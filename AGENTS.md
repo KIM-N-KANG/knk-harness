@@ -1,5 +1,3 @@
-# AGENTS.md
-
 ## Repository Knowledge Map
 
 Treat this `AGENTS.md` as a compact map for agents, not as a project encyclopedia. Keep durable project knowledge in `../llm-wiki` and keep this file focused on where to look first.
