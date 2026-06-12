@@ -34,3 +34,7 @@ When wiki context is needed:
 3. Use the wiki to understand project context before editing code or writing project-facing documentation.
 4. Verify behavior against the code when implementation details matter.
 5. If the wiki conflicts with the code, mention the conflict instead of silently choosing one source.
+
+## Shared Skills
+
+- Shared team skills live in this harness repository under `.agents/skills/`.

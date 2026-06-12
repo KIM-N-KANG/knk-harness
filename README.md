@@ -49,3 +49,11 @@ Before starting work, review the following document first:
 ```markdown
 @AGENTS.md
 ```
+
+## 팀 공용 스킬을 둡니다
+
+공용 스킬은 `knk-harness/.agents/skills/`에 둡니다. 개발 레포지토리에서 하네스의 `AGENTS.md`를 읽는 에이전트는 필요한 작업에 맞는 스킬의 `SKILL.md`를 먼저 읽고 따릅니다.
+
+현재 제공하는 스킬:
+
+- `create-branch`: Jira 티켓 번호를 확인하고 팀 브랜치 규칙에 맞는 Git 브랜치를 만듭니다.
