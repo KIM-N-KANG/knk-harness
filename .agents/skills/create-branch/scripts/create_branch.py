@@ -30,6 +30,7 @@ def run_git(args: list[str], check: bool = True) -> subprocess.CompletedProcess[
         ["git", *args],
         check=check,
         text=True,
+        encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -81,7 +82,7 @@ def resolve_base(base: str) -> str:
 
 
 def is_dirty() -> bool:
-    return bool(git_output(["status", "--porcelain"]))
+    return bool(git_output(["status", "--porcelain", "-uno"]))
 
 
 def build_branch(ticket: str, tag: str, title: str, max_slug_length: int) -> str:
@@ -109,11 +110,11 @@ def create_branch(
 
     if branch_exists(branch):
         if checkout_existing:
-            run_git(["switch", branch])
+            run_git(["checkout", branch])
             return Result(branch, created=False, checked_out=True, base_ref=base_ref, dirty=dirty)
         raise ValueError(f"Branch already exists: {branch}")
 
-    run_git(["switch", "-c", branch, base_ref])
+    run_git(["checkout", "-b", branch, base_ref])
     return Result(branch, created=True, checked_out=True, base_ref=base_ref, dirty=dirty)
 
 
