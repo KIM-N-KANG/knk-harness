@@ -21,9 +21,11 @@
 
 ## Skills
 
-- 팀 공유 스킬은 이 하네스 저장소의 `.agents/skills/` 및 `.claude/skills/` 아래에 있습니다.
+- 팀 공유 스킬의 원본은 이 하네스 저장소의 `.agents/skills/` 아래에 있습니다.
+- `.claude/skills`는 `.agents/skills`를 가리키는 심볼릭 링크로 관리합니다.
 
 ### 사용 가능한 팀 공유 스킬
 
 - `create-branch`: Jira 이슈나 티켓 키로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 사용합니다.
 - `create-commit`: 로컬 변경사항을 확인하고 팀 커밋 메시지 규칙에 맞는 Git 커밋을 만들 때 사용합니다.
+- `create-pr`: 현재 브랜치의 변경사항으로 팀 PR 규칙에 맞는 Draft Pull Request를 만들 때 사용합니다.

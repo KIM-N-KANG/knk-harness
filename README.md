@@ -52,9 +52,10 @@ git clone <development-repository-url>
 
 ## 팀 공용 스킬을 둡니다
 
-공용 스킬은 `knk-harness/.agents/skills/`에 둡니다. 개발 레포지토리에서 하네스의 `AGENTS.md`를 읽는 에이전트는 필요한 작업에 맞는 스킬의 `SKILL.md`를 먼저 읽고 따릅니다.
+공용 스킬 원본은 `knk-harness/.agents/skills/`에 둡니다. `.claude/skills`는 `.agents/skills`를 가리키는 심볼릭 링크로 관리합니다. 개발 레포지토리에서 하네스의 `AGENTS.md`를 읽는 에이전트는 필요한 작업에 맞는 스킬의 `SKILL.md`를 먼저 읽고 따릅니다.
 
 현재 제공하는 스킬:
 
 - `create-branch`: Jira 티켓 번호를 확인하고 팀 브랜치 규칙에 맞는 Git 브랜치를 만듭니다.
 - `create-commit`: 로컬 변경사항을 확인하고 팀 커밋 메시지 규칙에 맞는 Git 커밋을 만듭니다.
+- `create-pr`: 현재 브랜치의 변경사항으로 팀 PR 규칙에 맞는 Draft Pull Request를 만듭니다.
