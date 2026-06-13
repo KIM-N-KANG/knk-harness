@@ -69,6 +69,7 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 | `create-branch` | Jira 티켓 번호로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 | Jira 키, 브랜치 태그, `dev` 기준 분기, 워크트리 변경사항 |
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
 | `create-pr` | 현재 브랜치의 변경사항으로 Draft Pull Request를 만들 때 | base `dev`, 기존 PR 여부, PR 제목, PR 본문, 검증 결과 |
+| `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
 
 ## 스킬 사용 전 도구 확인
 
@@ -81,7 +82,7 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 | GitHub CLI | `create-pr` | `gh auth status` | PR 생성 전에 GitHub 로그인을 설정합니다. |
 | GitHub push 권한 | `create-pr` | `git push -u origin HEAD` | 권한이 없으면 PR을 만들 수 없습니다. |
 | Atlassian Rovo/Jira MCP | `create-branch` | Codex/Claude에서 Jira 이슈 조회 도구를 사용할 수 있는지 확인 | Jira 제목을 자동 조회할 수 없으므로 사용자가 이슈 제목을 제공해야 합니다. |
-| `llm-wiki` | 기능 이해, 문서, PR 본문 | `../llm-wiki/index.md` 존재 여부 확인 | 프로젝트 맥락을 확인할 수 없으므로 사용자에게 필요한 배경을 요청합니다. |
+| `llm-wiki` | 기능 이해, 문서, PR 본문, 기술 문서 작성 | `../llm-wiki/index.md` 존재 여부 확인 | 프로젝트 맥락을 확인할 수 없으므로 사용자에게 필요한 배경을 요청합니다. |
 
 ## 스킬별 외부 의존성
 
@@ -115,6 +116,18 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 - `git`
 - `gh`
 - GitHub 인증과 저장소 push 권한
+
+### technical-writing
+
+`technical-writing`은 한국어 기술 문서, 가이드, 튜토리얼, API 문서, 릴리스 노트, 회의록, 제안서를 계획, 작성, 검토, 재작성할 때 사용합니다. 문서 작업이 프로젝트 기능이나 도메인 맥락에 영향을 받으면 먼저 `../llm-wiki/index.md`에서 관련 문서를 확인합니다.
+
+필수:
+
+- 없음
+
+선택:
+
+- `../llm-wiki/`
 
 ## 스킬 관리 규칙
 
