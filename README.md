@@ -36,9 +36,9 @@ git clone <development-repository-url>
 개발 레포지토리의 `AGENTS.md`는 아래 내용을 파일 맨 위에 둡니다. 레포지토리별 추가 규칙이 있다면 이 블록 아래에 이어서 작성합니다.
 
 ```markdown
-## Basic Instructions
+# 기본 지침
 
-Before starting work, review the following document first:
+작업을 시작하기 전에 다음 문서를 먼저 확인하세요.
 - `../knk-harness/AGENTS.md`
 ```
 

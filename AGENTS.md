@@ -1,40 +1,36 @@
-## Repository Knowledge Map
+## Wiki
 
-Treat this `AGENTS.md` as a compact map for agents, not as a project encyclopedia. Keep durable project knowledge in `../llm-wiki` and keep this file focused on where to look first.
+- `../llm-wiki/`는 LLM이 관리하는 프로젝트 지식 저장소입니다.
+- `../llm-wiki/index.md`는 관련 위키 페이지를 찾기 위한 시작점입니다.
+- 위키에는 오래 보존할 지식을 저장합니다. 아키텍처, 기능, API, 화면, 컴포넌트, 도메인 규칙, 의사결정, 미해결 질문, 팀 컨벤션 등이 여기에 해당합니다.
 
-### Source of Record
+### Wiki를 열어야 할 때
 
-- `../llm-wiki/` is the LLM-maintained project knowledge repository.
-- `../llm-wiki/index.md` is the entry point for finding relevant wiki pages.
-- The wiki stores durable knowledge: architecture, features, APIs, screens, components, domain rules, decisions, open questions, and team conventions.
+단순한 기계적 변경이 아니라면 먼저 `../llm-wiki/index.md`를 읽고, 작업에 필요한 페이지만 열어 주세요.
 
-### When to Open the Wiki
+다음 작업에서는 먼저 위키를 참고해 주세요.
 
-Before non-trivial project work, read `../llm-wiki/index.md`, then open only the pages relevant to the task.
+- 기존 아키텍처나 기능 동작을 이해해야 하는 경우
+- 기능 구현 또는 수정
+- API 사용, 데이터 가져오기, 인증, 라우팅, 폼, 상태 관리, 공용 컴포넌트 변경
+- 제품 동작이나 도메인 규칙이 중요한 버그 수정
+- 기능 동작에 영향을 줄 수 있는 리팩터링
+- 프로젝트 동작 방식에 관한 질문 답변
+- 문서, PR 요약, 구현 계획, 기술 설명 작성
+- 나중에 기억되어야 하는 의사결정
 
-Reference the wiki first when the task involves:
+오탈자 수정, 포맷 변경, 의존성 정리, 고립된 린트 수정처럼 단순하고 기계적인 작업은 사용자가 요청하지 않는 한 위키를 확인하지 않아도 됩니다.
 
-- understanding existing architecture or feature behavior
-- implementing or modifying a feature
-- changing API usage, data fetching, auth, routing, forms, state management, or shared components
-- fixing a bug where product behavior or domain rules matter
-- refactoring code that may affect feature behavior
-- answering questions about how the project works
-- writing documentation, PR summaries, implementation plans, or technical explanations
-- making decisions that should be remembered later
+### Wiki 사용 방법
 
-For simple mechanical edits, such as typo fixes, formatting-only changes, dependency cleanup, or isolated lint fixes, the wiki does not need to be checked unless the user asks.
+위키 맥락이 필요하면 다음 순서로 진행해 주세요.
 
-### How to Use the Wiki
+1. `../llm-wiki/index.md`를 읽습니다.
+2. 필요한 위키 페이지만 최소한으로 엽니다.
+3. 코드를 수정하거나 프로젝트 문서를 작성하기 전에 위키로 프로젝트 맥락을 파악합니다.
+4. 구현 세부사항이 중요하다면 실제 코드와 대조해 동작을 확인합니다.
+5. 위키와 코드가 서로 맞지 않으면 한쪽을 조용히 택하지 말고 충돌 사실을 언급합니다.
 
-When wiki context is needed:
+## 공유 Skills
 
-1. Read `../llm-wiki/index.md`.
-2. Open the smallest set of relevant wiki pages.
-3. Use the wiki to understand project context before editing code or writing project-facing documentation.
-4. Verify behavior against the code when implementation details matter.
-5. If the wiki conflicts with the code, mention the conflict instead of silently choosing one source.
-
-## Shared Skills
-
-- Shared team skills live in this harness repository under `.agents/skills/`.
+- 팀 공유 스킬은 이 하네스 저장소의 `.agents/skills/` 아래에 있습니다.
