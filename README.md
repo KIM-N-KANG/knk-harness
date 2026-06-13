@@ -57,3 +57,4 @@ git clone <development-repository-url>
 현재 제공하는 스킬:
 
 - `create-branch`: Jira 티켓 번호를 확인하고 팀 브랜치 규칙에 맞는 Git 브랜치를 만듭니다.
+- `create-commit`: 로컬 변경사항을 확인하고 팀 커밋 메시지 규칙에 맞는 Git 커밋을 만듭니다.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Commit"
+  short_description: "팀 Git 규칙에 맞게 안전한 커밋을 작성합니다"
+  default_prompt: "Use $create-commit to inspect local Git changes and create a team-convention commit."
