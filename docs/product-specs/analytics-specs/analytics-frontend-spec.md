@@ -137,7 +137,7 @@ P0 이벤트는 출시 전에 반드시 심는다. P1 이벤트는 P0 이벤트�
 | 우선순위 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- | --- |
 | P0 | `story_list_viewed` | 스토리 목록 화면 진입 | `is_empty`, `story_count` |
-| P0 | `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `screen_name`, `cta_type` |
+| P0 | `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
 | P0 | `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `step`, `entry_point`, `screen_name` |
 | P0 | `story_create_step1_next_clicked` | Step1에서 다음 버튼 클릭 | `step`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
 | P0 | `story_create_step2_viewed` | Step2 스토리라인 후보 화면 진입 | `step`, `storyline_count`, `generation_time_ms` |
@@ -265,9 +265,11 @@ Step1의 장르·성격·직접 키워드 선택 값은 `story_create_step1_next
 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- |
 | `story_list_viewed` | 스토리 목록 화면 진입 | `is_empty`, `story_count` |
-| `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `cta_type` |
+| `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
 | `story_card_clicked` | 스토리 카드 클릭 | `story_id`, `story_position`, `genre_tags` |
 | `story_menu_clicked` | 스토리 카드의 메뉴 클릭 | `story_id`, `story_position` |
+
+`story_create_cta_clicked`는 스토리 목록과 채팅 목록 양쪽에서 발생한다. 두 화면에서 같은 property 집합(`entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type`)을 보내고, 진입 화면 구분은 공통 property인 `screen_name`으로 한다.
 
 ### AN-2-7-2 스토리 제작
 
@@ -313,7 +315,7 @@ Step1의 장르·성격·직접 키워드 선택 값은 `story_create_step1_next
 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- |
 | `chat_list_viewed` | 채팅 목록 화면 진입 | `is_empty`, `chat_count` |
-| `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `chat_count`, `screen_name` |
+| `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
 | `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `entry_point`, `screen_name` |
 | `chat_thread_clicked` | 채팅 항목 클릭 | `chat_id`, `story_id`, `message_count`, `thread_position`, `last_active_at` |
 | `chat_thread_menu_clicked` | 채팅 항목 메뉴 클릭 | `chat_id`, `story_id`, `thread_position` |

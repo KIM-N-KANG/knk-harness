@@ -37,7 +37,7 @@ PR 제목 형식:
 |---|---|
 | `harness-pull-request-template.md` | 하네스 레포지토리 변경 |
 | `frontend-pull-request-template.md` | 프론트엔드 화면, 브라우저 UI, 접근성, 반응형 변경 |
-| `moblie-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
+| `mobile-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
 | `backend-server-pull-request-template.md` | API, DB, 인증, 서버 비즈니스 로직 변경 |
 | `ai-server-pull-request-template.md` | Prompt, Model, RAG, Tool/Agent, Evaluation, Dataset 변경 |
 
@@ -52,7 +52,8 @@ PR 제목 형식:
 | `cicd` | `CICD` |
 | `refactor` | `Refactor` |
 | `chore` | `Chore` |
-| `release` | `Release` |
+
+`Release`는 릴리스 PR에만 사용하며, 대응하는 브랜치 태그가 없습니다.
 
 ## 작업 흐름
 

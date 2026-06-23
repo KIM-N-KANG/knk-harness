@@ -22,7 +22,6 @@ knk-workspace/
 mkdir -p ~/Projects/knk-workspace
 cd ~/Projects/knk-workspace
 
-git clone https://github.com/KIM-N-KANG/llm-wiki.git
 git clone https://github.com/KIM-N-KANG/knk-harness.git
 git clone <development-repository-url>
 ```
@@ -67,7 +66,7 @@ PR 템플릿은 `docs/templates/pull-request/` 아래에 있습니다. `create-p
 | --- | --- |
 | `harness-pull-request-template.md` | 하네스 레포지토리 변경 |
 | `frontend-pull-request-template.md` | 프론트엔드 화면, 브라우저 UI, 접근성, 반응형 변경 |
-| `moblie-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
+| `mobile-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
 | `backend-server-pull-request-template.md` | API, DB, 인증, 서버 비즈니스 로직 변경 |
 | `ai-server-pull-request-template.md` | Prompt, Model, RAG, Tool/Agent, Evaluation, Dataset 변경 |
 
@@ -123,13 +122,3 @@ PR 템플릿은 `docs/templates/pull-request/` 아래에 있습니다. `create-p
 필수:
 
 - 없음
-
-
-## 스킬 관리 규칙
-
-- 새 스킬은 `.claude/skills/<skill-name>/SKILL.md`로 추가합니다.
-- 스킬을 추가하거나 수정한 뒤에는 검증 스크립트를 실행합니다.
-
-```bash
-python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" .claude/skills/<skill-name>
-```

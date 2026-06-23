@@ -2,7 +2,7 @@
 
 이 문서는 **마냑 서비스에서 사용자가 스토리를 만들고 채팅을 이어가는 흐름**을 측정하기 위한 최상위 분석 스펙입니다. 프론트엔드 이벤트, 백엔드 로그, AI 호출 로그를 같은 식별자와 지표 언어로 연결하는 기준 문서로 사용합니다.
 
-OpenAI Harness Engineering 글의 원칙처럼 `docs/`는 구현과 운영 판단을 위한 기록 시스템입니다. 이 문서는 긴 설명서가 아니라 분석 스펙의 지도 역할을 하며, 세부 구현 계약은 프론트엔드·백엔드·AI 서비스 문서로 나눕니다.
+이 문서는 긴 설명서가 아니라 분석 스펙의 지도 역할을 하며, 세부 구현 계약은 프론트엔드·백엔드·AI 서비스 문서로 나눕니다.
 
 ```text
 §AN-1-1   분석 목적                 MVP 핵심 흐름과 분석 질문
@@ -316,9 +316,11 @@ OpenAI Harness Engineering 글의 원칙처럼 `docs/`는 구현과 운영 판�
 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- |
 | `story_list_viewed` | 스토리 목록 화면 진입 | `is_empty`, `story_count` |
-| `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `cta_type` |
+| `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
 | `story_card_clicked` | 스토리 카드 클릭 | `story_id`, `story_position`, `genre_tags` |
 | `story_menu_clicked` | 스토리 카드의 메뉴 클릭 | `story_id`, `story_position` |
+
+`story_create_cta_clicked`는 스토리 목록과 채팅 목록 양쪽에서 발생한다. 두 화면에서 같은 property 집합(`entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type`)을 보내고, 진입 화면 구분은 공통 property인 `screen_name`으로 한다.
 
 ### AN-1-7-2 스토리 상세
 
@@ -382,7 +384,7 @@ OpenAI Harness Engineering 글의 원칙처럼 `docs/`는 구현과 운영 판�
 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- |
 | `chat_list_viewed` | 채팅 목록 화면 진입 | `is_empty`, `chat_count` |
-| `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `chat_count`, `screen_name` |
+| `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
 | `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `entry_point`, `screen_name` |
 | `chat_thread_clicked` | 채팅 항목 클릭 | `chat_id`, `story_id`, `message_count`, `thread_position`, `last_active_at` |
 | `chat_thread_menu_clicked` | 채팅 항목 메뉴 클릭 | `chat_id`, `story_id`, `thread_position` |
