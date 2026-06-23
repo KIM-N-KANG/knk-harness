@@ -1,12 +1,6 @@
 # 김앤강 LLM 작업 하네스
 
-이 저장소는 팀원이 Codex, Claude 같은 LLM 개발 도구를 같은 규칙으로 사용하도록 돕는 공용 하네스입니다.
-
-하네스는 세 가지를 제공합니다.
-
-- 프로젝트 지식 저장소(`llm-wiki`)를 읽는 기준
-- 개발 레포지토리에서 공통 지침(`AGENTS.md`)을 불러오는 방법
-- 팀 Git 규칙을 따르는 공용 스킬
+이 저장소는 팀원이 Claude 같은 LLM 개발 도구를 같은 규칙으로 사용하도록 돕는 공용 하네스입니다.
 
 ## 워크스페이스 구조
 
@@ -14,13 +8,11 @@
 
 ```text
 knk-workspace/
-├── llm-wiki/
 ├── knk-harness/
 ├── <development-repo-1>/
 └── <development-repo-2>/
 ```
 
-- `llm-wiki/`: LLM이 참고하는 프로젝트 지식 저장소입니다.
 - `knk-harness/`: 공통 LLM 작업 규칙과 팀 운영 지침을 담는 저장소입니다.
 - `<development-repo-*>/`: 실제 제품이나 서비스 코드를 개발하는 저장소입니다.
 
@@ -37,30 +29,25 @@ git clone <development-repository-url>
 
 ## 개발 레포지토리에 하네스 연결
 
-각 개발 레포지토리 루트에는 `AGENTS.md` 또는 `CLAUDE.md`를 둡니다. 이 파일은 LLM 도구가 작업을 시작하기 전에 `../knk-harness/AGENTS.md`를 먼저 읽게 만듭니다.
+현재 워크트리에서 하네스의 공통 진입점은 `CLAUDE.md`입니다. 각 개발 레포지토리 루트에는 도구별 지침 파일을 두고, 작업을 시작하기 전에 `../knk-harness/CLAUDE.md`를 먼저 읽게 만듭니다.
 
-### AGENTS.md
+### CLAUDE.md
 
-개발 레포지토리의 `AGENTS.md` 맨 위에 아래 내용을 둡니다. 레포지토리별 추가 규칙은 이 블록 아래에 작성합니다.
+Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md` 맨 위에 아래 내용을 둡니다. 레포지토리별 추가 규칙은 이 블록 아래에 작성합니다.
 
 ```markdown
 # 기본 지침
 
 작업을 시작하기 전에 다음 문서를 먼저 확인하세요.
-- `../knk-harness/AGENTS.md`
-```
 
-### CLAUDE.md
+- `../knk-harness/CLAUDE.md`
 
-Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내용을 둡니다.
-
-```markdown
-@AGENTS.md
+## <레포별 독립 작업 규칙>
 ```
 
 ## 팀 공용 스킬
 
-공용 스킬의 원본은 `knk-harness/.agents/skills/`에 둡니다. `.claude/skills`는 `.agents/skills`를 가리키는 심볼릭 링크입니다. 스킬을 추가하거나 수정할 때는 `.agents/skills/`만 변경합니다.
+공용 스킬은 `.claude/skills/` 아래에 있습니다. 스킬을 추가하거나 수정할 때는 해당 스킬의 `SKILL.md`와 필요한 보조 파일을 이 경로에서 변경합니다.
 
 현재 제공하는 스킬은 아래와 같습니다.
 
@@ -70,6 +57,19 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
 | `create-pr` | 현재 브랜치의 변경사항으로 Draft Pull Request를 만들 때 | base `dev`, 기존 PR 여부, PR 제목, PR 본문, 검증 결과 |
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
+| `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
+
+## 문서 템플릿
+
+PR 템플릿은 `docs/templates/pull-request/` 아래에 있습니다. `create-pr`는 PR 본문을 만들 때 작업 중인 레포지토리의 특성에 맞는 템플릿을 참고합니다.
+
+| 템플릿 | 사용하는 상황 |
+| --- | --- |
+| `harness-pull-request-template.md` | 하네스 레포지토리 변경 |
+| `frontend-pull-request-template.md` | 프론트엔드 화면, 브라우저 UI, 접근성, 반응형 변경 |
+| `moblie-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
+| `backend-server-pull-request-template.md` | API, DB, 인증, 서버 비즈니스 로직 변경 |
+| `ai-server-pull-request-template.md` | Prompt, Model, RAG, Tool/Agent, Evaluation, Dataset 변경 |
 
 ## 스킬 사용 전 도구 확인
 
@@ -82,7 +82,6 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 | GitHub CLI | `create-pr` | `gh auth status` | PR 생성 전에 GitHub 로그인을 설정합니다. |
 | GitHub push 권한 | `create-pr` | `git push -u origin HEAD` | 권한이 없으면 PR을 만들 수 없습니다. |
 | Atlassian Rovo/Jira MCP | `create-branch` | Codex/Claude에서 Jira 이슈 조회 도구를 사용할 수 있는지 확인 | Jira 제목을 자동 조회할 수 없으므로 사용자가 이슈 제목을 제공해야 합니다. |
-| `llm-wiki` | 기능 이해, 문서, PR 본문, 기술 문서 작성 | `../llm-wiki/index.md` 존재 여부 확인 | 프로젝트 맥락을 확인할 수 없으므로 사용자에게 필요한 배경을 요청합니다. |
 
 ## 스킬별 외부 의존성
 
@@ -109,7 +108,7 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 
 ### create-pr
 
-`create-pr`는 현재 브랜치를 원격에 push하고 GitHub에 Draft Pull Request를 만듭니다. GitHub MCP는 필수가 아니며, 현재 스킬은 GitHub CLI(`gh`)를 사용합니다.
+`create-pr`는 현재 브랜치를 원격에 push하고 GitHub에 Draft Pull Request를 만듭니다. GitHub MCP는 필수가 아니며, 현재 스킬은 GitHub CLI(`gh`)를 사용합니다. PR 본문은 `docs/templates/pull-request/`의 템플릿 중 작업 레포지토리와 변경 유형에 맞는 파일을 참고해 작성합니다.
 
 필수:
 
@@ -119,24 +118,18 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md`에 아래 내�
 
 ### technical-writing
 
-`technical-writing`은 한국어 기술 문서, 가이드, 튜토리얼, API 문서, 릴리스 노트, 회의록, 제안서를 계획, 작성, 검토, 재작성할 때 사용합니다. 문서 작업이 프로젝트 기능이나 도메인 맥락에 영향을 받으면 먼저 `../llm-wiki/index.md`에서 관련 문서를 확인합니다.
+`technical-writing`은 한국어 기술 문서, 가이드, 튜토리얼, API 문서, 릴리스 노트, 회의록, 제안서를 계획, 작성, 검토, 재작성할 때 사용합니다.
 
 필수:
 
 - 없음
 
-선택:
-
-- `../llm-wiki/`
 
 ## 스킬 관리 규칙
 
-- 새 스킬은 `knk-harness/.agents/skills/<skill-name>/SKILL.md`로 추가합니다.
-- `.claude/skills`에는 직접 파일을 추가하지 않습니다.
+- 새 스킬은 `.claude/skills/<skill-name>/SKILL.md`로 추가합니다.
 - 스킬을 추가하거나 수정한 뒤에는 검증 스크립트를 실행합니다.
 
 ```bash
-python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" .agents/skills/<skill-name>
+python3 "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" .claude/skills/<skill-name>
 ```
-
-- 스킬이 사용하는 팀 규칙이 바뀌면 `../llm-wiki/`의 관련 문서를 먼저 확인합니다.
