@@ -22,8 +22,8 @@ AI 서비스는 사용자 행동 퍼널의 내부 피드백 루프입니다. pro
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.3 |
-| 작성일 | 2026-06-24 |
+| 버전 | v0.4 |
+| 작성일 | 2026-06-25 |
 | 대상 | 마냑 MVP AI 서비스 |
 | 적용 도구 | Sentry, `ai_call_logs` 테이블, CloudWatch |
 
@@ -31,7 +31,7 @@ AI 서비스는 사용자 행동 퍼널의 내부 피드백 루프입니다. pro
 | --- | --- |
 | [`analytics-spec.md`](./analytics-spec.md) | 전체 이벤트·지표·퍼널 기준 |
 | [`analytics-frontend-spec.md`](./analytics-frontend-spec.md) | AI 성공·실패가 사용자 행동 이벤트로 노출되는 기준 |
-| [`analytics-backend-spec.md`](./analytics-backend-spec.md) | 백엔드가 AI 호출에 전달하는 `request_id`와 저장 결과 연결 |
+| [`analytics-backend-spec.md`](./analytics-backend-spec.md) | 백엔드가 AI 호출에 전달하는 `request_id`와 `server_*` 이벤트 연결 |
 
 ## AN-4-1 목적
 
@@ -43,6 +43,8 @@ AI 서비스는 다음 데이터를 담당한다.
 - AI 호출 결과를 `ai_call_logs`에 기록한다.
 - provider 오류, timeout, 응답 파싱 실패, schema 검증 실패를 Sentry에 보낸다.
 - 프롬프트 원문, 채팅 원문, 생성 결과 원문은 로그와 Sentry에 넣지 않는다.
+
+AI 호출 결과는 백엔드가 `server_storyCreate_storyGeneration_processed_*`, `server_chat_aiMessage_processed_*` 같은 서버 분석 이벤트로 퍼널에 반영한다. AI 서비스의 상세 실패 코드(AN-4-7)는 그 이벤트의 `error_type`으로 거칠게 매핑된다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-4).
 
 ## AN-4-2 도구별 역할
 
@@ -60,12 +62,12 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지다.
 
 | feature | 설명 | 사용자 퍼널 연결 |
 | --- | --- | --- |
-| `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `story_create_step_viewed` where `step_number=2`, `story_create_error_shown` where `step_number=2` and `feature=storyline_generation` |
-| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `story_detail_viewed` with `source=story_create`, `story_create_error_shown` where `step_number=3` and `feature=story_completion` |
-| `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `ai_response_received`, `ai_response_failed` |
-| `suggestion_generation` | 다음 입력 추천 선택지 생성 | `ai_suggestion_shown`, `ai_suggestion_clicked` |
+| `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_succeeded`, `server_storyCreate_storyGeneration_processed_failed` |
+| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_completed`, `client_storyDetail_viewed` |
+| `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `client_chat_messageInput_submitted`, `server_chat_aiMessage_processed_succeeded`, `server_chat_aiMessage_processed_failed` |
+| `suggestion_generation` | 다음 입력 추천 선택지 생성 | `client_chat_choiceOption_selected` |
 
-AI feature는 프론트엔드 이벤트명에 넣지 않는다. 예를 들어 스토리라인 생성 실패와 스토리 완성 실패는 모두 `story_create_error_shown`으로 보내고, `feature`, `step_number`, `step_name`, `error_code`로 구분한다.
+AI feature는 프론트엔드 이벤트명에 넣지 않는다. 스토리라인 생성 실패와 채팅 응답 실패는 각각 `server_storyCreate_storyGeneration_processed_failed`, `server_chat_aiMessage_processed_failed`로 노출되고, 상세 원인은 `feature`와 `error_code`로 구분한다.
 
 ## AN-4-4 요청 context 계약
 
@@ -73,13 +75,14 @@ AI feature는 프론트엔드 이벤트명에 넣지 않는다. 예를 들어 �
 
 | 필드 | 필수 여부 | 설명 |
 | --- | --- | --- |
-| `request_id` | 필수 | 프론트엔드, 백엔드, AI 로그를 연결하는 ID |
-| `anonymous_id_hash` | 필수 | 익명 사용자 ID 해시 |
+| `request_id` | 필수 | 백엔드, AI 로그를 연결하는 서버 내부 상관 ID |
+| `device_id_hash` | 필수 | 익명 `device_id` 해시 |
 | `session_id` | 필수 | 프론트엔드 세션 ID |
 | `feature` | 필수 | AI 기능명 |
-| `story_id` | 조건부 | 스토리 생성 후 또는 채팅 중 필수 |
+| `creation_id` | 조건부 | 스토리라인 생성·완성 시 필수 |
+| `story_id` | 조건부 | 스토리 완성 후 또는 채팅 중 필수 |
 | `chat_id` | 조건부 | 채팅 응답 생성 시 필수 |
-| `turn_index` | 조건부 | 채팅 응답 생성 시 필수 |
+| `turn_number` | 조건부 | 채팅 응답 생성 시 필수 |
 | `prompt_template_version` | 필수 | 프롬프트 템플릿 버전 |
 
 AI 서비스 응답에는 다음 메타데이터를 포함한다.
@@ -106,9 +109,10 @@ AI 서비스 응답에는 다음 메타데이터를 포함한다.
   "request_id": "req_...",
   "ai_call_log_id": "ai_log_...",
   "feature": "chat_response",
+  "creation_id": null,
   "story_id": "story_...",
   "chat_id": "chat_...",
-  "turn_index": 2,
+  "turn_number": 2,
   "provider": "openai",
   "model": "model-name",
   "status": "succeeded",
@@ -137,14 +141,15 @@ MVP 최소 컬럼은 다음과 같다.
 | 컬럼 | 설명 |
 | --- | --- |
 | `id` | AI 호출 로그 ID |
-| `request_id` | 프론트엔드, 백엔드, AI 로그 연결 ID |
+| `request_id` | 백엔드, AI 로그 연결 ID |
 | `caller_service` | 호출 서비스. MVP 값은 `manyak-server` |
 | `feature` | AI 기능명 |
-| `anonymous_id_hash` | 익명 ID 해시 |
+| `device_id_hash` | 익명 `device_id` 해시 |
 | `session_id` | 세션 ID |
+| `creation_id` | 스토리 생성 시도 ID(`simpleCreationId`) |
 | `story_id` | 연결된 스토리 ID |
 | `chat_id` | 연결된 채팅 ID |
-| `turn_index` | 사용자 메시지 기준 턴 번호 |
+| `turn_number` | 사용자 메시지 기준 턴 번호 |
 | `provider` | AI provider |
 | `model` | 모델명 |
 | `prompt_template_version` | 프롬프트 템플릿 버전 |
@@ -160,18 +165,18 @@ MVP 최소 컬럼은 다음과 같다.
 
 ## AN-4-7 실패 코드
 
-MVP에서는 실패 코드를 적게 유지한다.
+MVP에서는 실패 코드를 적게 유지한다. 아래 `error_code`는 내부 상세 코드이며, 분석 이벤트의 `error_type`(`network` / `validation` / `server`)으로 매핑된다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-4).
 
-| error_code | 의미 |
-| --- | --- |
-| `provider_timeout` | provider 응답 시간 초과 |
-| `provider_rate_limited` | provider rate limit |
-| `provider_bad_request` | provider 요청 거부 |
-| `provider_unavailable` | provider 장애 또는 일시적 연결 실패 |
-| `invalid_ai_response` | 응답이 서비스 기대 형식과 다름 |
-| `schema_validation_failed` | Pydantic 또는 응답 schema 검증 실패 |
-| `content_filter_blocked` | 안전 정책 또는 필터에 의해 차단 |
-| `unexpected_error` | 분류되지 않은 예외 |
+| error_code | 의미 | error_type |
+| --- | --- | --- |
+| `provider_timeout` | provider 응답 시간 초과 | `network` |
+| `provider_rate_limited` | provider rate limit | `server` |
+| `provider_bad_request` | provider 요청 거부 | `validation` |
+| `provider_unavailable` | provider 장애 또는 일시적 연결 실패 | `network` |
+| `invalid_ai_response` | 응답이 서비스 기대 형식과 다름 | `validation` |
+| `schema_validation_failed` | Pydantic 또는 응답 schema 검증 실패 | `validation` |
+| `content_filter_blocked` | 안전 정책 또는 필터에 의해 차단 | `validation` |
+| `unexpected_error` | 분류되지 않은 예외 | `server` |
 
 프론트엔드와 백엔드에는 사용자에게 노출 가능한 메시지 코드만 전달한다. 내부 오류 상세는 CloudWatch와 Sentry에서 확인한다.
 
@@ -180,11 +185,11 @@ MVP에서는 실패 코드를 적게 유지한다.
 | 구분 | 수집 내용 |
 | --- | --- |
 | Tags | `feature`, `provider`, `model`, `prompt_template_version`, `error_code`, `request_id` |
-| Context | `ai_call_log_id`, `session_id`, `story_id`, `chat_id`, `turn_index`, `latency_ms`, `retry_count` |
+| Context | `ai_call_log_id`, `session_id`, `device_id_hash`, `creation_id`, `story_id`, `chat_id`, `turn_number`, `latency_ms`, `retry_count` |
 | Breadcrumb | AI 호출 시작, provider 응답 수신, schema 검증, DB 기록 |
 | Exceptions | timeout, provider 오류, 파싱 실패, schema 검증 실패, 예상하지 못한 예외 |
 
-Sentry에는 프롬프트 전문, 사용자 메시지, AI 생성 결과를 넣지 않는다. 필요한 경우 길이, 토큰 수, 템플릿 버전, 모델명만 남긴다.
+Sentry에는 프롬프트 전문, 사용자 메시지, AI 생성 결과를 넣지 않는다. 필요하면 길이, 토큰 수, 템플릿 버전, 모델명만 남긴다.
 
 ## AN-4-9 MVP 운영 지표
 
@@ -207,13 +212,14 @@ Sentry에는 프롬프트 전문, 사용자 메시지, AI 생성 결과를 넣�
 | 사용자 채팅 원문 | 저장 금지 |
 | AI 생성 결과 원문 | 저장 금지 |
 | 직접 추가 키워드 원문 | 저장 금지 |
-| 입력과 출력 크기 | token count, length bucket만 저장 |
-| 익명 ID | 해시값만 저장 |
+| 입력과 출력 크기 | token count만 저장 |
+| 익명 ID | `device_id_hash`만 저장 |
 
 ## AN-4-11 검수 체크리스트
 
 - 성공 호출과 실패 호출이 모두 `ai_call_logs`에 기록된다.
 - CloudWatch 로그에서 `request_id`로 백엔드 로그와 AI 로그를 연결할 수 있다.
+- AI 호출 결과가 `server_storyCreate_storyGeneration_processed_*` 또는 `server_chat_aiMessage_processed_*` 이벤트로 연결되고, `error_code`가 AN-4-7 기준으로 `error_type`에 매핑된다.
 - Sentry 이벤트에 `feature`, `model`, `prompt_template_version`, `error_code`가 있다.
 - 프롬프트 전문, 채팅 원문, AI 생성 결과 원문이 CloudWatch, Sentry, `ai_call_logs`에 없다.
 - `storyline_generation`, `story_completion`, `chat_response`의 성공률과 p95 latency를 계산할 수 있다.

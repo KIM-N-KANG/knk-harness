@@ -1,34 +1,34 @@
 # AN-1-ANALYTICS-SPEC
 
-이 문서는 **마냑 서비스에서 사용자가 스토리를 만들고 채팅을 이어가는 흐름**을 측정하기 위한 최상위 분석 스펙입니다. 프론트엔드 이벤트, 백엔드 로그, AI 호출 로그를 같은 식별자와 지표 언어로 연결하는 기준 문서로 사용합니다.
+이 문서는 **마냑 서비스에서 사용자가 스토리를 만들고 채팅을 이어가는 흐름**을 측정하기 위한 최상위 분석 스펙입니다. 프론트엔드 이벤트, 백엔드 서버 이벤트, AI 호출 로그를 같은 식별자와 네이밍 컨벤션으로 연결하는 기준 문서로 사용합니다.
 
 이 문서는 긴 설명서가 아니라 분석 스펙의 지도 역할을 하며, 세부 구현 계약은 프론트엔드·백엔드·AI 서비스 문서로 나눕니다.
 
 ```text
-§AN-1-1   분석 목적                 MVP 핵심 흐름과 분석 질문
-§AN-1-2   식별자 정책               anonymous_id · session_id · story_id · chat_id
-§AN-1-3   이벤트 공통 규칙          사용자 이벤트 · custom properties · 네이밍 컨벤션
-§AN-1-4   핵심 지표 정의            제작 · 채팅 · 피드백 지표 계산식
-§AN-1-5   스토리 제작 퍼널          제작 단계별 전환 이벤트
-§AN-1-6   채팅 퍼널                 채팅 시작 · 첫 메시지 · 다중 턴 전환 이벤트
-§AN-1-7   페이지별 이벤트 스펙      화면별 이벤트 카탈로그
-§AN-1-8   개인정보와 원문 수집 원칙  원문 수집 금지와 대체 property
-§AN-1-9   MVP 우선 적용 이벤트      P0 · P1 적용 순서
+§AN-1-1   분석 목적            MVP 핵심 흐름과 분석 질문
+§AN-1-2   식별자 정책          device_id · creation_id · story_id · chat_id
+§AN-1-3   이벤트 네이밍 컨벤션  platform · screenName · objectName · actionType · eventType
+§AN-1-4   이벤트 공통 프로퍼티  핵심 프로퍼티 · SDK 자동 수집 · 추후 도입
+§AN-1-5   핵심 퍼널 정의       제작 · 채팅 활성화 · 전체 활성화 퍼널
+§AN-1-6   핵심 지표 정의       제작 · 채팅 · 피드백 지표 계산식
+§AN-1-7   페이지별 이벤트 스펙  화면별 이벤트 카탈로그
+§AN-1-8   개인정보와 원문 수집 원칙  원문 수집 금지와 대체 프로퍼티
+§AN-1-9   MVP 우선 적용 이벤트  P0 · P1 적용 순서
 ```
 
 ---
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.4 |
-| 작성일 | 2026-06-24 |
+| 버전 | v0.5 |
+| 작성일 | 2026-06-25 |
 | 대상 | 마냑 서비스 |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 최소 이벤트 스펙을 정의한다. |
 
 | 세부 문서 | 역할 |
 | --- | --- |
 | [`analytics-frontend-spec.md`](./analytics-frontend-spec.md) | Amplitude 이벤트와 브라우저 Sentry 수집 기준 |
-| [`analytics-backend-spec.md`](./analytics-backend-spec.md) | CloudWatch API 로그, 서버 Sentry, `ai_call_logs` 연결 기준 |
+| [`analytics-backend-spec.md`](./analytics-backend-spec.md) | CloudWatch API 로그, 서버 분석 이벤트, 서버 Sentry, `ai_call_logs` 연결 기준 |
 | [`analytics-ai-spec.md`](./analytics-ai-spec.md) | AI 호출 로그, 실패 코드, 토큰·latency 운영 지표 |
 
 ## AN-1-1 분석 목적
@@ -46,434 +46,366 @@
 | 핵심 질문 | 확인 지표 |
 | --- | --- |
 | 사용자가 스토리 제작을 시작하는가? | 제작 시작률 |
-| 제작 중 어디서 막히는가? | 제작 단계별 이탈율, 취소율 |
+| 제작 중 어디서 막히는가? | 제작 단계별 이탈율, 생성 실패율 |
 | 스토리 생성이 채팅으로 이어지는가? | 스토리 상세 → 채팅 시작 전환율 |
-| 채팅이 실제 몰입으로 이어지는가? | 첫 메시지 전송률, 2턴 이상 진행률, 5턴 이상 진행률 |
+| 채팅이 실제 몰입으로 이어지는가? | 첫 메시지 전송률, N턴 이상 도달률 |
 | 개선 포인트를 수집하고 있는가? | 피드백 제출률 |
 
 ## AN-1-2 식별자 정책
 
-현재 MVP에는 로그인 기능이 없다. 따라서 `user_id`는 사용하지 않고, 익명 식별자를 기준으로 분석한다.
+현재 MVP는 로그인 기능이 없는 **전원 게스트(익명)** 서비스다. 따라서 `user_id`는 사용하지 않고, 익명 식별자를 기준으로 분석한다. 사용자 단위는 Amplitude SDK가 자동으로 채우는 `device_id`로 식별한다.
 
-| property | 설명 | 생성 방식 |
+| 식별자 | 타입 | 의미 | 생성 방식 |
+| --- | --- | --- | --- |
+| `device_id` | string | 같은 브라우저 사용자를 묶는 익명 단위 | Amplitude Browser SDK 자동 수집 |
+| `session_id` | number | 한 번의 방문 흐름 | Amplitude SDK 자동 수집 |
+| `creation_id` | string | 한 번의 스토리 생성 시도 | 스토리라인 생성 시 발급되는 `simpleCreationId` |
+| `story_id` | number | 스토리 식별자 | 스토리 완성 후 서버에서 발급한다. |
+| `chat_id` | string | 채팅 식별자 | 채팅 생성 후 서버에서 발급한다. |
+
+분석 단위는 다음 join key로 잡는다.
+
+| 키 | 의미 | 사용 |
 | --- | --- | --- |
-| `anonymous_id` | 같은 브라우저 사용자를 묶는 익명 ID | 첫 방문 시 `crypto.randomUUID()`로 생성하고 `localStorage` 또는 1st-party cookie에 저장 |
-| `session_id` | 한 번의 방문 흐름 ID | 앱 진입 시 생성한다. 마지막 이벤트 후 30분이 지나면 새로 생성한다. |
-| `user_id` | 로그인 사용자 ID | 현재는 `null`로 보낸다. 로그인 기능 도입 후 사용한다. |
-| `story_id` | 스토리 식별자 | 스토리 생성 후 서버에서 발급한다. |
-| `chat_id` | 채팅 식별자 | 채팅 시작 후 서버에서 발급한다. |
+| `device_id` | 익명 사용자 단위 (SDK 자동) | 전체·장기 퍼널의 기본 단위 |
+| `creation_id` | 한 번의 스토리 생성 시도 | 제작 퍼널의 생성 성공 ~ 완료 구간 고정값 |
+| `chat_id` | 한 채팅 세션 | 채팅 퍼널, 제작 완료 후 첫 대화 연결 |
 
-분석 기준은 다음과 같이 잡는다.
+`requested`·`viewed`처럼 ID 발급 이전 단계는 고정값 없이 `device_id` 순차 기준으로 집계한다. 로그인 기능을 도입하면 `device_id`는 계속 유지하고, 로그인 시점부터 `user_id`를 추가한다. Amplitude의 `identify` 또는 `alias` 기능으로 기존 익명 행동과 로그인 사용자를 연결한다.
 
-| 분석 목적 | 기준 식별자 |
+## AN-1-3 이벤트 네이밍 컨벤션
+
+이벤트명은 platform, screenName, objectName, actionType, eventType을 언더스코어로 연결해 만든다. 각 항목 내부는 camelCase로 쓰고, 프로퍼티는 `snake_case`로 쓴다.
+
+```text
+{platform}_{screenName}(_{objectName})?_{actionType}(_{eventType})?
+```
+
+```text
+client_storyList_viewed
+client_storyList_storyCard_clicked
+client_storyList_storyCard_impressed
+client_storyCreate_nextButton_clicked
+client_storyCreate_storyGeneration_requested
+server_storyCreate_storyGeneration_processed_succeeded
+server_storyCreate_storyGeneration_processed_failed
+```
+
+### AN-1-3-1 구성 항목
+
+| 항목 | 필수 여부 | 설명 |
+| --- | --- | --- |
+| `platform` | 필수 | 이벤트가 발생한 주체. `client`(프론트엔드 행동) 또는 `server`(서버·AI·DB 처리 결과) |
+| `screenName` | 필수 | 이벤트가 발생한 화면 또는 주요 flow. 예: `onboarding`, `storyList`, `storyCreate`, `storyDetail`, `chatList`, `chat`, `feedback` |
+| `objectName` | 조건부 필수 | 사용자가 보거나 조작한 대상, 또는 서버가 처리한 대상. 화면 진입처럼 대상이 화면 자체이면 생략한다. |
+| `actionType` | 필수 | 사용자 행동 또는 사용자에게 노출된 상태 |
+| `eventType` | 선택 | 결과 상태. 성공·실패·차단·취소를 구분해야 할 때만 사용한다. |
+
+`actionType`은 아래 값으로 제한해 사용한다.
+
+| 그룹 | 값 | 설명 |
+| --- | --- | --- |
+| 사용자 행동 (client) | `viewed` | 화면 또는 단계에 진입했을 때 |
+| 사용자 행동 (client) | `clicked` | 클릭 가능한 요소를 눌렀을 때 |
+| 사용자 행동 (client) | `selected` | 선택지를 선택했을 때 |
+| 사용자 행동 (client) | `focused` | 입력 영역에 포커스가 들어왔을 때 |
+| 사용자 행동 (client) | `submitted` | 폼이나 입력값을 제출했을 때 |
+| 사용자 행동 (client) | `requested` | 클라이언트가 서버에 생성·처리를 요청했을 때 |
+| 사용자 행동 (client) | `completed` | 주요 flow를 끝까지 완료했을 때 |
+| 상태 노출 (client) | `shown` | 모달, 토스트, 에러, 로딩, 빈 상태가 표시되었을 때 |
+| 상태 노출 (client) | `impressed` | 특정 item 또는 section이 유효하게 노출되었을 때 |
+| 서버 처리 (server) | `processed` | 서버가 생성·저장·처리를 수행했을 때. eventType으로 결과를 구분한다. |
+
+`eventType`은 `succeeded`, `failed`, `blocked`, `canceled`만 사용한다. 단순 클릭·노출·포커스·화면 진입에는 결과 상태를 붙이지 않는다. `completed`는 결과 상태가 아니라 사용자가 flow를 끝마친 행동이므로 eventType이 아니라 actionType으로 쓴다.
+
+### AN-1-3-2 이벤트명 작성 원칙
+
+| 원칙 | 설명 | 예시 |
+| --- | --- | --- |
+| 이벤트명에 데이터 값을 넣지 않는다. | ID, 선택값, 에러 코드, 단계 번호, 리스트 위치는 프로퍼티로 보낸다. | `story_id`, `step_number`, `position` |
+| 단계 번호는 screenName에 넣지 않는다. | 단계는 `step_number`, `step_name` 프로퍼티로 보낸다. | `client_storyCreate_step_viewed` |
+| 버튼은 문구보다 역할·의도로 쓴다. | `nextButton`, `completeButton`, `chatStartButton`, `skipButton` 등 | `client_storyCreate_nextButton_clicked` |
+| 서버 처리 대상은 기능 단위로 쓴다. | `storyGeneration`, `aiMessage`, `submission` 등 | `server_chat_aiMessage_processed_failed` |
+| `canceled`는 실제 취소 행동에만 붙인다. | 단순 닫기·나가기 클릭에는 `clicked`만 쓴다. | `client_storyCreate_exitButton_clicked` |
+
+### AN-1-3-3 impression 가이드
+
+`impressed`는 특정 item 또는 section이 사용자 화면에 유효하게 노출된 상태를 의미한다. 유효 노출 여부는 다음 기준으로 판단한다.
+
+| 항목 | 권장 기준 |
 | --- | --- |
-| 한 번의 사용 흐름 안에서 퍼널 보기 | `session_id` |
-| 재방문, 사용자 수, 중복 제거 보기 | `anonymous_id` |
-| 스토리 단위 성과 보기 | `story_id` |
-| 채팅 단위 성과 보기 | `chat_id` |
+| 최소 노출 면적 | 컴포넌트 면적의 50% 이상 |
+| 최소 노출 시간 | 1초 이상 |
 
-로그인 기능을 도입하면 `anonymous_id`는 계속 유지하고, 로그인 시점부터 `user_id`를 추가한다. 분석 도구가 `identify` 또는 `alias` 기능을 제공하면 기존 익명 행동과 로그인 사용자를 연결한다.
+중복 노출은 동일 item 기준으로 한 번만 수집한다. `동일 session_id + 동일 screenName + 동일 objectName + 동일 item_id` 기준으로 30초 이내 재노출은 중복으로 판단한다(cooling time 30초). section, item 세부 정보는 `section_id`, `section_name`, `item_id`, `position` 프로퍼티로 보낸다.
 
-## AN-1-3 이벤트 공통 규칙
+## AN-1-4 이벤트 공통 프로퍼티
 
-이벤트 이름은 `snake_case`를 사용한다. 프론트엔드 Amplitude 이벤트는 사용자가 보거나 누르거나 입력한 행동을 기준으로 남긴다. 선택한 장르, 선택 개수, 키워드 추가 여부처럼 비즈니스 로직이나 도메인에서 나온 값은 이벤트 이름으로 만들지 않고 custom properties에 담는다.
+각 이벤트 표에는 고유 프로퍼티만 나열하고, 공통 프로퍼티는 전 이벤트에 자동 부착한다. 프로퍼티 타입은 API 응답 모델과 일치시킨다. `story_id`는 number, `chat_id`는 string이고, boolean은 문자열이 아닌 boolean으로 보낸다.
 
-### AN-1-3-1 사용자 이벤트와 custom properties 구분
+### AN-1-4-1 MVP 핵심 프로퍼티
 
-사용자 이벤트와 custom properties는 다음 기준으로 나눈다.
+현재 서비스의 핵심 동선은 **스토리 제작 → 채팅**이다. 이 퍼널 추적에 필요한 최소 프로퍼티만 정의한다.
 
-| 구분 | 기준 | 예시 |
+| property | 타입 | 적용 범위 | 설명 |
+| --- | --- | --- | --- |
+| `screen_name` | string | 모든 이벤트 | 이벤트가 발생한 화면. 필터·세그먼트 편의를 위해 프로퍼티로도 보낸다. |
+| `step_name` | string | 스토리 제작 퍼널 | 제작 단계. `keyword`, `storylineSelect`, `additionalInfo`, `complete` |
+| `step_number` | number | 스토리 제작 퍼널 | 제작 단계 번호 |
+| `creation_id` | string | 스토리 제작 퍼널 | 스토리라인 생성 시 발급되는 `simpleCreationId` |
+| `story_id` | number | story 관련 이벤트 | 스토리 식별자 |
+| `chat_id` | string | chat 관련 이벤트 | 채팅 식별자 |
+
+### AN-1-4-2 자동 수집 (재정의 금지)
+
+다음 값은 Amplitude Browser SDK가 자동으로 채우므로 커스텀 프로퍼티로 다시 만들지 않는다. 익명 사용자 식별도 `device_id`로 처리한다.
+
+```text
+device_id, session_id
+platform, os_name, os_version, device_family
+app_version
+country, region, city, language
+event_time, event_id
+```
+
+### AN-1-4-3 추후 도입
+
+다음 프로퍼티는 관련 기능 도입 시점에 함께 추가한다.
+
+| property | 도입 시점 | 설명 |
 | --- | --- | --- |
-| 사용자 이벤트 | 사용자가 화면을 보거나 UI를 조작한 행동 | `story_create_step_viewed`, `story_create_option_clicked`, `story_create_complete_clicked` |
-| custom properties | 행동이 일어난 순간의 도메인 값, 선택 상태, 결과 속성 | `selected_genre_ids`, `selected_genre_count`, `has_custom_keyword`, `custom_keyword_count` |
+| `user_id` | 인증 도입 후 | 로그인 사용자 식별자 (`identify`로 설정) |
+| `is_logged_in` | 인증 도입 후 | 로그인 여부 (게스트 구분) |
+| `membership` | 구독·요금제 도입 후 | 요금제·등급 |
+| `signup_at` | 인증 도입 후 | 가입 시점 |
+| `experiment_key` / `variant` | A/B 테스트 도입 후 | 실험 키와 분기 값 |
+| `request_id` | 서버 사이드 이벤트 계측 시 | client `requested` ↔ server `processed` 연결용 상관 ID. 현재는 `creation_id`로 대체한다. |
+| `item_id` / `section_id` / `section_name` | impression 정밀 계측 시 | 추천 카드 등 노출 분석용 |
 
-### AN-1-3-2 이벤트 네이밍 컨벤션
+## AN-1-5 핵심 퍼널 정의
 
-프론트엔드 사용자 이벤트는 기본적으로 `{domain}_{object}_{verb}` 형식을 사용한다. 이벤트 이름은 사용자가 한 행동 또는 사용자에게 노출된 상태만 표현한다. 화면명, 단계, 진입 경로, 선택값, AI feature, 에러 코드는 이벤트 이름에 넣지 않고 custom properties로 보낸다.
+익명 서비스라 사용자 단위는 `device_id`(SDK 자동)를 쓰고, 한 번의 시도·세션은 `creation_id`·`chat_id`를 단계 간 고정값(hold constant)으로 쓴다.
 
-| 구성 | 설명 | 예시 |
+### AN-1-5-1 스토리 제작 퍼널
+
+키워드 입력부터 스토리 완성까지 어디서 이탈하는지와 생성 성공률을 측정한다.
+
+| 순서 | 단계 | 이벤트 | 고정값 |
+| --- | --- | --- | --- |
+| 1 | 제작 진입 | `client_storyCreate_viewed` | device |
+| 2 | 생성 요청 | `client_storyCreate_storyGeneration_requested` | device |
+| 3 | 생성 성공 | `server_storyCreate_storyGeneration_processed_succeeded` | creation_id |
+| 4 | 스토리라인 선택 | `client_storyCreate_storylineOption_selected` | creation_id |
+| 5 | 제작 완료 | `client_storyCreate_completed` | creation_id |
+
+- 핵심 지표: 전체 전환율(1 → 5), 생성 성공률(2 → 3), 생성 후 완료율(3 → 5), 최대 이탈 단계 식별
+- 고정값 주의: 1~2단계는 `creation_id` 발급 전이라 device 순차 기준, 3단계부터 `creation_id` 고정으로 한 생성 건의 완주를 측정한다.
+- UI 단계 렌즈: `client_storyCreate_step_viewed`의 `step_name`(keyword → storylineSelect → additionalInfo → complete)으로 화면 단계 이탈을 별도 퍼널로 관찰한다.
+
+### AN-1-5-2 채팅 활성화 퍼널
+
+채팅 진입 후 첫 메시지·첫 응답까지 도달하는지와 대화 깊이를 측정한다. 채팅은 메시지↔응답이 반복되므로 **활성화 퍼널 + 인게이지먼트 깊이**로 나눠서 본다.
+
+활성화 퍼널(고정값 `chat_id`)
+
+| 순서 | 단계 | 이벤트 |
 | --- | --- | --- |
-| `domain` | 기능 또는 사용자 흐름 | `story_create`, `story_detail`, `story_list`, `chat`, `feedback` |
-| `object` | 사용자가 보거나 조작한 대상 | `step`, `next`, `complete`, `option`, `storyline`, `suggestion`, `input`, `error`, `loading` |
-| `verb` | 사용자 행동 또는 사용자에게 노출된 상태 | `viewed`, `shown`, `clicked`, `focused`, `submitted`, `sent`, `received`, `failed`, `exited` |
+| 1 | 채팅 진입 | `client_chat_viewed` |
+| 2 | 첫 메시지 | `client_chat_messageInput_submitted` |
+| 3 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` |
 
-네이밍 규칙은 다음처럼 적용한다.
+- 핵심 지표: 말 거는 비율(1 → 2), AI 응답 성공률(2 → 3), 진입 경로(`client_storyDetail_chatStartButton_clicked` → 1)
+- 인게이지먼트 깊이: `client_chat_messageInput_submitted`의 `turn_number` 분포로 N턴 이상 도달률을 보고, 선택지 사용률은 `client_chat_choiceOption_selected` / 턴 수로 본다.
 
-| 규칙 | 설명 | 예시 |
-| --- | --- | --- |
-| 화면 진입은 `{screen_or_domain}_{object}_viewed`로 남긴다. | 단일 화면은 화면명을 쓰고, 단계형 flow는 `step`을 object로 쓴다. | `story_list_viewed`, `story_create_step_viewed` |
-| 단계형 flow의 단계 번호는 이벤트명에 넣지 않는다. | 단계는 `step_number`, `step_name`으로 보낸다. | `story_create_step_viewed` with `step_number=1` |
-| 버튼 클릭은 버튼 문구보다 의도를 쓴다. | `done` 대신 `next`, `complete`, `submit`, `exit`을 쓴다. | `story_create_next_clicked`, `story_create_complete_clicked` |
-| 옵션 선택은 하나의 이벤트로 묶는다. | 장르, 주인공 성격, 주변 인물 성격은 `option_group`으로 구분한다. | `story_create_option_clicked` |
-| 상태 노출은 `{domain}_{state}_shown`으로 남긴다. | 로딩과 에러는 `feature`, `step_number`, `error_code`로 구분한다. | `story_create_error_shown` |
-| 입력창 포커스는 `{domain}_{input}_focused`로 남긴다. | 실제 원문 입력값은 보내지 않고 입력 시작 여부만 남긴다. | `story_create_extra_info_focused` |
-| 도메인 값은 이벤트 이름에 넣지 않는다. | 선택된 장르 수, 커스텀 키워드 여부, 생성 시간은 property로 보낸다. | `has_custom_keyword`, `generation_time_ms` |
-| 여러 화면에서 같은 의미로 쓰는 공통 전환 이벤트는 같은 이벤트명을 유지한다. | 화면 구분은 `screen_name`, `entry_point`, `source`로 보완한다. | `story_create_cta_clicked`, `chat_start_clicked`, `user_message_sent` |
+### AN-1-5-3 전체 활성화 퍼널 (north-star)
 
-생성 성공, 생성 실패처럼 서비스 결과를 나타내는 이벤트는 백엔드·AI 운영 로그에서 사용한다. 프론트엔드 사용자 퍼널에서는 `story_detail_viewed`처럼 사용자가 실제로 본 화면이나 `story_create_error_shown`처럼 노출된 상태로 연결한다.
+방문자가 스토리를 만들고 실제 대화까지 갔는지 측정한다. 페이지를 가로지르는 퍼널이다.
 
-### AN-1-3-3 공통 properties
+| 순서 | 단계 | 이벤트 | 고정값 |
+| --- | --- | --- | --- |
+| 1 | 메인 방문 | `client_storyList_viewed` | device |
+| 2 | 제작 시작 | `client_storyList_createButton_clicked` | device |
+| 3 | 제작 완료 | `client_storyCreate_completed` | device |
+| 4 | 첫 메시지 | `client_chat_messageInput_submitted` | chat_id |
+| 5 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` | chat_id |
 
-모든 이벤트에는 다음 properties를 기본으로 포함한다.
+- 핵심 지표: 방문 → 활성화(첫 대화) 전환율(1 → 5), 구간별 이탈
+- 3단계 `client_storyCreate_completed`에서 발급된 `chat_id`로 4~5를 연결한다.
 
-| property | 설명 |
-| --- | --- |
-| `anonymous_id` | 익명 사용자 ID |
-| `user_id` | 현재는 `null` |
-| `session_id` | 세션 ID |
-| `screen_name` | 현재 화면 이름 |
-| `entry_point` | 진입 경로 |
-| `flow_name` | 사용자가 진행 중인 흐름. 단계형 flow에서 필수 |
-| `step_number` | 단계 번호. 단계형 flow에서 필수 |
-| `step_name` | 단계 의미. 단계형 flow에서 필수 |
-| `device_type` | 기기 유형 |
-| `story_count` | 사용자가 보유한 스토리 수 |
-| `chat_count` | 사용자가 진행 중인 채팅 수 |
-| `created_at` | 이벤트 발생 시각 |
+## AN-1-6 핵심 지표 정의
 
-`entry_point` 값은 우선 다음 값만 사용한다.
-
-| 값 | 의미 |
-| --- | --- |
-| `story_tab` | 하단 탭의 스토리 메뉴 |
-| `chat_tab` | 하단 탭의 채팅 메뉴 |
-| `feedback_tab` | 하단 탭의 피드백 메뉴 |
-| `empty_state` | 빈 상태 화면의 CTA |
-| `floating_button` | 플로팅 만들기 버튼 |
-| `story_card` | 스토리 목록 카드 |
-| `story_detail` | 스토리 상세 화면 |
-| `chat_thread` | 채팅 목록의 채팅 항목 |
-
-## AN-1-4 핵심 지표 정의
+지표는 페이지별 이벤트 카탈로그(AN-1-7)에 정의된 이벤트만으로 계산한다.
 
 | 영역 | 지표 | 계산식 |
 | --- | --- | --- |
-| 스토리 목록 | 빈 목록 CTA 클릭률 | `story_create_cta_clicked` 수 / `story_list_viewed` 수 where `is_empty=true` |
-| 스토리 목록 | 빈 목록 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_list_viewed` 수 where `entry_point=empty_state` |
-| 스토리 목록 | CTA 클릭 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_create_cta_clicked` 수 |
-| 스토리 목록 | 스토리 카드 클릭률 | `story_card_clicked` 수 / `story_list_viewed` 수 where `is_empty=false` |
-| 스토리 목록 | 기존 스토리 상세 진입률 | `story_detail_viewed` 수 where `source=story_list` / `story_card_clicked` 수 |
-| 스토리 목록 | 추가 제작률 | `story_create_step_viewed` 수 where `step_number=1` / `story_list_viewed` 수 where `story_count > 0` |
-| 스토리 제작 | 스토리 제작 완료율 | `story_detail_viewed` 사용자 수 where `source=story_create` / `story_create_step_viewed` 사용자 수 where `step_number=1` |
-| 스토리 제작 | 제작 명시 종료율 | `story_create_exit_clicked` 사용자 수 / `story_create_step_viewed` 사용자 수 where `step_number=1` |
-| 스토리 제작 | 단계별 이탈율 | `1 - 다음 단계 화면 진입 이벤트 사용자 수 / 현재 단계 화면 진입 이벤트 사용자 수` |
-| 스토리 제작 | AI 스토리라인 생성 실패 노출률 | `story_create_error_shown` 수 where `step_number=2` and `feature=storyline_generation` / `story_create_next_clicked` 수 where `step_number=1` |
-| 스토리 제작 | AI 스토리 생성 실패 노출률 | `story_create_error_shown` 수 where `step_number=3` and `feature=story_completion` / `story_create_complete_clicked` 수 where `step_number=3` |
-| 스토리 제작 | 다시 만들기율 | `story_create_regenerate_clicked` 수 where `step_number=2` / `story_create_step_viewed` 수 where `step_number=2` |
-| 스토리 제작 | 커스텀 키워드 사용률 | `story_create_next_clicked` 중 `step_number=1` and `has_custom_keyword=true` 사용자 수 / `story_create_next_clicked` 사용자 수 where `step_number=1` |
-| 스토리 상세 | 상세 → 채팅 시작 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 |
-| 스토리 상세 | 제작 직후 채팅 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `source=story_create` |
-| 스토리 상세 | 목록 재진입 후 채팅 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `source=story_list` |
-| 스토리 상세 | 상세 이탈율 | `1 - (chat_start_clicked 수 / story_detail_viewed 수)` |
-| 스토리 상세 | 기존 채팅 보유 스토리 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `has_existing_chat=true` |
-| 스토리 상세 | 신규 채팅 시작 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `has_existing_chat=false` |
-| 스토리 상세 | 상세 스크롤률 | `story_detail_scrolled` 수 / `story_detail_viewed` 수 |
-| 채팅 목록 | 채팅 빈 목록 CTA 클릭률 | `story_create_cta_clicked` 수 / `chat_list_viewed` 수 where `is_empty=true` |
-| 채팅 목록 | 채팅 빈 목록 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_create_cta_clicked` 수 where `screen_name=chat_list` |
-| 채팅 목록 | 채팅 항목 클릭률 | `chat_thread_clicked` 수 / `chat_list_viewed` 수 where `is_empty=false` |
-| 채팅 목록 | 채팅방 재진입률 | `chat_room_viewed` 수 / `chat_thread_clicked` 수 |
-| 채팅 목록 | 재진입 후 메시지 전송률 | `user_message_sent` 수 / `chat_room_viewed` 수 where `message_count > 0` |
-| 채팅 목록 | 채팅 목록 이탈율 | `1 - (chat_thread_clicked 수 / chat_list_viewed 수)` where `is_empty=false` |
-| 채팅 | 채팅 시작 → 채팅방 진입률 | `chat_room_viewed` 수 / `chat_start_clicked` 수 |
-| 채팅 | 첫 입력 의도율 | `chat_input_focused` 또는 `ai_suggestion_clicked` 수 / `chat_room_viewed` 수 |
-| 채팅 | 첫 메시지 전송률 | 첫 `user_message_sent` 사용자 수 / `chat_room_viewed` 사용자 수 |
-| 채팅 | 첫 화면 이탈율 | `1 - (첫 user_message_sent(turn_index=1) 사용자 수 / chat_room_viewed 사용자 수)` |
-| 채팅 | 2턴 이상 진행률 | `turn_index >= 2` 사용자 수 / 첫 `user_message_sent` 사용자 수 |
-| 채팅 | 5턴 이상 진행률 | `turn_index >= 5` 사용자 수 / `chat_room_viewed` 사용자 수 |
-| 채팅 | 추천 입력 노출률 | `ai_suggestion_shown` 수 / `chat_room_viewed` 수 |
-| 채팅 | 추천 입력 클릭률 | `ai_suggestion_clicked` 수 / `ai_suggestion_shown` 수 |
-| 채팅 | 추천 입력 전송 비중 | `user_message_sent` 수 where `input_type=ai_suggestion` / `user_message_sent` 수 |
-| 채팅 | 직접 입력 전송 비중 | `user_message_sent` 수 where `input_type=manual` / `user_message_sent` 수 |
-| 채팅 | AI 응답 실패율 | `ai_response_failed` 수 / `user_message_sent` 수 |
-| 피드백 | 피드백 제출률 | `feedback_submitted` 사용자 수 / `feedback_page_viewed` 사용자 수 |
-| 피드백 | 입력 시작률 | `feedback_input_started` 수 / `feedback_page_viewed` 수 |
-| 피드백 | 입력 시작 → 제출 성공률 | `feedback_submitted` 수 / `feedback_input_started` 수 |
-| 피드백 | 제출 클릭 → 제출 성공률 | `feedback_submitted` 수 / `feedback_submit_clicked` 수 |
-| 피드백 | 유효 피드백률 | `feedback_submitted` 중 `content_length >= 10` 비율 |
-| 피드백 | 이메일 남김률 | `feedback_submitted` 중 `has_email=true` 비율 |
-| 피드백 | 제출 실패율 | `feedback_submit_failed` 수 / `feedback_submit_clicked` 수 |
+| 온보딩 | 온보딩 완료율 | `client_onboarding_completed` 수 / `client_onboarding_viewed` 수 |
+| 온보딩 | 온보딩 건너뛰기율 | `client_onboarding_skipButton_clicked` 수 / `client_onboarding_viewed` 수 |
+| 스토리 목록 | 스토리 카드 클릭률 | `client_storyList_storyCard_clicked` 수 / `client_storyList_storyCard_impressed` 수 |
+| 스토리 목록 | 제작 시작률 | `client_storyList_createButton_clicked` 수 / `client_storyList_viewed` 수 |
+| 스토리 제작 | 생성 요청률 | `client_storyCreate_storyGeneration_requested` 수 / `client_storyCreate_viewed` 수 |
+| 스토리 제작 | 생성 성공률 | `server_storyCreate_storyGeneration_processed_succeeded` 수 / `client_storyCreate_storyGeneration_requested` 수 |
+| 스토리 제작 | 생성 실패율 | `server_storyCreate_storyGeneration_processed_failed` 수 / `client_storyCreate_storyGeneration_requested` 수 |
+| 스토리 제작 | 생성 후 완료율 | `client_storyCreate_completed` 수 / `server_storyCreate_storyGeneration_processed_succeeded` 수 (creation_id 기준) |
+| 스토리 제작 | 전체 제작 전환율 | `client_storyCreate_completed` 수 / `client_storyCreate_viewed` 수 |
+| 스토리 제작 | 단계별 이탈율 | `1 - 다음 단계 step_viewed 사용자 수 / 현재 단계 step_viewed 사용자 수` (`client_storyCreate_step_viewed`의 `step_name` 기준) |
+| 스토리 상세 | 상세 → 채팅 시작 전환율 | `client_storyDetail_chatStartButton_clicked` 수 / `client_storyDetail_viewed` 수 |
+| 스토리 상세 | 추천 카드 클릭률 | `client_storyDetail_recommendStoryCard_clicked` 수 / `client_storyDetail_recommendStoryCard_impressed` 수 |
+| 채팅 목록 | 채팅 카드 클릭률 | `client_chatList_chatCard_clicked` 수 / `client_chatList_chatCard_impressed` 수 |
+| 채팅 | 말 거는 비율(첫 메시지 전송률) | `client_chat_messageInput_submitted` 사용자 수 where `turn_number=1` / `client_chat_viewed` 사용자 수 |
+| 채팅 | AI 응답 성공률 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 |
+| 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 |
+| 채팅 | N턴 이상 도달률 | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수 (`turn_number` 분포) |
+| 채팅 | 선택지 사용률 | `client_chat_choiceOption_selected` 수 / `client_chat_messageInput_submitted` 수 |
+| 피드백 | 피드백 제출률 | `client_feedback_form_submitted` 사용자 수 / `client_feedback_viewed` 사용자 수 |
+| 피드백 | 제출 성공률 | `server_feedback_submission_processed_succeeded` 수 / `client_feedback_form_submitted` 수 |
+| 피드백 | 제출 실패율 | `server_feedback_submission_processed_failed` 수 / `client_feedback_form_submitted` 수 |
+| 전체 | 방문 → 활성화 전환율 (north-star) | `server_chat_aiMessage_processed_succeeded` 도달 사용자 수 / `client_storyList_viewed` 사용자 수 |
 
-이탈과 취소는 분리해서 본다.
-
-| 구분 | 정의 |
-| --- | --- |
-| 이탈 | 현재 단계 이후 다음 단계 이벤트가 30분 안에 발생하지 않은 경우 |
-| 취소 | 사용자가 뒤로가기, 나가기, 다시 선택하기 등으로 현재 흐름을 명시적으로 벗어난 경우 |
-
-## AN-1-5 스토리 제작 퍼널
-
-스토리 제작 기본 퍼널은 화면 진입 이벤트를 기준으로 본다. 화면 안에서 발생하는 장르 선택, 키워드 추가, 스토리라인 반응 같은 행동은 세부 퍼널 또는 행동 사용률로 따로 분석한다.
-
-| 순서 | 단계 | 이벤트 조건 | 전환율 |
-| --- | --- | --- | --- |
-| 1 | Step1 키워드 선택 화면 진입 | `story_create_step_viewed` where `step_number=1` | 기준 모수 |
-| 2 | Step2 스토리라인 선택 화면 진입 | `story_create_step_viewed` where `step_number=2` | Step2 진입 / Step1 진입 |
-| 3 | Step3 추가 정보 입력 화면 진입 | `story_create_step_viewed` where `step_number=3` | Step3 진입 / Step2 진입 |
-| 4 | 완성 버튼 클릭 | `story_create_complete_clicked` where `step_number=3` | 완성 클릭 / Step3 진입 |
-| 5 | 생성된 스토리 상세 화면 진입 | `story_detail_viewed` with `source=story_create` | 상세 진입 / 완성 클릭 |
-| 6 | 채팅 시작 | `chat_start_clicked` | 채팅 시작 / 생성된 스토리 상세 진입 |
-
-화면 안 세부 행동은 다음 보조 퍼널로 본다.
-
-| 화면 | 분석 질문 | 기준 이벤트 | 세부 이벤트 또는 property |
-| --- | --- | --- | --- |
-| Step1 | 사용자가 어떤 입력 요소를 많이 쓰는가? | `story_create_step_viewed` where `step_number=1` | `story_create_option_clicked`, `story_create_option_tab_clicked`, `story_create_custom_keyword_add_clicked` |
-| Step1 | 선택 상태가 다음 단계 이동에 영향을 주는가? | `story_create_next_clicked` where `step_number=1` | `selected_genre_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
-| Step2 | 스토리라인 후보가 선택으로 이어지는가? | `story_create_step_viewed` where `step_number=2` | `story_create_storyline_clicked`, `story_create_next_clicked`, `storyline_index`, `storyline_count` |
-| Step2 | 재생성 또는 반응 행동이 많은가? | `story_create_step_viewed` where `step_number=2` | `story_create_regenerate_clicked`, `story_create_storyline_reaction_clicked`, `reaction_type` |
-| Step3 | 추가 정보 입력이 완성 클릭으로 이어지는가? | `story_create_step_viewed` where `step_number=3` | `story_create_suggestion_clicked`, `story_create_complete_clicked`, `extra_info_count` |
-
-스토리 제작 이벤트에 사용하는 custom properties는 다음과 같다.
-
-| property | 설명 |
-| --- | --- |
-| `flow_name` | 제작 flow 이름. 값은 `story_create` |
-| `step_number` | 제작 단계 번호. 예: `1`, `2`, `3` |
-| `step_name` | 제작 단계 의미. 예: `keyword_selection`, `storyline_selection`, `extra_info` |
-| `option_group` | 선택 옵션 묶음. 예: `genre`, `main_character`, `supporting_character` |
-| `option_id` | 선택하거나 해제한 옵션 ID |
-| `selected_genre_ids` | 선택한 장르 ID 목록 |
-| `selected_genre_count` | 선택한 장르 수 |
-| `selected_main_character_ids` | 선택한 주인공 성격 ID 목록 |
-| `selected_main_character_count` | 선택한 주인공 성격 수 |
-| `selected_supporting_character_ids` | 선택한 주변 인물 성격 ID 목록 |
-| `selected_supporting_character_count` | 선택한 주변 인물 성격 수 |
-| `selected_keyword_count` | 현재 선택된 전체 키워드 수 |
-| `has_custom_keyword` | 직접 추가한 키워드 존재 여부 |
-| `custom_keyword_count` | 직접 추가한 키워드 수 |
-| `is_selected_after_click` | 클릭 후 선택 상태 |
-| `keyword_length` | 직접 추가한 키워드 길이. 원문은 보내지 않는다. |
-| `storyline_index` | 선택한 스토리라인 순서 |
-| `storyline_count` | 노출된 스토리라인 후보 수 |
-| `previous_storyline_count` | 다시 만들기 전 노출된 스토리라인 후보 수 |
-| `reaction_type` | 스토리라인 반응. 예: `like`, `dislike` |
-| `suggestion_index` | 선택한 AI 추천 추가 정보 순서 |
-| `suggestion_count` | 노출된 AI 추천 추가 정보 수 |
-| `feature` | AI 또는 서버 기능 구분. 예: `storyline_generation`, `story_completion` |
-| `generation_time_ms` | AI 생성 소요 시간 |
-| `error_code` | 생성 실패 코드 |
-| `extra_info_count` | 추가 정보 입력 또는 선택 개수 |
-| `extra_info_length_bucket` | 추가 정보 길이 구간 |
-| `source` | 상세 화면 진입 출처. 스토리 생성 직후에는 `story_create` |
-| `exit_step` | 사용자가 명시적으로 제작 흐름을 벗어난 단계 |
-| `total_duration_ms` | 제작 시작부터 완료까지 걸린 시간 |
-
-스토리 제작 이벤트별 properties는 다음처럼 매핑한다. 아래 표에는 공통 properties를 제외한 이벤트별 핵심 값만 적는다.
-
-| 우선순위 | 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- | --- |
-| P0 | `story_create_step_viewed` | 제작 단계 화면 진입 | `flow_name`, `step_number`, `step_name`, `entry_point`, `storyline_count`, `generation_time_ms` |
-| P0 | `story_create_next_clicked` | Step1 또는 Step2에서 다음 버튼 클릭 | `flow_name`, `step_number`, `step_name`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count`, `storyline_index`, `storyline_count` |
-| P0 | `story_create_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `storyline_count` |
-| P0 | `story_create_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
-| P0 | `story_detail_viewed` | 생성된 스토리 상세 화면 진입 | `story_id`, `source`, `has_existing_chat` |
-| P0 | `chat_start_clicked` | 생성된 스토리 상세에서 채팅 시작 클릭 | `story_id`, `source` |
-| P1 | `story_create_option_clicked` | Step1에서 옵션 선택 또는 선택 해제 | `flow_name`, `step_number`, `step_name`, `option_group`, `option_id`, `is_selected_after_click`, `selected_genre_count`, `selected_main_character_count`, `selected_supporting_character_count`, `selected_keyword_count` |
-| P1 | `story_create_option_tab_clicked` | Step1에서 옵션 탭 클릭 | `flow_name`, `step_number`, `step_name`, `option_group`, `selected_genre_count`, `selected_keyword_count` |
-| P1 | `story_create_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `flow_name`, `step_number`, `step_name`, `custom_keyword_count`, `keyword_length` |
-| P1 | `story_create_loading_shown` | AI 생성 로딩 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `request_id` |
-| P1 | `story_create_error_shown` | AI 생성 실패 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `error_code`, `generation_time_ms`, `total_duration_ms` |
-| P1 | `story_create_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `flow_name`, `step_number`, `step_name`, `feature`, `storyline_count`, `previous_storyline_count` |
-| P1 | `story_create_storyline_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `reaction_type` |
-| P1 | `story_create_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
-| P1 | `story_create_extra_info_focused` | Step3에서 직접 입력창 포커스 | `flow_name`, `step_number`, `step_name`, `storyline_index` |
-| P1 | `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `flow_name`, `step_number`, `step_name`, `exit_step`, `total_duration_ms` |
-
-## AN-1-6 채팅 퍼널
-
-채팅 퍼널은 `chat_start_clicked` 또는 `chat_room_viewed`를 기준으로 본다. 스토리 상세에서 채팅으로 잘 이어지는지는 `chat_start_clicked`를 기준으로 보고, 채팅방 안에서의 몰입은 `chat_room_viewed`를 기준으로 본다.
-
-| 순서 | 단계 | 이벤트 | 전환율 |
-| --- | --- | --- | --- |
-| 1 | 채팅 시작 클릭 | `chat_start_clicked` | 기준 모수 |
-| 2 | 채팅방 진입 | `chat_room_viewed` | 채팅방 진입 / 채팅 시작 클릭 |
-| 3 | 첫 입력 의도 | `chat_input_focused` 또는 `ai_suggestion_clicked` | 입력 의도 / 채팅방 진입 |
-| 4 | 첫 메시지 전송 | `user_message_sent` with `turn_index=1` | 첫 메시지 / 채팅방 진입 |
-| 5 | AI 응답 성공 | `ai_response_received` | AI 응답 / 사용자 메시지 |
-| 6 | 2턴 진행 | `user_message_sent` with `turn_index=2` | 2턴 진행 / 첫 메시지 |
-| 7 | 5턴 진행 | `user_message_sent` with `turn_index=5` | 5턴 진행 / 채팅방 진입 |
-
-채팅 중 공통으로 사용하는 properties는 다음과 같다.
-
-| property | 설명 |
-| --- | --- |
-| `chat_id` | 채팅 ID |
-| `story_id` | 연결된 스토리 ID |
-| `turn_index` | 사용자 메시지 기준 턴 번호 |
-| `input_type` | 입력 방식. 예: `manual`, `ai_suggestion` |
-| `suggestion_index` | 선택한 AI 추천 입력 순서 |
-| `suggestion_count` | 노출된 AI 추천 입력 수 |
-| `message_count` | 채팅방에 저장된 메시지 수 |
-| `message_length_bucket` | 메시지 길이 구간. 예: `1_20`, `21_50`, `51_100`, `101_plus` |
-| `response_time_ms` | AI 응답 소요 시간 |
-| `error_code` | AI 응답 실패 코드 |
-| `exit_after_turn` | 사용자가 나간 시점의 턴 번호 |
-| `entry_point` | 채팅방 진입 경로. 예: `story_detail`, `chat_list` |
+생성·응답·제출 실패 사유는 server 이벤트의 `error_type`(`network` / `validation` / `server`)으로 분포를 본다.
 
 ## AN-1-7 페이지별 이벤트 스펙
 
-### AN-1-7-1 스토리 목록
+각 이벤트 표에는 공통 프로퍼티(AN-1-4)를 제외한 고유 프로퍼티만 적는다. 필수는 ✅, 선택은 — 로 표기한다.
 
-목적은 스토리 제작 진입과 기존 스토리 재방문을 확인하는 것이다.
+### AN-1-7-1 온보딩
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `story_list_viewed` | 스토리 목록 화면 진입 | `is_empty`, `story_count` |
-| `story_create_cta_clicked` | `스토리 만들기` 또는 `만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
-| `story_card_clicked` | 스토리 카드 클릭 | `story_id`, `story_position`, `genre_tags` |
-| `story_menu_clicked` | 스토리 카드의 메뉴 클릭 | `story_id`, `story_position` |
+목적은 신규 진입 사용자의 온보딩 투어 노출·완료·이탈률을 파악하는 것이다.
 
-`story_create_cta_clicked`는 스토리 목록과 채팅 목록 양쪽에서 발생한다. 두 화면에서 같은 property 집합(`entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type`)을 보내고, 진입 화면 구분은 공통 property인 `screen_name`으로 한다.
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_onboarding_viewed` | 투어 첫 스텝 노출 | client | `step_number` (number, —) |
+| `client_onboarding_completed` | 투어 마지막 스텝 완료 | client | 없음 |
+| `client_onboarding_skipButton_clicked` | 건너뛰기 클릭 | client | `step_number` (number, ✅) — 이탈 지점 분석용 |
 
-### AN-1-7-2 스토리 상세
+### AN-1-7-2 스토리 목록
 
-목적은 생성된 스토리가 채팅 시작으로 이어질 만큼 매력적인지 확인하는 것이다.
+목적은 메인에서 스토리 탐색·진입과 제작 진입을 파악하는 것이다.
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `story_detail_viewed` | 스토리 상세 화면 진입 | `story_id`, `source`, `has_existing_chat`, `genre_tags`, `start_situation_count` |
-| `story_detail_scrolled` | 상세 설명 또는 시작 상황 영역 스크롤 | `story_id`, `source`, `scroll_depth` |
-| `chat_start_clicked` | `채팅 시작하기` 클릭 | `story_id`, `source`, `has_existing_chat` |
-| `story_detail_back_clicked` | 뒤로가기 클릭 | `story_id`, `source` |
-| `story_detail_menu_clicked` | 상세 화면 메뉴 클릭 | `story_id`, `source` |
-
-`source` 값은 다음 값만 사용한다.
-
-| 값 | 의미 |
-| --- | --- |
-| `story_list` | 스토리 목록에서 진입 |
-| `story_create` | 스토리 생성 직후 진입 |
-| `chat_list` | 채팅 목록에서 연결 진입 |
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyList_viewed` | 화면 진입 | client | 없음 |
+| `client_storyList_storyCard_clicked` | 스토리 카드 클릭 | client | `story_id` (number, ✅), `position` (number, —) |
+| `client_storyList_storyCard_impressed` | 카드 유효 노출 | client | `story_id` (number, ✅), `position` (number, —) |
+| `client_storyList_createButton_clicked` | 제작하기 CTA 클릭 | client | 없음 |
 
 ### AN-1-7-3 스토리 제작
 
-목적은 간편 모드 제작 과정에서 사용자가 어디서 막히는지 확인하는 것이다.
+목적은 키워드 입력부터 생성 완료까지 단계별 이탈·생성 성공률을 측정하는 것이다.
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `story_create_step_viewed` | 제작 단계 화면 진입 | `flow_name`, `step_number`, `step_name`, `entry_point`, `storyline_count`, `generation_time_ms` |
-| `story_create_option_tab_clicked` | Step1에서 옵션 탭 클릭 | `flow_name`, `step_number`, `step_name`, `option_group`, `selected_genre_count`, `selected_keyword_count` |
-| `story_create_option_clicked` | Step1에서 옵션 선택 또는 선택 해제 | `flow_name`, `step_number`, `step_name`, `option_group`, `option_id`, `is_selected_after_click`, `selected_genre_count`, `selected_main_character_count`, `selected_supporting_character_count`, `selected_keyword_count` |
-| `story_create_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `flow_name`, `step_number`, `step_name`, `custom_keyword_count`, `keyword_length` |
-| `story_create_next_clicked` | Step1 또는 Step2에서 다음 버튼 클릭 | `flow_name`, `step_number`, `step_name`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count`, `storyline_index`, `storyline_count` |
-| `story_create_loading_shown` | AI 생성 로딩 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `request_id` |
-| `story_create_error_shown` | AI 생성 실패 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `error_code`, `generation_time_ms`, `total_duration_ms` |
-| `story_create_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `flow_name`, `step_number`, `step_name`, `feature`, `storyline_count`, `previous_storyline_count` |
-| `story_create_storyline_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `reaction_type` |
-| `story_create_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `storyline_count` |
-| `story_create_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
-| `story_create_extra_info_focused` | Step3에서 직접 입력창 포커스 | `flow_name`, `step_number`, `step_name`, `storyline_index` |
-| `story_create_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
-| `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `flow_name`, `step_number`, `step_name`, `exit_step`, `total_duration_ms` |
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyCreate_viewed` | 제작 화면 진입 | client | 없음 |
+| `client_storyCreate_step_viewed` | 각 단계 진입 | client | `step_name` (string, ✅), `step_number` (number, ✅) |
+| `client_storyCreate_nextButton_clicked` | 다음 버튼 클릭 | client | `step_name` (string, ✅), `step_number` (number, ✅) |
+| `client_storyCreate_storyGeneration_requested` | 스토리라인 생성 요청 전송 | client | 없음 (`creation_id` 발급 전) |
+| `server_storyCreate_storyGeneration_processed_succeeded` | 생성 성공 응답 | server | `creation_id` (string, ✅) |
+| `server_storyCreate_storyGeneration_processed_failed` | 생성 실패 | server | `creation_id` (string, ✅), `error_type` (string, ✅) |
+| `client_storyCreate_storylineOption_selected` | 스토리라인 선택 | client | `creation_id` (string, ✅), `position` (number, —) |
+| `client_storyCreate_completed` | 스토리화 완료 | client | `story_id` (number, ✅), `chat_id` (string, ✅), `genre` (string[], —) |
 
-제작 단계 값은 다음 값만 사용한다.
+제작 단계 `step_name`은 다음 값만 사용한다.
 
-| step_number | step_name | screen_name |
-| --- | --- | --- |
-| `1` | `keyword_selection` | `story_create_keyword_selection` |
-| `2` | `storyline_selection` | `story_create_storyline_selection` |
-| `3` | `extra_info` | `story_create_extra_info` |
-
-장르와 성격 값은 원문 대신 관리되는 ID만 `option_id`로 보낸다.
-
-| option_group | 의미 |
+| step_number | step_name |
 | --- | --- |
-| `genre` | 선택하거나 해제한 장르 |
-| `main_character` | 선택하거나 해제한 주인공 성격 |
-| `supporting_character` | 선택하거나 해제한 주변 인물 성격 |
+| `1` | `keyword` |
+| `2` | `storylineSelect` |
+| `3` | `additionalInfo` |
+| `4` | `complete` |
 
-### AN-1-7-4 채팅 목록
+### AN-1-7-4 스토리 상세
 
-목적은 사용자가 진행 중인 채팅을 다시 이어가는지 확인하는 것이다.
+목적은 스토리 상세에서 채팅 시작 전환율을 파악하는 것이다.
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `chat_list_viewed` | 채팅 목록 화면 진입 | `is_empty`, `chat_count` |
-| `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
-| `story_create_step_viewed` | Step1 키워드 선택 화면 진입 | `entry_point`, `screen_name`, `flow_name`, `step_number`, `step_name` |
-| `chat_thread_clicked` | 채팅 항목 클릭 | `chat_id`, `story_id`, `message_count`, `thread_position`, `last_active_at` |
-| `chat_thread_menu_clicked` | 채팅 항목 메뉴 클릭 | `chat_id`, `story_id`, `thread_position` |
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyDetail_viewed` | 화면 진입 | client | `story_id` (number, ✅) |
+| `client_storyDetail_chatStartButton_clicked` | 채팅 시작 버튼 클릭 | client | `story_id` (number, ✅) |
+| `client_storyDetail_recommendStoryCard_clicked` | 추천 스토리 카드 클릭 | client | `story_id` (number, ✅) — 클릭한 추천 카드의 스토리 id, `position` (number, —) |
+| `client_storyDetail_recommendStoryCard_impressed` | 추천 카드 유효 노출 | client | `story_id` (number, ✅) — 노출된 추천 카드의 스토리 id, `position` (number, —) |
 
-### AN-1-7-5 채팅
+`recommendStoryCard`의 `story_id`는 현재 보고 있는 스토리가 아니라 추천 카드의 스토리 id다.
 
-목적은 사용자가 AI 추천 또는 직접 입력으로 이야기를 이어가는지 확인하는 것이다.
+### AN-1-7-5 채팅 목록
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `chat_room_viewed` | 채팅방 진입 | `chat_id`, `story_id`, `message_count`, `entry_point` |
-| `ai_suggestion_shown` | AI 추천 입력 노출 | `chat_id`, `story_id`, `suggestion_count`, `turn_index` |
-| `ai_suggestion_clicked` | AI 추천 입력 선택 | `chat_id`, `story_id`, `suggestion_index`, `suggestion_count`, `turn_index` |
-| `chat_input_focused` | 직접 입력창 포커스 | `chat_id`, `story_id`, `turn_index` |
-| `user_message_sent` | 사용자 메시지 전송 | `chat_id`, `story_id`, `turn_index`, `input_type`, `message_length_bucket` |
-| `ai_response_received` | AI 응답 수신 | `chat_id`, `story_id`, `turn_index`, `response_time_ms` |
-| `ai_response_failed` | AI 응답 실패 | `chat_id`, `story_id`, `turn_index`, `error_code`, `response_time_ms` |
-| `chat_room_exited` | 채팅방 나가기 | `chat_id`, `story_id`, `exit_after_turn` |
+목적은 채팅 목록에서 기존 채팅 재진입을 파악하는 것이다.
 
-### AN-1-7-6 피드백
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_chatList_viewed` | 화면 진입 | client | 없음 |
+| `client_chatList_chatCard_clicked` | 채팅 카드 클릭 | client | `chat_id` (string, ✅), `position` (number, —) |
+| `client_chatList_chatCard_impressed` | 카드 유효 노출 | client | `chat_id` (string, ✅), `position` (number, —) |
 
-목적은 MVP 개선에 필요한 불편, 니즈, 기능 요청을 수집하는 것이다.
+### AN-1-7-6 채팅
 
-| 이벤트 | 발생 시점 | 핵심 properties |
-| --- | --- | --- |
-| `feedback_page_viewed` | 피드백 화면 진입 | `entry_point`, `last_screen_name` |
-| `feedback_input_started` | 피드백 입력 시작 | `entry_point`, `last_screen_name` |
-| `feedback_submit_clicked` | `피드백 보내기` 클릭 | `content_length`, `has_email` |
-| `feedback_submitted` | 피드백 제출 성공 | `content_length`, `has_email` |
-| `feedback_submit_failed` | 피드백 제출 실패 | `content_length`, `has_email`, `error_code` |
+목적은 채팅 진입·메시지 전송·AI 응답 성공률을 파악하는 것이다.
+
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_chat_viewed` | 화면 진입 | client | `chat_id` (string, ✅) |
+| `client_chat_messageInput_submitted` | 메시지 전송 | client | `chat_id` (string, ✅), `turn_number` (number, ✅) |
+| `server_chat_aiMessage_processed_succeeded` | AI 응답 성공 | server | `chat_id` (string, ✅), `turn_number` (number, ✅) |
+| `server_chat_aiMessage_processed_failed` | AI 응답 실패 | server | `chat_id` (string, ✅), `turn_number` (number, ✅), `error_type` (string, ✅) |
+| `client_chat_choiceOption_selected` | 선택지(choices) 선택 | client | `chat_id` (string, ✅), `turn_number` (number, ✅), `position` (number, —) |
+
+### AN-1-7-7 피드백
+
+목적은 피드백 진입에서 제출 전환을 파악하는 것이다.
+
+| 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_feedback_viewed` | 화면 진입 | client | 없음 |
+| `client_feedback_form_submitted` | 제출 버튼 클릭(전송) | client | 없음 |
+| `server_feedback_submission_processed_succeeded` | 제출 성공 | server | 없음 |
+| `server_feedback_submission_processed_failed` | 제출 실패 | server | `error_type` (string, ✅) |
+
+server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나만 사용한다.
 
 ## AN-1-8 개인정보와 원문 수집 원칙
 
 MVP 분석 이벤트에는 사용자가 입력한 원문을 직접 넣지 않는다.
 
-| 데이터 | 이벤트 property 포함 여부 | 처리 방식 |
+| 데이터 | 이벤트 포함 여부 | 처리 방식 |
 | --- | --- | --- |
-| 피드백 본문 | 포함하지 않음 | 별도 저장소에 저장한다. 이벤트에는 `content_length`만 남긴다. |
-| 이메일 | 포함하지 않음 | 별도 저장소에 저장한다. 이벤트에는 `has_email`만 남긴다. |
-| 채팅 메시지 원문 | 포함하지 않음 | 이벤트에는 `message_length_bucket`과 `input_type`만 남긴다. |
-| 직접 추가 키워드 원문 | 원칙적으로 포함하지 않음 | 필요하면 별도 정책을 정한 뒤 저장한다. 이벤트에는 `keyword_length`만 남긴다. |
+| 피드백 본문 | 포함하지 않음 | 별도 저장소에 저장한다. |
+| 이메일 | 포함하지 않음 | 별도 저장소에 저장한다. |
+| 채팅 메시지 원문 | 포함하지 않음 | 분석 이벤트에는 `turn_number`만 남긴다. |
+| 키워드·추가 정보 원문 | 포함하지 않음 | 관리되는 ID 또는 선택값만 남긴다. |
+| 프롬프트 전문 | 포함하지 않음 | 로그와 Sentry에 넣지 않는다. |
 
 ## AN-1-9 MVP 우선 적용 이벤트
 
-처음부터 모든 이벤트를 심기 어렵다면 아래 이벤트를 우선 적용한다.
+처음부터 모든 이벤트를 심기 어렵다면 핵심 퍼널(AN-1-5)에 쓰이는 이벤트를 P0로 먼저 적용하고, 보조 분석용 이벤트를 P1로 추가한다.
 
 | 우선순위 | 이벤트 |
 | --- | --- |
-| P0 | `story_list_viewed` |
-| P0 | `story_create_cta_clicked` |
-| P0 | `story_create_step_viewed` |
-| P0 | `story_create_next_clicked` |
-| P0 | `story_create_storyline_clicked` |
-| P0 | `story_create_complete_clicked` |
-| P0 | `story_card_clicked` |
-| P0 | `story_detail_viewed` |
-| P0 | `chat_start_clicked` |
-| P0 | `chat_list_viewed` |
-| P0 | `chat_thread_clicked` |
-| P0 | `chat_room_viewed` |
-| P0 | `user_message_sent` |
-| P0 | `ai_response_received` |
-| P0 | `feedback_page_viewed` |
-| P0 | `feedback_submitted` |
-| P1 | `story_menu_clicked` |
-| P1 | `story_detail_scrolled` |
-| P1 | `story_detail_back_clicked` |
-| P1 | `story_detail_menu_clicked` |
-| P1 | `chat_thread_menu_clicked` |
-| P1 | `story_create_option_clicked` |
-| P1 | `story_create_option_tab_clicked` |
-| P1 | `story_create_custom_keyword_add_clicked` |
-| P1 | `story_create_loading_shown` |
-| P1 | `story_create_error_shown` |
-| P1 | `story_create_regenerate_clicked` |
-| P1 | `story_create_storyline_reaction_clicked` |
-| P1 | `story_create_suggestion_clicked` |
-| P1 | `story_create_extra_info_focused` |
-| P1 | `story_create_exit_clicked` |
-| P1 | `ai_suggestion_shown` |
-| P1 | `ai_suggestion_clicked` |
-| P1 | `chat_input_focused` |
-| P1 | `ai_response_failed` |
-| P1 | `chat_room_exited` |
-| P1 | `feedback_input_started` |
-| P1 | `feedback_submit_clicked` |
-| P1 | `feedback_submit_failed` |
+| P0 | `client_storyList_viewed` |
+| P0 | `client_storyList_createButton_clicked` |
+| P0 | `client_storyCreate_viewed` |
+| P0 | `client_storyCreate_step_viewed` |
+| P0 | `client_storyCreate_storyGeneration_requested` |
+| P0 | `server_storyCreate_storyGeneration_processed_succeeded` |
+| P0 | `server_storyCreate_storyGeneration_processed_failed` |
+| P0 | `client_storyCreate_storylineOption_selected` |
+| P0 | `client_storyCreate_completed` |
+| P0 | `client_storyDetail_viewed` |
+| P0 | `client_storyDetail_chatStartButton_clicked` |
+| P0 | `client_chat_viewed` |
+| P0 | `client_chat_messageInput_submitted` |
+| P0 | `server_chat_aiMessage_processed_succeeded` |
+| P0 | `server_chat_aiMessage_processed_failed` |
+| P0 | `client_feedback_viewed` |
+| P0 | `client_feedback_form_submitted` |
+| P1 | `client_onboarding_viewed` |
+| P1 | `client_onboarding_completed` |
+| P1 | `client_onboarding_skipButton_clicked` |
+| P1 | `client_storyList_storyCard_clicked` |
+| P1 | `client_storyList_storyCard_impressed` |
+| P1 | `client_storyCreate_nextButton_clicked` |
+| P1 | `client_storyDetail_recommendStoryCard_clicked` |
+| P1 | `client_storyDetail_recommendStoryCard_impressed` |
+| P1 | `client_chatList_viewed` |
+| P1 | `client_chatList_chatCard_clicked` |
+| P1 | `client_chatList_chatCard_impressed` |
+| P1 | `client_chat_choiceOption_selected` |
+| P1 | `server_feedback_submission_processed_succeeded` |
+| P1 | `server_feedback_submission_processed_failed` |
