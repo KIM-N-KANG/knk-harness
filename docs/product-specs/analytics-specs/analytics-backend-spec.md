@@ -20,8 +20,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.1 |
-| 작성일 | 2026-06-23 |
+| 버전 | v0.2 |
+| 작성일 | 2026-06-24 |
 | 대상 | 마냑 MVP 백엔드 |
 | 적용 도구 | Sentry, `ai_call_logs` 테이블, CloudWatch |
 
@@ -77,6 +77,8 @@ CloudWatch는 운영 상태를 빠르게 확인하는 기준이다. Sentry는 st
 
 모든 로그는 JSON 형태로 남긴다.
 
+백엔드 `event_name`은 Amplitude 사용자 이벤트명이 아니다. 백엔드 이벤트는 서버 처리 결과를 나타내며, 프론트엔드 사용자 이벤트와 같은 네이밍 컨벤션을 강제하지 않는다. 프론트엔드 사용자 이벤트와 백엔드 서버 로그는 `request_id`, `session_id`, `anonymous_id_hash`, `story_id`, `chat_id`로 연결한다.
+
 ```json
 {
   "timestamp": "2026-06-23T12:00:00.000Z",
@@ -107,7 +109,7 @@ MVP에서 반드시 남길 서버 이벤트는 다음과 같다.
 | `chat_started` | 채팅 생성 완료 | `story_id`, `chat_id` |
 | `user_message_saved` | 사용자 메시지 저장 완료 | `chat_id`, `story_id`, `turn_index`, `message_length_bucket` |
 | `ai_response_saved` | AI 응답 저장 완료 | `chat_id`, `story_id`, `turn_index`, `ai_call_log_id` |
-| `feedback_submitted` | 피드백 저장 또는 전달 완료 | `content_length`, `has_email` |
+| `feedback_delivery_completed` | 피드백 저장 또는 전달 완료 | `content_length`, `has_email` |
 
 ## AN-3-5 Sentry 수집 기준
 
@@ -165,7 +167,7 @@ CloudWatch와 `ai_call_logs`로 다음 지표를 본다.
 | AI 호출 실패율 | `ai_call_logs.status = failed` 수 / 전체 AI 호출 수 |
 | AI 응답 p95 latency | `ai_call_logs.latency_ms` p95 |
 | 채팅 응답 저장 성공률 | `ai_response_saved` 수 / `user_message_saved` 수 |
-| 피드백 제출 성공률 | `feedback_submitted` 수 / 피드백 제출 API 요청 수 |
+| 피드백 제출 성공률 | `feedback_delivery_completed` 수 / 피드백 제출 API 요청 수 |
 
 ## AN-3-8 개인정보 원칙
 

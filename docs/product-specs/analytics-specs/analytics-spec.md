@@ -20,8 +20,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.3 |
-| 작성일 | 2026-06-23 |
+| 버전 | v0.4 |
+| 작성일 | 2026-06-24 |
 | 대상 | 마냑 서비스 |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 최소 이벤트 스펙을 정의한다. |
 
@@ -84,31 +84,33 @@
 
 | 구분 | 기준 | 예시 |
 | --- | --- | --- |
-| 사용자 이벤트 | 사용자가 화면을 보거나 UI를 조작한 행동 | `story_create_step1_viewed`, `story_create_step1_genre_clicked`, `story_create_step3_complete_clicked` |
+| 사용자 이벤트 | 사용자가 화면을 보거나 UI를 조작한 행동 | `story_create_step_viewed`, `story_create_option_clicked`, `story_create_complete_clicked` |
 | custom properties | 행동이 일어난 순간의 도메인 값, 선택 상태, 결과 속성 | `selected_genre_ids`, `selected_genre_count`, `has_custom_keyword`, `custom_keyword_count` |
 
 ### AN-1-3-2 이벤트 네이밍 컨벤션
 
-프론트엔드 사용자 이벤트는 기본적으로 `{page}_{action}_{event}` 형식을 사용한다. 화면 자체가 action이면 `{page}_{event}`까지 줄일 수 있다. 새 이벤트를 추가할 때는 화면 또는 화면 단계를 먼저 적고, 사용자가 조작한 대상과 행동을 뒤에 붙인다.
+프론트엔드 사용자 이벤트는 기본적으로 `{domain}_{object}_{verb}` 형식을 사용한다. 이벤트 이름은 사용자가 한 행동 또는 사용자에게 노출된 상태만 표현한다. 화면명, 단계, 진입 경로, 선택값, AI feature, 에러 코드는 이벤트 이름에 넣지 않고 custom properties로 보낸다.
 
 | 구성 | 설명 | 예시 |
 | --- | --- | --- |
-| `page` | 이벤트가 발생한 화면 또는 화면 단계 | `story_create_step1`, `story_create_step2`, `story_create_step3`, `story_detail` |
-| `action` | 사용자가 조작한 UI 대상 또는 상태 | `genre`, `main_character`, `custom_keyword_add`, `storyline`, `complete` |
-| `event` | 사용자 행동 또는 사용자에게 노출된 상태 | `viewed`, `shown`, `clicked`, `focused`, `submitted`, `scrolled`, `pull_to_refresh` |
+| `domain` | 기능 또는 사용자 흐름 | `story_create`, `story_detail`, `story_list`, `chat`, `feedback` |
+| `object` | 사용자가 보거나 조작한 대상 | `step`, `next`, `complete`, `option`, `storyline`, `suggestion`, `input`, `error`, `loading` |
+| `verb` | 사용자 행동 또는 사용자에게 노출된 상태 | `viewed`, `shown`, `clicked`, `focused`, `submitted`, `sent`, `received`, `failed`, `exited` |
 
 네이밍 규칙은 다음처럼 적용한다.
 
 | 규칙 | 설명 | 예시 |
 | --- | --- | --- |
-| 화면 진입은 `{page}_viewed`로 남긴다. | 기본 퍼널은 화면 진입 이벤트를 기준으로 계산한다. | `story_create_step1_viewed` |
-| UI 클릭은 `{page}_{object}_clicked`로 남긴다. | 클릭 대상이 버튼이면 버튼의 목적을 `object`에 넣는다. | `story_create_step2_storyline_clicked`, `story_create_step3_complete_clicked` |
-| 상태 노출은 `{page}_{state}_shown`으로 남긴다. | 로딩, 에러, 추천 노출처럼 사용자가 본 상태를 기록한다. | `story_create_step2_error_shown` |
-| 입력창 포커스는 `{page}_{input}_focused`로 남긴다. | 실제 원문 입력값은 보내지 않고 입력 시작 여부만 남긴다. | `story_create_step3_extra_info_focused` |
+| 화면 진입은 `{screen_or_domain}_{object}_viewed`로 남긴다. | 단일 화면은 화면명을 쓰고, 단계형 flow는 `step`을 object로 쓴다. | `story_list_viewed`, `story_create_step_viewed` |
+| 단계형 flow의 단계 번호는 이벤트명에 넣지 않는다. | 단계는 `step_number`, `step_name`으로 보낸다. | `story_create_step_viewed` with `step_number=1` |
+| 버튼 클릭은 버튼 문구보다 의도를 쓴다. | `done` 대신 `next`, `complete`, `submit`, `exit`을 쓴다. | `story_create_next_clicked`, `story_create_complete_clicked` |
+| 옵션 선택은 하나의 이벤트로 묶는다. | 장르, 주인공 성격, 주변 인물 성격은 `option_group`으로 구분한다. | `story_create_option_clicked` |
+| 상태 노출은 `{domain}_{state}_shown`으로 남긴다. | 로딩과 에러는 `feature`, `step_number`, `error_code`로 구분한다. | `story_create_error_shown` |
+| 입력창 포커스는 `{domain}_{input}_focused`로 남긴다. | 실제 원문 입력값은 보내지 않고 입력 시작 여부만 남긴다. | `story_create_extra_info_focused` |
 | 도메인 값은 이벤트 이름에 넣지 않는다. | 선택된 장르 수, 커스텀 키워드 여부, 생성 시간은 property로 보낸다. | `has_custom_keyword`, `generation_time_ms` |
-| 여러 화면에서 같은 의미로 쓰는 공통 전환 이벤트는 `{domain}_{action}_{event}`를 허용한다. | 화면 구분은 `screen_name`과 `source`로 보완한다. | `chat_start_clicked`, `user_message_sent` |
+| 여러 화면에서 같은 의미로 쓰는 공통 전환 이벤트는 같은 이벤트명을 유지한다. | 화면 구분은 `screen_name`, `entry_point`, `source`로 보완한다. | `story_create_cta_clicked`, `chat_start_clicked`, `user_message_sent` |
 
-생성 성공, 생성 실패처럼 서비스 결과를 나타내는 이벤트는 백엔드·AI 운영 로그에서 사용한다. 프론트엔드 사용자 퍼널에서는 `story_detail_viewed`처럼 사용자가 실제로 본 화면이나 `story_create_step2_error_shown`처럼 노출된 상태로 연결한다.
+생성 성공, 생성 실패처럼 서비스 결과를 나타내는 이벤트는 백엔드·AI 운영 로그에서 사용한다. 프론트엔드 사용자 퍼널에서는 `story_detail_viewed`처럼 사용자가 실제로 본 화면이나 `story_create_error_shown`처럼 노출된 상태로 연결한다.
 
 ### AN-1-3-3 공통 properties
 
@@ -121,6 +123,9 @@
 | `session_id` | 세션 ID |
 | `screen_name` | 현재 화면 이름 |
 | `entry_point` | 진입 경로 |
+| `flow_name` | 사용자가 진행 중인 흐름. 단계형 flow에서 필수 |
+| `step_number` | 단계 번호. 단계형 flow에서 필수 |
+| `step_name` | 단계 의미. 단계형 flow에서 필수 |
 | `device_type` | 기기 유형 |
 | `story_count` | 사용자가 보유한 스토리 수 |
 | `chat_count` | 사용자가 진행 중인 채팅 수 |
@@ -144,18 +149,18 @@
 | 영역 | 지표 | 계산식 |
 | --- | --- | --- |
 | 스토리 목록 | 빈 목록 CTA 클릭률 | `story_create_cta_clicked` 수 / `story_list_viewed` 수 where `is_empty=true` |
-| 스토리 목록 | 빈 목록 → 제작 화면 진입률 | `story_create_step1_viewed` 수 / `story_list_viewed` 수 where `entry_point=empty_state` |
-| 스토리 목록 | CTA 클릭 → 제작 화면 진입률 | `story_create_step1_viewed` 수 / `story_create_cta_clicked` 수 |
+| 스토리 목록 | 빈 목록 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_list_viewed` 수 where `entry_point=empty_state` |
+| 스토리 목록 | CTA 클릭 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_create_cta_clicked` 수 |
 | 스토리 목록 | 스토리 카드 클릭률 | `story_card_clicked` 수 / `story_list_viewed` 수 where `is_empty=false` |
 | 스토리 목록 | 기존 스토리 상세 진입률 | `story_detail_viewed` 수 where `source=story_list` / `story_card_clicked` 수 |
-| 스토리 목록 | 추가 제작률 | `story_create_step1_viewed` 수 / `story_list_viewed` 수 where `story_count > 0` |
-| 스토리 제작 | 스토리 제작 완료율 | `story_detail_viewed` 사용자 수 where `source=story_create` / `story_create_step1_viewed` 사용자 수 |
-| 스토리 제작 | 제작 명시 종료율 | `story_create_exit_clicked` 사용자 수 / `story_create_step1_viewed` 사용자 수 |
+| 스토리 목록 | 추가 제작률 | `story_create_step_viewed` 수 where `step_number=1` / `story_list_viewed` 수 where `story_count > 0` |
+| 스토리 제작 | 스토리 제작 완료율 | `story_detail_viewed` 사용자 수 where `source=story_create` / `story_create_step_viewed` 사용자 수 where `step_number=1` |
+| 스토리 제작 | 제작 명시 종료율 | `story_create_exit_clicked` 사용자 수 / `story_create_step_viewed` 사용자 수 where `step_number=1` |
 | 스토리 제작 | 단계별 이탈율 | `1 - 다음 단계 화면 진입 이벤트 사용자 수 / 현재 단계 화면 진입 이벤트 사용자 수` |
-| 스토리 제작 | AI 스토리라인 생성 실패 노출률 | `story_create_step2_error_shown` 수 / `story_create_step1_next_clicked` 수 |
-| 스토리 제작 | AI 스토리 생성 실패 노출률 | `story_create_step3_error_shown` 수 / `story_create_step3_complete_clicked` 수 |
-| 스토리 제작 | 다시 만들기율 | `story_create_step2_regenerate_clicked` 수 / `story_create_step2_viewed` 수 |
-| 스토리 제작 | 커스텀 키워드 사용률 | `story_create_step1_next_clicked` 중 `has_custom_keyword=true` 사용자 수 / `story_create_step1_next_clicked` 사용자 수 |
+| 스토리 제작 | AI 스토리라인 생성 실패 노출률 | `story_create_error_shown` 수 where `step_number=2` and `feature=storyline_generation` / `story_create_next_clicked` 수 where `step_number=1` |
+| 스토리 제작 | AI 스토리 생성 실패 노출률 | `story_create_error_shown` 수 where `step_number=3` and `feature=story_completion` / `story_create_complete_clicked` 수 where `step_number=3` |
+| 스토리 제작 | 다시 만들기율 | `story_create_regenerate_clicked` 수 where `step_number=2` / `story_create_step_viewed` 수 where `step_number=2` |
+| 스토리 제작 | 커스텀 키워드 사용률 | `story_create_next_clicked` 중 `step_number=1` and `has_custom_keyword=true` 사용자 수 / `story_create_next_clicked` 사용자 수 where `step_number=1` |
 | 스토리 상세 | 상세 → 채팅 시작 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 |
 | 스토리 상세 | 제작 직후 채팅 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `source=story_create` |
 | 스토리 상세 | 목록 재진입 후 채팅 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `source=story_list` |
@@ -164,7 +169,7 @@
 | 스토리 상세 | 신규 채팅 시작 전환율 | `chat_start_clicked` 수 / `story_detail_viewed` 수 where `has_existing_chat=false` |
 | 스토리 상세 | 상세 스크롤률 | `story_detail_scrolled` 수 / `story_detail_viewed` 수 |
 | 채팅 목록 | 채팅 빈 목록 CTA 클릭률 | `story_create_cta_clicked` 수 / `chat_list_viewed` 수 where `is_empty=true` |
-| 채팅 목록 | 채팅 빈 목록 → 제작 화면 진입률 | `story_create_step1_viewed` 수 / `story_create_cta_clicked` 수 where `screen_name=chat_list` |
+| 채팅 목록 | 채팅 빈 목록 → 제작 화면 진입률 | `story_create_step_viewed` 수 where `step_number=1` / `story_create_cta_clicked` 수 where `screen_name=chat_list` |
 | 채팅 목록 | 채팅 항목 클릭률 | `chat_thread_clicked` 수 / `chat_list_viewed` 수 where `is_empty=false` |
 | 채팅 목록 | 채팅방 재진입률 | `chat_room_viewed` 수 / `chat_thread_clicked` 수 |
 | 채팅 목록 | 재진입 후 메시지 전송률 | `user_message_sent` 수 / `chat_room_viewed` 수 where `message_count > 0` |
@@ -199,12 +204,12 @@
 
 스토리 제작 기본 퍼널은 화면 진입 이벤트를 기준으로 본다. 화면 안에서 발생하는 장르 선택, 키워드 추가, 스토리라인 반응 같은 행동은 세부 퍼널 또는 행동 사용률로 따로 분석한다.
 
-| 순서 | 단계 | 이벤트 | 전환율 |
+| 순서 | 단계 | 이벤트 조건 | 전환율 |
 | --- | --- | --- | --- |
-| 1 | Step1 키워드 선택 화면 진입 | `story_create_step1_viewed` | 기준 모수 |
-| 2 | Step2 스토리라인 선택 화면 진입 | `story_create_step2_viewed` | Step2 진입 / Step1 진입 |
-| 3 | Step3 추가 정보 입력 화면 진입 | `story_create_step3_viewed` | Step3 진입 / Step2 진입 |
-| 4 | 완성 버튼 클릭 | `story_create_step3_complete_clicked` | 완성 클릭 / Step3 진입 |
+| 1 | Step1 키워드 선택 화면 진입 | `story_create_step_viewed` where `step_number=1` | 기준 모수 |
+| 2 | Step2 스토리라인 선택 화면 진입 | `story_create_step_viewed` where `step_number=2` | Step2 진입 / Step1 진입 |
+| 3 | Step3 추가 정보 입력 화면 진입 | `story_create_step_viewed` where `step_number=3` | Step3 진입 / Step2 진입 |
+| 4 | 완성 버튼 클릭 | `story_create_complete_clicked` where `step_number=3` | 완성 클릭 / Step3 진입 |
 | 5 | 생성된 스토리 상세 화면 진입 | `story_detail_viewed` with `source=story_create` | 상세 진입 / 완성 클릭 |
 | 6 | 채팅 시작 | `chat_start_clicked` | 채팅 시작 / 생성된 스토리 상세 진입 |
 
@@ -212,17 +217,21 @@
 
 | 화면 | 분석 질문 | 기준 이벤트 | 세부 이벤트 또는 property |
 | --- | --- | --- | --- |
-| Step1 | 사용자가 어떤 입력 요소를 많이 쓰는가? | `story_create_step1_viewed` | `story_create_step1_genre_clicked`, `story_create_step1_main_character_clicked`, `story_create_step1_supporting_character_clicked`, `story_create_step1_custom_keyword_add_clicked` |
-| Step1 | 선택 상태가 다음 단계 이동에 영향을 주는가? | `story_create_step1_next_clicked` | `selected_genre_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
-| Step2 | 스토리라인 후보가 선택으로 이어지는가? | `story_create_step2_viewed` | `story_create_step2_storyline_clicked`, `story_create_step2_next_clicked`, `storyline_index`, `storyline_count` |
-| Step2 | 재생성 또는 반응 행동이 많은가? | `story_create_step2_viewed` | `story_create_step2_regenerate_clicked`, `story_create_step2_reaction_clicked`, `reaction_type` |
-| Step3 | 추가 정보 입력이 완성 클릭으로 이어지는가? | `story_create_step3_viewed` | `story_create_step3_ai_suggestion_clicked`, `story_create_step3_complete_clicked`, `extra_info_count` |
+| Step1 | 사용자가 어떤 입력 요소를 많이 쓰는가? | `story_create_step_viewed` where `step_number=1` | `story_create_option_clicked`, `story_create_option_tab_clicked`, `story_create_custom_keyword_add_clicked` |
+| Step1 | 선택 상태가 다음 단계 이동에 영향을 주는가? | `story_create_next_clicked` where `step_number=1` | `selected_genre_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
+| Step2 | 스토리라인 후보가 선택으로 이어지는가? | `story_create_step_viewed` where `step_number=2` | `story_create_storyline_clicked`, `story_create_next_clicked`, `storyline_index`, `storyline_count` |
+| Step2 | 재생성 또는 반응 행동이 많은가? | `story_create_step_viewed` where `step_number=2` | `story_create_regenerate_clicked`, `story_create_storyline_reaction_clicked`, `reaction_type` |
+| Step3 | 추가 정보 입력이 완성 클릭으로 이어지는가? | `story_create_step_viewed` where `step_number=3` | `story_create_suggestion_clicked`, `story_create_complete_clicked`, `extra_info_count` |
 
 스토리 제작 이벤트에 사용하는 custom properties는 다음과 같다.
 
 | property | 설명 |
 | --- | --- |
-| `step` | 현재 단계. 예: `step1_keyword`, `step2_storyline`, `step3_extra_info` |
+| `flow_name` | 제작 flow 이름. 값은 `story_create` |
+| `step_number` | 제작 단계 번호. 예: `1`, `2`, `3` |
+| `step_name` | 제작 단계 의미. 예: `keyword_selection`, `storyline_selection`, `extra_info` |
+| `option_group` | 선택 옵션 묶음. 예: `genre`, `main_character`, `supporting_character` |
+| `option_id` | 선택하거나 해제한 옵션 ID |
 | `selected_genre_ids` | 선택한 장르 ID 목록 |
 | `selected_genre_count` | 선택한 장르 수 |
 | `selected_main_character_ids` | 선택한 주인공 성격 ID 목록 |
@@ -232,9 +241,6 @@
 | `selected_keyword_count` | 현재 선택된 전체 키워드 수 |
 | `has_custom_keyword` | 직접 추가한 키워드 존재 여부 |
 | `custom_keyword_count` | 직접 추가한 키워드 수 |
-| `genre_id` | 선택하거나 해제한 장르 ID |
-| `main_character_id` | 선택하거나 해제한 주인공 성격 ID |
-| `supporting_character_id` | 선택하거나 해제한 주변 인물 성격 ID |
 | `is_selected_after_click` | 클릭 후 선택 상태 |
 | `keyword_length` | 직접 추가한 키워드 길이. 원문은 보내지 않는다. |
 | `storyline_index` | 선택한 스토리라인 순서 |
@@ -243,6 +249,7 @@
 | `reaction_type` | 스토리라인 반응. 예: `like`, `dislike` |
 | `suggestion_index` | 선택한 AI 추천 추가 정보 순서 |
 | `suggestion_count` | 노출된 AI 추천 추가 정보 수 |
+| `feature` | AI 또는 서버 기능 구분. 예: `storyline_generation`, `story_completion` |
 | `generation_time_ms` | AI 생성 소요 시간 |
 | `error_code` | 생성 실패 코드 |
 | `extra_info_count` | 추가 정보 입력 또는 선택 개수 |
@@ -255,26 +262,22 @@
 
 | 우선순위 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- | --- |
-| P0 | `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `step`, `entry_point` |
-| P0 | `story_create_step1_next_clicked` | Step1에서 다음 버튼 클릭 | `step`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
-| P0 | `story_create_step2_viewed` | Step2 스토리라인 후보 화면 진입 | `step`, `storyline_count`, `generation_time_ms` |
-| P0 | `story_create_step2_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `step`, `storyline_index`, `storyline_count` |
-| P0 | `story_create_step2_next_clicked` | Step2에서 다음 버튼 클릭 | `step`, `storyline_index`, `storyline_count` |
-| P0 | `story_create_step3_viewed` | Step3 추가 정보 입력 화면 진입 | `step`, `storyline_index` |
-| P0 | `story_create_step3_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `step`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
+| P0 | `story_create_step_viewed` | 제작 단계 화면 진입 | `flow_name`, `step_number`, `step_name`, `entry_point`, `storyline_count`, `generation_time_ms` |
+| P0 | `story_create_next_clicked` | Step1 또는 Step2에서 다음 버튼 클릭 | `flow_name`, `step_number`, `step_name`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count`, `storyline_index`, `storyline_count` |
+| P0 | `story_create_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `storyline_count` |
+| P0 | `story_create_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
 | P0 | `story_detail_viewed` | 생성된 스토리 상세 화면 진입 | `story_id`, `source`, `has_existing_chat` |
 | P0 | `chat_start_clicked` | 생성된 스토리 상세에서 채팅 시작 클릭 | `story_id`, `source` |
-| P1 | `story_create_step1_genre_clicked` | Step1에서 장르 선택 또는 선택 해제 | `step`, `genre_id`, `is_selected_after_click`, `selected_genre_count`, `selected_keyword_count` |
-| P1 | `story_create_step1_main_character_clicked` | Step1에서 주인공 성격 선택 또는 선택 해제 | `step`, `main_character_id`, `is_selected_after_click`, `selected_main_character_count`, `selected_keyword_count` |
-| P1 | `story_create_step1_supporting_character_clicked` | Step1에서 주변 인물 성격 선택 또는 선택 해제 | `step`, `supporting_character_id`, `is_selected_after_click`, `selected_supporting_character_count`, `selected_keyword_count` |
-| P1 | `story_create_step1_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `step`, `custom_keyword_count`, `keyword_length` |
-| P1 | `story_create_step2_error_shown` | Step2 스토리라인 생성 실패 상태 노출 | `step`, `error_code`, `generation_time_ms` |
-| P1 | `story_create_step2_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `step`, `storyline_count`, `previous_storyline_count` |
-| P1 | `story_create_step2_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `step`, `storyline_index`, `reaction_type` |
-| P1 | `story_create_step3_ai_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `step`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
-| P1 | `story_create_step3_extra_info_focused` | Step3에서 직접 입력창 포커스 | `step`, `storyline_index` |
-| P1 | `story_create_step3_error_shown` | Step3 스토리 생성 실패 상태 노출 | `step`, `error_code`, `total_duration_ms` |
-| P1 | `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `step`, `exit_step`, `total_duration_ms` |
+| P1 | `story_create_option_clicked` | Step1에서 옵션 선택 또는 선택 해제 | `flow_name`, `step_number`, `step_name`, `option_group`, `option_id`, `is_selected_after_click`, `selected_genre_count`, `selected_main_character_count`, `selected_supporting_character_count`, `selected_keyword_count` |
+| P1 | `story_create_option_tab_clicked` | Step1에서 옵션 탭 클릭 | `flow_name`, `step_number`, `step_name`, `option_group`, `selected_genre_count`, `selected_keyword_count` |
+| P1 | `story_create_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `flow_name`, `step_number`, `step_name`, `custom_keyword_count`, `keyword_length` |
+| P1 | `story_create_loading_shown` | AI 생성 로딩 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `request_id` |
+| P1 | `story_create_error_shown` | AI 생성 실패 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `error_code`, `generation_time_ms`, `total_duration_ms` |
+| P1 | `story_create_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `flow_name`, `step_number`, `step_name`, `feature`, `storyline_count`, `previous_storyline_count` |
+| P1 | `story_create_storyline_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `reaction_type` |
+| P1 | `story_create_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
+| P1 | `story_create_extra_info_focused` | Step3에서 직접 입력창 포커스 | `flow_name`, `step_number`, `step_name`, `storyline_index` |
+| P1 | `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `flow_name`, `step_number`, `step_name`, `exit_step`, `total_duration_ms` |
 
 ## AN-1-6 채팅 퍼널
 
@@ -348,34 +351,36 @@
 
 | 이벤트 | 발생 시점 | 핵심 properties |
 | --- | --- | --- |
-| `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `step`, `entry_point` |
-| `story_create_step1_genre_tab_clicked` | Step1에서 장르 탭 클릭 | `step`, `selected_genre_count`, `selected_keyword_count` |
-| `story_create_step1_genre_clicked` | Step1에서 장르 선택 또는 선택 해제 | `step`, `genre_id`, `is_selected_after_click`, `selected_genre_count`, `selected_keyword_count` |
-| `story_create_step1_main_character_clicked` | Step1에서 주인공 성격 선택 또는 선택 해제 | `step`, `main_character_id`, `is_selected_after_click`, `selected_main_character_count`, `selected_keyword_count` |
-| `story_create_step1_supporting_character_clicked` | Step1에서 주변 인물 성격 선택 또는 선택 해제 | `step`, `supporting_character_id`, `is_selected_after_click`, `selected_supporting_character_count`, `selected_keyword_count` |
-| `story_create_step1_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `step`, `custom_keyword_count`, `keyword_length` |
-| `story_create_step1_next_clicked` | Step1에서 다음 버튼 클릭 | `step`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count` |
-| `story_create_step2_loading_shown` | 스토리라인 생성 로딩 상태 노출 | `step`, `request_id` |
-| `story_create_step2_viewed` | Step2 스토리라인 후보 화면 진입 | `step`, `storyline_count`, `generation_time_ms` |
-| `story_create_step2_error_shown` | Step2 스토리라인 생성 실패 상태 노출 | `step`, `error_code`, `generation_time_ms` |
-| `story_create_step2_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `step`, `storyline_count`, `previous_storyline_count` |
-| `story_create_step2_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `step`, `storyline_index`, `reaction_type` |
-| `story_create_step2_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `step`, `storyline_index`, `storyline_count` |
-| `story_create_step2_next_clicked` | Step2에서 다음 버튼 클릭 | `step`, `storyline_index`, `storyline_count` |
-| `story_create_step3_viewed` | Step3 추가 정보 입력 화면 진입 | `step`, `storyline_index` |
-| `story_create_step3_ai_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `step`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
-| `story_create_step3_extra_info_focused` | Step3에서 직접 입력창 포커스 | `step`, `storyline_index` |
-| `story_create_step3_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `step`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
-| `story_create_step3_error_shown` | Step3 스토리 생성 실패 상태 노출 | `step`, `error_code`, `total_duration_ms` |
-| `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `step`, `exit_step`, `total_duration_ms` |
+| `story_create_step_viewed` | 제작 단계 화면 진입 | `flow_name`, `step_number`, `step_name`, `entry_point`, `storyline_count`, `generation_time_ms` |
+| `story_create_option_tab_clicked` | Step1에서 옵션 탭 클릭 | `flow_name`, `step_number`, `step_name`, `option_group`, `selected_genre_count`, `selected_keyword_count` |
+| `story_create_option_clicked` | Step1에서 옵션 선택 또는 선택 해제 | `flow_name`, `step_number`, `step_name`, `option_group`, `option_id`, `is_selected_after_click`, `selected_genre_count`, `selected_main_character_count`, `selected_supporting_character_count`, `selected_keyword_count` |
+| `story_create_custom_keyword_add_clicked` | Step1에서 직접 키워드 추가 클릭 | `flow_name`, `step_number`, `step_name`, `custom_keyword_count`, `keyword_length` |
+| `story_create_next_clicked` | Step1 또는 Step2에서 다음 버튼 클릭 | `flow_name`, `step_number`, `step_name`, `selected_genre_ids`, `selected_genre_count`, `selected_main_character_ids`, `selected_main_character_count`, `selected_supporting_character_ids`, `selected_supporting_character_count`, `selected_keyword_count`, `has_custom_keyword`, `custom_keyword_count`, `storyline_index`, `storyline_count` |
+| `story_create_loading_shown` | AI 생성 로딩 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `request_id` |
+| `story_create_error_shown` | AI 생성 실패 상태 노출 | `flow_name`, `step_number`, `step_name`, `feature`, `error_code`, `generation_time_ms`, `total_duration_ms` |
+| `story_create_regenerate_clicked` | Step2에서 다시 만들기 클릭 | `flow_name`, `step_number`, `step_name`, `feature`, `storyline_count`, `previous_storyline_count` |
+| `story_create_storyline_reaction_clicked` | Step2에서 스토리라인 좋아요 또는 싫어요 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `reaction_type` |
+| `story_create_storyline_clicked` | Step2에서 스토리라인 후보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `storyline_count` |
+| `story_create_suggestion_clicked` | Step3에서 AI 추천 추가 정보 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `suggestion_index`, `suggestion_count`, `extra_info_count` |
+| `story_create_extra_info_focused` | Step3에서 직접 입력창 포커스 | `flow_name`, `step_number`, `step_name`, `storyline_index` |
+| `story_create_complete_clicked` | Step3에서 `스토리 완성하기` 클릭 | `flow_name`, `step_number`, `step_name`, `storyline_index`, `extra_info_count`, `extra_info_length_bucket`, `total_duration_ms` |
+| `story_create_exit_clicked` | 제작 중 뒤로가기, 닫기, 나가기 클릭 | `flow_name`, `step_number`, `step_name`, `exit_step`, `total_duration_ms` |
 
-장르와 성격 값은 원문 대신 관리되는 ID만 보낸다.
+제작 단계 값은 다음 값만 사용한다.
 
-| property | 의미 |
+| step_number | step_name | screen_name |
+| --- | --- | --- |
+| `1` | `keyword_selection` | `story_create_keyword_selection` |
+| `2` | `storyline_selection` | `story_create_storyline_selection` |
+| `3` | `extra_info` | `story_create_extra_info` |
+
+장르와 성격 값은 원문 대신 관리되는 ID만 `option_id`로 보낸다.
+
+| option_group | 의미 |
 | --- | --- |
-| `genre_id` | 선택하거나 해제한 장르 ID |
-| `main_character_id` | 선택하거나 해제한 주인공 성격 ID |
-| `supporting_character_id` | 선택하거나 해제한 주변 인물 성격 ID |
+| `genre` | 선택하거나 해제한 장르 |
+| `main_character` | 선택하거나 해제한 주인공 성격 |
+| `supporting_character` | 선택하거나 해제한 주변 인물 성격 |
 
 ### AN-1-7-4 채팅 목록
 
@@ -385,7 +390,7 @@
 | --- | --- | --- |
 | `chat_list_viewed` | 채팅 목록 화면 진입 | `is_empty`, `chat_count` |
 | `story_create_cta_clicked` | 빈 채팅 목록에서 `스토리 만들기` 클릭 | `entry_point`, `is_empty`, `story_count`, `chat_count`, `cta_type` |
-| `story_create_step1_viewed` | Step1 키워드 선택 화면 진입 | `entry_point`, `screen_name` |
+| `story_create_step_viewed` | Step1 키워드 선택 화면 진입 | `entry_point`, `screen_name`, `flow_name`, `step_number`, `step_name` |
 | `chat_thread_clicked` | 채팅 항목 클릭 | `chat_id`, `story_id`, `message_count`, `thread_position`, `last_active_at` |
 | `chat_thread_menu_clicked` | 채팅 항목 메뉴 클릭 | `chat_id`, `story_id`, `thread_position` |
 
@@ -435,13 +440,10 @@ MVP 분석 이벤트에는 사용자가 입력한 원문을 직접 넣지 않는
 | --- | --- |
 | P0 | `story_list_viewed` |
 | P0 | `story_create_cta_clicked` |
-| P0 | `story_create_step1_viewed` |
-| P0 | `story_create_step1_next_clicked` |
-| P0 | `story_create_step2_viewed` |
-| P0 | `story_create_step2_storyline_clicked` |
-| P0 | `story_create_step2_next_clicked` |
-| P0 | `story_create_step3_viewed` |
-| P0 | `story_create_step3_complete_clicked` |
+| P0 | `story_create_step_viewed` |
+| P0 | `story_create_next_clicked` |
+| P0 | `story_create_storyline_clicked` |
+| P0 | `story_create_complete_clicked` |
 | P0 | `story_card_clicked` |
 | P0 | `story_detail_viewed` |
 | P0 | `chat_start_clicked` |
@@ -457,18 +459,15 @@ MVP 분석 이벤트에는 사용자가 입력한 원문을 직접 넣지 않는
 | P1 | `story_detail_back_clicked` |
 | P1 | `story_detail_menu_clicked` |
 | P1 | `chat_thread_menu_clicked` |
-| P1 | `story_create_step1_genre_clicked` |
-| P1 | `story_create_step1_genre_tab_clicked` |
-| P1 | `story_create_step1_main_character_clicked` |
-| P1 | `story_create_step1_supporting_character_clicked` |
-| P1 | `story_create_step1_custom_keyword_add_clicked` |
-| P1 | `story_create_step2_loading_shown` |
-| P1 | `story_create_step2_error_shown` |
-| P1 | `story_create_step2_regenerate_clicked` |
-| P1 | `story_create_step2_reaction_clicked` |
-| P1 | `story_create_step3_ai_suggestion_clicked` |
-| P1 | `story_create_step3_extra_info_focused` |
-| P1 | `story_create_step3_error_shown` |
+| P1 | `story_create_option_clicked` |
+| P1 | `story_create_option_tab_clicked` |
+| P1 | `story_create_custom_keyword_add_clicked` |
+| P1 | `story_create_loading_shown` |
+| P1 | `story_create_error_shown` |
+| P1 | `story_create_regenerate_clicked` |
+| P1 | `story_create_storyline_reaction_clicked` |
+| P1 | `story_create_suggestion_clicked` |
+| P1 | `story_create_extra_info_focused` |
 | P1 | `story_create_exit_clicked` |
 | P1 | `ai_suggestion_shown` |
 | P1 | `ai_suggestion_clicked` |

@@ -22,8 +22,8 @@ AI 서비스는 사용자 행동 퍼널의 내부 피드백 루프입니다. pro
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.2 |
-| 작성일 | 2026-06-23 |
+| 버전 | v0.3 |
+| 작성일 | 2026-06-24 |
 | 대상 | 마냑 MVP AI 서비스 |
 | 적용 도구 | Sentry, `ai_call_logs` 테이블, CloudWatch |
 
@@ -60,10 +60,12 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지다.
 
 | feature | 설명 | 사용자 퍼널 연결 |
 | --- | --- | --- |
-| `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `story_create_step2_viewed`, `story_create_step2_error_shown` |
-| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `story_detail_viewed` with `source=story_create`, `story_create_step3_error_shown` |
+| `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `story_create_step_viewed` where `step_number=2`, `story_create_error_shown` where `step_number=2` and `feature=storyline_generation` |
+| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `story_detail_viewed` with `source=story_create`, `story_create_error_shown` where `step_number=3` and `feature=story_completion` |
 | `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `ai_response_received`, `ai_response_failed` |
 | `suggestion_generation` | 다음 입력 추천 선택지 생성 | `ai_suggestion_shown`, `ai_suggestion_clicked` |
+
+AI feature는 프론트엔드 이벤트명에 넣지 않는다. 예를 들어 스토리라인 생성 실패와 스토리 완성 실패는 모두 `story_create_error_shown`으로 보내고, `feature`, `step_number`, `step_name`, `error_code`로 구분한다.
 
 ## AN-4-4 요청 context 계약
 
