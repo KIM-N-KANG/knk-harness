@@ -8,6 +8,7 @@
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |
 | 서비스 배경, 타겟 사용자, MVP 범위 확인 | `docs/product-specs/1-background.md` |
+| 화면·기능별 사용자 요구(유저 스토리) 확인 | `docs/product-specs/2-user-stories.md` |
 | 분석 이벤트와 핵심 지표의 전체 기준 확인 | `docs/product-specs/analytics-specs/analytics-spec.md` |
 | 프론트엔드 이벤트, Amplitude, Sentry 기준 확인 | `docs/product-specs/analytics-specs/analytics-frontend-spec.md` |
 | 백엔드 로그, CloudWatch, Sentry, `ai_call_logs` 기준 확인 | `docs/product-specs/analytics-specs/analytics-backend-spec.md` |

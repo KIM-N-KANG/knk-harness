@@ -20,13 +20,6 @@
 | 대상 | 마냑 서비스 |
 | 작성 목적 | 마냑 MVP의 서비스 배경, 주요 기능, 사용자 흐름, 개발 범위를 정의한다. |
 
-| 관련 문서 | 연결 지점 |
-| --- | --- |
-| [`analytics-specs/analytics-spec.md`](./analytics-specs/analytics-spec.md) | MVP 핵심 흐름과 분석 질문 |
-| [`analytics-specs/analytics-frontend-spec.md`](./analytics-specs/analytics-frontend-spec.md) | 화면별 사용자 이벤트 |
-| [`analytics-specs/analytics-backend-spec.md`](./analytics-specs/analytics-backend-spec.md) | 서버 로그와 AI 호출 연결 |
-| [`analytics-specs/analytics-ai-spec.md`](./analytics-specs/analytics-ai-spec.md) | AI 호출 로그와 운영 지표 |
-
 ## 1-1 서비스 개요
 
 | 항목 | 내용 |

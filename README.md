@@ -58,18 +58,6 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md` 맨 위에 아
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
 | `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
 
-## 문서 템플릿
-
-PR 템플릿은 `docs/templates/pull-request/` 아래에 있습니다. `create-pr`는 PR 본문을 만들 때 작업 중인 레포지토리의 특성에 맞는 템플릿을 참고합니다.
-
-| 템플릿 | 사용하는 상황 |
-| --- | --- |
-| `harness-pull-request-template.md` | 하네스 레포지토리 변경 |
-| `frontend-pull-request-template.md` | 프론트엔드 화면, 브라우저 UI, 접근성, 반응형 변경 |
-| `mobile-pull-request-template.md` | 모바일 앱 화면이나 모바일 플랫폼 변경 |
-| `backend-server-pull-request-template.md` | API, DB, 인증, 서버 비즈니스 로직 변경 |
-| `ai-server-pull-request-template.md` | Prompt, Model, RAG, Tool/Agent, Evaluation, Dataset 변경 |
-
 ## 스킬 사용 전 도구 확인
 
 스킬은 저장소 규칙을 설명하지만, 실제 작업에는 로컬 도구와 외부 서비스 권한이 필요할 수 있습니다. 작업 전에 아래 항목을 확인합니다.
