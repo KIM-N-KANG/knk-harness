@@ -20,7 +20,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.5 |
+| 버전 | v0.6 |
 | 작성일 | 2026-06-25 |
 | 대상 | 마냑 서비스 |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 최소 이벤트 스펙을 정의한다. |
@@ -301,6 +301,7 @@ event_time, event_id
 | `server_storyCreate_storyGeneration_processed_succeeded` | 생성 성공 응답 | server | `creation_id` (string, ✅) |
 | `server_storyCreate_storyGeneration_processed_failed` | 생성 실패 | server | `creation_id` (string, ✅), `error_type` (string, ✅) |
 | `client_storyCreate_storylineOption_selected` | 스토리라인 선택 | client | `creation_id` (string, ✅), `position` (number, —) |
+| `client_storyCreate_selectedKeywordsButton_clicked` | 선택한 키워드 보기 버튼 클릭(드로워 열기) | client | `creation_id` (string, ✅) |
 | `client_storyCreate_completed` | 스토리화 완료 | client | `story_id` (number, ✅), `chat_id` (string, ✅), `genre` (string[], —) |
 
 제작 단계 `step_name`은 다음 값만 사용한다.
@@ -386,6 +387,7 @@ MVP 분석 이벤트에는 사용자가 입력한 원문을 직접 넣지 않는
 | P0 | `server_storyCreate_storyGeneration_processed_succeeded` |
 | P0 | `server_storyCreate_storyGeneration_processed_failed` |
 | P0 | `client_storyCreate_storylineOption_selected` |
+| P0 | `client_storyCreate_selectedKeywordsButton_clicked` |
 | P0 | `client_storyCreate_completed` |
 | P0 | `client_storyDetail_viewed` |
 | P0 | `client_storyDetail_chatStartButton_clicked` |
