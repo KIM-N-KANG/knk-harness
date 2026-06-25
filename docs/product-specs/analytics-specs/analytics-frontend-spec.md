@@ -21,7 +21,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.5 |
+| 버전 | v0.6 |
 | 작성일 | 2026-06-25 |
 | 대상 | 마냑 MVP 웹 프론트엔드 |
 | 적용 도구 | Amplitude, Sentry |
@@ -120,6 +120,7 @@ P0 이벤트는 출시 전에 반드시 심는다. P1 이벤트는 P0가 안정�
 | P0 | `client_storyCreate_step_viewed` | 제작 단계 진입 | `step_name`, `step_number` |
 | P0 | `client_storyCreate_storyGeneration_requested` | 스토리라인 생성 요청 전송 | 없음 |
 | P0 | `client_storyCreate_storylineOption_selected` | 스토리라인 선택 | `creation_id`, `position` |
+| P0 | `client_storyCreate_selectedKeywordsButton_clicked` | 선택한 키워드 보기 버튼 클릭(드로워 열기) | `creation_id` |
 | P0 | `client_storyCreate_completed` | 스토리화 완료 | `story_id`, `chat_id`, `genre` |
 | P0 | `client_storyDetail_viewed` | 스토리 상세 진입 | `story_id` |
 | P0 | `client_storyDetail_chatStartButton_clicked` | 채팅 시작 버튼 클릭 | `story_id` |
@@ -210,7 +211,10 @@ P0 이벤트는 출시 전에 반드시 심는다. P1 이벤트는 P0가 안정�
 | `client_storyCreate_nextButton_clicked` | 다음 버튼 클릭 | `step_name` (string, ✅), `step_number` (number, ✅) |
 | `client_storyCreate_storyGeneration_requested` | 스토리라인 생성 요청 전송 | 없음 |
 | `client_storyCreate_storylineOption_selected` | 스토리라인 선택 | `creation_id` (string, ✅), `position` (number, —) |
+| `client_storyCreate_selectedKeywordsButton_clicked` | 선택한 키워드 보기 버튼 클릭(드로워 열기) | `creation_id` (string, ✅) |
 | `client_storyCreate_completed` | 스토리화 완료 | `story_id` (number, ✅), `chat_id` (string, ✅), `genre` (string[], —) |
+
+`selectedKeywordsButton_clicked`는 스토리라인 선택(`storylineSelect`) 단계 탭 우측의 키워드 보기 버튼으로 선택 키워드 드로워를 열 때 발생한다. 드로워에 노출되는 키워드 이름은 이벤트에 넣지 않고 `creation_id`만 보낸다.
 
 제작 단계 `step_name`은 다음 값만 사용한다.
 
