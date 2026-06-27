@@ -21,7 +21,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.6 |
+| 버전 | v0.7 |
 | 작성일 | 2026-06-25 |
 | 대상 | 마냑 MVP 웹 프론트엔드 |
 | 적용 도구 | Amplitude, Sentry |
@@ -128,9 +128,8 @@ P0 이벤트는 출시 전에 반드시 심는다. P1 이벤트는 P0가 안정�
 | P0 | `client_chat_messageInput_submitted` | 메시지 전송 | `chat_id`, `turn_number` |
 | P0 | `client_feedback_viewed` | 피드백 화면 진입 | 없음 |
 | P0 | `client_feedback_form_submitted` | 피드백 제출(전송) | 없음 |
-| P1 | `client_onboarding_viewed` | 투어 첫 스텝 노출 | `step_number` |
-| P1 | `client_onboarding_completed` | 투어 완료 | 없음 |
-| P1 | `client_onboarding_skipButton_clicked` | 건너뛰기 클릭 | `step_number` |
+| P1 | `client_onboarding_viewed` | 환영 다이얼로그 노출 | 없음 |
+| P1 | `client_onboarding_createButton_clicked` | 스토리 만들기 버튼 클릭 | 없음 |
 | P1 | `client_storyList_storyCard_clicked` | 스토리 카드 클릭 | `story_id`, `position` |
 | P1 | `client_storyList_storyCard_impressed` | 스토리 카드 유효 노출 | `story_id`, `position` |
 | P1 | `client_storyCreate_nextButton_clicked` | 다음 버튼 클릭 | `step_name`, `step_number` |
@@ -185,11 +184,12 @@ P0 이벤트는 출시 전에 반드시 심는다. P1 이벤트는 P0가 안정�
 
 ### AN-2-7-1 온보딩
 
+홈 최초 진입 시 노출되는 환영 다이얼로그다. '스토리 만들기' 버튼을 누르기 전까지 닫을 수 없고, 최초 1회만 노출된다.
+
 | 이벤트 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- |
-| `client_onboarding_viewed` | 투어 첫 스텝 노출 | `step_number` (number, —) |
-| `client_onboarding_completed` | 투어 마지막 스텝 완료 | 없음 |
-| `client_onboarding_skipButton_clicked` | 건너뛰기 클릭 | `step_number` (number, ✅) |
+| `client_onboarding_viewed` | 환영 다이얼로그 노출 | 없음 |
+| `client_onboarding_createButton_clicked` | 스토리 만들기 버튼 클릭 | 없음 |
 
 ### AN-2-7-2 스토리 목록
 
