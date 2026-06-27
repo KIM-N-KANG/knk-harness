@@ -20,7 +20,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.6 |
+| 버전 | v0.7 |
 | 작성일 | 2026-06-25 |
 | 대상 | 마냑 서비스 |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 최소 이벤트 스펙을 정의한다. |
@@ -238,8 +238,7 @@ event_time, event_id
 
 | 영역 | 지표 | 계산식 |
 | --- | --- | --- |
-| 온보딩 | 온보딩 완료율 | `client_onboarding_completed` 수 / `client_onboarding_viewed` 수 |
-| 온보딩 | 온보딩 건너뛰기율 | `client_onboarding_skipButton_clicked` 수 / `client_onboarding_viewed` 수 |
+| 온보딩 | 제작 시작 전환율 | `client_onboarding_createButton_clicked` 수 / `client_onboarding_viewed` 수 |
 | 스토리 목록 | 스토리 카드 클릭률 | `client_storyList_storyCard_clicked` 수 / `client_storyList_storyCard_impressed` 수 |
 | 스토리 목록 | 제작 시작률 | `client_storyList_createButton_clicked` 수 / `client_storyList_viewed` 수 |
 | 스토리 제작 | 생성 요청률 | `client_storyCreate_storyGeneration_requested` 수 / `client_storyCreate_viewed` 수 |
@@ -269,13 +268,12 @@ event_time, event_id
 
 ### AN-1-7-1 온보딩
 
-목적은 신규 진입 사용자의 온보딩 투어 노출·완료·이탈률을 파악하는 것이다.
+목적은 홈 최초 진입 시 노출되는 환영 다이얼로그의 노출과 제작 시작 전환을 파악하는 것이다. 환영 다이얼로그는 '스토리 만들기' 버튼을 누르기 전까지 닫을 수 없고, 최초 1회만 노출된다.
 
 | 이벤트 | 발생 시점 | platform | 고유 프로퍼티 |
 | --- | --- | --- | --- |
-| `client_onboarding_viewed` | 투어 첫 스텝 노출 | client | `step_number` (number, —) |
-| `client_onboarding_completed` | 투어 마지막 스텝 완료 | client | 없음 |
-| `client_onboarding_skipButton_clicked` | 건너뛰기 클릭 | client | `step_number` (number, ✅) — 이탈 지점 분석용 |
+| `client_onboarding_viewed` | 환영 다이얼로그 노출 | client | 없음 |
+| `client_onboarding_createButton_clicked` | 스토리 만들기 버튼 클릭 | client | 없음 |
 
 ### AN-1-7-2 스토리 목록
 
@@ -398,8 +396,7 @@ MVP 분석 이벤트에는 사용자가 입력한 원문을 직접 넣지 않는
 | P0 | `client_feedback_viewed` |
 | P0 | `client_feedback_form_submitted` |
 | P1 | `client_onboarding_viewed` |
-| P1 | `client_onboarding_completed` |
-| P1 | `client_onboarding_skipButton_clicked` |
+| P1 | `client_onboarding_createButton_clicked` |
 | P1 | `client_storyList_storyCard_clicked` |
 | P1 | `client_storyList_storyCard_impressed` |
 | P1 | `client_storyCreate_nextButton_clicked` |
