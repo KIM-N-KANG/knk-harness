@@ -24,7 +24,7 @@
 
 ## 2-1 사용자 정의
 
-마냑 MVP는 로그인 없이 익명 사용자 기준으로 동작합니다. 사용자 한 명이 스토리를 만들고 채팅으로 이야기를 이어가며, 익명 식별자 정책은 [`analytics-spec.md §AN-1-2`](./analytics-specs/analytics-spec.md)를 따릅니다.
+마냑 MVP는 로그인 없이 익명 사용자 기준으로 동작합니다. 사용자 한 명이 스토리를 만들고 채팅으로 이야기를 이어가며, 익명 식별자 정책은 [`analytics-spec.md §AN-1-6`](./analytics-specs/analytics-spec.md)를 따릅니다.
 
 유저 스토리에 등장하는 사용자는 다음과 같이 나뉩니다.
 

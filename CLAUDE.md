@@ -9,10 +9,11 @@
 | --- | --- |
 | 서비스 배경, 타겟 사용자, MVP 범위 확인 | `docs/product-specs/1-background.md` |
 | 화면·기능별 사용자 요구(유저 스토리) 확인 | `docs/product-specs/2-user-stories.md` |
-| 분석 이벤트와 핵심 지표의 전체 기준 확인 | `docs/product-specs/analytics-specs/analytics-spec.md` |
-| 프론트엔드 이벤트, Amplitude, Sentry 기준 확인 | `docs/product-specs/analytics-specs/analytics-frontend-spec.md` |
-| 백엔드 로그, CloudWatch, Sentry, `ai_call_logs` 기준 확인 | `docs/product-specs/analytics-specs/analytics-backend-spec.md` |
-| AI 호출 로그, 실패 코드, 토큰·latency 지표 확인 | `docs/product-specs/analytics-specs/analytics-ai-spec.md` |
+| 분석 목적, 범위, 식별자, 문서 구조 확인 | `docs/product-specs/analytics-specs/analytics-spec.md` |
+| 이벤트명, 발생 조건, 프로퍼티, P0/P1 확인 | `docs/product-specs/analytics-specs/events.md` |
+| 퍼널, 핵심 지표, 계산식, 집계 기준 확인 | `docs/product-specs/analytics-specs/metrics.md` |
+| Amplitude, Sentry, CloudWatch, `ai_call_logs`, 실패 코드 확인 | `docs/product-specs/analytics-specs/observability.md` |
+| 릴리스 전 분석 검수, 테스트 기준, 검증 쿼리 확인 | `docs/product-specs/analytics-specs/qa.md` |
 
 ## Working Principle
 
