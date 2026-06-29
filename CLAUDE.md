@@ -1,7 +1,15 @@
 # KNK Workspace LLM Working Harness
 
-- 아래 경로는 `knk-harness/` 루트 기준입니다.
-- 세부 규칙은 이 문서에 반복하지 않고, 아래의 레포지토리 문서를 기준으로 확인합니다.
+## Repository Context
+
+- 제품·스펙 문서는 현재 레포지토리(`knk-harness/`)를 기준으로 확인합니다.
+- 구현 맥락이 필요하면 현재 레포지토리만 보지 말고 다음 서비스 레포지토리를 함께 참조합니다.
+
+| 영역 | 참조 경로 |
+| --- | --- |
+| 웹 프론트엔드 | `../manyak-web` |
+| 백엔드 서버 | `../manyak-server` |
+| AI 서버 | `../manyak-ai` |
 
 ## Knowledge Base
 
@@ -9,10 +17,10 @@
 | --- | --- |
 | 서비스 배경, 타겟 사용자, MVP 범위 확인 | `docs/product-specs/1-background.md` |
 | 화면·기능별 사용자 요구(유저 스토리) 확인 | `docs/product-specs/2-user-stories.md` |
-| 분석 이벤트와 핵심 지표의 전체 기준 확인 | `docs/product-specs/analytics-specs/analytics-spec.md` |
-| 프론트엔드 이벤트, Amplitude, Sentry 기준 확인 | `docs/product-specs/analytics-specs/analytics-frontend-spec.md` |
-| 백엔드 로그, CloudWatch, Sentry, `ai_call_logs` 기준 확인 | `docs/product-specs/analytics-specs/analytics-backend-spec.md` |
-| AI 호출 로그, 실패 코드, 토큰·latency 지표 확인 | `docs/product-specs/analytics-specs/analytics-ai-spec.md` |
+| 프론트엔드 화면, 상태, 사용자 흐름, 검수 기준 확인 | `docs/product-specs/3-frontend.md` |
+| 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 확인 | `docs/product-specs/4-backend.md` |
+| AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 확인 | `docs/product-specs/5-ai-server.md` |
+| 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 확인 | `docs/product-specs/6-analytics.md` |
 
 ## Working Principle
 
