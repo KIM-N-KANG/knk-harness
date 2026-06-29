@@ -73,6 +73,8 @@
 
 `requested`·`viewed`처럼 ID 발급 이전 단계는 고정값 없이 `device_id` 순차 기준으로 집계한다. 로그인 기능을 도입하면 `device_id`는 계속 유지하고, 로그인 시점부터 `user_id`를 추가한다. Amplitude의 `identify` 또는 `alias` 기능으로 기존 익명 행동과 로그인 사용자를 연결한다.
 
+`device_id`의 노출 정책은 관측 계층마다 다르며, 이는 의도된 차이다. Amplitude와 프론트엔드 Sentry는 브라우저 사용자 식별을 위해 원본 `device_id`를 그대로 사용한다(프론트엔드 Sentry는 User `id`로 원본 `device_id`를 쓴다, [`analytics-frontend-spec.md`](./analytics-frontend-spec.md) AN-2-8). 반면 백엔드·AI 서비스는 서버 로그·Sentry·`ai_call_logs`에 원본 대신 해시한 `device_id_hash`를 저장한다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-3, [`analytics-ai-spec.md`](./analytics-ai-spec.md) AN-4-6). 두 계층은 같은 사용자를 가리키되 저장 형태만 다르다.
+
 ## AN-1-3 이벤트 네이밍 컨벤션
 
 이벤트명은 platform, screenName, objectName, actionType, eventType을 언더스코어로 연결해 만든다. 각 항목 내부는 camelCase로 쓰고, 프로퍼티는 `snake_case`로 쓴다.
@@ -143,6 +145,8 @@ server_storyCreate_storyGeneration_processed_failed
 
 각 이벤트 표에는 고유 프로퍼티만 나열하고, 공통 프로퍼티는 전 이벤트에 자동 부착한다. 프로퍼티 타입은 API 응답 모델과 일치시킨다. `story_id`는 number, `chat_id`는 string이고, boolean은 문자열이 아닌 boolean으로 보낸다.
 
+여기서 정의하는 타입은 **Amplitude 분석 이벤트 프로퍼티 기준**이다. 같은 식별자라도 서버 관측 계층에서는 저장 방식이 다를 수 있다. 백엔드·AI 서비스의 CloudWatch 구조화 로그와 `ai_call_logs` 테이블은 `story_id`, `session_id` 등 식별자를 문자열(VARCHAR)로 저장한다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-5·AN-3-7). 즉 Amplitude 이벤트에서는 number, 서버 로그·DB에서는 string으로 보이는 것은 의도된 차이이며 같은 값을 가리킨다.
+
 ### AN-1-4-1 MVP 핵심 프로퍼티
 
 현재 서비스의 핵심 동선은 **스토리 제작 → 채팅**이다. 이 퍼널 추적에 필요한 최소 프로퍼티만 정의한다.
@@ -179,8 +183,10 @@ event_time, event_id
 | `membership` | 구독·요금제 도입 후 | 요금제·등급 |
 | `signup_at` | 인증 도입 후 | 가입 시점 |
 | `experiment_key` / `variant` | A/B 테스트 도입 후 | 실험 키와 분기 값 |
-| `request_id` | 서버 사이드 이벤트 계측 시 | client `requested` ↔ server `processed` 연결용 상관 ID. 현재는 `creation_id`로 대체한다. |
+| `request_id` | 서버 사이드 이벤트 계측 시 | client `requested` ↔ server `processed`를 **분석 이벤트 프로퍼티로** 잇는 상관 ID. 현재 client/server 분석 이벤트에는 싣지 않고 `creation_id`로 대체한다. |
 | `item_id` / `section_id` / `section_name` | impression 정밀 계측 시 | 추천 카드 등 노출 분석용 |
+
+`request_id`의 "추후 도입"은 **client/server 분석 이벤트를 잇는 프로퍼티로서의 도입**만 가리킨다. 서버 내부 상관 키로서의 `request_id`는 이미 사용 중이며, 백엔드는 모든 서버 로그·Sentry·`ai_call_logs`에 `request_id`를 싣는다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-3). 즉 `request_id`는 (1) 서버 내부 상관 키로는 현재 적용, (2) 프론트엔드↔서버 분석 이벤트 연결 프로퍼티로는 추후 도입으로 나뉘며, (2)가 도입되기 전까지 분석 이벤트 연결은 `creation_id`로 대체한다.
 
 ## AN-1-5 핵심 퍼널 정의
 
