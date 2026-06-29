@@ -1,7 +1,15 @@
 # KNK Workspace LLM Working Harness
 
-- 아래 경로는 `knk-harness/` 루트 기준입니다.
-- 세부 규칙은 이 문서에 반복하지 않고, 아래의 레포지토리 문서를 기준으로 확인합니다.
+## Repository Context
+
+- 제품·스펙 문서는 현재 레포지토리(`knk-harness/`)를 기준으로 확인합니다.
+- 구현 맥락이 필요하면 현재 레포지토리만 보지 말고 다음 서비스 레포지토리를 함께 참조합니다.
+
+| 영역 | 참조 경로 |
+| --- | --- |
+| 웹 프론트엔드 | `../manyak-web` |
+| 백엔드 서버 | `../manyak-server` |
+| AI 서버 | `../manyak-ai` |
 
 ## Knowledge Base
 
