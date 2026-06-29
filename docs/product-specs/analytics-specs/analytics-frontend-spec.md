@@ -40,6 +40,7 @@
 
 - Amplitude로 `client_*` 사용자 행동 이벤트를 수집한다.
 - Sentry로 브라우저 오류와 사용자 행동 breadcrumb를 수집한다.
+- 백엔드 API 호출에 익명 식별자(`device_id`, `session_id`)를 HTTP 헤더로 실어 보내 서버 로그·AI 호출과 연결한다.
 - 백엔드 API 호출에 상관 키(`creation_id`, `chat_id`)를 전달해 `server_*` 이벤트·서버 로그와 연결한다.
 - 사용자가 입력한 원문, 이메일, 채팅 메시지는 분석 이벤트에 넣지 않는다.
 
@@ -66,7 +67,21 @@ MVP는 로그인 기능이 없는 전원 게스트 서비스다. 사용자 단�
 | `story_id` | number | 서버 발급 | 스토리 식별자 |
 | `chat_id` | string | 서버 발급 | 채팅 식별자 |
 
-로그인 기능을 도입하면 `device_id`는 유지하고, 로그인 시점부터 `user_id`를 추가한다. Amplitude의 `identify`로 기존 익명 행동과 로그인 사용자를 연결한다. 서버 사이드 이벤트를 정밀하게 연결할 `request_id`는 추후 도입하며, 현재는 `creation_id`로 대체한다.
+로그인 기능을 도입하면 `device_id`는 유지하고, 로그인 시점부터 `user_id`를 추가한다. Amplitude의 `identify`로 기존 익명 행동과 로그인 사용자를 연결한다.
+
+`request_id`는 두 역할로 나뉜다. (1) **서버 내부 상관 키**로서의 `request_id`는 백엔드가 이미 사용 중이며, 서버 로그·Sentry·`ai_call_logs`를 잇는다([`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-3). 프론트엔드는 이 값을 `X-Manyak-Request-Id` 헤더로 전달하되, 값이 없으면 백엔드가 생성한다(AN-2-3-1). (2) **프론트엔드 `client_*` 이벤트와 `server_*` 이벤트를 분석 이벤트 프로퍼티로 잇는** `request_id`는 추후 도입하며, 도입 전까지 이 연결은 `creation_id`로 대체한다.
+
+### AN-2-3-1 API 요청 헤더로 전달하는 식별자
+
+프론트엔드는 백엔드 API를 호출할 때 익명 사용자·세션 식별자를 HTTP 헤더로 함께 보낸다. 값은 Amplitude Browser SDK가 자동으로 채운 `device_id`, `session_id`를 그대로 싣는다. 백엔드는 헤더 값을 검증한 뒤 서버 로그·Sentry·AI 호출 context에 연결한다. 백엔드 처리 기준은 [`analytics-backend-spec.md`](./analytics-backend-spec.md) AN-3-3을 따른다.
+
+| 헤더 | 필수 여부 | 값 | 설명 |
+| --- | --- | --- | --- |
+| `X-Manyak-Device-Id` | 필수 | `device_id` | Amplitude SDK가 채운 익명 사용자 ID |
+| `X-Manyak-Session-Id` | 필수 | `session_id` | Amplitude SDK가 채운 세션 ID |
+| `X-Manyak-Request-Id` | 권장 | `request_id` | 요청 단위 ID. `request_id` 도입 전까지는 백엔드에서 생성한다. |
+
+원본 `device_id`는 백엔드에서 `device_id_hash`로 변환해 저장한다. 프론트엔드는 헤더에 원본 값만 싣고 별도 해시를 만들지 않는다.
 
 ## AN-2-4 공통 이벤트 규칙
 
