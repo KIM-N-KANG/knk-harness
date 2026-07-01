@@ -66,11 +66,11 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | `request_id` | string | 프론트엔드 전달 또는 백엔드 생성 | 서버 로그, Sentry, AI 호출 연결 |
 | `device_id_hash` | string | 백엔드가 `device_id`를 해시 | 서버 로그, Sentry, `ai_call_logs` |
 | `creation_id` | string | 스토리라인 생성 시 발급되는 `simpleCreationId` | 스토리 제작 시도 연결 |
-| `story_id` | number | 스토리 완성 후 서버 발급 | 스토리 관련 이벤트 |
+| `story_id` | string | 스토리 완성 후 서버 발급 | 스토리 관련 이벤트 |
 | `chat_id` | string | 채팅 생성 후 서버 발급 | 채팅 관련 이벤트 |
 | `ai_call_log_id` | string | AI 호출 기록 생성 시 발급 | 서버 로그와 `ai_call_logs` 연결 |
 
-분석 이벤트에서 `story_id`는 number로 보냅니다. CloudWatch 로그와 `ai_call_logs`에서는 저장소 제약에 맞춰 문자열로 저장할 수 있습니다. 타입 차이는 저장 계층 차이이며 같은 값을 가리킵니다.
+분석 이벤트에서 `story_id`는 문자열(공개 UUID 식별자)로 보냅니다. CloudWatch 로그·`ai_call_logs`·DB에서도 동일하게 문자열로 저장합니다.
 
 | 키 | 분석 단위 | 사용 |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | `step_name` | string | 스토리 제작 퍼널 | `keyword`, `storylineSelect`, `additionalInfo`, `complete` 중 하나입니다. |
 | `step_number` | number | 스토리 제작 퍼널 | 제작 단계 번호입니다. |
 | `creation_id` | string | 스토리 제작 퍼널 | 스토리라인 생성 시 발급되는 `simpleCreationId`입니다. |
-| `story_id` | number | story 관련 이벤트 | 스토리 식별자입니다. |
+| `story_id` | string | story 관련 이벤트 | 스토리 식별자입니다. |
 | `chat_id` | string | chat 관련 이벤트 | 채팅 식별자입니다. |
 
 다음 값은 Amplitude Browser SDK가 자동으로 채우므로 커스텀 프로퍼티로 다시 만들지 않습니다.
@@ -217,8 +217,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | --- | --- | --- | --- |
 | `client_storyList_viewed` | P0 | 스토리 목록 화면 진입 | 없음 |
 | `client_storyList_createButton_clicked` | P0 | 제작하기 CTA 클릭 | 없음 |
-| `client_storyList_storyCard_clicked` | P1 | 스토리 카드 클릭 | `story_id` (number, 필수), `position` (number, 선택) |
-| `client_storyList_storyCard_impressed` | P1 | 스토리 카드 유효 노출 | `story_id` (number, 필수), `position` (number, 선택) |
+| `client_storyList_storyCard_clicked` | P1 | 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택) |
+| `client_storyList_storyCard_impressed` | P1 | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
 
 #### 6-4-2-3. 스토리 제작
 
@@ -231,7 +231,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `server_storyCreate_storyGeneration_processed_failed` | P0 | 스토리라인 생성 실패 | `creation_id` (string, 필수), `error_type` (string, 필수) |
 | `client_storyCreate_storylineOption_selected` | P0 | 스토리라인 선택 | `creation_id` (string, 필수), `position` (number, 선택) |
 | `client_storyCreate_selectedKeywordsButton_clicked` | P0 | 선택한 키워드 보기 버튼 클릭 | `creation_id` (string, 필수) |
-| `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (number, 필수), `chat_id` (string, 필수), `genre` (string[], 선택) |
+| `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genre` (string[], 선택) |
 | `client_storyCreate_nextButton_clicked` | P1 | 다음 버튼 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
 
 `client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다.
@@ -251,10 +251,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
-| `client_storyDetail_viewed` | P0 | 스토리 상세 화면 진입 | `story_id` (number, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0 | 채팅 시작 버튼 클릭 | `story_id` (number, 필수) |
-| `client_storyDetail_recommendStoryCard_clicked` | P1 | 추천 스토리 카드 클릭 | `story_id` (number, 필수), `position` (number, 선택) |
-| `client_storyDetail_recommendStoryCard_impressed` | P1 | 추천 스토리 카드 유효 노출 | `story_id` (number, 필수), `position` (number, 선택) |
+| `client_storyDetail_viewed` | P0 | 스토리 상세 화면 진입 | `story_id` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0 | 채팅 시작 버튼 클릭 | `story_id` (string, 필수) |
+| `client_storyDetail_recommendStoryCard_clicked` | P1 | 추천 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택) |
+| `client_storyDetail_recommendStoryCard_impressed` | P1 | 추천 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
 
 `recommendStoryCard`의 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
