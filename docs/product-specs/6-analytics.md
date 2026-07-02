@@ -15,8 +15,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.9 |
+| 버전 | v0.10 |
 | 작성일 | 2026-06-30 |
+| 수정일 | 2026-07-02 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -162,7 +163,7 @@ event_time, event_id
 
 ### 6-4-1. MVP 우선순위
 
-P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 안정적으로 수집된 뒤 추가합니다.
+P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 안정적으로 수집된 뒤 추가합니다. P2 이벤트는 세부 인터랙션 계측으로, P1 이후 필요에 따라 추가합니다.
 
 | 우선순위 | 소유 | 이벤트 |
 | --- | --- | --- |
@@ -188,15 +189,28 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_onboarding_createButton_clicked` |
 | P1 | client | `client_storyList_storyCard_clicked` |
 | P1 | client | `client_storyList_storyCard_impressed` |
-| P1 | client | `client_storyCreate_nextButton_clicked` |
-| P1 | client | `client_storyDetail_recommendStoryCard_clicked` |
-| P1 | client | `client_storyDetail_recommendStoryCard_impressed` |
+| P1 | client | `client_storyCreate_keywordCategory_selected` |
+| P1 | client | `client_storyCreate_regenerateButton_clicked` |
+| P1 | client | `client_storyCreate_storylineRating_clicked` |
+| P1 | client | `client_storyCreate_storyCompletion_requested` |
+| P1 | client | `client_storyCreate_completeError_shown` |
+| P1 | client | `client_storyCreate_exitButton_clicked` |
 | P1 | client | `client_chatList_viewed` |
 | P1 | client | `client_chatList_chatCard_clicked` |
 | P1 | client | `client_chatList_chatCard_impressed` |
 | P1 | client | `client_chat_choiceOption_selected` |
+| P1 | client | `client_chat_loadError_shown` |
+| P1 | client | `client_chat_retryButton_clicked` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
+| P2 | client | `client_storyCreate_addKeyword_submitted` |
+| P2 | client | `client_storyCreate_storylineTab_selected` |
+| P2 | client | `client_storyCreate_backToStorylineButton_clicked` |
+| P2 | client | `client_storyCreate_recommendedInfo_clicked` |
+| P2 | client | `client_storyCreate_additionalInfoAddButton_clicked` |
+| P2 | client | `client_storyCreate_additionalInfoRemoveButton_clicked` |
+
+스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
 ### 6-4-2. 페이지별 이벤트 카탈로그
 
@@ -216,9 +230,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_storyList_viewed` | P0 | 스토리 목록 화면 진입 | 없음 |
-| `client_storyList_createButton_clicked` | P0 | 제작하기 CTA 클릭 | 없음 |
+| `client_storyList_createButton_clicked` | P0 | 제작하기 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`) |
 | `client_storyList_storyCard_clicked` | P1 | 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택) |
 | `client_storyList_storyCard_impressed` | P1 | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
+
+제작하기 CTA는 플로팅 버튼과 빈 목록 상태 버튼 두 곳에 있습니다. 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: 플로팅 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다.
 
 #### 6-4-2-3. 스토리 제작
 
@@ -226,15 +242,30 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | --- | --- | --- | --- |
 | `client_storyCreate_viewed` | P0 | 제작 화면 진입 | 없음 |
 | `client_storyCreate_step_viewed` | P0 | 각 제작 단계 진입 | `step_name` (string, 필수), `step_number` (number, 필수) |
+| `client_storyCreate_keywordCategory_selected` | P1 | 키워드 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
+| `client_storyCreate_addKeyword_submitted` | P2 | 키워드 직접 추가 제출 | `category` (string, 필수) |
 | `client_storyCreate_storyGeneration_requested` | P0 | 스토리라인 생성 요청 전송 | 없음 |
 | `server_storyCreate_storyGeneration_processed_succeeded` | P0 | 스토리라인 생성 성공 | `creation_id` (string, 필수) |
 | `server_storyCreate_storyGeneration_processed_failed` | P0 | 스토리라인 생성 실패 | `creation_id` (string, 필수), `error_type` (string, 필수) |
+| `client_storyCreate_regenerateButton_clicked` | P1 | 스토리라인 다시 만들기 클릭 | `creation_id` (string, 필수) |
+| `client_storyCreate_storylineTab_selected` | P2 | 스토리라인 후보 탭 이동 | `creation_id` (string, 필수), `position` (number, 필수) |
+| `client_storyCreate_storylineRating_clicked` | P1 | 스토리라인 좋아요/싫어요 클릭 | `storyline_id` (string, 필수), `rating` (string, 필수: `GOOD` / `BAD`), `active` (boolean, 필수) |
 | `client_storyCreate_storylineOption_selected` | P0 | 스토리라인 선택 | `creation_id` (string, 필수), `position` (number, 선택) |
 | `client_storyCreate_selectedKeywordsButton_clicked` | P0 | 선택한 키워드 보기 버튼 클릭 | `creation_id` (string, 필수) |
+| `client_storyCreate_backToStorylineButton_clicked` | P2 | 다시 선택하기(스토리라인 선택으로 되돌아감) 클릭 | 없음 |
+| `client_storyCreate_recommendedInfo_clicked` | P2 | AI 추천 추가 정보 칩 클릭 | `selected` (boolean, 필수) |
+| `client_storyCreate_additionalInfoAddButton_clicked` | P2 | 추가 정보 입력란 추가 클릭 | 없음 |
+| `client_storyCreate_additionalInfoRemoveButton_clicked` | P2 | 추가 정보 입력란 삭제 클릭 | 없음 |
+| `client_storyCreate_storyCompletion_requested` | P1 | 스토리 완성 요청 전송 | `creation_id` (string, 필수) |
+| `client_storyCreate_completeError_shown` | P1 | 스토리 완성 실패 에러 표시 | `stage` (string, 필수: `story` / `chat`) |
+| `client_storyCreate_exitButton_clicked` | P1 | 제작 이탈 확인(나가기) 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
 | `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genre` (string[], 선택) |
-| `client_storyCreate_nextButton_clicked` | P1 | 다음 버튼 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
 
-`client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다.
+`client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다. 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
+
+`client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
+
+`client_storyCreate_keywordCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
 `selectedKeywordsButton_clicked`는 스토리라인 선택(`storylineSelect`) 단계 탭 우측의 키워드 보기 버튼으로 선택 키워드 드로워를 열 때 발생합니다. 드로워에 노출되는 키워드 이름은 이벤트에 넣지 않고 `creation_id`만 보냅니다.
 
@@ -253,10 +284,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | --- | --- | --- | --- |
 | `client_storyDetail_viewed` | P0 | 스토리 상세 화면 진입 | `story_id` (string, 필수) |
 | `client_storyDetail_chatStartButton_clicked` | P0 | 채팅 시작 버튼 클릭 | `story_id` (string, 필수) |
-| `client_storyDetail_recommendStoryCard_clicked` | P1 | 추천 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택) |
-| `client_storyDetail_recommendStoryCard_impressed` | P1 | 추천 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
 
-`recommendStoryCard`의 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
+추천 스토리 카드는 아직 도입되지 않은 기능입니다. 기능 도입 시 `client_storyDetail_recommendStoryCard_clicked`와 `client_storyDetail_recommendStoryCard_impressed`(P1, `story_id` string 필수, `position` number 선택)를 추가합니다. 이때 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
 #### 6-4-2-5. 채팅 목록
 
@@ -275,6 +304,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
 | `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수) |
 | `client_chat_choiceOption_selected` | P1 | 선택지 선택 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
+| `client_chat_loadError_shown` | P1 | 채팅 화면 로드 실패 에러 표시 | `chat_id` (string, 필수) |
+| `client_chat_retryButton_clicked` | P1 | 로드 실패 후 다시 시도 버튼 클릭 | `chat_id` (string, 필수) |
+
+`client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. AI 응답 생성 실패는 이 이벤트가 아니라 `server_chat_aiMessage_processed_failed`로 봅니다.
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
@@ -354,7 +387,7 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 4 | 스토리라인 선택 | `client_storyCreate_storylineOption_selected` | `creation_id` |
 | 5 | 제작 완료 | `client_storyCreate_completed` | `creation_id` |
 
-화면 단계 이탈은 `client_storyCreate_step_viewed`의 `step_name` 순서(`keyword` -> `storylineSelect` -> `additionalInfo` -> `complete`)로 별도 관찰합니다.
+화면 단계 이탈은 `client_storyCreate_step_viewed`의 `step_name` 순서(`keyword` -> `storylineSelect` -> `additionalInfo` -> `complete`)로 별도 관찰합니다. 키워드 단계 안의 카테고리별 이탈(장르 -> 주인공 -> 주변 인물)은 `client_storyCreate_keywordCategory_selected`의 `from_category` + `direction=forward`로 관찰합니다. 완성 실패율은 `client_storyCreate_completeError_shown`(`client_storyCreate_storyCompletion_requested` 대비), 완성 성공률은 `client_storyCreate_completed`로 봅니다.
 
 #### 6-5-3-2. 채팅 활성화 퍼널
 
@@ -393,15 +426,16 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 스토리 제작 | 생성 성공률 | `server_storyCreate_storyGeneration_processed_succeeded` 수 / `client_storyCreate_storyGeneration_requested` 수 |
 | 스토리 제작 | 생성 실패율 | `server_storyCreate_storyGeneration_processed_failed` 수 / `client_storyCreate_storyGeneration_requested` 수 |
 | 스토리 제작 | 생성 후 완료율 | `client_storyCreate_completed` 수 / `server_storyCreate_storyGeneration_processed_succeeded` 수 (`creation_id` 기준) |
+| 스토리 제작 | 완성 실패율 | `client_storyCreate_completeError_shown` 수 / `client_storyCreate_storyCompletion_requested` 수 |
 | 스토리 제작 | 전체 제작 전환율 | `client_storyCreate_completed` 수 / `client_storyCreate_viewed` 수 |
 | 스토리 제작 | 단계별 이탈율 | `1 - 다음 단계 step_viewed 사용자 수 / 현재 단계 step_viewed 사용자 수` |
 | 스토리 상세 | 상세에서 채팅 시작 전환율 | `client_storyDetail_chatStartButton_clicked` 수 / `client_storyDetail_viewed` 수 |
-| 스토리 상세 | 추천 카드 클릭률 | `client_storyDetail_recommendStoryCard_clicked` 수 / `client_storyDetail_recommendStoryCard_impressed` 수 |
 | 채팅 목록 | 채팅 카드 클릭률 | `client_chatList_chatCard_clicked` 수 / `client_chatList_chatCard_impressed` 수 |
 | 채팅 | 말 거는 비율 | `client_chat_messageInput_submitted` 사용자 수 where `turn_number = 1` / `client_chat_viewed` 사용자 수 |
 | 채팅 | AI 응답 성공률 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 |
 | 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 |
 | 채팅 | N턴 이상 도달률 | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수 |
+| 채팅 | 채팅 로드 실패율 | `client_chat_loadError_shown` 수 / `client_chat_viewed` 수 |
 | 채팅 | 선택지 사용률 | `client_chat_choiceOption_selected` 수 / `client_chat_messageInput_submitted` 수 |
 | 피드백 | 피드백 제출률 | `client_feedback_form_submitted` 사용자 수 / `client_feedback_viewed` 사용자 수 |
 | 피드백 | 제출 성공률 | `server_feedback_submission_processed_succeeded` 수 / `client_feedback_form_submitted` 수 |
@@ -563,7 +597,7 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 | feature | 설명 | 사용자 퍼널 연결 |
 | --- | --- | --- |
 | `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*` |
-| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_completed`, `client_storyDetail_viewed` |
+| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed` |
 | `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `client_chat_messageInput_submitted`, `server_chat_aiMessage_processed_*` |
 | `suggestion_generation` | 다음 입력 추천 선택지 생성 | `client_chat_choiceOption_selected` |
 
