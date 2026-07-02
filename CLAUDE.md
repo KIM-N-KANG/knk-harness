@@ -15,6 +15,7 @@
 
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |
+| 도메인 용어 정의, 한↔영 표기, 계층별 네이밍 컨벤션 확인 | `docs/product-specs/0-glossary.md` |
 | 서비스 배경, 타겟 사용자, MVP 범위 확인 | `docs/product-specs/1-background.md` |
 | 화면·기능별 사용자 요구(유저 스토리) 확인 | `docs/product-specs/2-user-stories.md` |
 | 프론트엔드 화면, 상태, 사용자 흐름, 검수 기준 확인 | `docs/product-specs/3-frontend.md` |
