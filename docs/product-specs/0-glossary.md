@@ -49,7 +49,7 @@
 | 공식 용어 | 영문 식별자 | 정의 | 지양 표기 |
 | --- | --- | --- | --- |
 | 스토리 | `story`, `story_id` | 사용자가 제작·플레이하는 세계관·설정 콘텐츠 단위. 외부 노출 식별자는 UUID `story_id` | "이야기"(API 문서·식별자·오류 메시지), "세계관"(스토리 전체를 가리킬 때) |
-| 스토리라인 | `storyline`, `storyline_id` | 간편 제작에서 AI가 생성하는 이야기 전개 방향 후보(3개 중 택1). 스토리가 되기 전 단계의 산출물 | `example`(DB 잔존 표기), 스토리라인 본문을 담는 `story` 필드 |
+| 스토리라인 | `storyline`, `storyline_id` | 간편 제작에서 AI가 생성하는 이야기 전개 방향 후보(3개 중 택1). 스토리가 되기 전 단계의 산출물 | `example`(레거시 표기), 스토리라인 본문을 담는 `story` 필드 |
 | 스토리 설정 | `story_settings` | 통글 4필드 묶음: `world_setting`(세계관) · `character_setting`(등장인물) · `user_role_setting`(주인공) · `rule_setting`(규칙) | `prompt_settings`(컴파일 내부 세분 스키마 전용, §0-6) |
 | 통글 | (한국어 고유 조어) | 섹션 헤더로 구분한 단일 마크다운 필드. 스토리 설정의 저장·전달 단위 | — |
 | 시작 설정 | `start_settings` | 채팅 시작 장면 3필드: `name`(상황 이름) · `start_situation`(시작 상황) · `prologue`(프롤로그) | 단수·복수, 접두어가 다른 변형 신설 금지 |
@@ -57,7 +57,7 @@
 | 추천 입력 | `suggested_inputs` | 채팅 시작 화면에서 제안하는 첫 입력 후보 문구(3개). 선택지(§0-3-3)와 다른 개념 | `recommendedInputs`, 선택지를 "추천 입력"으로 부르는 것 |
 | 태그 | `tag`, `tag_id` | 간편 제작에서 선택하거나 직접 추가하는 스토리 속성. `PREDEFINED`(제공)와 `CUSTOM`(직접 추가)으로 나뉨 | "키워드"(코드·데이터·이벤트·문서. UI 카피 전환은 별도 논의) |
 | 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징 | `tag_type` |
-| 추가 정보 | `additional_infos` | 사용자가 스토리라인에 첨부하는 보강 정보(추천 채택분 포함, 총 3개 상한) | `extra_info` |
+| 추가 정보 | `additional_infos` | 사용자가 스토리라인에 첨부하는 보강 정보(추천 채택분 포함, 총 13개 상한) | `extra_info` |
 | 추천 추가 정보 | `recommended_infos` | 스토리라인마다 AI가 제안하는 추가 정보 후보 3개 | "추천 질문"(`questions`, 레거시) |
 | 로어북 | `lorebook` | 장르 공용 용어 사전. 트리거 키워드 없는 카탈로그 | world info, "키워드북" |
 | 엔딩 | `ending` | 스토리의 종결 정의(스토리와 1:N). 발동 조건은 `condition_text` 자유 텍스트 | — |
@@ -80,7 +80,7 @@
 
 | 공식 용어 | 영문 식별자 | 정의 | 지양 표기 |
 | --- | --- | --- | --- |
-| 채팅 | `chat`, `chat_id` | 스토리를 기반으로 진행하는 플레이 세션. 저장·이어쓰기·삭제의 단위. 외부 노출 식별자는 UUID `chat_id` | "대화"(식별자·계약. 설명문에서는 허용), play session(DB 잔존 표기), "스토리 플레이" · "채팅 플레이" · "체험 플레이", "세션" |
+| 채팅 | `chat`, `chat_id` | 스토리를 기반으로 진행하는 플레이 세션. 저장·이어쓰기·삭제의 단위. 외부 노출 식별자는 UUID `chat_id` | "대화"(식별자·계약. 설명문에서는 허용), play session(레거시 표기), "스토리 플레이" · "채팅 플레이" · "체험 플레이", "세션" |
 | 채팅 화면 | — | 개별 채팅을 플레이하는 화면(`/chats/[id]`) | "채팅방"(구어. 코드 `room` 계열 식별자 신설 금지) |
 | 턴 | `turn`, `turn_number` | 사용자 입력 1회 + AI 출력 1회 + 선택지 1세트. `turn_number`는 **사용자 입력 기준** 1부터 센다 | 메시지와 혼용 금지 |
 | 메시지 | `message` | 턴을 구성하는 개별 발화 저장 행. `role`: `USER` · `ASSISTANT` · `SYSTEM` | — |
@@ -109,7 +109,7 @@
 | 계층 | 표기 | 예시 |
 | --- | --- | --- |
 | 클라이언트 REST 와이어(JSON) | camelCase | `storyId`, `aiOutput`, `suggestedInputs` |
-| DB 테이블·컬럼 | snake_case | `story_play_sessions`, `turn_index` |
+| DB 테이블·컬럼 | snake_case | `story_chats`, `turn_number` |
 | 구조화 로그 · MDC · Sentry | snake_case | `event_name`, `chat_id`, `error_code` |
 | 분석 이벤트명 | `client_{screenName}_{object}_{action}` — 세그먼트 구분 `_`, 세그먼트 내부 camelCase, 동사 과거형 | `client_chat_choiceOption_selected` |
 | 분석 프로퍼티 | snake_case | `turn_number`, `creation_id`, `step_name` |
