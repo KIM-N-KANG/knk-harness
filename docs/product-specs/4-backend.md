@@ -235,7 +235,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | --- | --- | --- |
 | `simpleCreationId` | ≥ 1 | 간편 제작 진행 ID |
 | `storylineId` | ≥ 1 | 선택한 스토리라인 ID |
-| `additionalInfos` | 최대 3개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
+| `additionalInfos` | 최대 13개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
 
 - 응답(201, `SimpleStoryCreateResponse`): `{id, title, oneLineIntro, description, genres, startSetting}`. `id`는 스토리 공개 식별자(UUID)이며 클라이언트가 로컬 서재에 저장합니다.
 - 같은 진행(`simpleCreationId`)으로 이미 스토리를 생성했다면 409를 반환합니다. 프론트엔드의 완성 재시도는 스토리 생성을 건너뛰므로 정상 흐름에서는 발생하지 않습니다([`3-frontend.md §3-5`](./3-frontend.md)).
@@ -326,7 +326,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 ### 테이블 구성
 
-스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V21)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. 여기서는 도메인 그룹과 역할만 고정합니다.
+스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V22)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. 여기서는 도메인 그룹과 역할만 고정합니다.
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
@@ -340,9 +340,9 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 간편 제작 | `story_creation_sessions` | 간편 제작 진행(퍼널 1회) |
 | 간편 제작 | `story_creation_session_tags` | 진행이 선택한 태그(유니크) |
 | 간편 제작 | `story_creation_storylines` | AI 생성 스토리라인 후보 |
-| 간편 제작 | `story_creation_example_recommended_infos` | 스토리라인별 추천 추가 정보 |
-| 간편 제작 | `story_creation_example_ratings` | 스토리라인 평가(GOOD·BAD, 사용자당 1건) |
-| 채팅 | `chats` | 채팅. `public_id`(UUID), 진행 턴 수, `deleted_at` |
+| 간편 제작 | `story_creation_storyline_recommended_infos` | 스토리라인별 추천 추가 정보 |
+| 간편 제작 | `story_creation_storyline_ratings` | 스토리라인 평가(GOOD·BAD, 사용자당 1건) |
+| 채팅 | `story_chats` | 채팅. `public_id`(UUID), 진행 턴 수, `deleted_at` |
 | 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM` |
 | 채팅 | `story_choices` | 메시지별 선택지(3개, 선택 여부 기록) |
 | 로어북 | `lorebooks` | `Phase 1` 장르 공용 용어 사전 |
@@ -353,13 +353,11 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 ### 잔존 표기
 
-용어집 정렬(V20·V21)로 `story_creation_examples` → `story_creation_storylines`, `story_play_sessions` → `chats` 개명은 끝났습니다. 다음 표기는 아직 남아 있으며, 신규 명명에는 쓰지 않습니다([`0-glossary.md §0-1`](./0-glossary.md)의 점진 적용 원칙).
+용어집 정렬(V20~V22)로 `story_creation_examples` → `story_creation_storylines`, `story_play_sessions` → `story_chats`, `turn_index` → `turn_number` 개명은 끝났습니다. 다음 표기는 아직 남아 있으며, 신규 명명에는 쓰지 않습니다([`0-glossary.md §0-1`](./0-glossary.md)의 점진 적용 원칙).
 
 | 잔존 표기 | 위치 | 공식 표기 |
 | --- | --- | --- |
-| `story_creation_example_*` | 추천 정보·평가 테이블명 | `storyline` 계열 |
 | `creation_session_id` | 간편 제작 FK 컬럼 | `creation_id` 계열 |
-| `turn_index` | `ai_call_logs` 컬럼, 구조화 로그 필드 | 분석 표준은 `turn_number`([§4-8](#4-8-검수-체크리스트) B3) |
 
 ## 4-5. 인증과 권한
 
@@ -471,7 +469,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 - 모든 로그는 JSON으로 남깁니다(Logstash Logback Encoder). MDC의 상관관계 식별자는 인코더가 자동 부착합니다.
 - API 요청 로그 필터가 endpoint, HTTP 메서드, 상태 코드, 소요 시간을 기록합니다.
-- 비즈니스 이벤트 로그는 snake_case 필드로 남깁니다. 예: 턴 저장 시 `user_message_saved` · `ai_response_saved`(`chat_id`, `story_id`, `turn_index`, `ai_call_log_id`).
+- 비즈니스 이벤트 로그는 snake_case 필드로 남깁니다. 예: 턴 저장 시 `user_message_saved` · `ai_response_saved`(`chat_id`, `story_id`, `turn_number`, `ai_call_log_id`).
 - 사용자 입력 원문은 로그에 싣지 않고 길이 구간(`message_length_bucket`)만 남깁니다([`6-analytics.md §6-7`](./6-analytics.md)).
 - CloudWatch 로그 이벤트 카탈로그의 원천은 [`6-analytics.md §6-6-5`](./6-analytics.md)입니다.
 
@@ -560,6 +558,4 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | --- | --- | --- | --- |
 | B1 | 서버 분석 이벤트 | [`6-analytics.md §6-4`](./6-analytics.md)의 `server_*` 6종 미구현. 서버 계측은 구조화 로그·`ai_call_logs`뿐 | Amplitude 서버 이벤트 발행을 후속 구현 |
 | B2 | AI 와이어 필드 정렬 | AI 계약의 `story`(스토리라인 본문)·`extra_info`가 용어집 기준(`storyline` · `additional_info`)과 불일치. 클라이언트 와이어는 정렬 완료 | AI 서버와 동시 배포로 정렬(KNK-375) |
-| B3 | 턴 번호 표기 | `ai_call_logs`·구조화 로그가 `turn_index`를 사용. 분석 표준은 `turn_number` | 신규 필드는 `turn_number`, 기존 필드는 점진 정리 |
 | B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | 상한 정책 정렬 |
-| B5 | 추가 정보 개수 | 서버 상한 3개 vs 프론트엔드 합산 초과 전송 가능([`3-frontend.md §3-13`](./3-frontend.md) G7) | 프론트엔드 제한 정렬 |
