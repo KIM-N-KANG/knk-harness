@@ -48,7 +48,7 @@ MVP는 로그인 없는 전원 게스트로 동작합니다. 인증·권한·세
 
 ### 제외 범위
 
-- 백엔드 내부 구현과 API 상세 스키마 (담당: [`4-backend.md`](./4-backend.md), 작성 예정)
+- 백엔드 내부 구현과 API 상세 스키마 (담당: [`4-backend.md`](./4-backend.md))
 - AI 요청·응답 계약과 프롬프트 (담당: [`5-ai-server.md`](./5-ai-server.md), 작성 예정)
 - 이벤트 카탈로그, 식별자 정책, 지표 (원천: [`6-analytics.md`](./6-analytics.md))
 - 로그인, 스토리 탐색, 좋아요·댓글·공유, 일반·전문가 제작 모드, 크레딧, 관리자 (MVP 제외, [§3-13](#3-13-mvp-제외-범위와-스펙-구현-간극))
@@ -60,11 +60,11 @@ MVP는 로그인 없는 전원 게스트로 동작합니다. 인증·권한·세
 | --- | --- | --- |
 | [`1-background.md`](./1-background.md) | 서비스 배경, MVP 범위 | 제품 방향의 상위 근거 |
 | [`2-user-stories.md`](./2-user-stories.md) | 화면별 사용자 요구(US ID) | 각 화면·흐름을 US ID로 추적 |
-| [`4-backend.md`](./4-backend.md) | API 명세, 데이터 모델 | API 상세 위임 예정(현재 작성 예정) |
+| [`4-backend.md`](./4-backend.md) | API 명세, 데이터 모델 | API 상세를 위임 |
 | [`5-ai-server.md`](./5-ai-server.md) | AI 계약, 스트리밍 규격 | 스트림 이벤트 계약 위임 예정(현재 작성 예정) |
 | [`6-analytics.md`](./6-analytics.md) | 이벤트·식별자·헤더·Sentry 기준 | 카탈로그는 위임, 프론트는 발화 배선만 정의 |
 
-> `4-backend.md`·`5-ai-server.md`는 현재 작성 예정 상태입니다. 그때까지 API·스트림 계약의 임시 근거는 백엔드 OpenAPI 스펙(Orval `generated`)과 서버 코드입니다.
+> `5-ai-server.md`는 현재 작성 예정 상태입니다. 그때까지 AI 계약의 임시 근거는 AI 서버 코드입니다.
 
 ### 작성 원칙
 
@@ -109,7 +109,7 @@ MVP는 로그인 없는 전원 게스트로 동작합니다. 인증·권한·세
 Next.js BFF 프록시 라우트 (서버 전용)
    │  API_BASE_URL 로 그대로 전달, 응답 스트리밍 통과
    ▼
-백엔드 API  — 스키마 근거: OpenAPI(generated). 4-backend.md는 작성 예정
+백엔드 API  — 계약: 4-backend.md §4-3
 ```
 
 `API_BASE_URL`은 클라이언트 번들에 노출되지 않는 서버 전용 값입니다. 브라우저는 항상 동일 출처 `/api`만 호출합니다([§3-8](#3-8-api-연동에러-처리-계약)).
@@ -474,7 +474,7 @@ FE-SCREEN-005의 상세입니다. 실시간 AI 응답이 이 앱에서 가장 �
 `EventSource`는 POST를 못 하므로 `fetch`+`ReadableStream`으로 구현합니다.
 
 - **요청** — `POST /chats/{id}/turns/stream`, 헤더 `Accept: text/event-stream` + `X-Manyak-*` 식별자, 본문 `{userInput}`(서버 검증 상한 3000자, 프론트는 별도 차단 없음).
-- **이벤트 계약** (`5-ai-server.md` 작성 예정, 현재 근거는 서버 SSE 구현)
+- **이벤트 계약** (원천: [`4-backend.md §4-3-3`](./4-backend.md))
 
 | 이벤트 | 데이터 필드 | 프론트 처리 |
 | --- | --- | --- |
@@ -574,7 +574,7 @@ FE-SCREEN-005의 상세입니다. 실시간 AI 응답이 이 앱에서 가장 �
 
 ## 3-8. API 연동·에러 처리 계약
 
-API 상세 명세는 [`4-backend.md`](./4-backend.md)(작성 예정)가 소유할 예정이며, 그때까지 임시 근거는 백엔드 OpenAPI 스펙(Orval `generated`)과 서버 코드입니다. 여기서는 프론트엔드가 어떻게 호출하고 무엇에 의존하며 실패를 어떻게 처리하는지 정의합니다. API 경로는 `/api/v1` prefix를 생략해 표기합니다.
+API 상세 명세는 [`4-backend.md`](./4-backend.md)가 소유합니다. 여기서는 프론트엔드가 어떻게 호출하고 무엇에 의존하며 실패를 어떻게 처리하는지 정의합니다. API 경로는 `/api/v1` prefix를 생략해 표기합니다.
 
 ### BFF 프록시
 
