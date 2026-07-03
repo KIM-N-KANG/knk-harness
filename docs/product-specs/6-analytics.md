@@ -15,9 +15,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.10 |
+| 버전 | v0.11 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-07-02 |
+| 수정일 | 2026-07-03 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -198,9 +198,12 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_chatList_viewed` |
 | P1 | client | `client_chatList_chatCard_clicked` |
 | P1 | client | `client_chatList_chatCard_impressed` |
+| P1 | client | `client_chat_inputMode_selected` |
 | P1 | client | `client_chat_choiceOption_selected` |
+| P1 | client | `client_chat_choiceFillButton_clicked` |
 | P1 | client | `client_chat_loadError_shown` |
 | P1 | client | `client_chat_retryButton_clicked` |
+| P1 | client | `client_chat_streamError_shown` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
 | P2 | client | `client_storyCreate_addKeyword_submitted` |
@@ -209,6 +212,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2 | client | `client_storyCreate_recommendedInfo_clicked` |
 | P2 | client | `client_storyCreate_additionalInfoAddButton_clicked` |
 | P2 | client | `client_storyCreate_additionalInfoRemoveButton_clicked` |
+| P2 | client | `client_chat_settingsButton_clicked` |
+| P2 | client | `client_chat_addBlockButton_clicked` |
+| P2 | client | `client_chat_removeBlockButton_clicked` |
+| P2 | client | `client_chat_situationInsertButton_clicked` |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -300,14 +307,25 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_chat_viewed` | P0 | 채팅 화면 진입 | `chat_id` (string, 필수) |
-| `client_chat_messageInput_submitted` | P0 | 사용자 메시지 전송 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
+| `client_chat_settingsButton_clicked` | P2 | 채팅 설정 드로어 열기(헤더 설정 버튼 클릭) | `chat_id` (string, 필수) |
+| `client_chat_inputMode_selected` | P1 | 입력 모드 전환(설정 드로어에서 블럭/일반 선택) | `chat_id` (string, 필수), `mode` (string, 필수: `block` / `plain`) |
+| `client_chat_messageInput_submitted` | P0 | 사용자 메시지 전송 | `chat_id` (string, 필수), `turn_number` (number, 필수), `input_mode` (string, 필수: `block` / `plain` / `choice`) |
+| `client_chat_addBlockButton_clicked` | P2 | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
+| `client_chat_removeBlockButton_clicked` | P2 | 블럭 입력 모드에서 입력 블럭 삭제 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
+| `client_chat_situationInsertButton_clicked` | P2 | 일반 입력 모드에서 상황 추가(강조 표기 삽입) 클릭 | `chat_id` (string, 필수) |
 | `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
 | `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수) |
 | `client_chat_choiceOption_selected` | P1 | 선택지 선택 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
+| `client_chat_choiceFillButton_clicked` | P1 | 선택지를 입력창에 넣어 수정 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
+| `client_chat_streamError_shown` | P1 | AI 응답 스트리밍 실패 에러 표시 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
 | `client_chat_loadError_shown` | P1 | 채팅 화면 로드 실패 에러 표시 | `chat_id` (string, 필수) |
 | `client_chat_retryButton_clicked` | P1 | 로드 실패 후 다시 시도 버튼 클릭 | `chat_id` (string, 필수) |
 
-`client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. AI 응답 생성 실패는 이 이벤트가 아니라 `server_chat_aiMessage_processed_failed`로 봅니다.
+채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 모드입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 모드 직접 입력), `plain`(일반 모드 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 설정 드로어에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 모드이므로 블럭 입력 UX 검증은 일반 모드로 전환하는 비율로 관찰합니다.
+
+`client_chat_choiceFillButton_clicked`는 선택지를 바로 전송하지 않고 입력창에 채워 수정할 때 발생합니다. 선택지 사용률(§6-5-4)은 그대로 전송한 `client_chat_choiceOption_selected`만으로 계산하고, 수정 후 사용 행동은 이 이벤트로 별도 관찰합니다.
+
+`client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패(연결 끊김·중단 등)해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
@@ -436,7 +454,10 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 |
 | 채팅 | N턴 이상 도달률 | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수 |
 | 채팅 | 채팅 로드 실패율 | `client_chat_loadError_shown` 수 / `client_chat_viewed` 수 |
+| 채팅 | 응답 스트리밍 실패율 | `client_chat_streamError_shown` 수 / `client_chat_messageInput_submitted` 수 |
 | 채팅 | 선택지 사용률 | `client_chat_choiceOption_selected` 수 / `client_chat_messageInput_submitted` 수 |
+| 채팅 | 선택지 수정 사용률 | `client_chat_choiceFillButton_clicked` 수 / `client_chat_messageInput_submitted` 수 |
+| 채팅 | 일반 모드 전환율 | `mode = plain` `client_chat_inputMode_selected` 사용자 수 / `client_chat_viewed` 사용자 수 |
 | 피드백 | 피드백 제출률 | `client_feedback_form_submitted` 사용자 수 / `client_feedback_viewed` 사용자 수 |
 | 피드백 | 제출 성공률 | `server_feedback_submission_processed_succeeded` 수 / `client_feedback_form_submitted` 수 |
 | 피드백 | 제출 실패율 | `server_feedback_submission_processed_failed` 수 / `client_feedback_form_submitted` 수 |
