@@ -15,7 +15,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.11 |
+| 버전 | v0.12 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-07-03 |
 | 대상 | 마냑 MVP |
@@ -175,7 +175,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0 | server | `server_storyCreate_storyGeneration_processed_succeeded` |
 | P0 | server | `server_storyCreate_storyGeneration_processed_failed` |
 | P0 | client | `client_storyCreate_storylineOption_selected` |
-| P0 | client | `client_storyCreate_selectedKeywordsButton_clicked` |
+| P0 | client | `client_storyCreate_selectedTagsButton_clicked` |
 | P0 | client | `client_storyCreate_completed` |
 | P0 | client | `client_storyDetail_viewed` |
 | P0 | client | `client_storyDetail_chatStartButton_clicked` |
@@ -189,7 +189,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_onboarding_createButton_clicked` |
 | P1 | client | `client_storyList_storyCard_clicked` |
 | P1 | client | `client_storyList_storyCard_impressed` |
-| P1 | client | `client_storyCreate_keywordCategory_selected` |
+| P1 | client | `client_storyCreate_tagCategory_selected` |
 | P1 | client | `client_storyCreate_regenerateButton_clicked` |
 | P1 | client | `client_storyCreate_storylineRating_clicked` |
 | P1 | client | `client_storyCreate_storyCompletion_requested` |
@@ -206,7 +206,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_chat_streamError_shown` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
-| P2 | client | `client_storyCreate_addKeyword_submitted` |
+| P2 | client | `client_storyCreate_addTag_submitted` |
 | P2 | client | `client_storyCreate_storylineTab_selected` |
 | P2 | client | `client_storyCreate_backToStorylineButton_clicked` |
 | P2 | client | `client_storyCreate_recommendedInfo_clicked` |
@@ -249,8 +249,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | --- | --- | --- | --- |
 | `client_storyCreate_viewed` | P0 | 제작 화면 진입 | 없음 |
 | `client_storyCreate_step_viewed` | P0 | 각 제작 단계 진입 | `step_name` (string, 필수), `step_number` (number, 필수) |
-| `client_storyCreate_keywordCategory_selected` | P1 | 키워드 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
-| `client_storyCreate_addKeyword_submitted` | P2 | 키워드 직접 추가 제출 | `category` (string, 필수) |
+| `client_storyCreate_tagCategory_selected` | P1 | 태그 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
+| `client_storyCreate_addTag_submitted` | P2 | 태그 직접 추가 제출 | `category` (string, 필수) |
 | `client_storyCreate_storyGeneration_requested` | P0 | 스토리라인 생성 요청 전송 | 없음 |
 | `server_storyCreate_storyGeneration_processed_succeeded` | P0 | 스토리라인 생성 성공 | `creation_id` (string, 필수) |
 | `server_storyCreate_storyGeneration_processed_failed` | P0 | 스토리라인 생성 실패 | `creation_id` (string, 필수), `error_type` (string, 필수) |
@@ -258,7 +258,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_storylineTab_selected` | P2 | 스토리라인 후보 탭 이동 | `creation_id` (string, 필수), `position` (number, 필수) |
 | `client_storyCreate_storylineRating_clicked` | P1 | 스토리라인 좋아요/싫어요 클릭 | `storyline_id` (string, 필수), `rating` (string, 필수: `GOOD` / `BAD`), `active` (boolean, 필수) |
 | `client_storyCreate_storylineOption_selected` | P0 | 스토리라인 선택 | `creation_id` (string, 필수), `position` (number, 선택) |
-| `client_storyCreate_selectedKeywordsButton_clicked` | P0 | 선택한 키워드 보기 버튼 클릭 | `creation_id` (string, 필수) |
+| `client_storyCreate_selectedTagsButton_clicked` | P0 | 선택한 태그 보기 버튼 클릭 | `creation_id` (string, 필수) |
 | `client_storyCreate_backToStorylineButton_clicked` | P2 | 다시 선택하기(스토리라인 선택으로 되돌아감) 클릭 | 없음 |
 | `client_storyCreate_recommendedInfo_clicked` | P2 | AI 추천 추가 정보 칩 클릭 | `selected` (boolean, 필수) |
 | `client_storyCreate_additionalInfoAddButton_clicked` | P2 | 추가 정보 입력란 추가 클릭 | 없음 |
@@ -266,15 +266,15 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_storyCompletion_requested` | P1 | 스토리 완성 요청 전송 | `creation_id` (string, 필수) |
 | `client_storyCreate_completeError_shown` | P1 | 스토리 완성 실패 에러 표시 | `stage` (string, 필수: `story` / `chat`) |
 | `client_storyCreate_exitButton_clicked` | P1 | 제작 이탈 확인(나가기) 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
-| `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genre` (string[], 선택) |
+| `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택) |
 
 `client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다. 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-`client_storyCreate_keywordCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
+`client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
-`selectedKeywordsButton_clicked`는 스토리라인 선택(`storylineSelect`) 단계 탭 우측의 키워드 보기 버튼으로 선택 키워드 드로워를 열 때 발생합니다. 드로워에 노출되는 키워드 이름은 이벤트에 넣지 않고 `creation_id`만 보냅니다.
+`selectedTagsButton_clicked`는 스토리라인 선택(`storylineSelect`) 단계 탭 우측의 키워드 보기 버튼으로 선택 키워드 드로워를 열 때 발생합니다. 드로워에 노출되는 태그 이름은 이벤트에 넣지 않고 `creation_id`만 보냅니다.
 
 제작 단계 `step_name`은 다음 값만 사용합니다.
 
@@ -405,7 +405,7 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 4 | 스토리라인 선택 | `client_storyCreate_storylineOption_selected` | `creation_id` |
 | 5 | 제작 완료 | `client_storyCreate_completed` | `creation_id` |
 
-화면 단계 이탈은 `client_storyCreate_step_viewed`의 `step_name` 순서(`keyword` -> `storylineSelect` -> `additionalInfo` -> `complete`)로 별도 관찰합니다. 키워드 단계 안의 카테고리별 이탈(장르 -> 주인공 -> 주변 인물)은 `client_storyCreate_keywordCategory_selected`의 `from_category` + `direction=forward`로 관찰합니다. 완성 실패율은 `client_storyCreate_completeError_shown`(`client_storyCreate_storyCompletion_requested` 대비), 완성 성공률은 `client_storyCreate_completed`로 봅니다.
+화면 단계 이탈은 `client_storyCreate_step_viewed`의 `step_name` 순서(`keyword` -> `storylineSelect` -> `additionalInfo` -> `complete`)로 별도 관찰합니다. 키워드 단계 안의 카테고리별 이탈(장르 -> 주인공 -> 주변 인물)은 `client_storyCreate_tagCategory_selected`의 `from_category` + `direction=forward`로 관찰합니다. 완성 실패율은 `client_storyCreate_completeError_shown`(`client_storyCreate_storyCompletion_requested` 대비), 완성 성공률은 `client_storyCreate_completed`로 봅니다.
 
 #### 6-5-3-2. 채팅 활성화 퍼널
 
@@ -505,7 +505,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | 서버 Sentry | 백엔드 예외 분석 | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패 |
 | CloudWatch | 운영 로그와 지표 | API 요청 로그, 주요 비즈니스 이벤트, latency, status |
 | AI Sentry | AI 서비스 오류 분석 | provider 오류, timeout, 파싱 실패, schema 검증 실패 |
-| `ai_call_logs` | AI 호출 이력 | 스토리라인 생성, 스토리 생성, 채팅 응답, 추천 입력 생성 |
+| `ai_call_logs` | AI 호출 이력 | 스토리라인 생성, 스토리 생성, 채팅 응답, 선택지 생성 |
 
 Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다. Sentry 이벤트 수는 제품 지표 계산에 사용하지 않습니다.
 
@@ -620,7 +620,7 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 | `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*` |
 | `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed` |
 | `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `client_chat_messageInput_submitted`, `server_chat_aiMessage_processed_*` |
-| `suggestion_generation` | 다음 입력 추천 선택지 생성 | `client_chat_choiceOption_selected` |
+| `suggestion_generation` | 선택지 생성 | `client_chat_choiceOption_selected` |
 
 AI feature는 프론트엔드 이벤트명에 넣지 않습니다. 상세 원인은 `feature`와 `error_code`로 구분합니다.
 
@@ -778,7 +778,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 이벤트 수집 | `client_storyList_viewed`, `client_storyList_createButton_clicked`가 Amplitude에서 수집됩니다. |
 | 이벤트 수집 | `client_storyCreate_viewed`, `client_storyCreate_step_viewed`, `client_storyCreate_storyGeneration_requested`가 수집됩니다. |
 | 이벤트 수집 | `server_storyCreate_storyGeneration_processed_succeeded`, `server_storyCreate_storyGeneration_processed_failed`가 수집됩니다. |
-| 이벤트 수집 | `client_storyCreate_storylineOption_selected`, `client_storyCreate_selectedKeywordsButton_clicked`, `client_storyCreate_completed`가 수집됩니다. |
+| 이벤트 수집 | `client_storyCreate_storylineOption_selected`, `client_storyCreate_selectedTagsButton_clicked`, `client_storyCreate_completed`가 수집됩니다. |
 | 이벤트 수집 | `client_storyDetail_viewed`, `client_storyDetail_chatStartButton_clicked`가 수집됩니다. |
 | 이벤트 수집 | `client_chat_viewed`, `client_chat_messageInput_submitted`가 수집됩니다. |
 | 이벤트 수집 | `server_chat_aiMessage_processed_succeeded`, `server_chat_aiMessage_processed_failed`가 수집됩니다. |
