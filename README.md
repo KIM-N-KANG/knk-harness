@@ -11,13 +11,17 @@ knk-workspace/
 ├── knk-harness/
 ├── manyak-web/
 ├── manyak-server/
-└── manyak-ai/
+├── manyak-ai/
+├── manyak-terraform/
+└── manyak-infra/
 ```
 
 - `knk-harness/`: 공통 LLM 작업 규칙과 팀 운영 지침을 담는 저장소입니다.
 - `manyak-web/`: 마냑 웹 프론트엔드 저장소입니다.
 - `manyak-server/`: 마냑 백엔드 서버 저장소입니다.
 - `manyak-ai/`: 마냑 AI 서버 저장소입니다.
+- `manyak-terraform/`: 마냑 운영 AWS Terraform 저장소입니다.
+- `manyak-infra/`: GHCR `dev` 이미지 기반 로컬·통합 Docker Compose 저장소입니다.
 
 예시:
 
@@ -29,6 +33,8 @@ git clone https://github.com/KIM-N-KANG/knk-harness.git
 git clone <manyak-web-repository-url>
 git clone <manyak-server-repository-url>
 git clone <manyak-ai-repository-url>
+git clone <manyak-terraform-repository-url>
+git clone <manyak-infra-repository-url>
 ```
 
 ## 제품 스펙 문서
@@ -43,6 +49,7 @@ git clone <manyak-ai-repository-url>
 | 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
 | 5 | `docs/product-specs/5-ai-server.md` | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 |
 | 6 | `docs/product-specs/6-analytics.md` | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 |
+| 7 | `docs/product-specs/7-deployment.md` | 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 |
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
@@ -51,6 +58,8 @@ git clone <manyak-ai-repository-url>
 | 웹 프론트엔드 | `../manyak-web` |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
+| 운영 Terraform | `../manyak-terraform` |
+| 로컬·통합 인프라 | `../manyak-infra` |
 
 ## 개발 레포지토리에 하네스 연결
 
