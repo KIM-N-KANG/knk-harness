@@ -352,7 +352,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
-`Phase 1 · 계획` — AI 응답 재생성([`4-backend.md §4-3-9`](./4-backend.md))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
+`Phase 1 · 계획` — AI 응답 재생성([`4-backend.md §4-3-9`](./4-backend.md))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답·SSE `completed`의 `imageKey` 필드([`4-backend.md §4-3-9`](./4-backend.md))에서 채우며, 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
 
 #### 6-4-2-7. 피드백
 

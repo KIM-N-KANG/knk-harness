@@ -272,7 +272,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 **`POST /chats/batch`** — 요청 `{chatIds: string[]}`(1~100개). 최근 활동순으로 정렬해 반환하며, 프론트엔드는 이 순서를 유지합니다([`3-frontend.md §3-7`](./3-frontend.md)). 응답 항목(`ChatSummaryResponse`): `{id, storyId, storyTitle, lastStoryPreview, turnCount, updatedAt}`. `turnCount`는 완료된 턴 수입니다.
 
-**`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. 턴 항목은 `{id, userInput, aiOutput, choices: string[], createdAt}`입니다. `Phase 1 · 계획` — 턴 항목에 `imageUrl`(string·null, 채팅 이미지 서빙 URL)을 추가합니다([§4-3-9](#4-3-api-계약)).
+**`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. 턴 항목은 `{id, userInput, aiOutput, choices: string[], createdAt}`입니다. `Phase 1 · 계획` — 턴 항목에 `imageUrl`(string·null, 채팅 이미지 서빙 URL)과 `imageKey`(string·null, 분석 이벤트용 자산 키)를 추가합니다([§4-3-9](#4-3-api-계약)).
 
 **`DELETE /chats/{chatId}`** — 소프트 삭제 후 204, 없으면 404. 처리 규칙은 스토리 삭제와 같습니다.
 
@@ -286,7 +286,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | --- | --- | --- |
 | `started` | `{chatId}` | 스트리밍 시작 |
 | `token` | `{text}` | AI 토큰 청크. AI 서버 스트림을 1:1 중계 |
-| `completed` | `{chatId, turnId, aiOutput, choices[]}` | 턴 저장 완료. `aiOutput`은 서버 확정본 전문. `Phase 1 · 계획` — `imageUrl`(string·null) 추가([§4-3-9](#4-3-api-계약)) |
+| `completed` | `{chatId, turnId, aiOutput, choices[]}` | 턴 저장 완료. `aiOutput`은 서버 확정본 전문. `Phase 1 · 계획` — `imageUrl`·`imageKey`(각 string·null) 추가([§4-3-9](#4-3-api-계약)) |
 | `error` | `{code, message}` | 실패. `completed`를 대체 |
 
 - 서버는 `completed` 전에 사용자 입력과 AI 출력을 한 턴으로 저장합니다. 저장이 확정한 턴 번호를 `ai_call_logs`에도 반영합니다([§4-7](#4-7-운영과-관측)).
@@ -466,7 +466,8 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 - 크레딧·체험 한도: 채팅 턴과 동일합니다([§4-3-7](#4-3-api-계약)) — 회원은 1턴분 선차감, 게스트는 기기 카운터 1턴 집계, 잔액 부족·한도 소진은 동기 402. 재생성 횟수 제한은 따로 두지 않습니다(소모가 반복을 제어).
 - AI 호출: AI 서버 `POST /chat/turns`를 일반 턴과 같은 계약으로 재호출합니다. History는 **마지막 턴의 USER·ASSISTANT 메시지 쌍을 모두 제외**하고(1..N-1턴) 구성하고, `user_input`은 마지막 턴의 사용자 입력을 그대로 다시 보냅니다 — 일반 턴에서 이번 턴 입력이 History가 아니라 `user_input`으로만 가는 것과 동일한 형태입니다. AI 서버는 재생성 여부를 구분하지 않습니다(무상태 — [`5-ai-server.md §5-3-4`](./5-ai-server.md)).
 - 저장: `completed` 전에 마지막 턴의 AI 출력·선택지를 새 값으로 **교체**합니다. 교체 트랜잭션에서 해당 턴이 여전히 마지막 턴인지 재확인하고, 아니면(스트림 중 새 턴 추가·동시 재생성 경합) 결과를 폐기하고 `error` 이벤트로 종료합니다 — 환불은 실패 규칙을 따릅니다. 이전 본문·선택지는 보관하지 않습니다(버전 이력 없음 — Phase 1). `turn_number`·사용자 입력은 변하지 않습니다. 채팅 이미지 매칭(아래)은 새 본문 기준으로 다시 수행합니다.
-- 실패: `completed` 이벤트 없이 종료되면(`error`·연결 끊김 포함) 기존 본문·선택지를 유지하고 크레딧을 전액 환불합니다. 교체는 성공 시점에만 일어납니다.
+- 실패: 서버가 `completed` 이벤트를 **발행하지 못하고** 종료되면(`error`·AI 실패·저장 전 연결 끊김) 기존 본문·선택지를 유지하고 크레딧을 전액 환불합니다. 교체는 성공 시점에만 일어납니다.
+- 전달 실패: `completed` 발행 후 전달 구간의 연결 끊김은 서버가 감지할 수 없습니다. 이 경우 서버 관점은 성공이므로 교체·크레딧 소모를 유지하고, 클라이언트는 `completed`·`error` 없는 종료(EOF)를 결과 불명으로 보고 상세 refetch로 서버 확정 상태에 수렴합니다([`3-frontend.md §3-6`](./3-frontend.md)).
 - 소유권: 턴 진행과 동일한 규칙입니다([§4-5](#4-5-인증과-권한)).
 
 #### `GET /images/presets` — 프리셋 이미지 카탈로그
@@ -492,7 +493,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 1. 턴 저장 시(AI 출력 확정 후) 스토리 이미지 각각의 `trigger_text`가 `aiOutput`에 부분 문자열로 포함되는지 검사합니다(양끝 공백 정규화 후 비교). 정규화 후 `trigger_text`가 빈 이미지는 매칭 대상에서 제외합니다(빈 문자열은 모든 본문과 매칭되므로 — 썸네일 전용 이미지가 여기에 해당).
 2. 매칭이 여러 개면 `sort_order`가 가장 작은 1개만 연결합니다(**턴당 최대 1장**).
 3. 직전 ASSISTANT 메시지에 연결된 이미지와 같으면 건너뛰고 다음 매칭 이미지를 연결합니다(연속 중복 노출 방지). 다른 매칭이 없으면 연결하지 않습니다.
-4. 연결 결과는 ASSISTANT 메시지의 `image_key`로 저장하고, 채팅 상세의 턴 항목과 SSE `completed`에 `imageUrl`(string·null)로 싣습니다.
+4. 연결 결과는 ASSISTANT 메시지의 `image_key`로 저장하고, 채팅 상세의 턴 항목과 SSE `completed`에 `imageUrl`(서빙 URL)과 `imageKey`(자산 키 — 분석 이벤트 `image_key` 프로퍼티의 소스, [`6-analytics.md §6-4-2-6`](./6-analytics.md))를 각각 string·null로 싣습니다. URL은 CDN 도메인·서빙 경로 변경에 따라 값이 바뀔 수 있어, 분석 키로는 안정적인 자산 키를 씁니다.
 
 - 스토리 이미지가 없는 스토리(간편 제작 기본)는 채팅 이미지가 표시되지 않습니다. 프리셋을 임의로 삽입하지 않습니다 — 장면과 무관한 이미지는 몰입을 해칩니다.
 - 이미 저장된 턴의 `image_key`는 이후 스토리 수정으로 이미지가 삭제·변경되어도 유지합니다(지난 턴 불변 — [§4-3-8](#4-3-api-계약)의 수정 규칙과 동일).
@@ -797,7 +798,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - `Phase 1` 크레딧: 동시 턴 요청 2건이 잔액 1턴분만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
 - `Phase 1` 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 크레딧이 소모되지 않아야 합니다. 주요 사건·엔딩의 런타임 반영은 KNK-444 전까지 검수하지 않습니다(이미지는 [§4-3-9](#4-3-api-계약) 기준으로 검수). 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다.
 - `Phase 1` 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
-- `Phase 1` 재생성: 마지막 턴 재생성이 성공하면 같은 턴의 `aiOutput`·선택지가 새 값으로 교체되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. `completed` 없이 종료되면 기존 본문이 유지되고 크레딧이 환불돼야 합니다.
+- `Phase 1` 재생성: 마지막 턴 재생성이 성공하면 같은 턴의 `aiOutput`·선택지가 새 값으로 교체되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 본문이 유지되고 크레딧이 환불돼야 하며, 발행 후 전달 실패는 교체·소모가 유지돼야 합니다.
 - `Phase 1` 썸네일: `thumbnailImageKey` 없이 등록한 스토리에 첫 번째 장르와 일치하는 프리셋이 자동 연결되고, 배치 조회 응답에 `thumbnailUrl`이 실려야 합니다. 규칙 도입 전 스토리는 `thumbnailUrl`이 null이어야 합니다.
 - `Phase 1` 채팅 이미지: `trigger_text`가 AI 출력에 포함된 턴에만 `imageUrl`이 실려야 하고, 같은 이미지가 연속 턴에 반복 연결되지 않아야 합니다. 스토리 이미지가 없는 스토리의 턴은 `imageUrl`이 null이어야 합니다.
 
