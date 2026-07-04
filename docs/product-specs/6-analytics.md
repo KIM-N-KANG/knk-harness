@@ -15,7 +15,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.15 |
+| 버전 | v0.16 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 MVP |
@@ -206,6 +206,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_storyCreate_tagCategory_selected` |
 | P1 | client | `client_storyCreate_regenerateButton_clicked` |
 | P1 | client | `client_storyCreate_storylineRating_clicked` |
+| P1 `Phase 1 · 계획` | client | `client_storyCreate_methodOption_selected` |
+| P1 `Phase 1 · 계획` | client | `client_generalCreate_viewed` |
+| P1 `Phase 1 · 계획` | client | `client_generalCreate_completed` |
+| P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed` |
+| P1 `Phase 1 · 계획` | client | `client_storyEdit_completed` |
 | P1 | client | `client_storyCreate_storyCompletion_requested` |
 | P1 | client | `client_storyCreate_completeError_shown` |
 | P1 | client | `client_storyCreate_exitButton_clicked` |
@@ -390,6 +395,20 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 계정 시트, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
+
+#### 6-4-2-10. 일반 제작·스토리 수정 — `Phase 1 · 계획`
+
+일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 처리가 없는 동기 CRUD라 서버 이벤트 없이 클라이언트 계측으로 충분합니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyCreate_methodOption_selected` | P1 | 제작 방식 선택(간편/일반) | `method` (string, 필수: `simple` / `general`) |
+| `client_generalCreate_viewed` | P1 | 일반 제작 폼 진입 | 없음 |
+| `client_generalCreate_completed` | P1 | 일반 제작 등록 성공 | `story_id` (string, 필수), `main_event_count` · `ending_count` · `image_count` (number, 필수) |
+| `client_storyEdit_viewed` | P1 | 수정 화면 진입 | `story_id` (string, 필수) |
+| `client_storyEdit_completed` | P1 | 수정 저장 성공 | `story_id` (string, 필수) |
+
+- 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
 
 ### 6-4-3. impression 수집 기준
 
@@ -850,6 +869,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
 | 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_creditShortage_shown`·`client_chat_creditShortage_shown`·`client_storyCreate_trialLimit_shown`·`client_chat_trialLimit_shown`이 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 
 ### 6-8-4. 계층별 검수 기준
 
