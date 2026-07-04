@@ -17,7 +17,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.5 |
+| 버전 | v0.6 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 백엔드 서버 |
@@ -73,7 +73,7 @@
 | --- | --- | --- |
 | `MVP` | Phase 0 범위. 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
 | `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API([§4-5](#4-5-인증과-권한)), 로어북·엔딩([§4-3-6](#4-3-api-계약)) |
-| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 계정 — 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약))·가입 프로필 발급([§4-5](#4-5-인증과-권한)). 크레딧([§4-3-7](#4-3-api-계약)). 엔딩 스키마 재정의 · 주요 사건([§4-8](#4-8-검수-체크리스트) B5). 일반 제작 · 스토리 수정 · 재생성 · 이미지는 후속 반영에서 추가 |
+| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 계정 — 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약))·가입 프로필 발급([§4-5](#4-5-인증과-권한)). 크레딧([§4-3-7](#4-3-api-계약)). 일반 제작·스토리 수정·이미지 업로드([§4-3-8](#4-3-api-계약)). 엔딩 스키마 재정의 · 주요 사건([§4-8](#4-8-검수-체크리스트) B5). 재생성 · 이미지 표시는 후속 반영에서 추가 |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | 서버 분석 이벤트([§4-7](#4-7-운영과-관측)), AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ## 4-2. 기술 환경과 아키텍처
@@ -162,6 +162,10 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 스토리 | `GET /stories/{storyId}` | 스토리 상세 조회 | 200 | 404 | 불필요 | MVP |
 | 스토리 | `DELETE /stories/{storyId}` | 스토리 소프트 삭제 | 204 | 404 | 불필요 | MVP |
 | 스토리 | `GET /stories/lorebooks` | 로어북 카탈로그 조회(`?genre` 필터) | 200 | — | 불필요 | Phase 1 · 구현 |
+| 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 | Phase 1 · 계획 |
+| 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 | Phase 1 · 계획 |
+| 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 | Phase 1 · 계획 |
+| 스토리 | `POST /uploads/images` | 스토리 이미지 업로드 URL 발급 | 201 | 400·401 | 필수 | Phase 1 · 계획 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | — | 불필요 | MVP |
 | 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·502 | 선택 | MVP |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·402·404·409·502 | 선택 | MVP |
@@ -394,7 +398,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 #### 게스트 체험 한도
 
-- 기준: **스토리 제작 횟수 + 채팅 턴 수**(기기 단위, 수치 `계획`). 소모 트리거와 1:1 대응합니다.
+- 기준: **스토리 간편 제작(컴파일) 횟수 + 채팅 턴 수**(기기 단위, 수치 `계획`). AI 비용이 발생하는 소모 트리거와 1:1 대응하며, 일반 제작 등록은 제외합니다.
 - 판정: 소모 대상 엔드포인트에서 게스트 요청은 `X-Manyak-Device-Id` 기준 카운터(Redis)로 집계하고, 한도 소진 시 `402`를 반환합니다. 게스트의 소모 대상 요청은 device 헤더를 필수로 강화합니다(현행 best-effort에서 변경 — [§4-8](#4-8-검수-체크리스트) B8).
 - 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. Phase 1은 이 수준을 수용하고 남용 징후는 관측으로 추적합니다(B8).
 
@@ -405,6 +409,47 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 - 보상 적립은 결정적 멱등 키로 중복을 차단합니다: `signup:{userId}` · `attendance:{userId}:{KST날짜}` · `invite:{초대자userId}:{피초대자userId}`. 키는 원장 유니크 제약입니다.
 - `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN`(소모 — 재생성 포함), `REFUND`(환불), `PURCHASE`(Phase 3 예약).
 - 소모 행은 `ref_type`·`ref_id`로 연관 리소스(story·chat·`ai_call_logs`)를 참조합니다. 선차감 후 서버 중단으로 환불 행이 누락되면 `ai_call_logs` 대사(배치)로 복구합니다.
+
+### 4-3-8. 일반 제작과 스토리 수정 — `Phase 1 · 계획`
+
+일반 제작은 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식입니다([`0-glossary.md §0-3-2`](./0-glossary.md)). **일반 제작 등록 자체는 AI를 호출하지 않습니다** — 컴파일은 희소 입력을 설정으로 확장하는 기능인데 일반 제작 입력은 이미 확장된 형태이므로 검증 후 그대로 저장합니다. 따라서 일반 제작 등록은 크레딧 소모·게스트 체험 한도 카운트가 없습니다(둘 다 AI 비용 근거). 이 예외는 "AI 비용이 발생하는 스토리 간편 제작·채팅 턴만 소모한다"는 Phase 1 정책입니다.
+
+일반 제작이 저장한 주요 사건·엔딩·이미지가 채팅 턴, 선택지, 엔딩 판정, 이미지 표시로 실제 반영되는 계약은 각각 KNK-444·이미지 출력 스펙이 소유합니다. 이 절은 **편집 폼의 저장·왕복 계약**만 정의하고, KNK-444가 확정할 런타임 스키마·도달 메타를 선확정하지 않습니다.
+
+#### `POST /stories/general` — 일반 제작 등록
+
+인증 선택(간편 제작과 동일 — 유효 토큰이면 `user_id` 귀속). 임시 저장 없이 등록만 지원하며, 작성 중 유실 방지는 프론트엔드 로컬 자동 보관이 담당합니다([`3-frontend.md`](./3-frontend.md)).
+
+| 요청 필드 | 제약 | 설명 |
+| --- | --- | --- |
+| `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
+| `genres` | 1개 이상 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장 — 현행 방식) |
+| `storySettings` | 4필드 모두 필수 | 통글 마크다운: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 섹션 단위 폼 입력을 통글로 조립하는 것은 프론트엔드 소유 |
+| `startSetting` | 3필드 모두 필수 | `name`(100자) · `prologue` · `startSituation` |
+| `suggestedInputs` | 정확히 3개 | 추천 입력(채팅 시작 화면 계약과 동일 개수) |
+| `mainEvents` | 최대 10개, 선택 | 주요 사건 저장 초안 `{name, description, keySentence}`. 채팅 런타임 의미와 판정 입력은 KNK-444에서 확정 |
+| `endings` | 0개 또는 정확히 3개 | 엔딩 저장 초안 `{endingType(HAPPY·NORMAL·BAD 각 1), requirement{minTurns, goal, mainEventNames[]}, epilogue}`. KNK-444 확정 전까지 편집 폼 왕복용 구조이며 도달 판정 계약이 아님 |
+| `images` | 최대 10개, 선택 | 스토리 이미지 `{name, triggerText, imageKey}`. `imageKey`는 업로드 결과 키 또는 팀 프리셋 키 |
+| `thumbnailImageKey` | 선택 | 썸네일로 쓸 이미지 키. 미지정 시 프리셋 자동 연결 여부와 규칙은 이미지 출력 스펙에서 확정 |
+
+- 응답 201: 간편 제작과 동일한 `{id, title, oneLineIntro, description, genres, startSetting}`. 생성 직후 상세 조회와 채팅 시작의 **기본 메타·스토리 설정·시작 설정**은 제작 방식과 무관하게 동작해야 합니다. 주요 사건·엔딩·이미지의 런타임 반영은 KNK-444·이미지 출력 스펙 전까지 검수 대상이 아닙니다.
+- 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩·이미지 필드는 저장·편집 왕복만 보장합니다.
+
+#### `POST /uploads/images` — 이미지 업로드
+
+**회원 전용**(401)입니다 — 익명 업로드는 스토리지 남용 위험이 커서 게스트는 프리셋 키만 쓸 수 있습니다. presigned URL 방식: 요청 `{contentType, byteSize(≤5MB)}` → 응답 `{imageKey, uploadUrl}` → 클라이언트가 `uploadUrl`로 직접 업로드합니다. 저장소(S3)·서빙 경로는 [`7-deployment.md`](./7-deployment.md) 반영 대상이며 이미지 출력 스펙에서 확정합니다.
+
+#### 스토리 수정
+
+**`GET /stories/{storyId}/edit`** — 수정 폼을 채우기 위한 전용 조회입니다. 스토리 상세(`GET /stories/{storyId}`)는 사용자 표시용이라 통글 4필드와 편집 초안 필드를 모두 반환하지 않습니다.
+
+응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSetting`, `suggestedInputs`, `mainEvents`, `endings`, `images`, `thumbnailImageKey`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 편집 초안 구조로 노출하지 않습니다. 레거시 엔딩 → 새 엔딩 초안 변환은 KNK-444 마이그레이션에서 정의하며, 그 전까지 기존 간편 제작 스토리는 `endings`가 빈 배열일 수 있습니다.
+
+**`PATCH /stories/{storyId}`** — 부분 갱신입니다. 보낸 필드만 교체하고 나머지는 유지합니다. 수정 가능 필드는 일반 제작 요청과 동일 전체이며, **간편 제작으로 만든 스토리도 같은 계약으로 수정**할 수 있습니다(제작 방식 무관 — US-4-5의 "아쉬운 설정 고치기"가 주 사용처).
+
+- 소유권: [§4-5](#4-5-인증과-권한) 규칙을 따릅니다. 회원 소유 스토리는 소유자만 수정할 수 있습니다. `user_id`가 NULL인 게스트 스토리는 서버가 소유자를 검증할 수 없으므로 `GET /stories/{storyId}/edit`와 `PATCH` 모두 익명 허용 상태를 유지하지만, 프론트엔드는 로컬 서재에 해당 `storyId`가 있을 때만 수정 진입점을 표시합니다.
+- 진행 중 채팅 반영: 백엔드는 채팅 턴을 만들 때 최신 스토리 설정을 다시 읽어 AI 서버에 전달합니다. 따라서 **같은 스토리 설정을 참조하는 채팅**은 다음 턴부터 새 설정을 사용합니다. 이미 저장된 지난 턴은 다시 쓰지 않습니다. 공개 스토리를 타인이 플레이하는 경우의 스냅샷/공유 정책은 Phase 2 스토리 피드에서 별도 정의합니다.
+- 응답 200: `GET /stories/{storyId}/edit`과 동일한 편집 폼 스키마. 검증 규칙은 일반 제작과 동일(400), 없는 스토리는 404, 권한 위반은 403입니다.
 
 ## 4-4. 데이터 모델
 
@@ -447,6 +492,8 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 크레딧 | `credit_wallets` | `Phase 1 · 계획` 사용자별 지갑. `user_id`(unique FK) · `balance`(원장 합계 캐시) |
 | 크레딧 | `credit_transactions` | `Phase 1 · 계획` 불변 원장. `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
 | 크레딧 | `users.invite_code` | `Phase 1 · 계획` 사용자당 고유 초대 코드(unique, nullable 컬럼 추가) |
+| 스토리 | `story_main_events` | `Phase 1 · 계획` 주요 사건 저장 초안(스토리당 최대 10). `name` · `description` · `key_sentence` · `sort_order` — 런타임 의미와 판정 계약은 KNK-444에서 확정 |
+| 스토리 | `story_images` | `Phase 1 · 계획` 스토리 이미지(스토리당 최대 10). `name` · `trigger_text` · `image_key` · `sort_order`, 썸네일 지정은 `stories.thumbnail_image_key` 컬럼 추가 |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](#4-7-운영과-관측)) |
 
 ### 잔존 표기
@@ -504,10 +551,10 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 | 대상 | 규칙 |
 | --- | --- |
-| `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` · `POST /chats/{chatId}/turns/stream` · `PATCH /stories/{storyId}`(수정, KNK-442) | 리소스의 `user_id`가 NULL이면 익명 허용(현행 유지). NULL이 아니면 요청자 `user_id`와 일치할 때만 허용하고, 불일치·미인증이면 `403`을 반환 |
+| `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` · `POST /chats/{chatId}/turns/stream` · `GET /stories/{storyId}/edit` · `PATCH /stories/{storyId}`(수정, KNK-442) | 리소스의 `user_id`가 NULL이면 익명 허용(현행 유지). NULL이 아니면 요청자 `user_id`와 일치할 때만 허용하고, 불일치·미인증이면 `403`을 반환 |
 | 조회(`GET /stories/{storyId}` 등) | 공개 리소스이므로 소유권 검증 없이 유지 |
 
-`user_id`가 NULL인 리소스는 여전히 UUID를 아는 누구나 클레임·변경할 수 있습니다(게스트 공유 전제). 이관 완료 후에는 소유자가 생기므로 타인이 변경할 수 없습니다.
+`user_id`가 NULL인 리소스는 서버 관점에서 소유자 검증이 불가능합니다. 따라서 UUID를 아는 요청을 막지 못하며, 프론트엔드는 로컬 서재 ID 보유 여부로 수정·삭제 진입점을 제한합니다. 이관 완료 후에는 소유자가 생기므로 타인이 변경할 수 없습니다.
 
 ### 토큰 세션과 재발급 — `Phase 1 · 계획`
 
@@ -664,6 +711,8 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-3-1 ~ 3-4 | 키워드 선택 | `GET /stories/simple/tags`, `POST /stories/simple/storylines` |
 | US-3-5 ~ 3-8 | 스토리라인 선택·평가 | `POST /stories/simple/storylines`, `PUT·DELETE …/rating` |
 | US-3-9 ~ 3-13 | 추가 정보·완성 | `POST /stories/simple`, `POST /chats` |
+| US-3-15 · 3-16 | 일반 제작 `Phase 1 · 계획` | `POST /stories/general`, `POST /uploads/images` |
+| US-4-5 | 스토리 수정 `Phase 1 · 계획` | `GET /stories/{storyId}/edit`, `PATCH /stories/{storyId}` |
 | US-4-1 ~ 4-4 | 스토리 상세·채팅 시작·삭제 | `GET·DELETE /stories/{storyId}`, `POST /chats` |
 | US-5-1 ~ 5-3 | 채팅 목록·재개·삭제 | `POST /chats/batch`, `GET·DELETE /chats/{chatId}` |
 | US-6-1 ~ 6-8 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
@@ -695,6 +744,8 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - `Phase 1` 크레딧: 출석 적립은 같은 KST 날짜에 2회 요청 시 두 번째가 `rewarded: false`(잔액 불변)여야 합니다. 초대 적립은 같은 (초대자, 피초대자) 쌍으로 1회만 발생해야 합니다.
 - `Phase 1` 크레딧: 잔액 부족 회원·한도 소진 게스트의 컴파일·턴 요청에 402를 반환하고 AI 호출이 시작되지 않아야 합니다. 선차감 후 AI 실패 시 원장에 `REFUND` 행이 추가되고 잔액이 복원돼야 합니다.
 - `Phase 1` 크레딧: 동시 턴 요청 2건이 잔액 1턴분만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
+- `Phase 1` 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 크레딧이 소모되지 않아야 합니다. 주요 사건·엔딩·이미지의 런타임 반영은 KNK-444·이미지 출력 스펙 전까지 검수하지 않습니다. 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다.
+- `Phase 1` 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
 
 ### 스펙-구현 간극과 계획
 
