@@ -25,6 +25,7 @@
 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 확인 | `docs/product-specs/5-ai-server.md` |
 | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 확인 | `docs/product-specs/6-analytics.md` |
 | 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 확인 | `docs/product-specs/7-deployment.md` |
+| Phase별 개발 로드맵, 마일스톤, 스프린트 일정, 백로그 확인 | `docs/planning/roadmap.md` |
 
 ## Working Principle
 

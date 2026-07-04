@@ -61,6 +61,14 @@ git clone <manyak-infra-repository-url>
 | 운영 Terraform | `../manyak-terraform` |
 | 로컬·통합 인프라 | `../manyak-infra` |
 
+## 계획 문서
+
+계획 문서는 `docs/planning/` 아래에 둡니다. 스펙(무엇을 어떻게 만들지)과 달리 개발 순서·기간·우선순위를 다룹니다.
+
+| 문서 | 역할 |
+| --- | --- |
+| `docs/planning/roadmap.md` | Phase별 개발 목표, 스프린트 일정, 작업 범위, 백로그 |
+
 ## 개발 레포지토리에 하네스 연결
 
 현재 워크트리에서 하네스의 공통 진입점은 `CLAUDE.md`입니다. 각 개발 레포지토리 루트에는 도구별 지침 파일을 두고, 작업을 시작하기 전에 `../knk-harness/CLAUDE.md`를 먼저 읽게 만듭니다.
