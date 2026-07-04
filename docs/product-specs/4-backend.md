@@ -17,7 +17,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.3 |
+| 버전 | v0.4 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 백엔드 서버 |
@@ -73,7 +73,7 @@
 | --- | --- | --- |
 | `MVP` | Phase 0 범위. 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
 | `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API([§4-5](#4-5-인증과-권한)), 로어북·엔딩([§4-3-6](#4-3-api-계약)) |
-| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 엔딩 스키마 재정의 · 주요 사건([§4-8](#4-8-검수-체크리스트) B5·B6). 계정 마이그레이션 · 크레딧 · 일반 제작 · 스토리 수정 · 재생성 · 이미지는 Phase 1 스펙 반영에서 추가 |
+| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 계정 — 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약))·가입 프로필 발급([§4-5](#4-5-인증과-권한)). 엔딩 스키마 재정의 · 주요 사건([§4-8](#4-8-검수-체크리스트) B5~B7). 크레딧 · 일반 제작 · 스토리 수정 · 재생성 · 이미지는 후속 반영에서 추가 |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | 서버 분석 이벤트([§4-7](#4-7-운영과-관측)), AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ## 4-2. 기술 환경과 아키텍처
@@ -177,6 +177,9 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 인증 | `GET /auth/me` | 현재 사용자 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 인증 | `POST /auth/token/refresh` | 토큰 재발급(회전) | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 · 구현 |
+| 인증 | `POST /auth/migrate` | 게스트 데이터 소유권 이관(항목별 부분 성공) | 200 | 400·401 | 필수 | Phase 1 · 계획 |
+| 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 계획 |
+| 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 계획 |
 
 인증 열의 `선택`은 익명을 허용하되 유효한 access 토큰이 오면 `user_id`를 귀속하는 엔드포인트입니다([§4-5](#4-5-인증과-권한)).
 
@@ -307,7 +310,46 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
 
-`TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer"}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다.
+`TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer"}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다. 웹에서는 이 응답을 BFF가 가로채 httpOnly 쿠키로 보관하고 `refreshToken`을 JS에 노출하지 않습니다(토큰 세션은 [§4-5](#4-5-인증과-권한) 참조).
+
+#### 게스트 데이터 마이그레이션 — `Phase 1 · 계획`
+
+게스트가 기기에 쌓은 스토리·채팅의 소유권을 로그인 계정으로 이관합니다. 서버에는 게스트 식별 수단이 없으므로(콘텐츠 행에 device_id를 저장하지 않음) 클라이언트가 `localStorage`에 보관한 공개 ID 목록을 제출하는 방식입니다. 프론트엔드는 로그인 성공 직후 사용자 확인 없이 자동 호출합니다([`3-frontend.md`](./3-frontend.md) FE-SCREEN-008).
+
+**`POST /auth/migrate`** — 인증 필수.
+
+| 요청 필드 | 타입 | 규칙 |
+| --- | --- | --- |
+| `storyIds` | string[] | 스토리 공개 ID(UUID). 최대 100개(로컬 상한과 동일), 빈 배열 허용 |
+| `chatIds` | string[] | 채팅 공개 ID(UUID). 최대 100개, 빈 배열 허용 |
+
+동작 규칙:
+
+- `user_id`가 NULL인 행에 요청자의 `user_id`를 설정합니다(클레임). 채팅은 참조하는 스토리의 소유자와 무관하게 독립적으로 이관합니다.
+- **항목별 독립 처리·부분 성공.** 일부 항목이 충돌해도 전체를 롤백하지 않습니다.
+- **효과 멱등.** 재호출해도 소유권 상태가 변하지 않아 별도 멱등 키가 없습니다. 다만 응답 `status`는 상태를 반영해 달라집니다 — 1회차 `MIGRATED`가 2회차에는 `ALREADY_OWNED`가 됩니다(효과는 동일, 응답은 현재 상태 기준).
+
+응답 200: `{stories: MigrationResult[], chats: MigrationResult[]}` — `MigrationResult`는 `{id, status}`이며 `status`는 다음 4종입니다.
+
+| `status` | 의미 |
+| --- | --- |
+| `MIGRATED` | 이번 요청으로 소유권이 설정됨 |
+| `ALREADY_OWNED` | 이미 요청자 소유(재호출 등) |
+| `CONFLICT` | 다른 회원 소유 — 이관하지 않음 |
+| `NOT_FOUND` | 존재하지 않거나 삭제됨 |
+
+오류: 400(UUID 형식 오류·배열 100개 초과), 401(미인증). 부분 실패는 오류가 아니라 `status`로 표현합니다.
+
+#### 내 콘텐츠 목록 — `Phase 1 · 계획`
+
+다른 기기에서 로그인해도 같은 서재를 보려면(US-9-4) 회원의 서재는 서버가 정본이어야 합니다. 회원 모드에서 `localStorage` 배치 조회(MVP 방식)를 대체합니다.
+
+| 엔드포인트 | 응답 | 정렬 |
+| --- | --- | --- |
+| `GET /users/me/stories` | 스토리 카드 배열 — `POST /stories/batch` 응답과 동일 스키마 | 생성 최신순 |
+| `GET /users/me/chats` | 채팅 카드 배열 — `POST /chats/batch` 응답과 동일 스키마 | 최근 활동순 |
+
+쿼리 `limit`(기본 100, 최대 100). Phase 1은 페이지네이션 없이 상한 100을 유지하고, 초과분 처리는 Phase 2 스토리 피드 설계와 함께 확장합니다. 소프트 삭제된 항목은 제외합니다.
 
 ### 4-3-6. 로어북 — `Phase 1 · 구현`
 
@@ -332,9 +374,9 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
-| 사용자 | `users` | 계정. `public_id`(UUID), `nickname`, `status` |
+| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기용 저해상도) · `status` |
 | 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크 |
-| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `deleted_at` |
+| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at` |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정: `name` · `prologue` · `start_situation`(1:1) |
 | 스토리 | `story_suggested_inputs` | 추천 입력(시작 설정별 목록) |
@@ -344,7 +386,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 간편 제작 | `story_creation_storylines` | AI 생성 스토리라인 후보 |
 | 간편 제작 | `story_creation_storyline_recommended_infos` | 스토리라인별 추천 추가 정보 |
 | 간편 제작 | `story_creation_storyline_ratings` | 스토리라인 평가(GOOD·BAD, 사용자당 1건) |
-| 채팅 | `story_chats` | 채팅. `public_id`(UUID), 진행 턴 수, `deleted_at` |
+| 채팅 | `story_chats` | 채팅. `public_id`(UUID), 진행 턴 수, `user_id`(소유자, nullable), `deleted_at` |
 | 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM` |
 | 채팅 | `story_choices` | 메시지별 선택지(3개, 선택 여부 기록) |
 | 로어북 | `lorebooks` | `Phase 1 · 구현` 장르 공용 용어 사전 |
@@ -372,6 +414,20 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 3. `(provider, provider_user_id)`로 사용자를 찾거나 새로 만듭니다(find-or-create).
 4. access·refresh 토큰을 발급합니다.
 
+### 가입 프로필 발급 — `Phase 1 · 계획`
+
+현행 구현은 닉네임을 Google `name` → 이메일 local-part → "사용자" 순서로 정하고, 프로필 이미지는 Google `picture` URL을 그대로 저장합니다. Phase 1부터 실명·외부 사진 노출을 피하기 위해 랜덤 발급으로 교체합니다([§4-8](#4-8-검수-체크리스트) B7).
+
+| 항목 | 규칙 |
+| --- | --- |
+| 닉네임 | 한국어 형용사+명사 조합 랜덤 생성(예: "용감한 문어"). 50자 이내, 중복 허용(식별은 `public_id`) |
+| 프로필 이미지 | 팀이 사전 제작한 프리셋 이미지 중 랜덤 배정. `profile_image_url`에 자산 URL, `profile_thumbnail_base64`에 저해상도 썸네일을 저장 |
+| Google 클레임 | `name`·`picture`를 프로필에 사용하지 않음. `email`은 `social_accounts`에만 저장 |
+
+현행 구현으로 이미 Google `name`·`picture`가 저장된 기존 회원은 백필(재발급) 여부를 KNK-440 구현 시 결정합니다(신규 가입분은 랜덤 발급 우선 적용).
+
+닉네임·프로필 이미지 변경 기능은 Phase 1 범위 밖입니다(백로그).
+
 ### 토큰 정책
 
 | 항목 | 값 |
@@ -386,7 +442,24 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 - 스토리·간편 제작·채팅·피드백 엔드포인트는 모두 익명을 허용합니다.
 - `Authorization: Bearer` 토큰이 유효하면 해당 요청의 생성 리소스에 `user_id`를 귀속합니다. 토큰이 없거나 무효(만료·위조)면 401을 반환하지 않고 익명으로 통과시킵니다.
-- 인증을 강제하는 엔드포인트는 `GET /auth/me`뿐입니다. 토큰 없음·만료·위조·사용자 삭제 모두 401입니다.
+- 인증을 강제하는 엔드포인트: `GET /auth/me`(MVP). Phase 1 추가분 `POST /auth/migrate` · `GET /users/me/stories` · `GET /users/me/chats`(`Phase 1 · 계획`). 토큰 없음·만료·위조·사용자 삭제 모두 401입니다.
+
+### 소유권과 권한 — `Phase 1 · 계획`
+
+`user_id` 소유 개념이 도입되면 소유자가 있는 리소스는 소유자만 변경할 수 있습니다. 선택적 인증에서 `user_id`를 확인해 다음을 적용합니다.
+
+| 대상 | 규칙 |
+| --- | --- |
+| `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` · `POST /chats/{chatId}/turns/stream` · `PATCH /stories/{storyId}`(수정, KNK-442) | 리소스의 `user_id`가 NULL이면 익명 허용(현행 유지). NULL이 아니면 요청자 `user_id`와 일치할 때만 허용하고, 불일치·미인증이면 `403`을 반환 |
+| 조회(`GET /stories/{storyId}` 등) | 공개 리소스이므로 소유권 검증 없이 유지 |
+
+`user_id`가 NULL인 리소스는 여전히 UUID를 아는 누구나 클레임·변경할 수 있습니다(게스트 공유 전제). 이관 완료 후에는 소유자가 생기므로 타인이 변경할 수 없습니다.
+
+### 토큰 세션과 재발급 — `Phase 1 · 계획`
+
+- 웹은 access·refresh 토큰을 브라우저 JS에 노출하지 않고 BFF 프록시가 httpOnly 쿠키로 보관합니다([`3-frontend.md §3-8`](./3-frontend.md)). 기존 `POST /auth/token/refresh` · `POST /auth/logout`의 `{refreshToken}` 본문 계약은 유지하되, 그 값을 채우는 주체가 클라이언트 JS에서 BFF로 바뀝니다(계약 무변경, 호출 주체만 변경).
+- **선제 재발급.** BFF는 access TTL(30분) 만료가 임박하면 백엔드 요청 전에 `POST /auth/token/refresh`로 갱신해 만료 토큰을 백엔드로 보내지 않습니다. 이로써 회원 요청이 선택적 인증에서 익명으로 통과해 `user_id=NULL`로 저장되는 고아 콘텐츠를 방지합니다.
+- 재발급 실패(refresh 만료·회전 재사용 탐지로 family 폐기)면 BFF가 세션 쿠키를 폐기하고 게스트 모드로 되돌립니다.
 
 ### 보안 설정
 
@@ -494,7 +567,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 ### 서버 분석 이벤트 — `계획`
 
-[`6-analytics.md §6-4`](./6-analytics.md)가 정의한 `server_*` 분석 이벤트 6종(스토리라인 생성·채팅 응답·피드백 제출의 성공·실패)은 **아직 구현되지 않았습니다.** 현재 서버 측 계측은 구조화 로그와 `ai_call_logs`로만 수행하며, Amplitude 서버 이벤트 발행은 후속 과제입니다([§4-8](#4-8-검수-체크리스트) B1).
+[`6-analytics.md §6-4`](./6-analytics.md)가 정의한 `server_*` 분석 이벤트(MVP 6종: 스토리라인 생성·채팅 응답·피드백 제출의 성공·실패, `Phase 1 · 계획` 4종: 로그인·마이그레이션 성공·실패)는 **아직 구현되지 않았습니다.** 현재 서버 측 계측은 구조화 로그와 `ai_call_logs`로만 수행하며, Amplitude 서버 이벤트 발행은 후속 과제입니다([§4-8](#4-8-검수-체크리스트) B1). Phase 1 로그인 이벤트가 P0로 지정되므로 이 발행 인프라 구현이 계정 시스템의 선행 조건입니다.
 
 ### 환경 변수
 
@@ -539,6 +612,10 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-5-1 ~ 5-3 | 채팅 목록·재개·삭제 | `POST /chats/batch`, `GET·DELETE /chats/{chatId}` |
 | US-6-1 ~ 6-8 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
 | US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |
+| US-9-1 · 9-5 | 로그인·로그아웃 `Phase 1 · 구현` | `POST /auth/login/google`, `POST /auth/logout` |
+| US-9-2 | 랜덤 프로필 발급 `Phase 1 · 계획` | `POST /auth/login/google`(가입 시 발급), `GET /auth/me` |
+| US-9-3 | 게스트 데이터 이관 `Phase 1 · 계획` | `POST /auth/migrate` |
+| US-9-4 | 기기 간 서재 `Phase 1 · 계획` | `GET /users/me/stories`, `GET /users/me/chats` |
 
 ### 엔드포인트 검수 기준
 
@@ -551,6 +628,9 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - 오류 응답이 모든 실패 경로에서 `ApiErrorResponse` 형태를 유지해야 합니다.
 - 모든 응답에 `X-Manyak-Request-Id` 헤더가 있어야 하고, 식별 헤더 없는 요청도 거부되지 않아야 합니다.
 - 사용자 입력 원문이 로그·Sentry에 남지 않아야 합니다([`6-analytics.md §6-8-5`](./6-analytics.md)).
+- `Phase 1` 마이그레이션은 같은 요청 2회에 결과가 불변해야 합니다(1회차 `MIGRATED` → 2회차 `ALREADY_OWNED`). 다른 회원 소유 ID는 `CONFLICT`, 삭제된 ID는 `NOT_FOUND`, 101개 배열은 400을 반환해야 합니다.
+- `Phase 1` 내 콘텐츠 목록·마이그레이션은 토큰 없음·만료·위조에 401을 반환해야 합니다.
+- `Phase 1` 소유권 검증: 이관으로 `user_id`가 설정된 스토리·채팅은 소유자만 삭제·턴 진행이 가능하고, 타인·익명 요청에 403을 반환해야 합니다. `user_id`가 NULL인 리소스는 익명 삭제·진행이 유지돼야 합니다.
 
 ### 스펙-구현 간극과 계획
 
@@ -563,3 +643,4 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | 상한 정책 정렬 |
 | B5 | 엔딩 스키마 재정의 | 현행 `story_endings`(제목·내용·`condition_text` 자유 텍스트, `Phase 1 · 구현`)는 팀 결정(2026-07-04)과 불일치 — 엔딩은 스토리당 3개(`ending_type` `HAPPY` · `NORMAL` · `BAD` 각 1개), 본문 사전 작성 없이 `ending_requirement`(최소 턴 수 · 목적 달성은 하드 AND, 거쳐온 주요 사건은 AI 정성 판정 입력 — 경유 강제 아님) + `ending_epilogue`(출력 가이드)로 정의. 주요 사건(`main_event`: 이름 · 설명 · `key_sentence`) 스키마는 미구현. 엔딩 도달 표시용 메타(채팅 상세 턴·SSE `completed`의 엔딩 필드, 스토리 상세의 본 엔딩 표시)도 미정의 | `Phase 1 · 계획` — 퀄리티 스펙 반영(KNK-444)에서 스키마·API·도달 메타 정의 |
 | B6 | 크레딧 도입 시 인증 정책 정합 | 선택적 인증([§4-5](#4-5-인증과-권한))은 스토리·간편 제작·채팅 전 엔드포인트에서 익명을 허용하는데, Phase 1 크레딧은 회원 전용 소모·게스트 체험 한도를 전제 — 소모 강제·한도 판정 지점 미정의 | `Phase 1 · 계획` — 크레딧 스펙 반영(KNK-441)에서 정의 |
+| B7 | 가입 프로필 발급 재정의 | 현행은 Google `name`·`picture` 클레임을 닉네임·프로필 이미지에 사용. 팀 결정은 랜덤 발급(형용사+명사 닉네임, 프리셋 이미지 랜덤 배정) — [§4-5](#4-5-인증과-권한) | `Phase 1 · 계획` — 계정 스펙(KNK-440) 기준으로 구현 교체 |
