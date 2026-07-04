@@ -17,8 +17,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.2 |
+| 버전 | v0.3 |
 | 작성일 | 2026-07-03 |
+| 수정일 | 2026-07-04 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `../manyak-server` `dev` 브랜치 (Kotlin 2.2, Spring Boot 4) |
@@ -41,7 +42,7 @@
 ### 제외 범위
 
 - 화면, 사용자 흐름, 프론트엔드 상태 처리 (담당: [`3-frontend.md`](./3-frontend.md))
-- AI 서버 내부 구현, 프롬프트, 레이어 구성 (담당: [`5-ai-server.md`](./5-ai-server.md), 작성 예정)
+- AI 서버 내부 구현, 프롬프트, 레이어 구성 (담당: [`5-ai-server.md`](./5-ai-server.md))
 - 분석 이벤트 카탈로그, 지표, CloudWatch·Sentry 수집 기준의 원천 정의 (원천: [`6-analytics.md`](./6-analytics.md))
 - 코드 구조, 클래스 설계, 테스트 작성 규칙, 로컬 실행 상세 (서버 레포 `README.md`·`CLAUDE.md`가 소유)
 - 인프라 구성(Terraform, VPC, RDS 등)과 배포 런북 (`manyak-terraform` 레포가 소유)
@@ -54,7 +55,7 @@
 | [`1-background.md`](./1-background.md) | 서비스 배경, MVP 범위 | 제품 방향의 상위 근거 |
 | [`2-user-stories.md`](./2-user-stories.md) | 화면별 사용자 요구(US ID) | 검수 기준을 US ID로 추적 |
 | [`3-frontend.md`](./3-frontend.md) | 화면, API 호출 시점, 실패 처리 | API의 소비자 계약. 호출 흐름은 위임 |
-| [`5-ai-server.md`](./5-ai-server.md) | AI 요청·응답 계약, 프롬프트 | AI 와이어 상세 위임 예정(현재 작성 예정) |
+| [`5-ai-server.md`](./5-ai-server.md) | AI 요청·응답 계약, 프롬프트 | AI 와이어 상세 위임 |
 | [`6-analytics.md`](./6-analytics.md) | 이벤트, 식별자, 관측 수집 기준 | 관측 계약의 원천. 백엔드 구현 현황은 이 문서가 기술 |
 
 ### 작성 원칙
@@ -66,13 +67,14 @@
 
 ### 구현 상태 라벨
 
-이 문서는 항목마다 다음 라벨로 구현 상태를 구분합니다. 라벨이 없는 항목은 모두 `MVP`입니다.
+이 문서는 항목마다 `{로드맵 Phase} · {구현 상태}` 두 축을 라벨로 구분합니다. 로드맵 Phase는 [`roadmap.md`](../planning/roadmap.md)가 기능을 배정한 단계이고, 구현 상태는 `구현`(코드 반영 완료)과 `계획`(미구현, 방향만 합의) 2종입니다. `MVP`(= `Phase 0 · 구현`)와 `계획`(Phase 미배정)은 관례 단축형이며, 라벨이 없는 항목은 모두 `MVP`입니다.
 
 | 라벨 | 의미 | 해당 항목 |
 | --- | --- | --- |
-| `MVP` | 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
-| `Phase 1` | 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API([§4-5](#4-5-인증과-권한)), 로어북·엔딩([§4-3-6](#4-3-api-계약)) |
-| `계획` | 미구현. 방향만 합의됨 | 서버 분석 이벤트([§4-7](#4-7-운영과-관측)), AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
+| `MVP` | Phase 0 범위. 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
+| `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API([§4-5](#4-5-인증과-권한)), 로어북·엔딩([§4-3-6](#4-3-api-계약)) |
+| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 엔딩 스키마 재정의 · 주요 사건([§4-8](#4-8-검수-체크리스트) B5·B6). 계정 마이그레이션 · 크레딧 · 일반 제작 · 스토리 수정 · 재생성 · 이미지는 Phase 1 스펙 반영에서 추가 |
+| `계획` | Phase 미배정. 미구현, 방향만 합의됨 | 서버 분석 이벤트([§4-7](#4-7-운영과-관측)), AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ## 4-2. 기술 환경과 아키텍처
 
@@ -159,7 +161,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 스토리 | `POST /stories/batch` | 공개 ID 목록으로 스토리 카드 조회 | 200 | 400 | 불필요 | MVP |
 | 스토리 | `GET /stories/{storyId}` | 스토리 상세 조회 | 200 | 404 | 불필요 | MVP |
 | 스토리 | `DELETE /stories/{storyId}` | 스토리 소프트 삭제 | 204 | 404 | 불필요 | MVP |
-| 스토리 | `GET /stories/lorebooks` | 로어북 카탈로그 조회(`?genre` 필터) | 200 | — | 불필요 | Phase 1 |
+| 스토리 | `GET /stories/lorebooks` | 로어북 카탈로그 조회(`?genre` 필터) | 200 | — | 불필요 | Phase 1 · 구현 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | — | 불필요 | MVP |
 | 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·502 | 선택 | MVP |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·404·409·502 | 선택 | MVP |
@@ -171,10 +173,10 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 채팅 | `DELETE /chats/{chatId}` | 채팅 소프트 삭제 | 204 | 404 | 불필요 | MVP |
 | 채팅 | `POST /chats/{chatId}/turns/stream` | 턴 진행 SSE 스트리밍 | 200(SSE) | 400·404 | 불필요 | MVP |
 | 피드백 | `POST /feedbacks` | 피드백 등록 | 201 | 400 | 선택 | MVP |
-| 인증 | `POST /auth/login/google` | Google ID 토큰 로그인 | 200 | 400·401 | 불필요 | Phase 1 |
-| 인증 | `GET /auth/me` | 현재 사용자 조회 | 200 | 401 | 필수 | Phase 1 |
-| 인증 | `POST /auth/token/refresh` | 토큰 재발급(회전) | 200 | 400·401 | 불필요 | Phase 1 |
-| 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 |
+| 인증 | `POST /auth/login/google` | Google ID 토큰 로그인 | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
+| 인증 | `GET /auth/me` | 현재 사용자 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
+| 인증 | `POST /auth/token/refresh` | 토큰 재발급(회전) | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
+| 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 · 구현 |
 
 인증 열의 `선택`은 익명을 허용하되 유효한 access 토큰이 오면 `user_id`를 귀속하는 엔드포인트입니다([§4-5](#4-5-인증과-권한)).
 
@@ -201,13 +203,13 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `coverImageUrl` | string·null | 커버 이미지 URL(placeholder) |
+| `coverImageUrl` | string·null | 썸네일 이미지 URL(placeholder — 와이어 필드명은 현행 계약 유지, [`0-glossary.md §0-3-1`](./0-glossary.md)) |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `suggestedInputs` | string[] | 채팅 시작 화면의 추천 입력 |
 | `startSetting` | object·null | 시작 설정 `{name, prologue, startSituation}` |
 | `visibility` | enum | `PUBLIC` · `PRIVATE`(기본 PRIVATE) |
-| `lorebooks` | object[] | `Phase 1` 로어북 `{id, name, genre, content}` |
-| `endings` | object[] | `Phase 1` 엔딩 `{title, content, conditionText, sortOrder, enabled}` |
+| `lorebooks` | object[] | `Phase 1 · 구현` 로어북 `{id, name, genre, content}` |
+| `endings` | object[] | `Phase 1 · 구현` 엔딩 `{title, content, conditionText, sortOrder, enabled}` — 구조 재정의 예정([§4-8](#4-8-검수-체크리스트) B5) |
 
 - `status`·`visibility`·`lorebooks`·`endings`는 MVP 프론트엔드가 사용하지 않습니다([`3-frontend.md §3-13`](./3-frontend.md) G3).
 - **`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([`3-frontend.md §3-7`](./3-frontend.md)).
@@ -294,7 +296,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 - 저장 후 Slack Incoming Webhook으로 알림을 보냅니다. webhook URL 미설정 시 알림만 생략하고, 알림 실패가 저장 성공(201)을 뒤집지 않습니다.
 - 본문 상한이 프론트엔드(500자)와 다릅니다([§4-8](#4-8-검수-체크리스트) B4).
 
-### 4-3-5. 인증 API — `Phase 1`
+### 4-3-5. 인증 API — `Phase 1 · 구현`
 
 구현은 완료됐고 MVP 프론트엔드는 호출하지 않습니다. 흐름과 토큰 정책은 [§4-5](#4-5-인증과-권한)에 정의합니다.
 
@@ -307,9 +309,9 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 `TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer"}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다.
 
-### 4-3-6. 로어북 — `Phase 1`
+### 4-3-6. 로어북 — `Phase 1 · 구현`
 
-**`GET /stories/lorebooks`** — 장르 공용 용어 사전 카탈로그 `{id, name, genre}[]`를 반환합니다. 쿼리 `genre`로 필터할 수 있습니다. 스토리 상세 응답의 `lorebooks`·`endings`와 함께 Phase 1(스토리 품질 보강) 범위이며 MVP 프론트엔드는 사용하지 않습니다.
+**`GET /stories/lorebooks`** — 장르 공용 용어 사전 카탈로그 `{id, name, genre}[]`를 반환합니다. 쿼리 `genre`로 필터할 수 있습니다. 스토리 상세 응답의 `lorebooks`·`endings`와 함께 Phase 1 퀄리티 개선 범위이며 MVP 프론트엔드는 사용하지 않습니다.
 
 ## 4-4. 데이터 모델
 
@@ -345,9 +347,9 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 채팅 | `story_chats` | 채팅. `public_id`(UUID), 진행 턴 수, `deleted_at` |
 | 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM` |
 | 채팅 | `story_choices` | 메시지별 선택지(3개, 선택 여부 기록) |
-| 로어북 | `lorebooks` | `Phase 1` 장르 공용 용어 사전 |
-| 로어북 | `story_lorebooks` | `Phase 1` 스토리-로어북 연결 |
-| 스토리 | `story_endings` | `Phase 1` 엔딩(제목·내용·도달 조건) |
+| 로어북 | `lorebooks` | `Phase 1 · 구현` 장르 공용 용어 사전 |
+| 로어북 | `story_lorebooks` | `Phase 1 · 구현` 스토리-로어북 연결 |
+| 스토리 | `story_endings` | `Phase 1 · 구현` 엔딩(제목·내용·도달 조건) — 구조 재정의 예정([§4-8](#4-8-검수-체크리스트) B5) |
 | 피드백 | `feedbacks` | 피드백 본문·이메일·플랫폼·앱 버전 |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](#4-7-운영과-관측)) |
 
@@ -361,7 +363,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 ## 4-5. 인증과 권한
 
-**상태: `Phase 1`.** 인증 스택(Google 로그인, JWT, refresh 저장소)은 서버에 구현 완료됐지만, MVP는 전원 게스트로 동작하므로 프론트엔드가 호출하지 않습니다([`3-frontend.md §3-13`](./3-frontend.md) G1). 로그인 도입 시 이 섹션이 계약 기준이 됩니다.
+**상태: `Phase 1 · 구현`.** 인증 스택(Google 로그인, JWT, refresh 저장소)은 서버에 구현 완료됐지만, MVP는 전원 게스트로 동작하므로 프론트엔드가 호출하지 않습니다([`3-frontend.md §3-13`](./3-frontend.md) G1). 로그인 도입 시 이 섹션이 계약 기준이 됩니다.
 
 ### Google 로그인 흐름
 
@@ -559,3 +561,5 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B1 | 서버 분석 이벤트 | [`6-analytics.md §6-4`](./6-analytics.md)의 `server_*` 6종 미구현. 서버 계측은 구조화 로그·`ai_call_logs`뿐 | Amplitude 서버 이벤트 발행을 후속 구현 |
 | B2 | AI 와이어 필드 정렬 | AI 계약의 `story`(스토리라인 본문)·`extra_info`가 용어집 기준(`storyline` · `additional_info`)과 불일치. 클라이언트 와이어는 정렬 완료 | AI 서버와 동시 배포로 정렬(KNK-375) |
 | B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | 상한 정책 정렬 |
+| B5 | 엔딩 스키마 재정의 | 현행 `story_endings`(제목·내용·`condition_text` 자유 텍스트, `Phase 1 · 구현`)는 팀 결정(2026-07-04)과 불일치 — 엔딩은 스토리당 3개(`ending_type` `HAPPY` · `NORMAL` · `BAD` 각 1개), 본문 사전 작성 없이 `ending_requirement`(최소 턴 수 · 목적 달성은 하드 AND, 거쳐온 주요 사건은 AI 정성 판정 입력 — 경유 강제 아님) + `ending_epilogue`(출력 가이드)로 정의. 주요 사건(`main_event`: 이름 · 설명 · `key_sentence`) 스키마는 미구현. 엔딩 도달 표시용 메타(채팅 상세 턴·SSE `completed`의 엔딩 필드, 스토리 상세의 본 엔딩 표시)도 미정의 | `Phase 1 · 계획` — 퀄리티 스펙 반영(KNK-444)에서 스키마·API·도달 메타 정의 |
+| B6 | 크레딧 도입 시 인증 정책 정합 | 선택적 인증([§4-5](#4-5-인증과-권한))은 스토리·간편 제작·채팅 전 엔드포인트에서 익명을 허용하는데, Phase 1 크레딧은 회원 전용 소모·게스트 체험 한도를 전제 — 소모 강제·한도 판정 지점 미정의 | `Phase 1 · 계획` — 크레딧 스펙 반영(KNK-441)에서 정의 |
