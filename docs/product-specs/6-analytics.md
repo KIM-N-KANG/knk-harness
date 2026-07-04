@@ -15,7 +15,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.14 |
+| 버전 | v0.15 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 MVP |
@@ -189,6 +189,14 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0 | client | `client_chat_messageInput_submitted` |
 | P0 | server | `server_chat_aiMessage_processed_succeeded` |
 | P0 | server | `server_chat_aiMessage_processed_failed` |
+| P0 `Phase 1 · 계획` | client | `client_storyCreate_creditShortage_shown` |
+| P0 `Phase 1 · 계획` | client | `client_chat_creditShortage_shown` |
+| P0 `Phase 1 · 계획` | client | `client_storyCreate_trialLimit_shown` |
+| P0 `Phase 1 · 계획` | client | `client_chat_trialLimit_shown` |
+| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_succeeded` |
+| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_failed` |
+| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_succeeded` |
+| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_failed` |
 | P0 | client | `client_feedback_viewed` |
 | P0 | client | `client_feedback_form_submitted` |
 | P1 | client | `client_onboarding_viewed` |
@@ -363,6 +371,25 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
 - 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다.
+
+#### 6-4-2-9. 크레딧 — `Phase 1 · 계획`
+
+계정 시트의 적립 인터랙션과 소모 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_account_attendanceButton_clicked` | P1 | 계정 시트 출석체크 클릭 | 없음 |
+| `client_account_inviteLinkButton_clicked` | P1 | 계정 시트 초대 링크 복사 클릭 | 없음 |
+| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입·초대·출석) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
+| `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
+| `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
+| `client_storyCreate_trialLimit_shown` | P0 | 컴파일 402로 체험 종료 다이얼로그 노출(게스트) | 없음 |
+| `client_chat_trialLimit_shown` | P0 | 채팅 턴 402로 체험 종료 다이얼로그 노출(게스트) | `chat_id` (string, 필수) |
+
+- `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
+- 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
+- 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 계정 시트, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
+- 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
 
 ### 6-4-3. impression 수집 기준
 
@@ -822,6 +849,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 개인정보 | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다. |
 | 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
 | 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
+| 이벤트 수집 `Phase 1` | `client_storyCreate_creditShortage_shown`·`client_chat_creditShortage_shown`·`client_storyCreate_trialLimit_shown`·`client_chat_trialLimit_shown`이 수집됩니다. |
 
 ### 6-8-4. 계층별 검수 기준
 
