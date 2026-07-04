@@ -15,7 +15,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.13 |
+| 버전 | v0.14 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 MVP |
@@ -53,7 +53,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | --- | --- |
 | 사용자 입력 원문 분석 | MVP 분석 이벤트와 로그에 원문을 넣지 않습니다. |
 | 대시보드 화면 요구사항 | 실제 Amplitude 또는 CloudWatch 대시보드가 정해질 때 별도 문서로 추가합니다. |
-| 인증 사용자 분석 | 로그인 기능 도입 후 `user_id`, `identify`, `is_logged_in`을 추가합니다. |
+| 인증 사용자 분석 | `Phase 1 · 계획` — §6-2·§6-4-2-8이 정의합니다(`setUserId`·`user_id`·`is_logged_in`). |
 | 실험 분석 | A/B 테스트 도입 후 `experiment_key`, `variant`를 추가합니다. |
 
 ## 6-2. 식별자 정책
@@ -85,7 +85,11 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 스토리 생성 요청은 `creation_id`가 발급되기 전에도 발생할 수 있습니다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계합니다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `creation_id`를 발급하고, 이후 성공·실패 `server_*` 이벤트에는 `creation_id`를 포함합니다. `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 CloudWatch 운영 로그로만 추적합니다.
 
-로그인 기능을 도입하면 `device_id`는 유지하고 로그인 시점부터 `user_id`를 추가합니다. Amplitude의 `identify` 또는 `alias` 기능으로 기존 익명 행동과 로그인 사용자를 연결합니다.
+`Phase 1 · 계획` — 로그인 도입 시 식별자 정책은 다음과 같습니다.
+
+- 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지합니다. 같은 기기의 과거 익명 행동은 `device_id`로 자동 연결되므로 별도 `alias`는 사용하지 않습니다.
+- 로그아웃 시 `setUserId(null)`와 함께 Amplitude `reset()`으로 `device_id`를 새로 발급합니다. Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합하므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되는 것을 막습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
+- 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend.md §4-7`](./4-backend.md)이 소유합니다.
 
 ## 6-3. 이벤트 네이밍과 공통 프로퍼티
 
@@ -149,10 +153,10 @@ event_time, event_id
 
 | property | 도입 시점 | 설명 |
 | --- | --- | --- |
-| `user_id` | 인증 도입 후 | 로그인 사용자 식별자입니다. |
-| `is_logged_in` | 인증 도입 후 | 로그인 여부입니다. |
+| `user_id` | 인증 도입 후 `Phase 1 · 계획` | 로그인 사용자 식별자(public_id 문자열)입니다. `setUserId`로 설정합니다(§6-2). |
+| `is_logged_in` | 인증 도입 후 `Phase 1 · 계획` | 로그인 여부입니다. |
 | `membership` | 구독·요금제 도입 후 | 요금제 또는 등급입니다. |
-| `signup_at` | 인증 도입 후 | 가입 시점입니다. |
+| `signup_at` | 인증 도입 후 `Phase 1 · 계획` | 가입 시점입니다. |
 | `experiment_key` / `variant` | A/B 테스트 도입 후 | 실험 키와 분기 값입니다. |
 | `request_id` | 서버 사이드 분석 이벤트 연결 도입 후 | client `requested`와 server `processed`를 분석 이벤트 프로퍼티로 직접 잇는 상관 ID입니다. |
 | `item_id` / `section_id` / `section_name` | impression 정밀 계측 시 | 추천 카드 등 노출 분석용 값입니다. |
@@ -341,6 +345,24 @@ AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succee
 | `server_feedback_submission_processed_failed` | P1 | 피드백 제출 처리 실패 | `error_type` (string, 필수) |
 
 server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나만 사용합니다. 상세 매핑은 `6-6-7. 서버 분석 이벤트와 실패 타입`을 따릅니다.
+
+#### 6-4-2-8. 로그인·계정 — `Phase 1 · 계획`
+
+로그인 화면(FE-SCREEN-008)과 게스트 데이터 마이그레이션의 이벤트입니다. 마이그레이션은 로그인 직후 자동 실행되므로 클라이언트 계측 없이 서버 이벤트로 수집합니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_login_viewed` | P1 | 로그인 화면 진입 | 없음 |
+| `client_login_googleButton_clicked` | P1 | Google 로그인 버튼 클릭 | 없음 |
+| `client_account_logoutButton_clicked` | P1 | 계정 시트 로그아웃 클릭 | 없음 |
+| `server_login_googleLogin_processed_succeeded` | P0 | 로그인 처리 성공 | `is_new_user` (boolean, 필수) |
+| `server_login_googleLogin_processed_failed` | P0 | 로그인 처리 실패 | `error_type` (string, 필수) |
+| `server_login_migration_processed_succeeded` | P0 | 마이그레이션 처리 완료(부분 성공 포함) | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
+| `server_login_migration_processed_failed` | P0 | 마이그레이션 요청 자체 실패(400 등) | `error_type` (string, 필수) |
+
+- `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
+- 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
+- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다.
 
 ### 6-4-3. impression 수집 기준
 
@@ -613,6 +635,14 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 | `validation` | 입력값, 응답 검증, 안전 정책 실패 | `provider_bad_request`, `schema_validation_failed`, `invalid_ai_response`, `content_filter_blocked` |
 | `server` | 서버 내부 처리 실패 | `provider_rate_limited`, `unexpected_error` |
 
+`Phase 1 · 계획` — 로그인·마이그레이션 실패의 `error_type` 매핑입니다.
+
+| error_type | 로그인·마이그레이션 실패 사례 |
+| --- | --- |
+| `network` | Google 인증 서버 연결·timeout 실패 |
+| `validation` | Google ID 토큰 서명·만료·audience 검증 실패, 마이그레이션 요청 UUID 형식 오류·배열 100개 초과(400) |
+| `server` | 사용자 저장·소유권 이관 중 내부 처리 실패 |
+
 ### 6-6-8. AI 기능과 요청 context
 
 MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
@@ -790,6 +820,8 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 식별자 | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있습니다. |
 | 로그 연결 | 서버 로그, Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있습니다. |
 | 개인정보 | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다. |
+| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
+| 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
 
 ### 6-8-4. 계층별 검수 기준
 
