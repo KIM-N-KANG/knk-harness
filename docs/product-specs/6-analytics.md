@@ -15,9 +15,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.17 |
+| 버전 | v0.18 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-07-04 |
+| 수정일 | 2026-07-05 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -225,6 +225,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_chat_streamError_shown` |
 | P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked` |
 | P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed` |
+| P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
 | P2 | client | `client_storyCreate_addTag_submitted` |
@@ -334,10 +335,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_addBlockButton_clicked` | P2 | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
 | `client_chat_removeBlockButton_clicked` | P2 | 블럭 입력 모드에서 입력 블럭 삭제 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
 | `client_chat_situationInsertButton_clicked` | P2 | 일반 입력 모드에서 상황 추가(강조 표기 삽입) 클릭 | `chat_id` (string, 필수) |
-| `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`) |
+| `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`), `ending_type` (string, 선택 `Phase 1 · 계획`: `HAPPY` / `NORMAL` / `BAD` — 엔딩 도달 턴만) |
 | `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`) |
 | `client_chat_regenerateButton_clicked` `Phase 1 · 계획` | P1 | 마지막 AI 응답 다시 생성 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
 | `client_chat_chatImage_impressed` `Phase 1 · 계획` | P1 | 채팅 이미지 유효 노출(§6-4-3 기준) | `chat_id` (string, 필수), `turn_number` (number, 필수), `image_key` (string, 필수) |
+| `client_chat_endingBadge_impressed` `Phase 1 · 계획` | P1 | 엔딩 도달 배지 유효 노출(§6-4-3 기준) | `chat_id` (string, 필수), `turn_number` (number, 필수), `ending_type` (string, 필수: `HAPPY` / `NORMAL` / `BAD`) |
 | `client_chat_choiceOption_selected` | P1 | 선택지 선택 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
 | `client_chat_choiceFillButton_clicked` | P1 | 선택지를 입력창에 넣어 수정 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
 | `client_chat_streamError_shown` | P1 | AI 응답 스트리밍 실패 에러 표시 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
@@ -353,6 +355,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
 `Phase 1 · 계획` — AI 응답 재생성([`4-backend.md §4-3-9`](./4-backend.md))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답·SSE `completed`의 `imageKey` 필드([`4-backend.md §4-3-9`](./4-backend.md))에서 채우며, 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
+
+`Phase 1 · 계획` — 엔딩 도달([`4-backend.md §4-3-10`](./4-backend.md))도 별도 서버 이벤트 없이 `server_chat_aiMessage_processed_succeeded`의 `ending_type` 프로퍼티로 구분합니다(같은 AI 처리 — 재생성과 동일 근거). 엔딩 도달률은 `ending_type is not null` 필터로 계산하고, 도달의 정본 기록은 이벤트가 아니라 백엔드의 턴 기록·집계 테이블입니다. `client_chat_endingBadge_impressed`는 도달 표시(US-6-13)가 실제로 사용자에게 보였는지를 확인하는 노출 신호이며, `ending_type` enum 값은 원문이 아니라 관리되는 선택값이라 §6-7에 저촉되지 않습니다.
 
 #### 6-4-2-7. 피드백
 
@@ -816,6 +820,32 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 | Context | `ai_call_log_id`, `session_id`, `device_id_hash`, `creation_id`, `story_id`, `chat_id`, `turn_number`, `latency_ms`, `retry_count` |
 | Breadcrumb | AI 호출 시작, provider 응답 수신, schema 검증, DB 기록 |
 | Exceptions | timeout, provider 오류, 파싱 실패, schema 검증 실패, 예상하지 못한 예외 |
+
+### 6-6-11. AI 품질 평가 로깅과 자가개선 루프 수집 기준 — `Phase 1 · 계획`
+
+평가 지표의 정의·루프 규칙은 [`5-ai-server.md §5-6`](./5-ai-server.md)이 소유합니다. 이 절은 평가 결과의 로깅 계약과, 자가개선 루프가 사용할 수 있는 데이터의 수집 기준을 고정합니다.
+
+**평가 로그 이벤트** — 평가 에이전트가 벤치 실행 결과를 JSON 로그로 남깁니다. Amplitude 이벤트가 아닙니다(사용자 행동이 아니라 내부 품질 실측이므로 CloudWatch 로그 축).
+
+| 이벤트 | 발생 시점 | 핵심 필드 |
+| --- | --- | --- |
+| `ai_evaluation_completed` | 벤치 케이스 1건 채점 완료 | `benchmark_id`(벤치 세트 식별자), `case_id`, `feature`, `metric`(지표 키), `score`(1~5 정수), `prompt_versions`, `model`, `judge_model`(채점 모델) |
+| `ai_evaluation_run_summarized` | 벤치 세트 1회 실행 완료 | `benchmark_id`, `run_id`, `feature`, 지표별 평균 점수, `case_count`, `prompt_versions`, `model` |
+
+- 점수는 항상 `prompt_versions`·`model`과 함께 남깁니다 — 버전별 품질 추적과 회귀 게이트 판정의 근거입니다.
+- 벤치 입력·산출 원문은 로그에 싣지 않습니다. 원문은 manyak-ai 레포의 벤치 자산(합성 시나리오)으로만 관리합니다.
+
+**자가개선 루프가 쓸 수 있는 데이터** — 원문 수집 원칙(§6-7)을 유지한 채 다음만 사용합니다.
+
+| 데이터 | 출처 | 용도 |
+| --- | --- | --- |
+| 벤치 지표 점수 | `ai_evaluation_*` 로그 | 프롬프트 버전 간 품질 비교, 회귀 게이트 |
+| `output_char_count` | `ai_call_completed` 로그에 필드 추가(채팅 본문 문자 수 — 원문이 아니라 길이, `message_length_bucket` 선례) | 분량 고정(약 600자) 준수 분포 실측 |
+| 폴백·빈 블록 발동 로그 | AI 형식 보정 로그([`5-ai-server.md §5-5`](./5-ai-server.md)) | 프롬프트 점검 신호 |
+| `retry_count` · `error_code` | `ai_call_logs` | 형식 위반·실패 추세 |
+| 스토리라인 GOOD/BAD 평가 | `story_creation_storyline_ratings`([`4-backend.md §4-3-2`](./4-backend.md)) | 운영 품질의 사용자 신호(원문 없이 평가값만) |
+
+**수집하지 않는 것** — 운영 채팅·생성 원문, 프롬프트 전문, 사용자 입력 원문. 자가개선 루프를 위해서라도 §6-7의 원문 비수집 원칙을 완화하지 않습니다. 원문 기반 평가가 필요하면 벤치 자산(합성 데이터)을 늘리는 방향으로 해결합니다.
 
 ## 6-7. 개인정보와 원문 수집 원칙
 
