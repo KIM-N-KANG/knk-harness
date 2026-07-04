@@ -18,8 +18,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.1 |
+| 버전 | v0.2 |
 | 작성일 | 2026-07-03 |
+| 수정일 | 2026-07-04 |
 | 대상 | 마냑 운영·개발·통합 배포 |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다. |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md) |
@@ -175,6 +176,18 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 - SSM 문서는 secret 값이 아니라 AWSCURRENT 버전 id만 비교합니다.
 - 버전 id가 바뀌면 `/opt/manyak/deploy.sh`를 override 없이 실행해 `.env`를 재생성합니다. 이 경로는 server를 pull/up하고, ECR에 AI 이미지가 있으면 AI도 `up -d --wait` healthcheck gate를 탑니다.
 - 평시에는 no-op이며, 첫 적용 직후에는 상태 파일이 없어 같은 no-override 동기화가 1회 일어날 수 있습니다.
+
+### 이미지 자산 저장·서빙 — `Phase 1 · 계획`
+
+스토리 이미지 업로드([`4-backend.md §4-3-8`](./4-backend.md))와 팀 프리셋·프로필 프리셋 자산을 위한 정적 자산 계층입니다. 현재 Terraform에는 없으며, Phase 1 이미지 기능(썸네일·채팅 이미지 — [`4-backend.md §4-3-9`](./4-backend.md)) 구현과 함께 추가합니다.
+
+| 항목 | 방향 |
+| --- | --- |
+| 저장소 | 비공개 S3 버킷 1개. prefix로 구분 — `uploads/`(회원 presigned 업로드) · `presets/`(팀 사전 제작 자산) |
+| 업로드 경로 | 백엔드가 presigned PUT URL을 발급하고 클라이언트가 S3에 직접 업로드([`4-backend.md §4-3-8`](./4-backend.md)). App EC2 → S3는 기존 S3 Gateway Endpoint 경유 |
+| 서빙 경로 | CDN(CloudFront) 배포가 버킷을 origin으로 공개 서빙. `imageKey` → 서빙 URL 변환은 백엔드 소유. CDN 도메인·캐시 정책 수치는 `계획` |
+| 권한 | EC2 인스턴스 role에 해당 버킷 presigned 발급·읽기 권한 추가 |
+| 소유 | S3·CloudFront·IAM 리소스 정의는 `manyak-terraform` 소유. 이 문서는 경계와 경로만 고정 |
 
 ## 7-5. 이미지 빌드와 CI/CD
 

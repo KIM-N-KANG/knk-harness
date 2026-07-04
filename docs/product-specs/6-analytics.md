@@ -15,7 +15,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.16 |
+| 버전 | v0.17 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-07-04 |
 | 대상 | 마냑 MVP |
@@ -223,6 +223,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 | client | `client_chat_loadError_shown` |
 | P1 | client | `client_chat_retryButton_clicked` |
 | P1 | client | `client_chat_streamError_shown` |
+| P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked` |
+| P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
 | P2 | client | `client_storyCreate_addTag_submitted` |
@@ -332,8 +334,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_addBlockButton_clicked` | P2 | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
 | `client_chat_removeBlockButton_clicked` | P2 | 블럭 입력 모드에서 입력 블럭 삭제 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
 | `client_chat_situationInsertButton_clicked` | P2 | 일반 입력 모드에서 상황 추가(강조 표기 삽입) 클릭 | `chat_id` (string, 필수) |
-| `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
-| `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수) |
+| `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`) |
+| `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`) |
+| `client_chat_regenerateButton_clicked` `Phase 1 · 계획` | P1 | 마지막 AI 응답 다시 생성 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
+| `client_chat_chatImage_impressed` `Phase 1 · 계획` | P1 | 채팅 이미지 유효 노출(§6-4-3 기준) | `chat_id` (string, 필수), `turn_number` (number, 필수), `image_key` (string, 필수) |
 | `client_chat_choiceOption_selected` | P1 | 선택지 선택 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
 | `client_chat_choiceFillButton_clicked` | P1 | 선택지를 입력창에 넣어 수정 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
 | `client_chat_streamError_shown` | P1 | AI 응답 스트리밍 실패 에러 표시 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
@@ -347,6 +351,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 `client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패(연결 끊김·중단 등)해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
+
+`Phase 1 · 계획` — AI 응답 재생성([`4-backend.md §4-3-9`](./4-backend.md))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
 
 #### 6-4-2-7. 피드백
 
@@ -520,8 +526,9 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 스토리 상세 | 상세에서 채팅 시작 전환율 | `client_storyDetail_chatStartButton_clicked` 수 / `client_storyDetail_viewed` 수 |
 | 채팅 목록 | 채팅 카드 클릭률 | `client_chatList_chatCard_clicked` 수 / `client_chatList_chatCard_impressed` 수 |
 | 채팅 | 말 거는 비율 | `client_chat_messageInput_submitted` 사용자 수 where `turn_number = 1` / `client_chat_viewed` 사용자 수 |
-| 채팅 | AI 응답 성공률 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 |
-| 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 |
+| 채팅 | AI 응답 성공률 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 재생성 도입 후에는 분자에 `is_regenerated = false` 필터 필수) |
+| 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 분자에 `is_regenerated = false` 필터 필수) |
+| 채팅 | 재생성 사용률 `Phase 1 · 계획` | `client_chat_regenerateButton_clicked` 수 / `is_regenerated = false` `server_chat_aiMessage_processed_succeeded` 수 |
 | 채팅 | N턴 이상 도달률 | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수 |
 | 채팅 | 채팅 로드 실패율 | `client_chat_loadError_shown` 수 / `client_chat_viewed` 수 |
 | 채팅 | 응답 스트리밍 실패율 | `client_chat_streamError_shown` 수 / `client_chat_messageInput_submitted` 수 |
@@ -697,7 +704,7 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 | --- | --- | --- |
 | `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*` |
 | `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed` |
-| `chat_response` | 사용자 메시지에 대한 AI 응답 생성 | `client_chat_messageInput_submitted`, `server_chat_aiMessage_processed_*` |
+| `chat_response` | 사용자 메시지에 대한 AI 응답 생성(`Phase 1 · 계획` 재생성 포함 — `is_regenerated`로 구분) | `client_chat_messageInput_submitted`, `client_chat_regenerateButton_clicked`, `server_chat_aiMessage_processed_*` |
 | `suggestion_generation` | 선택지 생성 | `client_chat_choiceOption_selected` |
 
 AI feature는 프론트엔드 이벤트명에 넣지 않습니다. 상세 원인은 `feature`와 `error_code`로 구분합니다.
@@ -870,6 +877,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_creditShortage_shown`·`client_chat_creditShortage_shown`·`client_storyCreate_trialLimit_shown`·`client_chat_trialLimit_shown`이 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다. |
 
 ### 6-8-4. 계층별 검수 기준
 
