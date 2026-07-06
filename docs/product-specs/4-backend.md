@@ -17,7 +17,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.9 |
+| 버전 | v0.10 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-07-07 |
 | 대상 | 마냑 백엔드 서버 |
@@ -73,7 +73,7 @@
 | --- | --- | --- |
 | `MVP` | Phase 0 범위. 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
 | `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API·랜덤 닉네임([§4-5](#4-5-인증과-권한)), 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약)), 로어북 카탈로그·엔딩 저장([§4-3-6](#4-3-api-계약)), 크레딧([§4-3-7](#4-3-api-계약)), 일반 제작·스토리 수정([§4-3-8](#4-3-api-계약)), AI 응답 재생성([§4-3-9](#4-3-api-계약)) |
-| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 가입 프로필 이미지 랜덤 배정([§4-5](#4-5-인증과-권한)). 이미지 업로드([§4-3-8](#4-3-api-계약))·썸네일·채팅 이미지([§4-3-9](#4-3-api-계약)). 주요 사건·엔딩 런타임 반영과 도달 메타([§4-3-10](#4-3-api-계약)). 로어북 런타임 반영([§4-3-6](#4-3-api-계약)) |
+| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 가입 프로필 이미지 랜덤 배정([§4-5](#4-5-인증과-권한)). 썸네일·채팅 이미지 삽입([§4-3-9](#4-3-api-계약)). 주요 사건·엔딩 런타임 반영과 도달 메타([§4-3-10](#4-3-api-계약)). 로어북 런타임 반영([§4-3-6](#4-3-api-계약)). 2026-07-07 결정분 — 재생성 이력 보존·보상 크레딧 만료·게스트 한도 회원 공유·시작 설정 복수화·와이어 개편([§4-8](#4-8-검수-체크리스트) B10~B14) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | 서버 분석 이벤트([§4-7](#4-7-운영과-관측)), AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ## 4-2. 기술 환경과 아키텍처
@@ -165,8 +165,6 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 | Phase 1 · 구현 |
-| 스토리 | `POST /uploads/images` | 스토리 이미지 업로드 URL 발급 | 201 | 400·401 | 필수 | Phase 1 · 계획 |
-| 스토리 | `GET /images/presets` | 프리셋 이미지 카탈로그 조회(`?genre` 필터) | 200 | — | 불필요 | Phase 1 · 계획 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | — | 불필요 | MVP |
 | 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·402·502 | 선택 | MVP |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·402·404·409·502 | 선택 | MVP |
@@ -205,7 +203,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `oneLineIntro` | string | 한 줄 소개 |
 | `genres` | string[] | 장르 태그명 목록 |
 | `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 null |
-| `chatCount` | number | 스토리로 시작한 채팅 수 |
+| `chatCount` | number | 스토리로 시작한 채팅 수. `Phase 1 · 계획`(결정 2026-07-07) — 채팅 개수 대신 누적 진행 턴 수(사용자 입력 횟수)가 실제 플레이량을 반영하므로 `turnCount`로 교체([§4-8](#4-8-검수-체크리스트) B14) |
 | `likeCount` | number | 좋아요 수(placeholder) |
 | `status` | enum | `DRAFT` · `PUBLISHED` |
 | `createdAt` | string | 생성 시각 |
@@ -216,7 +214,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `coverImageUrl` | string·null | 썸네일 이미지 URL(placeholder — 와이어 필드명은 현행 계약 유지, [`0-glossary.md §0-3-1`](./0-glossary.md)). `Phase 1 · 계획` — 썸네일 서빙 URL로 실값을 채움([§4-3-9](#4-3-api-계약)) |
+| `coverImageUrl` | string·null | 썸네일 이미지 URL(placeholder). `Phase 1 · 계획`(결정 2026-07-07) — `thumbnailUrl`로 개명하고 팀 이미지 서빙 URL로 실값을 채움. placeholder 명명을 유지하지 않고 목록 필드(`thumbnailUrl`)와 표기를 통일([§4-3-9](#4-3-api-계약), [§4-8](#4-8-검수-체크리스트) B14) |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `suggestedInputs` | string[] | 채팅 시작 화면의 추천 입력 |
 | `startSetting` | object·null | 시작 설정 `{name, prologue, startSituation}` |
@@ -226,7 +224,8 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `reachedEndings` | object[] | `Phase 1 · 계획` 요청자가 이 스토리에서 본 엔딩 `{id, name}`. 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
 
 - `status`·`visibility`·`lorebooks`·`endings`는 MVP 프론트엔드가 사용하지 않습니다([`3-frontend.md §3-13`](./3-frontend.md) G3).
-- **`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([`3-frontend.md §3-7`](./3-frontend.md)).
+
+**`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([`3-frontend.md §3-7`](./3-frontend.md)).
 
 ### 4-3-2. 간편 제작
 
@@ -242,8 +241,14 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `customTags` | 최대 20개 | 직접 추가 태그 `{name(≤30자), category}` |
 
 - `selectedTagIds`와 `customTags` 중 하나 이상은 있어야 합니다. 둘 다 비면 400입니다.
-- 응답(201): `{simpleCreationId, selectedTags[], storylines[]}`. `simpleCreationId`는 간편 제작 진행 ID로, 분석 표준 표기는 `creation_id`입니다([`0-glossary.md §0-3-2`](./0-glossary.md)).
-- `storylines`는 정확히 3개이며 각 항목은 `{id, storyline, recommendedInfos: {id, text}[3]}`입니다.
+
+**응답(201)**
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `simpleCreationId` | number | 간편 제작 진행 ID. 분석 표준 표기는 `creation_id`([`0-glossary.md §0-3-2`](./0-glossary.md)) |
+| `selectedTags` | object[] | 선택·직접 추가된 태그 목록 |
+| `storylines` | object[] | 정확히 3개. 각 항목은 `{id, storyline, recommendedInfos: {id, text}[3]}` |
 
 **`POST /stories/simple`** — 선택한 스토리라인과 추가 정보로 최종 스토리를 생성합니다. AI 서버 `POST /story/compile`을 동기 호출합니다. `Phase 1 · 구현` — 회원은 20 크레딧, 게스트는 디바이스 ID별 스토리 생성 3회 한도를 사용합니다([§4-3-7](#4-3-api-계약)).
 
@@ -253,7 +258,16 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `storylineId` | ≥ 1 | 선택한 스토리라인 ID |
 | `additionalInfos` | 최대 13개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
 
-- 응답(201, `SimpleStoryCreateResponse`): `{id, title, oneLineIntro, description, genres, startSetting}`. `id`는 스토리 공개 식별자(UUID)이며 클라이언트가 로컬 서재에 저장합니다.
+**응답(201, `SimpleStoryCreateResponse`)**
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | string | 스토리 공개 식별자(UUID) |
+| `title` · `oneLineIntro` · `description` | string | 기본 정보 |
+| `genres` | string[] | 장르 태그 |
+| `startSetting` | object | 시작 설정 `{name, prologue, startSituation}` |
+
+- 게스트는 `id`를 로컬 서재에 저장합니다. 회원의 서재는 서버가 정본이므로(내 콘텐츠 목록 — [§4-3-5](#4-3-api-계약)) 로컬 저장이 필요 없습니다.
 - 같은 진행(`simpleCreationId`)으로 이미 스토리를 생성했다면 409를 반환합니다. 프론트엔드의 완성 재시도는 스토리 생성을 건너뛰므로 정상 흐름에서는 발생하지 않습니다([`3-frontend.md §3-5`](./3-frontend.md)).
 - AI 호출 실패는 502입니다.
 
@@ -261,7 +275,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 ### 4-3-3. 채팅과 SSE 스트리밍
 
-**`POST /chats`** — 요청 `{storyId: string}`. 스토리가 없으면 404. 응답(201):
+**`POST /chats`** — 요청 `{storyId: string}`. 스토리가 없으면 404. `Phase 1 · 계획`(결정 2026-07-07) — 시작 설정 복수화([§4-3-8](#4-3-api-계약))에 따라 요청에 `startSettingId`(선택, 미지정 시 첫 번째 시작 설정)를 추가합니다. 응답(201):
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
@@ -271,9 +285,31 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `suggestedInputs` | string[] | 추천 입력(첫 입력 후보) |
 | `createdAt` | string | 생성 시각 |
 
-**`POST /chats/batch`** — 요청 `{chatIds: string[]}`(1~100개). 최근 활동순으로 정렬해 반환하며, 프론트엔드는 이 순서를 유지합니다([`3-frontend.md §3-7`](./3-frontend.md)). 응답 항목(`ChatSummaryResponse`): `{id, storyId, storyTitle, lastStoryPreview, turnCount, updatedAt}`. `turnCount`는 완료된 턴 수입니다. `Phase 1 · 계획` — `reachedEndings`(`{id, name}[]`, 이 채팅에서 도달한 엔딩)를 추가합니다([§4-3-10](#4-3-api-계약)).
+**`POST /chats/batch`** — 요청 `{chatIds: string[]}`(1~100개). 최근 활동순으로 정렬해 반환하며, 프론트엔드는 이 순서를 유지합니다([`3-frontend.md §3-7`](./3-frontend.md)).
 
-**`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. 턴 항목은 `{id, userInput, aiOutput, choices: string[], createdAt}`입니다. `Phase 1 · 계획` — 턴 항목에 `imageUrl`(string·null, 채팅 이미지 서빙 URL)과 `imageKey`(string·null, 분석 이벤트용 자산 키)를 추가하고([§4-3-9](#4-3-api-계약)), `reachedEnding`(`{id, name}`·null, 엔딩 도달 턴의 엔딩)을 추가합니다([§4-3-10](#4-3-api-계약)).
+**응답 항목(`ChatSummaryResponse`)**
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | string | 채팅 공개 식별자(UUID) |
+| `storyId` · `storyTitle` | string | 참조 스토리 |
+| `lastStoryPreview` | string | 마지막 AI 출력 미리보기 |
+| `turnCount` | number | 완료된 턴 수 |
+| `updatedAt` | string | 최근 활동 시각 |
+| `reachedEndings` | object[] | `Phase 1 · 계획` 이 채팅에서 도달한 엔딩 `{id, name}`([§4-3-10](#4-3-api-계약)) |
+
+**`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`.
+
+**턴 항목**
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | number | 턴 ID |
+| `userInput` | string | 사용자 입력 |
+| `aiOutput` | string | AI 출력 전문. `Phase 1 · 계획` — 채팅 이미지는 본문 내 이미지 마커로 포함([§4-3-9](#4-3-api-계약)) |
+| `choices` | string[] | 선택지 |
+| `createdAt` | string | 생성 시각 |
+| `reachedEnding` | object·null | `Phase 1 · 계획` 엔딩 도달 턴의 엔딩 `{id, name}`([§4-3-10](#4-3-api-계약)) |
 
 **`DELETE /chats/{chatId}`** — 소프트 삭제 후 204, 없으면 404. 처리 규칙은 스토리 삭제와 같습니다.
 
@@ -287,7 +323,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | --- | --- | --- |
 | `started` | `{chatId}` | 스트리밍 시작 |
 | `token` | `{text}` | AI 토큰 청크. AI 서버 스트림을 1:1 중계 |
-| `completed` | `{chatId, turnId, aiOutput, choices[]}` | 턴 저장 완료. `aiOutput`은 서버 확정본 전문. `Phase 1 · 계획` — `imageUrl`·`imageKey`(각 string·null) 추가([§4-3-9](#4-3-api-계약)), `reachedEnding`(`{id, name}`·null) 추가([§4-3-10](#4-3-api-계약)) |
+| `completed` | `{chatId, turnId, aiOutput, choices[]}` | 턴 저장 완료. `aiOutput`은 서버 확정본 전문. `Phase 1 · 계획` — 채팅 이미지는 `aiOutput` 본문 내 마커로 포함([§4-3-9](#4-3-api-계약)), `reachedEnding`(`{id, name}`·null) 추가([§4-3-10](#4-3-api-계약)) |
 | `error` | `{code, message}` | 실패. `completed`를 대체 |
 
 - 서버는 `completed` 전에 사용자 입력과 AI 출력을 한 턴으로 저장합니다. 저장이 확정한 턴 번호를 `ai_call_logs`에도 반영합니다([§4-7](#4-7-운영과-관측)).
@@ -308,7 +344,8 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 - 로그인 상태면 `user_id`를 함께 저장합니다(선택 인증).
 - 저장 후 Slack Incoming Webhook으로 알림을 보냅니다. webhook URL 미설정 시 알림만 생략하고, 알림 실패가 저장 성공(201)을 뒤집지 않습니다.
-- 본문 상한이 프론트엔드(500자)와 다릅니다([§4-8](#4-8-검수-체크리스트) B4).
+- 본문 상한은 서버 2,000자로 프론트엔드(500자)보다 크게 둡니다. 의도된 여유이며, 표시 상한은 프론트엔드가 유동적으로 조정합니다([§4-8](#4-8-검수-체크리스트) B4).
+- `Phase 1 · 계획` — `platform`은 클라이언트 제보값이라 세분화에 한계가 있으므로, 서버가 `User-Agent` 헤더를 함께 저장해 클라이언트 수정 없이 OS·브라우저 수준으로 세분 수집합니다.
 
 ### 4-3-5. 인증 API — `Phase 1 · 구현`
 
@@ -381,6 +418,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `GET /users/me/invite` | — | `{inviteCode, inviteUrl}` | 인증 필수. 내 초대 코드·공유 링크 조회 |
 
 - **가입 보상** — 회원 최초 생성(find-or-create의 create) 시 서버가 500 크레딧을 자동 적립합니다. 별도 API가 없습니다.
+- **보상 크레딧 유효기간·차감 순서 — `Phase 1 · 계획`(결정 2026-07-07)** — 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)은 적립 시점부터 30일 유효하며 만료분은 잔액에서 제외합니다. 차감은 유효기간이 있는 크레딧을 무기한 크레딧(`PURCHASE` — Phase 3)보다 먼저, 그중 남은 기간이 짧은(먼저 적립된) 것부터 소진합니다(FIFO). 현행 구현은 단일 잔액 캐시로 만료·순서를 표현할 수 없어 적립 로트별 잔여 추적(원장 `expires_at` + 로트 소진 기록)으로의 서버 변경이 필요합니다([§4-8](#4-8-검수-체크리스트) B12).
 - **초대 보상** — 초대자가 `inviteUrl`을 공유하고, 피초대자가 그 URL에서 회원가입을 완료해야 합니다. 프론트엔드는 URL의 초대 코드를 `POST /auth/login/google` 요청의 선택 필드 `inviteCode`로 전달합니다. 조건을 만족하면 **초대자와 피초대자 양쪽에 각각 500 크레딧**을 적립합니다. 초대 보상은 보상 수령 계정별 KST 월 10회까지만 적립하며, 초대자와 피초대자의 월 한도는 독립적으로 판정합니다. 월 귀속 기준은 판정 시점이 아니라 **피초대자가 가입한 KST 월**로 고정합니다(가입과 보상 지급이 월 경계에 걸려도 같은 월로 집계). 자기 자신의 코드 제출, 이미 가입된 계정의 코드 제출, 월 한도 초과분은 무시합니다(오류 아님).
 - 거래 내역 조회 API는 Phase 1 범위 밖입니다(원장은 운영·정산용).
 
@@ -401,7 +439,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 - 소모는 사용자 관점 "만들기·이어가기 1회" 단위입니다. **컴파일당 20 크레딧, 완성된 턴당 10 크레딧**이며, 컴파일 내부 부분 재호출(refill, [`5-ai-server.md`](./5-ai-server.md))은 추가 소모하지 않습니다(1회 컴파일에 포함).
 - 스토리라인 생성·재생성(`POST /stories/simple/storylines`)은 회원 크레딧을 소모하지 않고 원장에도 쓰지 않습니다. 단, 게스트는 리롤을 포함해 디바이스 ID별 최대 10회까지만 생성할 수 있습니다.
-- **게스트 체험과 회원 크레딧은 별개 카운터입니다.** 게스트가 한도를 소진하고 로그인하면 회원 지갑(가입 보상 등)으로 새로 시작하며, 소진된 디바이스 ID별 카운터는 크레딧 잔액에 영향을 주지 않습니다.
+- **회원도 게스트 체험 횟수를 공유합니다 — `Phase 1 · 계획`(결정 2026-07-07, 기존 "별개 카운터" 정책 대체)** — 디바이스의 체험 횟수가 남아 있으면 회원 요청도 크레딧 대신 체험 횟수를 먼저 차감해 무료로 처리합니다. 회원가입 시 디바이스 ID 기반 남은 횟수를 계정에 동기화합니다. 현행 구현은 회원=크레딧, 게스트=디바이스 카운터로 분리되어 있어 서버 변경이 필요합니다([§4-8](#4-8-검수-체크리스트) B13).
 
 #### 게스트 체험 한도
 
@@ -417,13 +455,15 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 - 보상 적립은 결정적 멱등 키로 중복을 차단합니다: `signup:{userId}` · `attendance:{userId}:{KST날짜}` · `invite:{초대자userId}:{피초대자userId}:{rewardedUserId}`. 키는 원장 유니크 제약입니다. 초대 보상 월 한도는 보상 수령 계정의 `INVITE_REWARD` 원장 행을 피초대자 가입 월(KST) 단위로 집계해 10회 미만일 때만 적립합니다.
 - `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN`(소모 — 재생성 포함), `REFUND`(환불), `PURCHASE`(Phase 3 예약).
 - 소모 행은 `ref_type`·`ref_id`로 연관 리소스(story·chat·`ai_call_logs`)를 참조합니다.
-- **선차감 대사 배치** — 선차감 후 서버 중단 등으로 환불 행이 누락되는 엣지는 정기 대사 배치가 사후 보정합니다. 미완료 소모 거래를 탐지해 유실 환불 행을 추가하며, `fixedDelay`로 실행이 겹치지 않게 직렬화합니다(주기 기본 15분, `manyak.credit.reconciliation.interval-ms`로 조정). 채팅 소모 거래의 완료 수는 `current_turn + regenerated_count`로 판정해 재생성 소모를 이중 환불하지 않습니다([§4-3-9](#4-3-api-계약)).
+- **선차감 대사 배치** — "먼저 차감하고 실패하면 환불"하는 구조에서, 환불 코드가 도는 도중 서버가 중단되면 돈만 차감되고 환불 행이 영영 안 남는 엣지가 생깁니다. 이를 막기 위해 주기적으로 원장과 실제 처리 결과를 대조(대사, reconciliation)해 "차감됐는데 완료되지 않은 거래"를 찾아 누락된 환불 행을 추가하는 배치입니다. `fixedDelay`로 실행이 겹치지 않게 직렬화합니다(주기 기본 15분, `manyak.credit.reconciliation.interval-ms`로 조정). 채팅 소모 거래의 완료 수는 `current_turn + regenerated_count`로 판정해 재생성 소모를 미완료로 오인해 이중 환불하지 않습니다([§4-3-9](#4-3-api-계약)).
 
 ### 4-3-8. 일반 제작과 스토리 수정 — `Phase 1 · 구현`
 
 일반 제작은 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식입니다([`0-glossary.md §0-3-2`](./0-glossary.md)). **일반 제작 등록 자체는 AI를 호출하지 않습니다** — 컴파일은 희소 입력을 설정으로 확장하는 기능인데 일반 제작 입력은 이미 확장된 형태이므로 검증 후 그대로 저장합니다. 따라서 일반 제작 등록은 크레딧 소모·게스트 체험 한도 카운트가 없습니다. 이 예외는 "스토리라인 생성, 스토리 간편 제작, 채팅 턴만 Phase 1 크레딧·체험 정책의 대상"이라는 정책입니다.
 
-등록은 **단발(single POST)**입니다 — 엔딩·주요 사건·로어북 참조를 부분 저장하는 별도 저작 API(초안 기반 `GET·PUT /stories/{id}/endings` 등)는 두지 않고, `POST /stories/general` 요청 본문 한 번으로 전부 등록합니다(KNK-464 전환 — 초안 기반 API는 구현 후 제거됨). 이미지 필드(`images`·`thumbnailImageKey`)와 업로드 API는 `Phase 1 · 계획`으로 남아 있습니다.
+등록은 **단발(single POST)**입니다 — 엔딩·주요 사건·로어북 참조를 부분 저장하는 별도 저작 API(초안 기반 `GET·PUT /stories/{id}/endings` 등)는 두지 않고, `POST /stories/general` 요청 본문 한 번으로 전부 등록합니다(KNK-464 전환 — 초안 기반 API는 구현 후 제거됨).
+
+이미지는 요청 대상이 아닙니다(결정 2026-07-07) — 스토리 이미지는 전부 팀이 사전 제작해 운영 시드로 관리하며 사용자가 업로드하거나 선택하지 않습니다. 따라서 요청 본문에 이미지 필드가 없고 업로드 API도 두지 않습니다([§4-3-9](#4-3-api-계약), [§4-8](#4-8-검수-체크리스트) B10).
 
 일반 제작이 저장한 주요 사건·엔딩이 채팅 턴, 선택지, 엔딩 판정으로 실제 반영되는 계약은 [§4-3-10](#4-3-api-계약)이 정의합니다. 이미지의 런타임 반영(썸네일·채팅 이미지 표시)은 [§4-3-9](#4-3-api-계약)가 정의합니다. 이 절은 **편집 폼의 저장·왕복 계약**을 정의합니다.
 
@@ -436,26 +476,20 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 | `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
 | `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장 — 현행 방식). 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
 | `storySettings` | 4필드 모두 필수 | 통글 마크다운: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 섹션 단위 폼 입력을 통글로 조립하는 것은 프론트엔드 소유 |
-| `startSetting` | 3필드 모두 필수 | `name`(100자) · `prologue` · `startSituation` |
+| `startSetting` | 3필드 모두 필수 | `name`(100자) · `prologue` · `startSituation`. `Phase 1 · 계획`(결정 2026-07-07) — 시작 설정은 여러 개 등록할 수 있게 배열 `startSettings[]`(1개 이상, 상한 추후 확정)로 확장. 엔딩은 시작 설정별 스코프 유지([§4-3-10](#4-3-api-계약)), 채팅 시작 시 선택은 `POST /chats`의 `startSettingId`([§4-3-3](#4-3-api-계약)). 현행 구현은 단수 1개 — 서버 변경 필요([§4-8](#4-8-검수-체크리스트) B14) |
 | `suggestedInputs` | 정확히 3개 | 추천 입력(채팅 시작 화면 계약과 동일 개수) |
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`. 채팅 런타임 의미(목표 선정·진행·완결 판정 입력)는 [§4-3-10](#4-3-api-계약) |
 | `endings` | 시작 설정당 0~10개 | 엔딩 `{name, requirement{minTurns, achievementCondition}, epilogue}` — 타입 없이 이름으로 식별. 도달 판정 계약은 [§4-3-10](#4-3-api-계약) |
 | `visibility` | 선택, 기본 `PRIVATE` | 공개 범위(`PUBLIC` · `PRIVATE`) |
-| `images` | 최대 10개, 선택 | `Phase 1 · 계획` 스토리 이미지 `{name, triggerText, imageKey}`. `imageKey`는 업로드 결과 키 또는 팀 프리셋 키([§4-3-9](#4-3-api-계약)). `triggerText`는 채팅 이미지 매칭에 사용 |
-| `thumbnailImageKey` | 선택 | `Phase 1 · 계획` 썸네일로 쓸 이미지 키. 미지정 시 프리셋 자동 연결([§4-3-9](#4-3-api-계약)) |
 
 - 응답 201: 간편 제작과 동일한 `{id, title, oneLineIntro, description, genres, startSetting}`. 생성 직후 상세 조회와 채팅 시작의 **기본 메타·스토리 설정·시작 설정**은 제작 방식과 무관하게 동작해야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약)을 따릅니다.
-- 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩 필드는 저장·편집 왕복만 보장하고, 이미지 필드는 저장·왕복에 더해 썸네일·채팅 이미지 표시([§4-3-9](#4-3-api-계약))로 반영됩니다.
-
-#### `POST /uploads/images` — 이미지 업로드 — `Phase 1 · 계획`
-
-**회원 전용**(401)입니다 — 익명 업로드는 스토리지 남용 위험이 커서 게스트는 프리셋 키만 쓸 수 있습니다. presigned URL 방식: 요청 `{contentType, byteSize(≤5MB)}` → 응답 `{imageKey, uploadUrl}` → 클라이언트가 `uploadUrl`로 직접 업로드합니다. 저장소(S3)·서빙 경로는 [`7-deployment.md §7-4`](./7-deployment.md)가 정의합니다.
+- 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩 필드는 저장·편집 왕복만 보장합니다(런타임 반영은 [§4-3-10](#4-3-api-계약)).
 
 #### 스토리 수정
 
 **`GET /stories/{storyId}/edit`** — 수정 폼을 채우기 위한 전용 조회입니다. 스토리 상세(`GET /stories/{storyId}`)는 사용자 표시용이라 통글 4필드와 편집 초안 필드를 모두 반환하지 않습니다.
 
-응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSetting`, `suggestedInputs`, `mainEvents`, `endings`, `images`, `thumbnailImageKey`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다 — 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 `endings`가 빈 배열일 수 있습니다.
+응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSetting`, `suggestedInputs`, `mainEvents`, `endings`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다 — 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 `endings`가 빈 배열일 수 있습니다.
 
 **`PATCH /stories/{storyId}`** — 부분 갱신입니다. 보낸 필드만 교체하고 나머지는 유지합니다. 수정 가능 필드는 일반 제작 요청과 동일 전체이며, **간편 제작으로 만든 스토리도 같은 계약으로 수정**할 수 있습니다(제작 방식 무관 — US-4-5의 "아쉬운 설정 고치기"가 주 사용처).
 
@@ -466,7 +500,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 ### 4-3-9. 채팅 확장 — AI 응답 재생성 `Phase 1 · 구현` · 이미지 표시 `Phase 1 · 계획`
 
-채팅 기능 확장 2종의 계약입니다: 마지막 AI 응답 재생성(US-6-10)과 이미지 표시 — 스토리 썸네일(US-2-7)·채팅 이미지(US-6-11). 이미지는 팀이 사전 제작한 프리셋 자산 또는 사용자 업로드 이미지([§4-3-8](#4-3-api-계약))를 **AI 미관여의 결정적 규칙**으로 자동 연결합니다. AI 서버 계약은 변경하지 않습니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)).
+채팅 기능 확장 2종의 계약입니다: 마지막 AI 응답 재생성(US-6-10)과 이미지 표시 — 스토리 썸네일(US-2-7)·채팅 이미지(US-6-11). 이미지는 전부 팀이 사전 제작한 자산입니다 — 스토리마다 이미지 세트를 연결하고 각 이미지에 키워드를 매핑해 두며, 채팅에서는 **AI가 응답 생성 중 적절한 위치에 이미지를 삽입**합니다(결정 2026-07-07 — 기존 "AI 미관여 결정적 규칙" 방식 대체, [§4-8](#4-8-검수-체크리스트) B10). 사용자가 이미지를 업로드·선택하는 기능은 없습니다. AI 서버 계약 변경이 필요합니다([`5-ai-server.md §5-3-4`](./5-ai-server.md) 정렬 예정).
 
 #### `POST /chats/{chatId}/turns/regenerate/stream` — AI 응답 재생성
 
@@ -475,40 +509,36 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 - 요청: `{turnId: number}` — 클라이언트가 마지막으로 보고 있는 턴 ID(채팅 상세 턴 항목의 `id`와 동일한 숫자 ID). 서버의 마지막 턴과 다르면 스트림 시작 전 동기 409를 반환합니다(다른 탭에서 턴이 추가된 낡은 화면의 재생성 방지). 채팅이 없거나 턴이 0개면 404입니다. `Phase 1 · 계획` — 마지막 턴이 엔딩 도달 턴이면 동기 409를 반환합니다(도달 기록이 이미 확정되어 재생성 대상이 아님 — [§4-3-10](#4-3-api-계약)).
 - 크레딧·체험 한도: 채팅 턴과 동일합니다([§4-3-7](#4-3-api-계약)) — 회원은 10 크레딧 선차감, 게스트는 `chat_turn` 카운터 1턴 집계, 잔액 부족·한도 소진은 동기 402. 재생성 횟수 제한은 따로 두지 않습니다(소모와 게스트 전체 채팅 턴 한도 15회가 반복을 제어).
 - AI 호출: AI 서버 `POST /chat/turns`를 일반 턴과 같은 계약으로 재호출합니다. History는 **마지막 턴의 USER·ASSISTANT 메시지 쌍을 모두 제외**하고(1..N-1턴) 구성하고, `user_input`은 마지막 턴의 사용자 입력을 그대로 다시 보냅니다 — 일반 턴에서 이번 턴 입력이 History가 아니라 `user_input`으로만 가는 것과 동일한 형태입니다. AI 서버는 재생성 여부를 구분하지 않습니다(무상태 — [`5-ai-server.md §5-3-4`](./5-ai-server.md)).
-- 저장: `completed` 전에 마지막 턴의 AI 출력·선택지를 새 값으로 **교체**합니다. 교체 트랜잭션에서 해당 턴이 여전히 마지막 턴인지 재확인하고, 아니면(스트림 중 새 턴 추가·동시 재생성 경합) 결과를 폐기하고 `error` 이벤트로 종료합니다 — 환불은 실패 규칙을 따릅니다. 이전 본문·선택지는 보관하지 않습니다(버전 이력 없음 — Phase 1). `turn_number`·사용자 입력은 변하지 않습니다. 채팅 이미지 매칭(아래)은 새 본문 기준으로 다시 수행합니다.
+- 저장(현행 구현): `completed` 전에 마지막 턴의 AI 출력·선택지를 새 값으로 **교체**합니다. 교체 트랜잭션에서 해당 턴이 여전히 마지막 턴인지 재확인하고, 아니면(스트림 중 새 턴 추가·동시 재생성 경합) 결과를 폐기하고 `error` 이벤트로 종료합니다 — 환불은 실패 규칙을 따릅니다. `turn_number`·사용자 입력은 변하지 않습니다.
+- 이력 보존 — `Phase 1 · 계획`(결정 2026-07-07, 교체 방식 대체): 기존 AI 출력·선택지를 덮어쓰거나 삭제하지 않고 **보존한 채 새 출력을 추가**하고, 최신 출력을 활성본으로 표시합니다. 상세 조회·SSE `completed`는 활성본만 싣고, 이전 출력은 화면에 노출하지 않되 재생성 원인 분석용으로 남깁니다. 현행 교체 구현에서 보존 스키마(메시지 버전 보관)로 서버 변경이 필요합니다([§4-8](#4-8-검수-체크리스트) B11).
 - 동시성: 이어쓰기·재생성의 저장 트랜잭션은 같은 채팅 행에 비관적 쓰기 락(`findByIdForUpdate`)을 걸어 채팅 단위로 직렬화합니다 — READ COMMITTED에서 이어쓰기가 insert한 미커밋 새 턴을 재생성이 보지 못하고 낡은 마지막 턴을 교체하는 경합, 그리고 동시 재생성의 중복 과금을 방지합니다.
 - 재생성 횟수 기록: 교체 성공 시 `story_chats.regenerated_count`를 1 증가시킵니다. 크레딧 선차감 대사([§4-3-7](#4-3-api-계약))는 채팅의 완료 소모 수를 `current_turn + regenerated_count`로 판정해 재생성 소모를 미완료 거래로 오인해 환불하지 않습니다.
 - 실패: 서버가 `completed` 이벤트를 **발행하지 못하고** 종료되면(`error`·AI 실패·저장 전 연결 끊김) 기존 본문·선택지를 유지하고 크레딧을 전액 환불합니다. 교체는 성공 시점에만 일어납니다.
 - 전달 실패: `completed` 발행 후 전달 구간의 연결 끊김은 서버가 감지할 수 없습니다. 이 경우 서버 관점은 성공이므로 교체·크레딧 소모를 유지하고, 클라이언트는 `completed`·`error` 없는 종료(EOF)를 결과 불명으로 보고 상세 refetch로 서버 확정 상태에 수렴합니다([`3-frontend.md §3-6`](./3-frontend.md)).
 - 소유권: 턴 진행과 동일한 규칙입니다([§4-5](#4-5-인증과-권한)).
 
-#### `GET /images/presets` — 프리셋 이미지 카탈로그
-
-팀이 사전 제작한 프리셋 이미지 목록 `{imageKey, name, genre, imageUrl}[]`를 반환합니다. 쿼리 `genre`로 필터할 수 있고, `genre`가 null인 프리셋은 장르 무관 기본 프리셋입니다. 인증이 필요 없습니다.
-
-- 용도 2가지: ① 일반 제작·수정 폼의 프리셋 선택(게스트는 업로드 대신 프리셋만 사용 — [§4-3-8](#4-3-api-계약)) ② 썸네일 자동 연결의 소스(아래).
-- 프리셋 자산은 `image_presets` 테이블로 관리하고 운영에서 시드합니다([§4-4](#4-4-데이터-모델)). 자산 파일의 저장·서빙 경로는 [`7-deployment.md §7-4`](./7-deployment.md)를 따릅니다.
-
 #### 썸네일 자동 연결 규칙
 
-스토리의 대표 이미지는 `stories.thumbnail_image_key`에 저장하고, 응답에는 서빙 URL로 변환해 싣습니다.
+스토리의 대표 이미지(표지)는 팀 이미지 중에서 서버가 자동 연결합니다. 사용자가 썸네일을 업로드하거나 선택하는 계약은 없습니다(결정 2026-07-07).
 
-- **자동 연결** — 스토리 등록 시(간편 제작·일반 제작 공통) `thumbnailImageKey`가 없으면 서버가 연결합니다: 스토리의 첫 번째 장르 태그와 `genre`가 일치하는 프리셋 중 랜덤 1개 → 없으면 장르 무관 프리셋 중 랜덤 1개 → 프리셋이 하나도 없으면 NULL.
-- 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다(썸네일 변경은 `PATCH`의 `thumbnailImageKey` 명시 지정만).
+- **자동 연결** — 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그와 `genre`가 일치하는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL.
+- 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다.
 - 기존 스토리(규칙 도입 전 생성분)는 백필하지 않고 NULL을 유지합니다. 프론트엔드는 NULL이면 현행 placeholder를 표시합니다.
-- **와이어 필드** — `StorySummaryResponse`(배치·내 스토리 목록)에 `thumbnailUrl`(string·null)을 추가합니다(신규 명명은 thumbnail 계열 — [`0-glossary.md §0-3-1`](./0-glossary.md)). 상세 응답의 `coverImageUrl`은 현행 필드명을 유지한 채 같은 썸네일 서빙 URL로 실값을 채웁니다(placeholder 해소).
+- **와이어 필드** — 목록(`StorySummaryResponse`)과 상세 응답 모두 `thumbnailUrl`(string·null, 서빙 URL)로 통일합니다. 상세의 `coverImageUrl`은 `thumbnailUrl`로 개명합니다(placeholder 명명 해소 — [§4-3-1](#4-3-api-계약)).
 
-#### 채팅 이미지 매칭 규칙
+#### 채팅 이미지 삽입 규칙
 
-채팅 진행 중 AI 출력과 함께 표시할 이미지를 스토리 이미지(`story_images`)에서 자동 연결합니다. LLM 판정 없이 백엔드의 결정적 문자열 매칭만 사용합니다.
+채팅 진행 중 AI 출력과 함께 표시할 이미지는 **AI가 응답 생성 중 본문 안에 삽입**합니다(결정 2026-07-07 — 기존 "백엔드 결정적 문자열 매칭·AI 미관여" 방식 대체).
 
-1. 턴 저장 시(AI 출력 확정 후) 스토리 이미지 각각의 `trigger_text`가 `aiOutput`에 부분 문자열로 포함되는지 검사합니다(양끝 공백 정규화 후 비교). 정규화 후 `trigger_text`가 빈 이미지는 매칭 대상에서 제외합니다(빈 문자열은 모든 본문과 매칭되므로 — 썸네일 전용 이미지가 여기에 해당).
-2. 매칭이 여러 개면 `sort_order`가 가장 작은 1개만 연결합니다(**턴당 최대 1장**).
-3. 직전 ASSISTANT 메시지에 연결된 이미지와 같으면 건너뛰고 다음 매칭 이미지를 연결합니다(연속 중복 노출 방지). 다른 매칭이 없으면 연결하지 않습니다.
-4. 연결 결과는 ASSISTANT 메시지의 `image_key`로 저장하고, 채팅 상세의 턴 항목과 SSE `completed`에 `imageUrl`(서빙 URL)과 `imageKey`(자산 키 — 분석 이벤트 `image_key` 프로퍼티의 소스, [`6-analytics.md §6-4-2-6`](./6-analytics.md))를 각각 string·null로 싣습니다. URL은 CDN 도메인·서빙 경로 변경에 따라 값이 바뀔 수 있어, 분석 키로는 안정적인 자산 키를 씁니다.
+1. 스토리마다 팀 이미지 세트를 연결하고, 각 이미지에 장면 매칭용 키워드를 매핑해 둡니다(운영 시드 — 사용자 편집 없음).
+2. 백엔드가 채팅 턴 요청에 해당 스토리의 이미지 목록(식별자·키워드)을 실어 보냅니다.
+3. AI는 장면에 어울리는 이미지가 있으면 본문 중 적절한 위치에 이미지 마커(식별자 참조)를 삽입하고, 어울리는 이미지가 없으면 삽입하지 않습니다.
+4. 백엔드는 저장·응답 전에 마커를 검증하고(존재하지 않는 식별자 제거), 클라이언트가 서빙 URL로 렌더링할 수 있는 형태로 본문에 포함해 전달합니다. 마커 포맷과 AI 요청 필드 상세는 [`5-ai-server.md`](./5-ai-server.md)와 정렬해 확정합니다(미정).
 
-- 스토리 이미지가 없는 스토리(간편 제작 기본)는 채팅 이미지가 표시되지 않습니다. 프리셋을 임의로 삽입하지 않습니다 — 장면과 무관한 이미지는 몰입을 해칩니다.
-- 이미 저장된 턴의 `image_key`는 이후 스토리 수정으로 이미지가 삭제·변경되어도 유지합니다(지난 턴 불변 — [§4-3-8](#4-3-api-계약)의 수정 규칙과 동일).
+- 이미지 자산은 S3 또는 GitHub 등 정적 저장소에 두고 URL로 서빙합니다. 저장·서빙 경로는 [`7-deployment.md §7-4`](./7-deployment.md)가 정의합니다.
+- 이미지가 연결되지 않은 스토리(간편 제작 기본 등)는 채팅 이미지가 표시되지 않습니다. 무관한 이미지를 임의로 삽입하지 않습니다 — 장면과 무관한 이미지는 몰입을 해칩니다.
+- 이미 저장된 턴의 본문(삽입된 이미지 포함)은 이후 스토리 이미지 구성이 바뀌어도 유지합니다(지난 턴 불변 — [§4-3-8](#4-3-api-계약)의 수정 규칙과 동일).
+- 기존 계약이던 턴 메타 필드 `imageUrl`·`imageKey`는 폐기합니다(본문 삽입 방식으로 대체). 분석 이벤트 `image_key` 프로퍼티의 소스는 [`6-analytics.md §6-4-2-6`](./6-analytics.md)과 재정렬이 필요합니다.
 
 ### 4-3-10. 주요 사건·엔딩 런타임 반영 — `Phase 1 · 계획`
 
@@ -520,7 +550,7 @@ manyak-ai  — 스토리 생성(동기 REST) · 채팅 턴(SSE)
 
 | 판정·상태 | 담당 | 방식 |
 | --- | --- | --- |
-| `key_sentence` 관련성(목표 사건 선정·교체) | AI | LLM 정성 판정 — 결정적 문자열 매칭이 아님(채팅 이미지 매칭과 다른 방식) |
+| `key_sentence` 관련성(목표 사건 선정·교체) | AI | LLM 정성 판정 — 결정적 문자열 매칭이 아님 |
 | 주요 사건 완결·진행 카운터 | AI | LLM 정성 판정. 결과를 `completed` 메타로 반환 |
 | 엔딩 최소 턴 수(`min_turns`) | 백엔드 | 결정적 — 충족한 엔딩만 AI 요청에 실음 |
 | 엔딩 달성 조건(`achievement_condition`) | AI | 자연어 조건의 정성 판정(하드) — 목적·거쳐온 사건을 한 필드에 서술, 특정 사건 경유는 강제 아님 |
@@ -602,9 +632,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 채팅 | `story_chat_main_events` | `Phase 1 · 계획` 채팅 ↔ 완결(거쳐온) 주요 사건 기록. `chat_id` · `main_event_id` · `turn_number`, `(chat_id, main_event_id)` 유니크 |
 | 스토리 | `user_story_ending_reaches` | `Phase 1 · 계획` 사용자+스토리 엔딩 도달 집계. `user_id` · `story_id` · `ending_id` · `first_reached_at`, 3필드 유니크 — 회원 도달 기록·이관 백필([§4-3-10](#4-3-api-계약)) |
 | 채팅 | `story_messages.reached_ending_id` | `Phase 1 · 계획` 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼 추가) |
-| 스토리 | `story_images` | `Phase 1 · 계획` 스토리 이미지(스토리당 최대 10). `name` · `trigger_text` · `image_key` · `sort_order`, 썸네일 지정은 `stories.thumbnail_image_key` 컬럼 추가 |
-| 스토리 | `image_presets` | `Phase 1 · 계획` 팀 프리셋 이미지 카탈로그. `image_key`(unique) · `name` · `genre`(nullable — NULL이면 장르 무관). 운영 시드로 관리 |
-| 채팅 | `story_messages.image_key` | `Phase 1 · 계획` ASSISTANT 메시지에 연결된 채팅 이미지 키(nullable 컬럼 추가) — 매칭 규칙은 [§4-3-9](#4-3-api-계약) |
+| 스토리 | `story_images` | `Phase 1 · 계획` 스토리별 팀 이미지 연결(운영 시드 — 사용자 편집 없음). 이미지 식별자 · `keyword`(AI 삽입 판단용) · `image_url`(S3·GitHub 등 정적 저장소 URL) · `genre`(nullable — 썸네일 자동 연결용). 썸네일 확정값은 `stories` 썸네일 컬럼에 저장([§4-3-9](#4-3-api-계약)) |
+| 채팅 | `story_messages` 재생성 이력 | `Phase 1 · 계획` 재생성 시 이전 AI 출력·선택지를 보존하고 활성본을 표시하는 버전 보관 스키마([§4-3-9](#4-3-api-계약)). 방식(버전 테이블 또는 비활성 행)은 구현 시 확정 |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](#4-7-운영과-관측)) |
 
 ### 잔존 표기
@@ -614,6 +643,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 잔존 표기 | 위치 | 공식 표기 |
 | --- | --- | --- |
 | `creation_session_id` | 간편 제작 FK 컬럼 | `creation_id` 계열 |
+
+`creation_session_id`는 V20~V22 개명 전례대로 서버 Flyway 마이그레이션으로 해소 가능하며, 해소 예정입니다(서버 작업 필요 — 2026-07-07 결정).
 
 ## 4-5. 인증과 권한
 
@@ -824,7 +855,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-3-1 ~ 3-4 | 키워드 선택 | `GET /stories/simple/tags`, `POST /stories/simple/storylines` |
 | US-3-5 ~ 3-8 | 스토리라인 선택·평가 | `POST /stories/simple/storylines`, `PUT·DELETE …/rating` |
 | US-3-9 ~ 3-13 | 추가 정보·완성 | `POST /stories/simple`, `POST /chats` |
-| US-3-15 · 3-16 | 일반 제작 `Phase 1 · 구현`(이미지 업로드는 `계획`) | `POST /stories/general`, `POST /uploads/images` |
+| US-3-15 · 3-16 | 일반 제작 `Phase 1 · 구현` | `POST /stories/general` |
 | US-4-5 | 스토리 수정 `Phase 1 · 구현` | `GET /stories/{storyId}/edit`, `PATCH /stories/{storyId}` |
 | US-4-6 | 본 엔딩 표시 `Phase 1 · 계획` | `GET /stories/{storyId}`(`reachedEndings`), `POST /chats/batch`(`reachedEndings`) |
 | US-4-1 ~ 4-4 | 스토리 상세·채팅 시작·삭제 | `GET·DELETE /stories/{storyId}`, `POST /chats` |
@@ -833,7 +864,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-6-10 | AI 응답 재생성 `Phase 1 · 구현` | `POST /chats/{chatId}/turns/regenerate/stream` |
 | US-6-12 | 주요 사건 기반 선택지 `Phase 1 · 계획` | `POST /chats/{chatId}/turns/stream`(AI 전달 계약 — [§4-3-10](#4-3-api-계약)) |
 | US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속 `Phase 1 · 계획` | SSE `completed`·`GET /chats/{chatId}` 턴 항목의 `reachedEnding` |
-| US-6-11 | 채팅 이미지 표시 `Phase 1 · 계획` | `GET /chats/{chatId}` 턴 항목·SSE `completed`의 `imageUrl`, `GET /images/presets` |
+| US-6-11 | 채팅 이미지 표시 `Phase 1 · 계획` | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
 | US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |
 | US-9-1 · 9-5 | 로그인·로그아웃 `Phase 1 · 구현` | `POST /auth/login/google`, `POST /auth/logout` |
 | US-9-2 | 랜덤 프로필 발급 — 닉네임 `Phase 1 · 구현` · 이미지 `계획` | `POST /auth/login/google`(가입 시 발급), `GET /auth/me` |
@@ -865,9 +896,9 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - `Phase 1` 크레딧: 동시 턴 요청 2건이 잔액 10 크레딧만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
 - `Phase 1` 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 크레딧이 소모되지 않아야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약) 기준으로 검수합니다(이미지는 [§4-3-9](#4-3-api-계약) 기준). 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다.
 - `Phase 1` 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
-- `Phase 1` 재생성: 마지막 턴 재생성이 성공하면 같은 턴의 `aiOutput`·선택지가 새 값으로 교체되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 본문이 유지되고 크레딧이 환불돼야 하며, 발행 후 전달 실패는 교체·소모가 유지돼야 합니다.
-- `Phase 1` 썸네일: `thumbnailImageKey` 없이 등록한 스토리에 첫 번째 장르와 일치하는 프리셋이 자동 연결되고, 배치 조회 응답에 `thumbnailUrl`이 실려야 합니다. 규칙 도입 전 스토리는 `thumbnailUrl`이 null이어야 합니다.
-- `Phase 1` 채팅 이미지: `trigger_text`가 AI 출력에 포함된 턴에만 `imageUrl`이 실려야 하고, 같은 이미지가 연속 턴에 반복 연결되지 않아야 합니다. 스토리 이미지가 없는 스토리의 턴은 `imageUrl`이 null이어야 합니다.
+- `Phase 1` 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이력 보존 전환(B11) 후에는 이전 출력이 삭제되지 않고 보존돼야 하며 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 크레딧이 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
+- `Phase 1` 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되고, 목록·상세 응답에 `thumbnailUrl`이 실려야 합니다. 규칙 도입 전 스토리는 `thumbnailUrl`이 null이어야 합니다.
+- `Phase 1` 채팅 이미지: AI가 삽입한 이미지 마커가 스토리에 연결된 이미지 식별자일 때만 본문에 남아야 하고(무효 마커는 서버가 제거), 이미지가 연결되지 않은 스토리의 턴에는 이미지가 없어야 합니다.
 - `Phase 1` 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`·상세 턴 항목의 `reachedEnding`이 일치해야 하고, 도달 후에도 턴 진행이 계속 가능해야 합니다.
 - `Phase 1` 엔딩 집계: 회원 도달 시 `user_story_ending_reaches`에 1행이 생기고 같은 (사용자, 스토리, 엔딩) 재도달은 행을 늘리지 않아야 합니다. 게스트 채팅 이관 시 도달 기록이 집계로 백필되어야 하고, `GET /stories/{storyId}`의 `reachedEndings`가 집계와 일치해야 합니다(게스트 요청은 빈 배열).
 - `Phase 1` 레거시 엔딩: 재정의 마이그레이션 후 기존 `story_endings` 행이 `enabled=false`로 보존되고, 수정 폼 응답·런타임 판정에 나타나지 않아야 합니다.
@@ -880,9 +911,14 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | --- | --- | --- | --- |
 | B1 | 서버 분석 이벤트 | [`6-analytics.md §6-4`](./6-analytics.md)의 `server_*` 6종 미구현. 서버 계측은 구조화 로그·`ai_call_logs`뿐 | Amplitude 서버 이벤트 발행을 후속 구현 |
 | B2 | AI 와이어 필드 정렬 | AI 계약의 `story`(스토리라인 본문)·`extra_info`가 용어집 기준(`storyline` · `additional_info`)과 불일치. 클라이언트 와이어는 정렬 완료 | AI 서버와 동시 배포로 정렬(KNK-375) |
-| B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | 상한 정책 정렬 |
+| B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | **의도된 차이로 확정(2026-07-07)** — 서버는 여유 상한을 유지하고 표시 상한은 프론트엔드가 유동 조정. 추가 정렬 불필요 |
 | B5 | 엔딩 런타임 반영 | 스키마·저작 API는 구현 완료(V29·V30·V33 — `story_endings` 이름 기반 2파라미터 재정의·`story_main_events`·레거시 비활성 보존, [§4-3-8](#4-3-api-계약)·[§4-3-10](#4-3-api-계약)). 런타임(턴 전달·AI 판정 연동·도달 기록 이원화·런타임 상태 컬럼)은 남음 | `Phase 1 · 계획` — 2026-07-05 엔딩 유형(HAPPY/NORMAL/BAD) 폐기·이름 기반 전환(KNK-462), 2026-07-06 조건 2파라미터화·엔딩↔주요 사건 연결 폐지(KNK-463). 컴파일은 유형 없이 3개 생성 |
 | B6 | 크레딧 도입 시 인증 정책 정합 | 소모 강제·한도 판정을 [§4-3-7](#4-3-api-계약) 계약대로 구현 완료(회원=선차감 또는 무료, 게스트=디바이스 ID별 3종 카운터, 402). 선택적 인증 구조 유지 | `Phase 1 · 구현` — 해소 |
 | B7 | 가입 프로필 발급 재정의 | 닉네임 랜덤 발급(형용사+명사)은 구현 완료. 프로필 이미지는 여전히 Google `picture`를 저장 — 프리셋 랜덤 배정으로 교체 필요([§4-5](#4-5-인증과-권한)) | 닉네임 `Phase 1 · 구현`, 프로필 이미지 `Phase 1 · 계획` |
 | B8 | 게스트 한도 우회 | 체험 한도가 디바이스 ID 헤더 기준이라 헤더 변조·기기 변경으로 우회 가능. 스토리라인 생성·재생성은 회원 무료지만 게스트는 10회로 제한 | 한도 자체는 `Phase 1 · 구현`. Phase 1은 우회를 수용하고 관측(호출량 급증 알림)으로 추적. 강화(rate limit 등)는 후속 결정 |
 | B9 | 삭제 소유권 검증 미적용 | 턴 진행·재생성·수정·평가는 소유권 403을 적용하나, `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}`는 소유권 검증 없이 익명 삭제를 허용([§4-5](#4-5-인증과-권한)) | `Phase 1 · 계획` — 삭제 계열에 동일 규칙 적용 |
+| B10 | 이미지 정책 전면 개정 | 사용자 업로드·프리셋 선택·백엔드 결정적 매칭 계약을 폐기하고, 팀 제작 이미지(스토리별 연결·키워드 매핑) + AI 본문 삽입으로 재정의([§4-3-9](#4-3-api-계약)). 서버·AI 서버 모두 미구현 | `Phase 1 · 계획`(결정 2026-07-07) — 마커 포맷·AI 요청 필드를 [`5-ai-server.md`](./5-ai-server.md)와 정렬해 확정, [`6-analytics.md`](./6-analytics.md) `image_key` 프로퍼티 재정렬 |
+| B11 | 재생성 이력 보존 | 현행 구현은 마지막 턴 교체(이전 본문 미보관). 결정은 이전 출력 보존 + 활성본 표시([§4-3-9](#4-3-api-계약)) — 재생성 원인 분석 목적 | `Phase 1 · 계획`(결정 2026-07-07) — 메시지 버전 보관 스키마로 서버 전환 |
+| B12 | 보상 크레딧 만료·차감 순서 | 현행 구현은 만료 없는 단일 잔액. 결정은 보상 크레딧 30일 유효 + 만료 임박(선입) 우선 차감 FIFO([§4-3-7](#4-3-api-계약)) | `Phase 1 · 계획`(결정 2026-07-07) — 적립 로트별 잔여 추적으로 서버 전환 |
+| B13 | 게스트 체험 한도 회원 공유 | 현행 구현은 회원=크레딧, 게스트=디바이스 카운터 분리. 결정은 회원도 잔여 체험 횟수 우선 차감 + 가입 시 디바이스 기준 동기화([§4-3-7](#4-3-api-계약)) | `Phase 1 · 계획`(결정 2026-07-07) — 판정 순서·동기화 저장 위치 설계 후 서버 전환 |
+| B14 | 와이어 개편 묶음 | `chatCount`→`turnCount`(누적 턴 수), 상세 `coverImageUrl`→`thumbnailUrl` 개명, 시작 설정 복수화(`startSettings[]` + `POST /chats`의 `startSettingId`) — 모두 미구현 | `Phase 1 · 계획`(결정 2026-07-07) — 프론트엔드와 동시 배포로 전환 |
