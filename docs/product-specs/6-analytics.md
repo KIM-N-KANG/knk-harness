@@ -395,7 +395,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --- | --- | --- | --- |
 | `client_account_attendanceButton_clicked` | P1 | 계정 시트 출석체크 클릭 | 없음 |
 | `client_account_inviteLinkButton_clicked` | P1 | 계정 시트 초대 링크 복사 클릭 | 없음 |
-| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
+| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
 | `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
 | `client_storyCreate_trialLimit_shown` | P0 | 스토리라인 생성·컴파일 402로 로그인 다이얼로그 노출(게스트) | `limit_type` (string, 필수: `storyline_generation` / `story_creation`) |
