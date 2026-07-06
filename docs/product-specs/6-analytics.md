@@ -389,19 +389,20 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-9. 크레딧 — `Phase 1 · 계획`
 
-계정 시트의 적립 인터랙션과 소모 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+계정 시트의 적립 인터랙션과 크레딧·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_account_attendanceButton_clicked` | P1 | 계정 시트 출석체크 클릭 | 없음 |
 | `client_account_inviteLinkButton_clicked` | P1 | 계정 시트 초대 링크 복사 클릭 | 없음 |
-| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입·초대·출석) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
+| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
 | `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
-| `client_storyCreate_trialLimit_shown` | P0 | 컴파일 402로 체험 종료 다이얼로그 노출(게스트) | 없음 |
-| `client_chat_trialLimit_shown` | P0 | 채팅 턴 402로 체험 종료 다이얼로그 노출(게스트) | `chat_id` (string, 필수) |
+| `client_storyCreate_trialLimit_shown` | P0 | 스토리라인 생성·컴파일 402로 로그인 다이얼로그 노출(게스트) | `limit_type` (string, 필수: `storyline_generation` / `story_creation`) |
+| `client_chat_trialLimit_shown` | P0 | 채팅 턴 402로 로그인 다이얼로그 노출(게스트) | `chat_id` (string, 필수) |
 
 - `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
+- `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 10회 한도와 스토리 생성 3회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 15회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 계정 시트, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
