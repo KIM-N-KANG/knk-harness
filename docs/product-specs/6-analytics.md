@@ -53,7 +53,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | --- | --- |
 | 사용자 입력 원문 분석 | MVP 분석 이벤트와 로그에 원문을 넣지 않습니다. |
 | 대시보드 화면 요구사항 | 실제 Amplitude 또는 CloudWatch 대시보드가 정해질 때 별도 문서로 추가합니다. |
-| 인증 사용자 분석 | `Phase 1 · 계획` — §6-2·§6-4-2-8이 정의합니다(`setUserId`·`user_id`·`is_logged_in`). |
+| 인증 사용자 분석 | 식별자 정책(`setUserId`·`user_id`·`is_logged_in`)은 `Phase 1 · 구현`(§6-2·§6-4-2-8), 로그인 처리·마이그레이션 서버 이벤트는 `Phase 1 · 계획`입니다. |
 | 실험 분석 | A/B 테스트 도입 후 `experiment_key`, `variant`를 추가합니다. |
 
 ## 6-2. 식별자 정책
@@ -85,7 +85,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 스토리 생성 요청은 `creation_id`가 발급되기 전에도 발생할 수 있습니다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계합니다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `creation_id`를 발급하고, 이후 성공·실패 `server_*` 이벤트에는 `creation_id`를 포함합니다. `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 CloudWatch 운영 로그로만 추적합니다.
 
-`Phase 1 · 계획` — 로그인 도입 시 식별자 정책은 다음과 같습니다.
+`Phase 1 · 구현` — 로그인 도입에 따른 식별자 정책은 다음과 같습니다.
 
 - 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지합니다. 같은 기기의 과거 익명 행동은 `device_id`로 자동 연결되므로 별도 `alias`는 사용하지 않습니다.
 - 로그아웃 시 `setUserId(null)`와 함께 Amplitude `reset()`으로 `device_id`를 새로 발급합니다. Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합하므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되는 것을 막습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
@@ -153,8 +153,8 @@ event_time, event_id
 
 | property | 도입 시점 | 설명 |
 | --- | --- | --- |
-| `user_id` | 인증 도입 후 `Phase 1 · 계획` | 로그인 사용자 식별자(public_id 문자열)입니다. `setUserId`로 설정합니다(§6-2). |
-| `is_logged_in` | 인증 도입 후 `Phase 1 · 계획` | 로그인 여부입니다. |
+| `user_id` | 인증 도입 후 `Phase 1 · 구현` | 로그인 사용자 식별자(public_id 문자열)입니다. `setUserId`로 설정합니다(§6-2). |
+| `is_logged_in` | 인증 도입 후 `Phase 1 · 구현` | 로그인 여부입니다. |
 | `membership` | 구독·요금제 도입 후 | 요금제 또는 등급입니다. |
 | `signup_at` | 인증 도입 후 `Phase 1 · 계획` | 가입 시점입니다. |
 | `experiment_key` / `variant` | A/B 테스트 도입 후 | 실험 키와 분기 값입니다. |
@@ -369,32 +369,32 @@ AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succee
 
 server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나만 사용합니다. 상세 매핑은 `6-6-7. 서버 분석 이벤트와 실패 타입`을 따릅니다.
 
-#### 6-4-2-8. 로그인·계정 — `Phase 1 · 계획`
+#### 6-4-2-8. 로그인·계정 — 클라이언트 이벤트 `Phase 1 · 구현` / 서버 이벤트 `Phase 1 · 계획`
 
 로그인 화면(FE-SCREEN-008)과 게스트 데이터 마이그레이션의 이벤트입니다. 마이그레이션은 로그인 직후 자동 실행되므로 클라이언트 계측 없이 서버 이벤트로 수집합니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
-| `client_login_viewed` | P1 | 로그인 화면 진입 | 없음 |
-| `client_login_googleButton_clicked` | P1 | Google 로그인 버튼 클릭 | 없음 |
-| `client_account_logoutButton_clicked` | P1 | 계정 시트 로그아웃 클릭 | 없음 |
-| `server_login_googleLogin_processed_succeeded` | P0 | 로그인 처리 성공 | `is_new_user` (boolean, 필수) |
-| `server_login_googleLogin_processed_failed` | P0 | 로그인 처리 실패 | `error_type` (string, 필수) |
-| `server_login_migration_processed_succeeded` | P0 | 마이그레이션 처리 완료(부분 성공 포함) | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
-| `server_login_migration_processed_failed` | P0 | 마이그레이션 요청 자체 실패(400 등) | `error_type` (string, 필수) |
+| `client_login_viewed` `Phase 1 · 구현` | P1 | 로그인 화면 진입 | 없음 |
+| `client_login_googleButton_clicked` `Phase 1 · 구현` | P1 | Google 로그인 버튼 클릭 | 없음 |
+| `client_account_logoutButton_clicked` `Phase 1 · 계획` | P1 | 마이 페이지 로그아웃 클릭 | 없음 |
+| `server_login_googleLogin_processed_succeeded` `Phase 1 · 계획` | P0 | 로그인 처리 성공 | `is_new_user` (boolean, 필수) |
+| `server_login_googleLogin_processed_failed` `Phase 1 · 계획` | P0 | 로그인 처리 실패 | `error_type` (string, 필수) |
+| `server_login_migration_processed_succeeded` `Phase 1 · 계획` | P0 | 마이그레이션 처리 완료(부분 성공 포함) | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
+| `server_login_migration_processed_failed` `Phase 1 · 계획` | P0 | 마이그레이션 요청 자체 실패(400 등) | `error_type` (string, 필수) |
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
-- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다.
+- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다. 프론트엔드는 현재 로그아웃 클릭 계측을 구현하지 않았고 analytics `reset()`만 수행합니다(§6-2) — `client_account_logoutButton_clicked`는 `Phase 1 · 계획`으로 유지합니다.
 
 #### 6-4-2-9. 크레딧 — `Phase 1 · 계획`
 
-계정 시트의 적립 인터랙션과 크레딧·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+마이 페이지의 적립 인터랙션과 크레딧·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
-| `client_account_attendanceButton_clicked` | P1 | 계정 시트 출석체크 클릭 | 없음 |
-| `client_account_inviteLinkButton_clicked` | P1 | 계정 시트 초대 링크 복사 클릭 | 없음 |
+| `client_account_attendanceButton_clicked` | P1 | 마이 페이지 출석체크 클릭 | 없음 |
+| `client_account_inviteLinkButton_clicked` | P1 | 마이 페이지 초대 링크 복사 클릭 | 없음 |
 | `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
 | `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
@@ -404,7 +404,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
 - `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 10회 한도와 스토리 생성 3회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 15회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
-- 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 계정 시트, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
+- 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
 
 #### 6-4-2-10. 일반 제작·스토리 수정 — `Phase 1 · 계획`
