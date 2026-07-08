@@ -403,7 +403,7 @@ graph LR
 
 **세션 부트스트랩 확장 — `Phase 1 · 구현`(B17, KNK-498).** `GET /auth/me` 응답에 `creditBalance`(number — 크레딧 잔액, 지갑이 없으면 0)와 `attendedToday`(boolean — KST 자정 기준 당일 출석체크 적립 완료 여부)를 포함합니다. `attendedToday`는 출석과 같은 멱등 키의 원장 행 존재 여부를 부수효과 없이 조회해 판정합니다. 프론트엔드는 세션 복원 1회 왕복으로 헤더의 잔액 표시와 출석체크 UI 상태까지 그립니다. access 토큰이 유효해도 `sub`가 UUID 형식이 아니면 401입니다.
 
-`profileThumbnailBase64`(string·null) — `Phase 1 · 계획`(B17). 세션 복원 시 헤더 아바타를 **이미지 호스트 왕복 없이 즉시 렌더**하도록 저해상도 인라인 썸네일(`users.profile_thumbnail_base64`)을 함께 싣습니다. 원본 전체 해상도는 `profileImageUrl`(외부 스토리지 URL)로 로드하고, 썸네일은 그 사이의 첫 페인트를 채웁니다. 값은 프리셋 배정 시 생성되며(KNK-388 — 그 전까지 null), 미배정·미생성이면 null(클라이언트 기본 아바타).
+`profileThumbnailBase64`(string·null) — `Phase 1 · 계획`(B17). 세션 복원 시 헤더 아바타를 **이미지 호스트 왕복 없이 즉시 렌더**하도록 48×48 저해상도 인라인 썸네일(`users.profile_thumbnail_base64`)을 함께 싣습니다. 원본 전체 해상도는 `profileImageUrl`(외부 스토리지 URL)로 로드하고, 썸네일은 그 사이의 첫 페인트 placeholder를 채웁니다(레티나 선명본은 원본 로드로 교체). 값은 프리셋 배정 시 생성되며(KNK-388 — 그 전까지 null), 미배정·미생성이면 null(클라이언트 기본 아바타).
 
 **결정 기록 — 세션 부트스트랩 응답 확장(2026-07-08, B17)**
 
@@ -811,7 +811,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
-| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기용 저해상도) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트)([§4-3-5](#4-3-api-계약) B15·B19) |
+| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트)([§4-3-5](#4-3-api-계약) B15·B19) |
 | 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크 |
 | 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at` |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
@@ -873,7 +873,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 항목 | 상태 | 규칙 |
 | --- | --- | --- |
 | 닉네임 | `구현` | 한국어 형용사+명사 조합 랜덤 생성(예: "몽환적인 이야기꾼") — 풀은 형용사 40 × 명사 40(1,600 조합), 각 토큰 무공백. 50자 초과는 절단으로 방어(재시도 없음), 중복 허용(식별은 `public_id`) |
-| 프로필 이미지 | `계획` | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 자동 배정. `profile_image_url`에 자산 URL, `profile_thumbnail_base64`에 저해상도 썸네일을 저장(후자는 `GET /auth/me` 첫 페인트용으로도 반환 — [§4-3-5](#4-3-api-계약) B17). 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타 — [§4-3-1](#4-3-api-계약)) |
+| 프로필 이미지 | `계획` | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 자동 배정. `profile_image_url`에 원본 자산 URL, `profile_thumbnail_base64`에 48×48 저해상도 인라인 썸네일을 저장(후자는 `GET /auth/me` 첫 페인트용으로도 반환 — [§4-3-5](#4-3-api-계약) B17). 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타 — [§4-3-1](#4-3-api-계약)) |
 | Google 클레임 | 닉네임 `구현` | `name`·`picture`를 프로필에 사용하지 않음(`picture`는 교체 전까지 잔존). `email`은 `social_accounts`에만 저장 |
 
 현행 구현으로 이미 Google `name`·`picture`가 저장된 기존 회원은 백필(재발급) 여부를 프로필 이미지 교체 구현 시 결정합니다(신규 가입분은 랜덤 발급 우선 적용).
