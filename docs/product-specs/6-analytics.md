@@ -404,7 +404,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_chat_trialLimit_shown` | P0 | 채팅 턴 402로 로그인 다이얼로그 노출(게스트) | `chat_id` (string, 필수) |
 
 - `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
-- `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 10회 한도와 스토리 생성 3회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 15회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
+- `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 5회 한도와 스토리 생성 1회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 5회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite` — 코드 표시·카카오톡 공유·링크 복사)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
