@@ -394,7 +394,9 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_account_attendanceButton_clicked` | P1 | 마이 페이지 출석체크 클릭 | 없음 |
-| `client_account_inviteLinkButton_clicked` | P1 | 마이 페이지 초대 링크 복사 클릭 | 없음 |
+| `client_invite_viewed` | P1 | 친구 초대 페이지(`/my/invite`) 진입 | 없음 |
+| `client_invite_copyButton_clicked` | P1 | 친구 초대 페이지 링크 복사 클릭 | 없음 |
+| `client_invite_kakaoShareButton_clicked` | P1 | 친구 초대 페이지 카카오톡 공유 클릭 | 없음 |
 | `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
 | `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
@@ -404,6 +406,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
 - `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 10회 한도와 스토리 생성 3회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 15회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
+- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite` — 코드 표시·카카오톡 공유·링크 복사)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
 
