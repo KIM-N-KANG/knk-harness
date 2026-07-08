@@ -705,7 +705,7 @@ graph TD
 - `occurred_main_event_names[]` — 이 채팅에서 이미 완결된(거쳐온) 주요 사건 이름.
 - `endings[]` — 도달 후보 엔딩. **`min_turns`를 충족한 엔딩만** 싣고, 이 채팅이 이미 엔딩에 도달했다면(`story_chats.reached_ending_id` 존재) 빈 배열을 실어 재판정을 차단합니다(도달 인정은 채팅당 최초 1회).
 
-AI가 `completed`에 실어 보낸 판정 메타(`reachedEndingName` · `targetMainEvent` · `occurredMainEventName`)는 턴 저장 트랜잭션에서 채팅 상태에 반영합니다. 백엔드는 AI가 반환한 엔딩 이름을 해당 스토리의 엔딩으로 해소해 `reached_ending_id`로 저장합니다. 재생성([§4-3-9](#4-3-api-계약))은 요청 재료를 **대상 턴의 메타를 제외한(직전 턴까지의) 상태**로 구성하고, 교체 성공 시 새 메타로 사건 완결 기록(`story_chat_main_events`)·목표 상태를 다시 씁니다 — 폐기된 본문의 사건 완결 기록은 남기지 않습니다. 단, **엔딩 도달 턴은 재생성 대상에서 제외**합니다(동기 409) — 도달 기록이 턴 기록과 사용자+스토리 집계로 이미 확정·전파되어 롤백이 불완전하기 때문입니다.
+AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEvent` · `occurredMainEventName` — 필드명 정본은 [`5-ai-server.md §5-3-4`](./5-ai-server.md))는 턴 저장 트랜잭션에서 채팅 상태에 반영합니다. 백엔드는 AI가 반환한 엔딩 이름을 해당 스토리의 엔딩으로 해소해 `reached_ending_id`로 저장합니다. 재생성([§4-3-9](#4-3-api-계약))은 요청 재료를 **대상 턴의 메타를 제외한(직전 턴까지의) 상태**로 구성하고, 교체 성공 시 새 메타로 사건 완결 기록(`story_chat_main_events`)·목표 상태를 다시 씁니다 — 폐기된 본문의 사건 완결 기록은 남기지 않습니다. 단, **엔딩 도달 턴은 재생성 대상에서 제외**합니다(동기 409) — 도달 기록이 턴 기록과 사용자+스토리 집계로 이미 확정·전파되어 롤백이 불완전하기 때문입니다.
 
 #### 엔딩 도달 기록 — 이원화
 
@@ -744,7 +744,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`reachedEndingName` · `targetM
 
 ### 테이블·저장소 구성
 
-RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V35)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. Redis 키는 이 문서의 계약 절이 정본입니다. 여기서는 도메인 그룹과 역할만 고정합니다.
+RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V37)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. Redis 키는 이 문서의 계약 절이 정본입니다. 여기서는 도메인 그룹과 역할만 고정합니다.
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
