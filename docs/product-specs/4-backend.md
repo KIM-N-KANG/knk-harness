@@ -395,13 +395,15 @@ graph LR
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
 | `POST /auth/login/google` | `{idToken, inviteCode?}` | `TokenResponse` |
-| `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, status, creditBalance, attendedToday}` — 확장 필드 2종은 `Phase 1 · 구현`(B17, KNK-498) |
+| `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday}` — `creditBalance`·`attendedToday`는 `Phase 1 · 구현`(B17, KNK-498), `profileThumbnailBase64`는 `Phase 1 · 계획`(B17) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
 
 `TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer"}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다. 웹에서는 이 응답을 BFF가 가로채 httpOnly 쿠키로 보관하고 `refreshToken`을 JS에 노출하지 않습니다(토큰 세션은 [§4-5](#4-5-인증과-권한) 참조).
 
 **세션 부트스트랩 확장 — `Phase 1 · 구현`(B17, KNK-498).** `GET /auth/me` 응답에 `creditBalance`(number — 크레딧 잔액, 지갑이 없으면 0)와 `attendedToday`(boolean — KST 자정 기준 당일 출석체크 적립 완료 여부)를 포함합니다. `attendedToday`는 출석과 같은 멱등 키의 원장 행 존재 여부를 부수효과 없이 조회해 판정합니다. 프론트엔드는 세션 복원 1회 왕복으로 헤더의 잔액 표시와 출석체크 UI 상태까지 그립니다. access 토큰이 유효해도 `sub`가 UUID 형식이 아니면 401입니다.
+
+`profileThumbnailBase64`(string·null) — `Phase 1 · 계획`(B17). 세션 복원 시 헤더 아바타를 **이미지 호스트 왕복 없이 즉시 렌더**하도록 저해상도 인라인 썸네일(`users.profile_thumbnail_base64`)을 함께 싣습니다. 원본 전체 해상도는 `profileImageUrl`(외부 스토리지 URL)로 로드하고, 썸네일은 그 사이의 첫 페인트를 채웁니다. 값은 프리셋 배정 시 생성되며(KNK-388 — 그 전까지 null), 미배정·미생성이면 null(클라이언트 기본 아바타).
 
 **결정 기록 — 세션 부트스트랩 응답 확장(2026-07-08, B17)**
 
@@ -871,7 +873,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 항목 | 상태 | 규칙 |
 | --- | --- | --- |
 | 닉네임 | `구현` | 한국어 형용사+명사 조합 랜덤 생성(예: "몽환적인 이야기꾼") — 풀은 형용사 40 × 명사 40(1,600 조합), 각 토큰 무공백. 50자 초과는 절단으로 방어(재시도 없음), 중복 허용(식별은 `public_id`) |
-| 프로필 이미지 | `계획` | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 자동 배정. `profile_image_url`에 자산 URL, `profile_thumbnail_base64`에 저해상도 썸네일을 저장. 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타 — [§4-3-1](#4-3-api-계약)) |
+| 프로필 이미지 | `계획` | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 자동 배정. `profile_image_url`에 자산 URL, `profile_thumbnail_base64`에 저해상도 썸네일을 저장(후자는 `GET /auth/me` 첫 페인트용으로도 반환 — [§4-3-5](#4-3-api-계약) B17). 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타 — [§4-3-1](#4-3-api-계약)) |
 | Google 클레임 | 닉네임 `구현` | `name`·`picture`를 프로필에 사용하지 않음(`picture`는 교체 전까지 잔존). `email`은 `social_accounts`에만 저장 |
 
 현행 구현으로 이미 Google `name`·`picture`가 저장된 기존 회원은 백필(재발급) 여부를 프로필 이미지 교체 구현 시 결정합니다(신규 가입분은 랜덤 발급 우선 적용).
@@ -1180,7 +1182,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B14 | 와이어 개편 묶음 | 계약은 `turnCount`(누적 사용자 입력 턴 수)·`thumbnailUrl`(목록·상세 통일)·`startSettings[]` 복수화 + `POST /chats`의 `startSettingId`. 현행 와이어·구현은 `chatCount`(채팅 개수 — 눌러본 횟수에 가까워 플레이량 지표로 부적합)·`coverImageUrl`(placeholder 명명)·단수 시작 설정이라 전환 필요. 복수화 근거: 엔딩 스키마가 이미 시작 설정 스코프(V30)로 복수를 전제하고, 크랙의 "시작 설정별 엔딩" 골격과 일치 — 한 스토리에 여러 진입점 제공 | `Phase 1 · 계획`(결정 2026-07-07) — 프론트엔드와 동시 배포로 전환 |
 | B15 | 게스트 이관 1회 제한 | 계약은 계정당 이관 1회(1건 이상 `MIGRATED` 시 잠금)·닫힌 계정의 `migrationClosed: true` 응답, 동시 호출은 `findByIdForUpdate`로 직렬화([§4-3-5](#4-3-api-계약)) | `Phase 1 · 구현` — `users.migrated_at`(V36)·잠금 게이트로 해소(KNK-434). 소유 증명 불가·열거 오라클 한계는 B19 |
 | B16 | 게스트-회원 교차 접근 차단 | 계약은 NULL 소유 리소스의 플레이·변경·삭제·채팅 생성·채팅 상세 조회를 게스트 전용으로 제한(회원 403)하고, 채팅 배치 조회는 열람 불가 항목을 제외([§4-5](#4-5-인증과-권한)·[§4-3-3](#4-3-api-계약)) | `Phase 1 · 구현` — 턴·재생성·수정·삭제·채팅 생성·채팅 상세 조회(KNK-435, `isOwnerAccessAllowed`)와 `POST /chats/batch` 열람 필터(KNK-497)까지 전부 해소. 프론트엔드 403 안내만 후속 정렬 |
-| B17 | 세션 부트스트랩 응답 확장 | 계약은 `GET /auth/me`에 `creditBalance`·`attendedToday` 동봉([§4-3-5](#4-3-api-계약)) | `Phase 1 · 구현` — `me` 처리에 잔액·당일 출석 원장 조회 추가로 해소(KNK-498) |
+| B17 | 세션 부트스트랩 응답 확장 | 계약은 `GET /auth/me`에 `creditBalance`·`attendedToday`·`profileThumbnailBase64` 동봉([§4-3-5](#4-3-api-계약)) | `creditBalance`·`attendedToday`는 `Phase 1 · 구현`(KNK-498). `profileThumbnailBase64`는 `Phase 1 · 계획` — 첫 페인트용 인라인 썸네일 동봉, 값 생성은 프리셋 배정(KNK-388)에 의존 |
 | B18 | 비인증 쓰기 남용·rate limit 부재 | 크레딧·한도(402)의 통제를 받지 않는 쓰기 경로가 요청량 제한 없이 열려 있음: `POST /feedbacks`(Slack 알림 도배 — [§4-3-4](#4-3-api-계약)), `POST /stories/general`(다중 테이블 파생 행 무한 적재 — [§4-3-8](#4-3-api-계약)), `POST /chats`(임의 스토리에 채팅 행 생성), 스토리라인 평가(`PUT/DELETE …/rating` — 열거 가능 Long ID·무소유). 멱등 키가 없어 중복 제출도 그대로 적재되고, `description`·`storySettings` 등 본문 길이·요청 크기 상한도 미정의. SSE 턴 스트림도 동시 연결 상한이 없어 커넥션·스레드 고갈 표면 | Phase 1 수용 — 등록·호출량 급증을 관측으로 추적. rate limit(IP·디바이스 기준)·멱등 키·페이로드 상한·동시 스트림 상한은 후속 강화로 일괄 결정 |
 | B19 | 이관 소유권 미증명·열거 오라클 | 서버가 요청자의 원래 게스트 소유를 증명할 수 없어 NULL 리소스는 UUID를 아는 회원 누구나 클레임 가능([§4-3-5](#4-3-api-계약)). 성공 0건 호출은 잠기지 않아, `MIGRATED`/`CONFLICT`/`NOT_FOUND` 구분이 임의 UUID의 소유 상태 열거 오라클이 됨 | 완화 `Phase 1 · 구현` — 이관 시도 상한 5회(성공 0건 포함, `users.migration_attempts` V38, KNK-500)로 열거 규모를 제한. `status` 세분화는 부분 성공 UX에 필요해 유지. 공개 게스트 UUID 클레임 가능성은 이관의 구조적 한계로 수용(관측 추적) |
 | B20 | 정지 계정 집행 | 계약은 정지 계정의 소모·쓰기 요청 403 + 회전 시 family 폐기([§4-5](#4-5-인증과-권한)) | `Phase 1 · 구현` — `SuspensionGuard` 공통 게이트·회전 시 반응형 폐기로 해소(KNK-499) |
