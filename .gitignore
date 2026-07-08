@@ -1,2 +1,6 @@
 # macOS Finder metadata
 .DS_Store
+
+# Agent-local settings (per-developer, not shared)
+.claude/settings.local.json
+.agents/settings.local.json
