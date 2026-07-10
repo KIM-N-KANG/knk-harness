@@ -23,7 +23,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.22 |
+| 버전 | v0.23 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-07-10 |
 | 대상 | 마냑 백엔드 서버 |
@@ -233,13 +233,14 @@ graph LR
 | `likeCount` | number | 좋아요 수(placeholder, 현재 0) |
 | `status` | enum | `DRAFT` · `PUBLISHED` |
 | `createdAt` | string | 생성 시각 |
+| `thumbnailUrlSm` | string·null | `Phase 1 · 계획`(KNK-548) 목록용 **축소 변형** 썸네일 URL(~700px `_sm`). 자동 연결·변형 구현과 함께 추가하는 필드입니다([§4-3-9](#4-3-api-계약) 반응형 변형) |
 
 **`GET /stories/{storyId}`** — 상세 응답(`StoryDetailResponse`)은 목록 필드에 다음을 더합니다.
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `thumbnailUrl` | string·null | `Phase 1 · 구현`(KNK-515) 썸네일 서빙 URL 필드. 이전 `coverImageUrl`을 개명. 다만 자동 연결 소스(썸네일 자동 연결 — [§4-3-9](#4-3-api-계약))가 `Phase 1 · 계획`이라 값은 현재 null |
+| `thumbnailUrl` | string·null | `Phase 1 · 구현`(KNK-515) 상세용 **원본 변형** 썸네일 URL 필드(이전 `coverImageUrl` 개명). 반응형 변형(`thumbnailUrlSm`은 목록·채팅용)은 `Phase 1 · 계획`(KNK-548). 자동 연결 소스(썸네일 자동 연결 — [§4-3-9](#4-3-api-계약))가 `Phase 1 · 계획`이라 값은 현재 null |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `startSettings` | object[] | `Phase 1 · 구현`(KNK-515) 시작 설정 목록(복수화 — 등록 순서). 각 항목 `{id, name, prologue, startSituation, suggestedInputs[], endings[]}`: `id`는 시작 설정 공개 식별자(UUID — `POST /chats`의 `startSettingId`로 사용), `suggestedInputs`는 이 시작 설정의 추천 입력, `endings`는 `{name, requirement{minTurns, achievementCondition}, epilogue}`(이름 기반·유형 없음, 활성 엔딩만, 레거시 `enabled=false` 제외, [§4-3-8](#4-3-api-계약)·[§4-3-10](#4-3-api-계약)). 시작 설정이 없으면 빈 배열 |
 | `visibility` | enum | `PUBLIC` · `PRIVATE`(기본 PRIVATE) |
@@ -329,6 +330,7 @@ graph LR
 | `lastStoryPreview` | string | 마지막 ASSISTANT 출력 **전문** — 서버는 자르지 않으며 표시 절단은 프론트엔드 소유. 완료 턴이 없는 채팅(생성 직후)은 빈 문자열. 채팅당 최신 1건만 뽑는 단일 배치 쿼리로 조회(N+1 방지) |
 | `turnCount` | number | 완료된 턴 수 — 매번 세지 않고 턴 저장과 원자적으로 증가하는 비정규화 카운터(`story_chats.current_turn`)를 반환 |
 | `updatedAt` | string | 최근 활동 시각 |
+| `thumbnailUrlSm` | string·null | `Phase 1 · 계획`(KNK-548) 참조 스토리 썸네일의 **축소 변형** URL(채팅 카드 46×62). 목록·채팅이 공유하는 `_sm`([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `reachedEndings` | string[] | `Phase 1 · 구현`(KNK-523) 이 채팅에서 도달한 엔딩 **이름** 목록(채팅당 최대 1개, 도달 전 빈 배열 — [§4-3-10](#4-3-api-계약)) |
 
 **`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. `Phase 1 · 구현` — 채팅 상세는 플레이 기록이므로 소유권 규칙을 적용합니다: 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 조회할 수 있고 위반은 403입니다([§4-5](#4-5-인증과-권한)). `turns[]`는 USER 직후 ASSISTANT 메시지를 짝지어 구성하며 짝 없는 USER·SYSTEM 메시지는 턴에서 제외합니다. `suggestedInputs`는 턴이 0개일 때만 채우고 진행 턴이 있으면 빈 배열입니다(다음 행동은 마지막 턴 `choices`가 안내).
@@ -708,10 +710,20 @@ graph TD
 
 스토리의 대표 이미지(표지)는 팀 이미지(카탈로그의 `THUMBNAIL` 타입 — 아래 자산 카탈로그) 중에서 서버가 자동 연결합니다. 사용자가 썸네일을 업로드하거나 선택하는 계약은 없습니다.
 
-- **자동 연결** — 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그가 이미지의 장르 태그 목록(`genres[]` — 복수 가능, 값은 장르 마스터와 정확 일치라 매칭이 문자열 동등 비교)에 포함되는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL. 확정값은 `stories.thumbnail_image_key`에 저장하고 응답 `thumbnailUrl`은 백엔드가 조합합니다([§4-4](#4-4-데이터-모델)).
+- **자동 연결** — 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그가 이미지의 장르 태그 목록(`genres[]` — 복수 가능, 값은 장르 마스터와 정확 일치라 매칭이 문자열 동등 비교)에 포함되는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL. 확정값은 `stories.thumbnail_image_key`에 저장하고, 응답의 두 썸네일 URL(`thumbnailUrl`·`thumbnailUrlSm`)은 백엔드가 조합합니다(반응형 변형 — 아래, [§4-4](#4-4-데이터-모델)).
 - 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다.
 - 기존 스토리(규칙 도입 전 생성분)는 백필하지 않고 NULL을 유지합니다. 프론트엔드는 NULL이면 현행 placeholder를 표시합니다.
-- **와이어 필드** — 상세 응답의 `coverImageUrl`은 `thumbnailUrl`(string·null, 서빙 URL)로 개명 완료입니다(`Phase 1 · 구현` — KNK-515). 다만 자동 연결 소스(이 절)가 아직 `Phase 1 · 계획`이라 상세의 `thumbnailUrl` 값은 현재 null입니다. 목록(`StorySummaryResponse`)에는 아직 `thumbnailUrl` 필드가 없으며, 이 자동 연결 구현과 함께 추가합니다([§4-3-1](#4-3-api-계약)).
+- **와이어 필드** — 상세 응답의 `coverImageUrl`은 `thumbnailUrl`로 개명 완료입니다(`Phase 1 · 구현` — KNK-515). 자동 연결 소스가 아직 `Phase 1 · 계획`이라 값은 현재 null입니다. 목록(`StorySummaryResponse`)·채팅 카드(`ChatSummaryResponse`)에는 축소 변형 `thumbnailUrlSm`을 자동 연결·변형 구현과 함께 추가합니다([§4-3-1](#4-3-api-계약)·[§4-3-3](#4-3-api-계약)).
+
+**썸네일 반응형 변형 — `Phase 1 · 계획`(KNK-548).** 썸네일 단일 URL이 채팅 목록 46×62 ~ 스토리 목록 200×266 ~ 스토리 상세 원본까지 쓰여, 한 파일로는 "가벼운 목록"과 "선명한 상세"를 동시에 못 잡습니다(상세에 맞추면 목록 20장이 무겁고, 목록에 맞추면 상세가 흐림). **썸네일만** 두 변형을 둡니다 — 배경·캐릭터는 채팅 중 한 장씩 로드라 목록 동시 로드 문제가 없어 단일 원본을 유지합니다.
+
+| 용도 | S3 키 | 응답 필드 | 사이즈 |
+| --- | --- | --- | --- |
+| 스토리 상세 | `thumbnails/{imageKey}.png`(카탈로그 canonical 키 = 원본) | `thumbnailUrl` | 원본 해상도 + 양자화 |
+| 스토리 목록·채팅 목록 | `thumbnails/{imageKey}_sm.png` | `thumbnailUrlSm` | 가장 긴 변 ~700px 다운스케일(채팅 46px도 이 축소본을 다운스케일) |
+
+- `imageKey`는 불변이고 `_sm`은 파생 접미사입니다(원본 키 불변). **BE가 두 URL을 모두 조합해 응답에 싣고(반환 방식 확정), 프론트엔드는 상세에서 `thumbnailUrl`, 목록·채팅에서 `thumbnailUrlSm`을 사용합니다(문자열 조작 금지 — URL은 백엔드 소유).**
+- **정적 사전 생성**(동적 CloudFront+Lambda 리사이즈 아님) — 자산이 고정 규모라 변형을 미리 만들어 올리는 편이 싸고 단순합니다. 접미사 `_sm` 컨벤션을 잠근 뒤 업로드하며(BE·FE와 불일치 시 404), 불변 캐시라 canonical(원본) 재업로드는 CloudFront invalidation을 동반합니다([`7-deployment.md §7-4`](./7-deployment.md)).
 
 #### 이미지 자산 카탈로그와 저장소
 
@@ -725,9 +737,9 @@ graph TD
 
 - **`imageKey` 규칙** — ASCII 소문자·숫자·언더스코어(`[a-z0-9_]`, 1~64자)로 강제하고, 형식은 `{타입 접두}_{연번 4자리}`(`bg_0007` · `char_0031` · `thumb_0012`)입니다. 시드 매니페스트가 부여하며 불변입니다. 문자 집합을 좁게 고정하는 이유: 마커 추출 정규식(`\[\[image:[a-z0-9_]{1,64}\]\]`)이 안전해지고, 한글·공백이 S3 객체 키·CDN 캐시 키·AI 마커에 실리는 위험을 없애며, 짧은 키가 프롬프트 토큰도 아낍니다.
 - **등록(시드) — 매니페스트 방식** — 서버 등록 입력은 파일명이 아니라 **시드 매니페스트(JSON)**입니다: 항목마다 `imageKey` · `type` · 의미 태그(`genres[]`·분위기/성격·장소/성별·소품) · 원본 파일 참조를 담습니다. 원본 한글 파일명(`{타입}__{장르}_{분위기}_{장소}_{소품}__{번호}` 계열)은 매니페스트 **생성 도구의 입력**(오프라인 파싱 + 큐레이션)으로만 쓰입니다 — 실물 자산의 파일명 장르(`재벌`·`헌터`·`판타지` 등)가 장르 마스터(`재벌물`·`헌터물`·`현대 판타지`/`로맨스 판타지`/`게임 판타지`)와 표기가 달라 기계 파싱만으로는 매칭이 조용히 0건이 되기 때문입니다(사람 매핑 필수). **런타임 매칭의 정본은 DB 메타이며 파일명이 아닙니다.**
-- **매니페스트 검증(시드 시 실패)** — `imageKey` 형식·중복, `type` 3종, 그리고 **`genres[]`의 각 값이 장르 마스터(GENRE 사전 정의 태그명, V13)와 정확히 일치(공백 포함)**해야 하며, 위반 항목이 있으면 시드 전체를 실패시킵니다 — 규칙 위반 자산이 매칭에서 조용히 빠지는 것이 가장 위험한 실패이기 때문입니다. 썸네일의 복수 장르는 매니페스트 `genres[]` 배열로 표현합니다(파일명 구분자 문제 소멸).
+- **매니페스트 검증(시드 시 실패)** — `imageKey` 형식·중복(**`_sm`으로 끝나는 키 금지** — 썸네일 축소 변형의 파생 객체 키 `{imageKey}_sm.png`와 충돌 방지, KNK-548), `type` 3종, 그리고 **`genres[]`의 각 값이 장르 마스터(GENRE 사전 정의 태그명, V13)와 정확히 일치(공백 포함)**해야 하며, 위반 항목이 있으면 시드 전체를 실패시킵니다 — 규칙 위반 자산이 매칭에서 조용히 빠지는 것이 가장 위험한 실패이기 때문입니다. 썸네일의 복수 장르는 매니페스트 `genres[]` 배열로 표현합니다(파일명 구분자 문제 소멸).
 - **시드 실행 경로** — 카탈로그 등재는 **Flyway 시드 마이그레이션**으로 합니다(태그 마스터 V13과 같은 하우스 패턴, 관리자 API 없음 정책 유지 — [§4-5](#4-5-인증과-권한)). S3 자산 업로드는 배포와 무관하게 선행하고, 등재(노출 대상 편입)는 서버 릴리스에 동반됩니다 — Phase 1 자산 배치는 드물어 수용하고, 등재 빈도가 높아지면 별도 시드 도구를 후속 결정합니다. **테스트 주의**: 테스트 프로파일은 Flyway 비활성(`ddl-auto: create-drop`)이라 시드가 실행되지 않아 통합 테스트의 카탈로그는 항상 비어 있습니다 — 매칭·자동 연결 테스트는 카탈로그를 픽스처(`@Sql`·리포지토리 저장)로 심어야 하고(안 심으면 "후보 없음 → NULL 폴백" 경로만 검증됨), 시드 마이그레이션 자체의 검증은 실 PostgreSQL 경로(`scripts/gen-db-docs.sh`)로 합니다(기존 스키마 문서화와 같은 패턴).
-- **확장자·서빙 URL** — Phase 1 자산은 전수 PNG이므로 확장자는 `.png` 고정이며 카탈로그에 저장하지 않습니다(포맷이 다양해지면 컬럼 추가). S3 객체 키는 `{prefix}/{imageKey}.png`(prefix는 `type`에서 유도 — `thumbnails/`·`backgrounds/`·`characters/`), 서빙 URL은 `{MANYAK_IMAGE_BASE_URL}/{prefix}/{imageKey}.png`로 백엔드가 조합합니다(base URL은 환경 변수 — [§4-7](#4-7-운영과-관측)).
+- **확장자·서빙 URL** — Phase 1 자산은 전수 PNG이므로 확장자는 `.png` 고정이며 카탈로그에 저장하지 않습니다(포맷이 다양해지면 컬럼 추가). S3 객체 키는 `{prefix}/{imageKey}.png`(prefix는 `type`에서 유도 — `thumbnails/`·`backgrounds/`·`characters/`), 서빙 URL은 `{MANYAK_IMAGE_BASE_URL}/{prefix}/{imageKey}.png`로 백엔드가 조합합니다(base URL은 환경 변수 — [§4-7](#4-7-운영과-관측)). **예외: 썸네일은 원본 키 외에 축소 변형 `thumbnails/{imageKey}_sm.png`가 함께 존재해 두 URL을 조합합니다(위 반응형 변형); 배경·캐릭터는 단일 원본뿐입니다.**
 - **비활성(`deactivated_at` 기록)의 적용 범위** — 부적절 자산의 긴급 내리기(takedown)가 동작해야 하므로, 비활성은 **이후의 모든 새 노출을 차단**하고 지난 기록만 보존합니다. 세 지점별로: ① **신규 스토리 후보 선정**(등록 배경 배정·컴파일 캐릭터 후보·썸네일 자동 연결)에서 제외. ② **기존 스토리의 새 턴**에서도 제외 — 매 턴 요청 재료(배경 후보 목록·인물 매핑)에 싣지 않고, `completed`의 `images[]` 구성에서도 거릅니다(이중 방어 — 본문 마커 무변경, 프론트엔드 숨김 규칙으로 무해화). 내린 다음 턴부터 즉시 노출이 멈추며, 인물 이미지가 비활성이면 그 인물은 이미지 없이 진행합니다. 연결·매핑 행(`story_images`·`story_characters`)은 지우지 않으므로 재활성화하면 복귀합니다. ③ **지난 턴 재구성은 확정 시각 기준으로 판정** — 비활성 **이전에** 확정된 턴에는 계속 보이고(지난 기록 보존), 비활성 **이후에** 확정된 턴에서는 재구성에서도 제외됩니다(`completed` 구성과 대칭 — 아래 재구성 불변의 비활성 시각 컷오프). 비활성은 불리언이 아니라 시각(`deactivated_at`)으로 기록해 이 비교를 가능하게 합니다. 지난 턴에서도 소급 제거해야 하는 사안(법적 삭제 등)은 비활성이 아니라 별도 운영 조치이며 Phase 1 범위 밖입니다.
 - **저장소** — 썸네일·배경·캐릭터는 **S3 + CloudFront**(비공개 버킷 + OAC, prefix `thumbnails/` · `backgrounds/` · `characters/`)로 서빙합니다(아래 결정 기록). `imageKey`는 **불변**이고 이미지 교체는 새 키 발급입니다 — 저장된 지난 턴이 언제 봐도 같아야 하기 때문입니다. DB 정본은 `imageKey`이며 `imageKey` → 서빙 URL 변환은 백엔드 소유입니다([`7-deployment.md §7-4`](./7-deployment.md)). 프로필 프리셋(서버 static·전체 URL 저장 — [§4-5](#4-5-인증과-권한))과는 저장소·정본이 다릅니다.
 
@@ -878,7 +890,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | --- | --- | --- |
 | 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19) |
 | 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크 |
-| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 계획` 컬럼 — `thumbnail_image_key`(nullable — 등록 시 자동 연결로 1회 확정, 응답 `thumbnailUrl`은 백엔드가 URL 조합, [§4-3-9](#4-3-api-계약)) |
+| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 계획` 컬럼 — `thumbnail_image_key`(nullable — 등록 시 자동 연결로 1회 확정. 응답의 두 URL `thumbnailUrl`(원본)·`thumbnailUrlSm`(축소 `_sm`)을 이 키에서 백엔드가 조합 — 반응형 변형 [§4-3-9](#4-3-api-계약) KNK-548) |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정(스토리 1:N — `Phase 1 · 구현` 복수화, KNK-515·V42): `public_id`(UUID, 유니크 — `POST /chats`의 `startSettingId`) · `name` · `prologue` · `start_situation`. 스토리당 1개 제약(V42에서 제거) 대신 `story_id` 비유니크 인덱스, 순서는 PK 오름차순(등록 순). 추천 입력·엔딩이 이 설정에 스코프 |
 | 스토리 | `story_suggested_inputs` | 추천 입력(시작 설정별 목록, `input_order`) |
@@ -1184,7 +1196,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US | 흐름 | 검증 엔드포인트 |
 | --- | --- | --- |
 | US-2-1 · 2-4 · 2-6 | 스토리 목록·삭제 | `POST /stories/batch`, `DELETE /stories/{storyId}` |
-| US-2-7 | 스토리 카드 썸네일 `Phase 1 · 계획` | `POST /stories/batch` · `GET /users/me/stories`(`thumbnailUrl`) |
+| US-2-7 | 스토리 카드 썸네일 `Phase 1 · 계획` | `POST /stories/batch` · `GET /users/me/stories`(`thumbnailUrlSm` — 목록은 축소 변형, 상세는 `thumbnailUrl` — KNK-548) |
 | US-3-1 ~ 3-4 | 키워드 선택 | `GET /stories/simple/tags`, `POST /stories/simple/storylines` |
 | US-3-5 ~ 3-8 | 스토리라인 선택·평가 | `POST /stories/simple/storylines`, `PUT·DELETE …/rating` |
 | US-3-9 ~ 3-13 | 추가 정보·완성 | `POST /stories/simple`, `POST /chats` |
@@ -1235,7 +1247,8 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - `Phase 1` 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
 - `Phase 1` 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이전 출력은 버전 이력으로 보존되고 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 크레딧이 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
 - `Phase 1` 이미지 시드: 매니페스트의 `imageKey`가 `[a-z0-9_]{1,64}` 형식·유니크여야 하고, `genres[]` 값이 GENRE 마스터 태그명과 하나라도 불일치하면 시드가 실패해야 합니다(조용한 매칭 0건 금지). 등재된 키의 서빙 URL(`{base}/{prefix}/{imageKey}.png`)이 실제 S3 객체와 일치해야 합니다.
-- `Phase 1` 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 목록·상세 응답에 조합된 `thumbnailUrl`이 실려야 합니다. 규칙 도입 전 스토리는 `thumbnailUrl`이 null이어야 합니다.
+- `Phase 1` 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 상세 응답에 원본 `thumbnailUrl`·목록/채팅 응답에 축소 `thumbnailUrlSm`이 실려야 합니다(반응형 변형 KNK-548). 규칙 도입 전 스토리는 두 필드가 null이어야 합니다.
+- `Phase 1` 썸네일 변형: 썸네일만 `_sm` 변형을 두고 배경·캐릭터는 단일 원본이어야 하며, `thumbnails/{imageKey}.png`(원본)·`thumbnails/{imageKey}_sm.png`(축소)가 각각 S3+CDN 200을 반환해야 합니다. 상세는 원본, 목록·채팅은 `_sm`을 써야 합니다.
 - `Phase 1` 채팅 이미지: `token` 스트림에 마커가 노출되지 않아야 하고, `completed`·상세 조회의 `images[]`에는 카탈로그에 있는 키가 타입별 최대 1장씩만 실려야 합니다(백엔드 이중 강제 — 본문 마커는 무변경). `images[]`에 없는 마커는 프론트엔드가 마커 텍스트째 숨겨야 하며 사용자에게 `[[image:…]]` 원문이 보이면 안 됩니다. 같은 인물은 턴 진행·재생성에 걸쳐 같은 이미지여야 하고(`story_characters` 고정), 상세 조회의 `images[]` 재구성 결과가 `completed` 시점과 동일해야 합니다 — 특히 턴 확정 이후 등록된 프리셋 키의 마커는 재구성에서도 무효로 남아야 합니다(삭제 금지 + 등록 시각 컷오프). 비활성(`deactivated_at` 기록)으로 내린 이미지는 다음 턴부터 후보 전달·`images[]`에서 빠져야 하고, 비활성 **이전에** 확정된 지난 턴 재구성에는 계속 남아야 하며, 비활성 **중에** 확정된 턴의 마커는 재구성에서도 무효여야 합니다(`completed` 대칭 — 비활성 적용 범위). 후보가 없는 스토리의 턴에는 이미지가 없어야 합니다.
 - `Phase 1` 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`의 `reachedEnding`(엔딩 이름·null)이 일치해야 하고(채팅 상세 턴 항목 노출은 후속), 도달 후에도 턴 진행이 계속 가능해야 합니다.
 - `Phase 1` 엔딩 집계: 회원 도달 시 `user_story_ending_reaches`에 1행이 생기고 같은 (사용자, 스토리, 엔딩) 재도달은 행을 늘리지 않아야 합니다. 게스트 채팅 이관 시 도달 기록이 집계로 백필되어야 하고, `GET /stories/{storyId}`의 `reachedEndings`가 집계와 일치해야 합니다(게스트 요청은 빈 배열).
@@ -1250,7 +1263,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B2 | AI 와이어 필드 정렬 | AI 계약의 `story`(스토리라인 본문)·`extra_info`가 용어집 기준(`storyline` · `additional_info`)과 불일치. 클라이언트 와이어는 정렬 완료 | AI 서버와 동시 배포로 정렬(KNK-375) |
 | B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | **의도된 차이로 확정(2026-07-07)** — 서버는 여유 상한을 유지하고 표시 상한은 프론트엔드가 유동 조정. 추가 정렬 불필요 |
 | B8 | 게스트 한도 우회·수치 축소 | 체험 한도가 디바이스 ID 헤더 기준이라 헤더 변조·기기 변경으로 우회 가능. 디바이스 ID 회전은 Redis 카운터 키를 만료 없이 무한히 늘림 | 한도 구조·수치 5·1·5(`application.yml`) 모두 `Phase 1 · 구현`(KNK-436 축소, 카운터 리셋 없음). 우회는 수용하고 관측(호출량 급증 알림·카운터 키 증가 추이)으로 추적, 강화(rate limit·키 TTL 등)는 후속 결정 |
-| B10 | 이미지 표시 구현 | 계약은 확정(2026-07-10 팀 합의 — [§4-3-9](#4-3-api-계약)): 마커 `[[image:<imageKey>]]` 1종 + `images[].type`, 배경=등록 시 후보 확정·매 턴 AI 선택, 인물=컴파일 시 매핑 확정(`story_characters`), `completed`에 마커 본문(오프셋 없음)·`token` 마커 미노출. 서버·AI 서버·프론트엔드 모두 미구현(현행 채팅 출력은 평문+강조 파서뿐이라 이미지 렌더 경로 신설 필요) | `Phase 1 · 계획` — 두 트랙으로 분리 착수: ① **썸네일 트랙**(AI 의존 없음 — S3·CloudFront 1회 준비 후 카탈로그 시드·`stories` 썸네일 컬럼·등록 시 자동 연결·목록 `thumbnailUrl` 추가) 즉시 가능, ② **채팅 이미지 트랙**(배경 후보 배정·컴파일 인물 매핑·`completed.images[]`)은 [`5-ai-server.md`](./5-ai-server.md) 정렬(컴파일 스키마 확장·"이미지 AI 미사용" 번복 기록·마커 검증)이 선행 조건. 공통 후속: [`6-analytics.md`](./6-analytics.md) `image_key` 재정렬, 프론트엔드 이미지 렌더·CDN 허용 호스트([`7-deployment.md §7-4`](./7-deployment.md)는 운영 시드 전용으로 정리 완료) |
+| B10 | 이미지 표시 구현 | 계약은 확정(2026-07-10 팀 합의 — [§4-3-9](#4-3-api-계약)): 마커 `[[image:<imageKey>]]` 1종 + `images[].type`, 배경=등록 시 후보 확정·매 턴 AI 선택, 인물=컴파일 시 매핑 확정(`story_characters`), `completed`에 마커 본문(오프셋 없음)·`token` 마커 미노출. 서버·AI 서버·프론트엔드 모두 미구현(현행 채팅 출력은 평문+강조 파서뿐이라 이미지 렌더 경로 신설 필요) | `Phase 1 · 계획` — 두 트랙으로 분리 착수: ① **썸네일 트랙**(AI 의존 없음 — S3·CloudFront 1회 준비 후 카탈로그 시드·`stories` 썸네일 컬럼·등록 시 자동 연결·반응형 변형(`thumbnailUrl`/`thumbnailUrlSm`, KNK-548)) 즉시 가능, ② **채팅 이미지 트랙**(배경 후보 배정·컴파일 인물 매핑·`completed.images[]`)은 [`5-ai-server.md`](./5-ai-server.md) 정렬(컴파일 스키마 확장·"이미지 AI 미사용" 번복 기록·마커 검증)이 선행 조건. 공통 후속: [`6-analytics.md`](./6-analytics.md) `image_key` 재정렬, 프론트엔드 이미지 렌더·CDN 허용 호스트([`7-deployment.md §7-4`](./7-deployment.md)는 운영 시드 전용으로 정리 완료) |
 | B18 | 비인증 쓰기 남용·rate limit 부재 | 크레딧·한도(402)의 통제를 받지 않는 쓰기 경로가 요청량 제한 없이 열려 있음: `POST /feedbacks`(Slack 알림 도배 — [§4-3-4](#4-3-api-계약)), `POST /stories/general`(다중 테이블 파생 행 무한 적재 — [§4-3-8](#4-3-api-계약)), `POST /chats`(임의 스토리에 채팅 행 생성), 스토리라인 평가(`PUT/DELETE …/rating` — 열거 가능 Long ID·무소유). 멱등 키가 없어 중복 제출도 그대로 적재되고, `description`·`storySettings` 등 본문 길이·요청 크기 상한도 미정의. SSE 턴 스트림도 동시 연결 상한이 없어 커넥션·스레드 고갈 표면 | Phase 1 수용 — 등록·호출량 급증을 관측으로 추적. rate limit(IP·디바이스 기준)·멱등 키·페이로드 상한·동시 스트림 상한은 후속 강화로 일괄 결정 |
 | B19 | 이관 소유권 미증명·열거 오라클 | 서버가 요청자의 원래 게스트 소유를 증명할 수 없어 NULL 리소스는 UUID를 아는 회원 누구나 클레임 가능([§4-3-5](#4-3-api-계약)). 성공 0건 호출은 잠기지 않아, `MIGRATED`/`CONFLICT`/`NOT_FOUND` 구분이 임의 UUID의 소유 상태 열거 오라클이 됨 | 완화 `Phase 1 · 구현` — 이관 시도 상한 5회(성공 0건 포함, `users.migration_attempts` V38, KNK-500)로 열거 규모를 제한. `status` 세분화는 부분 성공 UX에 필요해 유지. 공개 게스트 UUID 클레임 가능성은 이관의 구조적 한계로 수용(관측 추적) |
 | B21 | Sybil 보상 파밍 | 가입 500·초대 양측 500 크레딧이 계정 생성 제한 없이 지급([§4-3-7](#4-3-api-계약)). 다수 Google 계정으로 유료 AI 재화를 대량 확보 가능(게스트 이관 파밍(B8)과 다른 벡터). 초대 방식 개편(KNK-567)으로 자격이 회원 평생 1회로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)도 같은 벡터에 포함 — 의도된 정책으로 수용(2026-07-11) | Phase 1 수용 — 보상 지급량을 관측으로 추적. 계정 신뢰 신호 기반 dedup·보상 지연은 후속 결정 |
