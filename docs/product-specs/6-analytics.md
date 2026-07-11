@@ -415,8 +415,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --- | --- | --- | --- |
 | `client_account_attendanceButton_clicked` | P1 | 마이 페이지 출석체크 클릭 | 없음 |
 | `client_invite_viewed` | P1 | 친구 초대 페이지(`/my/invite`) 진입 | 없음 |
-| `client_invite_copyButton_clicked` | P1 | 친구 초대 페이지 링크 복사 클릭 | 없음 |
+| `client_invite_copyButton_clicked` | P1 | 친구 초대 페이지 초대 코드 복사 클릭(KNK-567 — 복사 대상이 링크에서 코드로 변경) | 없음 |
 | `client_invite_kakaoShareButton_clicked` | P1 | 친구 초대 페이지 카카오톡 공유 클릭 | 없음 |
+| `client_invite_codeInput_submitted` | P1 | 초대 코드 제출(`POST /users/me/invite/redeem` 호출, KNK-567) | `source` (string, 필수: `invite_page` / `onboarding`) |
+| `client_invite_codeInput_succeeded` | P0 | 초대 코드 제출 성공 — 양측 적립(KNK-567, 초대 전환의 종점) | `source` (동일) |
+| `client_invite_codeInput_failed` | P1 | 초대 코드 제출 실패(KNK-567) | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`) |
+| `client_inviteOnboarding_shown` | P1 | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567) | 없음 |
+| `client_inviteOnboarding_skipped` | P1 | 초대 코드 스텝 건너뛰기(KNK-567) | 없음 |
 | `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_guestLimitDialog_shown` | P0 | 402로 게스트 체험 한도 다이얼로그 노출 | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`) |
 | `client_guestLimitDialog_loginButton_clicked` | P1 | 게스트 한도 다이얼로그의 로그인 CTA 클릭 | `trigger` (동일) |
@@ -428,8 +433,9 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
 - 두 다이얼로그는 화면 횡단 전역 오버레이라 네이밍 원칙(§6-3-1)의 screenName 자리에 다이얼로그명을 씁니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하며, 이전 개정판의 화면 분리형 이벤트(`client_storyCreate_creditShortage_shown` 등 4종)와 `limit_type`·`chat_id` 프로퍼티를 대체합니다. CTA·닫기 클릭(P1)까지 수집해 전환 다이얼로그의 효과를 관찰합니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
-- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite` — 코드 표시·카카오톡 공유·링크 복사)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다.
-- 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
+- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
+- `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
+- 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
 
 #### 6-4-2-10. 일반 제작·스토리 수정 — `Phase 1 · 계획`
@@ -454,6 +460,19 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --- | --- | --- | --- |
 | `client_terms_viewed` | P2 | 이용약관 화면 진입 | 없음 |
 | `client_privacy_viewed` | P2 | 개인정보 처리방침 화면 진입 | 없음 |
+
+#### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567)
+
+인앱 브라우저 감지·탈출([`3-frontend.md §3-10`](./3-frontend.md))의 관측 이벤트입니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_inappBrowser_detected` | P1 | 인앱 브라우저 UA 감지 | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
+| `client_inappBrowser_escapeAttempted` | P1 | 카카오톡 탈출 스킴 호출 | `app` (string, 필수: `kakaotalk`) |
+| `client_inappBrowser_bannerShown` | P1 | 안내 배너 노출(카카오톡 탈출 실패 판정 포함) | `app` (동일 enum) |
+
+- 탈출 성공은 직접 계측할 수 없습니다(스킴 호출에 콜백이 없고 성공 시 페이지가 닫힘). `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다.
+- 인앱별 유입량(`detected`의 `app` 분포)은 안내 배너만 두는 인스타그램·쓰레드에 자동 탈출 투자를 추가할지 판단하는 근거입니다.
 
 ### 6-4-3. impression 수집 기준
 
