@@ -15,9 +15,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.18 |
+| 버전 | v0.19 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-07-05 |
+| 수정일 | 2026-07-11 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -189,10 +189,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0 | client | `client_chat_messageInput_submitted` |
 | P0 | server | `server_chat_aiMessage_processed_succeeded` |
 | P0 | server | `server_chat_aiMessage_processed_failed` |
-| P0 `Phase 1 · 계획` | client | `client_storyCreate_creditShortage_shown` |
-| P0 `Phase 1 · 계획` | client | `client_chat_creditShortage_shown` |
-| P0 `Phase 1 · 계획` | client | `client_storyCreate_trialLimit_shown` |
-| P0 `Phase 1 · 계획` | client | `client_chat_trialLimit_shown` |
+| P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown` |
+| P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown` |
 | P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_succeeded` |
 | P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_failed` |
 | P0 `Phase 1 · 계획` | server | `server_login_migration_processed_succeeded` |
@@ -226,6 +224,19 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked` |
 | P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed` |
 | P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed` |
+| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed` |
+| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed` |
+| P1 `Phase 1 · 구현` | client | `client_login_viewed` |
+| P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_account_viewed` |
+| P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_invite_viewed` |
+| P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked` |
+| P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked` |
 | P1 | server | `server_feedback_submission_processed_succeeded` |
 | P1 | server | `server_feedback_submission_processed_failed` |
 | P2 | client | `client_storyCreate_addTag_submitted` |
@@ -238,6 +249,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2 | client | `client_chat_addBlockButton_clicked` |
 | P2 | client | `client_chat_removeBlockButton_clicked` |
 | P2 | client | `client_chat_situationInsertButton_clicked` |
+| P2 | client | `client_storyCreate_creditInfoButton_clicked` |
+| P2 | client | `client_storyDetail_thumbnail_clicked` |
+| P2 | client | `client_terms_viewed` |
+| P2 | client | `client_privacy_viewed` |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -287,6 +302,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_additionalInfoRemoveButton_clicked` | P2 | 추가 정보 입력란 삭제 클릭 | 없음 |
 | `client_storyCreate_storyCompletion_requested` | P1 | 스토리 완성 요청 전송 | `creation_id` (string, 필수) |
 | `client_storyCreate_completeError_shown` | P1 | 스토리 완성 실패 에러 표시 | `stage` (string, 필수: `story` / `chat`) |
+| `client_storyCreate_creditInfoButton_clicked` | P2 | 제작 헤더 크레딧 안내 팝오버 열기(닫힘은 계측하지 않음) | 없음 |
 | `client_storyCreate_exitButton_clicked` | P1 | 제작 이탈 확인(나가기) 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
 | `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택) |
 
@@ -313,6 +329,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | --- | --- | --- | --- |
 | `client_storyDetail_viewed` | P0 | 스토리 상세 화면 진입 | `story_id` (string, 필수) |
 | `client_storyDetail_chatStartButton_clicked` | P0 | 채팅 시작 버튼 클릭 | `story_id` (string, 필수) |
+| `client_storyDetail_thumbnail_clicked` | P2 | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 
 추천 스토리 카드는 아직 도입되지 않은 기능입니다. 기능 도입 시 `client_storyDetail_recommendStoryCard_clicked`와 `client_storyDetail_recommendStoryCard_impressed`(P1, `story_id` string 필수, `position` number 선택)를 추가합니다. 이때 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
@@ -377,7 +394,9 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --- | --- | --- | --- |
 | `client_login_viewed` `Phase 1 · 구현` | P1 | 로그인 화면 진입 | 없음 |
 | `client_login_googleButton_clicked` `Phase 1 · 구현` | P1 | Google 로그인 버튼 클릭 | 없음 |
-| `client_account_logoutButton_clicked` `Phase 1 · 계획` | P1 | 마이 페이지 로그아웃 클릭 | 없음 |
+| `client_account_viewed` `Phase 1 · 구현` | P1 | 마이 페이지 진입 | 없음 |
+| `client_account_loginButton_clicked` `Phase 1 · 구현` | P1 | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음 |
+| `client_account_logoutButton_clicked` `Phase 1 · 구현` | P1 | 마이 페이지 로그아웃 클릭 | 없음 |
 | `server_login_googleLogin_processed_succeeded` `Phase 1 · 계획` | P0 | 로그인 처리 성공 | `is_new_user` (boolean, 필수) |
 | `server_login_googleLogin_processed_failed` `Phase 1 · 계획` | P0 | 로그인 처리 실패 | `error_type` (string, 필수) |
 | `server_login_migration_processed_succeeded` `Phase 1 · 계획` | P0 | 마이그레이션 처리 완료(부분 성공 포함) | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
@@ -385,7 +404,8 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
-- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다. 프론트엔드는 현재 로그아웃 클릭 계측을 구현하지 않았고 analytics `reset()`만 수행합니다(§6-2) — `client_account_logoutButton_clicked`는 `Phase 1 · 계획`으로 유지합니다.
+- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다. 프론트엔드는 로그아웃 클릭 시 이벤트를 보낸 뒤 analytics `reset()`을 수행합니다(§6-2) — 이벤트 전송이 리셋보다 먼저여야 로그아웃 직전 사용자에게 귀속됩니다.
+- `client_account_loginButton_clicked`는 게스트가 마이 페이지에서 로그인 화면으로 이동한 유입을 구분합니다. 로그인 화면 진입 자체는 `client_login_viewed`로 측정합니다.
 
 #### 6-4-2-9. 크레딧 — `Phase 1 · 계획`
 
@@ -398,13 +418,15 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_invite_copyButton_clicked` | P1 | 친구 초대 페이지 링크 복사 클릭 | 없음 |
 | `client_invite_kakaoShareButton_clicked` | P1 | 친구 초대 페이지 카카오톡 공유 클릭 | 없음 |
 | `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
-| `client_storyCreate_creditShortage_shown` | P0 | 컴파일 402로 크레딧 부족 다이얼로그 노출(회원) | 없음 |
-| `client_chat_creditShortage_shown` | P0 | 채팅 턴 402로 크레딧 부족 다이얼로그 노출(회원) | `chat_id` (string, 필수) |
-| `client_storyCreate_trialLimit_shown` | P0 | 스토리라인 생성·컴파일 402로 로그인 다이얼로그 노출(게스트) | `limit_type` (string, 필수: `storyline_generation` / `story_creation`) |
-| `client_chat_trialLimit_shown` | P0 | 채팅 턴 402로 로그인 다이얼로그 노출(게스트) | `chat_id` (string, 필수) |
+| `client_guestLimitDialog_shown` | P0 | 402로 게스트 체험 한도 다이얼로그 노출 | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`) |
+| `client_guestLimitDialog_loginButton_clicked` | P1 | 게스트 한도 다이얼로그의 로그인 CTA 클릭 | `trigger` (동일) |
+| `client_guestLimitDialog_dismissed` | P1 | 게스트 한도 다이얼로그 닫기 | `trigger` (동일) |
+| `client_creditShortageDialog_shown` | P0 | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원) | `trigger` (동일) |
+| `client_creditShortageDialog_earnButton_clicked` | P1 | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭 | `trigger` (동일) |
+| `client_creditShortageDialog_dismissed` | P1 | 크레딧 부족 다이얼로그 닫기 | `trigger` (동일) |
 
-- `creditShortage`·`trialLimit` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
-- `client_storyCreate_trialLimit_shown.limit_type`은 게스트가 스토리라인 생성·재생성 5회 한도와 스토리 생성 1회 한도 중 어느 지점에서 막혔는지 구분합니다. 채팅은 모든 채팅방 합산 5회 한도만 있으므로 `client_chat_trialLimit_shown`에 별도 `limit_type`을 싣지 않습니다.
+- `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
+- 두 다이얼로그는 화면 횡단 전역 오버레이라 네이밍 원칙(§6-3-1)의 screenName 자리에 다이얼로그명을 씁니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하며, 이전 개정판의 화면 분리형 이벤트(`client_storyCreate_creditShortage_shown` 등 4종)와 `limit_type`·`chat_id` 프로퍼티를 대체합니다. CTA·닫기 클릭(P1)까지 수집해 전환 다이얼로그의 효과를 관찰합니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite` — 코드 표시·카카오톡 공유·링크 복사)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
@@ -423,6 +445,15 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_storyEdit_completed` | P1 | 수정 저장 성공 | `story_id` (string, 필수) |
 
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
+
+#### 6-4-2-11. 법적 고지
+
+이용약관·개인정보 처리방침 화면의 진입 이벤트입니다. 유입 경로 분석용 저우선 계측입니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_terms_viewed` | P2 | 이용약관 화면 진입 | 없음 |
+| `client_privacy_viewed` | P2 | 개인정보 처리방침 화면 진입 | 없음 |
 
 ### 6-4-3. impression 수집 기준
 
@@ -909,7 +940,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 개인정보 | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다. |
 | 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
 | 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
-| 이벤트 수집 `Phase 1` | `client_storyCreate_creditShortage_shown`·`client_chat_creditShortage_shown`·`client_storyCreate_trialLimit_shown`·`client_chat_trialLimit_shown`이 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다. |
 
