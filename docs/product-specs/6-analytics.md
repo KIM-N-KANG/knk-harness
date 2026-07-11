@@ -422,7 +422,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_invite_codeInput_failed` | P1 | 초대 코드 제출 실패(KNK-567) | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`) |
 | `client_inviteOnboarding_shown` | P1 | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567) | 없음 |
 | `client_inviteOnboarding_skipped` | P1 | 초대 코드 스텝 건너뛰기(KNK-567) | 없음 |
-| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 계정별 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
+| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_guestLimitDialog_shown` | P0 | 402로 게스트 체험 한도 다이얼로그 노출 | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`) |
 | `client_guestLimitDialog_loginButton_clicked` | P1 | 게스트 한도 다이얼로그의 로그인 CTA 클릭 | `trigger` (동일) |
 | `client_guestLimitDialog_dismissed` | P1 | 게스트 한도 다이얼로그 닫기 | `trigger` (동일) |
