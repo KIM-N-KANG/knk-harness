@@ -16,11 +16,11 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v1.0 |
-| 작성일 | 2026-07-10 |
+| 버전 | v1.1 |
+| 작성일 | 2026-07-14 |
 | 대상 | 마냑 AI 서버 |
 | 작성 목적 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-ai` `dev` 브랜치 `b94371d64586` (2026-07-10, Python 3.11 · FastAPI) |
+| 기준 코드 | `../manyak-ai` `dev` 브랜치 `3ba611cbb4c0` (2026-07-14, Python 3.11 · FastAPI) |
 
 ## 5-1. 목적과 범위
 
@@ -271,7 +271,7 @@ graph LR
 | LLM 연동 | OpenAI SDK(`AsyncOpenAI`) — OpenAI 호환 API로 DeepSeek 호출 |
 | LLM 모델 | deepseek-v4-pro(컴파일) · deepseek-v4-flash(스토리라인·채팅·선택지·판정) — 근거는 D9 |
 | 관측 | Sentry SDK (FastAPI 통합) |
-| 테스트 | pytest + pytest-asyncio, 도커 격리 실행(`scripts/test.ps1`) |
+| 테스트 | pytest + pytest-asyncio, 도커 격리 실행(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`) |
 | 빌드·배포 | Docker, GitHub Actions — 상세는 [`7-deployment.md`](./7-deployment.md) |
 
 영속 계층이 없습니다. DB, 캐시, 세션 저장소 모두 없습니다(D2·D10).
@@ -754,7 +754,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 헬스체크: `GET /api/v1/health` → `{"status": "ok", "version": ...}`. 배포 게이트가 이 응답을 대기합니다([`7-deployment.md`](./7-deployment.md)).
 
-테스트 체계: 도커 격리 환경에서 pytest를 실행합니다(`scripts/test.ps1`, 로컬 파이썬 환경에는 pytest-asyncio가 없어 async 테스트가 스킵될 수 있음). LLM 의존 테스트는 CI에서 더미 키로 계약·형식 보정만 검증하고, 실제 LLM을 호출하는 라이브 통합 테스트는 `RUN_LIVE_TESTS=1`을 켠 경우에만 실행합니다(옵트인). CI/CD·배포 파이프라인은 [`7-deployment.md`](./7-deployment.md)가 소유합니다.
+테스트 체계: 도커 격리 환경에서 pytest를 실행합니다(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`, 로컬 파이썬 환경에는 pytest-asyncio가 없어 async 테스트가 스킵될 수 있음). LLM 의존 테스트는 CI에서 더미 키로 계약·형식 보정만 검증하고, 실제 LLM을 호출하는 라이브 통합 테스트는 `RUN_LIVE_TESTS=1`을 켠 경우에만 실행합니다(옵트인). CI/CD·배포 파이프라인은 [`7-deployment.md`](./7-deployment.md)가 소유합니다.
 
 ### 품질 평가와 자가개선 루프 — `Phase 1 · 계획`
 
@@ -788,7 +788,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 | 수단 | 용도 |
 | --- | --- |
-| `scripts/test.ps1` (도커 격리 pytest) | 계약·조립·형식 보정 회귀 검증 |
+| `scripts/test.sh` · `scripts/test.ps1` (도커 격리 pytest) | 계약·조립·형식 보정 회귀 검증 |
 | `RUN_LIVE_TESTS=1` 라이브 통합 테스트 | 실제 LLM 경유 end-to-end 검증(옵트인) |
 | 로컬 풀스택 루프(manyak-infra compose) | 프롬프트 수정 체감 검증 — 컨테이너 재시작만으로 반영 |
 | `scripts/preview_chat_prompt.py` | 조립 결과 시각 검증(조립기와 동일 로직) |
