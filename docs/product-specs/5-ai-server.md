@@ -636,7 +636,7 @@ graph LR
 | 판정(D12) | deepseek-v4-flash | (공급자 기본값) | 256 | JSON 모드 | 60초 |
 
 - 전 경로 공통: 비추론 호출(thinking 비활성, D9).
-- 모델명은 환경 변수로 주입됩니다([§5-6](#5-6-운영과-관측)). `DEEPSEEK_CHAT_MODEL`이라는 변수명은 역사적 표기이며 실제로는 스토리라인·채팅·선택지·판정 공용 fast 모델입니다.
+- 모델명은 환경 변수로 주입됩니다([§5-6](#5-6-운영과-관측)). 용도별로 `STORY_COMPILE_MODEL`(컴파일)·`STORYLINES_MODEL`(스토리라인)·`CHAT_MODEL`(채팅 본문·선택지·판정) 세 변수로 분리돼 있어, 지금은 스토리라인·채팅이 같은 flash 기본값이지만 독립적으로 교체할 수 있습니다.
 - 프롬프트 캐싱: 공급자가 프롬프트 앞부분 일치 시 캐시 적중을 제공하며(D2의 재전송 비용 상쇄 근거), 적중 토큰은 진단 로그로 실측합니다.
 - 채팅 본문의 출력 토큰 상한(`max_tokens`)은 분량 고정(450~650자, [§5-3-4](#5-3-4-채팅-턴)) 도입 시 초과 방지용으로 함께 확정하기로 했으나, 분량 고정 규칙만 먼저 반영되고 상한은 미확정으로 남았습니다. 수치는 실측으로만 정합니다(D9). 이 간극은 [§5-7](#5-7-검수-체크리스트) A8이 추적합니다. LLM 모델 변경·성능 비교(같은 표 A7)도 D9 절차를 따르며, 결정 전까지 현재 값을 유지합니다.
 
@@ -744,8 +744,9 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | (필수) | LLM API 키 |
 | `DEEPSEEK_API_URL` | `https://api.deepseek.com` | 공급자 엔드포인트 |
-| `DEEPSEEK_MODEL` | `deepseek-v4-pro` | 컴파일용 모델 |
-| `DEEPSEEK_CHAT_MODEL` | `deepseek-v4-flash` | 스토리라인·채팅·선택지·판정 공용 fast 모델(변수명은 역사적 표기) |
+| `STORY_COMPILE_MODEL` | `deepseek-v4-pro` | 컴파일용 모델 |
+| `STORYLINES_MODEL` | `deepseek-v4-flash` | 스토리라인 생성용 모델 |
+| `CHAT_MODEL` | `deepseek-v4-flash` | 채팅 본문·선택지·판정 공용 모델 |
 | `SENTRY_DSN` | (빈 값 = no-op) | prod에서만 채움 |
 | `SENTRY_ENVIRONMENT` | `local` | 백엔드 규약 미러링 |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | 백엔드 규약 미러링 |
