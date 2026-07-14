@@ -15,9 +15,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.19 |
+| 버전 | v0.20 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-07-11 |
+| 수정일 | 2026-07-14 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -253,6 +253,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2 | client | `client_storyDetail_thumbnail_clicked` |
 | P2 | client | `client_terms_viewed` |
 | P2 | client | `client_privacy_viewed` |
+| P2 `계획` | client | `client_serviceInfo_viewed` |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -473,6 +474,14 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - 탈출 성공은 직접 계측할 수 없습니다(스킴 호출에 콜백이 없고 성공 시 페이지가 닫힘). `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다.
 - 인앱별 유입량(`detected`의 `app` 분포)은 안내 배너만 두는 인스타그램·쓰레드에 자동 탈출 투자를 추가할지 판단하는 근거입니다.
+
+#### 6-4-2-13. 서비스 안내 — `계획`
+
+서비스 안내 화면([`3-frontend.md` FE-SCREEN-011](./3-frontend.md))의 진입 이벤트입니다. 법적 고지(§6-4-2-11)와 같은 유입 경로 분석용 저우선 계측입니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_serviceInfo_viewed` | P2 | 서비스 안내 화면 진입 | 없음 |
 
 ### 6-4-3. impression 수집 기준
 
