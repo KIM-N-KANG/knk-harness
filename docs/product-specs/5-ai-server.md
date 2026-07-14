@@ -16,11 +16,11 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v1.0 |
-| 작성일 | 2026-07-10 |
+| 버전 | v1.1 |
+| 작성일 | 2026-07-14 |
 | 대상 | 마냑 AI 서버 |
 | 작성 목적 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-ai` `dev` 브랜치 `b94371d64586` (2026-07-10, Python 3.11 · FastAPI) |
+| 기준 코드 | `../manyak-ai` `dev` 브랜치 `3ba611cbb4c0` (2026-07-14, Python 3.11 · FastAPI) |
 
 ## 5-1. 목적과 범위
 
@@ -150,7 +150,7 @@ graph LR
 
 **배경.** 프롬프트는 출력 품질을 좌우하는 기획 자산이고, 별도 스크립트·벤치마크로 반복 개선됩니다.
 
-**문제와 결정.** 프롬프트를 코드 상수로 두면 문구 수정마다 코드 리뷰·배포가 묶이고, 무엇이 언제 왜 바뀌었는지가 코드 diff에 묻힙니다. 그래서 **프롬프트를 `prompt/` 마크다운 파일로 분리**하고, 버전은 파일명이 아니라 각 파일 frontmatter의 `version` 정수를 유일한 기준(SSOT)으로 삼았습니다. 파일명이 고정되므로 버전이 올라가도 코드는 변경되지 않습니다. 변경 이력은 git으로 남깁니다. 트레이드오프는 두 가지입니다. frontmatter 파싱 계층이 필요하고, LF 줄바꿈 규약을 지켜야 합니다. 규약을 어기면 frontmatter가 프롬프트 본문에 섞일 수 있습니다([§5-4-2](#5-4-2-템플릿-카탈로그)).
+**문제와 결정.** 프롬프트를 코드 상수로 두면 문구 수정마다 코드 리뷰·배포가 묶이고, 무엇이 언제 왜 바뀌었는지가 코드 diff에 묻힙니다. 그래서 **프롬프트를 `prompt/` 마크다운 파일로 분리**하고, 버전은 파일명이 아니라 각 파일 frontmatter의 `version` 정수를 유일한 기준(SSOT)으로 삼았습니다. 파일명이 고정되므로 버전이 올라가도 코드는 변경되지 않습니다. 변경 이력은 git으로 남깁니다. 트레이드오프는 frontmatter 파싱 계층이 필요하다는 것입니다. LF 줄바꿈을 규약으로 두되, 파싱 계층이 CRLF도 허용해 규약을 어겨도 frontmatter가 프롬프트 본문에 섞이지는 않습니다([§5-4-2](#5-4-2-템플릿-카탈로그)).
 
 **구현.** 템플릿 카탈로그는 [§5-4-2](#5-4-2-템플릿-카탈로그)에, 버전 관리와 로깅 연결은 [§5-4-4](#5-4-4-프롬프트-버전-관리)에 있습니다.
 
@@ -271,7 +271,7 @@ graph LR
 | LLM 연동 | OpenAI SDK(`AsyncOpenAI`) — OpenAI 호환 API로 DeepSeek 호출 |
 | LLM 모델 | deepseek-v4-pro(컴파일) · deepseek-v4-flash(스토리라인·채팅·선택지·판정) — 근거는 D9 |
 | 관측 | Sentry SDK (FastAPI 통합) |
-| 테스트 | pytest + pytest-asyncio, 도커 격리 실행(`scripts/test.ps1`) |
+| 테스트 | pytest + pytest-asyncio, 도커 격리 실행(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`) |
 | 빌드·배포 | Docker, GitHub Actions — 상세는 [`7-deployment.md`](./7-deployment.md) |
 
 영속 계층이 없습니다. DB, 캐시, 세션 저장소 모두 없습니다(D2·D10).
@@ -621,7 +621,7 @@ graph LR
 | `prompt/chat/JUDGEMENT-TEMPLATE.md` | 주요 사건·엔딩 판정(D12) | 단독 — 6레이어에 들어가지 않음 | `JUDGEMENT` |
 
 - 버전 키는 UPPER_SNAKE_CASE입니다([`0-glossary.md §0-4`](./0-glossary.md)). `NEXT_ACTIONS`는 선택지의 레거시 적재 키로, 백엔드 `ai_call_logs` 연속성을 위해 유지합니다.
-- 파일은 LF 줄바꿈이어야 합니다. version 읽기는 CRLF를 허용하지만 조립기의 frontmatter 제거는 LF 전용이라, CRLF면 frontmatter가 프롬프트 본문에 조용히 섞입니다. frontmatter 블록·`version` 자체가 없으면 기동 시점에 실패합니다(버전 누락을 조용히 넘기지 않는 정책).
+- 파일은 LF 줄바꿈을 규약으로 합니다. version 읽기와 조립기의 frontmatter 제거 모두 CRLF도 허용하도록 방어되어 있어, CRLF로 저장된 템플릿에서도 frontmatter가 프롬프트 본문에 새지 않습니다. frontmatter 블록·`version` 자체가 없으면 기동 시점에 실패합니다(버전 누락을 조용히 넘기지 않는 정책).
 
 ### 5-4-3. 모델과 파라미터
 
@@ -636,7 +636,7 @@ graph LR
 | 판정(D12) | deepseek-v4-flash | (공급자 기본값) | 256 | JSON 모드 | 60초 |
 
 - 전 경로 공통: 비추론 호출(thinking 비활성, D9).
-- 모델명은 환경 변수로 주입됩니다([§5-6](#5-6-운영과-관측)). `DEEPSEEK_CHAT_MODEL`이라는 변수명은 역사적 표기이며 실제로는 스토리라인·채팅·선택지·판정 공용 fast 모델입니다.
+- 모델명은 환경 변수로 주입됩니다([§5-6](#5-6-운영과-관측)). 용도별로 `STORY_COMPILE_MODEL`(컴파일)·`STORYLINES_MODEL`(스토리라인)·`CHAT_MODEL`(채팅 본문·선택지·판정) 세 변수로 분리돼 있어, 지금은 스토리라인·채팅이 같은 flash 기본값이지만 독립적으로 교체할 수 있습니다.
 - 프롬프트 캐싱: 공급자가 프롬프트 앞부분 일치 시 캐시 적중을 제공하며(D2의 재전송 비용 상쇄 근거), 적중 토큰은 진단 로그로 실측합니다.
 - 채팅 본문의 출력 토큰 상한(`max_tokens`)은 분량 고정(450~650자, [§5-3-4](#5-3-4-채팅-턴)) 도입 시 초과 방지용으로 함께 확정하기로 했으나, 분량 고정 규칙만 먼저 반영되고 상한은 미확정으로 남았습니다. 수치는 실측으로만 정합니다(D9). 이 간극은 [§5-7](#5-7-검수-체크리스트) A8이 추적합니다. LLM 모델 변경·성능 비교(같은 표 A7)도 D9 절차를 따르며, 결정 전까지 현재 값을 유지합니다.
 
@@ -744,8 +744,9 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | (필수) | LLM API 키 |
 | `DEEPSEEK_API_URL` | `https://api.deepseek.com` | 공급자 엔드포인트 |
-| `DEEPSEEK_MODEL` | `deepseek-v4-pro` | 컴파일용 모델 |
-| `DEEPSEEK_CHAT_MODEL` | `deepseek-v4-flash` | 스토리라인·채팅·선택지·판정 공용 fast 모델(변수명은 역사적 표기) |
+| `STORY_COMPILE_MODEL` | `deepseek-v4-pro` | 컴파일용 모델 |
+| `STORYLINES_MODEL` | `deepseek-v4-flash` | 스토리라인 생성용 모델 |
+| `CHAT_MODEL` | `deepseek-v4-flash` | 채팅 본문·선택지·판정 공용 모델 |
 | `SENTRY_DSN` | (빈 값 = no-op) | prod에서만 채움 |
 | `SENTRY_ENVIRONMENT` | `local` | 백엔드 규약 미러링 |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | 백엔드 규약 미러링 |
@@ -753,7 +754,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 헬스체크: `GET /api/v1/health` → `{"status": "ok", "version": ...}`. 배포 게이트가 이 응답을 대기합니다([`7-deployment.md`](./7-deployment.md)).
 
-테스트 체계: 도커 격리 환경에서 pytest를 실행합니다(`scripts/test.ps1`, 로컬 파이썬 환경에는 pytest-asyncio가 없어 async 테스트가 스킵될 수 있음). LLM 의존 테스트는 CI에서 더미 키로 계약·형식 보정만 검증하고, 실제 LLM을 호출하는 라이브 통합 테스트는 `RUN_LIVE_TESTS=1`을 켠 경우에만 실행합니다(옵트인). CI/CD·배포 파이프라인은 [`7-deployment.md`](./7-deployment.md)가 소유합니다.
+테스트 체계: 도커 격리 환경에서 pytest를 실행합니다(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`, 로컬 파이썬 환경에는 pytest-asyncio가 없어 async 테스트가 스킵될 수 있음). LLM 의존 테스트는 CI에서 더미 키로 계약·형식 보정만 검증하고, 실제 LLM을 호출하는 라이브 통합 테스트는 `RUN_LIVE_TESTS=1`을 켠 경우에만 실행합니다(옵트인). CI/CD·배포 파이프라인은 [`7-deployment.md`](./7-deployment.md)가 소유합니다.
 
 ### 품질 평가와 자가개선 루프 — `Phase 1 · 계획`
 
@@ -787,7 +788,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 | 수단 | 용도 |
 | --- | --- |
-| `scripts/test.ps1` (도커 격리 pytest) | 계약·조립·형식 보정 회귀 검증 |
+| `scripts/test.sh` · `scripts/test.ps1` (도커 격리 pytest) | 계약·조립·형식 보정 회귀 검증 |
 | `RUN_LIVE_TESTS=1` 라이브 통합 테스트 | 실제 LLM 경유 end-to-end 검증(옵트인) |
 | 로컬 풀스택 루프(manyak-infra compose) | 프롬프트 수정 체감 검증 — 컨테이너 재시작만으로 반영 |
 | `scripts/preview_chat_prompt.py` | 조립 결과 시각 검증(조립기와 동일 로직) |
