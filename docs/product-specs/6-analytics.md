@@ -13,12 +13,12 @@
 §6-8  검수 체크리스트
 ```
 
-| 항목 | 값 |
-| --- | --- |
-| 버전 | v0.20 |
-| 작성일 | 2026-06-30 |
-| 수정일 | 2026-07-14 |
-| 대상 | 마냑 MVP |
+| 항목      | 값                                                                                                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------- |
+| 버전      | v0.21                                                                                                                 |
+| 작성일    | 2026-06-30                                                                                                            |
+| 수정일    | 2026-07-15                                                                                                            |
+| 대상      | 마냑 MVP                                                                                                              |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
 ## 6-1. 목적과 범위
@@ -31,55 +31,55 @@
 4. 채팅에서 첫 메시지를 보내고 여러 턴 동안 이야기를 이어갑니다.
 5. 불편하거나 아쉬운 점을 피드백으로 남깁니다.
 
-| 핵심 질문 | 확인 지표 |
-| --- | --- |
-| 사용자가 스토리 제작을 시작하나요? | 제작 시작률 |
-| 제작 중 어디서 막히나요? | 제작 단계별 이탈율, 생성 실패율 |
-| 스토리 생성이 채팅으로 이어지나요? | 스토리 상세에서 채팅 시작 전환율 |
-| 채팅이 실제 몰입으로 이어지나요? | 첫 메시지 전송률, N턴 이상 도달률 |
-| 개선 포인트를 수집하고 있나요? | 피드백 제출률 |
+| 핵심 질문                          | 확인 지표                         |
+| ---------------------------------- | --------------------------------- |
+| 사용자가 스토리 제작을 시작하나요? | 제작 시작률                       |
+| 제작 중 어디서 막히나요?           | 제작 단계별 이탈율, 생성 실패율   |
+| 스토리 생성이 채팅으로 이어지나요? | 스토리 상세에서 채팅 시작 전환율  |
+| 채팅이 실제 몰입으로 이어지나요?   | 첫 메시지 전송률, N턴 이상 도달률 |
+| 개선 포인트를 수집하고 있나요?     | 피드백 제출률                     |
 
 MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를 우선 수집합니다. 모든 화면 조작을 계측하지 않고, 퍼널과 운영 장애 분석에 필요한 행동과 처리 결과만 수집합니다.
 
-| 포함 범위 | 설명 | 원본 섹션 |
-| --- | --- | --- |
-| 사용자 행동 이벤트 | 화면 진입, CTA 클릭, 선택, 제출, 완료 | `6-4. 이벤트 카탈로그` |
+| 포함 범위             | 설명                                            | 원본 섹션              |
+| --------------------- | ----------------------------------------------- | ---------------------- |
+| 사용자 행동 이벤트    | 화면 진입, CTA 클릭, 선택, 제출, 완료           | `6-4. 이벤트 카탈로그` |
 | 서버 처리 결과 이벤트 | 스토리 생성, AI 응답, 피드백 제출의 성공과 실패 | `6-4. 이벤트 카탈로그` |
-| 핵심 퍼널과 지표 | 제작 퍼널, 채팅 활성화 퍼널, 전체 활성화 퍼널 | `6-5. 퍼널과 지표` |
-| 운영 관측 | Sentry, CloudWatch, `ai_call_logs`, 실패 코드 | `6-6. 관측 구현` |
-| 릴리스 검수 | P0 이벤트, 식별자, 원문 미수집, 로그 연결 확인 | `6-8. 검수 체크리스트` |
+| 핵심 퍼널과 지표      | 제작 퍼널, 채팅 활성화 퍼널, 전체 활성화 퍼널   | `6-5. 퍼널과 지표`     |
+| 운영 관측             | Sentry, CloudWatch, `ai_call_logs`, 실패 코드   | `6-6. 관측 구현`       |
+| 릴리스 검수           | P0 이벤트, 식별자, 원문 미수집, 로그 연결 확인  | `6-8. 검수 체크리스트` |
 
-| 제외 범위 | 처리 기준 |
-| --- | --- |
-| 사용자 입력 원문 분석 | MVP 분석 이벤트와 로그에 원문을 넣지 않습니다. |
-| 대시보드 화면 요구사항 | 실제 Amplitude 또는 CloudWatch 대시보드가 정해질 때 별도 문서로 추가합니다. |
-| 인증 사용자 분석 | 식별자 정책(`setUserId`·`user_id`·`is_logged_in`)은 `Phase 1 · 구현`(§6-2·§6-4-2-8), 로그인 처리·마이그레이션 서버 이벤트는 `Phase 1 · 계획`입니다. |
-| 실험 분석 | A/B 테스트 도입 후 `experiment_key`, `variant`를 추가합니다. |
+| 제외 범위              | 처리 기준                                                                                                                                           |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 사용자 입력 원문 분석  | MVP 분석 이벤트와 로그에 원문을 넣지 않습니다.                                                                                                      |
+| 대시보드 화면 요구사항 | 실제 Amplitude 또는 CloudWatch 대시보드가 정해질 때 별도 문서로 추가합니다.                                                                         |
+| 인증 사용자 분석       | 식별자 정책(`setUserId`·`user_id`·`is_logged_in`)은 `Phase 1 · 구현`(§6-2·§6-4-2-8), 로그인 처리·마이그레이션 서버 이벤트는 `Phase 1 · 계획`입니다. |
+| 실험 분석              | A/B 테스트 도입 후 `experiment_key`, `variant`를 추가합니다.                                                                                        |
 
 ## 6-2. 식별자 정책
 
 현재 MVP는 로그인 기능이 없는 전원 게스트 서비스입니다. 사용자 단위는 Amplitude Browser SDK가 자동으로 채우는 `device_id`로 식별합니다.
 
-| 식별자 | 분석 이벤트 타입 | 생성·관리 | 사용처 |
-| --- | --- | --- | --- |
-| `device_id` | string | Amplitude Browser SDK 자동 수집 | 익명 사용자 단위 분석 |
-| `session_id` | number | Amplitude Browser SDK 자동 수집 | 한 번의 방문 흐름 |
-| `request_id` | string | 프론트엔드 전달 또는 백엔드 생성 | 서버 로그, Sentry, AI 호출 연결 |
-| `device_id_hash` | string | 백엔드가 `device_id`를 해시 | 서버 로그, Sentry, `ai_call_logs` |
-| `creation_id` | string | 스토리라인 생성 시 발급되는 `simpleCreationId` | 스토리 제작 시도 연결 |
-| `story_id` | string | 스토리 완성 후 서버 발급 | 스토리 관련 이벤트 |
-| `chat_id` | string | 채팅 생성 후 서버 발급 | 채팅 관련 이벤트 |
-| `ai_call_log_id` | string | AI 호출 기록 생성 시 발급 | 서버 로그와 `ai_call_logs` 연결 |
+| 식별자           | 분석 이벤트 타입 | 생성·관리                                      | 사용처                            |
+| ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
+| `device_id`      | string           | Amplitude Browser SDK 자동 수집                | 익명 사용자 단위 분석             |
+| `session_id`     | number           | Amplitude Browser SDK 자동 수집                | 한 번의 방문 흐름                 |
+| `request_id`     | string           | 프론트엔드 전달 또는 백엔드 생성               | 서버 로그, Sentry, AI 호출 연결   |
+| `device_id_hash` | string           | 백엔드가 `device_id`를 해시                    | 서버 로그, Sentry, `ai_call_logs` |
+| `creation_id`    | string           | 스토리라인 생성 시 발급되는 `simpleCreationId` | 스토리 제작 시도 연결             |
+| `story_id`       | string           | 스토리 완성 후 서버 발급                       | 스토리 관련 이벤트                |
+| `chat_id`        | string           | 채팅 생성 후 서버 발급                         | 채팅 관련 이벤트                  |
+| `ai_call_log_id` | string           | AI 호출 기록 생성 시 발급                      | 서버 로그와 `ai_call_logs` 연결   |
 
 분석 이벤트에서 `story_id`는 문자열(공개 UUID 식별자)로 보냅니다. CloudWatch 로그·`ai_call_logs`·DB에서도 동일하게 문자열로 저장합니다.
 
-| 키 | 분석 단위 | 사용 |
-| --- | --- | --- |
-| `device_id` | 익명 사용자 | 전체 활성화 퍼널과 장기 행동 |
-| `session_id` | 방문 세션 | 같은 방문 안의 순차 행동 |
-| `creation_id` | 스토리 생성 시도 | 제작 퍼널의 생성 성공 이후 구간 |
-| `chat_id` | 채팅 세션 | 채팅 활성화와 대화 깊이 |
-| `request_id` | API 요청 | 서버 로그, Sentry, AI 호출 상관관계 |
+| 키            | 분석 단위        | 사용                                |
+| ------------- | ---------------- | ----------------------------------- |
+| `device_id`   | 익명 사용자      | 전체 활성화 퍼널과 장기 행동        |
+| `session_id`  | 방문 세션        | 같은 방문 안의 순차 행동            |
+| `creation_id` | 스토리 생성 시도 | 제작 퍼널의 생성 성공 이후 구간     |
+| `chat_id`     | 채팅 세션        | 채팅 활성화와 대화 깊이             |
+| `request_id`  | API 요청         | 서버 로그, Sentry, AI 호출 상관관계 |
 
 `request_id`는 현재 서버 내부 상관 키입니다. 프론트엔드 `client_*` 이벤트와 백엔드 `server_*` 이벤트를 분석 이벤트 프로퍼티로 직접 연결하는 용도로는 아직 사용하지 않습니다. 현재 제품 퍼널 연결은 `creation_id`와 `chat_id`를 사용합니다.
 
@@ -101,28 +101,28 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 {platform}_{screenName}(_{objectName})?_{actionType}(_{eventType})?
 ```
 
-| 원칙 | 설명 | 예시 |
-| --- | --- | --- |
-| 이벤트명에 데이터 값을 넣지 않습니다. | ID, 선택값, 단계 번호, 리스트 위치, 에러 코드는 프로퍼티로 보냅니다. | `story_id`, `step_number`, `position` |
-| 단계 번호는 screenName에 넣지 않습니다. | 단계는 `step_number`, `step_name` 프로퍼티로 보냅니다. | `client_storyCreate_step_viewed` |
-| 버튼은 문구보다 역할로 씁니다. | 버튼 문구가 바뀌어도 이벤트명이 바뀌지 않게 합니다. | `nextButton`, `chatStartButton` |
-| 서버 처리 대상은 기능 단위로 씁니다. | 서버 결과는 `processed`와 `eventType`으로 구분합니다. | `server_chat_aiMessage_processed_failed` |
-| `canceled`는 실제 취소 행동에만 씁니다. | 단순 닫기나 나가기 클릭에는 `clicked`를 씁니다. | `client_storyCreate_exitButton_clicked` |
+| 원칙                                    | 설명                                                                 | 예시                                     |
+| --------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------- |
+| 이벤트명에 데이터 값을 넣지 않습니다.   | ID, 선택값, 단계 번호, 리스트 위치, 에러 코드는 프로퍼티로 보냅니다. | `story_id`, `step_number`, `position`    |
+| 단계 번호는 screenName에 넣지 않습니다. | 단계는 `step_number`, `step_name` 프로퍼티로 보냅니다.               | `client_storyCreate_step_viewed`         |
+| 버튼은 문구보다 역할로 씁니다.          | 버튼 문구가 바뀌어도 이벤트명이 바뀌지 않게 합니다.                  | `nextButton`, `chatStartButton`          |
+| 서버 처리 대상은 기능 단위로 씁니다.    | 서버 결과는 `processed`와 `eventType`으로 구분합니다.                | `server_chat_aiMessage_processed_failed` |
+| `canceled`는 실제 취소 행동에만 씁니다. | 단순 닫기나 나가기 클릭에는 `clicked`를 씁니다.                      | `client_storyCreate_exitButton_clicked`  |
 
 `actionType`은 아래 값만 사용합니다.
 
-| 그룹 | 값 | 설명 |
-| --- | --- | --- |
-| 사용자 행동 | `viewed` | 화면 또는 단계에 진입했을 때 |
-| 사용자 행동 | `clicked` | 클릭 가능한 요소를 눌렀을 때 |
-| 사용자 행동 | `selected` | 선택지를 선택했을 때 |
-| 사용자 행동 | `focused` | 입력 영역에 포커스가 들어왔을 때 |
-| 사용자 행동 | `submitted` | 폼이나 입력값을 제출했을 때 |
-| 사용자 행동 | `requested` | 클라이언트가 서버에 생성 또는 처리를 요청했을 때 |
-| 사용자 행동 | `completed` | 주요 flow를 끝까지 완료했을 때 |
-| 상태 노출 | `shown` | 모달, 토스트, 에러, 로딩, 빈 상태가 표시되었을 때 |
-| 상태 노출 | `impressed` | item 또는 section이 유효하게 노출되었을 때 |
-| 서버 처리 | `processed` | 서버가 생성, 저장, 처리를 수행했을 때 |
+| 그룹        | 값          | 설명                                              |
+| ----------- | ----------- | ------------------------------------------------- |
+| 사용자 행동 | `viewed`    | 화면 또는 단계에 진입했을 때                      |
+| 사용자 행동 | `clicked`   | 클릭 가능한 요소를 눌렀을 때                      |
+| 사용자 행동 | `selected`  | 선택지를 선택했을 때                              |
+| 사용자 행동 | `focused`   | 입력 영역에 포커스가 들어왔을 때                  |
+| 사용자 행동 | `submitted` | 폼이나 입력값을 제출했을 때                       |
+| 사용자 행동 | `requested` | 클라이언트가 서버에 생성 또는 처리를 요청했을 때  |
+| 사용자 행동 | `completed` | 주요 flow를 끝까지 완료했을 때                    |
+| 상태 노출   | `shown`     | 모달, 토스트, 에러, 로딩, 빈 상태가 표시되었을 때 |
+| 상태 노출   | `impressed` | item 또는 section이 유효하게 노출되었을 때        |
+| 서버 처리   | `processed` | 서버가 생성, 저장, 처리를 수행했을 때             |
 
 `eventType`은 `succeeded`, `failed`, `blocked`, `canceled`만 사용합니다. 단순 클릭, 노출, 포커스, 화면 진입에는 결과 상태를 붙이지 않습니다. `completed`는 결과 상태가 아니라 사용자가 flow를 끝마친 행동이므로 `actionType`으로 씁니다.
 
@@ -130,14 +130,14 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 각 이벤트 표에는 고유 프로퍼티만 적습니다. 공통 프로퍼티는 적용 범위에 따라 모든 이벤트에 함께 보냅니다.
 
-| property | 타입 | 적용 범위 | 설명 |
-| --- | --- | --- | --- |
-| `screen_name` | string | 모든 이벤트 | 이벤트가 발생한 화면입니다. 필터와 세그먼트 편의를 위해 프로퍼티로도 보냅니다. |
-| `step_name` | string | 스토리 제작 퍼널 | `keyword`, `storylineSelect`, `additionalInfo`, `complete` 중 하나입니다. |
-| `step_number` | number | 스토리 제작 퍼널 | 제작 단계 번호입니다. |
-| `creation_id` | string | 스토리 제작 퍼널 | 스토리라인 생성 시 발급되는 `simpleCreationId`입니다. |
-| `story_id` | string | story 관련 이벤트 | 스토리 식별자입니다. |
-| `chat_id` | string | chat 관련 이벤트 | 채팅 식별자입니다. |
+| property      | 타입   | 적용 범위         | 설명                                                                           |
+| ------------- | ------ | ----------------- | ------------------------------------------------------------------------------ |
+| `screen_name` | string | 모든 이벤트       | 이벤트가 발생한 화면입니다. 필터와 세그먼트 편의를 위해 프로퍼티로도 보냅니다. |
+| `step_name`   | string | 스토리 제작 퍼널  | `keyword`, `storylineSelect`, `additionalInfo`, `complete` 중 하나입니다.      |
+| `step_number` | number | 스토리 제작 퍼널  | 제작 단계 번호입니다.                                                          |
+| `creation_id` | string | 스토리 제작 퍼널  | 스토리라인 생성 시 발급되는 `simpleCreationId`입니다.                          |
+| `story_id`    | string | story 관련 이벤트 | 스토리 식별자입니다.                                                           |
+| `chat_id`     | string | chat 관련 이벤트  | 채팅 식별자입니다.                                                             |
 
 다음 값은 Amplitude Browser SDK가 자동으로 채우므로 커스텀 프로퍼티로 다시 만들지 않습니다.
 
@@ -151,15 +151,15 @@ event_time, event_id
 
 다음 프로퍼티는 관련 기능 도입 시점에 추가합니다.
 
-| property | 도입 시점 | 설명 |
-| --- | --- | --- |
-| `user_id` | 인증 도입 후 `Phase 1 · 구현` | 로그인 사용자 식별자(public_id 문자열)입니다. `setUserId`로 설정합니다(§6-2). |
-| `is_logged_in` | 인증 도입 후 `Phase 1 · 구현` | 로그인 여부입니다. |
-| `membership` | 구독·요금제 도입 후 | 요금제 또는 등급입니다. |
-| `signup_at` | 인증 도입 후 `Phase 1 · 계획` | 가입 시점입니다. |
-| `experiment_key` / `variant` | A/B 테스트 도입 후 | 실험 키와 분기 값입니다. |
-| `request_id` | 서버 사이드 분석 이벤트 연결 도입 후 | client `requested`와 server `processed`를 분석 이벤트 프로퍼티로 직접 잇는 상관 ID입니다. |
-| `item_id` / `section_id` / `section_name` | impression 정밀 계측 시 | 추천 카드 등 노출 분석용 값입니다. |
+| property                                  | 도입 시점                            | 설명                                                                                      |
+| ----------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `user_id`                                 | 인증 도입 후 `Phase 1 · 구현`        | 로그인 사용자 식별자(public_id 문자열)입니다. `setUserId`로 설정합니다(§6-2).             |
+| `is_logged_in`                            | 인증 도입 후 `Phase 1 · 구현`        | 로그인 여부입니다.                                                                        |
+| `membership`                              | 구독·요금제 도입 후                  | 요금제 또는 등급입니다.                                                                   |
+| `signup_at`                               | 인증 도입 후 `Phase 1 · 계획`        | 가입 시점입니다.                                                                          |
+| `experiment_key` / `variant`              | A/B 테스트 도입 후                   | 실험 키와 분기 값입니다.                                                                  |
+| `request_id`                              | 서버 사이드 분석 이벤트 연결 도입 후 | client `requested`와 server `processed`를 분석 이벤트 프로퍼티로 직접 잇는 상관 ID입니다. |
+| `item_id` / `section_id` / `section_name` | impression 정밀 계측 시              | 추천 카드 등 노출 분석용 값입니다.                                                        |
 
 현재 `request_id`는 서버 내부 상관 키로 사용합니다. 분석 이벤트 프로퍼티로는 아직 보내지 않습니다. 자세한 기준은 `6-6-3. 요청 식별자와 상관관계`를 따릅니다.
 
@@ -171,89 +171,89 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 > **P0·P1·P2는 수집 우선순위이며, 로드맵의 Phase 0~3과 무관합니다.** 로드맵 단계 표기는 3·4·5 스펙 문서와 동일하게 `{로드맵 Phase} · {구현 상태}` 라벨(예: `Phase 1 · 계획`)을 사용합니다([`roadmap.md`](../planning/roadmap.md). 유저 스토리 문서만 `Phase 1` 단축 라벨을 씁니다). Phase 1 기능(계정 · 크레딧 · 제작/채팅 확장)의 이벤트는 Phase 1 스펙 반영에서 이 라벨로 추가합니다.
 
-| 우선순위 | 소유 | 이벤트 |
-| --- | --- | --- |
-| P0 | client | `client_storyList_viewed` |
-| P0 | client | `client_storyList_createButton_clicked` |
-| P0 | client | `client_storyCreate_viewed` |
-| P0 | client | `client_storyCreate_step_viewed` |
-| P0 | client | `client_storyCreate_storyGeneration_requested` |
-| P0 | server | `server_storyCreate_storyGeneration_processed_succeeded` |
-| P0 | server | `server_storyCreate_storyGeneration_processed_failed` |
-| P0 | client | `client_storyCreate_storylineOption_selected` |
-| P0 | client | `client_storyCreate_selectedTagsButton_clicked` |
-| P0 | client | `client_storyCreate_completed` |
-| P0 | client | `client_storyDetail_viewed` |
-| P0 | client | `client_storyDetail_chatStartButton_clicked` |
-| P0 | client | `client_chat_viewed` |
-| P0 | client | `client_chat_messageInput_submitted` |
-| P0 | server | `server_chat_aiMessage_processed_succeeded` |
-| P0 | server | `server_chat_aiMessage_processed_failed` |
-| P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown` |
-| P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown` |
-| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_succeeded` |
-| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_failed` |
-| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_succeeded` |
-| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_failed` |
-| P0 | client | `client_feedback_viewed` |
-| P0 | client | `client_feedback_form_submitted` |
-| P1 | client | `client_onboarding_viewed` |
-| P1 | client | `client_onboarding_createButton_clicked` |
-| P1 | client | `client_storyList_storyCard_clicked` |
-| P1 | client | `client_storyList_storyCard_impressed` |
-| P1 | client | `client_storyCreate_tagCategory_selected` |
-| P1 | client | `client_storyCreate_regenerateButton_clicked` |
-| P1 | client | `client_storyCreate_storylineRating_clicked` |
-| P1 `Phase 1 · 계획` | client | `client_storyCreate_methodOption_selected` |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_viewed` |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_completed` |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed` |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_completed` |
-| P1 | client | `client_storyCreate_storyCompletion_requested` |
-| P1 | client | `client_storyCreate_completeError_shown` |
-| P1 | client | `client_storyCreate_exitButton_clicked` |
-| P1 | client | `client_chatList_viewed` |
-| P1 | client | `client_chatList_chatCard_clicked` |
-| P1 | client | `client_chatList_chatCard_impressed` |
-| P1 | client | `client_chat_inputMode_selected` |
-| P1 | client | `client_chat_choiceOption_selected` |
-| P1 | client | `client_chat_choiceFillButton_clicked` |
-| P1 | client | `client_chat_loadError_shown` |
-| P1 | client | `client_chat_retryButton_clicked` |
-| P1 | client | `client_chat_streamError_shown` |
-| P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked` |
-| P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed` |
-| P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed` |
-| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed` |
-| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed` |
-| P1 `Phase 1 · 구현` | client | `client_login_viewed` |
-| P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_account_viewed` |
-| P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_invite_viewed` |
-| P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked` |
-| P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked` |
-| P1 | server | `server_feedback_submission_processed_succeeded` |
-| P1 | server | `server_feedback_submission_processed_failed` |
-| P2 | client | `client_storyCreate_addTag_submitted` |
-| P2 | client | `client_storyCreate_storylineTab_selected` |
-| P2 | client | `client_storyCreate_backToStorylineButton_clicked` |
-| P2 | client | `client_storyCreate_recommendedInfo_clicked` |
-| P2 | client | `client_storyCreate_additionalInfoAddButton_clicked` |
-| P2 | client | `client_storyCreate_additionalInfoRemoveButton_clicked` |
-| P2 | client | `client_chat_settingsButton_clicked` |
-| P2 | client | `client_chat_addBlockButton_clicked` |
-| P2 | client | `client_chat_removeBlockButton_clicked` |
-| P2 | client | `client_chat_situationInsertButton_clicked` |
-| P2 | client | `client_storyCreate_creditInfoButton_clicked` |
-| P2 | client | `client_storyDetail_thumbnail_clicked` |
-| P2 | client | `client_terms_viewed` |
-| P2 | client | `client_privacy_viewed` |
-| P2 `계획` | client | `client_serviceInfo_viewed` |
+| 우선순위            | 소유   | 이벤트                                                   |
+| ------------------- | ------ | -------------------------------------------------------- |
+| P0                  | client | `client_storyList_viewed`                                |
+| P0                  | client | `client_storyList_createButton_clicked`                  |
+| P0                  | client | `client_storyCreate_viewed`                              |
+| P0                  | client | `client_storyCreate_step_viewed`                         |
+| P0                  | client | `client_storyCreate_storyGeneration_requested`           |
+| P0                  | server | `server_storyCreate_storyGeneration_processed_succeeded` |
+| P0                  | server | `server_storyCreate_storyGeneration_processed_failed`    |
+| P0                  | client | `client_storyCreate_storylineOption_selected`            |
+| P0                  | client | `client_storyCreate_selectedTagsButton_clicked`          |
+| P0                  | client | `client_storyCreate_completed`                           |
+| P0                  | client | `client_storyDetail_viewed`                              |
+| P0                  | client | `client_storyDetail_chatStartButton_clicked`             |
+| P0                  | client | `client_chat_viewed`                                     |
+| P0                  | client | `client_chat_messageInput_submitted`                     |
+| P0                  | server | `server_chat_aiMessage_processed_succeeded`              |
+| P0                  | server | `server_chat_aiMessage_processed_failed`                 |
+| P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown`                      |
+| P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown`                          |
+| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_succeeded`           |
+| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_failed`              |
+| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_succeeded`             |
+| P0 `Phase 1 · 계획` | server | `server_login_migration_processed_failed`                |
+| P0                  | client | `client_feedback_viewed`                                 |
+| P0                  | client | `client_feedback_form_submitted`                         |
+| P1                  | client | `client_onboarding_viewed`                               |
+| P1                  | client | `client_onboarding_createButton_clicked`                 |
+| P1                  | client | `client_storyList_storyCard_clicked`                     |
+| P1                  | client | `client_storyList_storyCard_impressed`                   |
+| P1                  | client | `client_storyCreate_tagCategory_selected`                |
+| P1                  | client | `client_storyCreate_regenerateButton_clicked`            |
+| P1                  | client | `client_storyCreate_storylineRating_clicked`             |
+| P1 `Phase 1 · 계획` | client | `client_storyCreate_methodOption_selected`               |
+| P1 `Phase 1 · 계획` | client | `client_generalCreate_viewed`                            |
+| P1 `Phase 1 · 계획` | client | `client_generalCreate_completed`                         |
+| P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed`                                |
+| P1 `Phase 1 · 계획` | client | `client_storyEdit_completed`                             |
+| P1                  | client | `client_storyCreate_storyCompletion_requested`           |
+| P1                  | client | `client_storyCreate_completeError_shown`                 |
+| P1                  | client | `client_storyCreate_exitButton_clicked`                  |
+| P1                  | client | `client_chatList_viewed`                                 |
+| P1                  | client | `client_chatList_chatCard_clicked`                       |
+| P1                  | client | `client_chatList_chatCard_impressed`                     |
+| P1                  | client | `client_chat_inputMode_selected`                         |
+| P1                  | client | `client_chat_choiceOption_selected`                      |
+| P1                  | client | `client_chat_choiceFillButton_clicked`                   |
+| P1                  | client | `client_chat_loadError_shown`                            |
+| P1                  | client | `client_chat_retryButton_clicked`                        |
+| P1                  | client | `client_chat_streamError_shown`                          |
+| P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked`                   |
+| P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed`                        |
+| P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed`                      |
+| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
+| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed`                      |
+| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked`         |
+| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed`                  |
+| P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
+| P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
+| P1 `Phase 1 · 구현` | client | `client_account_viewed`                                  |
+| P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked`                     |
+| P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
+| P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked`                    |
+| P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
+| P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
+| P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
+| P1                  | server | `server_feedback_submission_processed_succeeded`         |
+| P1                  | server | `server_feedback_submission_processed_failed`            |
+| P2                  | client | `client_storyCreate_addTag_submitted`                    |
+| P2                  | client | `client_storyCreate_storylineTab_selected`               |
+| P2                  | client | `client_storyCreate_backToStorylineButton_clicked`       |
+| P2                  | client | `client_storyCreate_recommendedInfo_clicked`             |
+| P2                  | client | `client_storyCreate_additionalInfoAddButton_clicked`     |
+| P2                  | client | `client_storyCreate_additionalInfoRemoveButton_clicked`  |
+| P2                  | client | `client_chat_settingsButton_clicked`                     |
+| P2                  | client | `client_chat_addBlockButton_clicked`                     |
+| P2                  | client | `client_chat_removeBlockButton_clicked`                  |
+| P2                  | client | `client_chat_situationInsertButton_clicked`              |
+| P2                  | client | `client_storyCreate_creditInfoButton_clicked`            |
+| P2                  | client | `client_storyDetail_thumbnail_clicked`                   |
+| P2                  | client | `client_terms_viewed`                                    |
+| P2                  | client | `client_privacy_viewed`                                  |
+| P2 `계획`           | client | `client_serviceInfo_viewed`                              |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -265,47 +265,47 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 홈 최초 진입 시 노출되는 환영 다이얼로그입니다. 사용자는 `스토리 만들기` 버튼을 누르기 전까지 다이얼로그를 닫을 수 없고, 다이얼로그는 최초 1회만 노출됩니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_onboarding_viewed` | P1 | 환영 다이얼로그 노출 | 없음 |
-| `client_onboarding_createButton_clicked` | P1 | 스토리 만들기 버튼 클릭 | 없음 |
+| 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
+| ---------------------------------------- | -------- | ----------------------- | ------------- |
+| `client_onboarding_viewed`               | P1       | 환영 다이얼로그 노출    | 없음          |
+| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기 버튼 클릭 | 없음          |
 
 #### 6-4-2-2. 스토리 목록
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_storyList_viewed` | P0 | 스토리 목록 화면 진입 | 없음 |
-| `client_storyList_createButton_clicked` | P0 | 제작하기 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`) |
-| `client_storyList_storyCard_clicked` | P1 | 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택) |
-| `client_storyList_storyCard_impressed` | P1 | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
+| 이벤트                                  | 우선순위 | 발생 시점             | 고유 프로퍼티                                        |
+| --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
+| `client_storyList_viewed`               | P0       | 스토리 목록 화면 진입 | 없음                                                 |
+| `client_storyList_createButton_clicked` | P0       | 제작하기 CTA 클릭     | `source` (string, 필수: `fab` / `emptyState`)        |
+| `client_storyList_storyCard_clicked`    | P1       | 스토리 카드 클릭      | `story_id` (string, 필수), `position` (number, 선택) |
+| `client_storyList_storyCard_impressed`  | P1       | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
 
 제작하기 CTA는 플로팅 버튼과 빈 목록 상태 버튼 두 곳에 있습니다. 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: 플로팅 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다.
 
 #### 6-4-2-3. 스토리 제작
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_storyCreate_viewed` | P0 | 제작 화면 진입 | 없음 |
-| `client_storyCreate_step_viewed` | P0 | 각 제작 단계 진입 | `step_name` (string, 필수), `step_number` (number, 필수) |
-| `client_storyCreate_tagCategory_selected` | P1 | 태그 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
-| `client_storyCreate_addTag_submitted` | P2 | 태그 직접 추가 제출 | `category` (string, 필수) |
-| `client_storyCreate_storyGeneration_requested` | P0 | 스토리라인 생성 요청 전송 | 없음 |
-| `server_storyCreate_storyGeneration_processed_succeeded` | P0 | 스토리라인 생성 성공 | `creation_id` (string, 필수) |
-| `server_storyCreate_storyGeneration_processed_failed` | P0 | 스토리라인 생성 실패 | `creation_id` (string, 필수), `error_type` (string, 필수) |
-| `client_storyCreate_regenerateButton_clicked` | P1 | 스토리라인 다시 만들기 클릭 | `creation_id` (string, 필수) |
-| `client_storyCreate_storylineTab_selected` | P2 | 스토리라인 후보 탭 이동 | `creation_id` (string, 필수), `position` (number, 필수) |
-| `client_storyCreate_storylineRating_clicked` | P1 | 스토리라인 좋아요/싫어요 클릭 | `storyline_id` (string, 필수), `rating` (string, 필수: `GOOD` / `BAD`), `active` (boolean, 필수) |
-| `client_storyCreate_storylineOption_selected` | P0 | 스토리라인 선택 | `creation_id` (string, 필수), `position` (number, 선택) |
-| `client_storyCreate_selectedTagsButton_clicked` | P0 | 선택한 태그 보기 버튼 클릭 | `creation_id` (string, 필수) |
-| `client_storyCreate_backToStorylineButton_clicked` | P2 | 다시 선택하기(스토리라인 선택으로 되돌아감) 클릭 | 없음 |
-| `client_storyCreate_recommendedInfo_clicked` | P2 | AI 추천 추가 정보 칩 클릭 | `selected` (boolean, 필수) |
-| `client_storyCreate_additionalInfoAddButton_clicked` | P2 | 추가 정보 입력란 추가 클릭 | 없음 |
-| `client_storyCreate_additionalInfoRemoveButton_clicked` | P2 | 추가 정보 입력란 삭제 클릭 | 없음 |
-| `client_storyCreate_storyCompletion_requested` | P1 | 스토리 완성 요청 전송 | `creation_id` (string, 필수) |
-| `client_storyCreate_completeError_shown` | P1 | 스토리 완성 실패 에러 표시 | `stage` (string, 필수: `story` / `chat`) |
-| `client_storyCreate_creditInfoButton_clicked` | P2 | 제작 헤더 크레딧 안내 팝오버 열기(닫힘은 계측하지 않음) | 없음 |
-| `client_storyCreate_exitButton_clicked` | P1 | 제작 이탈 확인(나가기) 클릭 | `step_name` (string, 필수), `step_number` (number, 필수) |
-| `client_storyCreate_completed` | P0 | 스토리화 완료 | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택) |
+| 이벤트                                                   | 우선순위 | 발생 시점                                                                      | 고유 프로퍼티                                                                                                    |
+| -------------------------------------------------------- | -------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `client_storyCreate_viewed`                              | P0       | 제작 화면 진입                                                                 | 없음                                                                                                             |
+| `client_storyCreate_step_viewed`                         | P0       | 각 제작 단계 진입                                                              | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
+| `client_storyCreate_tagCategory_selected`                | P1       | 태그 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
+| `client_storyCreate_addTag_submitted`                    | P2       | 태그 직접 추가 제출                                                            | `category` (string, 필수)                                                                                        |
+| `client_storyCreate_storyGeneration_requested`           | P0       | 스토리라인 생성 요청 전송                                                      | 없음                                                                                                             |
+| `server_storyCreate_storyGeneration_processed_succeeded` | P0       | 스토리라인 생성 성공                                                           | `creation_id` (string, 필수)                                                                                     |
+| `server_storyCreate_storyGeneration_processed_failed`    | P0       | 스토리라인 생성 실패                                                           | `creation_id` (string, 필수), `error_type` (string, 필수)                                                        |
+| `client_storyCreate_regenerateButton_clicked`            | P1       | 스토리라인 다시 만들기 클릭                                                    | `creation_id` (string, 필수)                                                                                     |
+| `client_storyCreate_storylineTab_selected`               | P2       | 스토리라인 후보 탭 이동                                                        | `creation_id` (string, 필수), `position` (number, 필수)                                                          |
+| `client_storyCreate_storylineRating_clicked`             | P1       | 스토리라인 좋아요/싫어요 클릭                                                  | `storyline_id` (string, 필수), `rating` (string, 필수: `GOOD` / `BAD`), `active` (boolean, 필수)                 |
+| `client_storyCreate_storylineOption_selected`            | P0       | 스토리라인 선택                                                                | `creation_id` (string, 필수), `position` (number, 선택)                                                          |
+| `client_storyCreate_selectedTagsButton_clicked`          | P0       | 선택한 태그 보기 버튼 클릭                                                     | `creation_id` (string, 필수)                                                                                     |
+| `client_storyCreate_backToStorylineButton_clicked`       | P2       | 다시 선택하기(스토리라인 선택으로 되돌아감) 클릭                               | 없음                                                                                                             |
+| `client_storyCreate_recommendedInfo_clicked`             | P2       | AI 추천 추가 정보 칩 클릭                                                      | `selected` (boolean, 필수)                                                                                       |
+| `client_storyCreate_additionalInfoAddButton_clicked`     | P2       | 추가 정보 입력란 추가 클릭                                                     | 없음                                                                                                             |
+| `client_storyCreate_additionalInfoRemoveButton_clicked`  | P2       | 추가 정보 입력란 삭제 클릭                                                     | 없음                                                                                                             |
+| `client_storyCreate_storyCompletion_requested`           | P1       | 스토리 완성 요청 전송                                                          | `creation_id` (string, 필수)                                                                                     |
+| `client_storyCreate_completeError_shown`                 | P1       | 스토리 완성 실패 에러 표시                                                     | `stage` (string, 필수: `story` / `chat`)                                                                         |
+| `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 크레딧 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
+| `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확인(나가기) 클릭                                                    | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
+| `client_storyCreate_completed`                           | P0       | 스토리화 완료                                                                  | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택)                                   |
 
 `client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다. 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
@@ -317,52 +317,52 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 제작 단계 `step_name`은 다음 값만 사용합니다.
 
-| step_number | step_name |
-| --- | --- |
-| `1` | `keyword` |
-| `2` | `storylineSelect` |
-| `3` | `additionalInfo` |
-| `4` | `complete` |
+| step_number | step_name         |
+| ----------- | ----------------- |
+| `1`         | `keyword`         |
+| `2`         | `storylineSelect` |
+| `3`         | `additionalInfo`  |
+| `4`         | `complete`        |
 
 #### 6-4-2-4. 스토리 상세
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_storyDetail_viewed` | P0 | 스토리 상세 화면 진입 | `story_id` (string, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0 | 채팅 시작 버튼 클릭 | `story_id` (string, 필수) |
-| `client_storyDetail_thumbnail_clicked` | P2 | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
+| 이벤트                                       | 우선순위 | 발생 시점                            | 고유 프로퍼티             |
+| -------------------------------------------- | -------- | ------------------------------------ | ------------------------- |
+| `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수) |
+| `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 
 추천 스토리 카드는 아직 도입되지 않은 기능입니다. 기능 도입 시 `client_storyDetail_recommendStoryCard_clicked`와 `client_storyDetail_recommendStoryCard_impressed`(P1, `story_id` string 필수, `position` number 선택)를 추가합니다. 이때 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
 #### 6-4-2-5. 채팅 목록
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_chatList_viewed` | P1 | 채팅 목록 화면 진입 | 없음 |
-| `client_chatList_chatCard_clicked` | P1 | 채팅 카드 클릭 | `chat_id` (string, 필수), `position` (number, 선택) |
-| `client_chatList_chatCard_impressed` | P1 | 채팅 카드 유효 노출 | `chat_id` (string, 필수), `position` (number, 선택) |
+| 이벤트                               | 우선순위 | 발생 시점           | 고유 프로퍼티                                       |
+| ------------------------------------ | -------- | ------------------- | --------------------------------------------------- |
+| `client_chatList_viewed`             | P1       | 채팅 목록 화면 진입 | 없음                                                |
+| `client_chatList_chatCard_clicked`   | P1       | 채팅 카드 클릭      | `chat_id` (string, 필수), `position` (number, 선택) |
+| `client_chatList_chatCard_impressed` | P1       | 채팅 카드 유효 노출 | `chat_id` (string, 필수), `position` (number, 선택) |
 
 #### 6-4-2-6. 채팅
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_chat_viewed` | P0 | 채팅 화면 진입 | `chat_id` (string, 필수) |
-| `client_chat_settingsButton_clicked` | P2 | 채팅 설정 드로어 열기(헤더 설정 버튼 클릭) | `chat_id` (string, 필수) |
-| `client_chat_inputMode_selected` | P1 | 입력 모드 전환(설정 드로어에서 블럭/일반 선택) | `chat_id` (string, 필수), `mode` (string, 필수: `block` / `plain`) |
-| `client_chat_messageInput_submitted` | P0 | 사용자 메시지 전송 | `chat_id` (string, 필수), `turn_number` (number, 필수), `input_mode` (string, 필수: `block` / `plain` / `choice`) |
-| `client_chat_addBlockButton_clicked` | P2 | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
-| `client_chat_removeBlockButton_clicked` | P2 | 블럭 입력 모드에서 입력 블럭 삭제 클릭 | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`) |
-| `client_chat_situationInsertButton_clicked` | P2 | 일반 입력 모드에서 상황 추가(강조 표기 삽입) 클릭 | `chat_id` (string, 필수) |
-| `server_chat_aiMessage_processed_succeeded` | P0 | AI 응답 생성 성공 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`), `ending_id` (string, 선택 `Phase 1 · 계획`: 도달한 엔딩 식별자 — 엔딩 도달 턴만) |
-| `server_chat_aiMessage_processed_failed` | P0 | AI 응답 생성 실패 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`) |
-| `client_chat_regenerateButton_clicked` `Phase 1 · 계획` | P1 | 마지막 AI 응답 다시 생성 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
-| `client_chat_chatImage_impressed` `Phase 1 · 계획` | P1 | 채팅 이미지 유효 노출(§6-4-3 기준) | `chat_id` (string, 필수), `turn_number` (number, 필수), `image_key` (string, 필수) |
-| `client_chat_endingBadge_impressed` `Phase 1 · 계획` | P1 | 엔딩 도달 배지 유효 노출(§6-4-3 기준) | `chat_id` (string, 필수), `turn_number` (number, 필수), `ending_id` (string, 필수: 도달한 엔딩 식별자) |
-| `client_chat_choiceOption_selected` | P1 | 선택지 선택 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
-| `client_chat_choiceFillButton_clicked` | P1 | 선택지를 입력창에 넣어 수정 버튼 클릭 | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택) |
-| `client_chat_streamError_shown` | P1 | AI 응답 스트리밍 실패 에러 표시 | `chat_id` (string, 필수), `turn_number` (number, 필수) |
-| `client_chat_loadError_shown` | P1 | 채팅 화면 로드 실패 에러 표시 | `chat_id` (string, 필수) |
-| `client_chat_retryButton_clicked` | P1 | 로드 실패 후 다시 시도 버튼 클릭 | `chat_id` (string, 필수) |
+| 이벤트                                                  | 우선순위 | 발생 시점                                         | 고유 프로퍼티                                                                                                                                                                               |
+| ------------------------------------------------------- | -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `client_chat_viewed`                                    | P0       | 채팅 화면 진입                                    | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_settingsButton_clicked`                    | P2       | 채팅 설정 드로어 열기(헤더 설정 버튼 클릭)        | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_inputMode_selected`                        | P1       | 입력 모드 전환(설정 드로어에서 블럭/일반 선택)    | `chat_id` (string, 필수), `mode` (string, 필수: `block` / `plain`)                                                                                                                          |
+| `client_chat_messageInput_submitted`                    | P0       | 사용자 메시지 전송                                | `chat_id` (string, 필수), `turn_number` (number, 필수), `input_mode` (string, 필수: `block` / `plain` / `choice`)                                                                           |
+| `client_chat_addBlockButton_clicked`                    | P2       | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭       | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`)                                                                                                             |
+| `client_chat_removeBlockButton_clicked`                 | P2       | 블럭 입력 모드에서 입력 블럭 삭제 클릭            | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`)                                                                                                             |
+| `client_chat_situationInsertButton_clicked`             | P2       | 일반 입력 모드에서 상황 추가(강조 표기 삽입) 클릭 | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `server_chat_aiMessage_processed_succeeded`             | P0       | AI 응답 생성 성공                                 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`), `ending_id` (string, 선택 `Phase 1 · 계획`: 도달한 엔딩 식별자 — 엔딩 도달 턴만) |
+| `server_chat_aiMessage_processed_failed`                | P0       | AI 응답 생성 실패                                 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수), `is_regenerated` (boolean, 필수 `Phase 1 · 계획`)                                                      |
+| `client_chat_regenerateButton_clicked` `Phase 1 · 계획` | P1       | 마지막 AI 응답 다시 생성 버튼 클릭                | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
+| `client_chat_chatImage_impressed` `Phase 1 · 계획`      | P1       | 채팅 이미지 유효 노출(§6-4-3 기준)                | `chat_id` (string, 필수), `turn_number` (number, 필수), `image_key` (string, 필수)                                                                                                          |
+| `client_chat_endingBadge_impressed` `Phase 1 · 계획`    | P1       | 엔딩 도달 배지 유효 노출(§6-4-3 기준)             | `chat_id` (string, 필수), `turn_number` (number, 필수), `ending_id` (string, 필수: 도달한 엔딩 식별자)                                                                                      |
+| `client_chat_choiceOption_selected`                     | P1       | 선택지 선택                                       | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택)                                                                                                           |
+| `client_chat_choiceFillButton_clicked`                  | P1       | 선택지를 입력창에 넣어 수정 버튼 클릭             | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택)                                                                                                           |
+| `client_chat_streamError_shown`                         | P1       | AI 응답 스트리밍 실패 에러 표시                   | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
+| `client_chat_loadError_shown`                           | P1       | 채팅 화면 로드 실패 에러 표시                     | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_retryButton_clicked`                       | P1       | 로드 실패 후 다시 시도 버튼 클릭                  | `chat_id` (string, 필수)                                                                                                                                                                    |
 
 채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 설정 드로어에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다.
 
@@ -378,12 +378,12 @@ AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succee
 
 #### 6-4-2-7. 피드백
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_feedback_viewed` | P0 | 피드백 화면 진입 | 없음 |
-| `client_feedback_form_submitted` | P0 | 피드백 제출 버튼 클릭 | 없음 |
-| `server_feedback_submission_processed_succeeded` | P1 | 피드백 제출 처리 성공 | 없음 |
-| `server_feedback_submission_processed_failed` | P1 | 피드백 제출 처리 실패 | `error_type` (string, 필수) |
+| 이벤트                                           | 우선순위 | 발생 시점             | 고유 프로퍼티               |
+| ------------------------------------------------ | -------- | --------------------- | --------------------------- |
+| `client_feedback_viewed`                         | P0       | 피드백 화면 진입      | 없음                        |
+| `client_feedback_form_submitted`                 | P0       | 피드백 제출 버튼 클릭 | 없음                        |
+| `server_feedback_submission_processed_succeeded` | P1       | 피드백 제출 처리 성공 | 없음                        |
+| `server_feedback_submission_processed_failed`    | P1       | 피드백 제출 처리 실패 | `error_type` (string, 필수) |
 
 server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나만 사용합니다. 상세 매핑은 `6-6-7. 서버 분석 이벤트와 실패 타입`을 따릅니다.
 
@@ -391,50 +391,50 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 로그인 화면(FE-SCREEN-008)과 게스트 데이터 마이그레이션의 이벤트입니다. 마이그레이션은 로그인 직후 자동 실행되므로 클라이언트 계측 없이 서버 이벤트로 수집합니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_login_viewed` `Phase 1 · 구현` | P1 | 로그인 화면 진입 | 없음 |
-| `client_login_googleButton_clicked` `Phase 1 · 구현` | P1 | Google 로그인 버튼 클릭 | 없음 |
-| `client_account_viewed` `Phase 1 · 구현` | P1 | 마이 페이지 진입 | 없음 |
-| `client_account_loginButton_clicked` `Phase 1 · 구현` | P1 | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음 |
-| `client_account_logoutButton_clicked` `Phase 1 · 구현` | P1 | 마이 페이지 로그아웃 클릭 | 없음 |
-| `server_login_googleLogin_processed_succeeded` `Phase 1 · 계획` | P0 | 로그인 처리 성공 | `is_new_user` (boolean, 필수) |
-| `server_login_googleLogin_processed_failed` `Phase 1 · 계획` | P0 | 로그인 처리 실패 | `error_type` (string, 필수) |
-| `server_login_migration_processed_succeeded` `Phase 1 · 계획` | P0 | 마이그레이션 처리 완료(부분 성공 포함) | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
-| `server_login_migration_processed_failed` `Phase 1 · 계획` | P0 | 마이그레이션 요청 자체 실패(400 등) | `error_type` (string, 필수) |
+| 이벤트                                                          | 우선순위 | 발생 시점                                        | 고유 프로퍼티                                                                                                                |
+| --------------------------------------------------------------- | -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `client_login_viewed` `Phase 1 · 구현`                          | P1       | 로그인 화면 진입                                 | 없음                                                                                                                         |
+| `client_login_googleButton_clicked` `Phase 1 · 구현`            | P1       | Google 로그인 버튼 클릭                          | 없음                                                                                                                         |
+| `client_account_viewed` `Phase 1 · 구현`                        | P1       | 마이 페이지 진입                                 | 없음                                                                                                                         |
+| `client_account_loginButton_clicked` `Phase 1 · 구현`           | P1       | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음                                                                                                                         |
+| `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
+| `server_login_googleLogin_processed_succeeded` `Phase 1 · 계획` | P0       | 로그인 처리 성공                                 | `is_new_user` (boolean, 필수)                                                                                                |
+| `server_login_googleLogin_processed_failed` `Phase 1 · 계획`    | P0       | 로그인 처리 실패                                 | `error_type` (string, 필수)                                                                                                  |
+| `server_login_migration_processed_succeeded` `Phase 1 · 계획`   | P0       | 마이그레이션 처리 완료(부분 성공 포함)           | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
+| `server_login_migration_processed_failed` `Phase 1 · 계획`      | P0       | 마이그레이션 요청 자체 실패(400 등)              | `error_type` (string, 필수)                                                                                                  |
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
 - 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다. 프론트엔드는 로그아웃 클릭 시 이벤트를 보낸 뒤 analytics `reset()`을 수행합니다(§6-2) — 이벤트 전송이 리셋보다 먼저여야 로그아웃 직전 사용자에게 귀속됩니다.
 - `client_account_loginButton_clicked`는 게스트가 마이 페이지에서 로그인 화면으로 이동한 유입을 구분합니다. 로그인 화면 진입 자체는 `client_login_viewed`로 측정합니다.
 
-#### 6-4-2-9. 크레딧 — `Phase 1 · 계획`
+#### 6-4-2-9. 크레딧 — `Phase 1 · 구현`
 
 마이 페이지의 적립 인터랙션과 크레딧·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_account_attendanceButton_clicked` | P1 | 마이 페이지 출석체크 클릭 | 없음 |
-| `client_invite_viewed` | P1 | 친구 초대 페이지(`/my/invite`) 진입 | 없음 |
-| `client_invite_copyButton_clicked` | P1 | 친구 초대 페이지 초대 코드 복사 클릭(KNK-567 — 복사 대상이 링크에서 코드로 변경) | 없음 |
-| `client_invite_kakaoShareButton_clicked` | P1 | 친구 초대 페이지 카카오톡 공유 클릭 | 없음 |
-| `client_invite_codeInput_submitted` | P1 | 초대 코드 제출(`POST /users/me/invite/redeem` 호출, KNK-567) | `source` (string, 필수: `invite_page` / `onboarding`) |
-| `client_invite_codeInput_succeeded` | P0 | 초대 코드 제출 성공 — 양측 적립(KNK-567, 초대 전환의 종점) | `source` (동일) |
-| `client_invite_codeInput_failed` | P1 | 초대 코드 제출 실패(KNK-567) | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`) |
-| `client_inviteOnboarding_shown` | P1 | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567) | 없음 |
-| `client_inviteOnboarding_skipped` | P1 | 초대 코드 스텝 건너뛰기(KNK-567) | 없음 |
-| `server_credit_earn_processed_succeeded` | P1 | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250) | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
-| `client_guestLimitDialog_shown` | P0 | 402로 게스트 체험 한도 다이얼로그 노출 | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`) |
-| `client_guestLimitDialog_loginButton_clicked` | P1 | 게스트 한도 다이얼로그의 로그인 CTA 클릭 | `trigger` (동일) |
-| `client_guestLimitDialog_dismissed` | P1 | 게스트 한도 다이얼로그 닫기 | `trigger` (동일) |
-| `client_creditShortageDialog_shown` | P0 | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원) | `trigger` (동일) |
-| `client_creditShortageDialog_earnButton_clicked` | P1 | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭 | `trigger` (동일) |
-| `client_creditShortageDialog_dismissed` | P1 | 크레딧 부족 다이얼로그 닫기 | `trigger` (동일) |
+| 이벤트                                           | 우선순위 | 발생 시점                                                                        | 고유 프로퍼티                                                                                                  |
+| ------------------------------------------------ | -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `client_account_attendanceButton_clicked`        | P1       | 마이 페이지 출석체크 클릭                                                        | 없음                                                                                                           |
+| `client_invite_viewed`                           | P1       | 친구 초대 페이지(`/more/invite`) 진입                                            | 없음                                                                                                           |
+| `client_invite_copyButton_clicked`               | P1       | 친구 초대 페이지 초대 코드 복사 클릭(KNK-567 — 복사 대상이 링크에서 코드로 변경) | 없음                                                                                                           |
+| `client_invite_kakaoShareButton_clicked`         | P1       | 친구 초대 페이지 카카오톡 공유 클릭                                              | 없음                                                                                                           |
+| `client_invite_codeInput_submitted`              | P1       | 초대 코드 제출(`POST /users/me/invite/redeem` 호출, KNK-567)                     | `source` (string, 필수: `invite_page` / `onboarding`)                                                          |
+| `client_invite_codeInput_succeeded`              | P0       | 초대 코드 제출 성공 — 양측 적립(KNK-567, 초대 전환의 종점)                       | `source` (동일)                                                                                                |
+| `client_invite_codeInput_failed`                 | P1       | 초대 코드 제출 실패(KNK-567)                                                     | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`)       |
+| `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567)                                  | 없음                                                                                                           |
+| `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기(KNK-567)                                                 | 없음                                                                                                           |
+| `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
+| `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 다이얼로그 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
+| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일)                                                                                               |
+| `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_shown`              | P0       | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원)                     | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_earnButton_clicked` | P1       | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭                             | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_dismissed`          | P1       | 크레딧 부족 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
 
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
 - 두 다이얼로그는 화면 횡단 전역 오버레이라 네이밍 원칙(§6-3-1)의 screenName 자리에 다이얼로그명을 씁니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하며, 이전 개정판의 화면 분리형 이벤트(`client_storyCreate_creditShortage_shown` 등 4종)와 `limit_type`·`chat_id` 프로퍼티를 대체합니다. CTA·닫기 클릭(P1)까지 수집해 전환 다이얼로그의 효과를 관찰합니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
-- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
+- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/more/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
@@ -443,13 +443,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 처리가 없는 동기 CRUD라 서버 이벤트 없이 클라이언트 계측으로 충분합니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_storyCreate_methodOption_selected` | P1 | 제작 방식 선택(간편/일반) | `method` (string, 필수: `simple` / `general`) |
-| `client_generalCreate_viewed` | P1 | 일반 제작 폼 진입 | 없음 |
-| `client_generalCreate_completed` | P1 | 일반 제작 등록 성공 | `story_id` (string, 필수), `main_event_count` · `ending_count` · `image_count` (number, 필수) |
-| `client_storyEdit_viewed` | P1 | 수정 화면 진입 | `story_id` (string, 필수) |
-| `client_storyEdit_completed` | P1 | 수정 저장 성공 | `story_id` (string, 필수) |
+| 이벤트                                     | 우선순위 | 발생 시점                 | 고유 프로퍼티                                                                                 |
+| ------------------------------------------ | -------- | ------------------------- | --------------------------------------------------------------------------------------------- |
+| `client_storyCreate_methodOption_selected` | P1       | 제작 방식 선택(간편/일반) | `method` (string, 필수: `simple` / `general`)                                                 |
+| `client_generalCreate_viewed`              | P1       | 일반 제작 폼 진입         | 없음                                                                                          |
+| `client_generalCreate_completed`           | P1       | 일반 제작 등록 성공       | `story_id` (string, 필수), `main_event_count` · `ending_count` · `image_count` (number, 필수) |
+| `client_storyEdit_viewed`                  | P1       | 수정 화면 진입            | `story_id` (string, 필수)                                                                     |
+| `client_storyEdit_completed`               | P1       | 수정 저장 성공            | `story_id` (string, 필수)                                                                     |
 
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
 
@@ -457,40 +457,40 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 이용약관·개인정보 처리방침 화면의 진입 이벤트입니다. 유입 경로 분석용 저우선 계측입니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_terms_viewed` | P2 | 이용약관 화면 진입 | 없음 |
-| `client_privacy_viewed` | P2 | 개인정보 처리방침 화면 진입 | 없음 |
+| 이벤트                  | 우선순위 | 발생 시점                   | 고유 프로퍼티 |
+| ----------------------- | -------- | --------------------------- | ------------- |
+| `client_terms_viewed`   | P2       | 이용약관 화면 진입          | 없음          |
+| `client_privacy_viewed` | P2       | 개인정보 처리방침 화면 진입 | 없음          |
 
 #### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567)
 
 인앱 브라우저 감지·탈출([`3-frontend.md §3-10`](./3-frontend.md))의 관측 이벤트입니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_inappBrowser_detected` | P1 | 인앱 브라우저 UA 감지 | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
-| `client_inappBrowser_escapeAttempted` | P1 | 카카오톡 탈출 스킴 호출 | `app` (string, 필수: `kakaotalk`) |
-| `client_inappBrowser_bannerShown` | P1 | 안내 배너 노출(카카오톡 탈출 실패 판정 포함) | `app` (동일 enum) |
+| 이벤트                                | 우선순위 | 발생 시점                                    | 고유 프로퍼티                                               |
+| ------------------------------------- | -------- | -------------------------------------------- | ----------------------------------------------------------- |
+| `client_inappBrowser_detected`        | P1       | 인앱 브라우저 UA 감지                        | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
+| `client_inappBrowser_escapeAttempted` | P1       | 카카오톡 탈출 스킴 호출                      | `app` (string, 필수: `kakaotalk`)                           |
+| `client_inappBrowser_bannerShown`     | P1       | 안내 배너 노출(카카오톡 탈출 실패 판정 포함) | `app` (동일 enum)                                           |
 
 - 탈출 성공은 직접 계측할 수 없습니다(스킴 호출에 콜백이 없고 성공 시 페이지가 닫힘). `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다.
 - 인앱별 유입량(`detected`의 `app` 분포)은 안내 배너만 두는 인스타그램·쓰레드에 자동 탈출 투자를 추가할지 판단하는 근거입니다.
 
-#### 6-4-2-13. 서비스 안내 — `계획`
+#### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
 
 서비스 안내 화면([`3-frontend.md` FE-SCREEN-011](./3-frontend.md))의 진입 이벤트입니다. 법적 고지(§6-4-2-11)와 같은 유입 경로 분석용 저우선 계측입니다.
 
-| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
-| --- | --- | --- | --- |
-| `client_serviceInfo_viewed` | P2 | 서비스 안내 화면 진입 | 없음 |
+| 이벤트                      | 우선순위 | 발생 시점             | 고유 프로퍼티 |
+| --------------------------- | -------- | --------------------- | ------------- |
+| `client_serviceInfo_viewed` | P2       | 서비스 안내 화면 진입 | 없음          |
 
 ### 6-4-3. impression 수집 기준
 
 `impressed`는 특정 item 또는 section이 사용자 화면에 유효하게 노출된 상태를 뜻합니다.
 
-| 항목 | 권장 기준 |
-| --- | --- |
+| 항목           | 권장 기준                |
+| -------------- | ------------------------ |
 | 최소 노출 면적 | 컴포넌트 면적의 50% 이상 |
-| 최소 노출 시간 | 1초 이상 |
+| 최소 노출 시간 | 1초 이상                 |
 
 중복 노출은 동일 item 기준으로 한 번만 수집합니다. `동일 session_id + 동일 screenName + 동일 objectName + 동일 item_id` 기준으로 30초 이내 재노출은 중복으로 판단합니다. `section_id`, `section_name`, `item_id`는 정밀 계측 도입 시 추가합니다.
 
@@ -524,13 +524,13 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 ### 6-5-2. 분석 단위
 
-| 분석 단위 | 기준 키 | 사용 지표 |
-| --- | --- | --- |
-| 익명 사용자 | `device_id` | 방문, 제작 시작, 전체 활성화 |
-| 방문 세션 | `session_id` | 같은 방문 안의 화면 흐름 |
-| 스토리 생성 시도 | `creation_id` | 생성 성공 후 제작 완료까지의 흐름 |
-| 채팅 세션 | `chat_id` | 첫 메시지, 첫 AI 응답, N턴 이상 도달 |
-| API 요청 | `request_id` | 서버 로그, Sentry, AI 호출 상관관계 |
+| 분석 단위        | 기준 키       | 사용 지표                            |
+| ---------------- | ------------- | ------------------------------------ |
+| 익명 사용자      | `device_id`   | 방문, 제작 시작, 전체 활성화         |
+| 방문 세션        | `session_id`  | 같은 방문 안의 화면 흐름             |
+| 스토리 생성 시도 | `creation_id` | 생성 성공 후 제작 완료까지의 흐름    |
+| 채팅 세션        | `chat_id`     | 첫 메시지, 첫 AI 응답, N턴 이상 도달 |
+| API 요청         | `request_id`  | 서버 로그, Sentry, AI 호출 상관관계  |
 
 `creation_id`가 발급되기 전의 `client_storyCreate_viewed`, `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 봅니다. `creation_id`가 포함된 이벤트부터는 `creation_id`를 고정값으로 둡니다.
 
@@ -540,13 +540,13 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 키워드 입력부터 스토리 완성까지의 이탈과 생성 성공률을 측정합니다.
 
-| 순서 | 단계 | 이벤트 | 고정값 |
-| --- | --- | --- | --- |
-| 1 | 제작 진입 | `client_storyCreate_viewed` | device |
-| 2 | 생성 요청 | `client_storyCreate_storyGeneration_requested` | device |
-| 3 | 생성 성공 | `server_storyCreate_storyGeneration_processed_succeeded` | `creation_id` |
-| 4 | 스토리라인 선택 | `client_storyCreate_storylineOption_selected` | `creation_id` |
-| 5 | 제작 완료 | `client_storyCreate_completed` | `creation_id` |
+| 순서 | 단계            | 이벤트                                                   | 고정값        |
+| ---- | --------------- | -------------------------------------------------------- | ------------- |
+| 1    | 제작 진입       | `client_storyCreate_viewed`                              | device        |
+| 2    | 생성 요청       | `client_storyCreate_storyGeneration_requested`           | device        |
+| 3    | 생성 성공       | `server_storyCreate_storyGeneration_processed_succeeded` | `creation_id` |
+| 4    | 스토리라인 선택 | `client_storyCreate_storylineOption_selected`            | `creation_id` |
+| 5    | 제작 완료       | `client_storyCreate_completed`                           | `creation_id` |
 
 화면 단계 이탈은 `client_storyCreate_step_viewed`의 `step_name` 순서(`keyword` -> `storylineSelect` -> `additionalInfo` -> `complete`)로 별도 관찰합니다. 키워드 단계 안의 카테고리별 이탈(장르 -> 주인공 -> 주변 인물)은 `client_storyCreate_tagCategory_selected`의 `from_category` + `direction=forward`로 관찰합니다. 완성 실패율은 `client_storyCreate_completeError_shown`(`client_storyCreate_storyCompletion_requested` 대비), 완성 성공률은 `client_storyCreate_completed`로 봅니다.
 
@@ -554,11 +554,11 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 채팅 진입 후 첫 메시지와 첫 AI 응답까지 도달하는지 측정합니다.
 
-| 순서 | 단계 | 이벤트 | 고정값 |
-| --- | --- | --- | --- |
-| 1 | 채팅 진입 | `client_chat_viewed` | `chat_id` |
-| 2 | 첫 메시지 | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
-| 3 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` | `chat_id` |
+| 순서 | 단계       | 이벤트                                                       | 고정값    |
+| ---- | ---------- | ------------------------------------------------------------ | --------- |
+| 1    | 채팅 진입  | `client_chat_viewed`                                         | `chat_id` |
+| 2    | 첫 메시지  | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
+| 3    | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded`                  | `chat_id` |
 
 대화 깊이는 퍼널이 아니라 `turn_number` 분포로 봅니다.
 
@@ -566,46 +566,46 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 방문자가 스토리를 만들고 실제 대화까지 갔는지 측정합니다.
 
-| 순서 | 단계 | 이벤트 | 고정값 |
-| --- | --- | --- | --- |
-| 1 | 메인 방문 | `client_storyList_viewed` | device |
-| 2 | 제작 시작 | `client_storyList_createButton_clicked` | device |
-| 3 | 제작 완료 | `client_storyCreate_completed` | device |
-| 4 | 첫 메시지 | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
-| 5 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` | `chat_id` |
+| 순서 | 단계       | 이벤트                                                       | 고정값    |
+| ---- | ---------- | ------------------------------------------------------------ | --------- |
+| 1    | 메인 방문  | `client_storyList_viewed`                                    | device    |
+| 2    | 제작 시작  | `client_storyList_createButton_clicked`                      | device    |
+| 3    | 제작 완료  | `client_storyCreate_completed`                               | device    |
+| 4    | 첫 메시지  | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
+| 5    | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded`                  | `chat_id` |
 
 3단계 `client_storyCreate_completed`에서 발급된 `chat_id`로 4~5단계를 연결합니다.
 
 ### 6-5-4. 핵심 지표
 
-| 영역 | 지표 | 계산식 |
-| --- | --- | --- |
-| 온보딩 | 제작 시작 전환율 | `client_onboarding_createButton_clicked` 수 / `client_onboarding_viewed` 수 |
-| 스토리 목록 | 스토리 카드 클릭률 | `client_storyList_storyCard_clicked` 수 / `client_storyList_storyCard_impressed` 수 |
-| 스토리 목록 | 제작 시작률 | `client_storyList_createButton_clicked` 수 / `client_storyList_viewed` 수 |
-| 스토리 제작 | 생성 요청률 | `client_storyCreate_storyGeneration_requested` 수 / `client_storyCreate_viewed` 수 |
-| 스토리 제작 | 생성 성공률 | `server_storyCreate_storyGeneration_processed_succeeded` 수 / `client_storyCreate_storyGeneration_requested` 수 |
-| 스토리 제작 | 생성 실패율 | `server_storyCreate_storyGeneration_processed_failed` 수 / `client_storyCreate_storyGeneration_requested` 수 |
-| 스토리 제작 | 생성 후 완료율 | `client_storyCreate_completed` 수 / `server_storyCreate_storyGeneration_processed_succeeded` 수 (`creation_id` 기준) |
-| 스토리 제작 | 완성 실패율 | `client_storyCreate_completeError_shown` 수 / `client_storyCreate_storyCompletion_requested` 수 |
-| 스토리 제작 | 전체 제작 전환율 | `client_storyCreate_completed` 수 / `client_storyCreate_viewed` 수 |
-| 스토리 제작 | 단계별 이탈율 | `1 - 다음 단계 step_viewed 사용자 수 / 현재 단계 step_viewed 사용자 수` |
-| 스토리 상세 | 상세에서 채팅 시작 전환율 | `client_storyDetail_chatStartButton_clicked` 수 / `client_storyDetail_viewed` 수 |
-| 채팅 목록 | 채팅 카드 클릭률 | `client_chatList_chatCard_clicked` 수 / `client_chatList_chatCard_impressed` 수 |
-| 채팅 | 말 거는 비율 | `client_chat_messageInput_submitted` 사용자 수 where `turn_number = 1` / `client_chat_viewed` 사용자 수 |
-| 채팅 | AI 응답 성공률 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 재생성 도입 후에는 분자에 `is_regenerated = false` 필터 필수) |
-| 채팅 | AI 응답 실패율 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 분자에 `is_regenerated = false` 필터 필수) |
-| 채팅 | 재생성 사용률 `Phase 1 · 계획` | `client_chat_regenerateButton_clicked` 수 / `is_regenerated = false` `server_chat_aiMessage_processed_succeeded` 수 |
-| 채팅 | N턴 이상 도달률 | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수 |
-| 채팅 | 채팅 로드 실패율 | `client_chat_loadError_shown` 수 / `client_chat_viewed` 수 |
-| 채팅 | 응답 스트리밍 실패율 | `client_chat_streamError_shown` 수 / `client_chat_messageInput_submitted` 수 |
-| 채팅 | 선택지 사용률 | `client_chat_choiceOption_selected` 수 / `client_chat_messageInput_submitted` 수 |
-| 채팅 | 선택지 수정 사용률 | `client_chat_choiceFillButton_clicked` 수 / `client_chat_messageInput_submitted` 수 |
-| 채팅 | 일반 입력 전환율 | `mode = plain` `client_chat_inputMode_selected` 사용자 수 / `client_chat_viewed` 사용자 수 |
-| 피드백 | 피드백 제출률 | `client_feedback_form_submitted` 사용자 수 / `client_feedback_viewed` 사용자 수 |
-| 피드백 | 제출 성공률 | `server_feedback_submission_processed_succeeded` 수 / `client_feedback_form_submitted` 수 |
-| 피드백 | 제출 실패율 | `server_feedback_submission_processed_failed` 수 / `client_feedback_form_submitted` 수 |
-| 전체 | 방문에서 활성화 전환율 | `server_chat_aiMessage_processed_succeeded` 도달 사용자 수 / `client_storyList_viewed` 사용자 수 |
+| 영역        | 지표                           | 계산식                                                                                                                                                                     |
+| ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 온보딩      | 제작 시작 전환율               | `client_onboarding_createButton_clicked` 수 / `client_onboarding_viewed` 수                                                                                                |
+| 스토리 목록 | 스토리 카드 클릭률             | `client_storyList_storyCard_clicked` 수 / `client_storyList_storyCard_impressed` 수                                                                                        |
+| 스토리 목록 | 제작 시작률                    | `client_storyList_createButton_clicked` 수 / `client_storyList_viewed` 수                                                                                                  |
+| 스토리 제작 | 생성 요청률                    | `client_storyCreate_storyGeneration_requested` 수 / `client_storyCreate_viewed` 수                                                                                         |
+| 스토리 제작 | 생성 성공률                    | `server_storyCreate_storyGeneration_processed_succeeded` 수 / `client_storyCreate_storyGeneration_requested` 수                                                            |
+| 스토리 제작 | 생성 실패율                    | `server_storyCreate_storyGeneration_processed_failed` 수 / `client_storyCreate_storyGeneration_requested` 수                                                               |
+| 스토리 제작 | 생성 후 완료율                 | `client_storyCreate_completed` 수 / `server_storyCreate_storyGeneration_processed_succeeded` 수 (`creation_id` 기준)                                                       |
+| 스토리 제작 | 완성 실패율                    | `client_storyCreate_completeError_shown` 수 / `client_storyCreate_storyCompletion_requested` 수                                                                            |
+| 스토리 제작 | 전체 제작 전환율               | `client_storyCreate_completed` 수 / `client_storyCreate_viewed` 수                                                                                                         |
+| 스토리 제작 | 단계별 이탈율                  | `1 - 다음 단계 step_viewed 사용자 수 / 현재 단계 step_viewed 사용자 수`                                                                                                    |
+| 스토리 상세 | 상세에서 채팅 시작 전환율      | `client_storyDetail_chatStartButton_clicked` 수 / `client_storyDetail_viewed` 수                                                                                           |
+| 채팅 목록   | 채팅 카드 클릭률               | `client_chatList_chatCard_clicked` 수 / `client_chatList_chatCard_impressed` 수                                                                                            |
+| 채팅        | 말 거는 비율                   | `client_chat_messageInput_submitted` 사용자 수 where `turn_number = 1` / `client_chat_viewed` 사용자 수                                                                    |
+| 채팅        | AI 응답 성공률                 | `server_chat_aiMessage_processed_succeeded` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 재생성 도입 후에는 분자에 `is_regenerated = false` 필터 필수) |
+| 채팅        | AI 응답 실패율                 | `server_chat_aiMessage_processed_failed` 수 / `client_chat_messageInput_submitted` 수 (`Phase 1 · 계획` — 분자에 `is_regenerated = false` 필터 필수)                       |
+| 채팅        | 재생성 사용률 `Phase 1 · 계획` | `client_chat_regenerateButton_clicked` 수 / `is_regenerated = false` `server_chat_aiMessage_processed_succeeded` 수                                                        |
+| 채팅        | N턴 이상 도달률                | `turn_number >= N` 채팅 수 / `client_chat_viewed` 채팅 수                                                                                                                  |
+| 채팅        | 채팅 로드 실패율               | `client_chat_loadError_shown` 수 / `client_chat_viewed` 수                                                                                                                 |
+| 채팅        | 응답 스트리밍 실패율           | `client_chat_streamError_shown` 수 / `client_chat_messageInput_submitted` 수                                                                                               |
+| 채팅        | 선택지 사용률                  | `client_chat_choiceOption_selected` 수 / `client_chat_messageInput_submitted` 수                                                                                           |
+| 채팅        | 선택지 수정 사용률             | `client_chat_choiceFillButton_clicked` 수 / `client_chat_messageInput_submitted` 수                                                                                        |
+| 채팅        | 일반 입력 전환율               | `mode = plain` `client_chat_inputMode_selected` 사용자 수 / `client_chat_viewed` 사용자 수                                                                                 |
+| 피드백      | 피드백 제출률                  | `client_feedback_form_submitted` 사용자 수 / `client_feedback_viewed` 사용자 수                                                                                            |
+| 피드백      | 제출 성공률                    | `server_feedback_submission_processed_succeeded` 수 / `client_feedback_form_submitted` 수                                                                                  |
+| 피드백      | 제출 실패율                    | `server_feedback_submission_processed_failed` 수 / `client_feedback_form_submitted` 수                                                                                     |
+| 전체        | 방문에서 활성화 전환율         | `server_chat_aiMessage_processed_succeeded` 도달 사용자 수 / `client_storyList_viewed` 사용자 수                                                                           |
 
 생성, 응답, 제출 실패 사유는 server 이벤트의 `error_type`(`network`, `validation`, `server`) 분포로 봅니다.
 
@@ -613,19 +613,19 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 운영 지표는 제품 퍼널 지표가 아니라 장애 분석과 성능 관리에 사용합니다.
 
-| 영역 | 지표 | 계산 기준 |
-| --- | --- | --- |
-| API | API 실패율 | `api_request_failed` 수 / 전체 API 요청 수 |
+| 영역        | 지표                    | 계산 기준                                                      |
+| ----------- | ----------------------- | -------------------------------------------------------------- |
+| API         | API 실패율              | `api_request_failed` 수 / 전체 API 요청 수                     |
 | 스토리 생성 | 스토리 생성 서버 실패율 | `story_generation_failed` 수 / `story_generation_requested` 수 |
-| AI | AI 호출 성공률 | `ai_call_logs.status = succeeded` 수 / 전체 AI 호출 수 |
-| AI | AI 호출 실패율 | `ai_call_logs.status = failed` 수 / 전체 AI 호출 수 |
-| AI | 기능별 실패율 | `feature`별 실패 수 / `feature`별 전체 호출 수 |
-| AI | p50, p95 latency | `ai_call_logs.latency_ms`의 p50, p95 |
-| AI | 평균 입력 토큰 수 | `input_token_count` 평균 |
-| AI | 평균 출력 토큰 수 | `output_token_count` 평균 |
-| AI | 재시도율 | `retry_count > 0` 호출 수 / 전체 호출 수 |
-| 채팅 | 채팅 응답 저장 성공률 | `ai_response_saved` 수 / `user_message_saved` 수 |
-| 피드백 | 피드백 제출 성공률 | `feedback_delivery_completed` 수 / 피드백 제출 API 요청 수 |
+| AI          | AI 호출 성공률          | `ai_call_logs.status = succeeded` 수 / 전체 AI 호출 수         |
+| AI          | AI 호출 실패율          | `ai_call_logs.status = failed` 수 / 전체 AI 호출 수            |
+| AI          | 기능별 실패율           | `feature`별 실패 수 / `feature`별 전체 호출 수                 |
+| AI          | p50, p95 latency        | `ai_call_logs.latency_ms`의 p50, p95                           |
+| AI          | 평균 입력 토큰 수       | `input_token_count` 평균                                       |
+| AI          | 평균 출력 토큰 수       | `output_token_count` 평균                                      |
+| AI          | 재시도율                | `retry_count > 0` 호출 수 / 전체 호출 수                       |
+| 채팅        | 채팅 응답 저장 성공률   | `ai_response_saved` 수 / `user_message_saved` 수               |
+| 피드백      | 피드백 제출 성공률      | `feedback_delivery_completed` 수 / 피드백 제출 API 요청 수     |
 
 CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 따릅니다.
 
@@ -641,15 +641,15 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 
 ### 6-6-1. 도구별 역할
 
-| 도구 | 역할 | MVP 적용 범위 |
-| --- | --- | --- |
-| Amplitude | 사용자 행동 분석 | 퍼널, 전환율, 이탈율, 선택지 사용률 |
-| 브라우저 Sentry | 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
-| 서버 분석 이벤트 | 퍼널 결과 계측 | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패 |
-| 서버 Sentry | 백엔드 예외 분석 | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패 |
-| CloudWatch | 운영 로그와 지표 | API 요청 로그, 주요 비즈니스 이벤트, latency, status |
-| AI Sentry | AI 서비스 오류 분석 | provider 오류, timeout, 파싱 실패, schema 검증 실패 |
-| `ai_call_logs` | AI 호출 이력 | 스토리라인 생성, 스토리 생성, 채팅 응답, 선택지 생성 |
+| 도구             | 역할                 | MVP 적용 범위                                              |
+| ---------------- | -------------------- | ---------------------------------------------------------- |
+| Amplitude        | 사용자 행동 분석     | 퍼널, 전환율, 이탈율, 선택지 사용률                        |
+| 브라우저 Sentry  | 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
+| 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
+| 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
+| CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
+| AI Sentry        | AI 서비스 오류 분석  | provider 오류, timeout, 파싱 실패, schema 검증 실패        |
+| `ai_call_logs`   | AI 호출 이력         | 스토리라인 생성, 스토리 생성, 채팅 응답, 선택지 생성       |
 
 Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다. Sentry 이벤트 수는 제품 지표 계산에 사용하지 않습니다.
 
@@ -657,11 +657,11 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 
 프론트엔드는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 함께 보냅니다.
 
-| 헤더 | 필수 여부 | 값 | 설명 |
-| --- | --- | --- | --- |
-| `X-Manyak-Device-Id` | 필수 | `device_id` | Amplitude SDK가 채운 익명 사용자 ID입니다. |
-| `X-Manyak-Session-Id` | 필수 | `session_id` | Amplitude SDK가 채운 세션 ID입니다. |
-| `X-Manyak-Request-Id` | 권장 | `request_id` | 요청 단위 ID입니다. 없으면 백엔드가 생성합니다. |
+| 헤더                  | 필수 여부 | 값           | 설명                                            |
+| --------------------- | --------- | ------------ | ----------------------------------------------- |
+| `X-Manyak-Device-Id`  | 필수      | `device_id`  | Amplitude SDK가 채운 익명 사용자 ID입니다.      |
+| `X-Manyak-Session-Id` | 필수      | `session_id` | Amplitude SDK가 채운 세션 ID입니다.             |
+| `X-Manyak-Request-Id` | 권장      | `request_id` | 요청 단위 ID입니다. 없으면 백엔드가 생성합니다. |
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣습니다. 백엔드는 저장 전 `device_id_hash`로 변환합니다. 프론트엔드는 별도 해시를 만들지 않습니다.
 
@@ -669,16 +669,16 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 
 백엔드는 모든 서버 분석 이벤트, CloudWatch 로그, Sentry scope, AI 호출 요청에 다음 값을 가능한 범위에서 포함합니다.
 
-| 필드 | 설명 |
-| --- | --- |
-| `request_id` | API 요청과 AI 호출을 연결하는 서버 내부 상관 ID입니다. |
-| `device_id_hash` | 익명 `device_id`를 해시한 값입니다. |
-| `session_id` | 프론트엔드 세션 ID입니다. |
-| `creation_id` | 스토리 생성 시도 ID입니다. |
-| `story_id` | 스토리 ID입니다. |
-| `chat_id` | 채팅 ID입니다. |
-| `turn_number` | 사용자 메시지 기준 턴 번호입니다. |
-| `ai_call_log_id` | AI 호출 로그 행 ID입니다. |
+| 필드             | 설명                                                   |
+| ---------------- | ------------------------------------------------------ |
+| `request_id`     | API 요청과 AI 호출을 연결하는 서버 내부 상관 ID입니다. |
+| `device_id_hash` | 익명 `device_id`를 해시한 값입니다.                    |
+| `session_id`     | 프론트엔드 세션 ID입니다.                              |
+| `creation_id`    | 스토리 생성 시도 ID입니다.                             |
+| `story_id`       | 스토리 ID입니다.                                       |
+| `chat_id`        | 채팅 ID입니다.                                         |
+| `turn_number`    | 사용자 메시지 기준 턴 번호입니다.                      |
+| `ai_call_log_id` | AI 호출 로그 행 ID입니다.                              |
 
 `request_id`는 서버 로그, Sentry, `ai_call_logs`를 잇는 서버 내부 상관 키입니다. 프론트엔드 `client_*` 이벤트와 백엔드 `server_*` 이벤트를 제품 분석에서 연결할 때는 현재 `creation_id`와 `chat_id`를 사용합니다.
 
@@ -686,11 +686,11 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 
 프론트엔드 Sentry에는 오류 분석에 필요한 최소 context만 넣습니다.
 
-| 구분 | 수집 내용 |
-| --- | --- |
-| Tags | `screen_name`, `story_id`, `chat_id`, `creation_id` |
-| User | `id: device_id`, `ip_address: "{{auto}}"` |
-| Breadcrumb | P0 행동 이벤트 이름, 주요 API 요청 시작과 종료 |
+| 구분       | 수집 내용                                                           |
+| ---------- | ------------------------------------------------------------------- |
+| Tags       | `screen_name`, `story_id`, `chat_id`, `creation_id`                 |
+| User       | `id: device_id`, `ip_address: "{{auto}}"`                           |
+| Breadcrumb | P0 행동 이벤트 이름, 주요 API 요청 시작과 종료                      |
 | Exceptions | 렌더링 오류, 라우트 오류, API 네트워크 오류, 예상하지 못한 5xx 응답 |
 
 4xx 응답이 사용자가 복구할 수 있는 검증 오류라면 Sentry exception으로 보내지 않습니다. 사용자 행동 분석이 필요하면 Amplitude 이벤트로만 기록합니다. 서버 사이드 상관 키 `request_id`를 브라우저 Sentry Tags에 추가하는 것은 추후 도입 항목입니다.
@@ -718,28 +718,28 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 }
 ```
 
-| 이벤트 | 발생 시점 | 핵심 필드 |
-| --- | --- | --- |
-| `api_request_completed` | API 요청 정상 종료 | `endpoint`, `http_method`, `status_code`, `duration_ms` |
-| `api_request_failed` | API 요청 실패 | `endpoint`, `http_method`, `status_code`, `duration_ms`, `error_code` |
-| `story_generation_requested` | 스토리라인 생성 API 요청 수신 | `request_id`, `session_id` |
-| `story_generated` | 스토리라인 생성 완료 | `creation_id`, `duration_ms` |
-| `story_generation_failed` | 스토리라인 생성 실패 | `creation_id`, `error_code`, `duration_ms` |
-| `story_created` | 스토리 저장 완료 | `story_id`, `chat_id`, `duration_ms` |
-| `user_message_saved` | 사용자 메시지 저장 완료 | `chat_id`, `story_id`, `turn_number` |
-| `ai_response_saved` | AI 응답 저장 완료 | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id` |
-| `feedback_delivery_completed` | 피드백 저장 또는 전달 완료 | `has_email` |
+| 이벤트                        | 발생 시점                     | 핵심 필드                                                             |
+| ----------------------------- | ----------------------------- | --------------------------------------------------------------------- |
+| `api_request_completed`       | API 요청 정상 종료            | `endpoint`, `http_method`, `status_code`, `duration_ms`               |
+| `api_request_failed`          | API 요청 실패                 | `endpoint`, `http_method`, `status_code`, `duration_ms`, `error_code` |
+| `story_generation_requested`  | 스토리라인 생성 API 요청 수신 | `request_id`, `session_id`                                            |
+| `story_generated`             | 스토리라인 생성 완료          | `creation_id`, `duration_ms`                                          |
+| `story_generation_failed`     | 스토리라인 생성 실패          | `creation_id`, `error_code`, `duration_ms`                            |
+| `story_created`               | 스토리 저장 완료              | `story_id`, `chat_id`, `duration_ms`                                  |
+| `user_message_saved`          | 사용자 메시지 저장 완료       | `chat_id`, `story_id`, `turn_number`                                  |
+| `ai_response_saved`           | AI 응답 저장 완료             | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id`                |
+| `feedback_delivery_completed` | 피드백 저장 또는 전달 완료    | `has_email`                                                           |
 
 ### 6-6-6. 백엔드 Sentry 기준
 
 백엔드는 예상하지 못한 장애와 운영자가 확인해야 하는 실패만 Sentry에 보냅니다.
 
-| 구분 | 수집 내용 |
-| --- | --- |
-| Tags | `endpoint`, `http_method`, `status_code`, `error_code`, `creation_id`, `story_id`, `chat_id`, `request_id` |
-| Context | `session_id`, `device_id_hash`, `feature`, `duration_ms`, `ai_call_log_id` |
-| Breadcrumb | API 요청 시작, DB 저장 완료, AI 호출 시작과 종료 |
-| Exceptions | 5xx 예외, DB 예외, AI 호출 timeout, AI 응답 검증 실패, Slack 피드백 webhook 실패 |
+| 구분       | 수집 내용                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------- |
+| Tags       | `endpoint`, `http_method`, `status_code`, `error_code`, `creation_id`, `story_id`, `chat_id`, `request_id` |
+| Context    | `session_id`, `device_id_hash`, `feature`, `duration_ms`, `ai_call_log_id`                                 |
+| Breadcrumb | API 요청 시작, DB 저장 완료, AI 호출 시작과 종료                                                           |
+| Exceptions | 5xx 예외, DB 예외, AI 호출 timeout, AI 응답 검증 실패, Slack 피드백 webhook 실패                           |
 
 사용자 입력 검증 실패처럼 예상 가능한 4xx 오류는 기본적으로 Sentry exception으로 보내지 않습니다. 같은 4xx 오류가 짧은 시간에 반복되어 운영 문제가 의심될 때만 warning 수준의 CloudWatch 로그로 확인합니다.
 
@@ -749,99 +749,99 @@ Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다.
 
 `error_type`은 사용자·퍼널 분석용 거친 분류이며 `network`, `validation`, `server`만 사용합니다. 내부 상세 실패 코드(`ai_call_logs.error_code`)는 다음 기준으로 `error_type`에 매핑합니다.
 
-| error_type | 의미 | 매핑되는 내부 error_code |
-| --- | --- | --- |
-| `network` | 네트워크, 연결, timeout 실패 | `provider_timeout`, `provider_unavailable` |
+| error_type   | 의미                              | 매핑되는 내부 error_code                                                                            |
+| ------------ | --------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `network`    | 네트워크, 연결, timeout 실패      | `provider_timeout`, `provider_unavailable`                                                          |
 | `validation` | 입력값, 응답 검증, 안전 정책 실패 | `provider_bad_request`, `schema_validation_failed`, `invalid_ai_response`, `content_filter_blocked` |
-| `server` | 서버 내부 처리 실패 | `provider_rate_limited`, `unexpected_error` |
+| `server`     | 서버 내부 처리 실패               | `provider_rate_limited`, `unexpected_error`                                                         |
 
 `Phase 1 · 계획` — 로그인·마이그레이션 실패의 `error_type` 매핑입니다.
 
-| error_type | 로그인·마이그레이션 실패 사례 |
-| --- | --- |
-| `network` | Google 인증 서버 연결·timeout 실패 |
+| error_type   | 로그인·마이그레이션 실패 사례                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| `network`    | Google 인증 서버 연결·timeout 실패                                                                 |
 | `validation` | Google ID 토큰 서명·만료·audience 검증 실패, 마이그레이션 요청 UUID 형식 오류·배열 100개 초과(400) |
-| `server` | 사용자 저장·소유권 이관 중 내부 처리 실패 |
+| `server`     | 사용자 저장·소유권 이관 중 내부 처리 실패                                                          |
 
 ### 6-6-8. AI 기능과 요청 context
 
 MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 
-| feature | 설명 | 사용자 퍼널 연결 |
-| --- | --- | --- |
-| `storyline_generation` | 선택 키워드로 스토리라인 후보 생성 | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*` |
-| `story_completion` | 선택 스토리라인과 추가 정보로 스토리 상세 생성 | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed` |
-| `chat_response` | 사용자 메시지에 대한 AI 응답 생성(`Phase 1 · 계획` 재생성 포함 — `is_regenerated`로 구분) | `client_chat_messageInput_submitted`, `client_chat_regenerateButton_clicked`, `server_chat_aiMessage_processed_*` |
-| `suggestion_generation` | 선택지 생성 | `client_chat_choiceOption_selected` |
+| feature                 | 설명                                                                                      | 사용자 퍼널 연결                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `storyline_generation`  | 선택 키워드로 스토리라인 후보 생성                                                        | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*`                  |
+| `story_completion`      | 선택 스토리라인과 추가 정보로 스토리 상세 생성                                            | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed`                                    |
+| `chat_response`         | 사용자 메시지에 대한 AI 응답 생성(`Phase 1 · 계획` 재생성 포함 — `is_regenerated`로 구분) | `client_chat_messageInput_submitted`, `client_chat_regenerateButton_clicked`, `server_chat_aiMessage_processed_*` |
+| `suggestion_generation` | 선택지 생성                                                                               | `client_chat_choiceOption_selected`                                                                               |
 
 AI feature는 프론트엔드 이벤트명에 넣지 않습니다. 상세 원인은 `feature`와 `error_code`로 구분합니다.
 
 백엔드는 AI 서비스 호출 시 다음 값을 전달합니다. AI 서비스는 값을 그대로 로그, Sentry scope, `ai_call_logs`에 연결합니다.
 
-| 필드 | 필수 여부 | 설명 |
-| --- | --- | --- |
-| `request_id` | 필수 | 백엔드와 AI 로그를 연결하는 서버 내부 상관 ID입니다. |
-| `device_id_hash` | 필수 | 익명 `device_id` 해시입니다. |
-| `session_id` | 필수 | 프론트엔드 세션 ID입니다. |
-| `feature` | 필수 | AI 기능명입니다. |
-| `prompt_template_version` | 필수 | 프롬프트 템플릿 버전입니다. |
-| `creation_id` | 조건부 | 스토리라인 생성과 스토리 완성 시 필수입니다. |
-| `story_id` | 조건부 | 스토리 완성 후 또는 채팅 중 필수입니다. |
-| `chat_id` | 조건부 | 채팅 응답 생성 시 필수입니다. |
-| `turn_number` | 조건부 | 채팅 응답 생성 시 필수입니다. |
+| 필드                      | 필수 여부 | 설명                                                 |
+| ------------------------- | --------- | ---------------------------------------------------- |
+| `request_id`              | 필수      | 백엔드와 AI 로그를 연결하는 서버 내부 상관 ID입니다. |
+| `device_id_hash`          | 필수      | 익명 `device_id` 해시입니다.                         |
+| `session_id`              | 필수      | 프론트엔드 세션 ID입니다.                            |
+| `feature`                 | 필수      | AI 기능명입니다.                                     |
+| `prompt_template_version` | 필수      | 프롬프트 템플릿 버전입니다.                          |
+| `creation_id`             | 조건부    | 스토리라인 생성과 스토리 완성 시 필수입니다.         |
+| `story_id`                | 조건부    | 스토리 완성 후 또는 채팅 중 필수입니다.              |
+| `chat_id`                 | 조건부    | 채팅 응답 생성 시 필수입니다.                        |
+| `turn_number`             | 조건부    | 채팅 응답 생성 시 필수입니다.                        |
 
 AI 서비스 응답에는 다음 메타데이터를 포함합니다.
 
-| 필드 | 설명 |
-| --- | --- |
-| `ai_call_log_id` | `ai_call_logs` 행 ID입니다. |
-| `model` | 사용 모델입니다. |
-| `latency_ms` | AI 호출 소요 시간입니다. |
-| `input_token_count` | 입력 토큰 수입니다. |
-| `output_token_count` | 출력 토큰 수입니다. |
-| `error_code` | 실패 시 오류 코드입니다. |
+| 필드                 | 설명                        |
+| -------------------- | --------------------------- |
+| `ai_call_log_id`     | `ai_call_logs` 행 ID입니다. |
+| `model`              | 사용 모델입니다.            |
+| `latency_ms`         | AI 호출 소요 시간입니다.    |
+| `input_token_count`  | 입력 토큰 수입니다.         |
+| `output_token_count` | 출력 토큰 수입니다.         |
+| `error_code`         | 실패 시 오류 코드입니다.    |
 
 ### 6-6-9. `ai_call_logs` 기록 기준
 
 AI 호출 1회당 `ai_call_logs`에 1행을 기록합니다. 재시도가 발생하면 같은 `request_id` 아래에서 `retry_count`를 증가시킵니다. 여러 모델을 순차 호출하는 기능이 생기면 provider 호출별로 행을 분리합니다.
 
-| 컬럼 | 타입 예시 | 설명 |
-| --- | --- | --- |
-| `id` | UUID | AI 호출 로그 ID입니다. |
-| `request_id` | VARCHAR | API 요청과 연결되는 ID입니다. |
-| `caller_service` | VARCHAR | 호출 서비스입니다. MVP 값은 `manyak-server`입니다. |
-| `feature` | VARCHAR | AI 기능명입니다. |
-| `device_id_hash` | VARCHAR | 익명 `device_id` 해시입니다. |
-| `session_id` | VARCHAR | 세션 ID입니다. |
-| `creation_id` | VARCHAR NULL | 스토리 생성 시도 ID입니다. |
-| `story_id` | VARCHAR NULL | 연결된 스토리 ID입니다. |
-| `chat_id` | VARCHAR NULL | 연결된 채팅 ID입니다. |
-| `turn_number` | INTEGER NULL | 사용자 메시지 기준 턴 번호입니다. |
-| `provider` | VARCHAR | AI provider입니다. |
-| `model` | VARCHAR | 모델명입니다. |
-| `prompt_template_version` | VARCHAR | 프롬프트 템플릿 버전입니다. |
-| `status` | VARCHAR | `started`, `succeeded`, `failed` 중 하나입니다. |
-| `latency_ms` | INTEGER | AI 호출 소요 시간입니다. |
-| `input_token_count` | INTEGER NULL | 입력 토큰 수입니다. |
-| `output_token_count` | INTEGER NULL | 출력 토큰 수입니다. |
-| `retry_count` | INTEGER | 재시도 횟수입니다. |
-| `error_code` | VARCHAR NULL | 내부 실패 코드입니다. |
-| `sentry_event_id` | VARCHAR NULL | Sentry 이벤트 ID입니다. |
-| `created_at` | TIMESTAMP | 생성 시각입니다. |
-| `completed_at` | TIMESTAMP NULL | 완료 시각입니다. |
+| 컬럼                      | 타입 예시      | 설명                                               |
+| ------------------------- | -------------- | -------------------------------------------------- |
+| `id`                      | UUID           | AI 호출 로그 ID입니다.                             |
+| `request_id`              | VARCHAR        | API 요청과 연결되는 ID입니다.                      |
+| `caller_service`          | VARCHAR        | 호출 서비스입니다. MVP 값은 `manyak-server`입니다. |
+| `feature`                 | VARCHAR        | AI 기능명입니다.                                   |
+| `device_id_hash`          | VARCHAR        | 익명 `device_id` 해시입니다.                       |
+| `session_id`              | VARCHAR        | 세션 ID입니다.                                     |
+| `creation_id`             | VARCHAR NULL   | 스토리 생성 시도 ID입니다.                         |
+| `story_id`                | VARCHAR NULL   | 연결된 스토리 ID입니다.                            |
+| `chat_id`                 | VARCHAR NULL   | 연결된 채팅 ID입니다.                              |
+| `turn_number`             | INTEGER NULL   | 사용자 메시지 기준 턴 번호입니다.                  |
+| `provider`                | VARCHAR        | AI provider입니다.                                 |
+| `model`                   | VARCHAR        | 모델명입니다.                                      |
+| `prompt_template_version` | VARCHAR        | 프롬프트 템플릿 버전입니다.                        |
+| `status`                  | VARCHAR        | `started`, `succeeded`, `failed` 중 하나입니다.    |
+| `latency_ms`              | INTEGER        | AI 호출 소요 시간입니다.                           |
+| `input_token_count`       | INTEGER NULL   | 입력 토큰 수입니다.                                |
+| `output_token_count`      | INTEGER NULL   | 출력 토큰 수입니다.                                |
+| `retry_count`             | INTEGER        | 재시도 횟수입니다.                                 |
+| `error_code`              | VARCHAR NULL   | 내부 실패 코드입니다.                              |
+| `sentry_event_id`         | VARCHAR NULL   | Sentry 이벤트 ID입니다.                            |
+| `created_at`              | TIMESTAMP      | 생성 시각입니다.                                   |
+| `completed_at`            | TIMESTAMP NULL | 완료 시각입니다.                                   |
 
 실패 코드는 적게 유지합니다.
 
-| error_code | 의미 | error_type |
-| --- | --- | --- |
-| `provider_timeout` | provider 응답 시간 초과 | `network` |
-| `provider_rate_limited` | provider rate limit | `server` |
-| `provider_bad_request` | provider 요청 거부 | `validation` |
-| `provider_unavailable` | provider 장애 또는 일시적 연결 실패 | `network` |
-| `invalid_ai_response` | 응답이 서비스 기대 형식과 다름 | `validation` |
+| error_code                 | 의미                                | error_type   |
+| -------------------------- | ----------------------------------- | ------------ |
+| `provider_timeout`         | provider 응답 시간 초과             | `network`    |
+| `provider_rate_limited`    | provider rate limit                 | `server`     |
+| `provider_bad_request`     | provider 요청 거부                  | `validation` |
+| `provider_unavailable`     | provider 장애 또는 일시적 연결 실패 | `network`    |
+| `invalid_ai_response`      | 응답이 서비스 기대 형식과 다름      | `validation` |
 | `schema_validation_failed` | Pydantic 또는 응답 schema 검증 실패 | `validation` |
-| `content_filter_blocked` | 안전 정책 또는 필터에 의해 차단 | `validation` |
-| `unexpected_error` | 분류되지 않은 예외 | `server` |
+| `content_filter_blocked`   | 안전 정책 또는 필터에 의해 차단     | `validation` |
+| `unexpected_error`         | 분류되지 않은 예외                  | `server`     |
 
 ### 6-6-10. AI CloudWatch와 Sentry 기준
 
@@ -870,19 +870,19 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 }
 ```
 
-| 이벤트 | 발생 시점 | 핵심 필드 |
-| --- | --- | --- |
-| `ai_call_started` | provider 호출 직전 | `feature`, `request_id`, `prompt_template_version`, `model` |
-| `ai_call_completed` | provider 호출과 응답 검증 성공 | `feature`, `ai_call_log_id`, `latency_ms`, `input_token_count`, `output_token_count` |
-| `ai_call_failed` | provider 호출 또는 응답 검증 실패 | `feature`, `ai_call_log_id`, `latency_ms`, `error_code`, `retry_count` |
-| `ai_response_validation_failed` | 응답 schema 검증 실패 | `feature`, `error_code`, `prompt_template_version` |
+| 이벤트                          | 발생 시점                         | 핵심 필드                                                                            |
+| ------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------ |
+| `ai_call_started`               | provider 호출 직전                | `feature`, `request_id`, `prompt_template_version`, `model`                          |
+| `ai_call_completed`             | provider 호출과 응답 검증 성공    | `feature`, `ai_call_log_id`, `latency_ms`, `input_token_count`, `output_token_count` |
+| `ai_call_failed`                | provider 호출 또는 응답 검증 실패 | `feature`, `ai_call_log_id`, `latency_ms`, `error_code`, `retry_count`               |
+| `ai_response_validation_failed` | 응답 schema 검증 실패             | `feature`, `error_code`, `prompt_template_version`                                   |
 
-| 구분 | 수집 내용 |
-| --- | --- |
-| Tags | `feature`, `provider`, `model`, `prompt_template_version`, `error_code`, `request_id` |
-| Context | `ai_call_log_id`, `session_id`, `device_id_hash`, `creation_id`, `story_id`, `chat_id`, `turn_number`, `latency_ms`, `retry_count` |
-| Breadcrumb | AI 호출 시작, provider 응답 수신, schema 검증, DB 기록 |
-| Exceptions | timeout, provider 오류, 파싱 실패, schema 검증 실패, 예상하지 못한 예외 |
+| 구분       | 수집 내용                                                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Tags       | `feature`, `provider`, `model`, `prompt_template_version`, `error_code`, `request_id`                                              |
+| Context    | `ai_call_log_id`, `session_id`, `device_id_hash`, `creation_id`, `story_id`, `chat_id`, `turn_number`, `latency_ms`, `retry_count` |
+| Breadcrumb | AI 호출 시작, provider 응답 수신, schema 검증, DB 기록                                                                             |
+| Exceptions | timeout, provider 오류, 파싱 실패, schema 검증 실패, 예상하지 못한 예외                                                            |
 
 ### 6-6-11. AI 품질 평가 로깅과 자가개선 루프 수집 기준 — `Phase 1 · 계획`
 
@@ -890,23 +890,23 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 **평가 로그 이벤트** — 평가 에이전트가 벤치 실행 결과를 JSON 로그로 남깁니다. Amplitude 이벤트가 아닙니다(사용자 행동이 아니라 내부 품질 실측이므로 CloudWatch 로그 축).
 
-| 이벤트 | 발생 시점 | 핵심 필드 |
-| --- | --- | --- |
-| `ai_evaluation_completed` | 벤치 케이스 1건 채점 완료 | `benchmark_id`(벤치 세트 식별자), `case_id`, `feature`, `metric`(지표 키), `score`(1~5 정수), `prompt_versions`, `model`, `judge_model`(채점 모델) |
-| `ai_evaluation_run_summarized` | 벤치 세트 1회 실행 완료 | `benchmark_id`, `run_id`, `feature`, 지표별 평균 점수, `case_count`, `prompt_versions`, `model` |
+| 이벤트                         | 발생 시점                 | 핵심 필드                                                                                                                                          |
+| ------------------------------ | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai_evaluation_completed`      | 벤치 케이스 1건 채점 완료 | `benchmark_id`(벤치 세트 식별자), `case_id`, `feature`, `metric`(지표 키), `score`(1~5 정수), `prompt_versions`, `model`, `judge_model`(채점 모델) |
+| `ai_evaluation_run_summarized` | 벤치 세트 1회 실행 완료   | `benchmark_id`, `run_id`, `feature`, 지표별 평균 점수, `case_count`, `prompt_versions`, `model`                                                    |
 
 - 점수는 항상 `prompt_versions`·`model`과 함께 남깁니다 — 버전별 품질 추적과 회귀 게이트 판정의 근거입니다.
 - 벤치 입력·산출 원문은 로그에 싣지 않습니다. 원문은 manyak-ai 레포의 벤치 자산(합성 시나리오)으로만 관리합니다.
 
 **자가개선 루프가 쓸 수 있는 데이터** — 원문 수집 원칙(§6-7)을 유지한 채 다음만 사용합니다.
 
-| 데이터 | 출처 | 용도 |
-| --- | --- | --- |
-| 벤치 지표 점수 | `ai_evaluation_*` 로그 | 프롬프트 버전 간 품질 비교, 회귀 게이트 |
-| `output_char_count` | `ai_call_completed` 로그에 필드 추가(채팅 본문 문자 수 — 원문이 아니라 길이, `message_length_bucket` 선례) | 분량 고정(약 600자) 준수 분포 실측 |
-| 폴백·빈 블록 발동 로그 | AI 형식 보정 로그([`5-ai-server.md §5-5`](./5-ai-server.md)) | 프롬프트 점검 신호 |
-| `retry_count` · `error_code` | `ai_call_logs` | 형식 위반·실패 추세 |
-| 스토리라인 GOOD/BAD 평가 | `story_creation_storyline_ratings`([`4-backend.md §4-3-2`](./4-backend.md)) | 운영 품질의 사용자 신호(원문 없이 평가값만) |
+| 데이터                       | 출처                                                                                                       | 용도                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 벤치 지표 점수               | `ai_evaluation_*` 로그                                                                                     | 프롬프트 버전 간 품질 비교, 회귀 게이트     |
+| `output_char_count`          | `ai_call_completed` 로그에 필드 추가(채팅 본문 문자 수 — 원문이 아니라 길이, `message_length_bucket` 선례) | 분량 고정(약 600자) 준수 분포 실측          |
+| 폴백·빈 블록 발동 로그       | AI 형식 보정 로그([`5-ai-server.md §5-5`](./5-ai-server.md))                                               | 프롬프트 점검 신호                          |
+| `retry_count` · `error_code` | `ai_call_logs`                                                                                             | 형식 위반·실패 추세                         |
+| 스토리라인 GOOD/BAD 평가     | `story_creation_storyline_ratings`([`4-backend.md §4-3-2`](./4-backend.md))                                | 운영 품질의 사용자 신호(원문 없이 평가값만) |
 
 **수집하지 않는 것** — 운영 채팅·생성 원문, 프롬프트 전문, 사용자 입력 원문. 자가개선 루프를 위해서라도 §6-7의 원문 비수집 원칙을 완화하지 않습니다. 원문 기반 평가가 필요하면 벤치 자산(합성 데이터)을 늘리는 방향으로 해결합니다.
 
@@ -914,14 +914,14 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 사용자가 입력한 원문을 직접 넣지 않습니다.
 
-| 데이터 | 분석 이벤트 | 운영 로그와 Sentry | 대체 값 |
-| --- | --- | --- | --- |
-| 채팅 메시지 원문 | 수집하지 않음 | 저장 금지 | `turn_number`, token count |
-| 피드백 본문 | 수집하지 않음 | 로그 저장 금지 | 저장 또는 전달 성공 여부, 본문 길이 |
-| 이메일 | 수집하지 않음 | 로그 저장 금지 | `has_email` |
-| 키워드·추가 정보 원문 | 수집하지 않음 | 저장 금지 | 관리되는 ID 또는 선택값 |
-| 프롬프트 전문 | 수집하지 않음 | 저장 금지 | `prompt_template_version` |
-| AI 생성 결과 원문 | 수집하지 않음 | 저장 금지 | 응답 성공 여부, token count |
+| 데이터                | 분석 이벤트   | 운영 로그와 Sentry | 대체 값                             |
+| --------------------- | ------------- | ------------------ | ----------------------------------- |
+| 채팅 메시지 원문      | 수집하지 않음 | 저장 금지          | `turn_number`, token count          |
+| 피드백 본문           | 수집하지 않음 | 로그 저장 금지     | 저장 또는 전달 성공 여부, 본문 길이 |
+| 이메일                | 수집하지 않음 | 로그 저장 금지     | `has_email`                         |
+| 키워드·추가 정보 원문 | 수집하지 않음 | 저장 금지          | 관리되는 ID 또는 선택값             |
+| 프롬프트 전문         | 수집하지 않음 | 저장 금지          | `prompt_template_version`           |
+| AI 생성 결과 원문     | 수집하지 않음 | 저장 금지          | 응답 성공 여부, token count         |
 
 원문 디버깅이 필요하면 별도 보안 정책과 제한된 저장소를 먼저 정의한 뒤 사용합니다. 이 문서의 MVP 분석 범위에는 원문 저장소를 포함하지 않습니다.
 
@@ -931,12 +931,12 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 
 검수는 "이벤트가 발생한다"에서 끝나지 않습니다. 이벤트명, 프로퍼티 타입, 식별자 연결, 지표 계산 가능성, 원문 미수집까지 함께 확인합니다.
 
-| 원칙 | 확인 방법 |
-| --- | --- |
-| P0 이벤트 우선 | 출시 전에는 `6-4-1. MVP 우선순위`의 P0 이벤트를 모두 확인합니다. |
-| 원본 섹션 기준 | 이벤트는 `6-4. 이벤트 카탈로그`, 지표는 `6-5. 퍼널과 지표`, 관측 구현은 `6-6. 관측 구현`을 기준으로 확인합니다. |
+| 원칙             | 확인 방법                                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| P0 이벤트 우선   | 출시 전에는 `6-4-1. MVP 우선순위`의 P0 이벤트를 모두 확인합니다.                                                     |
+| 원본 섹션 기준   | 이벤트는 `6-4. 이벤트 카탈로그`, 지표는 `6-5. 퍼널과 지표`, 관측 구현은 `6-6. 관측 구현`을 기준으로 확인합니다.      |
 | 식별자 연결 확인 | `device_id`, `session_id`, `creation_id`, `chat_id`, `request_id`, `ai_call_log_id`가 각 계층에서 이어지는지 봅니다. |
-| 원문 수집 금지 | 채팅, 피드백, 이메일, 키워드, 프롬프트, AI 생성 결과 원문이 payload에 없는지 확인합니다. |
+| 원문 수집 금지   | 채팅, 피드백, 이메일, 키워드, 프롬프트, AI 생성 결과 원문이 payload에 없는지 확인합니다.                             |
 
 ### 6-8-2. 문서 변경 체크리스트
 
@@ -951,26 +951,26 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 
 ### 6-8-3. 출시 전 P0 체크리스트
 
-| 영역 | 체크 항목 |
-| --- | --- |
-| 이벤트 수집 | `client_storyList_viewed`, `client_storyList_createButton_clicked`가 Amplitude에서 수집됩니다. |
-| 이벤트 수집 | `client_storyCreate_viewed`, `client_storyCreate_step_viewed`, `client_storyCreate_storyGeneration_requested`가 수집됩니다. |
-| 이벤트 수집 | `server_storyCreate_storyGeneration_processed_succeeded`, `server_storyCreate_storyGeneration_processed_failed`가 수집됩니다. |
-| 이벤트 수집 | `client_storyCreate_storylineOption_selected`, `client_storyCreate_selectedTagsButton_clicked`, `client_storyCreate_completed`가 수집됩니다. |
-| 이벤트 수집 | `client_storyDetail_viewed`, `client_storyDetail_chatStartButton_clicked`가 수집됩니다. |
-| 이벤트 수집 | `client_chat_viewed`, `client_chat_messageInput_submitted`가 수집됩니다. |
-| 이벤트 수집 | `server_chat_aiMessage_processed_succeeded`, `server_chat_aiMessage_processed_failed`가 수집됩니다. |
-| 이벤트 수집 | `client_feedback_viewed`, `client_feedback_form_submitted`가 수집됩니다. |
-| 식별자 | `device_id`와 `session_id`가 SDK 자동 수집으로 채워지고 커스텀 프로퍼티로 재정의되지 않습니다. |
-| 식별자 | 스토리 제작 퍼널을 `creation_id`로 계산할 수 있습니다. |
-| 식별자 | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있습니다. |
-| 로그 연결 | 서버 로그, Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있습니다. |
-| 개인정보 | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다. |
-| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
-| 식별자 `Phase 1` | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다. |
-| 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다. |
+| 영역                  | 체크 항목                                                                                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 이벤트 수집           | `client_storyList_viewed`, `client_storyList_createButton_clicked`가 Amplitude에서 수집됩니다.                                                                                     |
+| 이벤트 수집           | `client_storyCreate_viewed`, `client_storyCreate_step_viewed`, `client_storyCreate_storyGeneration_requested`가 수집됩니다.                                                        |
+| 이벤트 수집           | `server_storyCreate_storyGeneration_processed_succeeded`, `server_storyCreate_storyGeneration_processed_failed`가 수집됩니다.                                                      |
+| 이벤트 수집           | `client_storyCreate_storylineOption_selected`, `client_storyCreate_selectedTagsButton_clicked`, `client_storyCreate_completed`가 수집됩니다.                                       |
+| 이벤트 수집           | `client_storyDetail_viewed`, `client_storyDetail_chatStartButton_clicked`가 수집됩니다.                                                                                            |
+| 이벤트 수집           | `client_chat_viewed`, `client_chat_messageInput_submitted`가 수집됩니다.                                                                                                           |
+| 이벤트 수집           | `server_chat_aiMessage_processed_succeeded`, `server_chat_aiMessage_processed_failed`가 수집됩니다.                                                                                |
+| 이벤트 수집           | `client_feedback_viewed`, `client_feedback_form_submitted`가 수집됩니다.                                                                                                           |
+| 식별자                | `device_id`와 `session_id`가 SDK 자동 수집으로 채워지고 커스텀 프로퍼티로 재정의되지 않습니다.                                                                                     |
+| 식별자                | 스토리 제작 퍼널을 `creation_id`로 계산할 수 있습니다.                                                                                                                             |
+| 식별자                | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있습니다.                                                                                                          |
+| 로그 연결             | 서버 로그, Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있습니다.                                                                                                             |
+| 개인정보              | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다.                                                                                                 |
+| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다.                                                     |
+| 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다.                                                                                |
+| 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다.                                                                                 |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
-| 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다. |
+| 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다.                           |
 
 ### 6-8-4. 계층별 검수 기준
 
@@ -1003,15 +1003,15 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 
 ### 6-8-5. 개인정보 검수 기준
 
-| 데이터 | 확인 기준 |
-| --- | --- |
-| 채팅 메시지 원문 | Amplitude, CloudWatch, Sentry, `ai_call_logs` payload에 없습니다. |
-| 피드백 본문 | 분석 이벤트와 로그 payload에 없습니다. |
-| 이메일 | 분석 이벤트와 로그 payload에 없습니다. `has_email`만 허용합니다. |
-| 키워드·추가 정보 원문 | 관리되는 ID 또는 선택값만 허용합니다. |
-| 프롬프트 전문 | CloudWatch, Sentry, `ai_call_logs`에 없습니다. |
-| AI 생성 결과 원문 | CloudWatch, Sentry, `ai_call_logs`에 없습니다. |
-| 익명 ID | 서버 계층에는 원본 `device_id`가 없고 `device_id_hash`만 있습니다. |
+| 데이터                | 확인 기준                                                          |
+| --------------------- | ------------------------------------------------------------------ |
+| 채팅 메시지 원문      | Amplitude, CloudWatch, Sentry, `ai_call_logs` payload에 없습니다.  |
+| 피드백 본문           | 분석 이벤트와 로그 payload에 없습니다.                             |
+| 이메일                | 분석 이벤트와 로그 payload에 없습니다. `has_email`만 허용합니다.   |
+| 키워드·추가 정보 원문 | 관리되는 ID 또는 선택값만 허용합니다.                              |
+| 프롬프트 전문         | CloudWatch, Sentry, `ai_call_logs`에 없습니다.                     |
+| AI 생성 결과 원문     | CloudWatch, Sentry, `ai_call_logs`에 없습니다.                     |
+| 익명 ID               | 서버 계층에는 원본 `device_id`가 없고 `device_id_hash`만 있습니다. |
 
 ### 6-8-6. 검증 쿼리 예시
 
