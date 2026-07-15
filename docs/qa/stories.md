@@ -133,7 +133,6 @@
 | STORY-LIMIT-07 | P0  | 게스트, 채팅 한도(5턴) 도달                   | 상세에서 "새 채팅 시작하기" 탭                          | 요청 없이 로그인 다이얼로그 표시                                                                                                                                        | ✅ e2e `stories/story-guest-limit`                                     | US-10-5, 구현(`use-start-chat`)                   |
 | STORY-LIMIT-08 | P1  | 채팅 생성이 402로 거절                        | 상세에서 채팅 시작(게스트/회원 각각)                    | 게스트 사유는 로그인 다이얼로그, 회원 크레딧 사유는 크레딧 부족 다이얼로그(실패 토스트 아님)                                                                            | ✅ e2e `stories/story-guest-limit`                                     | US-10-4·10-5, 구현(`use-start-chat`)              |
 | STORY-LIMIT-09 | P2  | 게스트 각 액션 수행                           | 로컬 카운터 확인                                        | 스토리라인은 201 성공 시에만 +1(실패 미집계), 스토리는 생성 성공 시 +1. `storyCreate`는 저장된 스토리 ID 수로 시드되어 삭제해도 줄지 않음. 로그인·이관 후 카운터 제거   | ◐ e2e `stories/story-create-limit`(스토리라인 증가·storyCreate 시드만) | 구현(`guest-usage-storage`)                       |
-| STORY-LIMIT-10 | P2  | 게스트/회원                                   | 퍼널 헤더 크레딧 안내(ⓘ) 탭                             | 게스트: "로그인 전에는 스토리를 1개까지 만들 수 있어요" / 회원: "스토리를 완성할 때 20크레딧이 자동으로 차감돼요". 스크롤 시 닫힘                                       | ◐ e2e `stories/story-create-limit`(스크롤 닫힘 제외)                   | US-10-3, 구현(`story-create-credit-info-popover`) |
 
 ## ⚠️ 확인 필요
 
