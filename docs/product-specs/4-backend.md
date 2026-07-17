@@ -23,12 +23,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.23 |
+| 버전 | v0.24 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-07-10 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-server` `dev` 브랜치 HEAD `1a2dad6` (Kotlin 2.2, Spring Boot 4, Flyway V42) |
+| 기준 코드 | `../manyak-server` `dev` 브랜치 HEAD `87557cc` (Kotlin 2.2, Spring Boot 4, Flyway V47) |
 
 ---
 
@@ -81,8 +81,8 @@
 | --- | --- | --- |
 | `MVP` | Phase 0 범위. 서버 구현 완료, MVP 프론트엔드가 사용 중 | 스토리·간편 제작·채팅·피드백 API |
 | `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API·랜덤 닉네임([§4-5](#4-5-인증과-권한)), 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약)), 로어북 카탈로그([§4-3-6](#4-3-api-계약))·엔딩 저장([§4-3-10](#4-3-api-계약)), 크레딧([§4-3-7](#4-3-api-계약)), 일반 제작·스토리 수정([§4-3-8](#4-3-api-계약)), AI 응답 재생성([§4-3-9](#4-3-api-계약)) |
-| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 썸네일·채팅 이미지 삽입([§4-3-9](#4-3-api-계약)). 채팅 상세 턴 항목의 `reachedEnding` 노출([§4-3-3](#4-3-api-계약) — 저장은 되나 아직 와이어 미노출). 초대 방식 개편 — 코드 입력 적립·코드 재발급(KNK-567, [§4-3-7](#4-3-api-계약)) |
-| `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 크레딧 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524) — [§4-8](#4-8-검수-체크리스트) |
+| `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 채팅 이미지 삽입 — 배경·인물 트랙([§4-3-9](#4-3-api-계약) B10 ②) |
+| `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 크레딧 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 카탈로그·자동 연결·반응형 변형(KNK-409, V45·V46)·초대 코드 입력 개편(KNK-565·567·581, V47)·피드백 User-Agent 저장(KNK-528, V43)·채팅 상세 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ---
@@ -233,14 +233,14 @@ graph LR
 | `likeCount` | number | 좋아요 수(placeholder, 현재 0) |
 | `status` | enum | `DRAFT` · `PUBLISHED` |
 | `createdAt` | string | 생성 시각 |
-| `thumbnailUrlSm` | string·null | `Phase 1 · 계획`(KNK-548) 목록용 **축소 변형** 썸네일 URL(~700px `_sm`). 자동 연결·변형 구현과 함께 추가하는 필드입니다([§4-3-9](#4-3-api-계약) 반응형 변형) |
+| `thumbnailUrlSm` | string·null | `Phase 1 · 구현`(KNK-548·KNK-409) 목록용 **축소 변형** 썸네일 URL(~700px `_sm`). 자동 연결 소스가 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 
 **`GET /stories/{storyId}`** — 상세 응답(`StoryDetailResponse`)은 목록 필드에 다음을 더합니다.
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `thumbnailUrl` | string·null | `Phase 1 · 구현`(KNK-515) 상세용 **원본 변형** 썸네일 URL 필드(이전 `coverImageUrl` 개명). 반응형 변형(`thumbnailUrlSm`은 목록·채팅용)은 `Phase 1 · 계획`(KNK-548). 자동 연결 소스(썸네일 자동 연결 — [§4-3-9](#4-3-api-계약))가 `Phase 1 · 계획`이라 값은 현재 null |
+| `thumbnailUrl` | string·null | `Phase 1 · 구현`(KNK-515·KNK-409) 상세용 **원본 변형** 썸네일 URL 필드(이전 `coverImageUrl` 개명). 목록·채팅 카드는 축소 변형 `thumbnailUrlSm`을 씁니다([§4-3-9](#4-3-api-계약) 반응형 변형). 자동 연결 소스가 없으면(도입 전 스토리 등) null |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `startSettings` | object[] | `Phase 1 · 구현`(KNK-515) 시작 설정 목록(복수화 — 등록 순서). 각 항목 `{id, name, prologue, startSituation, suggestedInputs[], endings[]}`: `id`는 시작 설정 공개 식별자(UUID — `POST /chats`의 `startSettingId`로 사용), `suggestedInputs`는 이 시작 설정의 추천 입력, `endings`는 `{name, requirement{minTurns, achievementCondition}, epilogue}`(이름 기반·유형 없음, 활성 엔딩만, 레거시 `enabled=false` 제외, [§4-3-8](#4-3-api-계약)·[§4-3-10](#4-3-api-계약)). 시작 설정이 없으면 빈 배열 |
 | `visibility` | enum | `PUBLIC` · `PRIVATE`(기본 PRIVATE) |
@@ -330,7 +330,7 @@ graph LR
 | `lastStoryPreview` | string | 마지막 ASSISTANT 출력 **전문** — 서버는 자르지 않으며 표시 절단은 프론트엔드 소유. 완료 턴이 없는 채팅(생성 직후)은 빈 문자열. 채팅당 최신 1건만 뽑는 단일 배치 쿼리로 조회(N+1 방지) |
 | `turnCount` | number | 완료된 턴 수 — 매번 세지 않고 턴 저장과 원자적으로 증가하는 비정규화 카운터(`story_chats.current_turn`)를 반환 |
 | `updatedAt` | string | 최근 활동 시각 |
-| `thumbnailUrlSm` | string·null | `Phase 1 · 계획`(KNK-548) 참조 스토리 썸네일의 **축소 변형** URL(채팅 카드 46×62). 목록·채팅이 공유하는 `_sm`([§4-3-9](#4-3-api-계약) 반응형 변형) |
+| `thumbnailUrlSm` | string·null | `Phase 1 · 구현`(KNK-548·KNK-409) 참조 스토리 썸네일의 **축소 변형** URL(채팅 카드 46×62). 목록·채팅이 공유하는 `_sm`([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `reachedEndings` | string[] | `Phase 1 · 구현`(KNK-523) 이 채팅에서 도달한 엔딩 **이름** 목록(채팅당 최대 1개, 도달 전 빈 배열 — [§4-3-10](#4-3-api-계약)) |
 
 **`GET /chats/{chatId}`** — 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. `Phase 1 · 구현` — 채팅 상세는 플레이 기록이므로 소유권 규칙을 적용합니다: 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 조회할 수 있고 위반은 403입니다([§4-5](#4-5-인증과-권한)). `turns[]`는 USER 직후 ASSISTANT 메시지를 짝지어 구성하며 짝 없는 USER·SYSTEM 메시지는 턴에서 제외합니다. `suggestedInputs`는 턴이 0개일 때만 채우고 진행 턴이 있으면 빈 배열입니다(다음 행동은 마지막 턴 `choices`가 안내).
@@ -344,8 +344,7 @@ graph LR
 | `aiOutput` | string | AI 출력 전문. `Phase 1 · 계획` — 채팅 이미지는 본문 내 `[[image:<imageKey>]]` 마커로 포함하고 턴 항목에 `images[]`를 동봉(저장본이 아니라 조회 시 본문에서 재구성 — [§4-3-9](#4-3-api-계약)) |
 | `choices` | string[] | 선택지 |
 | `createdAt` | string | 생성 시각 |
-
-- 엔딩 도달 턴의 엔딩 노출(`reachedEnding`)은 도달 시각의 SSE `completed`로만 제공하며, 채팅 상세 턴 항목에는 아직 싣지 않습니다(`story_messages.reached_ending_id`는 저장 — `Phase 1 · 계획`, [§4-3-10](#4-3-api-계약)).
+| `reachedEnding` | string·null | `Phase 1 · 구현`(KNK-527) 이 턴이 엔딩 도달 턴이면 도달 엔딩 **이름**, 아니면 null — SSE `completed`의 `reachedEnding`과 동일 값([§4-3-10](#4-3-api-계약)) |
 
 **`DELETE /chats/{chatId}`** — 소프트 삭제 후 204, 없으면 404. 소유권 검증(403)을 포함해 처리 규칙은 스토리 삭제와 같습니다(`Phase 1 · 구현`).
 
@@ -386,7 +385,7 @@ graph LR
 - Slack HTTP 타임아웃은 연결 2초·읽기 3초입니다. 페이로드는 `{"text": ...}` 단일 필드(피드백 번호·본문 인용·platform/appVersion/email 메타·등록 시각)이며 본문·메타는 Slack mrkdwn 이스케이프를 거칩니다. 발송 실패는 webhook URL(secret) 노출을 막기 위해 예외 타입명만 WARN으로 남기고 Sentry `captureMessage`(WARNING)로도 보냅니다.
 - 선택 필드 `email`·`appVersion`의 공백 입력은 null로 정규화해 저장합니다. 등록 성공 시 `feedback_submitted` 구조화 로그를 남기며 필드는 `content_length`·`has_email`뿐입니다(원문 미기록 — [§4-7](#4-7-운영과-관측)).
 - 본문 상한은 서버 2,000자로 프론트엔드(500자)보다 크게 둡니다. 의도된 여유이며, 표시 상한은 프론트엔드가 유동적으로 조정합니다([§4-8](#4-8-검수-체크리스트) B4).
-- `Phase 1 · 계획` — `platform`은 클라이언트 제보값이라 세분화에 한계가 있으므로, 서버가 `User-Agent` 헤더를 함께 저장해 클라이언트 수정 없이 OS·브라우저 수준으로 세분 수집합니다.
+- `Phase 1 · 구현`(KNK-528, V43) — `platform`은 클라이언트 제보값이라 세분화에 한계가 있으므로, 서버가 `User-Agent` 헤더를 함께 저장해(`feedbacks.user_agent`, 512자) 클라이언트 수정 없이 OS·브라우저 수준으로 세분 수집합니다. 헤더가 없으면 null입니다.
 - 요청량 제한(rate limit)은 두지 않습니다. 인증·크레딧·한도 장치가 없는 쓰기 엔드포인트라 대량 등록으로 저장소·Slack 알림을 남용할 수 있는 표면이며, Phase 1은 이를 수용하고 등록량 급증을 관측으로 추적합니다([§4-8](#4-8-검수-체크리스트) B18).
 
 ### 4-3-5. 인증 API — `Phase 1 · 구현`
@@ -395,7 +394,7 @@ graph LR
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `POST /auth/login/google` | `{idToken, inviteCode?}` — `inviteCode`는 `Phase 1 · 계획`(KNK-567)에서 폐기([§4-3-7](#4-3-api-계약)) | `TokenResponse` |
+| `POST /auth/login/google` | `{idToken}` — 구 `inviteCode` 필드는 초대 방식 개편으로 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)) | `TokenResponse` |
 | `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday}` — `Phase 1 · 구현`(`creditBalance`·`attendedToday` KNK-498, `profileThumbnailBase64` KNK-388) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
@@ -489,16 +488,16 @@ graph LR
 | --- | --- | --- | --- |
 | `GET /users/me/credits` | — | `{balance}` | 인증 필수. 지갑이 없으면 0 반환 |
 | `POST /users/me/credits/attendance` | — | `{rewarded, amount, balance}` | 인증 필수. KST 자정 기준 1일 1회(`ZoneId "Asia/Seoul"` 고정). 보상 250 크레딧. 이미 받았으면 `rewarded: false`·`amount: 0`으로 200(멱등) |
-| `GET /users/me/invite` | — | `{inviteCode, monthlyRewardCount, monthlyRewardLimit}` | 인증 필수. 내 초대 코드·이번 달 초대 보상 진행 조회. 진행 필드 2종은 `Phase 1 · 구현`(KNK-513). `inviteUrl` 필드 제거는 `Phase 1 · 계획`(KNK-567) |
-| `POST /users/me/invite/redeem` | `{code}` | `{amount, balance}` | `Phase 1 · 계획`(KNK-567) 인증 필수. 초대 코드 입력으로 양측 500 크레딧 적립. 계정당 평생 1회. 오류 계약은 아래 초대 코드 입력 규칙 |
+| `GET /users/me/invite` | — | `{inviteCode, monthlyRewardCount, monthlyRewardLimit}` | 인증 필수. 내 초대 코드·이번 달 초대 보상 진행 조회. 진행 필드 2종은 `Phase 1 · 구현`(KNK-513). `inviteUrl` 필드는 제거 완료(KNK-567) |
+| `POST /users/me/invite/redeem` | `{code}` | `{amount, balance}` | `Phase 1 · 구현`(KNK-565·567) 인증 필수. 초대 코드 입력으로 양측 500 크레딧 적립. 계정당 평생 1회. 오류 계약은 아래 초대 코드 입력 규칙 |
 
 - **세션 부트스트랩 동봉 — `Phase 1 · 구현`** — 세션 복원 시점의 잔액·당일 출석 여부는 `GET /auth/me` 응답의 `creditBalance`·`attendedToday`로 제공합니다([§4-3-5](#4-3-api-계약)). `GET /users/me/credits`는 소모·적립 직후의 잔액 갱신 조회로 유지합니다.
 - **가입 보상** — 회원 가입 시 500 크레딧을 자동 적립합니다. 별도 API가 없으며, 적립은 생성 시 1회 실행이 아니라 **매 로그인마다 멱등 키 `signup:{userId}`로 재시도**해 일시 실패를 자가 복구합니다(실제 적립은 계정당 1회).
 - **보상 크레딧 유효기간·차감 순서 — `Phase 1 · 구현`(V39·KNK-503)** — 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)과 **환불(`REFUND`) 재적립**은 적립 시점부터 30일 유효하며, 만료분은 잔액에서 제외합니다(무기한은 `PURCHASE`뿐 — Phase 3). 적립·환불마다 `credit_lots` 행(원금·잔여·`expires_at`)을 만들고, 차감은 만료 임박(`expires_at` 오름차순, 무기한 NULL은 마지막, 동률은 `id` 오름차순) 로트부터 잔여를 소진합니다(FIFO). 만료 회수는 원장에 `EXPIRE` 음수 행(`ref_type=CREDIT_LOT` · `ref_id=로트 ID`)을 남겨 `balance = SUM(amount)` 불변식을 유지합니다. 조회 잔액(`balance`)은 **미만료·잔여 > 0 로트의 합**이며, 부족 판정은 만료 정리(쓰기) 전에 활성 잔여 기준으로 수행해 실패한 차감이 만료 정리를 롤백시키지 않게 합니다.
 - **초대 보상 — `Phase 1 · 계획`(KNK-567 개편)** — 초대자가 초대 코드를 공유하고, 다른 회원이 그 코드를 `POST /users/me/invite/redeem`에 제출하면 **초대자와 제출자(피초대자) 양쪽에 각각 500 크레딧**을 적립합니다. 제출 자격은 회원 계정당 **평생 1회**입니다 — 가입 시점과 무관하게 기존 회원도 제출할 수 있고, 한 번 성공하면 다시 제출할 수 없습니다. 자기 자신의 코드는 제출할 수 없습니다. 월 10회 상한은 **초대자 몫에만** 적용합니다(KNK-581) — 제출자 몫은 평생 1회 자격이 유일한 제한이라 월 상한 판정·집계 대상이 아닙니다. 제출자 몫까지 수령 계정의 월 상한으로 묶으면, 그 달 초대자로 상한을 채운 계정이 코드를 입력할 때 평생 1회 자격만 소진하고 보상을 영영 받지 못하는 손실이 생깁니다. 초대자가 상한에 도달했으면 초대자 적립만 건너뛰고 제출자는 적립하며, 응답은 성공입니다(상한 사실은 응답에 싣지 않음 — 초대자 쪽 진행 표시로 충분). 월 귀속은 **적립 시점의 KST 월**입니다(가입 월 고정·월 넘김 영구 스킵 특례 폐기). 초대 관계(`users.inviter_user_id`) 저장과 양측 적립은 redeem 트랜잭션에서 원자적으로 처리합니다 — 동기 API라 로그인 self-heal 재적립(KNK-393)이 필요 없어 함께 폐기합니다. 구 링크 방식(`inviteUrl` 공유 → 가입 시 로그인 요청의 `inviteCode` 제출)과 24시간 어트리뷰션 윈도우도 폐기합니다(아래 결정 기록).
-- **초대 코드 입력 규칙 — `Phase 1 · 계획`(KNK-567)** — 제출된 `code`는 trim·대문자 정규화 후 비교합니다. 링크 방식의 "오류 없이 무시" 규칙은 폐기합니다 — 사용자가 직접 타이핑하는 값이므로 실패 사유를 구분해 응답해야 프론트엔드가 안내할 수 있습니다. 빈 값·형식 위반은 400, 매칭되는 코드 없음은 404, 자기 코드 제출은 409 `INVITE_SELF_CODE`, 이미 입력을 마친 계정의 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다(같은 상태를 바디 `code`로 구분 — 402 전례(KNK-524)와 같은 방식, [§4-6](#4-6-오류와-예외-처리)). 정지 계정은 공통 게이트가 403으로 차단합니다([§4-5](#4-5-인증과-권한)).
-- **초대 코드 발급** — 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. `Phase 1 · 계획`(KNK-567) — 문자 집합을 현행 영대소문자+숫자 62종에서 **혼동 문자(`O`·`0`·`I`·`1`·`L` 등)를 제외한 대문자+숫자 집합**으로 바꿉니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이 되므로 시각 혼동이 곧 입력 실패율입니다. 기존 발급분은 새 집합으로 전량 재발급합니다 — 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다. `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기합니다.
-- **초대 상한 진행 표시 — `Phase 1 · 구현`(KNK-513)** — `GET /users/me/invite` 응답에 `monthlyRewardCount`(이번 KST 월에 요청자가 **초대자 역할로** 수령한 초대 보상 횟수, `Long` — 제출자 역할 수령분은 세지 않음, KNK-581)·`monthlyRewardLimit`(월 상한, 현재 10 — `manyak.credit.invite-monthly-cap` 재사용)을 동봉합니다. `monthlyRewardCount`는 상한 판정과 **같은 쿼리·같은 창**(초대자 역할 `INVITE_REWARD` 원장의 KST 월 집계, `[월 시작, 익월 시작)`)을 재사용하므로 진행 표시가 상한 스킵 경계와 정확히 일치합니다. 월 귀속은 초대 보상 판정과 동일한 기준을 따릅니다 — 현행 구현은 피초대자 가입 KST 월, `Phase 1 · 계획`(KNK-567)에서 적립 시점 KST 월로 함께 변경합니다. 잔여(`limit - count`)·리셋(KST 월 경계)은 클라이언트가 계산하며, 별도 `remaining` 필드는 없습니다. 보상 크레딧 30일 만료와 무관합니다 — 만료로 잔액이 줄어도 그 달 수령 건수는 감소하지 않습니다. 상한 도달 후 초대자 적립은 건너뛰므로(위 초대 보상 규칙), 프론트엔드가 "이번 달 N/10회"를 고지해 보상 없는 코드 공유로 인한 혼란을 줄입니다. 상한값을 응답에 함께 싣는 이유: 상한은 정책 수치라 변할 수 있어 클라이언트 하드코딩을 피합니다.
+- **초대 코드 입력 규칙 — `Phase 1 · 구현`(KNK-565·567)** — 제출된 `code`는 trim·대문자 정규화 후 비교합니다(소문자·앞뒤 공백 허용). 링크 방식의 "오류 없이 무시" 규칙은 폐기합니다 — 사용자가 직접 타이핑하는 값이므로 실패 사유를 구분해 응답해야 프론트엔드가 안내할 수 있습니다. 빈 값·형식 위반은 400, 매칭되는 코드 없음은 404, 자기 코드 제출은 409 `INVITE_SELF_CODE`, 이미 입력을 마친 계정의 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다(같은 상태를 바디 `code`로 구분 — 402 전례(KNK-524)와 같은 방식, [§4-6](#4-6-오류와-예외-처리)). 정지 계정은 공통 게이트가 403으로 차단합니다([§4-5](#4-5-인증과-권한)).
+- **초대 코드 발급** — 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. `Phase 1 · 구현`(KNK-567, V47) — 문자 집합은 **혼동 문자(`O`·`0`·`I`·`1`·`L` 등)를 제외한 대문자+숫자 집합**입니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이라 시각 혼동이 곧 입력 실패율이기 때문입니다. 구 집합(영대소문자+숫자)으로 발급된 기존 코드는 V47이 전량 NULL로 회수했고 다음 조회가 새 집합으로 지연 재발급합니다 — 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다(결정 기록 2026-07-11). `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기됐습니다.
+- **초대 상한 진행 표시 — `Phase 1 · 구현`(KNK-513)** — `GET /users/me/invite` 응답에 `monthlyRewardCount`(이번 KST 월에 요청자가 **초대자 역할로** 수령한 초대 보상 횟수, `Long` — 제출자 역할 수령분은 세지 않음, KNK-581)·`monthlyRewardLimit`(월 상한, 현재 10 — `manyak.credit.invite-monthly-cap` 재사용)을 동봉합니다. `monthlyRewardCount`는 상한 판정과 **같은 쿼리·같은 창**(초대자 역할 `INVITE_REWARD` 원장의 KST 월 집계, `[월 시작, 익월 시작)`)을 재사용하므로 진행 표시가 상한 스킵 경계와 정확히 일치합니다. 월 귀속은 초대 보상 판정과 동일하게 **적립(redeem) 시점의 KST 월**입니다(KNK-567 구현 — 코드 입력과 적립이 동기라 가입 월 귀속 개념은 폐기). 잔여(`limit - count`)·리셋(KST 월 경계)은 클라이언트가 계산하며, 별도 `remaining` 필드는 없습니다. 보상 크레딧 30일 만료와 무관합니다 — 만료로 잔액이 줄어도 그 달 수령 건수는 감소하지 않습니다. 상한 도달 후 초대자 적립은 건너뛰므로(위 초대 보상 규칙), 프론트엔드가 "이번 달 N/10회"를 고지해 보상 없는 코드 공유로 인한 혼란을 줄입니다. 상한값을 응답에 함께 싣는 이유: 상한은 정책 수치라 변할 수 있어 클라이언트 하드코딩을 피합니다.
 - 거래 내역 조회 API는 Phase 1 범위 밖입니다(원장은 운영·정산용).
 
 **결정 기록 — 초대 방식 개편: 링크 어트리뷰션 → 코드 입력(2026-07-11, KNK-567)**
@@ -510,7 +509,7 @@ graph LR
 | 링크 유지 + 인앱 브라우저 탈출만 추가 | 탈출 스킴(`kakaotalk://web/openExternal`)은 카카오가 문서로 보장하지 않는 비공식 진입점이라 앱 업데이트로 깨질 수 있습니다. 보상 어트리뷰션의 단일 경로로 삼기엔 취약합니다(탈출은 가입 성공률 보조 수단으로만 도입 — [`3-frontend.md §3-10`](./3-frontend.md)) |
 | 링크·코드 하이브리드 | 어트리뷰션 경로 2개의 유지 비용과 중복 판정 규칙(링크로 연결된 사용자의 코드 재입력)이 추가로 필요합니다. 링크 방식 실사용자가 없어 남길 실익이 없습니다 |
 
-- **영향.** 폐기: `/invite/[code]` 라우트·httpOnly 쿠키·24시간 윈도우([`3-frontend.md`](./3-frontend.md)), 로그인 요청의 `inviteCode` 필드, self-heal 재적립(KNK-393), `inviteUrl` 응답 필드·`MANYAK_INVITE_BASE_URL`. 자격이 "초대 URL 경유 신규 가입"에서 "회원 평생 1회"로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)이 가능해집니다 — B21에 수용 리스크로 기록. 서버는 링크 방식 구현 상태이므로 정렬 전까지 간극 B22로 추적합니다.
+- **영향.** 폐기: `/invite/[code]` 라우트·httpOnly 쿠키·24시간 윈도우([`3-frontend.md`](./3-frontend.md)), 로그인 요청의 `inviteCode` 필드, self-heal 재적립(KNK-393), `inviteUrl` 응답 필드·`MANYAK_INVITE_BASE_URL`. 자격이 "초대 URL 경유 신규 가입"에서 "회원 평생 1회"로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)이 가능해집니다 — B21에 수용 리스크로 기록. 서버 개편은 완료됐습니다(KNK-565·567·581·587, V47 — B22 해소).
 
 **결정 기록 — 보상 크레딧 만료·차감 순서(2026-07-07)**
 
@@ -713,9 +712,9 @@ graph TD
 - **자동 연결** — 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그가 이미지의 장르 태그 목록(`genres[]` — 복수 가능, 값은 장르 마스터와 정확 일치라 매칭이 문자열 동등 비교)에 포함되는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL. 확정값은 `stories.thumbnail_image_key`에 저장하고, 응답의 두 썸네일 URL(`thumbnailUrl`·`thumbnailUrlSm`)은 백엔드가 조합합니다(반응형 변형 — 아래, [§4-4](#4-4-데이터-모델)).
 - 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다.
 - 기존 스토리(규칙 도입 전 생성분)는 백필하지 않고 NULL을 유지합니다. 프론트엔드는 NULL이면 현행 placeholder를 표시합니다.
-- **와이어 필드** — 상세 응답의 `coverImageUrl`은 `thumbnailUrl`로 개명 완료입니다(`Phase 1 · 구현` — KNK-515). 자동 연결 소스가 아직 `Phase 1 · 계획`이라 값은 현재 null입니다. 목록(`StorySummaryResponse`)·채팅 카드(`ChatSummaryResponse`)에는 축소 변형 `thumbnailUrlSm`을 자동 연결·변형 구현과 함께 추가합니다([§4-3-1](#4-3-api-계약)·[§4-3-3](#4-3-api-계약)).
+- **와이어 필드** — 상세 응답의 `coverImageUrl`은 `thumbnailUrl`로 개명 완료(KNK-515), 목록(`StorySummaryResponse`)·채팅 카드(`ChatSummaryResponse`)의 축소 변형 `thumbnailUrlSm`도 구현 완료입니다(`Phase 1 · 구현` — KNK-409, [§4-3-1](#4-3-api-계약)·[§4-3-3](#4-3-api-계약)). 자동 연결 도입 전 등록된 스토리는 두 필드가 null입니다.
 
-**썸네일 반응형 변형 — `Phase 1 · 계획`(KNK-548).** 썸네일 단일 URL이 채팅 목록 46×62 ~ 스토리 목록 200×266 ~ 스토리 상세 원본까지 쓰여, 한 파일로는 "가벼운 목록"과 "선명한 상세"를 동시에 못 잡습니다(상세에 맞추면 목록 20장이 무겁고, 목록에 맞추면 상세가 흐림). **썸네일만** 두 변형을 둡니다 — 배경·캐릭터는 채팅 중 한 장씩 로드라 목록 동시 로드 문제가 없어 단일 원본을 유지합니다.
+**썸네일 반응형 변형 — `Phase 1 · 구현`(KNK-548 계약·KNK-409 구현).** 썸네일 단일 URL이 채팅 목록 46×62 ~ 스토리 목록 200×266 ~ 스토리 상세 원본까지 쓰여, 한 파일로는 "가벼운 목록"과 "선명한 상세"를 동시에 못 잡습니다(상세에 맞추면 목록 20장이 무겁고, 목록에 맞추면 상세가 흐림). **썸네일만** 두 변형을 둡니다 — 배경·캐릭터는 채팅 중 한 장씩 로드라 목록 동시 로드 문제가 없어 단일 원본을 유지합니다.
 
 | 용도 | S3 키 | 응답 필드 | 사이즈 |
 | --- | --- | --- | --- |
@@ -851,7 +850,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEven
 
 도달 이벤트는 채팅 턴에 기록하고, 스토리 상세 표시는 사용자+스토리 단위로 집계합니다(팀 결정).
 
-- **턴 기록** — 도달 턴의 ASSISTANT 메시지에 `reached_ending_id`를 저장하고, SSE `completed`에 `reachedEnding`(엔딩 **이름**·null)으로 싣습니다([§4-3-3](#4-3-api-계약)). 채팅 상세 턴 항목(`GET /chats/{chatId}`)에는 아직 노출하지 않습니다(`Phase 1 · 계획` — 컬럼 저장만 완료).
+- **턴 기록** — 도달 턴의 ASSISTANT 메시지에 `reached_ending_id`를 저장하고, SSE `completed`와 채팅 상세 턴 항목(`GET /chats/{chatId}`) 모두에 `reachedEnding`(엔딩 **이름**·null)으로 싣습니다(`Phase 1 · 구현` — KNK-522·523·527, [§4-3-3](#4-3-api-계약)).
 - **채팅 가드** — `story_chats.reached_ending_id`에 최초 도달 엔딩을 기록합니다. 값이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(US-6-14).
 - **사용자+스토리 집계** — 회원 도달 시(게스트=`user_id` NULL은 집계하지 않음) `user_story_ending_reaches`에 `(user_id, story_id, ending_id)` 유니크로 기록합니다(중복 도달은 무시). 집계는 별도 독립 트랜잭션(`REQUIRES_NEW`)에서 수행하고 유니크 위반은 멱등 흡수해 턴 저장을 롤백하지 않습니다. `GET /stories/{storyId}` 응답의 `reachedEndings`(엔딩 **이름** 배열, `string[]`)는 이 집계가 소스이며(`sort_order` 순), 게스트 요청은 빈 배열입니다 — 서버에 게스트 식별 수단이 없기 때문입니다(마이그레이션과 동일 근거, [§4-3-5](#4-3-api-계약)).
 - **게스트 표시 경로** — 채팅 카드(`ChatSummaryResponse`)에 `reachedEndings`(엔딩 **이름** 배열, `string[]`)를 싣습니다([§4-3-3](#4-3-api-계약)). 게스트의 스토리 상세 "본 엔딩" 표시는 프론트엔드가 로컬 서재 채팅의 이 값을 스토리별로 합산해 구성합니다([`3-frontend.md §3-6`](./3-frontend.md)). 기기 종속 한계는 게스트 서재와 동일하게 수용합니다.
@@ -890,7 +889,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | --- | --- | --- |
 | 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19) |
 | 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크 |
-| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 계획` 컬럼 — `thumbnail_image_key`(nullable — 등록 시 자동 연결로 1회 확정. 응답의 두 URL `thumbnailUrl`(원본)·`thumbnailUrlSm`(축소 `_sm`)을 이 키에서 백엔드가 조합 — 반응형 변형 [§4-3-9](#4-3-api-계약) KNK-548) |
+| 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 구현` 컬럼 — `thumbnail_image_key`(nullable, V45 — 등록 시 자동 연결로 1회 확정. 응답의 두 URL `thumbnailUrl`(원본)·`thumbnailUrlSm`(축소 `_sm`)을 이 키에서 백엔드가 조합 — 반응형 변형 [§4-3-9](#4-3-api-계약) KNK-548·409) |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정(스토리 1:N — `Phase 1 · 구현` 복수화, KNK-515·V42): `public_id`(UUID, 유니크 — `POST /chats`의 `startSettingId`) · `name` · `prologue` · `start_situation`. 스토리당 1개 제약(V42에서 제거) 대신 `story_id` 비유니크 인덱스, 순서는 PK 오름차순(등록 순). 추천 입력·엔딩이 이 설정에 스코프 |
 | 스토리 | `story_suggested_inputs` | 추천 입력(시작 설정별 목록, `input_order`) |
@@ -906,17 +905,17 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 로어북 | `lorebooks` | `Phase 1 · 구현` 장르 공용 용어 사전 |
 | 로어북 | `story_lorebooks` | `Phase 1 · 구현` 스토리-로어북 연결 |
 | 스토리 | `story_endings` | `Phase 1 · 구현` 엔딩 — `name` · `min_turns` · `achievement_condition` · `epilogue`(V33), `start_setting_id` 스코프·시작 설정당 최대 10(유형 없음). 레거시 행(제목·내용·`condition_text`)은 `enabled=false` 보존([§4-3-10](#4-3-api-계약)) |
-| 피드백 | `feedbacks` | 피드백 본문·이메일·플랫폼·앱 버전 |
+| 피드백 | `feedbacks` | 피드백 본문·이메일·플랫폼·앱 버전·`user_agent`(nullable 512자, V43 — [§4-3-4](#4-3-api-계약)) |
 | 크레딧 | `credit_wallets` | `Phase 1 · 구현` 사용자별 지갑(V24). `user_id`(unique FK) · `balance`. 최초 적립 시 지연 생성. 조회 잔액의 정본은 로트 합([§4-3-7](#4-3-api-계약))이며 지갑 행은 차감·적립 직렬화 락의 앵커 |
 | 크레딧 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) — 30일 만료·FIFO 차감의 잔여 추적 |
 | 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
-| 크레딧 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 계획`(KNK-567) — 초대자 FK 저장 시점을 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급([§4-3-7](#4-3-api-계약)) |
+| 크레딧 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567, V47) — 초대자 FK는 코드 입력(redeem) 트랜잭션에서 양측 적립과 원자 커밋(non-null이면 평생 1회 자격 소진), 초대 코드는 혼동 문자 제외 집합으로 전량 재발급 완료([§4-3-7](#4-3-api-계약)) |
 | 크레딧 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
 | 스토리 | `story_main_events` | `Phase 1 · 구현` 주요 사건(스토리당 최대 10, V29). `name` · `description` · `key_sentence` · `sort_order` — 런타임 의미와 판정 계약은 [§4-3-10](#4-3-api-계약)(`Phase 1 · 구현`, V41) |
 | 채팅 | `story_chat_main_events` | `Phase 1 · 구현`(V41) 채팅 ↔ 완결(거쳐온) 주요 사건 기록. `chat_id` · `main_event_id` · `created_at`, `(chat_id, main_event_id)` 유니크. 거쳐온 사건 순서는 조회 시 `story_main_events.sort_order`로 정렬 |
 | 스토리 | `user_story_ending_reaches` | `Phase 1 · 구현`(V41) 사용자+스토리 엔딩 도달 집계. `user_id` · `story_id` · `ending_id` · `created_at`, 3필드 유니크 — 회원 도달 기록·이관 백필([§4-3-10](#4-3-api-계약)) |
 | 채팅 | `story_messages.reached_ending_id` | `Phase 1 · 구현`(V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
-| 이미지 | `image_presets` | `Phase 1 · 계획` 팀 이미지 카탈로그(시드 매니페스트를 Flyway 마이그레이션으로 등재 — 런타임 매칭 정본, 원본 파일명은 매니페스트 생성 도구의 입력일 뿐, [§4-3-9](#4-3-api-계약)). `image_key`(unique·불변·`[a-z0-9_]{1,64}` — 서빙 URL 구성은 백엔드) · `type`(`THUMBNAIL`·`BACKGROUND`·`CHARACTER`) · 의미 태그(장르[복수 가능 — **값은 GENRE 마스터 태그명과 정확 일치**]·분위기/성격·장소/성별·소품 — 타입별 축 상이) · `deactivated_at`(nullable timestamptz — 비활성 시각, NULL이면 활성. 재활성화는 NULL 복귀. 활성 여부는 이 컬럼의 파생) · 등록 시각(재구성 컷오프용). **행 삭제 금지**(운영 제외는 비활성 시각 기록으로만 — 신규 매칭·새 턴 전달·`images[]` 구성에서 제외, 지난 턴 재구성은 확정 시각과의 비교로 판정, [§4-3-9](#4-3-api-계약) 비활성 적용 범위). 삭제 금지(사라짐 방지)와 등록·비활성 시각 컷오프(나타남 방지·`completed` 대칭)가 지난 턴 `images[]` 재구성의 불변 전제 |
+| 이미지 | `image_presets`(+`image_preset_genres`) | `Phase 1 · 구현`(V45 스키마·V46 시드, KNK-409) 팀 이미지 카탈로그(시드 매니페스트를 Flyway 마이그레이션으로 등재 — 런타임 매칭 정본, 원본 파일명은 매니페스트 생성 도구의 입력일 뿐, [§4-3-9](#4-3-api-계약)). `image_key`(unique·불변·`[a-z0-9_]{1,64}` — 서빙 URL 구성은 백엔드) · `type`(`THUMBNAIL`·`BACKGROUND`·`CHARACTER`) · 의미 태그(장르[복수 가능 — **값은 GENRE 마스터 태그명과 정확 일치**]·분위기/성격·장소/성별·소품 — 타입별 축 상이) · `deactivated_at`(nullable timestamptz — 비활성 시각, NULL이면 활성. 재활성화는 NULL 복귀. 활성 여부는 이 컬럼의 파생) · 등록 시각(재구성 컷오프용). **행 삭제 금지**(운영 제외는 비활성 시각 기록으로만 — 신규 매칭·새 턴 전달·`images[]` 구성에서 제외, 지난 턴 재구성은 확정 시각과의 비교로 판정, [§4-3-9](#4-3-api-계약) 비활성 적용 범위). 삭제 금지(사라짐 방지)와 등록·비활성 시각 컷오프(나타남 방지·`completed` 대칭)가 지난 턴 `images[]` 재구성의 불변 전제 |
 | 이미지 | `story_images` | `Phase 1 · 계획` 스토리↔배경 후보 연결. 등록 시 장르 매칭으로 5~8장 확정하고 매 턴 AI 요청에 동일 목록 전달([§4-3-9](#4-3-api-계약)). 썸네일 확정값은 별도로 `stories` 썸네일 컬럼에 저장 |
 | 이미지 | `story_characters` | `Phase 1 · 계획` 인물↔이미지 매핑(컴파일 산출물 — 주요 사건·엔딩과 같은 저장 패턴). `story_id` · `name`(인물 이름) · `image_key`(nullable — 배정 실패·무효화 시 NULL). 매 턴 AI 요청에 실어 같은 인물=같은 이미지를 보장([§4-3-9](#4-3-api-계약)) |
 | 채팅 | `story_message_versions` | `Phase 1 · 구현` 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](#4-3-api-계약)) |
@@ -940,7 +939,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 
 ### Google 로그인 흐름
 
-1. 클라이언트가 Google ID 토큰을 `POST /auth/login/google`로 보냅니다. 선택 필드 `inviteCode`(초대 URL 경유 가입의 코드 전달)는 초대 방식 개편으로 폐기 예정입니다(`Phase 1 · 계획` KNK-567 — 초대 보상은 로그인이 아니라 `POST /users/me/invite/redeem`에서 적립, [§4-3-7](#4-3-api-계약)).
+1. 클라이언트가 Google ID 토큰을 `POST /auth/login/google`로 보냅니다. 구 선택 필드 `inviteCode`(초대 URL 경유 가입의 코드 전달)는 초대 방식 개편으로 폐기됐습니다(`Phase 1 · 구현` KNK-567 — 초대 보상은 로그인이 아니라 `POST /users/me/invite/redeem`에서 적립, [§4-3-7](#4-3-api-계약)).
 2. 서버가 서명(JWKS URI `https://www.googleapis.com/oauth2/v3/certs` 고정), 만료, issuer(`https://accounts.google.com`·`accounts.google.com` 두 형식 허용), audience(허용 client ID 목록 중 하나 포함)를 검증합니다. client ID 목록이 비어 있으면 모든 토큰을 거부하고(fail-closed), 실패 사유와 무관하게 일괄 401입니다.
 3. `(provider, provider_user_id)`로 사용자를 찾거나 새로 만듭니다(find-or-create). create는 `REQUIRES_NEW` 독립 트랜잭션이며, 동시 첫 로그인의 유니크 위반은 재조회로 상대 요청이 만든 계정을 재사용합니다(500 대신 정상 로그인). 기존 연동 로그인은 `social_accounts.last_login_at`만 갱신합니다. 소셜 provider enum은 GOOGLE 외 KAKAO·APPLE·NAVER를 예약해 둡니다(미사용).
 4. access·refresh 토큰을 발급합니다.
@@ -1057,7 +1056,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 
 ### 상태 코드 카탈로그
 
-`code`는 HTTP 상태의 표준 이름을 사용합니다. **예외: 402와 초대 코드 입력의 409는 사유 구분을 위해 앱 수준 코드를 씁니다**(`CodedResponseStatusException`이 `code`를 오버라이드 — 402는 `Phase 1 · 구현`(KNK-524), 초대 409는 `Phase 1 · 계획`(KNK-567)).
+`code`는 HTTP 상태의 표준 이름을 사용합니다. **예외: 402와 초대 코드 입력의 409는 사유 구분을 위해 앱 수준 코드를 씁니다**(`CodedResponseStatusException`이 `code`를 오버라이드 — 402는 KNK-524, 초대 409는 KNK-567, 모두 `Phase 1 · 구현`).
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
@@ -1068,7 +1067,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 404 | `NOT_FOUND` | 리소스 없음·이미 삭제됨·읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드. 응답에 `Allow` 헤더 동봉 |
 | 406 | `NOT_ACCEPTABLE` | Accept 협상 실패 |
-| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` | 이미 스토리를 생성한 간편 제작 진행으로 재생성 시도. `Phase 1 · 구현` — AI 응답 재생성의 `turnId`가 마지막 턴이 아님([§4-3-9](#4-3-api-계약)). `Phase 1 · 계획`(KNK-567) — 초대 코드 입력의 자기 코드 제출(`INVITE_SELF_CODE`)·재제출(`INVITE_ALREADY_REDEEMED`)은 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
+| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` | 이미 스토리를 생성한 간편 제작 진행으로 재생성 시도. `Phase 1 · 구현` — AI 응답 재생성의 `turnId`가 마지막 턴이 아님([§4-3-9](#4-3-api-계약)). `Phase 1 · 구현`(KNK-567) — 초대 코드 입력의 자기 코드 제출(`INVITE_SELF_CODE`)·재제출(`INVITE_ALREADY_REDEEMED`)은 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
 | 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일) |
@@ -1160,7 +1159,6 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `SPRING_DATA_REDIS_HOST` · `SPRING_DATA_REDIS_PORT` | 예(운영) | Redis 연결. 로컬 기본 `localhost:6379` |
 | `MANYAK_AI_BASE_URL` | 예 | AI 서버 base URL(scheme 포함). 기동 시 scheme·host를 검증해 잘못된 값이면 부팅 실패(스텁 모드에서는 불필요). 연결 5초·이벤트 간 60초 등 타임아웃은 `manyak.ai.*` 프로퍼티([§4-3-3](#4-3-api-계약)) |
 | `MANYAK_AI_CHAT_STUB` · `MANYAK_AI_STORY_STUB` | 아니오 | AI 스텁 토글(`manyak.ai.chat.stub` · `manyak.ai.story.stub`). `true`면 실제 AI 호출 없이 스텁 응답 — 채팅 스텁은 고정 서사 문구에 `userInput` 앞 24자를 에코해 3자 청크로 스트리밍하고 고정 선택지 3개를 반환, 스토리 스텁은 결정적 더미 스토리라인 3개(`"[스텁] 스토리라인 N — {장르}"`)·더미 compile을 즉답합니다. 스텁 호출은 meta `model`·`provider`가 `"stub"`으로 `ai_call_logs`에서 구분됩니다. 미설정·`false`가 기본(실제 호출)이고 환경 변수가 프로필 yaml보다 우선하므로 임의 환경에서 켤 수 있습니다. 프로필 기본값은 local=`true`·prod=`false` |
-| `MANYAK_INVITE_BASE_URL` | 아니오 | 초대 링크 base URL. 기본 `https://manyak.app/invite`. `Phase 1 · 계획`(KNK-567) — 초대 방식 개편으로 `inviteUrl`과 함께 폐기 예정([§4-3-7](#4-3-api-계약)) |
 | `MANYAK_IMAGE_BASE_URL` | 아니오(`Phase 1 · 계획`) | 이미지 CDN base URL — `imageKey` → 서빙 URL 조합용(`{base}/{prefix}/{imageKey}.png`, [§4-3-9](#4-3-api-계약)). 이미지 기능 배포와 함께 도입 |
 | `MANYAK_CREDIT_*` | 아니오 | 크레딧 정책값 오버라이드 — `SIGNUP_REWARD`(500) · `INVITE_REWARD`(500) · `INVITE_MONTHLY_CAP`(10) · `ATTENDANCE_REWARD`(250) · `STORY_CREATION_COST`(20) · `CHAT_TURN_COST`(10) · `RECONCILIATION_{ENABLED(true), INTERVAL_MS(900000), INITIAL_DELAY_MS(60000), CHARGE_AGE_THRESHOLD(PT15M)}` |
 | `MANYAK_GUEST_TRIAL_*` | 아니오 | 게스트 체험 한도 오버라이드 — `STORYLINE_LIMIT`(5) · `STORY_CREATION_LIMIT`(1) · `CHAT_TURN_LIMIT`(5) |
@@ -1263,8 +1261,8 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B2 | AI 와이어 필드 정렬 | AI 계약의 `story`(스토리라인 본문)·`extra_info`가 용어집 기준(`storyline` · `additional_info`)과 불일치. 클라이언트 와이어는 정렬 완료 | AI 서버와 동시 배포로 정렬(KNK-375) |
 | B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([`3-frontend.md §3-13`](./3-frontend.md) G6) | **의도된 차이로 확정(2026-07-07)** — 서버는 여유 상한을 유지하고 표시 상한은 프론트엔드가 유동 조정. 추가 정렬 불필요 |
 | B8 | 게스트 한도 우회·수치 축소 | 체험 한도가 디바이스 ID 헤더 기준이라 헤더 변조·기기 변경으로 우회 가능. 디바이스 ID 회전은 Redis 카운터 키를 만료 없이 무한히 늘림 | 한도 구조·수치 5·1·5(`application.yml`) 모두 `Phase 1 · 구현`(KNK-436 축소, 카운터 리셋 없음). 우회는 수용하고 관측(호출량 급증 알림·카운터 키 증가 추이)으로 추적, 강화(rate limit·키 TTL 등)는 후속 결정 |
-| B10 | 이미지 표시 구현 | 계약은 확정(2026-07-10 팀 합의 — [§4-3-9](#4-3-api-계약)): 마커 `[[image:<imageKey>]]` 1종 + `images[].type`, 배경=등록 시 후보 확정·매 턴 AI 선택, 인물=컴파일 시 매핑 확정(`story_characters`), `completed`에 마커 본문(오프셋 없음)·`token` 마커 미노출. 서버·AI 서버·프론트엔드 모두 미구현(현행 채팅 출력은 평문+강조 파서뿐이라 이미지 렌더 경로 신설 필요) | `Phase 1 · 계획` — 두 트랙으로 분리 착수: ① **썸네일 트랙**(AI 의존 없음 — S3·CloudFront 1회 준비 후 카탈로그 시드·`stories` 썸네일 컬럼·등록 시 자동 연결·반응형 변형(`thumbnailUrl`/`thumbnailUrlSm`, KNK-548)) 즉시 가능, ② **채팅 이미지 트랙**(배경 후보 배정·컴파일 인물 매핑·`completed.images[]`)은 [`5-ai-server.md`](./5-ai-server.md) 정렬(컴파일 스키마 확장·"이미지 AI 미사용" 번복 기록·마커 검증)이 선행 조건. 공통 후속: [`6-analytics.md`](./6-analytics.md) `image_key` 재정렬, 프론트엔드 이미지 렌더·CDN 허용 호스트([`7-deployment.md §7-4`](./7-deployment.md)는 운영 시드 전용으로 정리 완료) |
+| B10 | 이미지 표시 구현 | 계약은 확정(2026-07-10 팀 합의 — [§4-3-9](#4-3-api-계약)): 마커 `[[image:<imageKey>]]` 1종 + `images[].type`, 배경=등록 시 후보 확정·매 턴 AI 선택, 인물=컴파일 시 매핑 확정(`story_characters`), `completed`에 마커 본문(오프셋 없음)·`token` 마커 미노출. 서버·AI 서버·프론트엔드 모두 미구현(현행 채팅 출력은 평문+강조 파서뿐이라 이미지 렌더 경로 신설 필요) | ① **썸네일 트랙 `Phase 1 · 구현`**(KNK-409, V45·V46) — 카탈로그(`image_presets`) 시드·`stories.thumbnail_image_key`·등록 시 자동 연결·반응형 변형(`thumbnailUrl`/`thumbnailUrlSm`, KNK-548) 해소. ② **채팅 이미지 트랙 `Phase 1 · 계획`**(배경 후보 배정·컴파일 인물 매핑·`completed.images[]`) — [`5-ai-server.md`](./5-ai-server.md) 정렬(컴파일 스키마 확장·"이미지 AI 미사용" 번복 기록·마커 검증)이 선행 조건. 공통 후속: [`6-analytics.md`](./6-analytics.md) `image_key` 재정렬, 프론트엔드 이미지 렌더·CDN 허용 호스트([`7-deployment.md §7-4`](./7-deployment.md)는 운영 시드 전용으로 정리 완료) |
 | B18 | 비인증 쓰기 남용·rate limit 부재 | 크레딧·한도(402)의 통제를 받지 않는 쓰기 경로가 요청량 제한 없이 열려 있음: `POST /feedbacks`(Slack 알림 도배 — [§4-3-4](#4-3-api-계약)), `POST /stories/general`(다중 테이블 파생 행 무한 적재 — [§4-3-8](#4-3-api-계약)), `POST /chats`(임의 스토리에 채팅 행 생성), 스토리라인 평가(`PUT/DELETE …/rating` — 열거 가능 Long ID·무소유). 멱등 키가 없어 중복 제출도 그대로 적재되고, `description`·`storySettings` 등 본문 길이·요청 크기 상한도 미정의. SSE 턴 스트림도 동시 연결 상한이 없어 커넥션·스레드 고갈 표면 | Phase 1 수용 — 등록·호출량 급증을 관측으로 추적. rate limit(IP·디바이스 기준)·멱등 키·페이로드 상한·동시 스트림 상한은 후속 강화로 일괄 결정 |
 | B19 | 이관 소유권 미증명·열거 오라클 | 서버가 요청자의 원래 게스트 소유를 증명할 수 없어 NULL 리소스는 UUID를 아는 회원 누구나 클레임 가능([§4-3-5](#4-3-api-계약)). 성공 0건 호출은 잠기지 않아, `MIGRATED`/`CONFLICT`/`NOT_FOUND` 구분이 임의 UUID의 소유 상태 열거 오라클이 됨 | 완화 `Phase 1 · 구현` — 이관 시도 상한 5회(성공 0건 포함, `users.migration_attempts` V38, KNK-500)로 열거 규모를 제한. `status` 세분화는 부분 성공 UX에 필요해 유지. 공개 게스트 UUID 클레임 가능성은 이관의 구조적 한계로 수용(관측 추적) |
 | B21 | Sybil 보상 파밍 | 가입 500·초대 양측 500 크레딧이 계정 생성 제한 없이 지급([§4-3-7](#4-3-api-계약)). 다수 Google 계정으로 유료 AI 재화를 대량 확보 가능(게스트 이관 파밍(B8)과 다른 벡터). 초대 방식 개편(KNK-567)으로 자격이 회원 평생 1회로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)도 같은 벡터에 포함 — 의도된 정책으로 수용(2026-07-11) | Phase 1 수용 — 보상 지급량을 관측으로 추적. 계정 신뢰 신호 기반 dedup·보상 지연은 후속 결정 |
-| B22 | 초대 방식 개편 미구현 | 문서 기준은 코드 입력 적립(KNK-567 — [§4-3-7](#4-3-api-계약)): `POST /users/me/invite/redeem`·혼동 문자 제외 코드 재발급·적립 월 귀속·로그인 `inviteCode` 폐기·`inviteUrl` 제거. 서버 dev는 링크 방식(가입 시 `inviteCode`·self-heal(KNK-393)·가입 월 귀속) 구현 상태 | 서버 작업으로 정렬. 프론트엔드 개편([`3-frontend.md`](./3-frontend.md))과 동시 배포 — 링크 방식 실사용자가 없어 전환기 호환 불필요 |
+| B22 | 초대 방식 개편 | 계약은 코드 입력 적립(KNK-567 — [§4-3-7](#4-3-api-계약)): `POST /users/me/invite/redeem`·혼동 문자 제외 코드 재발급·월 상한은 초대자 몫만(도달 시 초대자만 스킵, 제출자 적립·200 — KNK-581)·상호 제출 데드락 방지(적립을 user id 오름차순 지갑 락으로 전역 결정화 — KNK-587) | `Phase 1 · 구현` — 서버 개편 완료(KNK-565·567·581·587, V47 코드 리셋). 링크 방식 실사용자가 없어 전환기 호환 없이 교체 |
