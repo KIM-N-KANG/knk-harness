@@ -775,7 +775,7 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 | `storyline_generation`  | 선택 키워드로 스토리라인 후보 생성                                                        | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*`                  |
 | `story_completion`      | 선택 스토리라인과 추가 정보로 스토리 상세 생성                                            | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed`                                    |
 | `chat_response`         | 사용자 메시지에 대한 AI 응답 생성(`Phase 1 · 계획` 재생성 포함 — `is_regenerated`로 구분) | `client_chat_messageInput_submitted`, `client_chat_regenerateButton_clicked`, `server_chat_aiMessage_processed_*` |
-| `suggestion_generation` | 선택지 생성                                                                               | `client_chat_choiceOption_selected`                                                                               |
+| `choice_generation`     | 선택지 생성 — 현행은 `chat_response` 내부 호출로 합산 적재. `Phase 1 · 계획`(KNK-622) 선택지 전용 엔드포인트 분리 후 별도 행 적재 시작(백엔드 feature enum `CHOICE_GENERATION` 기정의 — [`4-backend.md §4-7`](./4-backend.md)) | `client_chat_choiceOption_selected`                                                                               |
 
 AI feature는 프론트엔드 이벤트명에 넣지 않습니다. 상세 원인은 `feature`와 `error_code`로 구분합니다.
 
@@ -806,7 +806,7 @@ AI 서비스 응답에는 다음 메타데이터를 포함합니다.
 
 ### 6-6-9. `ai_call_logs` 기록 기준
 
-AI 호출 1회당 `ai_call_logs`에 1행을 기록합니다. 재시도가 발생하면 같은 `request_id` 아래에서 `retry_count`를 증가시킵니다. 여러 모델을 순차 호출하는 기능이 생기면 provider 호출별로 행을 분리합니다.
+AI 호출 1회당 `ai_call_logs`에 1행을 기록합니다. 재시도가 발생하면 같은 `request_id` 아래에서 `retry_count`를 증가시킵니다. 여러 모델을 순차 호출하는 기능이 생기면 provider 호출별로 행을 분리합니다. `Phase 1 · 계획`(KNK-622) — 선택지 전용 엔드포인트 분리 후에는 한 턴이 `chat_response`(본문+판정)와 `choice_generation`(선택지) 두 행으로 적재되고, `chat_id` + `turn_number`로 조인합니다.
 
 | 컬럼                      | 타입 예시      | 설명                                               |
 | ------------------------- | -------------- | -------------------------------------------------- |

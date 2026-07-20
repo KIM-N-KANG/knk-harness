@@ -371,6 +371,14 @@ graph LR
 
 - 서버는 `completed` 전에 사용자 입력과 AI 출력을 한 턴으로 저장합니다. 저장은 채팅 행 비관적 락 → 마지막 `message_order` 조회 → USER(n+1) → ASSISTANT(n+2) insert → 선택지 insert → `current_turn` +1 순서의 단일 트랜잭션이며, 메시지 순서는 `(chat_id, message_order)` 유니크 제약으로 보강합니다. 턴 ID는 ASSISTANT 메시지 행의 ID입니다. 저장이 확정한 턴 번호를 `ai_call_logs`에도 반영합니다([§4-7](#4-7-운영과-관측)).
 - 선택지는 AI가 준 개수만큼 `story_choices` 행(`choice_order` 1부터, `(message_id, choice_order)` 유니크)으로 저장하고 빈 배열이면 저장하지 않습니다 — "3개"는 AI 계약이며 서버가 개수를 보정하지 않습니다. 카드의 최근 활동 시각(`updatedAt`)은 채팅 행 UPDATE 시(턴 저장 포함) 자동 갱신됩니다.
+
+`Phase 1 · 계획`(KNK-622) — 선택지 생성 분리(2026-07-20 팀 합의, [`5-ai-server.md §5-3-5`](./5-ai-server.md))의 백엔드 반영분입니다. 구현 전까지 위 현행 계약이 유효합니다.
+
+- **선택지 생성 트리거(확정 제안)** — `POST /chats/{chatId}/turns/{turnId}/choices`. 프론트엔드는 turnId만 보내고, 백엔드가 턴 요청과 같은 조립 로직으로 AI 요청 재료를 다시 조립한 뒤 DB에 저장된 해당 턴의 본문을 `ai_output`으로 붙여 AI `POST /chat/choices`를 호출합니다. 본문은 `completed` 시점에 이미 저장되어 있으므로 프론트엔드가 되싣지 않습니다(실제 생성 본문과 100% 동일 보장).
+- **저장 플로우 변경** — `completed` 시점 persist는 aiOutput + 판정만 저장하고 choices는 빈 상태로 시작합니다. 선택지 호출 성공 시 그 턴의 `story_choices`를 채우고 응답으로 반환합니다. SSE `completed`의 `choices` 필드 처리(빈 배열 유지 vs 제거)는 프론트엔드와 확정합니다(미정).
+- **`ai_call_logs` 분리** — 메인 턴은 `chat_response`, 선택지는 `choice_generation`(기정의 예약 enum `CHOICE_GENERATION`) 두 행으로 적재합니다. 각 행이 자기 meta(토큰·`retry_count`)를 담고 `chat_id` + `turn_number`로 조인합니다. 스키마 변경 없이 적재 지점만 추가합니다([§4-7](#4-7-운영과-관측)).
+- **판정 위치** — 판정은 토글 대상이 아니고 백엔드가 채팅 상태(목표·거쳐온 사건·도달 엔딩)로 저장하는 값이라 `/chat/turns`에 그대로 둡니다([§4-3-10](#4-3-api-계약) 무변경).
+- 상세 규칙(멱등성·마지막 턴 제한·재생성과의 상호작용·크레딧 소모 여부·타임아웃)은 구현 설계 시 확정합니다(미정).
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
 - **타임아웃**: 두 층의 타임아웃이 있습니다(둘 다 60초이나 홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 60초**(`SseEmitter` 타임아웃) — 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리 간극은 [`3-frontend.md §3-13`](./3-frontend.md) G5에 기록되어 있습니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
@@ -1128,7 +1136,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `STORYLINE_GENERATION` | `POST /api/v1/story/storylines` | 동기 REST | 30초 |
 | `STORY_COMPLETION` | `POST /api/v1/story/compile` | 동기 REST | 120초 |
 | `CHAT_RESPONSE` | `POST /api/v1/chat/turns` | SSE | 연결 5초, 이벤트 간 60초 |
-| `CHOICE_GENERATION` | — | 예약(미사용) | — |
+| `CHOICE_GENERATION` | `POST /api/v1/chat/choices` — `Phase 1 · 계획`(KNK-622, [§4-3-3](#4-3-api-계약)) | 동기 REST | 미정 |
 
 **와이어 표기** — AI 계약은 이원 표기가 공식입니다([`0-glossary.md §0-4`](./0-glossary.md)). story 계열 요청·응답은 snake_case(`genre_tags`, `selected_storyline`, `recommended_infos`)이고, chat SSE `completed` 페이로드는 camelCase(`aiOutput`, `choices`)입니다. 현재 AI 와이어의 `story`(스토리라인 본문)·`extra_info` 필드는 용어집 기준으로 정렬 예정입니다([§4-8](#4-8-검수-체크리스트) B2).
 
