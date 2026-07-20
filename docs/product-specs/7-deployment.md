@@ -240,7 +240,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 | PR -> `dev`              | pnpm install, lint, typecheck, Docker build 검증                                                                                    |
 | PR·push -> `dev`, `main` | Playwright: Pixel 5 전체 E2E·비주얼 회귀, Desktop Chrome·iPhone 13 스모크. CI는 Chromium·WebKit을 설치하고 Linux 기준 이미지와 비교 |
 | push -> `dev`            | GHCR `dev`, `<short-sha>` push                                                                                                      |
-| push tag `v*`            | GHCR release image push. 현재 build arg는 `NEXT_PUBLIC_AMPLITUDE_API_KEY`와 `NEXT_PUBLIC_APP_VERSION`만 주입                        |
+| push tag `v*`            | GHCR release image push. 현재 build arg는 `NEXT_PUBLIC_AMPLITUDE_API_KEY`, `NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_META_PIXEL_ID`(KNK-616)를 주입                        |
 
 비주얼 기준 이미지는 Linux 렌더링만 정본입니다. UI를 의도적으로 변경하면 `manyak-web`에서 `pnpm test:e2e:visual:update`를 실행해 Playwright Docker 이미지로 기준 이미지를 갱신하고 diff를 검토합니다. macOS 로컬 실행은 폰트·안티앨리어싱 차이 때문에 스냅샷 비교를 건너뜁니다.
 
@@ -266,6 +266,7 @@ Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` 
 | `manyak-server` | repository variable `AWS_ROLE_ARN`    | server ECR push와 SSM 배포용 OIDC role ARN                      |
 | `manyak-ai`     | repository variable `AWS_ROLE_ARN`    | AI ECR push와 전용 SSM 배포용 OIDC role ARN                     |
 | `manyak-web`    | repository secret `AMPLITUDE_API_KEY` | tag release 이미지 빌드 시 `NEXT_PUBLIC_AMPLITUDE_API_KEY` 주입 |
+| `manyak-web`    | repository secret `META_PIXEL_ID`     | tag release 이미지 빌드 시 `NEXT_PUBLIC_META_PIXEL_ID` 주입(KNK-616). 미등록 시 빈 값이 주입되어 픽셀은 비활성 상태로 빌드됨 |
 
 `AWS_ROLE_ARN` 값은 `manyak-terraform/terraform/envs/prod` output에서 확인합니다.
 
