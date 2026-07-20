@@ -274,8 +274,9 @@ graph LR
 
 - **배경 카테고리 추가** — 태그 카테고리에 `BACKGROUND`(배경)를 추가하고 `GET /stories/simple/tags`가 함께 반환합니다(카테고리 4종 — [`0-glossary.md §0-3-1`](./0-glossary.md)).
 - **커스텀 태그 제한** — 장르·배경은 제공 태그만 선택할 수 있습니다. `customTags`의 `category`가 `GENRE`·`BACKGROUND`이면 400입니다(주인공 특징의 직접 추가는 유지).
-- **선택 상한 변경** — 장르·배경은 각 1~2개입니다(기존 장르 3 상한 대체). 배경의 최소 선택 필수 여부는 미정입니다.
-- **주변 인물 세트** — 주변 인물 특징 태그 대신 주변 인물 세트(최대 5)를 받습니다. 각 세트 `{name, gender, features}`는 전부 선택 항목이며 빈 항목은 AI가 자동 생성합니다(성별 값 집합·특징 입력 방식·요청 필드명은 미정). AI 요청 필드 구성은 [`5-ai-server.md §5-3-2`](./5-ai-server.md)가 소유합니다.
+- **선택 규칙 변경** — 장르·배경은 각 1~2개이고 각 최소 1개 필수입니다(기존 장르 3 상한·장르만 필수 대체). 서버는 개수 범위를 검증하며 위반 시 400입니다.
+- **제공 키워드 시드(팀 큐레이션)** — 장르 8종: 로맨스 · 복수극 · 생존물 · 미스터리 · 재벌물 · 육아물 · 요리물 · 오컬트. 배경 11종: 무협 · 현대 · 중세 · 디스토피아 · 포스트 아포칼립스 · 아포칼립스 · 게임·시스템 · 아카데미 · 던전 · SF · 탑. 주인공(나) 태그 목록도 새 체계에 맞춰 갱신합니다(목록 미정). **주의** — 썸네일·배경 이미지 매칭(`image_presets.genres[]`)과 로어북 선별(`lorebooks.genre`)이 GENRE 마스터 태그명과 문자열 정확 일치로 동작하므로([§4-3-9](#4-3-api-계약)·[§4-3-6](#4-3-api-계약)), 장르 마스터 개편 시 두 자산의 표기를 함께 마이그레이션해야 합니다.
+- **주변 인물 세트** — 주변 인물 특징 태그 대신 주변 인물 세트 `supportingCharacters[]`(최대 5)를 받습니다. 각 세트 `{name(≤30자), gender("MALE"·"FEMALE"·null), features[](세트당 최대 3, 각 30자 — 제공 태그 + 직접 입력)}`는 전부 선택 항목이며 빈 항목은 AI가 자동 생성합니다. AI 요청 필드 구성은 [`5-ai-server.md §5-3-2`](./5-ai-server.md)가 소유합니다.
 
 **응답(201)**
 
@@ -377,10 +378,12 @@ graph LR
 `Phase 1 · 계획`(KNK-622) — 선택지 생성 분리(2026-07-20 팀 합의, [`5-ai-server.md §5-3-5`](./5-ai-server.md))의 백엔드 반영분입니다. 구현 전까지 위 현행 계약이 유효합니다.
 
 - **선택지 생성 트리거(확정 제안)** — `POST /chats/{chatId}/turns/{turnId}/choices`. 프론트엔드는 turnId만 보내고, 백엔드가 턴 요청과 같은 조립 로직으로 AI 요청 재료를 다시 조립한 뒤 DB에 저장된 해당 턴의 본문을 `ai_output`으로 붙여 AI `POST /chat/choices`를 호출합니다. 본문은 `completed` 시점에 이미 저장되어 있으므로 프론트엔드가 되싣지 않습니다(실제 생성 본문과 100% 동일 보장).
-- **저장 플로우 변경** — `completed` 시점 persist는 aiOutput + 판정만 저장하고 choices는 빈 상태로 시작합니다. 선택지 호출 성공 시 그 턴의 `story_choices`를 채우고 응답으로 반환합니다. SSE `completed`의 `choices` 필드 처리(빈 배열 유지 vs 제거)는 프론트엔드와 확정합니다(미정).
+- **저장 플로우 변경** — `completed` 시점 persist는 aiOutput + 판정만 저장하고 choices는 빈 상태로 시작합니다. 선택지 호출 성공 시 그 턴의 `story_choices`를 채우고 응답으로 반환합니다. SSE `completed`의 `choices` 필드는 계약 파괴를 피해 항상 빈 배열로 유지합니다(필드 제거는 추후 SSE 구조 개편 시 함께).
 - **`ai_call_logs` 분리** — 메인 턴은 `chat_response`, 선택지는 `choice_generation`(기정의 예약 enum `CHOICE_GENERATION`) 두 행으로 적재합니다. 각 행이 자기 meta(토큰·`retry_count`)를 담고 `chat_id` + `turn_number`로 조인합니다. 스키마 변경 없이 적재 지점만 추가합니다([§4-7](#4-7-운영과-관측)).
 - **판정 위치** — 판정은 토글 대상이 아니고 백엔드가 채팅 상태(목표·거쳐온 사건·도달 엔딩)로 저장하는 값이라 `/chat/turns`에 그대로 둡니다([§4-3-10](#4-3-api-계약) 무변경).
-- 상세 규칙(멱등성·마지막 턴 제한·재생성과의 상호작용·크레딧 소모 여부·타임아웃)은 구현 설계 시 확정합니다(미정).
+- **호출 규칙** — 마지막 턴만 허용합니다(아니면 재생성과 동일 패턴의 409). 이미 choices가 있는 턴은 AI 호출 없이 기존 값을 반환합니다(멱등 — 중복 탭·재진입 안전). 재생성은 기존 choices를 비우므로([§4-3-9](#4-3-api-계약)) 새 활성 본문 기준의 재호출이 자연스럽게 허용됩니다.
+- **크레딧·한도** — 선택지 생성은 무료이며(턴 10크레딧에 포함된 경험 유지) 게스트 채팅 한도도 소모하지 않습니다.
+- **타임아웃** — 동기 REST 30초(스토리라인 생성과 동일).
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
 - **타임아웃**: 두 층의 타임아웃이 있습니다(둘 다 60초이나 홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 60초**(`SseEmitter` 타임아웃) — 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리 간극은 [`3-frontend.md §3-13`](./3-frontend.md) G5에 기록되어 있습니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
@@ -1138,7 +1141,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `STORYLINE_GENERATION` | `POST /api/v1/story/storylines` | 동기 REST | 30초 |
 | `STORY_COMPLETION` | `POST /api/v1/story/compile` | 동기 REST | 120초 |
 | `CHAT_RESPONSE` | `POST /api/v1/chat/turns` | SSE | 연결 5초, 이벤트 간 60초 |
-| `CHOICE_GENERATION` | `POST /api/v1/chat/choices` — `Phase 1 · 계획`(KNK-622, [§4-3-3](#4-3-api-계약)) | 동기 REST | 미정 |
+| `CHOICE_GENERATION` | `POST /api/v1/chat/choices` — `Phase 1 · 계획`(KNK-622, [§4-3-3](#4-3-api-계약)) | 동기 REST | 30초 |
 
 **와이어 표기** — AI 계약은 이원 표기가 공식입니다([`0-glossary.md §0-4`](./0-glossary.md)). story 계열 요청·응답은 snake_case(`genre_tags`, `selected_storyline`, `recommended_infos`)이고, chat SSE `completed` 페이로드는 camelCase(`aiOutput`, `choices`)입니다. 현재 AI 와이어의 `story`(스토리라인 본문)·`extra_info` 필드는 용어집 기준으로 정렬 예정입니다([§4-8](#4-8-검수-체크리스트) B2).
 
