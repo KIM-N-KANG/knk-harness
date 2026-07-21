@@ -212,6 +212,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_storyCreate_storyCompletion_requested`           |
 | P1                  | client | `client_storyCreate_completeError_shown`                 |
 | P1                  | client | `client_storyCreate_exitButton_clicked`                  |
+| P1                  | client | `client_storyCreate_draftSaved`                          |
+| P2                  | client | `client_storyCreate_continueBanner_shown`                |
+| P1                  | client | `client_storyCreate_continueBanner_clicked`              |
+| P2                  | client | `client_storyCreate_continueBanner_dismissed`            |
+| P2                  | client | `client_storyCreate_resumeDialog_shown`                  |
+| P1                  | client | `client_storyCreate_resumeDialog_continued`              |
+| P2                  | client | `client_storyCreate_resumeDialog_discarded`              |
 | P1                  | client | `client_chatList_viewed`                                 |
 | P1                  | client | `client_chatList_chatCard_clicked`                       |
 | P1                  | client | `client_chatList_chatCard_impressed`                     |
@@ -305,11 +312,20 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_completeError_shown`                 | P1       | 스토리 완성 실패 에러 표시                                                     | `stage` (string, 필수: `story` / `chat`)                                                                         |
 | `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 크레딧 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
 | `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확인(나가기) 클릭                                                    | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
+| `client_storyCreate_draftSaved`                          | P1       | 이탈 확정으로 제작 상태를 임시 저장                                            | `step` (string, 필수: `storyline-select` / `additional-info`)                                                    |
+| `client_storyCreate_continueBanner_shown`                | P2       | 홈 이어서 만들기 배너 노출(임프레션)                                           | `stage` (string, 필수: `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)                              |
+| `client_storyCreate_continueBanner_clicked`              | P1       | 홈 이어서 만들기 배너의 "이어서 만들기" 클릭                                   | `stage` (string, 필수: `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)                              |
+| `client_storyCreate_continueBanner_dismissed`            | P2       | 홈 이어서 만들기 배너 닫기(X) — 레코드 폐기                                    | `stage` (string, 필수: `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)                              |
+| `client_storyCreate_resumeDialog_shown`                  | P2       | 퍼널 진입 시 임시 저장본 재개 다이얼로그 노출                                  | 없음                                                                                                             |
+| `client_storyCreate_resumeDialog_continued`              | P1       | 재개 다이얼로그에서 "이어서 만들기" 선택                                       | 없음                                                                                                             |
+| `client_storyCreate_resumeDialog_discarded`              | P2       | 재개 다이얼로그에서 "새로 만들기" 선택 — 임시 저장본 폐기                      | 없음                                                                                                             |
 | `client_storyCreate_completed`                           | P0       | 스토리화 완료                                                                  | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택)                                   |
 
 `client_storyCreate_storyGeneration_requested`는 `creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `creation_id`를 포함합니다. 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
+
+임시 저장 관련 이벤트([`3-frontend.md §3-5`](./3-frontend.md) 제작 임시 저장)는 이탈 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`(저장) → `client_storyCreate_continueBanner_shown`/`_clicked`(홈 배너 회수) 또는 `client_storyCreate_resumeDialog_shown`/`_continued`(퍼널 재진입 회수)로 이어지며, `_dismissed`와 `_discarded`는 저장본을 버린 이탈입니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 임시 저장본(`STORY_DRAFT`) 회수를 구분합니다.
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 1 · 계획`(KNK-621) — 키워드 단계 개편([`3-frontend.md §3-5`](./3-frontend.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
