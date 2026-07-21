@@ -279,7 +279,10 @@ Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` 
 | 키                                     | 필수              | 주입 대상           | 설명                                                                                                                                         |
 | -------------------------------------- | ----------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SERVER_SENTRY_DSN`                    | 아니오            | server `SENTRY_DSN` | 백엔드 Sentry DSN. 비우면 Sentry 비활성                                                                                                      |
-| `AI_SENTRY_DSN`                        | 아니오            | ai `SENTRY_DSN`     | AI Sentry DSN. 비우면 Sentry 비활성                                                                                                          |
+| `AI_SENTRY_DSN`                        | 아니오            | ai `SENTRY_DSN`     | AI Sentry DSN. 비우면 Sentry 비활성 |
+| `AI_LANGFUSE_PUBLIC_KEY` | 아니오 | ai `LANGFUSE_PUBLIC_KEY` | Langfuse 공개 키. 비우면 관측 비활성(no-op) |
+| `AI_LANGFUSE_SECRET_KEY` | 아니오 | ai `LANGFUSE_SECRET_KEY` | Langfuse 시크릿 키. 비우면 관측 비활성(no-op) |
+| `AI_LANGFUSE_HOST` | 아니오 | ai `LANGFUSE_HOST` | Langfuse 리전 엔드포인트. JP `https://jp.cloud.langfuse.com`(미설정 시 코드 기본값은 JP 아님)                                                                                                          |
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL`    | 아니오            | server              | 피드백 Slack 알림. 비우면 발송 생략                                                                                                          |
 | `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 아니오            | server              | 현재 Terraform과 infra가 주입하는 pepper 키. 서버 코드는 새 `MANYAK_ANALYTICS_DEVICE_ID_PEPPER`를 먼저 보고 이 키를 fallback으로 인식합니다. |
 | `DEEPSEEK_API_KEY`                     | 예(AI)            | ai                  | AI 서버 기동 필수 secret                                                                                                                     |
@@ -289,6 +292,8 @@ Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` 
 `aws secretsmanager put-secret-value`는 secret 전체를 덮어씁니다. 일부 키만 바꿀 때도 기존 키를 모두 포함해야 합니다.
 
 시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다. `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다. 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
+
+> **Langfuse는 아직 배선 전입니다(`Phase 1 · 계획`).** 위 Secrets Manager 표의 Langfuse 3키는 현재 운영 Terraform(`user-data`)·Compose가 **읽지도 주입하지도 않습니다**(현재 AI 컨테이너엔 Sentry·DeepSeek만 주입). 키를 넣어도 **배선 구현 전에는 켜지지 않습니다.** 백엔드가 반응 신호를 보내려면 백엔드용 Langfuse 키·HOST도 별도 정의해야 하는데 아직 없습니다 — 모두 후속 구현 대상입니다.
 
 ### EC2 `.env` 생성 결과
 
@@ -431,9 +436,20 @@ docker compose ps
 
 - server는 구조화 로그, Sentry, `ai_call_logs`, Actuator health를 사용합니다.
 - AI는 Sentry와 request correlation middleware를 사용합니다.
+- AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용, `Phase 1 · 계획`). 키 미설정 시 no-op.
 - web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 단, 현재 release 이미지에는 `NEXT_PUBLIC_SENTRY_DSN` 주입 경로가 정의되어 있지 않아 운영 Sentry 수집은 미정입니다.
 - `X-Manyak-Request-Id`, `X-Manyak-Session-Id`, `X-Manyak-Device-Id-Hash` 계열은 server와 AI 관측 연결에 사용합니다.
 - 운영 Swagger UI와 OpenAPI 문서는 비공개입니다. 해당 경로는 운영에서 404여야 합니다.
+
+### Langfuse 활성화 전 점검 — `Phase 1 · 계획`
+
+프로덕션에서 Langfuse를 켜기(키 주입) 전에 확인합니다.
+
+- **배선이 구현됐는지** — 현재 Terraform·Compose는 Langfuse를 주입하지 않으므로(후속), 배선 전에는 켜지지 않습니다.
+- **코드가 prod·JP를 강제하는지** — 현재는 키만 있으면 켜지므로 강제는 후속 과제입니다.
+- `LANGFUSE_HOST`가 JP(`https://jp.cloud.langfuse.com`)인지 — 지정하지 않으면 코드 기본값(JP 아님)으로 대화 원문이 다른 리전으로 전송됩니다.
+- 사전 정의 장르만 태그하는 코드가 반영됐는지(KNK-640 후속) — 커스텀 장르가 태그로 새면 카디널리티·PII 문제.
+- §6-7 원문 수집 예외 조건(JP 리전·무기한 보존·AI 담당자 한정 접근·prod 전용)이 지켜지는지([`6-analytics.md §6-7`](./6-analytics.md)).
 
 ### 롤백
 
