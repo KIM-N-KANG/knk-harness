@@ -200,7 +200,7 @@ graph LR
 
 **배경.** AI 서버는 DB가 없습니다(D2의 귀결). 호출 이력·토큰 사용량·프롬프트 버전을 남길 자리가 서버 안에 없습니다.
 
-**문제와 결정.** AI가 자체 저장소를 두면 D2를 훼손합니다. 그래서 **관측 값을 응답에 동봉해 기록 책임을 백엔드에 위임**했습니다. 모든 응답에 로깅 메타(`meta`)를 싣고, 백엔드가 이를 `ai_call_logs`에 적재합니다. 요청 상관관계는 반대 방향으로 헤더를 수신해 잇습니다. 프롬프트·채팅·생성 원문은 응답 meta에도 Sentry에도 싣지 않습니다(수집 기준 AN-4-10). 트레이드오프는 응답 계약이 커지는 것과, 기록이 백엔드 적재에 의존하는 것입니다.
+**문제와 결정.** AI가 자체 저장소를 두면 D2를 훼손합니다. 그래서 **관측 값을 응답에 동봉해 기록 책임을 백엔드에 위임**했습니다. 모든 응답에 로깅 메타(`meta`)를 싣고, 백엔드가 이를 `ai_call_logs`에 적재합니다. 요청 상관관계는 반대 방향으로 헤더를 수신해 잇습니다. 프롬프트·채팅·생성 원문은 응답 meta에도 Sentry에도 싣지 않습니다(수집 기준 AN-4-10). LLM 트레이싱(Langfuse) 도입 뒤에도 meta·Sentry 경로는 그대로이며, 원문은 Langfuse만 별도 예외로 싣습니다(§5-6, `Phase 1 · 계획`). 트레이드오프는 응답 계약이 커지는 것과, 기록이 백엔드 적재에 의존하는 것입니다.
 
 `필드` `meta` 구성 → `model` · `prompt_versions` · `provider` · 입출력 토큰 · `retry_count`
 
@@ -277,7 +277,7 @@ graph LR
 | 프레임워크 | FastAPI + uvicorn, Pydantic v2 (+ pydantic-settings) |
 | LLM 연동 | OpenAI SDK(`AsyncOpenAI`) — OpenAI 호환 API로 DeepSeek 호출 |
 | LLM 모델 | deepseek-v4-pro(컴파일) · deepseek-v4-flash(스토리라인·채팅·선택지·판정) — 근거는 D9 |
-| 관측 | Sentry SDK (FastAPI 통합) |
+| 관측 | Sentry SDK(오류 수집) · Langfuse(LLM 호출 트레이싱, `Phase 1 · 계획`) — 키 미설정 시 각각 no-op |
 | 테스트 | pytest + pytest-asyncio, 도커 격리 실행(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`) |
 | 빌드·배포 | Docker, GitHub Actions — 상세는 [`7-deployment.md`](./7-deployment.md) |
 
@@ -301,7 +301,7 @@ graph LR
 | `src/api/v1/` | 엔드포인트(story · chat · health) |
 | `src/services/` | 프롬프트 조립, LLM 호출, 형식 보정, 통글 변환 |
 | `src/schemas/` | 요청·응답 계약(Pydantic) |
-| `src/core/` | 설정, 상관관계 미들웨어, Sentry |
+| `src/core/` | 설정, 상관관계 미들웨어, Sentry, Langfuse |
 | `tests/` | 단위·통합 테스트(라이브 테스트는 옵트인 — [§5-6](#5-6-운영과-관측)) |
 
 ## 5-3. 요청과 응답 계약
@@ -758,7 +758,7 @@ graph LR
 - **기록 책임은 백엔드에 위임합니다.** 응답에 meta를 동봉하면 백엔드가 `ai_call_logs`에 적재합니다. AI는 자체 저장소를 만들지 않습니다.
 - **상관관계는 헤더로 잇습니다.** 백엔드가 요청 헤더로 넘긴 상관관계 식별자를 요청 단위 Sentry 스코프에 부착해, 백엔드 로그 ↔ AI Sentry 이벤트가 같은 요청 식별자(`request_id`)로 연결됩니다. 원본 기기 식별자(`device_id`)는 수신 경로 자체가 없습니다. 해시만 받습니다.
 - **Sentry는 DSN이 없으면 no-op(아무 동작도 하지 않음)입니다.** 로컬·CI는 DSN을 비워 관측 코드가 아무 일도 하지 않게 하고, prod에서만 켭니다. 관측 때문에 개발 루프가 느려지거나 외부 의존이 생기지 않게 하기 위해서입니다.
-- **원문 비수집.** 프롬프트·채팅·생성 원문은 meta에도 Sentry에도 싣지 않습니다(AN-4-10). PII 기본 수집도 끄고, 요청 본문은 전송 전에 떼어냅니다.
+- **원문 비수집.** 프롬프트·채팅·생성 원문은 meta에도 Sentry에도 싣지 않습니다(AN-4-10). PII 기본 수집도 끄고, 요청 본문은 전송 전에 떼어냅니다. 단, LLM 트레이싱(Langfuse)은 이 원칙의 명시적 예외로 원문을 싣습니다(아래 [LLM 트레이싱]).
 
 **구현.**
 
@@ -796,11 +796,34 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 | `SENTRY_DSN` | (빈 값 = no-op) | prod에서만 채움 |
 | `SENTRY_ENVIRONMENT` | `local` | 백엔드 규약 미러링 |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | 백엔드 규약 미러링 |
+| `LANGFUSE_PUBLIC_KEY` · `LANGFUSE_SECRET_KEY` | (빈 값 = no-op) | prod에서만 채움 (`Phase 1 · 계획`) |
+| `LANGFUSE_HOST` | `https://cloud.langfuse.com` | 가입 리전(us/eu/jp) |
 | `APP_NAME` · `APP_VERSION` · `DEBUG` | — | 앱 메타 |
 
 헬스체크: `GET /api/v1/health` → `{"status": "ok", "version": ...}`. 배포 게이트가 이 응답을 대기합니다([`7-deployment.md`](./7-deployment.md)).
 
 테스트 체계: 도커 격리 환경에서 pytest를 실행합니다(macOS·Linux `scripts/test.sh` · Windows `scripts/test.ps1`, 로컬 파이썬 환경에는 pytest-asyncio가 없어 async 테스트가 스킵될 수 있음). LLM 의존 테스트는 CI에서 더미 키로 계약·형식 보정만 검증하고, 실제 LLM을 호출하는 라이브 통합 테스트는 `RUN_LIVE_TESTS=1`을 켠 경우에만 실행합니다(옵트인). CI/CD·배포 파이프라인은 [`7-deployment.md`](./7-deployment.md)가 소유합니다.
+
+### LLM 트레이싱 (Langfuse) — `Phase 1 · 계획`
+
+> 관측 그릇(트레이스 묶기·차원 부착)은 KNK-624(PR #56)에 구현돼 있고, dev 머지 시 sync-ai-spec으로 현행 승격합니다. 턴·스토리 식별자 수신은 백엔드 협의 대상입니다.
+
+**배경.** Sentry는 오류만, 응답 meta는 토큰 수만 남깁니다. 그래서 정상 동작한 턴에 "어떤 프롬프트가 조립돼 어떤 본문이 나왔는지"를 확인할 방법이 없습니다. 뒤에는 사용자 선호 분석(무엇이 인기 있는지)을 위한 원문 축적이라는 목적도 있습니다.
+
+**문제와 결정.**
+
+- **정상 호출의 원문을 관측 도구에 남깁니다.** Langfuse Cloud에 요청 단위 트레이스로 프롬프트·응답 원문과 토큰·지연을 기록합니다. 원문 비수집(AN-4-10, [`6-analytics.md §6-7`](./6-analytics.md))의 **명시적 예외**이며 §6-7 개정이 짝입니다. 원문 취급이 Sentry와 정반대인 것이 도입 목적입니다.
+- **프로덕션 전용입니다.** 실험 환경은 자체 기록 체계가 있어 이중 기록이 되므로 제외합니다.
+- **키가 없으면 no-op입니다.** 로컬·CI는 키를 비워 관측이 외부 의존을 만들지 않게 하고 prod에서만 켭니다(Sentry와 동일 규약). 다만 **현재 코드는 키 유무만 보고 켜지므로**(환경·리전 강제 없음), 운영·JP 리전이 아니면 켜지지 않게 코드로 막는 것은 **후속 과제**입니다 — 문서 조건(§6-7·[`7-deployment.md §7-9`](./7-deployment.md))만으로는 강제되지 않습니다.
+
+**구현.**
+
+- 요청 1건 = 트레이스 1건입니다. 엔드포인트가 본 작업을 감싸면 그 안의 모든 LLM 호출(채팅 턴의 본문+판정, 컴파일·선택지의 재호출)이 하위 관측으로 묶입니다.
+- 트레이스 정체성은 상관관계 식별자로 채웁니다: `session_id`(대화 묶음)·`user_id`(원본 아닌 기기 해시 `device_id_hash`, AN-4-10).
+- 분석 차원을 함께 싣습니다 — 저카디널리티 태그(사전 정의 장르)와 metadata(프롬프트 버전 맵·`retry_count`·`request_id`). **PII 경계**: tags·metadata에는 구조화된 장르·버전만 싣고 사용자 자유입력(주인공·조연 커스텀 태그·`user_input`·`additional_info`)은 넣지 않습니다. 다만 이 자유입력은 프롬프트의 일부라 **Langfuse 요청 원문에는 저장됩니다** — 색인 차원(tags·metadata)으로 올리지 않을 뿐입니다.
+- 배치 전송이라 앱 종료 시 flush합니다(미전송 트레이스 유실 방지).
+
+**연결용 식별자 수신과 선호 신호 — `Phase 1 · 계획`.** AI는 무상태(D2)라 트레이스가 어떤 턴·스토리의 것인지 스스로 알 수 없고, 턴·스토리 ID는 AI 호출이 끝난 뒤 백엔드 저장 시점에야 생깁니다(그래서 호출 때 forward 불가). 대신 백엔드가 호출 **전에** 연결용 식별자를 만들어 forward하면 AI가 이를 **저장하지 않고 트레이스 연결에만** 씁니다. **다만 지금 AI는 요청마다 별도 트레이스를 남기므로**(위 '구현' 1항), 채팅 본문·선택지를 한 트레이스로 합칠지 같은 식별자로 검색만 할지, 스토리의 연결 식별자를 어떻게 만들지(멱등용 `requestId`는 단계 간 재사용이 백엔드에서 막힘)는 **후속에서 확정합니다**. 백엔드는 식별자를 실제 turnId·스토리ID와 매핑해두었다가 이후 반응 신호(재생성·엔딩·스토리라인 평가)를 이어 붙입니다. 장르 태그는 사전 정의 장르만 답니다(커스텀 혼입 방지 — 백엔드가 구분해 전달). 발신·전송 주체와 신호 카탈로그는 [`4-backend.md §4-7`](./4-backend.md)·[`6-analytics.md §6-6-12`](./6-analytics.md)가 소유합니다.
 
 ### 품질 평가와 자가개선 루프 — `Phase 1 · 계획`
 
