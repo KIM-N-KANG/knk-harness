@@ -18,13 +18,13 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.3                                                                                                                                                                |
+| 버전      | v0.4                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-07-15                                                                                                                                                          |
+| 수정일    | 2026-07-22                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
-| 기준 코드 | `../manyak-terraform` dev `447c8fc`, `../manyak-infra` dev `6c892b9`, `../manyak-server` dev `f106b8e`, `../manyak-ai` dev `cddda1f`, `../manyak-web` dev `0fac4bd` |
+| 기준 코드 | `../manyak-terraform` dev `447c8fc`, `../manyak-infra` dev `6c892b9`, `../manyak-server` dev `f106b8e`, `../manyak-ai` dev `cddda1f`, `../manyak-web` dev `0fac4bd`. Langfuse 관련 절(§7-6 주석·§7-9)만 `../manyak-ai` dev `604b68ab060d`(운영 릴리스 `v0.2.1`)와 `../manyak-terraform` dev(KNK-653 머지분) 기준입니다 — terraform은 머지만 됐고 `apply` 전이라 운영 EC2에는 아직 반영되지 않았습니다 |
 
 ## 7-1. 목적과 범위
 
@@ -220,7 +220,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 | 트리거         | 동작                                                                |
 | -------------- | ------------------------------------------------------------------- |
-| PR -> `dev`    | Python 3.11, `pytest`, multi-arch Docker build 검증                 |
+| PR -> `dev`    | Python 3.11, `pytest`, multi-arch Docker build 검증, 이미지 스모크 2종(기본 health · 더미 키로 Langfuse 활성 경로 health+기동 로그) |
 | push -> `dev`  | 테스트 후 GHCR `dev`, `<short-sha>` push                            |
 | push -> `main` | 테스트 후 ECR `latest`, `<short-sha>` push, 전용 SSM 문서로 AI 배포 |
 
@@ -282,7 +282,7 @@ Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` 
 | `AI_SENTRY_DSN`                        | 아니오            | ai `SENTRY_DSN`     | AI Sentry DSN. 비우면 Sentry 비활성 |
 | `AI_LANGFUSE_PUBLIC_KEY` | 아니오 | ai `LANGFUSE_PUBLIC_KEY` | Langfuse 공개 키. 비우면 관측 비활성(no-op) |
 | `AI_LANGFUSE_SECRET_KEY` | 아니오 | ai `LANGFUSE_SECRET_KEY` | Langfuse 시크릿 키. 비우면 관측 비활성(no-op) |
-| `AI_LANGFUSE_HOST` | 아니오 | ai `LANGFUSE_HOST` | Langfuse 리전 엔드포인트. JP `https://jp.cloud.langfuse.com`(미설정 시 코드 기본값은 JP 아님)                                                                                                          |
+| `AI_LANGFUSE_HOST` | 아니오 | ai `LANGFUSE_HOST` | Langfuse 리전 엔드포인트. JP `https://jp.cloud.langfuse.com` 필수 — 비우면 활성화 가드가 막아 관측 비활성(no-op) |
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL`    | 아니오            | server              | 피드백 Slack 알림. 비우면 발송 생략                                                                                                          |
 | `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 아니오            | server              | 현재 Terraform과 infra가 주입하는 pepper 키. 서버 코드는 새 `MANYAK_ANALYTICS_DEVICE_ID_PEPPER`를 먼저 보고 이 키를 fallback으로 인식합니다. |
 | `DEEPSEEK_API_KEY`                     | 예(AI)            | ai                  | AI 서버 기동 필수 secret                                                                                                                     |
@@ -291,9 +291,9 @@ Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` 
 
 `aws secretsmanager put-secret-value`는 secret 전체를 덮어씁니다. 일부 키만 바꿀 때도 기존 키를 모두 포함해야 합니다.
 
-시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다. `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다. 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
+시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다. `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다(배선 후에는 Langfuse 3키도 같습니다). 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
 
-> **Langfuse는 아직 배선 전입니다(`Phase 1 · 계획`).** 위 Secrets Manager 표의 Langfuse 3키는 현재 운영 Terraform(`user-data`)·Compose가 **읽지도 주입하지도 않습니다**(현재 AI 컨테이너엔 Sentry·DeepSeek만 주입). 키를 넣어도 **배선 구현 전에는 켜지지 않습니다.** 백엔드가 반응 신호를 보내려면 백엔드용 Langfuse 키·HOST도 별도 정의해야 하는데 아직 없습니다 — 모두 후속 구현 대상입니다.
+> **Langfuse 배선은 머지 완료·`terraform apply` 대기입니다(KNK-653, manyak-terraform).** 위 Secrets Manager 표의 Langfuse 3키(`AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST`)는 **apply 전까지는** 운영 EC2의 `user-data`·Compose가 읽지도 주입하지도 않으므로(현재 AI 컨테이너엔 Sentry·DeepSeek만 주입) 키를 넣어도 켜지지 않습니다. 배선 후에는 user-data가 3키를 배포 스크립트의 **export로만** compose에 넘깁니다 — 공용 `.env`에 쓰지 않아 server 컨테이너로 새지 않는 대신, `deploy.sh`를 거치지 않은 수동 compose 실행에서는 값이 비어 Langfuse가 꺼집니다(아래 롤백 표 참고). 주입 순서와 선행 조건은 §7-9가 소유합니다. 백엔드가 반응 신호를 보내려면 백엔드용 Langfuse 키·HOST도 별도 정의해야 하는데 아직 없습니다 — 이건 후속 구현 대상입니다.
 
 ### EC2 `.env` 생성 결과
 
@@ -436,27 +436,36 @@ docker compose ps
 
 - server는 구조화 로그, Sentry, `ai_call_logs`, Actuator health를 사용합니다.
 - AI는 Sentry와 request correlation middleware를 사용합니다.
-- AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용, `Phase 1 · 계획`). 키 미설정 시 no-op.
+- AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-ai-server.md §5-6`](./5-ai-server.md)) 미충족 시 no-op입니다. 프로덕션은 아직 미활성 — 켜기는 KNK-654(`Phase 1 · 계획`).
 - web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 단, 현재 release 이미지에는 `NEXT_PUBLIC_SENTRY_DSN` 주입 경로가 정의되어 있지 않아 운영 Sentry 수집은 미정입니다.
 - `X-Manyak-Request-Id`, `X-Manyak-Session-Id`, `X-Manyak-Device-Id-Hash` 계열은 server와 AI 관측 연결에 사용합니다.
 - 운영 Swagger UI와 OpenAPI 문서는 비공개입니다. 해당 경로는 운영에서 404여야 합니다.
 
-### Langfuse 활성화 전 점검 — `Phase 1 · 계획`
+### Langfuse 활성화 점검 — `Phase 1 · 계획`
 
 프로덕션에서 Langfuse를 켜기(키 주입) 전에 확인합니다.
 
-- **배선이 구현됐는지** — 현재 Terraform·Compose는 Langfuse를 주입하지 않으므로(후속), 배선 전에는 켜지지 않습니다.
-- **코드가 prod·JP를 강제하는지** — 현재는 키만 있으면 켜지므로 강제는 후속 과제입니다.
-- `LANGFUSE_HOST`가 JP(`https://jp.cloud.langfuse.com`)인지 — 지정하지 않으면 코드 기본값(JP 아님)으로 대화 원문이 다른 리전으로 전송됩니다.
-- 사전 정의 장르만 태그하는 코드가 반영됐는지(KNK-640 후속) — 커스텀 장르가 태그로 새면 카디널리티·PII 문제.
+- **Langfuse 코드가 담긴 AI 릴리스가 배포됐는지** — **충족**: 관측 그릇(KNK-624·640)과 안전장치(KNK-652)가 `v0.2.1`(2026-07-22)로 운영에 배포됐습니다. 그 이전 릴리스에는 켜질 코드 자체가 없었습니다.
+- **배선이 apply됐는지** — 배선은 KNK-653(manyak-terraform)으로 **머지 완료·apply 대기**입니다. user-data가 Secrets Manager의 `AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST` 3키를 배포 스크립트의 **export로만** compose에 보간합니다 — 공용 `.env`에 기록하지 않아 server 컨테이너로 새지 않습니다. apply 전에는 켜지지 않습니다.
+- **apply의 파급을 감수할 창을 잡았는지** — 배선은 user-data(+임베드된 compose) 변경이라 apply가 **EC2 교체**를 부릅니다(다운타임). 교체된 인스턴스에는 기존 `/opt/manyak/.env`가 없어 **이미지 핀이 `SERVER_IMAGE`·`AI_IMAGE` 기본값 `:latest`로 리셋**되므로, apply 후 원하는 `<short-sha>`로 다시 고정할지 확인합니다. 같은 이유로 manyak-terraform은 user-data를 건드리는 변경의 주입을 따로 게이트합니다.
+- **활성화 가드가 릴리스에 실렸는지** — **충족**: 키가 있어도 `LANGFUSE_HOST`가 JP가 아니거나 환경이 `prod`가 아니면 no-op + 오류 로그로 막는 가드가 `v0.2.1`에 포함됐습니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 원칙: **키 주입은 가드가 담긴 릴리스 배포 뒤**여야 합니다 — 관측 그릇(KNK-624)만 실리고 가드가 없는 릴리스는 키만 있으면 켜지기 때문입니다.
+- `LANGFUSE_HOST`가 JP(`https://jp.cloud.langfuse.com`)로 Secrets에 들어 있는지 — 가드가 실린 릴리스에서는 JP가 아니면(누락 포함) 켜지지 않습니다. 가드 이전 릴리스에서도 이 배선 경로라면 누락 시 빈 값이 주입돼 전송이 실패할 뿐 다른 리전으로 새지는 않지만, 배선을 우회한 수동 주입에서는 코드 기본값(JP 아님)이 살아나므로 값 자체를 반드시 확인합니다.
+- **백엔드 키워드 단계 개편(KNK-621)이 먼저 배포됐는지** — 개편이 커스텀 장르 입력을 400으로 차단해야 `genre_tags`가 사전 정의만 남습니다. 장르 차원은 저장된 트레이스에 소급 부착되지 않으므로, 켜기가 KNK-621 이후여야 초기 데이터부터 장르로 분해됩니다.
+- **채팅 트레이스 장르 태그 제거가 릴리스에 실렸는지** — **충족**: `v0.2.1`에 포함됐습니다. 장르 태그는 스토리 제작 트레이스에만 싣습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
 - §6-7 원문 수집 예외 조건(JP 리전·무기한 보존·AI 담당자 한정 접근·prod 전용)이 지켜지는지([`6-analytics.md §6-7`](./6-analytics.md)).
+
+켠 뒤에는 다음을 확인합니다.
+
+- **AI 컨테이너 기동 로그에 `Langfuse 활성 — host=… env=…`이 있는지** — 가드를 통과해 실제로 켜졌다는 유일한 신호입니다. 조건 미충족이면 같은 자리에 비활성 사유가 오류 로그로 남습니다. 실패 격리 때문에 관측이 비어도 요청은 성공하므로, 로그를 보지 않으면 꺼진 것을 알 수 없습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+- **Langfuse 웹에 트레이스가 유입되는지**(실호출 1건 — 과금 발생, 실행 전 승인).
+- **server 컨테이너에는 `AI_LANGFUSE_*`가 없는지** — 배선이 공용 `.env`가 아니라 export로만 넘기는지 확인하는 점검입니다.
 
 ### 롤백
 
 | 상황                     | 기준 롤백                                                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | server 이미지 문제       | ECR에 직전 정상 `<short-sha>` 태그가 남아 있으면 해당 이미지를 `/opt/manyak/.env`의 `SERVER_IMAGE`에 반영하고 `docker compose pull server && docker compose up -d server` 실행 |
-| AI 이미지 문제           | ECR에 직전 정상 `<short-sha>` 태그가 남아 있으면 해당 이미지를 `/opt/manyak/.env`의 `AI_IMAGE`에 반영하고 `docker compose pull ai && docker compose up -d --wait ai` 실행      |
+| AI 이미지 문제           | ECR에 직전 정상 `<short-sha>` 태그가 남아 있으면 해당 이미지를 `/opt/manyak/.env`의 `AI_IMAGE`에 반영하고 `docker compose pull ai && docker compose up -d --wait ai` 실행. **Langfuse 활성화 이후에는** 이 수동 실행이 `AI_LANGFUSE_*`를 비워 관측을 조용히 끄므로(값은 `deploy.sh`의 export로만 들어옴 — §7-6), `AI_IMAGE_OVERRIDE`를 넘긴 SSM 배포나 `bash /opt/manyak/deploy.sh`로 되돌립니다 |
 | main release 문제        | revert PR 또는 이전 정상 커밋을 release합니다. 단, 이미 실행된 Flyway 마이그레이션은 전진 전용으로 취급합니다.                                                                 |
 | DB 마이그레이션 문제     | 보상 마이그레이션 또는 RDS snapshot 복구가 필요합니다. 파괴적 스키마 변경은 배포 직전 snapshot을 남깁니다.                                                                     |
 | Terraform user-data 문제 | Terraform revert apply가 EC2 교체를 유발할 수 있습니다. 다운타임 창을 잡고 plan을 먼저 확인합니다.                                                                             |
