@@ -201,6 +201,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_onboarding_createButton_clicked`                 |
 | P1                  | client | `client_storyList_storyCard_clicked`                     |
 | P1                  | client | `client_storyList_storyCard_impressed`                   |
+| P1 `Phase 1 · 구현` | client | `client_storyList_loginButton_clicked`                   |
 | P1                  | client | `client_storyCreate_tagCategory_selected`                |
 | P1                  | client | `client_storyCreate_regenerateButton_clicked`            |
 | P1                  | client | `client_storyCreate_storylineRating_clicked`             |
@@ -285,6 +286,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyList_createButton_clicked` | P0       | 제작하기 CTA 클릭     | `source` (string, 필수: `fab` / `emptyState`)        |
 | `client_storyList_storyCard_clicked`    | P1       | 스토리 카드 클릭      | `story_id` (string, 필수), `position` (number, 선택) |
 | `client_storyList_storyCard_impressed`  | P1       | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
+| `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈 헤더 로그인 버튼 클릭(게스트) | 없음 |
+
+`client_storyList_loginButton_clicked`는 게스트가 홈 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 더보기발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
 제작하기 CTA는 플로팅 버튼과 빈 목록 상태 버튼 두 곳에 있습니다. 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: 플로팅 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다.
 

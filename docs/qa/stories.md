@@ -26,6 +26,8 @@
 | STORY-LIST-09 | P0  | 회원 로그인 상태                           | `/` 진입                             | 로컬 ID와 무관하게 `GET /users/me/stories` 서버 목록으로 카드 표시(서버 순서 유지, 이관 미발동)                                                             | ✅ e2e `stories/story-list`                     | 구현(`use-created-stories`) — 확인 필요 2 |
 | STORY-LIST-10 | P2  | 세션 판별 중(`loading`)                    | `/` 진입 직후 관찰                   | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                                                           | 수동                                            | 구현(`use-created-stories`)               |
 | STORY-LIST-11 | P1  | 목록에 스토리 있음(FAB 표시)               | FAB 확인 → 스크롤 → FAB 탭           | 스크롤 전 아이콘 + "만들기" 라벨, 스크롤 후 같은 위치에서 아이콘만 남게 접힘. 탭하면 `/stories/new` 이동(한도 게스트 분기는 STORY-LIMIT-01)                 | ◐ e2e `visual/stories-visual`(스크롤 전 상태만) | US-2-3, §3-4 검수                         |
+| STORY-LIST-12 | P1  | 게스트                                     | `/` 헤더 오른쪽 확인 → 로그인 탭     | 로고·"홈" 제목 오른쪽 끝에 secondary "로그인" 버튼 표시. 탭하면 `/login`으로 이동(더보기 MORE-MENU-03과 같은 진입점)                                        | ✅ e2e `stories/story-list`                     | 구현(`main-header`)                       |
+| STORY-LIST-13 | P1  | 회원 로그인 상태 또는 세션 판별 중         | `/` 헤더 오른쪽 확인                 | 로그인 버튼 없음. 세션 판별 중에도 표시하지 않아 회원에게 버튼이 깜빡이지 않음. 채팅·더보기 탭 헤더에도 표시하지 않음                                        | ◐ e2e `stories/story-list`(회원 상태만)         | 구현(`main-header`)                       |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
@@ -48,6 +50,7 @@
 | STORY-DETAIL-13 | P1  | 상세 조회가 4xx·5xx로 실패  | 진입                                               | 인라인 "스토리를 불러오지 못했어요" + "잠시 후 다시 시도해주세요" + "다시 시도하기". 재시도 성공 시 본문 표시. 헤더는 유지                                          | ✅ e2e `stories/story-detail`                            | US-4-4, §3-4                        |
 | STORY-DETAIL-14 | P2  | 본문이 스크롤될 만큼 김     | 제목이 화면 밖으로 나가게 스크롤                   | 헤더에 제목이 페이드 인. 제목이 다시 보이면 헤더 제목 숨김                                                                                                    | 수동                                                     | §3-4 화면 구성                      |
 | STORY-DETAIL-15 | P1  | 임의 스토리                 | 헤더 뒤로가기 탭                                   | 히스토리 뒤로 이동                                                                                                                                            | 수동                                                     | US-4-3, §3-4                        |
+| STORY-DETAIL-16 | P2  | 삭제 요청 진행 중           | 삭제 확정 직후 다이얼로그 관찰                     | 확정 버튼은 문구 공간을 유지한 중앙 스피너("삭제 중")로 전환되고, 취소·확정 버튼과 바깥 탭 닫기가 모두 잠김                                                   | 수동                                                     | §3-4, 구현(`options-menu`)          |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 
