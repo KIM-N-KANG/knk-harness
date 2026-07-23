@@ -278,7 +278,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
 | `client_onboarding_viewed`               | P1       | 환영 다이얼로그 노출    | 없음          |
 | `client_onboarding_createButton_clicked` | P1       | 스토리 만들기 버튼 클릭 | 없음          |
-| `client_onboarding_skipButton_clicked`   | P1       | 먼저 둘러보기 버튼 클릭 | 없음          |
+| `client_onboarding_skipButton_clicked`   | P1       | 나중에 하기 버튼 클릭   | 없음          |
 
 #### 6-4-2-2. 스토리 목록
 
