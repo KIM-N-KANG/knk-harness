@@ -205,6 +205,10 @@ graph LR
 | 인증 | `POST /auth/token/refresh` | 토큰 재발급(회전) | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/migrate` | 게스트 데이터 소유권 이관(항목별 부분 성공) | 200 | 400·401 | 필수 | Phase 1 · 구현 |
+| 인증 | `POST /auth/handoffs` | 로그인 핸드오프 생성(인앱 게스트 데이터 임시 보관) | 201 | 400 | 불필요 | Phase 1 · 계획 |
+| 인증 | `GET /auth/handoffs/{code}` | 핸드오프 확인(외부 랜딩 안내용 건수) | 200 | 404 | 불필요 | Phase 1 · 계획 |
+| 인증 | `POST /auth/handoffs/{code}/consume` | 핸드오프 소비(보관 ID를 이관 제출) | 200 | 401·404·409 | 필수 | Phase 1 · 계획 |
+| 인증 | `GET /auth/handoffs/{code}/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 계획 |
 | 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/credits` | 크레딧 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
@@ -423,7 +427,7 @@ graph LR
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `POST /auth/login/google` | `{idToken}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)) | `TokenResponse` |
+| `POST /auth/login/google` | `{idToken, handoffCode?}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 `Phase 1 · 계획`(KNK-681) — 유효하면 핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 회원 체험 시드에 사용([로그인 핸드오프](#로그인-핸드오프--phase-1--계획knk-681)) | `TokenResponse` |
 | `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday}` — `Phase 1 · 구현`(`creditBalance`·`attendedToday` KNK-498, `profileThumbnailBase64` KNK-388) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
@@ -489,6 +493,43 @@ graph LR
 | 닫힌 계정 재호출에 409 오류 | 재호출은 매 로그인마다 발생하는 정상 자동 흐름이라, 오류로 주면 프론트엔드 에러 분기와 모니터링 노이즈만 늘립니다. 200 + `migrationClosed`로 조용히 무시하게 합니다 |
 
 - **영향.** `users.migrated_at` 컬럼(V36)과 응답 `migrationClosed` 필드로 구현됐습니다(KNK-434). 프론트엔드 자동 호출 흐름은 변경 없이 유지됩니다. 교차 접근 차단·체험 한도 축소(B8)와 함께 파밍 경로를 닫습니다.
+
+#### 로그인 핸드오프 — `Phase 1 · 계획`(KNK-681)
+
+인앱 브라우저에서 게스트 이용을 허용하면([`3-frontend.md §3-10`](./3-frontend.md) 인앱 게스트 허용·로그인 핸드오프) 로그인은 외부 브라우저에서 일어나는데, 게스트 데이터 ID 배열과 디바이스 ID는 인앱 저장소에 고립됩니다. 핸드오프는 외부 전환 전에 두 가지를 서버에 임시 보관했다가 로그인 계정에 잇는 장치입니다. 프론트엔드 흐름·화면은 3-frontend가 정본이고, 이 절은 API 계약과 저장·보안 규칙을 고정합니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `POST /auth/handoffs` | `{storyIds: string[], chatIds: string[], deviceId: string, callbackPath: string, sourceApp: string}` — 배열은 각 최대 100개(이관과 동일), `callbackPath`는 앱 내 상대 경로만 허용, `sourceApp`은 `kakaotalk` · `instagram` · `threads` | 201 `{handoffCode, handoffId, expiresAt}` |
+| `GET /auth/handoffs/{code}` | — (외부 랜딩 안내용) | 200 `{storyCount, chatCount, expiresAt}` — 제목·본문 등 콘텐츠는 노출하지 않음 |
+| `POST /auth/handoffs/{code}/consume` | 인증 필수, 본문 없음 | 200 — `POST /auth/migrate` 응답과 동일 스키마 |
+| `GET /auth/handoffs/{code}/status` | — (인앱 복귀 정리용) | 200 `{status, migratedStoryIds: string[], migratedChatIds: string[]}` |
+
+동작 규칙:
+
+- **디바이스 ID 원문 보관.** `deviceId`는 Amplitude 디바이스 ID 원문입니다. 회원 체험 시드([§4-3-7](#4-3-api-계약))가 서버 내부에서 pepper 해시로 카운터 키를 만들므로 클라이언트가 해시한 값은 쓸 수 없습니다. 원문은 핸드오프 수명(TTL) 동안만 서버에 남습니다.
+- **시드 연결 — 로그인 호출에 실려야 합니다.** `POST /auth/login/google` 요청의 `handoffCode?`가 유효하면 핸드오프에 보관된 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 회원 체험 시드에 사용합니다. 무효·만료면 헤더 폴백입니다(§4-3-7 시드 규칙 그대로). 시드를 로그인 후 별도 호출로 미루면 헤더 없는 첫 로그인이 소진 시드를 확정하므로(1회성·비가역 — `member_trial_seeded_at`) 코드는 반드시 로그인 호출에 함께 도착해야 합니다.
+- **소비.** 인증 계정으로 핸드오프의 ID 배열을 기존 이관 로직([게스트 데이터 마이그레이션](#게스트-데이터-마이그레이션--phase-1--구현))에 그대로 제출합니다. 이관 1회 잠금·시도 5회 상한(`migration_attempts` 카운트 포함)·항목별 부분 성공이 동일하게 적용됩니다. 소비는 원자적 일회용입니다 — 이미 소비된 코드는 409, 이관 처리 예외로 실패하면 소비되지 않은 상태로 남아 만료 전까지 재시도할 수 있습니다.
+- **상태 조회.** 인앱 브라우저는 `status`로 로컬 ID 정리·안내를 분기하고, 이관에 성공한 ID만 제거합니다(403 조회 판별 대안을 기각한 결정 기록은 3-frontend 소유). 소비 결과 상태(`MIGRATED` · `MIGRATION_CLOSED`)는 인앱 복귀가 늦을 수 있어 소비 시점부터 TTL 24시간으로 연장 보관합니다.
+
+| `status` | 의미 |
+| --- | --- |
+| `PENDING` | 생성됨 — 외부 브라우저가 아직 받지 않음 |
+| `LANDED` | 외부 랜딩이 코드를 수령함 |
+| `MIGRATED` | 소비 완료 — 이관 결과 ID 목록 포함(성공 0건 포함) |
+| `MIGRATION_CLOSED` | 소비했으나 계정 잠금·시도 상한으로 이관되지 않음 |
+
+- **저장·보안.** Redis `login_handoff:{codeHash}`에 TTL 30분으로 저장하며, 키는 코드 원문이 아니라 SHA-256 해시입니다. 코드는 128비트 이상 무작위 값이고 생성 응답에 1회만 노출합니다. 존재하지 않는 코드와 만료된 코드는 동일하게 404로 응답해 열거 오라클을 만들지 않습니다(만료 상태는 별도 enum 없이 404). 분석에는 코드와 별개의 `handoffId`만 사용하고([`6-analytics.md §6-4-2-12`](./6-analytics.md)), 코드 원문은 로그·분석 이벤트·Sentry에 남기지 않습니다.
+
+**결정 기록 — 핸드오프 저장소는 Redis(2026-07-24)**
+
+- **배경.** 핸드오프는 로그인 도중에만 필요한 단명 데이터입니다. 저장소 선택의 갈림길입니다.
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| RDB 테이블 | 만료 행 청소 배치가 별도로 필요합니다. 해시 키 조회·TTL 만료·원자적 일회 소비는 게스트 체험 한도가 이미 쓰는 Redis 패턴([§4-3-7](#4-3-api-계약))이 그대로 맞습니다 |
+
+- **영향.** 게스트 한도와 같은 Redis 인프라를 재사용합니다. TTL 만료가 곧 소멸이므로 별도 만료 처리가 없고, 소비 결과만 24시간 연장 보관합니다.
 
 #### 내 콘텐츠 목록 — `Phase 1 · 구현`
 
@@ -583,7 +624,7 @@ graph TD
 - 소모는 사용자 관점 "만들기·이어가기 1회" 단위입니다. **컴파일당 20 크레딧, 완성된 턴당 10 크레딧**이며, 컴파일 내부 부분 재호출(refill, [`5-ai-server.md`](./5-ai-server.md))은 추가 소모하지 않습니다(1회 컴파일에 포함).
 - 스토리라인 생성·재생성(`POST /stories/simple/storylines`)은 회원 크레딧을 소모하지 않고 원장에도 쓰지 않습니다. 단, 게스트는 리롤을 포함해 디바이스 ID별 최대 5회까지만 생성할 수 있습니다.
 - 환불은 요청당 정확히 1회를 보장합니다(charge-once/refund-once) — 스트림 타임아웃·연결 끊김이 겹쳐 환불 경로가 중복 실행돼도 요청 단위 가드와 턴별 멱등 키의 이중 방어로 이중 환불을 차단합니다(KNK-399).
-- **회원도 게스트 체험 횟수를 공유합니다 — `Phase 1 · 구현`(KNK-504)** — 회원 요청의 소모 판정은 2단입니다: 계정 귀속 체험 잔여가 있으면 크레딧 대신 먼저 무료 소진(`reserveMember`), 없으면 크레딧 선차감. 무료 처리된 요청의 실패·미완료는 크레딧이 아니라 회원 체험 카운터를 복원합니다(`restoreMember`). 가입 시(로그인) 게스트 디바이스 사용량을 회원 카운터로 **1회 시드**하고, 성공하면 `users.member_trial_seeded_at`에 기록해 이후 로그인이 다시 시드하지 않게 합니다. device 헤더가 없으면 소진 시드(무료 체험 없음)로 처리하고, 시드가 Redis 장애로 실패하면 `member_trial_seeded_at`이 NULL로 남아 다음 로그인이 재시도합니다(로그인 자체는 진행). 롤아웃 이전 가입 회원은 `member_trial_seeded_at`을 백필해 시드 대상에서 제외합니다(V40).
+- **회원도 게스트 체험 횟수를 공유합니다 — `Phase 1 · 구현`(KNK-504)** — 회원 요청의 소모 판정은 2단입니다: 계정 귀속 체험 잔여가 있으면 크레딧 대신 먼저 무료 소진(`reserveMember`), 없으면 크레딧 선차감. 무료 처리된 요청의 실패·미완료는 크레딧이 아니라 회원 체험 카운터를 복원합니다(`restoreMember`). 가입 시(로그인) 게스트 디바이스 사용량을 회원 카운터로 **1회 시드**하고, 성공하면 `users.member_trial_seeded_at`에 기록해 이후 로그인이 다시 시드하지 않게 합니다. 시드가 정책이고(게스트로 다 쓰고 가입해 체험을 리셋하는 파밍 차단), device 헤더 없는 소진 시드(무료 체험 없음)는 헤더가 정상 전달된다는 전제의 **우회 차단 폴백**입니다 — 정상 경로가 아니므로 BFF는 로그인 호출에 디바이스 ID를 반드시 실어야 합니다(`Phase 1 · 구현` KNK-683 — BFF가 요청 쿠키의 Amplitude 디바이스 ID를 헤더 원문으로 전달. 한 번 소진 시드된 계정은 1회성 마커 때문에 교정할 수 없음). 인앱 브라우저 경유 로그인은 핸드오프의 원본 디바이스 ID가 헤더보다 우선합니다(`Phase 1 · 계획` — [§4-3-5 로그인 핸드오프](#4-3-api-계약)). 시드가 Redis 장애로 실패하면 `member_trial_seeded_at`이 NULL로 남아 다음 로그인이 재시도합니다(로그인 자체는 진행). 롤아웃 이전 가입 회원은 `member_trial_seeded_at`을 백필해 시드 대상에서 제외합니다(V40).
 
 **결정 기록 — 게스트 체험 한도 회원 공유(2026-07-07)**
 
@@ -601,7 +642,7 @@ graph TD
 - 판정: 게스트 요청은 Redis 카운터로 한도를 확인하고, 한도 소진 시 `402`(`code=GUEST_TRIAL_LIMIT_EXCEEDED`, "게스트 체험 한도를 모두 사용했습니다." — KNK-524)를 반환합니다. 게스트의 체험 한도 대상 요청은 device 헤더가 필수이며, 헤더가 없으면 400("게스트의 체험 한도 대상 요청은 X-Manyak-Device-Id 헤더가 필요합니다.")을 반환합니다(`GuestTrialLimitService.requireDeviceId` — `Phase 1 · 구현`, [§4-8](#4-8-검수-체크리스트) B8).
 - 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
 - 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다(Phase 1). 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([§4-8](#4-8-검수-체크리스트) B8).
-- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. Phase 1은 이 수준을 수용하고 남용 징후는 관측으로 추적합니다(B8).
+- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. Phase 1은 이 수준을 수용하고 남용 징후는 관측으로 추적합니다(B8). 인앱 게스트 허용 개편(KNK-681) 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다 — 수용 여부는 미결이며 [`3-frontend.md §3-10`](./3-frontend.md)이 결정 항목을 소유합니다.
 
 **결정 기록 — 체험 한도 축소(2026-07-07, B8)**
 
@@ -931,6 +972,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
 | 크레딧 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 크레딧 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
+| 인증 | Redis `login_handoff:{codeHash}` | `Phase 1 · 계획`(KNK-681) 로그인 핸드오프 임시 보관(TTL 30분, 소비 결과는 24시간). 게스트 ID 배열·원본 디바이스 ID·복귀 경로·상태([§4-3-5](#4-3-api-계약)) |
 | 스토리 | `story_main_events` | `Phase 1 · 구현` 주요 사건(스토리당 최대 10, V29). `name` · `description` · `key_sentence` · `sort_order` — 런타임 의미와 판정 계약은 [§4-3-10](#4-3-api-계약)(`Phase 1 · 구현`, V41) |
 | 채팅 | `story_chat_main_events` | `Phase 1 · 구현`(V41) 채팅 ↔ 완결(거쳐온) 주요 사건 기록. `chat_id` · `main_event_id` · `created_at`, `(chat_id, main_event_id)` 유니크. 거쳐온 사건 순서는 조회 시 `story_main_events.sort_order`로 정렬 |
 | 스토리 | `user_story_ending_reaches` | `Phase 1 · 구현`(V41) 사용자+스토리 엔딩 도달 집계. `user_id` · `story_id` · `ending_id` · `created_at`, 3필드 유니크 — 회원 도달 기록·이관 백필([§4-3-10](#4-3-api-계약)) |

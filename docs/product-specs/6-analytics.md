@@ -484,7 +484,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_terms_viewed`   | P2       | 이용약관 화면 진입          | 없음          |
 | `client_privacy_viewed` | P2       | 개인정보 처리방침 화면 진입 | 없음          |
 
-#### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567)
+#### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567·KNK-681)
 
 인앱 브라우저 감지·탈출([`3-frontend.md §3-10`](./3-frontend.md))의 관측 이벤트입니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
 
@@ -496,6 +496,19 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - 탈출 성공은 직접 계측할 수 없습니다(스킴 호출에 콜백이 없고 성공 시 페이지가 닫힘). `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다.
 - 인앱별 유입량(`detected`의 `app` 분포)은 안내 배너만 두는 인스타그램·쓰레드에 자동 탈출 투자를 추가할지 판단하는 근거입니다.
+
+**로그인 핸드오프 퍼널 — `Phase 1 · 계획`(KNK-681)**
+
+인앱 게스트 허용·로그인 핸드오프 개편([`3-frontend.md §3-10`](./3-frontend.md))의 관측 이벤트입니다. 인앱 브라우저와 외부 브라우저는 Amplitude `device_id`가 서로 달라, 서버가 핸드오프 생성 시 발급하는 분석용 `handoff_id`가 두 구간을 잇는 유일한 키입니다. `handoff_id`는 비밀 핸드오프 코드와 별개의 값이며, 비밀 코드는 분석 이벤트·Sentry에 넣지 않습니다.
+
+| 이벤트                                     | 우선순위 | 발생 시점                               | 고유 프로퍼티                                    |
+| ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
+| `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
+| `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | `handoff_id` (string, 필수)                      |
+| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 Google 로그인 시작              | `handoff_id` (string, 필수)                      |
+
+- 목표 퍼널은 `인앱 유입(detected) → 스토리 생성 → 첫 채팅 → 핸드오프 생성 → 외부 랜딩 → 로그인 성공 → 이관 성공`입니다. 로그인·이관 구간은 서버 이벤트(§6-4-3)에 `handoff_id`를 실어 연결하며, 서버 측 프로퍼티 추가는 [`4-backend.md`](./4-backend.md) 소유로 협의합니다.
+- 게스트 체험 이중 사용(미결, [`3-frontend.md §3-10`](./3-frontend.md)) 규모 판단을 위해, 개편 배포 시 공통 프로퍼티(§6-3-2)에 인앱 여부(`in_app_browser`: 동일 enum 또는 null)를 추가하는 것을 검토합니다 — 게스트 한도 도달 이벤트의 인앱 분포가 판단 근거입니다.
 
 #### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
 
