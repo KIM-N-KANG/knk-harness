@@ -206,9 +206,8 @@ graph LR
 | 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/migrate` | 게스트 데이터 소유권 이관(항목별 부분 성공) | 200 | 400·401 | 필수 | Phase 1 · 구현 |
 | 인증 | `POST /auth/handoffs` | 로그인 핸드오프 생성(인앱 게스트 데이터 임시 보관) | 201 | 400 | 불필요 | Phase 1 · 계획 |
-| 인증 | `GET /auth/handoffs/{code}` | 핸드오프 확인(외부 랜딩 안내용 건수) | 200 | 404 | 불필요 | Phase 1 · 계획 |
-| 인증 | `POST /auth/handoffs/{code}/consume` | 핸드오프 소비(보관 ID를 이관 제출) | 200 | 401·404·409 | 필수 | Phase 1 · 계획 |
-| 인증 | `GET /auth/handoffs/{code}/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 계획 |
+| 인증 | `GET /auth/handoffs` | 핸드오프 확인(외부 랜딩 안내용 건수) | 200 | 404 | 불필요 | Phase 1 · 계획 |
+| 인증 | `GET /auth/handoffs/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 계획 |
 | 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/credits` | 크레딧 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
@@ -427,7 +426,7 @@ graph LR
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `POST /auth/login/google` | `{idToken, handoffCode?}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 `Phase 1 · 계획`(KNK-681) — 유효하면 핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 회원 체험 시드에 사용([로그인 핸드오프](#로그인-핸드오프--phase-1--계획knk-681)) | `TokenResponse` |
+| `POST /auth/login/google` | `{idToken, handoffCode?}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 `Phase 1 · 계획`(KNK-681) — 유효하면 이 호출이 회원 체험 시드(핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선)와 게스트 데이터 이관을 함께 수행([로그인 핸드오프](#로그인-핸드오프--phase-1--계획knk-681)) | `TokenResponse` |
 | `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday}` — `Phase 1 · 구현`(`creditBalance`·`attendedToday` KNK-498, `profileThumbnailBase64` KNK-388) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
@@ -498,27 +497,29 @@ graph LR
 
 인앱 브라우저에서 게스트 이용을 허용하면([`3-frontend.md §3-10`](./3-frontend.md) 인앱 게스트 허용·로그인 핸드오프) 로그인은 외부 브라우저에서 일어나는데, 게스트 데이터 ID 배열과 디바이스 ID는 인앱 저장소에 고립됩니다. 핸드오프는 외부 전환 전에 두 가지를 서버에 임시 보관했다가 로그인 계정에 잇는 장치입니다. 프론트엔드 흐름·화면은 3-frontend가 정본이고, 이 절은 API 계약과 저장·보안 규칙을 고정합니다.
 
+코드는 URL path·쿼리에 싣지 않습니다. 서버가 매 요청 URI를 구조화 로그·Sentry breadcrumb에 남기므로([§4-7](#4-7-운영과-관측)), path에 두면 "코드 원문을 로그에 남기지 않는다" 규칙을 첫 호출부터 어깁니다. 확인·상태 조회는 코드를 `X-Manyak-Handoff-Code` 헤더로 받습니다 — 외부 랜딩이 코드를 HttpOnly 쿠키로 옮겨 담고(3-frontend 흐름 5), 이후 BFF 프록시가 그 쿠키를 헤더로 주입합니다(세션 토큰 주입과 같은 패턴).
+
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `POST /auth/handoffs` | `{storyIds: string[], chatIds: string[], deviceId: string, callbackPath: string, sourceApp: string}` — 배열은 각 최대 100개(이관과 동일), `callbackPath`는 앱 내 상대 경로만 허용, `sourceApp`은 `kakaotalk` · `instagram` · `threads` | 201 `{handoffCode, handoffId, expiresAt}` |
-| `GET /auth/handoffs/{code}` | — (외부 랜딩 안내용) | 200 `{storyCount, chatCount, expiresAt}` — 제목·본문 등 콘텐츠는 노출하지 않음 |
-| `POST /auth/handoffs/{code}/consume` | 인증 필수, 본문 없음 | 200 — `POST /auth/migrate` 응답과 동일 스키마 |
-| `GET /auth/handoffs/{code}/status` | — (인앱 복귀 정리용) | 200 `{status, migratedStoryIds: string[], migratedChatIds: string[]}` |
+| `POST /auth/handoffs` | `{storyIds: string[], chatIds: string[], callbackPath: string, sourceApp: string}` + `X-Manyak-Device-Id` 헤더 — 배열은 각 최대 100개(이관과 동일), `callbackPath`는 앱 내 상대 경로만 허용, `sourceApp`은 `kakaotalk` · `instagram` · `threads` | 201 `{handoffCode, handoffId, expiresAt}` |
+| `GET /auth/handoffs` | `X-Manyak-Handoff-Code` 헤더 (외부 랜딩 안내용) | 200 `{storyCount, chatCount, expiresAt}` — 제목·본문 등 콘텐츠는 노출하지 않음 |
+| `GET /auth/handoffs/status` | `X-Manyak-Handoff-Code` 헤더 (인앱 복귀 정리용) | 200 `{status, migratedStoryIds: string[], migratedChatIds: string[]}` |
 
 동작 규칙:
 
-- **디바이스 ID 원문 보관.** `deviceId`는 Amplitude 디바이스 ID 원문입니다. 회원 체험 시드([§4-3-7](#4-3-api-계약))가 서버 내부에서 pepper 해시로 카운터 키를 만들므로 클라이언트가 해시한 값은 쓸 수 없습니다. 원문은 핸드오프 수명(TTL) 동안만 서버에 남습니다.
-- **시드 연결 — 로그인 호출에 실려야 합니다.** `POST /auth/login/google` 요청의 `handoffCode?`가 유효하면 핸드오프에 보관된 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 회원 체험 시드에 사용합니다. 무효·만료면 헤더 폴백입니다(§4-3-7 시드 규칙 그대로). 시드를 로그인 후 별도 호출로 미루면 헤더 없는 첫 로그인이 소진 시드를 확정하므로(1회성·비가역 — `member_trial_seeded_at`) 코드는 반드시 로그인 호출에 함께 도착해야 합니다.
-- **소비.** 인증 계정으로 핸드오프의 ID 배열을 기존 이관 로직([게스트 데이터 마이그레이션](#게스트-데이터-마이그레이션--phase-1--구현))에 그대로 제출합니다. 이관 1회 잠금·시도 5회 상한(`migration_attempts` 카운트 포함)·항목별 부분 성공이 동일하게 적용됩니다. 소비는 원자적 일회용입니다 — 이미 소비된 코드는 409, 이관 처리 예외로 실패하면 소비되지 않은 상태로 남아 만료 전까지 재시도할 수 있습니다.
-- **상태 조회.** 인앱 브라우저는 `status`로 로컬 ID 정리·안내를 분기하고, 이관에 성공한 ID만 제거합니다(403 조회 판별 대안을 기각한 결정 기록은 3-frontend 소유). 소비 결과 상태(`MIGRATED` · `MIGRATION_CLOSED`)는 인앱 복귀가 늦을 수 있어 소비 시점부터 TTL 24시간으로 연장 보관합니다.
+- **디바이스 ID 원문 보관.** 생성 요청은 디바이스 ID를 `X-Manyak-Device-Id` 헤더로 받습니다(`custom-fetch`가 모든 호출에 자동으로 붙여 프론트 변경이 없고, 게스트 엔드포인트 계약과도 통일 — [§4-3-7](#4-3-api-계약)). 회원 체험 시드가 서버 내부에서 pepper 해시로 카운터 키를 만들므로 원문이 필요하며(클라이언트 해시는 못 씀), 원문은 핸드오프 수명(TTL) 동안만 서버에 남습니다.
+- **소비는 로그인 호출이 겸합니다.** 별도 `consume` 엔드포인트를 두지 않고, `POST /auth/login/google`의 `handoffCode?`가 유효하면 그 호출이 **시드와 이관을 함께 수행**합니다. 로그인 성공 후 이관을 별도 호출로 미루면 "로그인 → 이관 → 복귀" 순서 경쟁과 헤더 없는 첫 로그인의 소진 시드 확정(1회성·비가역 — `member_trial_seeded_at`)이 생기므로, 한 호출로 원자화합니다. 시드는 핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 사용하고(무효·만료면 헤더 폴백 — §4-3-7 규칙 그대로), 이관은 핸드오프의 ID 배열을 기존 이관 로직([게스트 데이터 마이그레이션](#게스트-데이터-마이그레이션--phase-1--구현))에 그대로 제출합니다. 이관 1회 잠금·시도 5회 상한(`migration_attempts` 카운트 포함)·항목별 부분 성공이 동일하게 적용됩니다.
+- **멱등 소비.** 이미 소비된 코드로 다시 로그인하면 오류가 아니라 저장된 이관 결과를 그대로 반환합니다(기존 `/auth/migrate` 멱등과 같은 결). 응답 유실 후 재시도가 단순해집니다. 소비 전 이관 처리가 예외로 실패하면 코드는 미소비로 남아 만료 전까지 재시도할 수 있습니다.
+- **상태 전이.** 각 상태는 아래 호출이 진입시킵니다. 인앱 브라우저는 `status`로 로컬 ID 정리·안내를 분기하고, 이관에 성공한 ID만 제거합니다(403 조회 판별 대안을 기각한 결정 기록은 3-frontend 소유).
 
-| `status` | 의미 |
-| --- | --- |
-| `PENDING` | 생성됨 — 외부 브라우저가 아직 받지 않음 |
-| `LANDED` | 외부 랜딩이 코드를 수령함 |
-| `MIGRATED` | 소비 완료 — 이관 결과 ID 목록 포함(성공 0건 포함) |
-| `MIGRATION_CLOSED` | 소비했으나 계정 잠금·시도 상한으로 이관되지 않음 |
+| `status` | 진입 트리거 | 의미 |
+| --- | --- | --- |
+| `PENDING` | `POST /auth/handoffs` | 생성됨 — 외부 브라우저가 아직 받지 않음 |
+| `LANDED` | `GET /auth/handoffs` | 외부 랜딩이 코드를 수령함(확인 호출) |
+| `MIGRATED` | `POST /auth/login/google`(유효 `handoffCode`) | 소비 완료 — 이관 결과 ID 목록 포함(성공 0건 포함) |
+| `MIGRATION_CLOSED` | `POST /auth/login/google`(유효 `handoffCode`) | 소비했으나 계정 잠금·시도 상한으로 이관되지 않음 |
 
+- **소비 결과 보관.** `MIGRATED` · `MIGRATION_CLOSED`는 인앱 복귀가 늦을 수 있어 소비 시점부터 TTL 24시간으로 연장 보관합니다.
 - **저장·보안.** Redis `login_handoff:{codeHash}`에 TTL 30분으로 저장하며, 키는 코드 원문이 아니라 SHA-256 해시입니다. 코드는 128비트 이상 무작위 값이고 생성 응답에 1회만 노출합니다. 존재하지 않는 코드와 만료된 코드는 동일하게 404로 응답해 열거 오라클을 만들지 않습니다(만료 상태는 별도 enum 없이 404). 분석에는 코드와 별개의 `handoffId`만 사용하고([`6-analytics.md §6-4-2-12`](./6-analytics.md)), 코드 원문은 로그·분석 이벤트·Sentry에 남기지 않습니다.
 
 **결정 기록 — 핸드오프 저장소는 Redis(2026-07-24)**
