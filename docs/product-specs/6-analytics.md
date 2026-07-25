@@ -290,7 +290,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyList_storyCard_impressed`  | P1       | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈 헤더 로그인 버튼 클릭(게스트) | 없음 |
 
-`client_storyList_loginButton_clicked`는 게스트가 홈 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 더보기발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
+`client_storyList_loginButton_clicked`는 게스트가 홈 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 마이발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
 제작하기 CTA는 플로팅 버튼과 빈 목록 상태 버튼 두 곳에 있습니다. 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: 플로팅 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다.
 
@@ -437,7 +437,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | 이벤트                                           | 우선순위 | 발생 시점                                                                        | 고유 프로퍼티                                                                                                  |
 | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `client_account_attendanceButton_clicked`        | P1       | 마이 페이지 출석체크 클릭                                                        | 없음                                                                                                           |
-| `client_invite_viewed`                           | P1       | 친구 초대 페이지(`/more/invite`) 진입                                            | 없음                                                                                                           |
+| `client_invite_viewed`                           | P1       | 친구 초대 페이지(`/my/invite`) 진입                                              | 없음                                                                                                           |
 | `client_invite_copyButton_clicked`               | P1       | 친구 초대 페이지 초대 코드 복사 클릭(KNK-567 — 복사 대상이 링크에서 코드로 변경) | 없음                                                                                                           |
 | `client_invite_kakaoShareButton_clicked`         | P1       | 친구 초대 페이지 카카오톡 공유 클릭                                              | 없음                                                                                                           |
 | `client_invite_codeInput_submitted`              | P1       | 초대 코드 제출(`POST /users/me/invite/redeem` 호출, KNK-567)                     | `source` (string, 필수: `invite_page` / `onboarding`)                                                          |
@@ -456,7 +456,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
 - 두 다이얼로그는 화면 횡단 전역 오버레이라 네이밍 원칙(§6-3-1)의 screenName 자리에 다이얼로그명을 씁니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하며, 이전 개정판의 화면 분리형 이벤트(`client_storyCreate_creditShortage_shown` 등 4종)와 `limit_type`·`chat_id` 프로퍼티를 대체합니다. CTA·닫기 클릭(P1)까지 수집해 전환 다이얼로그의 효과를 관찰합니다.
 - 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
-- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/more/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
+- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
