@@ -15,9 +15,9 @@
 
 | 항목      | 값                                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.23                                                                                                                 |
+| 버전      | v0.24                                                                                                                 |
 | 작성일    | 2026-06-30                                                                                                            |
-| 수정일    | 2026-07-23                                                                                                            |
+| 수정일    | 2026-07-28                                                                                                            |
 | 대상      | 마냑 MVP                                                                                                              |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -236,6 +236,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed`                      |
 | P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked`         |
+| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_attendanceButton_clicked`   |
 | P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed`                  |
 | P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
 | P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
@@ -254,10 +255,15 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2                  | client | `client_storyCreate_recommendedInfo_clicked`             |
 | P2                  | client | `client_storyCreate_additionalInfoAddButton_clicked`     |
 | P2                  | client | `client_storyCreate_additionalInfoRemoveButton_clicked`  |
-| P2                  | client | `client_chat_settingsButton_clicked`                     |
+| P2 `폐기`           | client | `client_chat_settingsButton_clicked`                     |
+| P2                  | client | `client_chat_choicesToggle_clicked`                      |
 | P2                  | client | `client_chat_addBlockButton_clicked`                     |
 | P2                  | client | `client_chat_removeBlockButton_clicked`                  |
 | P2                  | client | `client_chat_situationInsertButton_clicked`              |
+| P2                  | client | `client_chat_tour_shown`                                 |
+| P2                  | client | `client_chat_tourStep_viewed`                            |
+| P2                  | client | `client_chat_tour_completed`                             |
+| P2                  | client | `client_chat_tourSkipButton_clicked`                     |
 | P2                  | client | `client_storyCreate_creditInfoButton_clicked`            |
 | P2                  | client | `client_storyDetail_thumbnail_clicked`                   |
 | P2                  | client | `client_terms_viewed`                                    |
@@ -369,8 +375,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                                  | 우선순위 | 발생 시점                                         | 고유 프로퍼티                                                                                                                                                                               |
 | ------------------------------------------------------- | -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `client_chat_viewed`                                    | P0       | 채팅 화면 진입                                    | `chat_id` (string, 필수)                                                                                                                                                                    |
-| `client_chat_settingsButton_clicked`                    | P2       | 채팅 설정 드로어 열기(헤더 설정 버튼 클릭)        | `chat_id` (string, 필수)                                                                                                                                                                    |
-| `client_chat_inputMode_selected`                        | P1       | 입력 모드 전환(설정 드로어에서 블럭/일반 선택)    | `chat_id` (string, 필수), `mode` (string, 필수: `block` / `plain`)                                                                                                                          |
+| `client_chat_settingsButton_clicked` `폐기`             | P2       | (폐기) 채팅 설정 드로어 열기                      | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_inputMode_selected`                        | P1       | 입력 모드 전환(입력 툴바 메뉴에서 블럭/일반 선택) | `chat_id` (string, 필수), `mode` (string, 필수: `block` / `plain`)                                                                                                                          |
+| `client_chat_choicesToggle_clicked`                     | P2       | 추천 입력 켬/끔 전환(입력 툴바 메뉴)              | `chat_id` (string, 필수), `enabled` (boolean, 필수: 전환 후 상태)                                                                                                                           |
 | `client_chat_messageInput_submitted`                    | P0       | 사용자 메시지 전송                                | `chat_id` (string, 필수), `turn_number` (number, 필수), `input_mode` (string, 필수: `block` / `plain` / `choice`)                                                                           |
 | `client_chat_addBlockButton_clicked`                    | P2       | 블럭 입력 모드에서 상황·대사 블럭 추가 클릭       | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`)                                                                                                             |
 | `client_chat_removeBlockButton_clicked`                 | P2       | 블럭 입력 모드에서 입력 블럭 삭제 클릭            | `chat_id` (string, 필수), `block_type` (string, 필수: `situation` / `dialogue`)                                                                                                             |
@@ -385,10 +392,18 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_streamError_shown`                         | P1       | AI 응답 스트리밍 실패 에러 표시                   | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
 | `client_chat_loadError_shown`                           | P1       | 채팅 화면 로드 실패 에러 표시                     | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_retryButton_clicked`                       | P1       | 로드 실패 후 다시 시도 버튼 클릭                  | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_tour_shown`                                | P2       | 첫 진입 안내 투어 노출                            | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_tourStep_viewed`                           | P2       | 안내 투어의 각 스텝 도달                          | `chat_id` (string, 필수), `step_number` (number, 필수: 0부터), `step_id` (string, 필수: `add-blocks`·`add-emphasis`·`settings`·`random-send`)                                                |
+| `client_chat_tour_completed`                            | P2       | 안내 투어 완주(마지막 스텝에서 완료)              | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_tourSkipButton_clicked`                    | P2       | 안내 투어 건너뛰기 버튼 클릭                      | `chat_id` (string, 필수), `step_number` (number, 필수: 건너뛴 시점의 스텝)                                                                                                                   |
 
-채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 설정 드로어에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다.
+채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 입력 툴바의 모드 메뉴에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다. 같은 툴바의 추천 입력 켬/끔은 `client_chat_choicesToggle_clicked`로 수집하며(같은 상태 재선택 제외, `enabled`는 전환 후 상태), 기본값이 켬이므로 끄는 비율로 추천 입력의 방해 여부를 관찰합니다.
+
+`client_chat_settingsButton_clicked`는 채팅 설정 드로어 전용 이벤트였으나, 드로어를 걷어내고 입력 툴바 메뉴 + 헤더 옵션 메뉴로 바꾸면서(2026-07-16, KNK-611 — [`3-frontend.md §3-6`](./3-frontend.md)) 발화 지점이 사라졌습니다. 과거 수집분 해석을 위해 표에는 `폐기`로 남기고 신규 수집은 하지 않습니다.
 
 `client_chat_choiceFillButton_clicked`는 선택지를 바로 전송하지 않고 입력창에 채워 수정할 때 발생합니다. 선택지 사용률(§6-5-4)은 그대로 전송한 `client_chat_choiceOption_selected`만으로 계산하고, 수정 후 사용 행동은 이 이벤트로 별도 관찰합니다.
+
+안내 투어 4종(KNK-694)은 첫 채팅 진입 안내가 실제로 읽히는지 보는 보조 계측입니다. 완주율은 `client_chat_tour_completed` ÷ `client_chat_tour_shown`으로, 이탈 지점은 `client_chat_tourSkipButton_clicked`의 `step_number` 분포로 봅니다. 투어는 기기별 1회만 노출하고 재열람 진입점이 없으므로 `tour_shown`은 사용자당 사실상 1회입니다(`localStorage` 차단 환경에서는 진입마다 반복될 수 있음 — [`3-frontend.md §3-6`](./3-frontend.md)). `step_id`는 단계 번호가 아닌 안내 대상 식별자이며 입력 모드에 따라 첫 스텝이 `add-blocks`(블럭)·`add-emphasis`(일반)로 갈립니다. 같은 화면의 추천 입력 인라인 힌트는 별도 이벤트를 두지 않습니다 — 사용자가 조작하는 UI가 아니라 문구 노출이라 추천 사용률(`client_chat_choiceOption_selected`, §6-5-4)의 변화로 관찰합니다.
 
 `client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패(연결 끊김·중단 등)해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
 
@@ -450,7 +465,8 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일)                                                                                               |
 | `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
 | `client_creditShortageDialog_shown`              | P0       | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원)                     | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_earnButton_clicked` | P1       | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭                             | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_earnButton_clicked` | P1       | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭(친구 초대로 이동)           | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_attendanceButton_clicked` | P1  | 크레딧 부족 다이얼로그의 출석 보상 받기 버튼 클릭(오늘 미출석일 때만 노출)       | `trigger` (동일)                                                                                               |
 | `client_creditShortageDialog_dismissed`          | P1       | 크레딧 부족 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
 
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
