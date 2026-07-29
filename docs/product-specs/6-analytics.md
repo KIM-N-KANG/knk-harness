@@ -541,12 +541,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 채팅 공유 열람 화면([`3-frontend.md` FE-SCREEN-012](./3-frontend.md))의 이벤트입니다. 발급 클릭은 채팅 화면 이벤트(§6-4-2-6의 `client_chat_shareButton_clicked`)가 담당하고, 여기서는 링크를 받은 사람의 열람만 수집합니다.
 
-| 이벤트                    | 우선순위 | 발생 시점                | 고유 프로퍼티                                              |
-| ------------------------- | -------- | ------------------------ | ---------------------------------------------------------- |
-| `client_chatShare_viewed` | P1       | 채팅 공유 열람 화면 진입 | `share_id` (string, 필수), `story_id` (string, 필수)       |
+| 이벤트                    | 우선순위 | 발생 시점                | 고유 프로퍼티              |
+| ------------------------- | -------- | ------------------------ | -------------------------- |
+| `client_chatShare_viewed` | P1       | 채팅 공유 열람 화면 진입 | `story_id` (string, 필수)  |
 
-- 열람 화면은 원본 `chat_id`를 알 수 없으므로([`4-backend.md §4-3-11`](./4-backend.md) — 응답에 비노출) `chat_id` 공통 프로퍼티 대신 `share_id`를 보냅니다. 발급과 열람의 연결은 `share_id` 기준으로, 스토리 유입 분석은 `story_id`로 봅니다.
-- 발급 대비 열람 비율(`client_chat_shareButton_clicked` → `client_chatShare_viewed`)이 공유 기능의 핵심 관찰 지표입니다.
+- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend.md §4-3-11`](./4-backend.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{id}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
+- 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
+- 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 비밀 토큰과 분리된 분석용 ID를 서버가 발급하는 핸드오프 `handoff_id` 패턴(§6-4-2-12)을 따라 추가합니다.
 
 ### 6-4-3. impression 수집 기준
 
