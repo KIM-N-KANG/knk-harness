@@ -713,10 +713,12 @@ graph LR
 | `deepseek-v4-flash` | deepseek | OpenAI SDK | 끔 | 받음 | 1,000,000 | 384,000 | json_object |
 | `gpt-5.6-terra` | openai | OpenAI SDK | 끔(강도 `none`) | 안 받음 | 1,050,000 | 128,000 | json_object · json_schema |
 | `gpt-5.6-luna` | openai | OpenAI SDK | 끔(강도 `none`) | 안 받음 | 1,050,000 | 128,000 | json_object · json_schema |
-| `gpt-5.4-mini` | openai | OpenAI SDK | 끔(강도 `none`) | 안 받음 | 400,000 | 128,000 | json_object · json_schema |
+| `gpt-5.4-mini`(별칭) | openai | OpenAI SDK | 끔(강도 `none`) | 안 받음 | 400,000 | 128,000 | json_object · json_schema |
 | `claude-sonnet-5` | anthropic | Anthropic SDK | 끔 | 안 받음 | 1,000,000 | 128,000 | json_schema |
 
 「추론」의 괄호는 **실제로 요청에 싣는 추론 강도**입니다. GPT 3종은 강도 인자로 끄고, 나머지 셋은 강도 인자를 아예 싣지 않습니다. 그 모델이 받아들이는 강도 **목록**은 등록부에만 있습니다.
+
+`gpt-5.4-mini`에 붙은 「별칭」은 **이 표의 이름이 권장 표기가 아니라는 뜻**입니다. 이 모델에는 날짜가 붙은 스냅샷(`gpt-5.4-mini-2026-03-17`)이 따로 있어 규칙대로면 그 이름으로 등록해야 하는데 아직 바꾸지 않았습니다([§5-7](#5-7-검수-체크리스트) A14). 나머지 다섯은 이름 자체가 스냅샷이거나(GPT-5.6 둘·Claude) 공급자에 스냅샷 제도가 없어(DeepSeek 둘) 표의 이름 그대로가 맞습니다.
 
 표의 값은 2026-07-29에 각 공급자 공식 문서로 대조했습니다. 다만 **확인하지 못한 칸이 둘 있습니다.** ① GPT 3종의 `temperature` 미수용 — 이 회사 문서는 이 모델들을 추론 모델로 분류하면서도 `temperature`를 거부한다고 밝히지 않습니다. ② `gpt-5.6-terra`·`gpt-5.6-luna`가 받아들이는 추론 강도 목록 — 두 모델 페이지에 그 목록이 없습니다(`gpt-5.4-mini`만 문서에 있고 등록부와 일치). 둘 다 라이브 호출로만 확인되므로 이 모델들을 실제로 고를 때 함께 확인합니다([§5-7](#5-7-검수-체크리스트) A7).
 
