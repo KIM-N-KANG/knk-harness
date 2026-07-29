@@ -545,7 +545,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | ------------------------- | -------- | ------------------------ | -------------------------- |
 | `client_chatShare_viewed` | P1       | 채팅 공유 열람 화면 진입 | `story_id` (string, 필수)  |
 
-- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend.md §4-3-11`](./4-backend.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{id}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
+- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend.md §4-3-11`](./4-backend.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
 - 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 비밀 토큰과 분리된 분석용 ID를 서버가 발급하는 핸드오프 `handoff_id` 패턴(§6-4-2-12)을 따라 추가합니다.
 
