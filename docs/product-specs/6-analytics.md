@@ -233,8 +233,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked`                   |
 | P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed`                        |
 | P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed`                      |
-| P1 `계획`           | client | `client_chat_shareButton_clicked`                        |
-| P1 `계획`           | client | `client_chatShare_viewed`                                |
+| P1 `Phase 1 · 구현` | client | `client_chat_shareButton_clicked`                        |
+| P1 `Phase 1 · 구현` | client | `client_chatShare_viewed`                                |
+| P1 `Phase 1 · 구현` | client | `client_chatShare_ctaButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed`                      |
 | P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked`         |
@@ -398,7 +399,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_tourStep_viewed`                           | P2       | 안내 투어의 각 스텝 도달                          | `chat_id` (string, 필수), `step_number` (number, 필수: 0부터), `step_id` (string, 필수: `add-blocks`·`add-emphasis`·`settings`·`random-send`)                                                |
 | `client_chat_tour_completed`                            | P2       | 안내 투어 완주(마지막 스텝에서 완료)              | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_tourSkipButton_clicked`                    | P2       | 안내 투어 건너뛰기 버튼 클릭                      | `chat_id` (string, 필수), `step_number` (number, 필수: 건너뛴 시점의 스텝)                                                                                                                   |
-| `client_chat_shareButton_clicked` `계획`                | P1       | 채팅 옵션 메뉴 공유 링크 복사 클릭                | `chat_id` (string, 필수), `turn_number` (number, 필수: 발급 시점 턴 수)                                                                                                                     |
+| `client_chat_shareButton_clicked` `Phase 1 · 구현`      | P1       | 채팅 옵션 메뉴 "채팅 공유하기" 클릭               | `chat_id` (string, 필수), `turn_number` (number, 필수: 발급 시점 턴 수)                                                                                                                     |
 
 채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 입력 툴바의 모드 메뉴에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다. 같은 툴바의 추천 입력 켬/끔은 `client_chat_choicesToggle_clicked`로 수집하며(같은 상태 재선택 제외, `enabled`는 전환 후 상태), 기본값이 켬이므로 끄는 비율로 추천 입력의 방해 여부를 관찰합니다.
 
@@ -537,16 +538,18 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --------------------------- | -------- | --------------------- | ------------- |
 | `client_serviceInfo_viewed` | P2       | 서비스 안내 화면 진입 | 없음          |
 
-#### 6-4-2-14. 채팅 공유 — `계획`
+#### 6-4-2-14. 채팅 공유 — `Phase 1 · 구현`
 
-채팅 공유 열람 화면([`3-frontend.md` FE-SCREEN-012](./3-frontend.md))의 이벤트입니다. 발급 클릭은 채팅 화면 이벤트(§6-4-2-6의 `client_chat_shareButton_clicked`)가 담당하고, 여기서는 링크를 받은 사람의 열람만 수집합니다.
+채팅 공유 열람 화면([`3-frontend.md` FE-SCREEN-012](./3-frontend.md))의 이벤트입니다. 발급 클릭은 채팅 화면 이벤트(§6-4-2-6의 `client_chat_shareButton_clicked`)가 담당하고, 여기서는 링크를 받은 사람의 열람과 전환만 수집합니다.
 
-| 이벤트                    | 우선순위 | 발생 시점                | 고유 프로퍼티              |
-| ------------------------- | -------- | ------------------------ | -------------------------- |
-| `client_chatShare_viewed` | P1       | 채팅 공유 열람 화면 진입 | `story_id` (string, 필수)  |
+| 이벤트                               | 우선순위 | 발생 시점                        | 고유 프로퍼티             |
+| ------------------------------------ | -------- | -------------------------------- | ------------------------- |
+| `client_chatShare_viewed`            | P1       | 채팅 공유 열람 화면 진입         | `story_id` (string, 필수) |
+| `client_chatShare_ctaButton_clicked` | P1       | 열람 화면 하단 CTA 버튼 클릭     | `story_id` (string, 필수) |
 
 - **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend.md §4-3-11`](./4-backend.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
+- CTA 클릭은 공유 링크가 신규 유입으로 이어졌는지를 보는 지표입니다. 열람 대비 클릭(`client_chatShare_viewed` 수 대비 `client_chatShare_ctaButton_clicked` 수)이 공유 열람 화면의 전환율입니다.
 - 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 비밀 토큰과 분리된 분석용 ID를 서버가 발급하는 핸드오프 `handoff_id` 패턴(§6-4-2-12)을 따라 추가합니다.
 
 ### 6-4-3. impression 수집 기준
