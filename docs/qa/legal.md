@@ -36,6 +36,7 @@
 | LEGAL-DOC-04 | P2  | 두 페이지 각각  | 헤더 구성 확인        | 뒤로가기 버튼(스크린 리더 라벨 "이전 페이지로 돌아가기 버튼") + 문서 제목 헤더. 하단 탭 없음                                                                                      | ✅ e2e `visual/legal-visual`                      | FE-SCREEN-010, §3-3          |
 | LEGAL-DOC-05 | P1  | `/privacy` 진입 | 행태정보 고지 확인    | "12. 행태정보의 수집 및 맞춤형 광고" 섹션에 광고 사업자(Meta Platforms, Inc.)·수집 항목(입력 원문 제외)·수집 방법(Meta 픽셀)·목적·보유 기간·이용자 통제 수단 고지. 국외 이전(7)·쿠키(11) 조항에도 Meta 반영 | ✅ e2e `legal/legal`(섹션 렌더) · unit `tests/features/legal/content.test.ts`(문구 계약) | KNK-616 Meta 픽셀 사전 고지  |
 | LEGAL-DOC-06 | P1  | `/privacy` 진입 | AI 품질·학습 고지 확인 | "13. AI 품질 관리 및 학습 데이터 활용" 섹션에 저장 항목(스토리 설정·채팅 메시지·AI 응답 원문·기기 해시)·저장 도구(Langfuse Cloud, 일본 리전)·이용 방법(품질 평가·AI 모델 학습)·보유 기간(수집일로부터 1년)·학습 제외·삭제 요청 수단 고지. 위탁(6)·국외 이전(7)·쿠키(11) 조항에 Langfuse GmbH 반영, §1은 행태 분석 도구(Amplitude) 원문 미수집과 구분해 고지 | ✅ e2e `legal/legal`(섹션 렌더) · unit `tests/features/legal/content.test.ts`(문구 계약) | 방침 v1.2 Langfuse 원문 저장·학습 활용 고지(`6-analytics.md` §6-7) |
+| LEGAL-DOC-07 | P2  | 두 페이지 각각  | 브라우저 탭 제목 확인 | `서비스이용약관 - 마냑`·`개인정보처리방침 - 마냑`(본문 h1과 동일한 문서 제목 + 서비스명, [§3-3](../product-specs/3-frontend.md))                                                    | ✅ e2e `legal/legal`                              | 구현(`terms`·`privacy` page), KNK-713 |
 
 ## ⚠️ 확인 필요
 
