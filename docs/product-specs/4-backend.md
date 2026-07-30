@@ -1057,6 +1057,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 - **기존 Nimbus 검증기를 파라미터화해 재사용합니다.** 카카오 OIDC discovery(`https://kauth.kakao.com/.well-known/openid-configuration`)가 서명을 `RS256`으로 고정하고 있어 Google 검증 코드가 검증 파라미터만 바꿔 그대로 동작합니다. discovery는 값 확인용이며 서버는 런타임에 조회하지 않고 위 표의 값을 고정 주입합니다(외부 의존 추가 없음).
 - **Kakao `sub`는 앱별(pairwise)입니다.** 카카오 디벨로퍼스 앱을 교체하면 같은 사용자라도 `sub`가 바뀌어 `social_accounts.provider_user_id`가 어긋나고 기존 회원이 계정에 접근할 수 없게 됩니다. 앱은 서비스 공용 계정 소유의 단일 앱으로 고정하며, 앱 교체는 사실상 비가역 변경으로 취급합니다.
+- **`MANYAK_KAKAO_CLIENT_IDS`에는 단일 카카오 앱의 키만 넣습니다(운영은 REST API 키 1개).** 계정 식별 키가 `(provider, provider_user_id)`뿐이므로, 서로 다른 카카오 앱의 키를 함께 허용하면 각 앱 안에서만 유일한 `sub`가 앱 간에 충돌해 서로 다른 사람이 같은 계정으로 오귀속될 수 있습니다(Google은 `sub`가 전역 유일이라 목록이 안전 — 카카오만의 제약). 콤마 구분 목록 형태는 Google 계약과의 통일이며 카카오에서 복수 항목을 넣는 상황은 상정하지 않습니다. 서버 구현 시 서로 다른 앱 ID 2개 + 동일 `sub` 조합이 같은 계정으로 수렴하지 않는지 확인하는 테스트를 포함합니다.
 - **DB 마이그레이션은 없습니다.** `social_accounts`의 유니크는 `(provider, provider_user_id)`이고 provider 체크 제약(V16)이 이미 KAKAO를 허용하므로 스키마 변경 없이 수용됩니다.
 
 **Kakao 동의항목 — 요청하지 않습니다.** 인가 요청 scope는 `openid` 단독입니다. 서버가 소셜 프로필에서 쓰는 값은 `sub`뿐이고(아래 가입 프로필 발급), `sub`는 동의와 무관하게 항상 ID 토큰에 실리는 기본 제공 정보입니다. 따라서 닉네임·프로필 사진·이메일 등 동의항목을 하나도 설정하지 않으며, 그 결과 비즈앱 전환과 추가 기능 심사(이메일·이름·전화번호·CI 등 "권한 없음" 항목의 선행 조건)를 모두 건너뜁니다. 동의항목이 없으면 카카오 동의 화면은 앱 연결 안내만 표시합니다.
@@ -1324,7 +1325,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `MANYAK_CORS_ALLOWED_ORIGINS` | 예 | CORS 허용 origin(콤마 구분) |
 | `MANYAK_AUTH_JWT_SECRET` | 예 | access JWT HS256 키(32바이트 이상). 미주입 시 기본값이 빈 문자열이라 기동 실패(잘못된 운영 기동 조기 차단). JWT issuer·TTL은 `manyak.auth.jwt.*` yml 전용(환경 변수 바인딩 없음) |
 | `MANYAK_GOOGLE_CLIENT_IDS` | 예 | Google OAuth client ID 목록(콤마 구분). 미주입 시 빈 목록으로 모든 Google 로그인 거부(fail-closed) |
-| `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | Kakao REST API 키 목록(콤마 구분) — ID 토큰 `aud` 검증용. 미주입 시 빈 목록으로 모든 Kakao 로그인 거부(fail-closed). provider별로 독립이라 미주입이 Google 로그인에는 영향이 없습니다(`Phase 1 · 계획`) |
+| `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | Kakao REST API 키 목록(콤마 구분) — ID 토큰 `aud` 검증용. 미주입 시 빈 목록으로 모든 Kakao 로그인 거부(fail-closed). provider별로 독립이라 미주입이 Google 로그인에는 영향이 없습니다. **단일 카카오 앱의 키만 허용** — pairwise `sub` 충돌로 인한 계정 오귀속 방지([§4-5](#4-5-인증과-권한))(`Phase 1 · 계획`) |
 | `MANYAK_ANALYTICS_DEVICE_ID_PEPPER` | 아니오 | `device_id` 해시 pepper. 미설정 시 구 이름 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER`로 폴백(전환기), 둘 다 없으면 무염 해시 |
 | `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` · `MANYAK_AMPLITUDE_API_KEY` | 아니오 | 서버 분석 이벤트(`server_*`) Amplitude 발행(KNK-514). `ENABLED` 기본 `false`, 켜려면 `true` + API 키 필요(둘 중 하나 없으면 no-op) |
 | `MANYAK_AMPLITUDE_BASE_URL` | 아니오 | Amplitude HTTP V2 base URL. 기본 `https://api2.amplitude.com`(EU는 `https://api.eu.amplitude.com`). `application.yml` 전용(`.env.example` 미포함) |

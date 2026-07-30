@@ -191,6 +191,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | server | `server_chat_aiMessage_processed_failed`                 |
 | P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown`                      |
 | P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown`                          |
+| P0 `Phase 1 · 계획` | client | `client_login_oauthError_shown`                          |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_succeeded`           |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_failed`              |
 | P0 `Phase 1 · 계획` | server | `server_login_kakaoLogin_processed_succeeded`            |
@@ -444,6 +445,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_login_viewed` `Phase 1 · 구현`                          | P1       | 로그인 화면 진입                                 | 없음                                                                                                                         |
 | `client_login_googleButton_clicked` `Phase 1 · 구현`            | P1       | Google 로그인 버튼 클릭                          | 없음                                                                                                                         |
 | `client_login_kakaoButton_clicked` `Phase 1 · 계획`             | P1       | 카카오 로그인 버튼 클릭(KNK-721)                 | 없음                                                                                                                         |
+| `client_login_oauthError_shown` `Phase 1 · 계획`                | P0       | OAuth 콜백 실패로 `/login` 복귀 시 NextAuth `error` 쿼리 감지(KNK-721) | `error_code` (string, 필수 — NextAuth error 값) · `provider` (string, 시작 provider를 알 수 없으면 null)                     |
 | `client_account_viewed` `Phase 1 · 구현`                        | P1       | 마이 페이지 진입                                 | 없음                                                                                                                         |
 | `client_account_loginButton_clicked` `Phase 1 · 구현`           | P1       | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음                                                                                                                         |
 | `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
@@ -455,6 +457,8 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `server_login_migration_processed_failed` `Phase 1 · 구현`      | P0       | 마이그레이션 요청 자체 실패(400 등)              | `error_type` (string, 필수)                                                                                                  |
 
 **결정 기록 — 서버 로그인 이벤트는 provider별 이름을 유지합니다(2026-07-31, KNK-721).** `server_login_googleLogin_processed_*`는 이미 운영에서 발행 중입니다(서버 `ServerAnalytics` 구현·통합 테스트가 이름을 검증하고, 운영 user-data가 `MANYAK_ANALYTICS_AMPLITUDE_ENABLED=true`로 발행하며, Amplitude 적재를 확인 — 2026-07-31). 따라서 `server_login_socialLogin_*` + `provider` 프로퍼티로의 개명은 지표 이력 단절 또는 전환기 이중 발행(dual-write)·대시보드 이전을 요구해 기각합니다. 카카오는 `server_login_kakaoLogin_processed_*`를 새로 추가하고 고유 프로퍼티는 Google과 동일하게 둡니다. 전체 로그인 성공률·전환은 두 이벤트 합산 차트로, provider 비교는 이벤트별 시리즈로 봅니다. 클라이언트 버튼 클릭도 같은 구조입니다(`client_login_googleButton_clicked` · `client_login_kakaoButton_clicked` — 명명 규칙 `client_{화면}_{요소}_{동작}` 유지).
+
+**서버 `processed_failed`는 백엔드에 로그인 요청이 도달한 이후의 실패만 셉니다.** 토큰 교환 실패(`invalid_client`), 카카오 OIDC 비활성, redirect URI 불일치 같은 OAuth 콜백 단계 실패는 백엔드 호출 전에 끝나므로 서버 이벤트에 잡히지 않습니다 — 콜백 단계에서 로그인이 전면 실패해도 서버 실패율은 정상으로 보입니다. 이 사각지대는 `client_login_oauthError_shown`(NextAuth가 `error` 쿼리와 함께 `/login`으로 복귀시키는 시점에 발행 — [`3-frontend.md`](./3-frontend.md) FE-SCREEN-008)이 커버합니다. 카카오 로그인 릴리스 검수는 서버 실패율과 함께 이 이벤트가 0건에 가깝게 유지되는지 확인하고, 지속 발생 시 콘솔 설정(OIDC 토글·리다이렉트 URI·클라이언트 시크릿)을 점검합니다.
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
@@ -1088,7 +1092,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 식별자                | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있습니다.                                                                                                          |
 | 로그 연결             | 서버 로그, Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있습니다.                                                                                                             |
 | 개인정보              | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다.                                                                                                 |
-| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_kakaoLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_kakaoLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집되고, `client_login_oauthError_shown`이 `error_code`와 함께 수집됩니다(§6-4-3 — 콜백 단계 실패는 서버 이벤트가 못 잡음). |
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다.                                                                                |
 | 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다.                                                                                 |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
