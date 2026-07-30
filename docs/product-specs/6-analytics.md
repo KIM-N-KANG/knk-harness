@@ -233,7 +233,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked`                   |
 | P1 `Phase 1 · 계획` | client | `client_chat_chatImage_impressed`                        |
 | P1 `Phase 1 · 계획` | client | `client_chat_endingBadge_impressed`                      |
+| P1 `Phase 1 · 구현` | client | `client_chatShareDialog_shown`                           |
 | P1 `Phase 1 · 구현` | client | `client_chat_shareButton_clicked`                        |
+| P1 `Phase 1 · 구현` | client | `client_chatShareDialog_dismissed`                       |
 | P1 `Phase 1 · 구현` | client | `client_chatShare_viewed`                                |
 | P1 `Phase 1 · 구현` | client | `client_chatShare_ctaButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
@@ -399,7 +401,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_tourStep_viewed`                           | P2       | 안내 투어의 각 스텝 도달                          | `chat_id` (string, 필수), `step_number` (number, 필수: 0부터), `step_id` (string, 필수: `add-blocks`·`add-emphasis`·`settings`·`random-send`)                                                |
 | `client_chat_tour_completed`                            | P2       | 안내 투어 완주(마지막 스텝에서 완료)              | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_tourSkipButton_clicked`                    | P2       | 안내 투어 건너뛰기 버튼 클릭                      | `chat_id` (string, 필수), `step_number` (number, 필수: 건너뛴 시점의 스텝)                                                                                                                   |
-| `client_chat_shareButton_clicked` `Phase 1 · 구현`      | P1       | 채팅 옵션 메뉴 "채팅 공유하기" 클릭               | `chat_id` (string, 필수), `turn_number` (number, 필수: 발급 시점 턴 수)                                                                                                                     |
+| `client_chatShareDialog_shown` `Phase 1 · 구현`         | P1       | 헤더 공유 버튼 클릭으로 공유 확인 다이얼로그 노출(KNK-715)                       | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
+| `client_chat_shareButton_clicked` `Phase 1 · 구현`      | P1       | 공유 다이얼로그 "링크 복사하기" 확정 클릭(발급 시도, KNK-715 이전에는 옵션 메뉴 항목 클릭) | `chat_id` (string, 필수), `turn_number` (number, 필수: 발급 시점 턴 수)                                                                                                                     |
+| `client_chatShareDialog_dismissed` `Phase 1 · 구현`     | P1       | 공유 다이얼로그를 발급 없이 닫음("나중에 하기"·배경 탭·ESC, KNK-715)             | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
 
 채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 입력 툴바의 모드 메뉴에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다. 같은 툴바의 추천 입력 켬/끔은 `client_chat_choicesToggle_clicked`로 수집하며(같은 상태 재선택 제외, `enabled`는 전환 후 상태), 기본값이 켬이므로 끄는 비율로 추천 입력의 방해 여부를 관찰합니다.
 
@@ -463,7 +467,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_invite_codeInput_succeeded`              | P0       | 초대 코드 제출 성공 — 양측 적립(KNK-567, 초대 전환의 종점)                       | `source` (동일)                                                                                                |
 | `client_invite_codeInput_failed`                 | P1       | 초대 코드 제출 실패(KNK-567)                                                     | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`)       |
 | `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567)                                  | 없음                                                                                                           |
-| `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기(KNK-567)                                                 | 없음                                                                                                           |
+| `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "나중에 하기" 버튼·배경 탭·ESC 공통(KNK-567, KNK-715)  | 없음                                                                                                           |
 | `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 다이얼로그 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
 | `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일)                                                                                               |
