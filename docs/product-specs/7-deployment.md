@@ -290,10 +290,11 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 | `DEEPSEEK_API_KEY`                     | 예(AI)            | ai                  | AI 서버 기동 필수 secret                                                                                                                     |
 | `MANYAK_AUTH_JWT_SECRET`               | 예(server)        | server              | access JWT HS256 서명·검증 키. 미주입 또는 빈 값이면 server 부팅 실패                                                                        |
 | `MANYAK_GOOGLE_CLIENT_IDS`             | 로그인 사용 시 예 | server              | 허용할 Google OAuth client-id 목록. 비우면 모든 Google 로그인 토큰 거부                                                                      |
+| `MANYAK_KAKAO_CLIENT_IDS`              | 카카오 로그인 사용 시 예 | server       | 허용할 Kakao REST API 키 목록(ID 토큰 `aud` 검증). 비우면 모든 Kakao 로그인 토큰 거부. provider별 독립이라 미주입이 Google 로그인에 영향을 주지 않음(`Phase 1 · 계획` KNK-721) |
 
 `aws secretsmanager put-secret-value`는 secret 전체를 덮어씁니다. 일부 키만 바꿀 때도 기존 키를 모두 포함해야 합니다.
 
-시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다. `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다(배선 후에는 Langfuse 3키도 같습니다). 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
+시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, `MANYAK_KAKAO_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다. `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다(배선 후에는 Langfuse 3키도 같습니다). 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
 
 > **Langfuse 배선과 키 주입은 2026-07-23 완료했습니다(KNK-653, manyak-terraform).** user-data는 Secrets Manager의 Langfuse 3키(`AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST`)를 배포 스크립트의 **export로만** compose에 넘깁니다. 공용 `.env`에 쓰지 않아 server 컨테이너로 새지 않는 대신, `deploy.sh`를 거치지 않은 수동 compose 실행에서는 값이 비어 Langfuse가 꺼집니다(아래 롤백 표 참고). 백엔드가 반응 신호를 보내려면 백엔드용 Langfuse 키·HOST도 별도 정의해야 하는데 아직 없습니다 — 이건 후속 구현 대상입니다.
 
@@ -312,7 +313,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL`                  | server      | 앱 secret                                             |
 | `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER`               | server      | 앱 secret                                             |
 | `DEEPSEEK_API_KEY`                                   | ai          | 앱 secret                                             |
-| `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS` | server      | 앱 secret                                             |
+| `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, `MANYAK_KAKAO_CLIENT_IDS` | server      | 앱 secret                                             |
 | `MANYAK_CORS_ALLOWED_ORIGINS`                        | server      | Terraform `https://manyak.app,https://www.manyak.app` |
 | `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT`   | server      | ElastiCache endpoint, port                            |
 

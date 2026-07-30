@@ -191,8 +191,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | server | `server_chat_aiMessage_processed_failed`                 |
 | P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown`                      |
 | P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown`                          |
-| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_succeeded`           |
-| P0 `Phase 1 · 계획` | server | `server_login_googleLogin_processed_failed`              |
+| P0 `Phase 1 · 계획` | server | `server_login_socialLogin_processed_succeeded`           |
+| P0 `Phase 1 · 계획` | server | `server_login_socialLogin_processed_failed`              |
 | P0 `Phase 1 · 계획` | server | `server_login_migration_processed_succeeded`             |
 | P0 `Phase 1 · 계획` | server | `server_login_migration_processed_failed`                |
 | P0                  | client | `client_feedback_viewed`                                 |
@@ -245,6 +245,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed`                  |
 | P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
 | P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
+| P1 `Phase 1 · 계획` | client | `client_login_kakaoButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_account_viewed`                                  |
 | P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
@@ -440,13 +441,18 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --------------------------------------------------------------- | -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | `client_login_viewed` `Phase 1 · 구현`                          | P1       | 로그인 화면 진입                                 | 없음                                                                                                                         |
 | `client_login_googleButton_clicked` `Phase 1 · 구현`            | P1       | Google 로그인 버튼 클릭                          | 없음                                                                                                                         |
+| `client_login_kakaoButton_clicked` `Phase 1 · 계획`             | P1       | 카카오 로그인 버튼 클릭(KNK-721)                 | 없음                                                                                                                         |
 | `client_account_viewed` `Phase 1 · 구현`                        | P1       | 마이 페이지 진입                                 | 없음                                                                                                                         |
 | `client_account_loginButton_clicked` `Phase 1 · 구현`           | P1       | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음                                                                                                                         |
 | `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
-| `server_login_googleLogin_processed_succeeded` `Phase 1 · 계획` | P0       | 로그인 처리 성공                                 | `is_new_user` (boolean, 필수)                                                                                                |
-| `server_login_googleLogin_processed_failed` `Phase 1 · 계획`    | P0       | 로그인 처리 실패                                 | `error_type` (string, 필수)                                                                                                  |
+| `server_login_socialLogin_processed_succeeded` `Phase 1 · 계획` | P0       | 로그인 처리 성공                                 | `is_new_user` (boolean, 필수) · `provider` (string, 필수 — `google` · `kakao`)                                               |
+| `server_login_socialLogin_processed_failed` `Phase 1 · 계획`    | P0       | 로그인 처리 실패                                 | `error_type` (string, 필수) · `provider` (string, 필수 — `google` · `kakao`)                                                 |
 | `server_login_migration_processed_succeeded` `Phase 1 · 계획`   | P0       | 마이그레이션 처리 완료(부분 성공 포함)           | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
 | `server_login_migration_processed_failed` `Phase 1 · 계획`      | P0       | 마이그레이션 요청 자체 실패(400 등)              | `error_type` (string, 필수)                                                                                                  |
+
+**서버 로그인 이벤트는 provider를 이름이 아니라 프로퍼티로 구분합니다** (`Phase 1 · 계획`, KNK-721). 구 이름 `server_login_googleLogin_processed_*`를 `server_login_socialLogin_processed_*`로 바꾸고 `provider`를 필수 프로퍼티로 둡니다. 로그인 성공률·신규 가입 전환의 기본 뷰는 provider 합산인데 이벤트가 provider별로 갈리면 지표마다 합산 정의가 필요해지고, provider 비교는 프로퍼티 group-by로 충분합니다. 두 이벤트 모두 아직 `계획`이라 발행 이력이 없어 개명 비용이 없습니다.
+
+클라이언트 버튼 클릭은 반대로 이벤트를 나눕니다(`client_login_googleButton_clicked` · `client_login_kakaoButton_clicked`). 기존 이벤트가 이미 수집 중이라 개명하면 이력이 끊기고, 버튼은 화면 요소라 요소마다 이벤트를 두는 명명 규칙(`client_{화면}_{요소}_{동작}`)이 그대로 적용됩니다.
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
@@ -529,9 +535,10 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
 | `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
 | `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | `handoff_id` (string, 필수)                      |
-| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 Google 로그인 시작              | `handoff_id` (string, 필수)                      |
+| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `handoff_id` (string, 필수)                      |
 
 - 목표 퍼널은 `인앱 유입(detected) → 스토리 생성 → 첫 채팅 → 핸드오프 생성 → 외부 랜딩 → 로그인 성공 → 이관 성공`입니다. 로그인·이관 구간은 서버 이벤트(§6-4-3)에 `handoff_id`를 실어 연결하며, 서버 측 프로퍼티 추가는 [`4-backend.md`](./4-backend.md) 소유로 협의합니다.
+- **카카오톡 인앱의 카카오 로그인은 이 퍼널을 타지 않습니다** (`Phase 1 · 계획`, KNK-721). 같은 브라우저에서 핸드오프 없이 완료되므로([`3-frontend.md §3-10`](./3-frontend.md) 분기 표) 핸드오프 이벤트가 발생하지 않고, `device_id`가 연속이라 연결 키도 필요 없습니다. 카카오 로그인 배포 후 핸드오프 생성 건수 감소는 퍼널 이탈이 아니라 이 경로 전환의 정상 신호이므로, 인앱 로그인 전환은 핸드오프 퍼널과 `client_login_kakaoButton_clicked` → `server_login_socialLogin_processed_succeeded`(`provider = kakao`)를 합쳐 봅니다.
 - 게스트 체험 이중 사용(미결, [`3-frontend.md §3-10`](./3-frontend.md)) 규모 판단을 위해, 개편 배포 시 공통 프로퍼티(§6-3-2)에 인앱 여부(`in_app_browser`: 동일 enum 또는 null)를 추가하는 것을 검토합니다 — 게스트 한도 도달 이벤트의 인앱 분포가 판단 근거입니다.
 
 #### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
@@ -838,8 +845,8 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 
 | error_type   | 로그인·마이그레이션 실패 사례                                                                      |
 | ------------ | -------------------------------------------------------------------------------------------------- |
-| `network`    | Google 인증 서버 연결·timeout 실패                                                                 |
-| `validation` | Google ID 토큰 서명·만료·audience 검증 실패, 마이그레이션 요청 UUID 형식 오류·배열 100개 초과(400) |
+| `network`    | 소셜 인증 서버(Google·Kakao) 연결·timeout 실패                                                     |
+| `validation` | 소셜 ID 토큰 서명·만료·issuer·audience 검증 실패(provider 미허용·client ID 목록 비어 있음 포함), 마이그레이션 요청 UUID 형식 오류·배열 100개 초과(400) |
 | `server`     | 사용자 저장·소유권 이관 중 내부 처리 실패                                                          |
 
 ### 6-6-8. AI 기능과 요청 context
@@ -1079,7 +1086,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry context, `ai_call_logs`에는 �
 | 식별자                | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있습니다.                                                                                                          |
 | 로그 연결             | 서버 로그, Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있습니다.                                                                                                             |
 | 개인정보              | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없습니다.                                                                                                 |
-| 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다.                                                     |
+| 이벤트 수집 `Phase 1` | `server_login_socialLogin_processed_succeeded`·`_failed`(각 `provider` 포함), `server_login_migration_processed_succeeded`·`_failed`가 수집됩니다.                                 |
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정되고, 로그아웃 시 `reset()`으로 `device_id`가 재발급됩니다.                                                                                |
 | 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다.                                                                                 |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |

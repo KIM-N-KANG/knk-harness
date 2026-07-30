@@ -117,6 +117,8 @@
 | 세션 | `session_id` | **분석 세션 전용 예약어**(Amplitude). 한 번의 방문 단위 | 채팅·간편 제작 진행 단위를 "세션"으로 부르는 것(§0-5) |
 | 요청 ID | `request_id` | API 요청 1건의 상관 ID(`req_` + UUID). 헤더 `X-Manyak-Request-Id` | — |
 | 사용자 | `user` | 로그인한 사용자 계정. 외부 식별자는 UUID `public_id` | — |
+| 소셜 제공자 | `provider` / `SocialProvider` | 로그인을 위임하는 외부 신원 제공자. Phase 1은 `GOOGLE`·`KAKAO`(`APPLE`·`NAVER`는 예약, 미사용) | — |
+| 소셜 연동 | `social_accounts` | 사용자 계정과 소셜 제공자 계정의 연결. `(provider, provider_user_id)`가 유일하며, 제공자가 다르면 별개 계정(Phase 1 — 계정 통합 미도입) | "SNS 계정" |
 | 닉네임 | `nickname` | 사용자 표시 이름. 회원가입 시 랜덤 발급(Phase 1) | — |
 | 프로필 이미지 | `profileImageUrl`(와이어) | 사용자 대표 이미지. 회원가입 시 랜덤 발급(Phase 1) | "아바타" |
 | 데이터 마이그레이션 | migration | 게스트가 기기에 쌓은 스토리·채팅의 소유권을 로그인 계정으로 이관하는 것(Phase 1) | "동기화"(양방향 유지로 오해) |
