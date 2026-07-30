@@ -246,7 +246,9 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 현재 확인한 운영 Terraform에는 `manyak-web` 컨테이너를 운영 호스팅에 배포하는 리소스가 없습니다. `manyak-web` release PR들은 GHCR release image 발행과 외부 호스팅 반영을 전제로 합니다.
 
-Web Sentry 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만, 현재 `manyak-web` release workflow와 Dockerfile은 이 값을 build arg로 주입하지 않습니다. 따라서 운영 웹 Sentry 이벤트 수집은 호스팅·빌드 경로가 DSN 주입 방식을 확정한 뒤 활성 상태로 간주합니다.
+Web Sentry는 Vercel 호스팅 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성화되어 운영 이벤트를 수집하고 있습니다(GHCR release workflow·Dockerfile에는 여전히 이 build arg가 없어 컨테이너 경로는 비활성).
+
+Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 때만** 이벤트를 전송합니다(KNK-714). `NODE_ENV`만 보면 로컬 프로덕션 빌드(`pnpm build && pnpm start`)의 이벤트까지 `production` 환경으로 유입되기 때문입니다. 배포 여부는 `NEXT_PUBLIC_VERCEL_ENV`의 존재로 판별하며, 이 값은 대시보드의 시스템 환경 변수 노출 설정에 의존하지 않도록 `next.config.ts`가 `VERCEL_ENV`를 빌드 시점에 직접 인라인합니다. 로컬에서 연동을 확인할 때는 `NEXT_PUBLIC_SENTRY_FORCE_ENABLE=true`로 강제 활성화합니다.
 
 ### EC2 `deploy.sh` 공통 규칙
 
@@ -437,7 +439,7 @@ docker compose ps
 - server는 구조화 로그, Sentry, `ai_call_logs`, Actuator health를 사용합니다.
 - AI는 Sentry와 request correlation middleware를 사용합니다.
 - AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-ai-server.md §5-6`](./5-ai-server.md)) 미충족 시 no-op입니다. 프로덕션은 2026-07-23 활성화했습니다.
-- web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 단, 현재 release 이미지에는 `NEXT_PUBLIC_SENTRY_DSN` 주입 경로가 정의되어 있지 않아 운영 Sentry 수집은 미정입니다.
+- web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 운영 Sentry 수집은 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성 상태입니다(§7-5). GHCR release 이미지에는 여전히 주입 경로가 없어 컨테이너 배포 경로는 비활성입니다.
 - `X-Manyak-Request-Id`, `X-Manyak-Session-Id`, `X-Manyak-Device-Id-Hash` 계열은 server와 AI 관측 연결에 사용합니다.
 - 운영 Swagger UI와 OpenAPI 문서는 비공개입니다. 해당 경로는 운영에서 404여야 합니다.
 
@@ -554,7 +556,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | ------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web 운영 호스팅           | 미정      | 현재 Terraform에는 web hosting, CDN, web container 배포가 정의되어 있지 않습니다. 호스팅 플랫폼이 정해지면 배포 절차와 도메인 소유를 추가합니다.                                    |
 | Terraform apply 자동화    | 미정      | 현재 `manyak-terraform`에는 GitHub Actions apply workflow가 없습니다. 운영 apply는 수동 절차와 plan 리뷰를 기준으로 합니다.                                                         |
-| Web Sentry DSN 주입       | 미정      | web 코드는 `NEXT_PUBLIC_SENTRY_DSN`을 읽지만 현재 GHCR release 이미지 빌드에는 해당 build arg가 없습니다. 운영 웹 Sentry를 활성화할 때 빌드 secret·호스팅 env 주입 방식을 정합니다. |
+| Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | MVP       | EC2와 RDS는 MVP 단일 AZ 중심입니다. HA 요구가 생기면 ECS/Fargate 또는 multi-AZ 설계를 별도 버전으로 정의합니다.                                                                     |
 | Cloudflare proxy/WAF      | 미적용    | `api.manyak.app` 레코드는 `proxied=false`입니다. CDN/WAF 요구가 생기면 edge 정책을 별도 정의합니다.                                                                                 |
 | Redis health              | 확인 필요 | Redis endpoint는 주입하지만 기준 server 코드는 운영 Redis health를 비활성화합니다. Redis를 배포 게이트에 포함할지는 후속 결정이 필요합니다.                                         |
