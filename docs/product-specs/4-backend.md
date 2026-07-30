@@ -23,12 +23,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.26 |
+| 버전 | v0.27 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-07-23 |
+| 수정일 | 2026-07-30 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-server` `dev` 브랜치 `87557cc` (2026-07-21, Kotlin 2.2, Spring Boot 4, Flyway V47) — 이후 머지분은 표기된 절만 선반영(선택지 분리 KNK-636 [§4-3-3](#4-3-api-계약)·B23, 피드백 구글 폼 KNK-618 [§4-3-4](#4-3-api-계약)). 백그라운드 생성 복구(KNK-631·V48)는 KNK-638이 반영 중 |
+| 기준 코드 | `../manyak-server` `dev` 브랜치 `ff92d8a` (2026-07-30, Kotlin 2.2, Spring Boot 4, Flyway V51) |
 
 ---
 
@@ -189,8 +189,9 @@ graph LR
 | 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 | Phase 1 · 구현 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | — | 불필요 | MVP |
-| 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·402·502 | 선택 | MVP |
+| 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·402·409·502 | 선택 | MVP |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·402·403·404·409·502 | 선택 | MVP |
+| 간편 제작 | `GET /stories/simple/creation-requests/{requestId}` | 생성 요청 복구 조회(연결 유실 후 결과 되찾기) | 200 | 404 | 선택 | Phase 1 · 구현 |
 | 간편 제작 | `PUT /stories/simple/storylines/{storylineId}/rating` | 스토리라인 평가 설정 | 200 | 400·403·404 | 선택 | MVP |
 | 간편 제작 | `DELETE /stories/simple/storylines/{storylineId}/rating` | 스토리라인 평가 취소(멱등) | 204 | 403·404 | 선택 | MVP |
 | 채팅 | `POST /chats` | 채팅 생성(플레이 시작) | 201 | 400·403·404 | 선택 | MVP |
@@ -199,17 +200,18 @@ graph LR
 | 채팅 | `DELETE /chats/{chatId}` | 채팅 소프트 삭제 | 204 | 403·404 | 선택 | MVP |
 | 채팅 | `POST /chats/{chatId}/turns/stream` | 턴 진행 SSE 스트리밍 | 200(SSE) | 400·402·403·404 | 선택 | MVP |
 | 채팅 | `POST /chats/{chatId}/turns/regenerate/stream` | 마지막 턴 AI 응답 재생성 SSE 스트리밍 | 200(SSE) | 400·402·403·404·409 | 선택 | Phase 1 · 구현 |
-| 채팅 | `POST /chats/{chatId}/shares` | 채팅 공유 링크 발급(발급 시점 스냅샷) | 201 | 403·404 | 선택 | 계획 |
-| 채팅 | `GET /shares/{shareId}` | 공유된 채팅 열람(읽기 전용) | 200 | 404 | 불필요 | 계획 |
+| 채팅 | `POST /chats/{chatId}/turns/{turnId}/choices` | 선택지 생성 트리거(마지막 턴, 멱등) | 200 | 403·404·409·502 | 선택 | Phase 1 · 구현 |
+| 채팅 | `POST /chats/{chatId}/shares` | 채팅 공유 링크 발급(발급 시점 스냅샷) | 201 | 403·404 | 선택 | Phase 1 · 구현 |
+| 채팅 | `GET /shares/{shareId}` | 공유된 채팅 열람(읽기 전용) | 200 | 404 | 불필요 | Phase 1 · 구현 |
 | 피드백 | `POST /feedbacks` | 피드백 등록 | 201 | 400 | 선택 | MVP |
 | 인증 | `POST /auth/login/google` | Google ID 토큰 로그인 | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
 | 인증 | `GET /auth/me` | 현재 사용자 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 인증 | `POST /auth/token/refresh` | 토큰 재발급(회전) | 200 | 400·401 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/logout` | refresh 토큰 폐기(멱등) | 204 | 400 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/migrate` | 게스트 데이터 소유권 이관(항목별 부분 성공) | 200 | 400·401 | 필수 | Phase 1 · 구현 |
-| 인증 | `POST /auth/handoffs` | 로그인 핸드오프 생성(인앱 게스트 데이터 임시 보관) | 201 | 400 | 불필요 | Phase 1 · 계획 |
-| 인증 | `GET /auth/handoffs` | 핸드오프 확인(외부 랜딩 안내용 건수) | 200 | 404 | 불필요 | Phase 1 · 계획 |
-| 인증 | `GET /auth/handoffs/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 계획 |
+| 인증 | `POST /auth/handoffs` | 로그인 핸드오프 생성(인앱 게스트 데이터 임시 보관) | 201 | 400 | 불필요 | Phase 1 · 구현 |
+| 인증 | `GET /auth/handoffs` | 핸드오프 확인(외부 랜딩 안내용 건수) | 200 | 404 | 불필요 | Phase 1 · 구현 |
+| 인증 | `GET /auth/handoffs/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/credits` | 크레딧 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
@@ -267,20 +269,21 @@ graph LR
 
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
+| `requestId` | UUID, 필수 | 클라이언트 생성 요청 ID — 복구 조회·멱등 키(아래 KNK-623 블록). 누락 시 400 |
 | `selectedTagIds` | 최대 20개, 각 ≥ 1 | 선택한 제공 태그 ID |
 | `customTags` | 최대 20개 | 직접 추가 태그 `{name(≤30자), category}` |
 
 - `selectedTagIds`와 `customTags` 중 하나 이상은 있어야 합니다. 둘 다 비면 400입니다.
 - `selectedTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 누락 ID 목록을 `details`에 담아 400을 반환합니다.
-- `customTags`는 이름을 trim하고 `(category, name)` 기준 중복을 제거하며, 동일한 기존 `CUSTOM` 태그가 있으면 재사용합니다(find-or-create). `Phase 1 · 계획`(KNK-717) — 원문 키가 대소문자·공백 변형(BL / Bl / bl / b l)을 별개 태그로 저장해 파편화되므로 정규화 키 기준으로 교체합니다(아래 정규화 블록).
+- `customTags`는 정규화 키 기준으로 요청 내 중복을 제거하며, 동일한 기존 태그가 있으면 재사용합니다(find-or-create — 아래 정규화 블록). 원문 키 시절에는 대소문자·공백 변형(BL / Bl / bl / b l)이 별개 태그로 저장돼 파편화됐습니다(KNK-717로 교체).
 - AI 요청에는 태그를 카테고리별 3필드(`genre_tags` · `protagonist_tags` · `supporting_tags`)로 나눠 사전 정의 태그(요청 ID 순) 뒤에 직접 추가 태그를 이어 전달합니다.
 - AI 호출은 저장 트랜잭션 밖에서 먼저 수행하고, 성공 후 한 트랜잭션에서 진행(세션) → 세션 태그 → 스토리라인(`storyline_order` 1부터) → 추천 추가 정보(`info_order` 1부터) 순으로 저장합니다. 게스트 카운터는 AI 호출 전에 예약하고 생성·저장이 실패하면(모든 예외) 복원합니다.
 
-`Phase 1 · 계획`(KNK-717) — 커스텀 태그 정규화입니다. 구현 전까지 위 현행 계약이 유효합니다.
+`Phase 1 · 구현`(KNK-717, server `v0.2.5` 배포) — 커스텀 태그 정규화입니다.
 
-- **정규화 키** — trim → 내부 공백 제거 → lowercase 한 정규화 키(`normalized_name`)로 커스텀 태그 동일성을 판정합니다. find-or-create 조회와 요청 내 중복 제거 모두 `(category, 정규화 키)` 기준이며, 표시명(`name`)은 최초 입력 원문을 유지합니다.
+- **정규화 키** — trim → 내부 공백 제거 → lowercase 한 정규화 키(`normalized_name`)로 커스텀 태그 동일성을 판정합니다. find-or-create 조회와 요청 내 중복 제거 모두 `(category, 정규화 키)` 기준이며, 표시명(`name`)은 최초 입력의 trim본을 유지합니다(선행·후행 공백만 제거하고 내부 공백·대소문자는 입력 그대로).
 - **PREDEFINED 연결** — 커스텀 입력이 같은 카테고리의 사전 정의 태그와 정규화 키가 일치하면 새 `CUSTOM` 태그를 만들지 않고 해당 `PREDEFINED` 태그로 연결합니다.
-- **기존 중복 병합(이행)** — 기존 중복 커스텀 태그는 `(tag_source, tag_type, normalized_name)` 그룹별 최초 행(최소 id)을 정본으로 `story_creation_session_tags`의 참조를 재지정한 뒤 중복 행을 삭제하고, 유니크 제약을 원문 키에서 `(tag_source, tag_type, normalized_name)`으로 교체합니다(DB 컬럼 `tag_source`=`PREDEFINED`·`CUSTOM` 구분, `tag_type`=API `category`). 기존 `CUSTOM` 행이 같은 카테고리 `PREDEFINED` 태그와 정규화 키가 일치하는 경우도 위 연결 규칙과 동일하게 predefined 행으로 재지정 후 삭제합니다. 재지정 시 `story_creation_session_tags`의 `(creation_session_id, tag_id)` 유니크와 충돌하는 행(같은 세션이 변형 표기를 중복 선택)은 중복 제거합니다. 그 밖의 태그 FK 참조처는 `image_preset_genres`뿐이며 `PREDEFINED` 장르만 참조하므로(병합은 `CUSTOM` 행만 삭제) 영향이 없습니다.
+- **기존 중복 병합(이행, V51)** — 정규화 키가 겹치는 기존 행은 `(tag_source, tag_type, normalized_name)` 그룹별 정본 1행으로 참조를 재지정한 뒤 중복 행을 삭제하고, 유니크 제약을 원문 키에서 `(tag_source, tag_type, normalized_name)`으로 교체합니다(DB 컬럼 `tag_source`=`PREDEFINED`·`CUSTOM` 구분, `tag_type`=API `category`). `CUSTOM`뿐 아니라 `PREDEFINED` 그룹도 병합 대상입니다 — V2 시드의 `현대판타지`·`로맨스판타지`와 V13이 추가한 `현대 판타지`·`로맨스 판타지`가 정규화 키에서 충돌해, "CUSTOM 행만 삭제"로는 유니크 제약을 붙일 수 없습니다. 정본은 **활성 행 우선 → 최소 id**로 고릅니다(최소 id만 쓰면 V13이 비활성화한 옛 행이 정본이 되어 활성 장르가 태그 목록에서 사라짐). 기존 `CUSTOM` 행이 같은 카테고리 `PREDEFINED` 태그와 정규화 키가 일치하는 경우는 위 연결 규칙과 동일하게 predefined 정본으로 재지정 후 삭제합니다. 재지정 시 `story_creation_session_tags`의 `(creation_session_id, tag_id)` 유니크와 충돌하는 행(같은 세션이 변형 표기를 중복 선택)은 중복 제거하며, 나머지 FK 참조처인 `image_preset_genres`도 PREDEFINED 병합에 걸리면 같은 방식(PK 충돌분 제거 후 정본으로 재지정)으로 처리합니다.
 
 `Phase 1 · 계획`(KNK-621) — 키워드 단계 개편(2026-07-20 팀 결정, [`3-frontend.md §3-5`](./3-frontend.md))의 서버 반영분입니다. 구현 전까지 위 현행 계약이 유효합니다.
 
@@ -302,6 +305,7 @@ graph LR
 
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
+| `requestId` | UUID, 필수 | 클라이언트 생성 요청 ID — 복구 조회·멱등 키(아래 KNK-623 블록). 누락 시 400 |
 | `simpleCreationId` | ≥ 1 | 간편 제작 진행 ID |
 | `storylineId` | ≥ 1 | 선택한 스토리라인 ID |
 | `additionalInfos` | 최대 13개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
@@ -326,11 +330,11 @@ graph LR
 
 **`PUT · DELETE /stories/simple/storylines/{storylineId}/rating`** — 평가 설정은 `{rating: "GOOD" | "BAD"}`를 받아 200과 `{id, rating}`을 반환합니다. 평가는 스토리라인당 1행 upsert이며 새 평가가 기존 평가를 덮어씁니다(평가 주체는 저장하지 않음). 취소는 행 물리 삭제 후 204이며 평가가 없어도 성공하는 멱등 동작입니다. 존재하지 않는 스토리라인은 404, 소유자가 있는 진행의 스토리라인은 소유자만 평가·취소할 수 있고 타인·익명은 403입니다.
 
-`Phase 1 · 계획`(KNK-623) — 모바일에서 스토리라인 생성·스토리 완성 대기 중 앱 전환으로 연결이 끊겨도 서버가 생성을 계속 진행하고, 프론트엔드가 복귀 시 진행 상태·결과를 조회할 수 있어야 합니다(2026-07-20 팀 결정, [`3-frontend.md §3-5`](./3-frontend.md)). 현행 구현은 두 생성 호출 모두 servlet 워커 스레드의 동기 블로킹 구조(RestClient)라, 클라이언트 연결이 끊겨도 서버는 AI 호출·저장 트랜잭션을 끝까지 진행하고 응답 쓰기에서만 실패합니다 — 결과는 DB에 남지만 클라이언트가 식별자를 받지 못해 되찾을 수 없는 것이 문제입니다(응답 쓰기 실패는 서비스 밖에서 발생하므로 크레딧·게스트 카운터도 성공 경로로 정산 — 저장 결과와 정합). 따라서 동기 흐름은 유지하고 복구 경로만 추가합니다(확정 제안 — 전면 비동기화·폴링 전환은 하지 않음).
+`Phase 1 · 구현`(KNK-623, V48·V49) — 생성 요청 복구입니다. 모바일에서 스토리라인 생성·스토리 완성 대기 중 앱 전환으로 연결이 끊겨도 서버가 생성을 계속 진행하고, 프론트엔드가 복귀 시 진행 상태·결과를 조회할 수 있습니다(2026-07-20 팀 결정, [`3-frontend.md §3-5`](./3-frontend.md)). 두 생성 호출 모두 servlet 워커 스레드의 동기 블로킹 구조(RestClient)라, 클라이언트 연결이 끊겨도 서버는 AI 호출·저장 트랜잭션을 끝까지 진행하고 응답 쓰기에서만 실패합니다 — 결과는 DB에 남지만 클라이언트가 식별자를 받지 못해 되찾을 수 없던 것이 문제였습니다(응답 쓰기 실패는 서비스 밖에서 발생하므로 크레딧·게스트 카운터도 성공 경로로 정산 — 저장 결과와 정합). 따라서 동기 흐름은 유지하고 복구 경로만 추가했습니다(전면 비동기화·폴링 전환은 하지 않음).
 
-- **요청 ID** — `POST /stories/simple/storylines` · `POST /stories/simple` 요청 본문에 클라이언트 생성 `requestId`(UUID, 필수)를 추가합니다. 서버는 요청 수신 시 저장 트랜잭션과 별도 트랜잭션으로 생성 요청 행 `{request_id(유니크), stage, status=PENDING}`을 기록하고, 성공 시 `COMPLETED`로 갱신하며 결과를 연결, 실패 시 `FAILED`로 갱신합니다.
+- **요청 ID** — `POST /stories/simple/storylines` · `POST /stories/simple` 요청 본문의 클라이언트 생성 `requestId`(UUID, 필수 — 위 요청 필드 표). 서버는 요청 수신 시 저장 트랜잭션과 별도 트랜잭션으로 생성 요청 행 `{request_id(유니크), stage, status=PENDING}`을 기록하고, 성공 시 `COMPLETED`로 갱신하며 결과를 연결, 실패 시 `FAILED`로 갱신합니다.
 - **복구 조회** — `GET /stories/simple/creation-requests/{requestId}` → `{stage: "STORYLINE_GENERATION" | "STORY_COMPLETION", status: "PENDING" | "COMPLETED" | "FAILED", result}`. `result`는 `COMPLETED`일 때 원 POST 응답 본문과 동일 스키마, 그 외 null입니다. 소유 주체(회원 또는 게스트 디바이스 ID)만 조회할 수 있고 미존재·타인은 404입니다.
-- **멱등 겸용** — 같은 `requestId`로 재POST 시 `PENDING`이면 409, `COMPLETED`면 AI 호출 없이 저장된 결과를 반환합니다(재시도 중복 생성·중복 과금 방지).
+- **멱등 겸용** — 같은 `requestId`로 재POST 시 상태별로 갈립니다(판정은 행 락 안에서 이뤄져 동시 재요청과 직렬화). `COMPLETED`면 AI 호출 없이 저장된 결과를 반환합니다(재시도 중복 생성·중복 과금 방지). `PENDING`이면 409이되, 임계(기본 300초, `manyak.story.pending-reclaim-after-seconds`)보다 오래된 PENDING은 실행 중 프로세스가 죽은 잔여로 보고 회수 재실행을 허용합니다(`updatedAt` 갱신으로 곧이은 재요청은 다시 409). `FAILED`면 PENDING으로 되돌려 정상 재실행합니다 — 회수로 표시하지 않습니다: 회수로 처리하면 신규 requestId로 완성 세션을 찔러 409→FAILED를 만든 공격자가 같은 requestId 재시도로 reconcile을 유발해 남의 스토리를 열람할 수 있습니다. 다른 소유 주체의 requestId 재사용과 다른 생성 단계에서 쓴 requestId 재사용은 409입니다(단계 불일치 replay는 저장 응답을 다른 타입으로 역직렬화해 500이 나므로 사전 차단).
 - 요청 행 보존 기간·정리 정책은 미정입니다.
 
 ### 4-3-3. 채팅과 SSE 스트리밍
@@ -405,7 +409,7 @@ graph LR
 - **크레딧·한도** — 선택지 생성은 무료이며(턴 10크레딧에 포함된 경험 유지) 게스트 채팅 한도도 소모하지 않습니다.
 - **타임아웃** — 동기 REST **90초**(`manyak.ai.chat.choices-timeout`). AI가 재호출·폴백을 마치고 200을 주기도 전에 백엔드가 먼저 끊는 타임아웃 역전을 피하기 위한 값입니다(재호출 1회 여유 기준 — AI 누적 재호출 최악 케이스는 초과할 수 있음).
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
-- **타임아웃**: 두 층의 타임아웃이 있습니다(홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 160초**(`SseEmitter` 타임아웃) — 턴 스트림이 선택지 생성(90초)까지 마치고 `completed`를 보내는 과도기 배선(간극 표 B23) 동안 본문+선택지에 여유를 주도록 60초에서 상향된 값입니다. 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리 간극은 [`3-frontend.md §3-13`](./3-frontend.md) G5에 기록되어 있습니다.
+- **타임아웃**: 두 층의 타임아웃이 있습니다(홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 120초**(`SseEmitter` 타임아웃) — 선택지 분리(B23 해소) 후 stopgap용 160초에서 낮춘 값이며, AI 스트림 idle 60초의 2배 여유를 둡니다(idle은 토큰 간격 상한이라 토큰이 계속 오면 총 스트리밍이 60초를 넘을 수 있어, 전체 상한을 idle과 같게 두면 정상적인 긴 턴이 `completed` 전에 잘려 클라이언트가 turnId를 잃고 과금됨). 정상 턴은 완료 즉시 조기 종료하므로 지연·행 상황의 비상 상한입니다. 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리 간극은 [`3-frontend.md §3-13`](./3-frontend.md) G5에 기록되어 있습니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
 
 ### 4-3-4. 피드백
@@ -434,12 +438,12 @@ graph LR
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `POST /auth/login/google` | `{idToken, handoffCode?}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 `Phase 1 · 계획`(KNK-681) — 유효하면 이 호출이 회원 체험 시드(핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선)와 게스트 데이터 이관을 함께 수행([로그인 핸드오프](#로그인-핸드오프--phase-1--계획knk-681)) | `TokenResponse` |
+| `POST /auth/login/google` | `{idToken, handoffCode?}` — 구 `inviteCode?` 필드는 폐기 완료(`Phase 1 · 구현` KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 `Phase 1 · 구현`(KNK-681·684) — 유효하면 이 호출이 회원 체험 시드(핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선)와 게스트 데이터 이관을 함께 수행([로그인 핸드오프](#로그인-핸드오프--phase-1--구현knk-681684)) | `TokenResponse` |
 | `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday}` — `Phase 1 · 구현`(`creditBalance`·`attendedToday` KNK-498, `profileThumbnailBase64` KNK-388) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
 | `POST /auth/logout` | `{refreshToken}` | 204 (멱등) |
 
-`TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer"}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다. 웹에서는 이 응답을 BFF가 가로채 httpOnly 쿠키로 보관하고 `refreshToken`을 JS에 노출하지 않습니다(토큰 세션은 [§4-5](#4-5-인증과-권한) 참조).
+`TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer", isNewUser}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `isNewUser`(boolean)는 이번 로그인으로 계정이 새로 생성됐는지(신규 가입 여부)이며 프론트엔드 신규 가입 온보딩(초대 코드 입력 스텝, KNK-567)의 판정 신호입니다 — 기존 계정 로그인과 refresh 회전은 항상 false. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다. 웹에서는 이 응답을 BFF가 가로채 httpOnly 쿠키로 보관하고 `refreshToken`을 JS에 노출하지 않습니다(토큰 세션은 [§4-5](#4-5-인증과-권한) 참조).
 
 **세션 부트스트랩 확장 — `Phase 1 · 구현`(KNK-498).** `GET /auth/me` 응답에 `creditBalance`(number — 크레딧 잔액, 지갑이 없으면 0)와 `attendedToday`(boolean — KST 자정 기준 당일 출석체크 적립 완료 여부)를 포함합니다. `attendedToday`는 출석과 같은 멱등 키의 원장 행 존재 여부를 부수효과 없이 조회해 판정합니다. 프론트엔드는 세션 복원 1회 왕복으로 헤더의 잔액 표시와 출석체크 UI 상태까지 그립니다. access 토큰이 유효해도 `sub`가 UUID 형식이 아니면 401입니다.
 
@@ -501,7 +505,7 @@ graph LR
 
 - **영향.** `users.migrated_at` 컬럼(V36)과 응답 `migrationClosed` 필드로 구현됐습니다(KNK-434). 프론트엔드 자동 호출 흐름은 변경 없이 유지됩니다. 교차 접근 차단·체험 한도 축소(B8)와 함께 파밍 경로를 닫습니다.
 
-#### 로그인 핸드오프 — `Phase 1 · 계획`(KNK-681)
+#### 로그인 핸드오프 — `Phase 1 · 구현`(KNK-681·684)
 
 인앱 브라우저에서 게스트 이용을 허용하면([`3-frontend.md §3-10`](./3-frontend.md) 인앱 게스트 허용·로그인 핸드오프) 로그인은 외부 브라우저에서 일어나는데, 게스트 데이터 ID 배열과 디바이스 ID는 인앱 저장소에 고립됩니다. 핸드오프는 외부 전환 전에 두 가지를 서버에 임시 보관했다가 로그인 계정에 잇는 장치입니다. 프론트엔드 흐름·화면은 3-frontend가 정본이고, 이 절은 API 계약과 저장·보안 규칙을 고정합니다.
 
@@ -517,15 +521,16 @@ graph LR
 
 - **디바이스 ID 원문 보관.** 생성 요청은 디바이스 ID를 `X-Manyak-Device-Id` 헤더로 받습니다(`custom-fetch`가 모든 호출에 자동으로 붙여 프론트 변경이 없고, 게스트 엔드포인트 계약과도 통일 — [§4-3-7](#4-3-api-계약)). 회원 체험 시드가 서버 내부에서 pepper 해시로 카운터 키를 만들므로 원문이 필요하며(클라이언트 해시는 못 씀), 원문은 핸드오프 수명(TTL) 동안만 서버에 남습니다.
 - **소비는 로그인 호출이 겸합니다.** 별도 `consume` 엔드포인트를 두지 않고, `POST /auth/login/google`의 `handoffCode?`가 유효하면 그 호출이 **시드와 이관을 함께 수행**합니다. 로그인 성공 후 이관을 별도 호출로 미루면 "로그인 → 이관 → 복귀" 순서 경쟁과 헤더 없는 첫 로그인의 소진 시드 확정(1회성·비가역 — `member_trial_seeded_at`)이 생기므로, 한 호출로 원자화합니다. 시드는 핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선해 사용하고(무효·만료면 헤더 폴백 — §4-3-7 규칙 그대로), 이관은 핸드오프의 ID 배열을 기존 이관 로직([게스트 데이터 마이그레이션](#게스트-데이터-마이그레이션--phase-1--구현))에 그대로 제출합니다. 이관 1회 잠금·시도 5회 상한(`migration_attempts` 카운트 포함)·항목별 부분 성공이 동일하게 적용됩니다.
-- **멱등 소비.** 이미 소비된 코드로 다시 로그인하면 오류가 아니라 저장된 이관 결과를 그대로 반환합니다(기존 `/auth/migrate` 멱등과 같은 결). 응답 유실 후 재시도가 단순해집니다. 소비 전 이관 처리가 예외로 실패하면 코드는 미소비로 남아 만료 전까지 재시도할 수 있습니다.
+- **멱등 소비.** 이미 소비된 코드로 다시 로그인하면 오류가 아니라 멱등 no-op입니다(기존 `/auth/migrate` 멱등과 같은 결 — 응답 유실 후 재시도가 단순해짐). 로그인 응답은 `TokenResponse`뿐이며, 저장된 이관 결과 ID 목록은 `GET /auth/handoffs/status`로 확인합니다. 소비 전 이관 처리가 예외로 실패하면 코드는 미소비로 남아 만료 전까지 재시도할 수 있습니다.
+- **시드 성공이 소비의 전제.** 회원 체험 시드가 실패하면(Redis 장애 — 미시드로 남아 다음 로그인이 재시도) 핸드오프를 소비하지 않고 기존 상태를 유지합니다. 소비는 보관 규칙상 원본 디바이스 ID를 지우므로, 시드 실패에도 소비해 버리면 재시도가 인앱 디바이스를 잃고 외부 브라우저 디바이스로 시드해 게스트 사용량이 리셋되거나 소진으로 잘못 확정됩니다.
 - **상태 전이.** 각 상태는 아래 호출이 진입시킵니다. 인앱 브라우저는 `status`로 로컬 ID 정리·안내를 분기하고, 이관에 성공한 ID만 제거합니다(403 조회 판별 대안을 기각한 결정 기록은 3-frontend 소유).
 
 | `status` | 진입 트리거 | 의미 |
 | --- | --- | --- |
 | `PENDING` | `POST /auth/handoffs` | 생성됨 — 외부 브라우저가 아직 받지 않음 |
 | `LANDED` | `GET /auth/handoffs` | 외부 랜딩이 코드를 수령함(확인 호출) |
-| `MIGRATED` | `POST /auth/login/google`(유효 `handoffCode`) | 소비 완료 — 이관 결과 ID 목록 포함(성공 0건 포함) |
-| `MIGRATION_CLOSED` | `POST /auth/login/google`(유효 `handoffCode`) | 소비했으나 계정 잠금·시도 상한으로 이관되지 않음 |
+| `MIGRATED` | `POST /auth/login/google`(유효 `handoffCode` + 시드 성공) | 소비 완료 — 이관 결과 ID 목록 포함(성공 0건 포함) |
+| `MIGRATION_CLOSED` | `POST /auth/login/google`(유효 `handoffCode` + 시드 성공) | 소비했으나 계정 잠금·시도 상한으로 이관되지 않음 |
 
 - **소비 결과 보관.** `MIGRATED` · `MIGRATION_CLOSED`는 인앱 복귀가 늦을 수 있어 소비 시점부터 TTL 24시간으로 연장 보관합니다.
 - **저장·보안.** Redis `login_handoff:{codeHash}`에 TTL 30분으로 저장하며, 키는 코드 원문이 아니라 SHA-256 해시입니다. 코드는 128비트 이상 무작위 값이고 생성 응답에 1회만 노출합니다. 존재하지 않는 코드와 만료된 코드는 동일하게 404로 응답해 열거 오라클을 만들지 않습니다(만료 상태는 별도 enum 없이 404). 분석에는 코드와 별개의 `handoffId`만 사용하고([`6-analytics.md §6-4-2-12`](./6-analytics.md)), 코드 원문은 로그·분석 이벤트·Sentry에 남기지 않습니다.
@@ -633,7 +638,7 @@ graph TD
 - 소모는 사용자 관점 "만들기·이어가기 1회" 단위입니다. **컴파일당 20 크레딧, 완성된 턴당 10 크레딧**이며, 컴파일 내부 부분 재호출(refill, [`5-ai-server.md`](./5-ai-server.md))은 추가 소모하지 않습니다(1회 컴파일에 포함).
 - 스토리라인 생성·재생성(`POST /stories/simple/storylines`)은 회원 크레딧을 소모하지 않고 원장에도 쓰지 않습니다. 단, 게스트는 리롤을 포함해 디바이스 ID별 최대 5회까지만 생성할 수 있습니다.
 - 환불은 요청당 정확히 1회를 보장합니다(charge-once/refund-once) — 스트림 타임아웃·연결 끊김이 겹쳐 환불 경로가 중복 실행돼도 요청 단위 가드와 턴별 멱등 키의 이중 방어로 이중 환불을 차단합니다(KNK-399).
-- **회원도 게스트 체험 횟수를 공유합니다 — `Phase 1 · 구현`(KNK-504)** — 회원 요청의 소모 판정은 2단입니다: 계정 귀속 체험 잔여가 있으면 크레딧 대신 먼저 무료 소진(`reserveMember`), 없으면 크레딧 선차감. 무료 처리된 요청의 실패·미완료는 크레딧이 아니라 회원 체험 카운터를 복원합니다(`restoreMember`). 가입 시(로그인) 게스트 디바이스 사용량을 회원 카운터로 **1회 시드**하고, 성공하면 `users.member_trial_seeded_at`에 기록해 이후 로그인이 다시 시드하지 않게 합니다. 시드가 정책이고(게스트로 다 쓰고 가입해 체험을 리셋하는 파밍 차단), device 헤더 없는 소진 시드(무료 체험 없음)는 헤더가 정상 전달된다는 전제의 **우회 차단 폴백**입니다 — 정상 경로가 아니므로 BFF는 로그인 호출에 디바이스 ID를 반드시 실어야 합니다(`Phase 1 · 구현` KNK-683 — BFF가 요청 쿠키의 Amplitude 디바이스 ID를 헤더 원문으로 전달. 한 번 소진 시드된 계정은 1회성 마커 때문에 교정할 수 없음). 인앱 브라우저 경유 로그인은 핸드오프의 원본 디바이스 ID가 헤더보다 우선합니다(`Phase 1 · 계획` — [§4-3-5 로그인 핸드오프](#4-3-api-계약)). 시드가 Redis 장애로 실패하면 `member_trial_seeded_at`이 NULL로 남아 다음 로그인이 재시도합니다(로그인 자체는 진행). 롤아웃 이전 가입 회원은 `member_trial_seeded_at`을 백필해 시드 대상에서 제외합니다(V40).
+- **회원도 게스트 체험 횟수를 공유합니다 — `Phase 1 · 구현`(KNK-504)** — 회원 요청의 소모 판정은 2단입니다: 계정 귀속 체험 잔여가 있으면 크레딧 대신 먼저 무료 소진(`reserveMember`), 없으면 크레딧 선차감. 무료 처리된 요청의 실패·미완료는 크레딧이 아니라 회원 체험 카운터를 복원합니다(`restoreMember`). 가입 시(로그인) 게스트 디바이스 사용량을 회원 카운터로 **1회 시드**하고, 성공하면 `users.member_trial_seeded_at`에 기록해 이후 로그인이 다시 시드하지 않게 합니다. 시드가 정책이고(게스트로 다 쓰고 가입해 체험을 리셋하는 파밍 차단), device 헤더 없는 소진 시드(무료 체험 없음)는 헤더가 정상 전달된다는 전제의 **우회 차단 폴백**입니다 — 정상 경로가 아니므로 BFF는 로그인 호출에 디바이스 ID를 반드시 실어야 합니다(`Phase 1 · 구현` KNK-683 — BFF가 요청 쿠키의 Amplitude 디바이스 ID를 헤더 원문으로 전달. 한 번 소진 시드된 계정은 1회성 마커 때문에 교정할 수 없음). 인앱 브라우저 경유 로그인은 핸드오프의 원본 디바이스 ID가 헤더보다 우선합니다(`Phase 1 · 구현` — [§4-3-5 로그인 핸드오프](#4-3-api-계약)). 시드가 Redis 장애로 실패하면 `member_trial_seeded_at`이 NULL로 남아 다음 로그인이 재시도합니다(로그인 자체는 진행). 롤아웃 이전 가입 회원은 `member_trial_seeded_at`을 백필해 시드 대상에서 제외합니다(V40).
 
 **결정 기록 — 게스트 체험 한도 회원 공유(2026-07-07)**
 
@@ -935,7 +940,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEven
 - **레거시 보존 — `Phase 1 · 구현`** — 기존 `story_endings` 행(제목 · 내용 · `condition_text`)은 새 구조로 자동 변환하지 않고 `enabled = false`로 비활성 보존합니다. 자유 텍스트 조건을 구조화 조건으로 기계 변환할 수 없고, 대상 스토리가 소수라 수정 화면에서의 수동 재등록이 안전하기 때문입니다. 수정으로 `endings`를 교체하면 레거시 행도 함께 삭제됩니다([§4-3-8](#4-3-api-계약)). 새 엔딩을 등록하기 전까지 기존 스토리는 엔딩 판정이 동작하지 않습니다.
 - **런타임 상태 컬럼·집계 테이블 — `Phase 1 · 구현`(V41, KNK-521)** — `story_chats`에 목표 사건·도달 가드 컬럼(`target_main_event_id` FK · `target_progress_turns` · `reached_ending_id` FK)을 추가하고, 신규 테이블 `story_chat_main_events`(채팅↔완결 사건, `(chat_id, main_event_id)` 유니크)·`user_story_ending_reaches`(`(user_id, story_id, ending_id)` 유니크)와 `story_messages.reached_ending_id`(FK) 컬럼을 생성했습니다. 컬럼·제약 상세는 [§4-4](#4-4-데이터-모델).
 
-### 4-3-11. 채팅 공유 — `계획`
+### 4-3-11. 채팅 공유 — `Phase 1 · 구현`(KNK-706, V50)
 
 채팅 소유자가 발급 시점까지의 채팅을 읽기 전용 링크로 공유합니다(US-6-17·6-18). 화면 계약은 [`3-frontend.md §3-6`](./3-frontend.md)이 정의합니다.
 
@@ -978,7 +983,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEven
 
 ### 테이블·저장소 구성
 
-RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V42)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. Redis 키는 이 문서의 계약 절이 정본입니다. 여기서는 도메인 그룹과 역할만 고정합니다.
+RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migration/`, 현재 V51)이며, 컬럼 상세와 ER 다이어그램은 서버 레포 `dbdoc/`(tbls 자동 생성)이 소유합니다. Redis 키는 이 문서의 계약 절이 정본입니다. 여기서는 도메인 그룹과 역할만 고정합니다.
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
@@ -988,8 +993,9 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정(스토리 1:N — `Phase 1 · 구현` 복수화, KNK-515·V42): `public_id`(UUID, 유니크 — `POST /chats`의 `startSettingId`) · `name` · `prologue` · `start_situation`. 스토리당 1개 제약(V42에서 제거) 대신 `story_id` 비유니크 인덱스, 순서는 PK 오름차순(등록 순). 추천 입력·엔딩이 이 설정에 스코프 |
 | 스토리 | `story_suggested_inputs` | 추천 입력(시작 설정별 목록, `input_order`) |
-| 간편 제작 | `story_creation_tags` | 태그. `PREDEFINED` · `CUSTOM`, 카테고리 3종. `Phase 1 · 계획` 컬럼(KNK-717) — `normalized_name`(trim → 내부 공백 제거 → lowercase, 유니크 제약을 `(tag_source, tag_type, normalized_name)`으로 교체 — 커스텀 태그 파편화 병합, [§4-3-2](#4-3-api-계약)) |
-| 간편 제작 | `story_creation_sessions` | 간편 제작 진행(퍼널 1회) |
+| 간편 제작 | `story_creation_tags` | 태그. `PREDEFINED` · `CUSTOM`, 카테고리 3종. `normalized_name` 컬럼(KNK-717, V51) — trim → 내부 공백 제거 → lowercase, 유니크 제약을 `(tag_source, tag_type, normalized_name)`으로 교체 — 태그 파편화 병합([§4-3-2](#4-3-api-계약)) |
+| 간편 제작 | `story_creation_sessions` | 간편 제작 진행(퍼널 1회). `Phase 1 · 구현` 컬럼 — `creation_request_id`(UUID nullable, V49 — FK 제약 없는 요청 ID 바인딩. 익명 세션의 회수 재실행이 "이 세션을 만든 그 요청"인지 검증, [§4-3-2](#4-3-api-계약)) |
+| 간편 제작 | `story_creation_requests` | `Phase 1 · 구현`(KNK-623, V48) 생성 요청 복구·멱등. `request_id`(UUID 유니크) · `stage` · `status`(`PENDING`·`COMPLETED`·`FAILED`) · 소유 주체(회원 또는 게스트 디바이스 ID 해시) · `result_json`(COMPLETED 응답 replay용) · `updated_at`(aged PENDING 회수 판정 앵커, [§4-3-2](#4-3-api-계약)) |
 | 간편 제작 | `story_creation_session_tags` | 진행이 선택한 태그(유니크) |
 | 간편 제작 | `story_creation_storylines` | AI 생성 스토리라인 후보 |
 | 간편 제작 | `story_creation_storyline_recommended_infos` | 스토리라인별 추천 추가 정보 |
@@ -997,7 +1003,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 채팅 | `story_chats` | 채팅. `public_id`(UUID), 진행 턴 수(`current_turn`), `status`(`ACTIVE`·`ENDED` CHECK — V5부터. ENDED는 재생성 차단 가드, [§4-3-9](#4-3-api-계약)), `regenerated_count`(`Phase 1 · 구현` — 재생성 성공 횟수, 크레딧 대사 판정용, V35), `start_setting_id`(FK nullable → `story_start_settings`, `ON DELETE SET NULL`), `user_id`(소유자, nullable), `deleted_at`. `Phase 1 · 구현` 런타임 컬럼(V41) — `target_main_event_id`(FK nullable, `ON DELETE SET NULL`) · `target_progress_turns`(int not null default 0) · `reached_ending_id`(FK nullable, `ON DELETE SET NULL`) — 진행 상태·도달 가드([§4-3-10](#4-3-api-계약)) |
 | 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM`. `Phase 1 · 계획` 컬럼 — 본문 확정 시각(최초 생성 시 `created_at`과 동값, 재생성 성공 시 갱신 — 이미지 `images[]` 재구성 컷오프 앵커, [§4-3-9](#4-3-api-계약)). 현행은 `created_at`뿐이고 재생성이 타임스탬프를 갱신하지 않아 이미지 마이그레이션과 함께 추가 |
 | 채팅 | `story_choices` | 메시지별 선택지(`choice_order` 1부터, `(message_id, choice_order)` 유니크). `is_selected`·`selected_at` 컬럼은 현행 채팅 경로에서 기록하지 않음(항상 false·NULL) |
-| 채팅 | `story_chat_shares` | `계획` 채팅 공유 링크([§4-3-11](#4-3-api-계약)). `public_id`(UUID v4 — 공유 열람 토큰) · `chat_id`(FK) · `turn_cutoff`(발급 시점 `current_turn`) · `created_at`, `(chat_id, turn_cutoff)` 유니크(멱등 재발급). 삭제 컬럼 없음 — 유효성은 원본 채팅 `deleted_at`에 종속 |
+| 채팅 | `story_chat_shares` | `Phase 1 · 구현`(KNK-706, V50) 채팅 공유 링크([§4-3-11](#4-3-api-계약)). `public_id`(UUID v4 — 공유 열람 토큰) · `chat_id`(FK) · `turn_cutoff`(발급 시점 `current_turn`) · `created_at`, `(chat_id, turn_cutoff)` 유니크(멱등 재발급). 삭제 컬럼 없음 — 유효성은 원본 채팅 `deleted_at`에 종속 |
 | 로어북 | `lorebooks` | `Phase 1 · 구현` 장르 공용 용어 사전 |
 | 로어북 | `story_lorebooks` | `Phase 1 · 구현` 스토리-로어북 연결 |
 | 스토리 | `story_endings` | `Phase 1 · 구현` 엔딩 — `name` · `min_turns` · `achievement_condition` · `epilogue`(V33), `start_setting_id` 스코프·시작 설정당 최대 10(유형 없음). 레거시 행(제목·내용·`condition_text`)은 `enabled=false` 보존([§4-3-10](#4-3-api-계약)) |
@@ -1007,7 +1013,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
 | 크레딧 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 크레딧 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
-| 인증 | Redis `login_handoff:{codeHash}` | `Phase 1 · 계획`(KNK-681) 로그인 핸드오프 임시 보관(TTL 30분, 소비 결과는 24시간). 게스트 ID 배열·원본 디바이스 ID·복귀 경로·상태([§4-3-5](#4-3-api-계약)) |
+| 인증 | Redis `login_handoff:{codeHash}` · `login_handoff_claim:{codeHash}` | `Phase 1 · 구현`(KNK-681·684) 로그인 핸드오프 임시 보관(TTL 30분, 소비 결과는 24시간). 게스트 ID 배열·원본 디바이스 ID·복귀 경로·상태, `_claim` 키는 소비 멱등 판정용([§4-3-5](#4-3-api-계약)) |
 | 스토리 | `story_main_events` | `Phase 1 · 구현` 주요 사건(스토리당 최대 10, V29). `name` · `description` · `key_sentence` · `sort_order` — 런타임 의미와 판정 계약은 [§4-3-10](#4-3-api-계약)(`Phase 1 · 구현`, V41) |
 | 채팅 | `story_chat_main_events` | `Phase 1 · 구현`(V41) 채팅 ↔ 완결(거쳐온) 주요 사건 기록. `chat_id` · `main_event_id` · `created_at`, `(chat_id, main_event_id)` 유니크. 거쳐온 사건 순서는 조회 시 `story_main_events.sort_order`로 정렬 |
 | 스토리 | `user_story_ending_reaches` | `Phase 1 · 구현`(V41) 사용자+스토리 엔딩 도달 집계. `user_id` · `story_id` · `ending_id` · `created_at`, 3필드 유니크 — 회원 도달 기록·이관 백필([§4-3-10](#4-3-api-계약)) |
@@ -1097,8 +1103,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | `Phase 1 · 구현` | 위 두 규칙을 동일 적용 — 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403(KNK-69) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | `Phase 1 · 구현`(KNK-497) | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | `구현`(KNK-401·464) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)) — 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
-| 채팅 공유 발급(`POST /chats/{chatId}/shares`) | `계획` | 채팅 상세 조회와 동일 규칙 — 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
-| 채팅 공유 열람(`GET /shares/{shareId}`) | `계획` | 인증 불필요 — 공유 토큰(UUID) 보유가 접근 수단. 소유자가 명시 발급한 별도 경로라 채팅 상세 비공개 결정(아래 결정 기록)과 충돌하지 않음([§4-3-11](#4-3-api-계약) 결정 기록) |
+| 채팅 공유 발급(`POST /chats/{chatId}/shares`) | `Phase 1 · 구현`(KNK-706) | 채팅 상세 조회와 동일 규칙 — 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
+| 채팅 공유 열람(`GET /shares/{shareId}`) | `Phase 1 · 구현`(KNK-706) | 인증 불필요 — 공유 토큰(UUID) 보유가 접근 수단. 소유자가 명시 발급한 별도 경로라 채팅 상세 비공개 결정(아래 결정 기록)과 충돌하지 않음([§4-3-11](#4-3-api-계약) 결정 기록) |
 
 게스트 간 접근(UUID를 아는 다른 게스트의 NULL 리소스 접근)은 서버가 게스트를 식별할 수 없어 차단하지 못합니다. 프론트엔드가 로컬 서재 ID 보유 여부로 수정·삭제 진입점을 제한하는 현행 완화를 유지하고, 이관 완료 후에는 소유자가 생겨 소유자 전용 규칙이 적용됩니다.
 
@@ -1169,9 +1175,9 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` | 이미 스토리를 생성한 간편 제작 진행으로 재생성 시도. `Phase 1 · 구현` — AI 응답 재생성의 `turnId`가 마지막 턴이 아님([§4-3-9](#4-3-api-계약)). `Phase 1 · 구현`(KNK-567) — 초대 코드 입력의 자기 코드 제출(`INVITE_SELF_CODE`)·재제출(`INVITE_ALREADY_REDEEMED`)은 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
-| 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일) |
+| 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일·선택지 생성 트리거 — [§4-3-3](#4-3-api-계약)) |
 
-**OpenAPI 스키마 노출 — `Phase 1 · 구현`(KNK-525).** 위 오류 응답(`ApiErrorResponse`, `code` 포함)을 Swagger/`GET /v3/api-docs`에 스키마로 노출합니다(이전에는 `hidden` 처리로 누락). 엔드포인트별 문서화된 오류 코드: 채팅 이어쓰기 스트림 400·402·403·404, 재생성 스트림 400·402·403·404·409, 스토리라인 생성 400·402·502, 간편 제작 400·402·404·409·502. SSE 엔드포인트도 오류 바디는 `application/json`으로 문서화하며, 회귀 테스트가 402 경로의 스키마 노출을 고정합니다.
+**OpenAPI 스키마 노출 — `Phase 1 · 구현`(KNK-525).** 위 오류 응답(`ApiErrorResponse`, `code` 포함)을 Swagger/`GET /v3/api-docs`에 스키마로 노출합니다(이전에는 `hidden` 처리로 누락). 엔드포인트별 문서화된 오류 코드: 채팅 이어쓰기 스트림 400·402·403·404, 재생성 스트림 400·402·403·404·409, 스토리라인 생성 400·402·502, 간편 제작 400·402·404·409·502(스토리라인 생성의 런타임 409(requestId 멱등 — [§4-3-2](#4-3-api-계약))는 Swagger 목록 미기재). SSE 엔드포인트도 오류 바디는 `application/json`으로 문서화하며, 회귀 테스트가 402 경로의 스키마 노출을 고정합니다.
 
 ### SSE 오류 중계
 
@@ -1288,6 +1294,8 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` · `MANYAK_AMPLITUDE_API_KEY` | 아니오 | 서버 분석 이벤트(`server_*`) Amplitude 발행(KNK-514). `ENABLED` 기본 `false`, 켜려면 `true` + API 키 필요(둘 중 하나 없으면 no-op) |
 | `MANYAK_AMPLITUDE_BASE_URL` | 아니오 | Amplitude HTTP V2 base URL. 기본 `https://api2.amplitude.com`(EU는 `https://api.eu.amplitude.com`). `application.yml` 전용(`.env.example` 미포함) |
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL` | 아니오 | 피드백 Slack 알림. 미설정 시 알림 생략 |
+| `MANYAK_ASSET_BASE_URL` | 아니오 | 프로필 프리셋 이미지 서빙 base URL(기본 `https://api.manyak.app`) — `profile_image_url = {base}/profile-presets/{명사}.png`([§4-5](#4-5-인증과-권한) B7). 후속 S3/CDN 전환은 이 값 치환만으로 됨 |
+| `MANYAK_GOOGLE_FORM_FEEDBACK_ID` · `MANYAK_GOOGLE_FORM_FEEDBACK_{BODY,EMAIL,PLATFORM,APP_VERSION}_ENTRY` · `MANYAK_GOOGLE_FORM_BASE_URL` | 아니오 | 피드백 구글 폼 적재(KNK-618, [§4-3-4](#4-3-api-계약)). form ID 미설정이면 건너뜀 — live form ID는 운영에만 둬 로컬 실행이 실 스프레드시트를 오염시키지 않음. entry ID는 공개 식별자라 yml 기본값 보유, base URL은 테스트 mock 전용 오버라이드 |
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` · `SENTRY_TRACES_SAMPLE_RATE` | 아니오 | Sentry 연동. DSN 미설정 시 비활성 |
 
 ### 헬스체크·API 문서·배포
@@ -1327,7 +1335,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-6-12 | 주요 사건 기반 선택지 `Phase 1 · 구현` | `POST /chats/{chatId}/turns/stream`(AI 전달 계약 — [§4-3-10](#4-3-api-계약)) |
 | US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속 `Phase 1 · 구현` | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목 노출은 후속([§4-3-3](#4-3-api-계약)) |
 | US-6-11 | 채팅 이미지 표시 `Phase 1 · 계획` | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
-| US-6-17 · 6-18 | 채팅 공유 발급·열람 `계획` | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
+| US-6-17 · 6-18 | 채팅 공유 발급·열람 `Phase 1 · 구현` | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
 | US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |
 | US-9-1 · 9-5 | 로그인·로그아웃 `Phase 1 · 구현` | `POST /auth/login/google`, `POST /auth/logout` |
 | US-9-2 | 랜덤 프로필 발급 — 닉네임·이미지 `Phase 1 · 구현` | `POST /auth/login/google`(가입 시 닉네임·프리셋 이미지 배정 — KNK-388), `GET /auth/me` |
@@ -1368,7 +1376,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 - `Phase 1` 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 상세 응답에 원본 `thumbnailUrl`, 목록·채팅 카드 응답에 축소 변형 `thumbnailUrlSm`(`_sm` 접미사 파생)이 실려야 합니다. 규칙 도입 전 스토리는 두 필드 모두 null이어야 합니다.
 - `Phase 1` 채팅 이미지: `token` 스트림에 마커가 노출되지 않아야 하고, `completed`·상세 조회의 `images[]`에는 카탈로그에 있는 키가 타입별 최대 1장씩만 실려야 합니다(백엔드 이중 강제 — 본문 마커는 무변경). `images[]`에 없는 마커는 프론트엔드가 마커 텍스트째 숨겨야 하며 사용자에게 `[[image:…]]` 원문이 보이면 안 됩니다. 같은 인물은 턴 진행·재생성에 걸쳐 같은 이미지여야 하고(`story_characters` 고정), 상세 조회의 `images[]` 재구성 결과가 `completed` 시점과 동일해야 합니다 — 특히 턴 확정 이후 등록된 프리셋 키의 마커는 재구성에서도 무효로 남아야 합니다(삭제 금지 + 등록 시각 컷오프). 비활성(`deactivated_at` 기록)으로 내린 이미지는 다음 턴부터 후보 전달·`images[]`에서 빠져야 하고, 비활성 **이전에** 확정된 지난 턴 재구성에는 계속 남아야 하며, 비활성 **중에** 확정된 턴의 마커는 재구성에서도 무효여야 합니다(`completed` 대칭 — 비활성 적용 범위). 후보가 없는 스토리의 턴에는 이미지가 없어야 합니다.
 - `Phase 1` 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`의 `reachedEnding`(엔딩 이름·null)이 일치해야 하고(채팅 상세 턴 항목 노출은 후속), 도달 후에도 턴 진행이 계속 가능해야 합니다.
-- `계획` 채팅 공유: 발급 응답의 `turnCount`가 발급 시점 `current_turn`과 일치해야 하고, 같은 커트라인의 재발급은 같은 `shareId`를 반환해야 합니다(멱등). 발급 후 턴이 진행돼도 공유 조회 `turns[]`는 커트라인 이하만 반환해야 합니다. 공유 조회는 인증 없이 200이어야 하고, 원본 채팅 삭제 후에는 404여야 합니다. 발급의 소유권 위반(회원의 NULL 채팅, 타인 소유 채팅)은 403이어야 합니다.
+- `Phase 1` 채팅 공유: 발급 응답의 `turnCount`가 발급 시점 `current_turn`과 일치해야 하고, 같은 커트라인의 재발급은 같은 `shareId`를 반환해야 합니다(멱등). 발급 후 턴이 진행돼도 공유 조회 `turns[]`는 커트라인 이하만 반환해야 합니다. 공유 조회는 인증 없이 200이어야 하고, 원본 채팅 삭제 후에는 404여야 합니다. 발급의 소유권 위반(회원의 NULL 채팅, 타인 소유 채팅)은 403이어야 합니다.
 - `Phase 1` 엔딩 집계: 회원 도달 시 `user_story_ending_reaches`에 1행이 생기고 같은 (사용자, 스토리, 엔딩) 재도달은 행을 늘리지 않아야 합니다. 게스트 채팅 이관 시 도달 기록이 집계로 백필되어야 하고, `GET /stories/{storyId}`의 `reachedEndings`가 집계와 일치해야 합니다(게스트 요청은 빈 배열).
 - `Phase 1` 레거시 엔딩: 재정의 마이그레이션 후 기존 `story_endings` 행이 `enabled=false`로 보존되고, 수정 폼 응답·런타임 판정에 나타나지 않아야 합니다.
 
@@ -1386,4 +1394,5 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | B19 | 이관 소유권 미증명·열거 오라클 | 서버가 요청자의 원래 게스트 소유를 증명할 수 없어 NULL 리소스는 UUID를 아는 회원 누구나 클레임 가능([§4-3-5](#4-3-api-계약)). 성공 0건 호출은 잠기지 않아, `MIGRATED`/`CONFLICT`/`NOT_FOUND` 구분이 임의 UUID의 소유 상태 열거 오라클이 됨 | 완화 `Phase 1 · 구현` — 이관 시도 상한 5회(성공 0건 포함, `users.migration_attempts` V38, KNK-500)로 열거 규모를 제한. `status` 세분화는 부분 성공 UX에 필요해 유지. 공개 게스트 UUID 클레임 가능성은 이관의 구조적 한계로 수용(관측 추적) |
 | B21 | Sybil 보상 파밍 | 가입 500·초대 양측 500 크레딧이 계정 생성 제한 없이 지급([§4-3-7](#4-3-api-계약)). 다수 Google 계정으로 유료 AI 재화를 대량 확보 가능(게스트 이관 파밍(B8)과 다른 벡터). 초대 방식 개편(KNK-567)으로 자격이 회원 평생 1회로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)도 같은 벡터에 포함 — 의도된 정책으로 수용(2026-07-11) | Phase 1 수용 — 보상 지급량을 관측으로 추적. 계정 신뢰 신호 기반 dedup·보상 지연은 후속 결정 |
 | B22 | 초대 방식 개편 — prod 릴리스 대기 | **서버·프론트엔드 구현 완료**(KNK-567, 2026-07-21 코드 대조 확인) — 코드 입력 적립 `POST /users/me/invite/redeem`(`InviteController.kt:100`, 양측 적립·평생 1회), 혼동 문자 제외 코드 재발급(V47), 적립 월 귀속(`monthlyRewardCount`), 로그인 `inviteCode` 폐기·`inviteUrl` 제거([§4-3-7](#4-3-api-계약)). 프론트엔드도 redeem 훅·온보딩 폼·로그인 분리 반영([`3-frontend.md`](./3-frontend.md)) | 링크 방식 실사용자가 없어 전환기 호환 불필요 — 서버·프론트엔드 prod 동반 릴리스로 종결 |
-| B23 | 선택지 분리의 과도기 배선(stopgap) | **해소** — stopgap은 KNK-645로 제거됐고(server `v0.2.2`), 프론트 트리거 전환(KNK-643, web `v0.2.5`)과 AI 분리(KNK-625, `v0.2.1`)까지 2026-07-22 3자 동시 배포로 반영됐습니다. 이제 문서 기준([§4-3-3](#4-3-api-계약))대로 SSE `completed`의 `choices`는 항상 빈 배열이고 프론트가 트리거 엔드포인트로 채웁니다. **이전 판의 "프론트 동시 배포 불요"는 폐기합니다** — stopgap이 사라졌으므로 AI·백엔드만 배포하면 선택지가 비고, 롤백도 3자 동시여야 합니다. KNK-645는 SSE 전체 상한도 조정했습니다(AI 스트림 idle 예산 위로 여유를 둔 값) | `계획` — 타임아웃 역전 재조정(choices 90초 vs AI 최악 180초 — [`5-ai-server.md` A11](./5-ai-server.md)), §4-3-3의 SSE 상한 표기 현행화(백엔드 소관) |
+| B23 | 선택지 분리의 과도기 배선(stopgap) | **해소** — stopgap은 KNK-645로 제거됐고(server `v0.2.2`), 프론트 트리거 전환(KNK-643, web `v0.2.5`)과 AI 분리(KNK-625, `v0.2.1`)까지 2026-07-22 3자 동시 배포로 반영됐습니다. 이제 문서 기준([§4-3-3](#4-3-api-계약))대로 SSE `completed`의 `choices`는 항상 빈 배열이고 프론트가 트리거 엔드포인트로 채웁니다. **이전 판의 "프론트 동시 배포 불요"는 폐기합니다** — stopgap이 사라졌으므로 AI·백엔드만 배포하면 선택지가 비고, 롤백도 3자 동시여야 합니다. KNK-645는 SSE 전체 상한도 조정했습니다(AI 스트림 idle 예산 위로 여유를 둔 값 — §4-3-3 표기 현행화 완료) | `계획` — 타임아웃 역전 재조정(choices 90초 vs AI 최악 180초 — [`5-ai-server.md` A11](./5-ai-server.md)) |
+| B24 | `StoryAuthorResponse.id`의 Long 노출형 | DTO(`story/dto/StoryDtos.kt`)의 `author.id`가 내부 Long 타입 — 외부 노출 식별자는 공개 UUID만 쓰는 정책([§4-4](#4-4-데이터-모델))과 충돌. 현재는 `StoryService`가 `author = null` 고정이라 실제 노출은 없음(placeholder — [§4-3-1](#4-3-api-계약)) | 후속에서 author를 채우기 전에 `id`를 `public_id`(UUID)로 교체 — 채우는 순간 식별자 정책 위반이 되므로 선행 조건 |
