@@ -768,6 +768,8 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 
 4xx 응답이 사용자가 복구할 수 있는 검증 오류라면 Sentry exception으로 보내지 않습니다. 사용자 행동 분석이 필요하면 Amplitude 이벤트로만 기록합니다. 서버 사이드 상관 키 `request_id`를 브라우저 Sentry Tags에 추가하는 것은 추후 도입 항목입니다.
 
+앱 코드와 무관한 외부 노이즈는 `ignoreErrors`로 수집 자체를 차단합니다. 사용자 취소(`AbortError`)·`ResizeObserver` 경고 외에, SNS 인앱 브라우저(인스타그램·쓰레드·카카오톡 등)가 웹뷰에 주입하는 네이티브 브릿지 스크립트(`sendDataToNative`)가 페이지 이탈 시점에 던지는 오류(`window.webkit.messageHandlers` undefined, `Java object is gone`)도 여기에 해당합니다 — 웹 레포에서 고칠 수 없는 주입 스크립트 오류인데 사용자 영향 1위 이슈로 잡혀 실제 오류를 가렸기 때문입니다. 정본 목록은 `src/observability/monitoring/sentry.ts`의 `SENTRY_IGNORE_ERRORS`입니다.
+
 ### 6-6-5. 백엔드 CloudWatch 로그
 
 모든 백엔드 로그는 JSON 형태로 남깁니다. CloudWatch `event_name`은 운영 로그 이름이며, `6-4. 이벤트 카탈로그`의 분석 이벤트 네이밍 컨벤션을 강제하지 않습니다.
