@@ -194,8 +194,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0 `Phase 1 · 계획` | client | `client_login_oauthError_shown`                          |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_succeeded`           |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_failed`              |
-| P0 `Phase 1 · 계획` | server | `server_login_kakaoLogin_processed_succeeded`            |
-| P0 `Phase 1 · 계획` | server | `server_login_kakaoLogin_processed_failed`               |
+| P0 `Phase 1 · 구현` | server | `server_login_kakaoLogin_processed_succeeded`            |
+| P0 `Phase 1 · 구현` | server | `server_login_kakaoLogin_processed_failed`               |
+| P1 `Phase 1 · 구현` | server | `server_link_socialLink_processed_succeeded`             |
+| P1 `Phase 1 · 구현` | server | `server_link_socialLink_processed_failed`                |
 | P0 `Phase 1 · 구현` | server | `server_login_migration_processed_succeeded`             |
 | P0 `Phase 1 · 구현` | server | `server_login_migration_processed_failed`                |
 | P0                  | client | `client_feedback_viewed`                                 |
@@ -451,8 +453,10 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
 | `server_login_googleLogin_processed_succeeded` `Phase 1 · 구현` | P0       | Google 로그인 처리 성공                          | `is_new_user` (boolean, 필수)                                                                                                |
 | `server_login_googleLogin_processed_failed` `Phase 1 · 구현`    | P0       | Google 로그인 처리 실패                          | `error_type` (string, 필수)                                                                                                  |
-| `server_login_kakaoLogin_processed_succeeded` `Phase 1 · 계획`  | P0       | Kakao 로그인 처리 성공(KNK-721)                  | `is_new_user` (boolean, 필수)                                                                                                |
-| `server_login_kakaoLogin_processed_failed` `Phase 1 · 계획`     | P0       | Kakao 로그인 처리 실패(KNK-721)                  | `error_type` (string, 필수)                                                                                                  |
+| `server_login_kakaoLogin_processed_succeeded` `Phase 1 · 구현`  | P0       | Kakao 로그인 처리 성공(KNK-721)                  | `is_new_user` (boolean, 필수)                                                                                                |
+| `server_login_kakaoLogin_processed_failed` `Phase 1 · 구현`     | P0       | Kakao 로그인 처리 실패(KNK-721)                  | `error_type` (string, 필수)                                                                                                  |
+| `server_link_socialLink_processed_succeeded` `Phase 1 · 구현`   | P1       | 계정 연동 처리 성공(KNK-739)                     | `provider` (string, 필수 — `google` · `kakao`)                                                                               |
+| `server_link_socialLink_processed_failed` `Phase 1 · 구현`      | P1       | 계정 연동 처리 실패(KNK-739)                     | `provider` (string, 필수) · `error_type` (string, 필수)                                                                      |
 | `server_login_migration_processed_succeeded` `Phase 1 · 구현`   | P0       | 마이그레이션 처리 완료(부분 성공 포함)           | `migrated_story_count` · `migrated_chat_count` · `already_owned_count` · `conflict_count` · `not_found_count` (number, 필수) |
 | `server_login_migration_processed_failed` `Phase 1 · 구현`      | P0       | 마이그레이션 요청 자체 실패(400 등)              | `error_type` (string, 필수)                                                                                                  |
 
