@@ -989,7 +989,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
 | 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19) |
-| 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크, `user_id`는 다대일(한 사용자에 여러 provider 연동 가능 — 계정 연결은 후속 [§4-5](#4-5-인증과-권한)). provider 체크 제약(V16)이 GOOGLE·KAKAO·APPLE·NAVER를 허용 |
+| 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)` 유니크, `user_id`는 다대일(한 사용자에 여러 provider 연동 가능 — 계정 연동 기능은 후속 [§4-5](#4-5-인증과-권한)). provider 체크 제약(V16)이 GOOGLE·KAKAO·APPLE·NAVER를 허용 |
 | 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 구현` 컬럼 — `thumbnail_image_key`(V45, nullable — 등록 시 자동 연결로 1회 확정, 응답 `thumbnailUrl`·`thumbnailUrlSm`은 백엔드가 URL 조합, [§4-3-9](#4-3-api-계약)) |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정(스토리 1:N — `Phase 1 · 구현` 복수화, KNK-515·V42): `public_id`(UUID, 유니크 — `POST /chats`의 `startSettingId`) · `name` · `prologue` · `start_situation`. 스토리당 1개 제약(V42에서 제거) 대신 `story_id` 비유니크 인덱스, 순서는 PK 오름차순(등록 순). 추천 입력·엔딩이 이 설정에 스코프 |
@@ -1080,7 +1080,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 계정 병합(merge) API | 크레딧은 로트별 만료일을 물고 FIFO로 소진되므로(V39) 잔액 합산이 아니라 로트 단위 이관이 필요하고, `users.inviter_user_id` 초대 그래프의 자기참조 루프, `user_story_ending_reaches` 유니크 충돌, 이관 1회 잠금(`migrated_at`)·정지 상태의 어느 쪽을 남길지까지 전부 새 정책이 필요합니다. 수요가 확인되면 문의 기반 수동 처리를 우선합니다 |
 | PASS 등 본인확인 CI(연계정보) 기반 통합 | 실명·휴대폰번호 수집이 전제라 실명 노출 회피 프로필 정책(아래 B7)·최소수집 원칙과 정면 충돌하고 가입 퍼널이 길어집니다. 카카오 `account_ci`는 이미 본인확인을 도입한 서비스용이라 선행 조건이 순환합니다. CI를 얻어도 위의 병합 비용(로트·초대 그래프·유니크 충돌)은 그대로 남습니다. 연령 등급 의무나 파밍 피해가 실측되면 그 목적으로 별도 판단합니다 |
 
-계정 연결(linking — 로그인된 세션에서 다른 provider를 같은 `user_id`에 추가)은 스키마가 이미 다대일이라 마이그레이션 없이 가능하며, 갈라진 계정을 사후에 합치는 것보다 훨씬 싸므로 **후속 별도 티켓**으로 다룹니다.
+계정 연동(linking — 로그인된 세션에서 다른 provider를 같은 `user_id`에 추가)은 갈라진 계정을 사후에 합치는 것보다 훨씬 싸므로 **후속 별도 티켓**(KNK-738)으로 다룹니다. 표기는 "계정 연동"으로 통일합니다([`0-glossary.md §0-3-4`](./0-glossary.md) — "계정 연결"은 지양, KNK-737).
 
 ### 가입 프로필 발급 — 닉네임·프로필 이미지 `Phase 1 · 구현`
 
