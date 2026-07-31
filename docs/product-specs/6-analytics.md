@@ -1030,7 +1030,7 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 **결정.** 매일 오전 10시(KST) claude.ai 클라우드 루틴이 지난 24시간 Sentry 오류를 세 서비스(`python-fastapi`·`java-spring-boot`·`typescript-nextjs`) 통틀어 요약해 슬랙 전용 채널 `#센트리-데일리-리포트`에 올립니다(KNK-711).
 
-**규칙의 정본은 manyak-ai 레포의 `.agents/skills/daily-sentry-digest/`입니다.** 조회식·분류 기준·메시지 형식·결정 이력이 그 문서에 있습니다. 이 절은 관측 계약으로 고정할 것만 적습니다.
+**규칙의 정본은 manyak-ai 레포의 `.agents/skills/daily-sentry-report/`입니다.** 조회식·분류 기준·메시지 형식·결정 이력이 그 문서에 있습니다. 이 절은 관측 계약으로 고정할 것만 적습니다.
 
 | 고정하는 것 | 값 |
 | --- | --- |
