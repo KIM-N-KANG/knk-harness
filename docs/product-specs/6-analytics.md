@@ -191,7 +191,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | server | `server_chat_aiMessage_processed_failed`                 |
 | P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown`                      |
 | P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown`                          |
-| P0 `Phase 1 · 계획` | client | `client_login_oauthError_shown`                          |
+| P0 `Phase 1 · 구현` | client | `client_login_oauthError_shown`                          |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_succeeded`           |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_failed`              |
 | P0 `Phase 1 · 구현` | server | `server_login_kakaoLogin_processed_succeeded`            |
@@ -250,7 +250,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed`                  |
 | P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
 | P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
-| P1 `Phase 1 · 계획` | client | `client_login_kakaoButton_clicked`                       |
+| P1 `Phase 1 · 구현` | client | `client_login_kakaoButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_account_viewed`                                  |
 | P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
@@ -446,8 +446,8 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | --------------------------------------------------------------- | -------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | `client_login_viewed` `Phase 1 · 구현`                          | P1       | 로그인 화면 진입                                 | 없음                                                                                                                         |
 | `client_login_googleButton_clicked` `Phase 1 · 구현`            | P1       | Google 로그인 버튼 클릭                          | 없음                                                                                                                         |
-| `client_login_kakaoButton_clicked` `Phase 1 · 계획`             | P1       | 카카오 로그인 버튼 클릭(KNK-721)                 | 없음                                                                                                                         |
-| `client_login_oauthError_shown` `Phase 1 · 계획`                | P0       | OAuth 콜백 실패로 `/login` 복귀 시 NextAuth `error` 쿼리 감지(KNK-721) | `error_code` (string, 필수 — NextAuth error 값) · `provider` (string, 시작 provider를 알 수 없으면 null)                     |
+| `client_login_kakaoButton_clicked` `Phase 1 · 구현`             | P1       | 카카오 로그인 버튼 클릭(KNK-721)                 | 없음                                                                                                                         |
+| `client_login_oauthError_shown` `Phase 1 · 구현`                | P0       | OAuth 콜백 실패로 `/login` 복귀 시 NextAuth `error` 쿼리 감지(KNK-721) | `error_code` (string, 필수 — NextAuth error 값) · `provider` (string, 시작 provider를 알 수 없으면 null)                     |
 | `client_account_viewed` `Phase 1 · 구현`                        | P1       | 마이 페이지 진입                                 | 없음                                                                                                                         |
 | `client_account_loginButton_clicked` `Phase 1 · 구현`           | P1       | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음                                                                                                                         |
 | `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
@@ -486,7 +486,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "나중에 하기" 버튼·배경 탭·ESC 공통(KNK-567, KNK-715)  | 없음                                                                                                           |
 | `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
 | `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 다이얼로그 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
-| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일)                                                                                               |
+| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일) · `provider` (string, 필수 — `google` · `kakao`, KNK-728)                                                                                               |
 | `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
 | `client_creditShortageDialog_shown`              | P0       | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원)                     | `trigger` (동일)                                                                                               |
 | `client_creditShortageDialog_earnButton_clicked` | P1       | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭(친구 초대로 이동)           | `trigger` (동일)                                                                                               |
@@ -545,10 +545,10 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
 | `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
 | `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | `handoff_id` (string, 필수)                      |
-| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `handoff_id` (string, 필수)                      |
+| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `handoff_id` (string, 필수) · `provider` (string, 필수 — `google` · `kakao`, KNK-728) |
 
 - 목표 퍼널은 `인앱 유입(detected) → 스토리 생성 → 첫 채팅 → 핸드오프 생성 → 외부 랜딩 → 로그인 성공 → 이관 성공`입니다. 로그인·이관 구간은 서버 이벤트(§6-4-3)에 `handoff_id`를 실어 연결하며, 서버 측 프로퍼티 추가는 [`4-backend.md`](./4-backend.md) 소유로 협의합니다.
-- **카카오톡 인앱의 카카오 로그인은 이 퍼널을 타지 않습니다** (`Phase 1 · 계획`, KNK-721). 같은 브라우저에서 핸드오프 없이 완료되므로([`3-frontend.md §3-10`](./3-frontend.md) 분기 표) 핸드오프 이벤트가 발생하지 않고, `device_id`가 연속이라 연결 키도 필요 없습니다. 카카오 로그인 배포 후 핸드오프 생성 건수 감소는 퍼널 이탈이 아니라 이 경로 전환의 정상 신호이므로, 인앱 로그인 전환은 핸드오프 퍼널과 `client_login_kakaoButton_clicked` → `server_login_kakaoLogin_processed_succeeded`를 합쳐 봅니다.
+- **카카오톡 인앱의 카카오 로그인은 이 퍼널을 타지 않습니다** (`Phase 1 · 구현`, KNK-721·KNK-728). 같은 브라우저에서 핸드오프 없이 완료되므로([`3-frontend.md §3-10`](./3-frontend.md) 분기 표) 핸드오프 이벤트가 발생하지 않고, `device_id`가 연속이라 연결 키도 필요 없습니다. 카카오 로그인 배포 후 핸드오프 생성 건수 감소는 퍼널 이탈이 아니라 이 경로 전환의 정상 신호이므로, 인앱 로그인 전환은 핸드오프 퍼널과 `client_login_kakaoButton_clicked` → `server_login_kakaoLogin_processed_succeeded`를 합쳐 봅니다.
 - 게스트 체험 이중 사용(미결, [`3-frontend.md §3-10`](./3-frontend.md)) 규모 판단을 위해, 개편 배포 시 공통 프로퍼티(§6-3-2)에 인앱 여부(`in_app_browser`: 동일 enum 또는 null)를 추가하는 것을 검토합니다 — 게스트 한도 도달 이벤트의 인앱 분포가 판단 근거입니다.
 
 #### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
