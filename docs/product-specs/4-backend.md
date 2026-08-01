@@ -385,7 +385,7 @@ graph LR
 
 **`POST /chats/{chatId}/turns/stream`** — 사용자 입력으로 턴을 진행하고 AI 응답을 SSE로 중계합니다. `Phase 1 · 구현` — 회원은 10 크레딧, 게스트는 모든 채팅방 합산 채팅 턴 5회 한도를 사용합니다([§4-3-7](#4-3-api-계약)).
 
-- 요청: `{userInput: string}` — `@NotBlank`+`@Size(max=3000)` 검증으로 공백만인 입력도 400입니다. 채팅이 없으면 스트림 시작 전에 동기 404로 응답합니다.
+- 요청: `{userInput: string, userSource?: "choice" | "edited_choice" | "typed"}` — `userInput`은 `@NotBlank`+`@Size(max=3000)` 검증으로 공백만인 입력도 400입니다. `userSource`는 `Phase 1 · 구현`(KNK-707·KNK-751) 선택 필드로, 서버는 값을 추론하지 않고 통과만 시킵니다 — 추천 선택지를 그대로 보낸 경우 `choice`, 고쳐서 보낸 경우 `edited_choice`, 직접 입력한 경우 `typed`이며, 문자열만으로는 "추천 선택지와 같은 문장을 직접 입력했는지"를 서버가 구분할 수 없어 프론트가 명시해야 합니다. 허용값 밖의 값은 400입니다. 채팅이 없으면 스트림 시작 전에 동기 404로 응답합니다. 서버는 AI 채팅 턴 요청 본문에 같은 값을 `user_source` 필드로 그대로 forward합니다(값이 없으면 필드 생략) — AI는 이를 Langfuse metadata의 `user_source` 키로 기록합니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 값이 없을 때 다운스트림 파이프라인이 어떻게 처리하는지는 파이프라인 소관이라 이 문서가 정하지 않습니다.
 - 응답 Content-Type: `text/event-stream;charset=UTF-8`.
 - 이벤트 순서: `started` → `token`(반복) → `completed` 또는 `error`.
 
@@ -1305,18 +1305,58 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 원본 `X-Manyak-Device-Id`는 forward하지 않습니다. PII가 서버 경계를 넘지 않게 하는 구조적 장치입니다.
 
-**Langfuse 선호 분석용 백엔드 협력 — `Phase 1 · 계획`(KNK-641).**
+**Langfuse 여정 연결용 헤더 — `Phase 1 · 구현`(KNK-707·KNK-751).** 위 3종은 요청 단위 MDC 공통값에서 채우지만, 아래는 도메인 데이터(제작 세션·채팅·턴)에서 채우는 값이라 성격이 다릅니다. 값이 없거나 `unknown`이면 위와 동일하게 헤더를 생략합니다. 근거·확정 경위는 아래 [Langfuse 선호 분석용 백엔드 협력] 절을 참조하세요.
+
+| forward 헤더 | 값 | 적용 호출 |
+| --- | --- | --- |
+| `X-Manyak-Creation-Id` | 스토리라인 단계 `story_creation_requests.request_id`(UUID). 컴파일은 세션의 `storyline_request_id`로 조회, 채팅 턴·선택지는 `story_chats.creation_id`로 저장해 둔 같은 값을 그대로 forward | 스토리라인 생성, 컴파일, 채팅 턴, 선택지 생성 |
+| `X-Manyak-Parent-Creation-Id` | 프론트가 재생성 요청에 실어 보내는 **직전** `creation_id`(체인 — 확정, 아래 참고). `story_creation_requests.parent_request_id`로 검증에 성공했을 때만 forward | 스토리라인 생성(재생성일 때만, 값 없거나 검증 실패 시 생략) |
+| `X-Manyak-Storyline-Id` | 컴파일 요청 본문의 Long `storylineId` 그대로(§4-4 정책대로 UUID 아님) | 컴파일 |
+| `X-Manyak-Storyline-Order` | `story_creation_storylines.storyline_order`(1~3, AI 후보 id와 일치) | 컴파일 |
+| `X-Manyak-Story-Id` | `stories.public_id` | 채팅 턴, 선택지 생성 |
+| `X-Manyak-Chat-Id` | `story_chats.public_id` | 채팅 턴, 선택지 생성 |
+| `X-Manyak-Start-Setting-Id` | `story_start_settings.public_id` | 채팅 턴, 선택지 생성 |
+| `X-Manyak-Turn-Number` | 호출 종류마다 다름(아래 참고) | 채팅 턴(이어쓰기·재생성), 선택지 생성 |
+| `X-Manyak-Is-Regenerated` | `true`·`false`(서버가 판단해 채움, 아래 참고) | 채팅 턴(이어쓰기·재생성), 선택지 생성 |
+
+`X-Manyak-Turn-Number`는 호출 종류에 따라 성격이 다릅니다 — 같은 헤더 이름이지만 예측치인 경우와 이미 확정된 값인 경우가 섞여 있어 혼동하기 쉽습니다.
+
+- **일반 이어쓰기**(`POST /chats/{chatId}/turns/stream`) — 아직 저장되지 않은 **예측치** `current_turn + 1`입니다. 권위값이 아니며, 최종 대조는 저장 트랜잭션 확정 후 사후 반영되는 `ai_call_logs.turn_number`로 합니다.
+- **재생성**(`POST /chats/{chatId}/turns/regenerate/stream`) — 이미 저장돼 있는 **재생성 대상 턴의 번호**(`current_turn`, 새 턴이 아니라 기존 마지막 턴을 교체하므로 +1 하지 않음)입니다. 정확한 값입니다.
+- **선택지 생성**(`POST /chats/{chatId}/turns/{turnId}/choices`) — `current_turn`과 같습니다. 별도 조회가 필요 없습니다 — `resolveRegenerateTarget`이 그 `turnId`가 마지막 턴이 아니면 409로 막으므로, 선택지 호출이 성립하는 시점에 그 턴은 항상 마지막 턴이고 번호는 항상 `current_turn`과 같습니다.
+
+`X-Manyak-Is-Regenerated`는 다른 헤더의 "값 없으면 생략" 원칙의 예외로, **항상 `true`/`false`를 명시적으로 채워 보냅니다** — 이지선다 값이라 생략하면 "모름"과 "아니오"가 구분되지 않기 때문입니다.
+
+**이 헤더의 의미는 "이 호출이 재생성 호출인가"이지 "이 턴이 재생성된 턴인가"가 아닙니다** — 구현 완료(KNK-751, `fa81b2c`):
+
+- 일반 이어쓰기·자동 재시도 — `false`(백엔드에 AI 호출 자동 재시도 경로가 없어 — story는 RestClient, chat은 WebClient, 양쪽 다 retry 미설정 — 이 경우는 사실상 발생하지 않습니다)
+- 채팅 본문 재생성(`/turns/regenerate/stream`) — `true`
+- 선택지 생성 — **항상 `false`**입니다. 선택지에는 재생성 개념이 없습니다 — `ChatService.generateChoices`는 이미 선택지가 있으면 AI 호출 없이 기존 값을 반환하는 멱등 흐름이고, "선택지를 다시 생성한다"는 사용자 흐름도 엔드포인트도 없습니다.
+- 스토리라인 재생성은 별도 불리언 헤더가 아니라 위 `X-Manyak-Parent-Creation-Id`의 유무로 판단합니다(있으면 재생성, 없으면 신규)
+
+**"이 턴이 재생성된 턴인가"는 헤더가 아니라 조인으로 구합니다.** 선택지 호출의 `X-Manyak-Is-Regenerated: false`를 "이 턴은 재생성되지 않았다"로 읽으면 안 됩니다 — 그 턴이 재생성으로 만들어졌는지는 같은 `chat_id` + `turn_number`를 가진 `chat_response`(채팅 본문) 트레이스의 `is_regenerated` 값에서 유도합니다. 같은 조인 키가 이미 그 정보를 주므로 턴 단위 플래그를 별도로 저장하지 않습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+
+**Langfuse 선호 분석용 백엔드 협력 — 트레이스 연결용 식별자는 `Phase 1 · 구현`(KNK-707·KNK-751), 반응 신호 전송·직접 입력 장르 임시 관측은 `Phase 1 · 계획`(KNK-641).**
 
 **배경과 문제.** AI가 남기는 LLM 트레이스(Langfuse — [`5-ai-server.md §5-6`](./5-ai-server.md))로 "무엇이 인기 있는가"를 분석하려면 트레이스에 ① 어느 대화·스토리인지 ② 사용자가 좋아했는지 ③ 어떤 장르인지가 붙어야 합니다. 그런데 AI는 무상태라 이 셋을 스스로 알 수 없습니다. 게다가 턴·스토리 ID는 **AI 호출이 끝난 뒤 저장 시점에야 생기고**(`ChatTurnPersister`·`SimpleStoryCreationService`), 장르는 사용자 커스텀 입력이 섞여 옵니다.
 
-**결정.** 백엔드가 아래 세 가지를 제공합니다. 헤더 이름·전송 방식은 제안이며 백엔드 구현에 맞춰 확정합니다. AI는 받은 값을 저장하지 않고 트레이스 열쇠로만 씁니다(무상태 유지).
+**결정.** 백엔드가 아래 세 가지를 제공합니다. AI는 받은 값을 **자체 DB에는 저장하지 않지만 Langfuse metadata에는 기록**합니다(무상태 유지 — 백엔드 도메인 테이블에 별도로 적재하지 않는다는 뜻이지, Langfuse에 남기지 않는다는 뜻이 아닙니다).
 
-**① 트레이스 연결용 식별자를 호출 전에 만들어 forward.** 턴·스토리 ID는 호출이 끝난 뒤 저장 시점에야 생기므로(그때는 forward 불가), 백엔드가 호출 **전에** 연결용 식별자를 만들어 forward합니다. **정확한 헤더 이름·값·전달 방식은 후속에서 확정**하며, 아래는 방향입니다.
+**① 트레이스 연결용 식별자를 호출 전에 만들어 forward — 구현 완료(KNK-707·KNK-751).** 턴·스토리 ID는 호출이 끝난 뒤 저장 시점에야 생기므로(그때는 forward 불가), 백엔드가 호출 **전에** 연결용 식별자를 만들어 forward합니다. 헤더 이름·값·전달 방식은 아래로 확정합니다(표는 위 [상관관계 식별자] 절).
 
-- 채팅: 본문(`/chat/turns`) 호출은 이 시점에 턴 ID가 없어 연결용 식별자가 필요합니다. 선택지(`/chat/choices`)는 경로에 이미 실제 `turnId`가 있으므로(`POST /chats/{chatId}/turns/{turnId}/choices`) 그 turnId를 그대로 쓰면 됩니다 — 두 호출을 억지로 같은 합성 키로 묶지 않습니다.
-- 스토리: 멱등용 `requestId`는 **단계 간 재사용이 409로 막히지만**(`StoryCreationRequestRecorder` — 스토리라인↔완성 재사용 시 "다른 단계에서 사용된 요청 ID" 오류), 제작 세션 PK `simpleCreationId`가 이미 스토리라인 생성 때 발급돼 컴파일까지 클라이언트가 되돌려 보내는 **단계 간 안정 식별자**입니다(크레딧 refId로도 같은 값 사용). 새 식별자를 만들 필요 없이 이 `simpleCreationId` 재사용을 우선 검토합니다.
-- AI는 이 식별자를 저장하지 않고 트레이스 연결에만 씁니다. 저장 후 실제 turnId·스토리ID와의 매핑은 백엔드가 보관해 이후 반응 신호를 이어 붙입니다.
-- **두 호출을 한 트레이스로 합칠지, 같은 식별자로 검색만 할지는 후속에서 정합니다** — 지금 AI는 요청마다 별도 트레이스를 남기고, 식별자를 metadata에 넣는 것만으로 자동 병합되지 않습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+- **스토리 계열(스토리라인 생성·컴파일)** — 연결 키는 `X-Manyak-Creation-Id`이며 값은 **스토리라인 단계 `story_creation_requests.request_id`(클라이언트 생성 UUID)** 입니다. 제작 세션 PK `simpleCreationId`(`story_creation_sessions.id`)는 쓰지 않습니다 — 그 값은 스토리라인 AI 호출이 **성공한 뒤에야** 생겨 최초 스토리라인 트레이스에 실을 수 없고, 순차 PK라 외부 노출 식별자는 `public_id`로 한다는 정책과도 어긋납니다. 대신 `request_id`는 AI 호출 **전** 별도 트랜잭션에서 `PENDING` 행으로 먼저 커밋되고([§4-3-2](#4-3-api-계약)의 '요청 ID' 절, KNK-623), 실패해도 행이 남아 `FAILED`로 전이되며, 같은 `requestId`로 재요청하면 같은 값이 재사용됩니다(KNK-631 복구 경로) — 호출 전 발급·실패해도 보존·재요청 시 동일값이라는 세 요구를 이미 만족합니다. 컴파일 호출은 자기 자신의 멱등용 `requestId`를 본문에 그대로 쓰고(단계 간 재사용 409 회피), 스토리라인 단계의 값은 `story_creation_sessions.storyline_request_id`(세션 생성 시점 — 즉 스토리라인 AI 호출 성공 시점에 그 스토리라인 요청의 `requestId`를 저장해 두는 컬럼)로 조회해 `X-Manyak-Creation-Id` 헤더로 별도 운반합니다. 같은 테이블의 기존 `creation_request_id`(V49)는 **컴파일 완료 시점에 컴파일 자신의 `requestId`로 채워지는 별개 컬럼**(회수 재실행 검증용 — 위 데이터 모델 절)이라 이 용도에는 쓸 수 없습니다 — 혼동하면 스토리라인 호출은 자기 `requestId`를, 컴파일 호출은 그와 다른 컴파일 `requestId`를 실어 보내 두 단계가 연결되지 않습니다. 헤더 forward는 멱등 키 재사용이 아니라 연결용 값을 얹는 것이라 `StoryCreationRequestRecorder`의 단계 간 재사용 차단(409)에 걸리지 않습니다. 스토리라인 재생성은 전용 엔드포인트가 없어(그냥 신규 `requestId`의 신규 호출) 서버가 원본과의 관계를 스스로 알 수 없습니다 — 프론트엔드가 직전 `creation_id`를 함께 보내면 백엔드가 검증합니다.
+
+  **체인 vs 루트 — 체인으로 확정(KNK-755).** 정본 컬럼은 `story_creation_requests.parent_request_id`(자기참조 UUID, 신규)입니다. `story_creation_sessions`가 아닙니다 — 세션은 스토리라인 AI 호출이 성공한 뒤에만 생겨서, 실패한 재생성 시도가 그 방식으로는 체인에서 빠집니다. 자기참조 단일 컬럼은 구조적으로 "직전 값"만 표현할 수 있어(최초 값을 담을 별도 자리가 없음), 이 스키마를 채택하는 순간 체인 방식(A→B→C, `B.parent=A`·`C.parent=B`, `C.parent`가 A를 직접 가리키지 않음)으로 자동 확정됩니다 — 프론트엔드는 매 재생성마다 **바로 직전** `creation_id`를 보냅니다.
+
+  **검증 — 존재 + 소유 연속성 + 자기참조 아님.** 소유 연속성 판정은 **양쪽 다 회원이면 `user_id` 엄격 일치가 우선**입니다 — 이때는 `device_id_hash`로 보조 판정하지 않습니다. 같은 기기에서 계정 A로 로그아웃 후 계정 B로 로그인해 재생성하면 `device_id_hash`는 같아도 서로 다른 사람의 제작이라, 기기 일치만으로 연결하면 계정이 다른 두 여정이 섞이기 때문입니다. `device_id_hash`는 **둘 중 한쪽 이상이 비로그인(게스트)일 때만** 보조 기준으로 씁니다 — 회원 요청에도 `device_id_hash`가 함께 저장돼 있어(회원이어도 디바이스 해시를 버리지 않음) 게스트로 시작해 제작 도중 로그인해도(같은 기기) 연속으로 인정됩니다. 순환은 부모가 항상 이미 커밋된 과거 행만 가리킬 수 있어(쓰기 시점에 이미 존재하는 행만 참조 허용) 구조적으로 불가능하며, 자기참조만 별도로 `parent != self`를 확인합니다.
+
+  **검증 실패는 400이 아닙니다 — 시도값·사유를 남기고 헤더만 생략.** 부모가 존재하지 않거나, 소유가 불연속이거나, 자기참조면 검증된 `parent_request_id`는 NULL로 저장하고 `X-Manyak-Parent-Creation-Id` 헤더를 생략합니다. 다만 **프론트가 실제로 보낸 값(`attempted_parent_creation_id`)과 실패 사유는 별도로 보존**합니다 — `parent_request_id`만 NULL로 남기면 "애초에 최초 생성이라 부모가 없는 행"과 "재생성인데 연결에 실패한 행"을 구분할 수 없기 때문입니다(둘 다 NULL이면 후자를 최초 생성으로 오판). 관측용 필드 때문에 정상적인 재생성 요청 자체를 막지 않는다는, 이 문서가 `ai_call_logs`에 이미 적용해 온 원칙("관측이 비즈니스를 막지 않는다" — 컬럼 길이 절단·음수 보정과 같은 결)을 그대로 따른 것이고, AI팀이 요구한 "확신 없으면 추정하지 말고 `chain_complete: false` + 구체적 `chain_error`로 반환" 원칙과도 일관됩니다 — 서버 쪽 첫 관문도 거부가 아니라 조용히 끊고 표시하는 쪽을 택했습니다. 이 규칙 덕분에 **검증된 `parent_request_id`는 항상 유효한 조상을 가리킨다**는 불변식이 성립하고, 중간 연결 누락 걱정 없이 체인을 그대로 순회할 수 있습니다.
+
+  일반 제작(저작) 스토리는 제작 세션이 없으므로 `X-Manyak-Creation-Id`를 생략합니다(임의 값 생성 금지).
+- **채팅 계열(턴·선택지)** — AI팀 요구(§6)가 `creation_id` + `story_id` + `chat_id`로 스토리라인 생성 → 컴파일 → 채팅까지 이어지는 전체 여정을 구성하므로, 채팅 턴·선택지 호출도 `X-Manyak-Creation-Id`를 forward합니다 — 값은 채팅 생성 시점에 원본 창작 진행의 `creation_id`를 복사해 저장해 둔 `story_chats.creation_id`입니다. 일반 제작(저작) 스토리의 채팅은 이 값이 없어 헤더를 생략합니다. 턴 단위 연결은 `X-Manyak-Chat-Id`(`story_chats.public_id`) + `X-Manyak-Turn-Number` 조합입니다. `X-Manyak-Turn-Number`·`X-Manyak-Is-Regenerated`는 호출(이어쓰기·재생성·선택지) 종류마다 값이 다릅니다 — 규칙은 위 [상관관계 식별자] 절 표 아래를 참조하세요. 턴 번호를 미리 선점하는 방식은 채택하지 않습니다 — 실패한 호출이 번호를 소모하면, AI팀이 "빈 구간 = 누락 신호"로 쓰려는 규칙이 영구히 오염되기 때문입니다. 판정(목표 사건 진행·엔딩 도달)은 백엔드 입장에서 별도 HTTP 호출이 아니라 턴 SSE `completed` 페이로드에 실려 오므로(`AiCallFeature`는 `STORYLINE_GENERATION`·`STORY_COMPLETION`·`CHAT_RESPONSE`·`CHOICE_GENERATION` 4종뿐이며 판정 전용 feature·호출은 없음) 판정용 별도 헤더 배선은 없고 턴 SSE 호출 헤더가 그대로 커버합니다. 선택지 생성(`/chat/choices`)은 턴 SSE와 완전히 분리된 동기 REST 호출이지만 헤더 부착 방식은 동일합니다. `X-Manyak-Story-Id`(`stories.public_id`)·`X-Manyak-Start-Setting-Id`(`story_start_settings.public_id`)도 같은 두 호출에 forward합니다. `userSource`(아래 §4-3)는 헤더가 아니라 AI 채팅 턴 요청 본문의 `user_source` 필드로 그대로 전달합니다 — 값이 없으면 필드를 생략하고, AI는 이를 Langfuse metadata의 같은 키(`user_source`)로 기록합니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+- 헤더에 싣는 식별자는 원칙적으로 `public_id`(UUID)를 씁니다. 단 `X-Manyak-Storyline-Id`는 예외입니다 — 스토리라인 ID는 [§4-4](#4-4-데이터-모델)가 이미 "제작 퍼널의 임시 리소스로 소유 개념이 없어 Long을 그대로 노출한다"고 정해 뒀고, 그 Long은 컴파일 요청 본문에 이미 실려 있으므로 같은 값을 AI 호출 헤더에 얹는 것은 새로운 노출이 아닙니다 — 이 값만을 위해 `story_creation_storylines`에 `public_id` 컬럼을 신설할 필요는 없습니다. `ai_call_logs.story_id`가 내부 PK BIGINT인 채로 남아도 파이프라인 조인은 `request_id` 기준이라 깨지지 않습니다.
+- AI는 이 식별자를 **자체 DB에는 저장하지 않지만 Langfuse metadata에는 기록**합니다. 저장 후 실제 turnId·스토리ID와의 매핑은 백엔드가 보관해 이후 반응 신호를 이어 붙입니다.
+- **트레이스 자동 병합은 하지 않습니다.** AI는 지금도 요청마다 별도 트레이스를 남기는 구조를 유지하며(식별자를 metadata에 넣는 것만으로 자동 병합되지 않음), 그 구조를 바꿀지는 AI팀 소관이라 이 문서가 확정하지 않습니다. 대신 스토리 계열은 `creation_id`로, 채팅 계열은 `creation_id` + `chat_id` + `turn_number`로 **검색·조인**해 같은 여정임을 식별하는 방식으로 확정합니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
 
 **② 사용자 반응 신호를 Langfuse score로 전송.** 재생성 여부([§4-3-9](#4-3-api-계약))·엔딩 도달([§4-3-10](#4-3-api-계약))·스토리라인 GOOD/BAD 평가(`story_creation_storyline_ratings`, [§4-3-2](#4-3-api-계약)). 셋 다 백엔드 보유 데이터라 전송만 추가하면 됩니다(부정·긍정·명시평가를 고루 포함). **백엔드가 직접 전송**합니다 — 반응 시점이 AI 호출과 무관(며칠 뒤 재생성 등)해 AI 경유가 부자연스럽기 때문입니다. 단계적으로 도입합니다.
 
@@ -1350,7 +1390,9 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 **와이어 표기** — AI 계약은 이원 표기가 공식입니다([`0-glossary.md §0-4`](./0-glossary.md)). story 계열 요청·응답은 snake_case(`genre_tags`, `selected_storyline`, `recommended_infos`)이고, chat SSE `completed` 페이로드는 camelCase(`aiOutput`, `choices`)입니다. AI 와이어의 스토리라인 본문·부가 정보 필드는 용어집 기준 `storyline`·`additional_info`·`recommended_infos`로 정렬 완료입니다(구 `story`·`extra_info` 소멸 — [§4-8](#4-8-검수-체크리스트) B2).
 
-**기록 필드** — 행마다 feature(소문자 snake_case로 저장 — CloudWatch 이벤트 이름과 정합), 상태(`STARTED` → `SUCCEEDED` · `FAILED`), 상관관계 식별자(`request_id`, `device_id_hash`, `session_id`), 연결 리소스(스토리·채팅·턴), AI 응답 meta(provider, model, 입·출력 토큰 수, `retry_count`), 프롬프트 버전 맵(JSONB — AI가 보낸 키를 변환 없이 적재, 레거시 스칼라 `prompt_template_version`과 병존), `latency_ms`, 실패 시 `error_code`와 `sentry_event_id`를 기록합니다. 호출 직전 `STARTED` 행을 insert하고 **같은 행을 UPDATE**로 전이하므로(`completed_at` 기록) `STARTED` 잔존 행은 호출 중 프로세스 중단의 지표입니다. meta는 `SUCCEEDED` 전이와 같은 저장에 반영하고, 관측이 비즈니스를 깨지 않도록 컬럼 길이 절단·음수 보정·`unknown`→null 정규화를 적용합니다. 채팅 턴 번호는 저장 트랜잭션이 확정한 값을 사후 반영합니다.
+**기록 필드** — 행마다 feature(코드 enum `AiCallFeature`는 대문자지만 **DB에는 소문자 snake_case로 저장** — CloudWatch 이벤트 이름과 정합. `STORYLINE_GENERATION`→`storyline_generation`·`STORY_COMPLETION`→`story_completion`·`CHAT_RESPONSE`→`chat_response`·`CHOICE_GENERATION`→`choice_generation`. **대문자 enum 이름으로 `ai_call_logs.feature`를 필터하면 조용히 0행이 나옵니다** — 쿼리·내보내기 스크립트는 반드시 소문자 값을 씁니다), 상태(`STARTED` → `SUCCEEDED` · `FAILED`), 상관관계 식별자(`request_id`, `device_id_hash`, `session_id`), 연결 리소스(스토리·채팅·턴), AI 응답 meta(provider, model, 입·출력 토큰 수, `retry_count`), 프롬프트 버전 맵(JSONB — AI가 보낸 키를 변환 없이 적재, 레거시 스칼라 `prompt_template_version`과 병존), `latency_ms`, 실패 시 `error_code`와 `sentry_event_id`를 기록합니다. 호출 직전 `STARTED` 행을 insert하고 **같은 행을 UPDATE**로 전이하므로(`completed_at` 기록) `STARTED` 잔존 행은 호출 중 프로세스 중단의 지표입니다. meta는 `SUCCEEDED` 전이와 같은 저장에 반영하고, 관측이 비즈니스를 깨지 않도록 컬럼 길이 절단·음수 보정·`unknown`→null 정규화를 적용합니다. 채팅 턴 번호는 저장 트랜잭션이 확정한 값을 사후 반영합니다.
+
+**`ai_call_logs` 내보내기(다운스트림 파이프라인용) 최소 필드 — `Phase 1 · 구현`(KNK-707·KNK-751).** Langfuse 트레이스를 `ai_call_logs`와 대조하는 파이프라인은 최소 `request_id`·공개 `chat_id`·최종 `turn_number`·**저장 성공 여부**·가능하면 공개 `story_id`가 필요합니다. `status = SUCCEEDED`는 **AI 호출 성공**만 뜻하고 **채팅 DB 저장 성공을 보장하지 않습니다**(호출은 성공했는데 이후 저장이 실패하는 경로가 있을 수 있음). 그래서 별도 저장 성공 컬럼을 새로 만들지 않고 기존 규칙을 그대로 판별 기준으로 씁니다 — **`turn_number IS NOT NULL`인 행만 저장 완료로 간주**합니다. `AiCallRecorder.attachTurnNumber`는 턴이 DB에 확정 저장된 뒤에만 실행되므로(`ChatService`가 persist 완료 후 호출 — 위 [기록 필드] 절), 저장이 실패하거나 프로세스가 죽으면 이 호출 자체가 일어나지 않아 `turn_number`가 계속 `null`로 남습니다 — `turn_number`가 채워졌다는 사실 자체가 저장 성공을 뜻합니다. **내보내기 형식은 확정됐습니다** — 쿼리는 manyak-server 레포 `docs/ai-call-logs-export.sql`(KNK-751, PR #168, `0f2a364`)에 있습니다. 남은 것은 실제 운영 데이터 샘플뿐이며, 이는 KNK-751 구현 완료 후 별도 공유합니다.
 
 ### 서버 분석 이벤트 — `Phase 1 · 구현`(KNK-514)
 
