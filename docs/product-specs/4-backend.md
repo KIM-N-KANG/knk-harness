@@ -1323,14 +1323,18 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 - **일반 이어쓰기**(`POST /chats/{chatId}/turns/stream`) — 아직 저장되지 않은 **예측치** `current_turn + 1`입니다. 권위값이 아니며, 최종 대조는 저장 트랜잭션 확정 후 사후 반영되는 `ai_call_logs.turn_number`로 합니다.
 - **재생성**(`POST /chats/{chatId}/turns/regenerate/stream`) — 이미 저장돼 있는 **재생성 대상 턴의 번호**(`current_turn`, 새 턴이 아니라 기존 마지막 턴을 교체하므로 +1 하지 않음)입니다. 정확한 값입니다.
-- **선택지 생성**(`POST /chats/{chatId}/turns/{turnId}/choices`) — 경로의 `turnId`로 조회한 **그 턴에 이미 저장된 turn_number**입니다. 예측이 아니라 DB에서 조회한 정확한 값입니다.
+- **선택지 생성**(`POST /chats/{chatId}/turns/{turnId}/choices`) — `current_turn`과 같습니다. 별도 조회가 필요 없습니다 — `resolveRegenerateTarget`이 그 `turnId`가 마지막 턴이 아니면 409로 막으므로, 선택지 호출이 성립하는 시점에 그 턴은 항상 마지막 턴이고 번호는 항상 `current_turn`과 같습니다.
 
 `X-Manyak-Is-Regenerated`는 다른 헤더의 "값 없으면 생략" 원칙의 예외로, **항상 `true`/`false`를 명시적으로 채워 보냅니다** — 이지선다 값이라 생략하면 "모름"과 "아니오"가 구분되지 않기 때문입니다.
 
-- 일반 이어쓰기·자동 재시도 — `false`
+**이 헤더의 의미는 "이 호출이 재생성 호출인가"이지 "이 턴이 재생성된 턴인가"가 아닙니다** — 구현 완료(KNK-751, `fa81b2c`):
+
+- 일반 이어쓰기·자동 재시도 — `false`(백엔드에 AI 호출 자동 재시도 경로가 없어 — story는 RestClient, chat은 WebClient, 양쪽 다 retry 미설정 — 이 경우는 사실상 발생하지 않습니다)
 - 채팅 본문 재생성(`/turns/regenerate/stream`) — `true`
-- 선택지 생성 — 그 선택지가 붙는 턴의 마지막 AI 응답이 재생성으로 만들어졌으면 `true`, 아니면 `false`. **턴별 재생성 여부를 저장하는 컬럼이 현재 스키마에 없어**, 이 판별을 어떻게 구현할지는 KNK-751 구현에서 결정합니다(`story_chats.regenerated_count`는 채팅 단위 누적 횟수일 뿐 턴 단위 플래그가 아님)
+- 선택지 생성 — **항상 `false`**입니다. 선택지에는 재생성 개념이 없습니다 — `ChatService.generateChoices`는 이미 선택지가 있으면 AI 호출 없이 기존 값을 반환하는 멱등 흐름이고, "선택지를 다시 생성한다"는 사용자 흐름도 엔드포인트도 없습니다.
 - 스토리라인 재생성은 별도 불리언 헤더가 아니라 위 `X-Manyak-Parent-Creation-Id`의 유무로 판단합니다(있으면 재생성, 없으면 신규)
+
+**"이 턴이 재생성된 턴인가"는 헤더가 아니라 조인으로 구합니다.** 선택지 호출의 `X-Manyak-Is-Regenerated: false`를 "이 턴은 재생성되지 않았다"로 읽으면 안 됩니다 — 그 턴이 재생성으로 만들어졌는지는 같은 `chat_id` + `turn_number`를 가진 `chat_response`(채팅 본문) 트레이스의 `is_regenerated` 값에서 유도합니다. 같은 조인 키가 이미 그 정보를 주므로 턴 단위 플래그를 별도로 저장하지 않습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
 
 **Langfuse 선호 분석용 백엔드 협력 — 트레이스 연결용 식별자는 `Phase 1 · 구현`(KNK-707·KNK-751), 반응 신호 전송·직접 입력 장르 임시 관측은 `Phase 1 · 계획`(KNK-641).**
 
@@ -1380,7 +1384,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 **기록 필드** — 행마다 feature(소문자 snake_case로 저장 — CloudWatch 이벤트 이름과 정합), 상태(`STARTED` → `SUCCEEDED` · `FAILED`), 상관관계 식별자(`request_id`, `device_id_hash`, `session_id`), 연결 리소스(스토리·채팅·턴), AI 응답 meta(provider, model, 입·출력 토큰 수, `retry_count`), 프롬프트 버전 맵(JSONB — AI가 보낸 키를 변환 없이 적재, 레거시 스칼라 `prompt_template_version`과 병존), `latency_ms`, 실패 시 `error_code`와 `sentry_event_id`를 기록합니다. 호출 직전 `STARTED` 행을 insert하고 **같은 행을 UPDATE**로 전이하므로(`completed_at` 기록) `STARTED` 잔존 행은 호출 중 프로세스 중단의 지표입니다. meta는 `SUCCEEDED` 전이와 같은 저장에 반영하고, 관측이 비즈니스를 깨지 않도록 컬럼 길이 절단·음수 보정·`unknown`→null 정규화를 적용합니다. 채팅 턴 번호는 저장 트랜잭션이 확정한 값을 사후 반영합니다.
 
-**`ai_call_logs` 내보내기(다운스트림 파이프라인용) 최소 필드 — `Phase 1 · 계획`(KNK-707·KNK-751).** Langfuse 트레이스를 `ai_call_logs`와 대조하는 파이프라인은 최소 `request_id`·공개 `chat_id`·최종 `turn_number`·**저장 성공 여부**·가능하면 공개 `story_id`가 필요합니다. `status = SUCCEEDED`는 **AI 호출 성공**만 뜻하고 **채팅 DB 저장 성공을 보장하지 않습니다**(호출은 성공했는데 이후 저장이 실패하는 경로가 있을 수 있음). 그래서 별도 저장 성공 컬럼을 새로 만들지 않고 기존 규칙을 그대로 판별 기준으로 씁니다 — **`turn_number IS NOT NULL`인 행만 저장 완료로 간주**합니다. 턴 번호는 저장 트랜잭션이 확정된 뒤에만 사후 반영되므로(바로 위 문장), 저장이 실패하거나 프로세스가 죽으면 그 UPDATE 자체가 일어나지 않아 `turn_number`가 계속 `null`로 남기 때문입니다. 내보내기 형식·실제 샘플은 KNK-751 구현 완료 후 별도 공유합니다.
+**`ai_call_logs` 내보내기(다운스트림 파이프라인용) 최소 필드 — `Phase 1 · 계획`(KNK-707·KNK-751).** Langfuse 트레이스를 `ai_call_logs`와 대조하는 파이프라인은 최소 `request_id`·공개 `chat_id`·최종 `turn_number`·**저장 성공 여부**·가능하면 공개 `story_id`가 필요합니다. `status = SUCCEEDED`는 **AI 호출 성공**만 뜻하고 **채팅 DB 저장 성공을 보장하지 않습니다**(호출은 성공했는데 이후 저장이 실패하는 경로가 있을 수 있음). 그래서 별도 저장 성공 컬럼을 새로 만들지 않고 기존 규칙을 그대로 판별 기준으로 씁니다 — **`turn_number IS NOT NULL`인 행만 저장 완료로 간주**합니다. `AiCallRecorder.attachTurnNumber`는 턴이 DB에 확정 저장된 뒤에만 실행되므로(`ChatService`가 persist 완료 후 호출 — 위 [기록 필드] 절), 저장이 실패하거나 프로세스가 죽으면 이 호출 자체가 일어나지 않아 `turn_number`가 계속 `null`로 남습니다 — `turn_number`가 채워졌다는 사실 자체가 저장 성공을 뜻합니다. 내보내기 형식·실제 샘플은 KNK-751 구현 완료 후 별도 공유합니다.
 
 ### 서버 분석 이벤트 — `Phase 1 · 구현`(KNK-514)
 
