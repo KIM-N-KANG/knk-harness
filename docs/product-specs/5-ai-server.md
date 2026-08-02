@@ -16,12 +16,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.4 |
+| 버전 | v2.5 |
 | 작성일 | 2026-07-22 |
-| 수정일 | 2026-08-01 |
+| 수정일 | 2026-08-02 |
 | 대상 | 마냑 AI 서버 |
 | 작성 목적 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-ai` `dev` 브랜치 `62f203bf0fe8` (2026-07-29, Python 3.11 · FastAPI). LLM 호출 3층 재구성(D13 — KNK-667, PR #67), 두 번째 어댑터·채팅 자리 차단(KNK-675, PR #69), 모델 4개 등록과 등록부 확장·Anthropic 자동 계측 제거(KNK-703, PR #70)가 모두 dev에 머지되어 반영됐습니다. 운영 릴리스는 `v0.2.2`(main `4624fc2`). **판정 대기 중 `ping` 발행과 판정 시간 상한 정리(KNK-748·749·750, PR #72)는 dev 머지 전에 선반영했습니다** — 이 부분만 기준 코드 SHA보다 앞서 있으며, 머지 후 SHA를 갱신할 때 실제 구현과 다시 대조합니다 |
+| 기준 코드 | `../manyak-ai` `dev` 브랜치 `27472d6d3b74` (2026-08-02, Python 3.11 · FastAPI). LLM 호출 3층 재구성(D13 — KNK-667, PR #67), 두 번째 어댑터·채팅 자리 차단(KNK-675, PR #69), 모델 4개 등록과 등록부 확장·Anthropic 자동 계측 제거(KNK-703, PR #70), 판정 대기 중 `ping` 발행과 판정 시간 상한 정리(KNK-748·749·750, PR #72)가 dev에 반영됐습니다. 운영 릴리스는 `v0.2.2`(main `4624fc2`)입니다. |
 
 ## 5-1. 목적과 범위
 
@@ -877,7 +877,7 @@ graph LR
 | `X-Manyak-Request-Id` | tag `request_id` |
 | `X-Manyak-Session-Id` | context `identity.session_id` |
 | `X-Manyak-Device-Id-Hash` | context `identity.device_id_hash` |
-| `X-Manyak-Creation-Id` · `X-Manyak-Parent-Creation-Id` · `X-Manyak-Storyline-Id` · `X-Manyak-Storyline-Order` · `X-Manyak-Story-Id` · `X-Manyak-Chat-Id` · `X-Manyak-Start-Setting-Id` · `X-Manyak-Turn-Number` · `X-Manyak-Is-Regenerated` | `Phase 1 · 구현`(KNK-707·KNK-751) — Langfuse 트레이스 연결용(값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본, 아래 [연결용 식별자 수신과 선호 신호]도 참조). Sentry 부착 여부·위치는 미확정 — AI 구현이 정합니다 |
+| `X-Manyak-Creation-Id` · `X-Manyak-Parent-Creation-Id` · `X-Manyak-Storyline-Id` · `X-Manyak-Storyline-Order` · `X-Manyak-Story-Id` · `X-Manyak-Chat-Id` · `X-Manyak-Start-Setting-Id` · `X-Manyak-Turn-Number` · `X-Manyak-Is-Regenerated` | 백엔드 전달 `Phase 1 · 구현`(KNK-751·KNK-755) · AI 수신·Langfuse 기록 `Phase 1 · 계획`(KNK-762) — 값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본입니다. Sentry에는 새 식별자를 추가하지 않고 Langfuse 루트 관측 metadata에만 기록합니다 |
 
 요청 단위 Sentry 스코프에 부착하므로 명시 캡처·SSE 스트리밍 중 캡처·미처리 500 자동 캡처가 모두 같은 식별자를 갖습니다.
 
@@ -909,7 +909,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 ### LLM 트레이싱 (Langfuse) — `Phase 1 · 구현`
 
-> 관측 그릇(트레이스 묶기·차원 부착, KNK-624)과 안전장치(활성화 가드·채팅 트레이스 장르 태그 제거·실패 격리, KNK-652)는 AI `v0.2.1`로 운영에 배포됐습니다. 인프라 연결(KNK-653)과 키 주입도 2026-07-23 완료해 **프로덕션에서 활성화**했습니다. 직접 입력 장르는 KNK-669 임시 정책에 따라 `genre:*` 라벨로 저장하며, KNK-621 배포 후 이 예외를 종료합니다([`7-deployment.md §7-9`](./7-deployment.md)). 턴·스토리 식별자 수신은 백엔드 협의 대상입니다.
+> 관측 그릇(트레이스 묶기·차원 부착, KNK-624)과 안전장치(활성화 가드·채팅 트레이스 장르 태그 제거·실패 격리, KNK-652)는 AI `v0.2.1`로 운영에 배포됐습니다. 인프라 연결(KNK-653)과 키 주입도 2026-07-23 완료해 **프로덕션에서 활성화**했습니다. 직접 입력 장르는 KNK-669 임시 정책에 따라 `genre:*` 라벨로 저장하며, KNK-621 배포 후 이 예외를 종료합니다([`7-deployment.md §7-9`](./7-deployment.md)). 연결 식별자의 백엔드 전달은 완료됐고(KNK-751·KNK-755), AI 수신·Langfuse 기록은 KNK-762 계획입니다.
 
 **배경.** Sentry는 오류만, 응답 meta는 토큰 수만 남깁니다. 그래서 정상 동작한 턴에 "어떤 프롬프트가 조립돼 어떤 본문이 나왔는지"를 확인할 방법이 없습니다. 뒤에는 사용자 선호 분석(무엇이 인기 있는지)을 위한 원문 축적이라는 목적도 있습니다.
 
@@ -923,7 +923,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 
 - 요청 1건 = 트레이스 1건입니다. 엔드포인트가 본 작업을 감싸면 그 안의 모든 LLM 호출(채팅 턴의 본문+판정, 컴파일·선택지의 재호출)이 하위 관측으로 묶입니다. 단 **하위 관측으로 잡히는 것은 OpenAI SDK로 나가는 호출뿐입니다**(DeepSeek·GPT). Anthropic SDK로 나가는 호출은 아직 기록되지 않아, 그 모델을 고르면 트레이스는 남되 그 안의 호출 내역이 빕니다([§5-7](#5-7-검수-체크리스트) A13). 지금 고른 모델이 모두 DeepSeek이라 실제로 비는 경우는 없습니다.
 - 트레이스 정체성은 상관관계 식별자로 채웁니다: `session_id`(**접속(클라이언트) 세션** `X-Manyak-Session-Id` — 한 접속에 여러 대화가 섞일 수 있어 대화 하나와 1:1이 아니며, 대화 단위 묶기는 후속)·`user_id`(원본 아닌 기기 해시 `device_id_hash`, AN-4-10).
-- 분석 차원을 함께 싣습니다 — 장르 라벨과 metadata(프롬프트 버전 맵·`retry_count`·`request_id`·채팅 트레이스는 `user_source`도 — 백엔드가 채팅 턴 요청 본문에 실어 보내는 `"choice" | "edited_choice" | "typed"` 값을 같은 키로 그대로 기록. 값이 없을 때 다운스트림 파이프라인이 어떻게 처리하는지는 파이프라인 소관이라 정하지 않음 — [`4-backend.md §4-3`](./4-backend.md)). 장르 라벨은 **스토리 제작 트레이스(스토리라인·컴파일)에만** 싣습니다 — 채팅 턴·선택지 트레이스의 장르 라벨은 KNK-652에서 제거했습니다(채팅 트레이스에 장르가 필요한지는 후속). 현재 백엔드는 사전 정의 장르와 직접 입력 장르를 하나의 `genre_tags`로 보내므로 AI는 둘을 구분하지 않고 모두 `genre:*` 필터용 라벨로 저장합니다. 직접 입력 장르 수요를 확인하기 위한 임시 예외이며(KNK-669), KNK-621이 장르 직접 입력을 차단하면 사전 정의 장르만 남습니다. 그 밖의 사용자 자유입력(주인공·조연 커스텀 태그·`user_input`·`additional_info`)은 tags·metadata에 넣지 않습니다. 다만 모든 사용자 자유입력은 프롬프트의 일부라 **Langfuse 요청 원문에는 저장됩니다**.
+- 현재 분석 차원은 장르 라벨과 metadata(`prompt_versions`·`retry_count`·`request_id`)입니다. KNK-762에서 아래 연결 식별자와 채팅 턴의 `user_source`를 추가합니다. 장르 라벨은 **스토리 제작 트레이스(스토리라인·컴파일)에만** 싣습니다 — 채팅 턴·선택지 트레이스의 장르 라벨은 KNK-652에서 제거했습니다. 현재 백엔드는 사전 정의 장르와 직접 입력 장르를 하나의 `genre_tags`로 보내므로 AI는 둘을 구분하지 않고 모두 `genre:*` 필터용 라벨로 저장합니다. 직접 입력 장르 수요를 확인하기 위한 임시 예외이며(KNK-669), KNK-621이 장르 직접 입력을 차단하면 사전 정의 장르만 남습니다. 그 밖의 사용자 자유입력(주인공·조연 커스텀 태그·`user_input`·`additional_info`)은 tags·metadata에 넣지 않습니다. 다만 모든 사용자 자유입력은 프롬프트의 일부라 **Langfuse 요청 원문에는 저장됩니다**.
 - 배치 전송이라 앱 종료 시 flush합니다(미전송 트레이스 유실 방지).
 
 **활성화 가드 — 구현 완료(KNK-652, `v0.2.1`로 운영 배포됨).**
@@ -940,7 +940,23 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 - **결정(어긋난 상태 방지).** openai 전역 계측 설치는 되돌릴 수 없으므로 초기화의 **맨 마지막** 단계에 둡니다 — 앞 단계가 실패해도 "비활성으로 표시됐는데 계측만 남아 호출이 계속 기록되는" 상태가 생기지 않습니다.
 - **트레이드오프.** 관측이 조용히 비는 구간이 생깁니다 — 실패해도 요청은 성공하므로 유실은 경고 로그로만 드러납니다. 켠 뒤 관측이 실제로 도는지는 기동 로그(`Langfuse 활성 — host=… env=…`)와 트레이스 유입으로 확인합니다([`7-deployment.md §7-9`](./7-deployment.md)).
 
-**연결용 식별자 수신과 선호 신호 — `Phase 1 · 구현`(KNK-707·KNK-751).** AI는 무상태(D2)라 트레이스가 어떤 턴·스토리의 것인지 스스로 알 수 없고, 턴·스토리 ID는 AI 호출이 끝난 뒤 백엔드 저장 시점에야 생깁니다(그래서 호출 때 forward 불가). 백엔드가 호출 **전에** 연결용 식별자를 만들어 헤더로 forward하면 AI가 이를 **자체 DB에는 저장하지 않지만 Langfuse metadata에는 기록**합니다(헤더 목록·값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본). 스토리 계열은 `X-Manyak-Creation-Id`(스토리라인 단계 `story_creation_requests.request_id`)로 연결합니다. 채팅 계열(본문·선택지)은 AI팀 요구(§6)의 여정 구성에 맞춰 같은 `X-Manyak-Creation-Id`(채팅 생성 시점에 원본 창작 진행값을 복사해 둔 `story_chats.creation_id`) + `X-Manyak-Story-Id` + `X-Manyak-Chat-Id` + `X-Manyak-Turn-Number`로 연결합니다(일반 제작 저작 스토리의 채팅은 `creation_id`가 없어 그 헤더만 생략). `X-Manyak-Turn-Number`·`X-Manyak-Is-Regenerated`는 호출 종류(이어쓰기·재생성·선택지)마다 값 규칙이 다르며 — 이어쓰기는 예측치, 재생성·선택지는 이미 저장된 정확한 값 — 상세 규칙은 [`4-backend.md §4-7`](./4-backend.md) 상관관계 식별자 절이 정본입니다. **`X-Manyak-Is-Regenerated`는 "이 호출이 재생성 호출인가"를 뜻하며, 선택지 호출은 항상 `false`입니다** — 선택지에는 재생성 개념 자체가 없기 때문입니다. 이를 "이 턴은 재생성되지 않았다"로 오독하면 안 됩니다. **그 턴이 재생성으로 만들어졌는지는 같은 `chat_id` + `turn_number`를 가진 `chat_response`(채팅 본문) 트레이스의 `is_regenerated` 값으로 유도합니다** — 데이터셋 파이프라인이 조인 키로 이미 구할 수 있는 정보라 별도 턴 단위 플래그를 두지 않았습니다([`4-backend.md §4-7`](./4-backend.md)). 제작 세션 PK `simpleCreationId`는 **쓰지 않습니다**: 그 값은 스토리라인 AI 호출이 성공해야 생기는 세션 PK라 최초 호출 시점에는 아직 존재하지 않습니다. **트레이스 자동 병합은 하지 않습니다** — 지금 AI는 요청마다 별도 트레이스를 남기는 구조를 유지하며(위 '구현' 1항), 스토리라인·컴파일 두 호출과 채팅 본문·선택지 두 호출은 각각 위 식별자로 **검색·조인**해 같은 여정임을 식별하는 방식으로 확정합니다. 트레이스 구조 자체를 바꿀지는 AI 구현이 정할 몫이라 이 문서가 확정하지 않습니다. 백엔드는 식별자를 실제 turnId·스토리ID와 매핑해두었다가 이후 반응 신호(재생성·엔딩·스토리라인 평가)를 이어 붙입니다. 장르 라벨은 현재 사전 정의 장르와 직접 입력 장르를 모두 포함합니다(KNK-669). KNK-621이 `customTags`의 `GENRE` 직접 입력을 차단하면 별도 계약 변경 없이 사전 정의 장르만 남습니다. Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다([`4-backend.md §4-7`](./4-backend.md)·[`7-deployment.md §7-9`](./7-deployment.md)). 발신·전송 주체와 신호 카탈로그는 [`4-backend.md §4-7`](./4-backend.md)·[`6-analytics.md §6-6-12`](./6-analytics.md)가 소유합니다.
+**구조화된 요청 입력과 생성 결과 연결 metadata — `Phase 1 · 계획`(KNK-762).**
+
+- **무엇.** 네 API 요청의 구조화된 입력을 Langfuse 루트 `SPAN.input`에 기록하고, 백엔드가 보내는 연결 식별자를 같은 루트 관측의 metadata에 붙입니다. 채팅 턴 안의 본문·판정과 선택지 안의 재호출은 기존처럼 각 요청의 하위 관측으로 남습니다.
+- **왜.** 현재 자식 `GENERATION`에는 프롬프트와 출력이 있지만 루트 `SPAN.input`은 비어 있고, 연결 식별자도 `request_id` 외에는 기록되지 않습니다. 이 상태에서는 프롬프트 문자열을 다시 해석해야 요청 구조를 복원할 수 있고, 어느 스토리라인·스토리·채팅·턴의 생성인지 확정할 수 없습니다.
+- **어떻게.** 엔드포인트가 검증한 Pydantic 요청 객체를 JSON 모드로 직렬화해 루트 `SPAN.input`에 전달합니다. 요청 컨텍스트는 아래 헤더를 읽어 호출별 metadata를 구성합니다. 값이 없거나 공백이거나 `unknown`이면 그 필드만 생략하고 임의 기본값을 만들지 않습니다. UUID는 문자열, `storyline_id`·`storyline_order`·`turn_number`는 정수, `is_regenerated`는 불리언으로 기록합니다. 잘못된 값이나 metadata 기록 실패는 경고만 남기고 AI 응답을 막지 않습니다.
+
+  | 루트 trace | 구조화 입력 | 추가 metadata |
+  | --- | --- | --- |
+  | 스토리라인 생성 | `StorylinesRequest` 전체 | `creation_id`, 선택적인 `parent_creation_id` |
+  | 스토리 컴파일 | `StoryCompileRequest` 전체 | `creation_id`, `storyline_id`, `storyline_order` |
+  | 채팅 턴(본문·판정 포함) | `ChatTurnRequest` 전체 | `creation_id`, `story_id`, `chat_id`, `start_setting_id`, `turn_number`, `is_regenerated`, 선택적인 `user_source` |
+  | 채팅 선택지 | `ChatChoicesRequest` 전체 | `creation_id`, `story_id`, `chat_id`, `start_setting_id`, `turn_number`, `is_regenerated` |
+
+  `user_source`는 요청 본문의 `"choice" | "edited_choice" | "typed"`를 그대로 기록합니다. 값이 없을 때 AI가 `unknown`을 만들지 않으며, 누락값 정규화는 다운스트림 파이프라인이 담당합니다. 판정은 채팅 턴 안의 내부 LLM 호출이므로 별도 trace를 만들지 않고 채팅 턴 루트의 연결 metadata를 공유합니다. 헤더의 값·적용 호출·`turn_number` 의미는 [`4-backend.md §4-7`](./4-backend.md)이 정본입니다. 자동 테스트는 네 요청별 루트 입력과 허용 metadata, 누락·공백·잘못된 헤더의 필드 단위 생략, 요청별 trace 분리, 내부 재호출의 하위 관측 유지, Langfuse 기록 실패 시 AI 응답 지속을 검증합니다.
+
+  **연결 계약은 KNK-752에서 확정됐습니다.** AI는 요청마다 별도 trace를 만들고 각 trace metadata에 백엔드와 같은 `request_id`를 기록합니다. 백엔드는 `request_id`로 Langfuse trace를 찾으므로 AI가 결정적 `trace_id`를 만들거나 응답으로 반환하지 않습니다. KNK-762 범위에서 AI가 추가로 정할 연결 정책은 없습니다. API 경로·DB 구조·행동 ID·score outbox·백엔드의 trace 조회·배포 설정은 각 담당 레포가 결정합니다.
+- **왜 이 방법.** 프롬프트를 파싱해 요청값을 추정하면 템플릿 변경 때 연결이 깨지고, 서로 다른 API 요청을 하나의 trace로 합치면 재시도·실패 경계가 사라집니다. 요청별 trace 경계를 유지하고 양쪽에 기록된 `request_id`로 연결하면, 백엔드는 시각이나 원문으로 대상을 추정하지 않고 score를 붙일 수 있습니다. `simpleCreationId`는 최초 AI 호출 뒤에 생기므로 연결 키로 쓰지 않습니다. 사용자 반응 score의 발행 주체는 백엔드이며 카탈로그는 [`6-analytics.md §6-6-12`](./6-analytics.md)가 소유합니다.
 
 ### 품질 평가와 자가개선 루프 — `Phase 1 · 계획`
 
@@ -1030,3 +1046,4 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 | A14 | 스냅샷이 있는 모델을 별칭으로 등록해 둠 | 공급자가 스냅샷(특정 시점 버전에 못 박은 이름)을 내는 모델은 **그 이름으로 등록하고 모델 이름 변수에도 그 이름을 적기로** 정했습니다(2026-07-29, [§5-4-3](#5-4-3-모델과-파라미터)). 아직 등록부는 `gpt-5.4-mini`를 별칭으로 올려 두었고, 스냅샷 `gpt-5.4-mini-2026-03-17`은 값으로 적어만 두고 호출에 쓰지 않습니다. **지금 걸리는 자리는 없습니다** — 실제로 고른 세 모델은 모두 DeepSeek이고 이 공급자는 스냅샷 제도 자체가 없습니다(2026-07-29 확인). 나머지 셋(`claude-sonnet-5` · `gpt-5.6-terra` · `gpt-5.6-luna`)은 **이름 자체가 그 모델의 기본 스냅샷이라 이미 규칙에 맞습니다.** 다만 등록부는 같은 상황을 다르게 적어 두었습니다 — `claude-sonnet-5`에는 자기 이름을 적고 GPT-5.6 둘에는 "없음"을 적었습니다. 뜻은 "이 이름과 다른 스냅샷 ID가 없다"였지만 "스냅샷이 없다"로 읽혀, 이 표기도 함께 맞춰야 합니다 | `계획` — 이 모델을 실제로 고를 때(A7) 등록 이름을 스냅샷으로 바꾸고 GPT-5.6 둘의 표기도 맞춥니다. 그때 은퇴 날짜도 함께 정합니다 — 스냅샷은 은퇴하면 404가 되고, 등록되지 않은 모델은 기동에서 막히므로(D13) 은퇴일이 지나면 배포가 실패합니다 |
 | A15 | 판정 예산의 시작점이 백엔드와 어긋남 | AI는 판정에 줄 시간을 `백엔드 전체 상한 120초 - 이 턴에 쓴 시간 - 안전 여유 15초`로 잡습니다(KNK-750). 그런데 **백엔드는 요청을 보내기 전에 그 120초 시계를 켜고**, 워커 대기 줄(`ChatSseConfig` — core 4 · queue 100)에서 밀린 시간도 거기 포함됩니다. AI가 재는 경과 시간에는 그 구간이 빠져 있어 판정에 실제보다 넉넉한 시간을 주게 되고, 부하가 높으면 `ping`을 계속 받으면서도 백엔드의 전체 상한을 넘겨 턴을 잃을 수 있습니다 — 이 변경이 막으려던 바로 그 실패입니다(코덱스 리뷰 지적). 안전 여유를 3초에서 15초로 키워 덮었지만 **추정이지 보장이 아닙니다**. 여유를 키워도 평소 턴은 영향이 없습니다(본문이 45초 안에 끝나면 판정은 상한 60초를 그대로 받고, 관측된 본문 최대는 25.5초) | `계획` — 정석은 백엔드가 **남은 시간 또는 요청 시작 시각을 요청에 실어 보내고** AI가 그 값으로 계산하는 것입니다. 요청 계약 변경이라 AI·백엔드·이 문서와 [`4-backend.md`](./4-backend.md)가 함께 움직여야 합니다 |
 | A16 | 시간 상한이 아닌 판정 실패가 사건 진행을 지움 | 판정 호출이 빈 응답·깨진 JSON·전송 오류로 실패하면 AI는 흡수하고 메타 3필드를 null로 보냅니다(D12). 백엔드 `ChatTurnPersister.applyMainEventState`는 그 null을 **목표 해제**로 읽어 `targetMainEventId`와 진행 카운터를 초기화하므로, 실패 한 번에 사용자가 쌓아온 사건 진행이 조용히 사라집니다. 오류도 사용자 안내도 없습니다. 이 문제 자체는 KNK-420 시점부터 있었지만 **KNK-750이 빈도를 올립니다** — 전에는 그런 긴 턴이 백엔드 상한에 걸려 저장 자체가 안 됐고 진행도 보존됐는데, 이제 `ping`으로 턴이 살아남아 저장까지 갑니다. 우리가 건 시간 상한 때문에 판정을 못 돌린 경우(건너뜀·시간 초과)는 목표를 되돌려 실어 해소했으나([§5-3-4](#5-3-4-채팅-턴)), 나머지 실패는 그대로입니다 | `계획` — 백엔드 가드가 먼저입니다. 기존 목표가 있는데 응답의 `targetMainEvent`와 `occurredMainEventName`이 둘 다 null이면 판정 실패로 보고 상태를 건드리지 않습니다(와이어 계약이 안 바뀌어 **백엔드 단독 배포**로 끝납니다, [`4-backend.md §4-3-10`](./4-backend.md)). 정석인 계약 개정(`completed`에 판정 상태 필드 추가)은 그 뒤 별도 사안입니다 |
+| A17 | Langfuse 구조화 입력·제품 연결 metadata | 백엔드의 연결 헤더 전달은 구현됐지만, AI는 아직 네 API의 구조화된 루트 입력과 `creation_id`·`story_id`·`chat_id`·턴 정보를 Langfuse에 기록하지 않습니다. trace 연결은 KNK-752에서 양쪽의 `request_id`를 조인 키로 사용하는 방식으로 확정됐습니다([§5-6](#5-6-운영과-관측)) | `Phase 1 · 계획`(KNK-762) — 검증된 요청 객체를 루트 입력으로 기록하고 헤더별 타입 검증·누락값 생략·관측 실패 격리를 구현합니다. 추가 설계 결정은 없습니다 |
