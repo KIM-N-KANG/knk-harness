@@ -16,9 +16,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.4 |
+| 버전 | v2.5 |
 | 작성일 | 2026-07-22 |
-| 수정일 | 2026-08-01 |
+| 수정일 | 2026-08-02 |
 | 대상 | 마냑 AI 서버 |
 | 작성 목적 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `../manyak-ai` `dev` 브랜치 `62f203bf0fe8` (2026-07-29, Python 3.11 · FastAPI). LLM 호출 3층 재구성(D13 — KNK-667, PR #67), 두 번째 어댑터·채팅 자리 차단(KNK-675, PR #69), 모델 4개 등록과 등록부 확장·Anthropic 자동 계측 제거(KNK-703, PR #70)가 모두 dev에 머지되어 반영됐습니다. 운영 릴리스는 `v0.2.2`(main `4624fc2`). **판정 대기 중 `ping` 발행과 판정 시간 상한 정리(KNK-748·749·750, PR #72)는 dev 머지 전에 선반영했습니다** — 이 부분만 기준 코드 SHA보다 앞서 있으며, 머지 후 SHA를 갱신할 때 실제 구현과 다시 대조합니다 |
@@ -653,7 +653,7 @@ graph LR
 
 ## 5-4. 프롬프트와 모델 설정
 
-이 절은 D4(파일 관리) · D5(6레이어) · D9(실측 고정)의 구현 상세입니다. 결정 자체의 근거는 [§5-2 카탈로그](#설계-결정-카탈로그-d1d12)를 참조하고 여기서 다시 서술하지 않습니다.
+이 절은 D4(파일 관리) · D5(6레이어) · D9(실측 고정)의 구현 상세입니다. 결정 자체의 근거는 [§5-2 카탈로그](#설계-결정-카탈로그-d1d13)를 참조하고 여기서 다시 서술하지 않습니다.
 
 ### 5-4-1. 6레이어 프롬프트 구조
 
@@ -877,7 +877,7 @@ graph LR
 | `X-Manyak-Request-Id` | tag `request_id` |
 | `X-Manyak-Session-Id` | context `identity.session_id` |
 | `X-Manyak-Device-Id-Hash` | context `identity.device_id_hash` |
-| `X-Manyak-Creation-Id` · `X-Manyak-Parent-Creation-Id` · `X-Manyak-Storyline-Id` · `X-Manyak-Storyline-Order` · `X-Manyak-Story-Id` · `X-Manyak-Chat-Id` · `X-Manyak-Start-Setting-Id` · `X-Manyak-Turn-Number` · `X-Manyak-Is-Regenerated` | `Phase 1 · 구현`(KNK-707·KNK-751) — Langfuse 트레이스 연결용(값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본, 아래 [연결용 식별자 수신과 선호 신호]도 참조). Sentry 부착 여부·위치는 미확정 — AI 구현이 정합니다 |
+| `X-Manyak-Creation-Id` · `X-Manyak-Parent-Creation-Id` · `X-Manyak-Storyline-Id` · `X-Manyak-Storyline-Order` · `X-Manyak-Story-Id` · `X-Manyak-Chat-Id` · `X-Manyak-Start-Setting-Id` · `X-Manyak-Turn-Number` · `X-Manyak-Is-Regenerated` | `Phase 1 · 구현`(KNK-707·KNK-751) — Langfuse 트레이스 연결용. `X-Manyak-Creation-Id`·`X-Manyak-Parent-Creation-Id`가 싣는 값은 **`trace_creation_id`**(스토리라인 요청 UUID)이며 제품 분석의 `analytics_creation_id`와 다른 값입니다([`6-analytics.md §6-2`](./6-analytics.md)). 값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본, 아래 [연결용 식별자 수신과 선호 신호]도 참조). Sentry 부착 여부·위치는 미확정 — AI 구현이 정합니다 |
 
 요청 단위 Sentry 스코프에 부착하므로 명시 캡처·SSE 스트리밍 중 캡처·미처리 500 자동 캡처가 모두 같은 식별자를 갖습니다.
 
@@ -940,7 +940,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 - **결정(어긋난 상태 방지).** openai 전역 계측 설치는 되돌릴 수 없으므로 초기화의 **맨 마지막** 단계에 둡니다 — 앞 단계가 실패해도 "비활성으로 표시됐는데 계측만 남아 호출이 계속 기록되는" 상태가 생기지 않습니다.
 - **트레이드오프.** 관측이 조용히 비는 구간이 생깁니다 — 실패해도 요청은 성공하므로 유실은 경고 로그로만 드러납니다. 켠 뒤 관측이 실제로 도는지는 기동 로그(`Langfuse 활성 — host=… env=…`)와 트레이스 유입으로 확인합니다([`7-deployment.md §7-9`](./7-deployment.md)).
 
-**연결용 식별자 수신과 선호 신호 — `Phase 1 · 구현`(KNK-707·KNK-751).** AI는 무상태(D2)라 트레이스가 어떤 턴·스토리의 것인지 스스로 알 수 없고, 턴·스토리 ID는 AI 호출이 끝난 뒤 백엔드 저장 시점에야 생깁니다(그래서 호출 때 forward 불가). 백엔드가 호출 **전에** 연결용 식별자를 만들어 헤더로 forward하면 AI가 이를 **자체 DB에는 저장하지 않지만 Langfuse metadata에는 기록**합니다(헤더 목록·값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본). 스토리 계열은 `X-Manyak-Creation-Id`(스토리라인 단계 `story_creation_requests.request_id`)로 연결합니다. 채팅 계열(본문·선택지)은 AI팀 요구(§6)의 여정 구성에 맞춰 같은 `X-Manyak-Creation-Id`(채팅 생성 시점에 원본 창작 진행값을 복사해 둔 `story_chats.creation_id`) + `X-Manyak-Story-Id` + `X-Manyak-Chat-Id` + `X-Manyak-Turn-Number`로 연결합니다(일반 제작 저작 스토리의 채팅은 `creation_id`가 없어 그 헤더만 생략). `X-Manyak-Turn-Number`·`X-Manyak-Is-Regenerated`는 호출 종류(이어쓰기·재생성·선택지)마다 값 규칙이 다르며 — 이어쓰기는 예측치, 재생성·선택지는 이미 저장된 정확한 값 — 상세 규칙은 [`4-backend.md §4-7`](./4-backend.md) 상관관계 식별자 절이 정본입니다. **`X-Manyak-Is-Regenerated`는 "이 호출이 재생성 호출인가"를 뜻하며, 선택지 호출은 항상 `false`입니다** — 선택지에는 재생성 개념 자체가 없기 때문입니다. 이를 "이 턴은 재생성되지 않았다"로 오독하면 안 됩니다. **그 턴이 재생성으로 만들어졌는지는 같은 `chat_id` + `turn_number`를 가진 `chat_response`(채팅 본문) 트레이스의 `is_regenerated` 값으로 유도합니다** — 데이터셋 파이프라인이 조인 키로 이미 구할 수 있는 정보라 별도 턴 단위 플래그를 두지 않았습니다([`4-backend.md §4-7`](./4-backend.md)). 제작 세션 PK `simpleCreationId`는 **쓰지 않습니다**: 그 값은 스토리라인 AI 호출이 성공해야 생기는 세션 PK라 최초 호출 시점에는 아직 존재하지 않습니다. **트레이스 자동 병합은 하지 않습니다** — 지금 AI는 요청마다 별도 트레이스를 남기는 구조를 유지하며(위 '구현' 1항), 스토리라인·컴파일 두 호출과 채팅 본문·선택지 두 호출은 각각 위 식별자로 **검색·조인**해 같은 여정임을 식별하는 방식으로 확정합니다. 트레이스 구조 자체를 바꿀지는 AI 구현이 정할 몫이라 이 문서가 확정하지 않습니다. 백엔드는 식별자를 실제 turnId·스토리ID와 매핑해두었다가 이후 반응 신호(재생성·엔딩·스토리라인 평가)를 이어 붙입니다. 장르 라벨은 현재 사전 정의 장르와 직접 입력 장르를 모두 포함합니다(KNK-669). KNK-621이 `customTags`의 `GENRE` 직접 입력을 차단하면 별도 계약 변경 없이 사전 정의 장르만 남습니다. Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다([`4-backend.md §4-7`](./4-backend.md)·[`7-deployment.md §7-9`](./7-deployment.md)). 발신·전송 주체와 신호 카탈로그는 [`4-backend.md §4-7`](./4-backend.md)·[`6-analytics.md §6-6-12`](./6-analytics.md)가 소유합니다.
+**연결용 식별자 수신과 선호 신호 — `Phase 1 · 구현`(KNK-707·KNK-751).** 이 절의 연결용 `creation_id`는 모두 **`trace_creation_id`**(스토리라인 요청 UUID)이며 제품 분석의 `analytics_creation_id`와 다른 값입니다([`6-analytics.md §6-2`](./6-analytics.md)). AI는 무상태(D2)라 트레이스가 어떤 턴·스토리의 것인지 스스로 알 수 없고, 턴·스토리 ID는 AI 호출이 끝난 뒤 백엔드 저장 시점에야 생깁니다(그래서 호출 때 forward 불가). 백엔드가 호출 **전에** 연결용 식별자를 만들어 헤더로 forward하면 AI가 이를 **자체 DB에는 저장하지 않지만 Langfuse metadata에는 기록**합니다(헤더 목록·값·적용 호출은 [`4-backend.md §4-7`](./4-backend.md)이 정본). 스토리 계열은 `X-Manyak-Creation-Id`(스토리라인 단계 `story_creation_requests.request_id`)로 연결합니다. 채팅 계열(본문·선택지)은 AI팀 요구(§6)의 여정 구성에 맞춰 같은 `X-Manyak-Creation-Id`(채팅 생성 시점에 원본 창작 진행값을 복사해 둔 `story_chats.creation_id`) + `X-Manyak-Story-Id` + `X-Manyak-Chat-Id` + `X-Manyak-Turn-Number`로 연결합니다(일반 제작 저작 스토리의 채팅은 `creation_id`가 없어 그 헤더만 생략). `X-Manyak-Turn-Number`·`X-Manyak-Is-Regenerated`는 호출 종류(이어쓰기·재생성·선택지)마다 값 규칙이 다르며 — 이어쓰기는 예측치, 재생성·선택지는 이미 저장된 정확한 값 — 상세 규칙은 [`4-backend.md §4-7`](./4-backend.md) 상관관계 식별자 절이 정본입니다. **`X-Manyak-Is-Regenerated`는 "이 호출이 재생성 호출인가"를 뜻하며, 선택지 호출은 항상 `false`입니다** — 선택지에는 재생성 개념 자체가 없기 때문입니다. 이를 "이 턴은 재생성되지 않았다"로 오독하면 안 됩니다. **그 턴이 재생성으로 만들어졌는지는 같은 `chat_id` + `turn_number`를 가진 `chat_response`(채팅 본문) 트레이스의 `is_regenerated` 값으로 유도합니다** — 데이터셋 파이프라인이 조인 키로 이미 구할 수 있는 정보라 별도 턴 단위 플래그를 두지 않았습니다([`4-backend.md §4-7`](./4-backend.md)). 제작 세션 PK `simpleCreationId`는 **쓰지 않습니다**: 그 값은 스토리라인 AI 호출이 성공해야 생기는 세션 PK라 최초 호출 시점에는 아직 존재하지 않습니다. **트레이스 자동 병합은 하지 않습니다** — 지금 AI는 요청마다 별도 트레이스를 남기는 구조를 유지하며(위 '구현' 1항), 스토리라인·컴파일 두 호출과 채팅 본문·선택지 두 호출은 각각 위 식별자로 **검색·조인**해 같은 여정임을 식별하는 방식으로 확정합니다. 트레이스 구조 자체를 바꿀지는 AI 구현이 정할 몫이라 이 문서가 확정하지 않습니다. 백엔드는 식별자를 실제 turnId·스토리ID와 매핑해두었다가 이후 반응 신호(재생성·엔딩·스토리라인 평가)를 이어 붙입니다. 장르 라벨은 현재 사전 정의 장르와 직접 입력 장르를 모두 포함합니다(KNK-669). KNK-621이 `customTags`의 `GENRE` 직접 입력을 차단하면 별도 계약 변경 없이 사전 정의 장르만 남습니다. Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다([`4-backend.md §4-7`](./4-backend.md)·[`7-deployment.md §7-9`](./7-deployment.md)). 발신·전송 주체와 신호 카탈로그는 [`4-backend.md §4-7`](./4-backend.md)·[`6-analytics.md §6-6-12`](./6-analytics.md)가 소유합니다.
 
 ### 품질 평가와 자가개선 루프 — `Phase 1 · 계획`
 
@@ -1005,7 +1005,7 @@ Sentry 캡처 항목(AN-4-8): 태그 `feature` · `provider` · `model` · `erro
 ### 문서 갱신 규칙
 
 - 이 문서는 메타 표의 **기준 코드 SHA**가 가리키는 manyak-ai 구현과 동기화됩니다. 구현 변경이 `dev`에 머지되면 manyak-ai 레포의 `sync-ai-spec` 스킬로 드리프트를 감지하고 갱신합니다.
-- 갱신 시 변경이 문서의 어느 층위(배경 / 문제와 결정 / 구현)를 건드리는지 먼저 판단합니다. 새 설계 결정은 [카탈로그 관리 규칙](#설계-결정-카탈로그-d1d12)(등록 기준·추가 전용·폐기 보존)을 따릅니다.
+- 갱신 시 변경이 문서의 어느 층위(배경 / 문제와 결정 / 구현)를 건드리는지 먼저 판단합니다. 새 설계 결정은 [카탈로그 관리 규칙](#설계-결정-카탈로그-d1d13)(등록 기준·추가 전용·폐기 보존)을 따릅니다.
 - 갱신을 마치면 기준 코드 SHA·작성일·버전을 올립니다.
 
 ### 스펙과 구현이 어긋난 곳과 계획

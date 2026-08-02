@@ -14,9 +14,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.8 |
+| 버전 | v0.11 |
 | 작성일 | 2026-07-05 |
-| 대상 | 마냑 전 레포지토리 (manyak-web · manyak-server · manyak-ai · llm-wiki · knk-harness) |
+| 대상 | 마냑 전 레포지토리 (manyak-web · manyak-android · manyak-server · manyak-ai · llm-wiki · knk-harness) |
 | 작성 목적 | 레포지토리 간 용어 불일치를 없애고, 앞으로의 개발에서 통일된 단어 사용 기준을 정의한다. |
 
 ## 0-1. 목적과 적용 범위
@@ -80,8 +80,8 @@
 | 간편 제작 | simple creation | 태그 선택 → 스토리라인 선택 → 추가 정보의 3단계 제작 방식 | "간편 모드"(레거시) |
 | 일반 제작 | general creation | 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식(Phase 1). 기본 정보 · 스토리 설정 · 시작 설정 · 추천 입력을 직접 입력하며, 주요 사건·엔딩은 채팅 런타임 반영 계약([`4-backend.md §4-3-10`](./4-backend.md))이, 이미지는 썸네일·채팅 이미지 표시 계약([`4-backend.md §4-3-9`](./4-backend.md))이 확정됐다 | "일반 모드" · "일반 모드 제작". 채팅 입력 모드 "일반 입력"(`NORMAL`)과 다른 개념(§0-5) |
 | 스토리 수정 | edit | 사용자가 이미 등록된 스토리의 설정을 고치는 행위(Phase 1) | "스토리 편집"("편집"은 채팅 산출물 — AI 응답·메모리 — 전용) |
-| 간편 제작 진행(세션) ID | `creation_session_id` | 간편 제작 1회 진행(세션) 단위의 식별자. 와이어 `simpleCreationId`, DB PK `story_creation_sessions.id` | 로그 필드 `simple_creation_id`. 분석 표기 `creation_id`(아래 항목과 혼동 금지 — 서로 다른 값) |
-| 제작 트레이스 연결 ID | `creation_id` | 간편 제작 **스토리라인 생성 요청**의 클라이언트 생성 UUID(`story_creation_requests.request_id`). Langfuse 트레이스를 진행 단위로 묶는 열쇠([`4-backend.md §4-7`](./4-backend.md)). 위 진행(세션) ID(`simpleCreationId`)와 **다른 값**입니다 — 세션 PK는 스토리라인 AI 호출이 성공해야 생겨 그 최초 호출 시점에는 forward할 수 없습니다 | 위 진행(세션) ID와 혼동 금지 |
+| 제품 분석 제작 진행 ID | `analytics_creation_id` | 간편 제작 1회 진행(세션) 단위의 식별자. 원본은 DB PK `story_creation_sessions.id`(Long), 와이어는 `simpleCreationId`, 분석 이벤트에는 문자열로 변환해 싣습니다. **분석 이벤트의 와이어 키 이름이 `creation_id`이므로 아래 항목과 혼동 금지 — 서로 다른 값이며 직접 조인할 수 없습니다**([`6-analytics.md §6-2`](./6-analytics.md)) | 로그 필드 `simple_creation_id`. 개념 이름 없이 `creation_id`로만 쓰지 않기 |
+| AI 트레이스 연결 ID | `trace_creation_id` | 간편 제작 **스토리라인 생성 요청**의 클라이언트 생성 UUID(`story_creation_requests.request_id`). Langfuse 트레이스를 진행 단위로 묶는 열쇠이며 와이어 키는 `X-Manyak-Creation-Id`·`ai_call_logs.creation_id`입니다([`4-backend.md §4-7`](./4-backend.md)). 위 진행(세션) ID와 **다른 값**입니다 — 세션 PK는 스토리라인 AI 호출이 성공해야 생겨 그 최초 호출 시점에는 forward할 수 없습니다 | 위 제품 분석 ID와 혼동 금지. 두 값을 직접 조인하지 않기 |
 | 제작 단계 | `step_name`: `keyword` · `storylineSelect` · `additionalInfo` · `complete` | 간편 제작 퍼널의 4단계. 분석 표기 기준이며 라우팅 슬러그(kebab-case)와의 매핑은 §0-4 | — |
 | 컴파일 | compile | 선택한 스토리라인 + 추가 정보 + 태그를 스토리 명세로 확장하는 AI 호출. 스토리당 1회(시점 A-1) | 관측 feature 값 `story_completion`은 이 호출의 역사적 명칭 — 적재 데이터 연속성을 위해 유지하되 새 이름에 쓰지 않음 |
 | 완성 | completion | **사용자 관점**에서 스토리 제작을 끝내는 퍼널 단계 | 컴파일(AI 호출)과 혼용 금지 |
@@ -168,7 +168,7 @@ Phase 1 범위 용어입니다. 크레딧은 회원 전용이며, 게스트는 �
 
 | 단어 | 규칙 |
 | --- | --- |
-| 세션(session) | 분석 세션(`session_id`) 전용 예약어. 채팅은 `chat`, 간편 제작 진행은 `creation_id` 계열로 부른다 |
+| 세션(session) | 분석 세션(`session_id`) 전용 예약어. 채팅은 `chat`, 간편 제작 진행은 `analytics_creation_id`(와이어 `creation_id`) 계열로 부른다 |
 | 스토리(story) | ① 마냑 콘텐츠 단위(기본 의미) ② Jira 이슈 유형 ③ AI 프롬프트 STORY 레이어 — ②③은 "Jira 스토리", "STORY 레이어"처럼 수식어를 붙여 구분한다 |
 | USER | AI 레포에서 4중 의미(USER 레이어, `## [USER]` 템플릿 블록, history `role`, `user_input`). 문서·주석에서 "USER 레이어", "`[USER]` 블록"처럼 층위를 명시한다 |
 | meta | 컴파일 응답에서 노출 메타(제목 등)는 `stories` 키, 로깅 메타(model·토큰)는 `meta` 키. "메타"라고만 쓰지 않는다 |
