@@ -255,6 +255,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_account_loginButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
 | P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked`                    |
+| P1 `Phase 1 · 구현` | client | `client_account_linkAccountButton_clicked`               |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -451,6 +452,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_account_viewed` `Phase 1 · 구현`                        | P1       | 마이 페이지 진입                                 | 없음                                                                                                                         |
 | `client_account_loginButton_clicked` `Phase 1 · 구현`           | P1       | 마이 페이지 프로필 헤더 로그인 버튼 클릭(게스트) | 없음                                                                                                                         |
 | `client_account_logoutButton_clicked` `Phase 1 · 구현`          | P1       | 마이 페이지 로그아웃 클릭                        | 없음                                                                                                                         |
+| `client_account_linkAccountButton_clicked` `Phase 1 · 구현`     | P1       | 마이 페이지 계정 연동 버튼 클릭(KNK-740)         | `provider` (string, 필수 — 연동 **대상** provider, `google` · `kakao`)                                                       |
 | `server_login_googleLogin_processed_succeeded` `Phase 1 · 구현` | P0       | Google 로그인 처리 성공                          | `is_new_user` (boolean, 필수)                                                                                                |
 | `server_login_googleLogin_processed_failed` `Phase 1 · 구현`    | P0       | Google 로그인 처리 실패                          | `error_type` (string, 필수)                                                                                                  |
 | `server_login_kakaoLogin_processed_succeeded` `Phase 1 · 구현`  | P0       | Kakao 로그인 처리 성공(KNK-721)                  | `is_new_user` (boolean, 필수)                                                                                                |
@@ -468,6 +470,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
 - 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않습니다. 프론트엔드는 로그아웃 클릭 시 이벤트를 보낸 뒤 analytics `reset()`을 수행합니다(§6-2) — 이벤트 전송이 리셋보다 먼저여야 로그아웃 직전 사용자에게 귀속됩니다.
 - `client_account_loginButton_clicked`는 게스트가 마이 페이지에서 로그인 화면으로 이동한 유입을 구분합니다. 로그인 화면 진입 자체는 `client_login_viewed`로 측정합니다.
+- 계정 연동(KNK-740)의 클라이언트 이벤트는 시도 시점(`client_account_linkAccountButton_clicked`) 하나뿐입니다. 성공·실패는 서버가 `server_link_socialLink_processed_*`로 이미 잡고 있어 중복이며, 클라이언트에서 결과를 다시 보내면 재인증·연동 2단계를 한 시도로 세기 어려워집니다. 이 이벤트는 인앱 브라우저 차단으로 플로우가 시작되지 않은 경우에도 발화해 차단 빈도를 함께 측정합니다. 링크 코드는 비밀값이라 어떤 이벤트에도 싣지 않습니다(§6-6 관측 금지 규칙).
 
 #### 6-4-2-9. 크레딧 — `Phase 1 · 구현`
 
