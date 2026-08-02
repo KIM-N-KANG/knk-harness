@@ -50,7 +50,7 @@
 
 ### 제외 범위
 
-- 화면 요구사항과 UX 검수: [`3-frontend.md`](./3-frontend.md)
+- 화면 요구사항과 UX 검수: [`3-1-client.md`](./3-1-client.md)
 - API, 데이터 모델, 인증, 오류 처리: [`4-backend.md`](./4-backend.md)
 - AI 프롬프트와 요청·응답 계약: [`5-ai-server.md`](./5-ai-server.md)
 - 이벤트·지표·관측 수집 정책: [`6-analytics.md`](./6-analytics.md)
