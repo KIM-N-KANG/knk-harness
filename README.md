@@ -10,6 +10,7 @@
 knk-workspace/
 ├── knk-harness/
 ├── manyak-web/
+├── manyak-android/
 ├── manyak-server/
 ├── manyak-ai/
 ├── manyak-terraform/
@@ -18,6 +19,7 @@ knk-workspace/
 
 - `knk-harness/`: 공통 LLM 작업 규칙과 팀 운영 지침을 담는 저장소입니다.
 - `manyak-web/`: 마냑 웹 프론트엔드 저장소입니다.
+- `manyak-android/`: 마냑 안드로이드 앱 저장소입니다.
 - `manyak-server/`: 마냑 백엔드 서버 저장소입니다.
 - `manyak-ai/`: 마냑 AI 서버 저장소입니다.
 - `manyak-terraform/`: 마냑 운영 AWS Terraform 저장소입니다.
@@ -31,6 +33,7 @@ cd ~/Projects/knk-workspace
 
 git clone https://github.com/KIM-N-KANG/knk-harness.git
 git clone <manyak-web-repository-url>
+git clone <manyak-android-repository-url>
 git clone <manyak-server-repository-url>
 git clone <manyak-ai-repository-url>
 git clone <manyak-terraform-repository-url>
@@ -47,7 +50,7 @@ git clone <manyak-infra-repository-url>
 | 2 | `docs/product-specs/2-user-stories.md` | 화면·기능별 사용자 요구 |
 | 3-1 | `docs/product-specs/3-1-client.md` | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 |
 | 3-2 | `docs/product-specs/3-2-web-app.md` | 웹 라우팅, BFF 프록시·토큰 세션, 브라우저 지원, 웹 검수 기준 |
-| 3-3 | `docs/product-specs/3-3-mobile-app.md` | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 |
+| 3-3 | `docs/product-specs/3-3-android-app.md` | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 |
 | 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
 | 5 | `docs/product-specs/5-ai-server.md` | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 |
 | 6 | `docs/product-specs/6-analytics.md` | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 |
@@ -58,6 +61,7 @@ git clone <manyak-infra-repository-url>
 | 영역 | 참조 경로 |
 | --- | --- |
 | 웹 프론트엔드 | `../manyak-web` |
+| 안드로이드 앱 | `../manyak-android` |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 운영 Terraform | `../manyak-terraform` |
