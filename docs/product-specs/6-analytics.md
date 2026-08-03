@@ -15,9 +15,9 @@
 
 | 항목      | 값                                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.30                                                                                                                 |
+| 버전      | v0.31                                                                                                                 |
 | 작성일    | 2026-06-30                                                                                                            |
-| 수정일    | 2026-08-03                                                                                                            |
+| 수정일    | 2026-08-04                                                                                                            |
 | 대상      | 마냑 MVP                                                                                                              |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -60,12 +60,12 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 현재 MVP는 로그인 기능이 없는 전원 게스트 서비스입니다. 사용자 단위는 익명 `device_id`로 식별합니다.
 
-**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, Android는 공통 이벤트 카탈로그를 구현해야 한다는 계약은 확정이되 SDK 제품 선택·생성·보관·reset 매핑이 미정입니다([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관이 `device_id`에 의존하므로 매핑 결정 전까지 해당 흐름의 Android 구현을 시작할 수 없습니다.
+**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android 매핑은 확정됐습니다**(2026-08-03, KNK-772): 앱이 첫 실행 시 생성한 UUID가 `device_id` 정본이며 Amplitude Android SDK에 `setDeviceId`로 주입하고(로그아웃 시 재발급), `session_id`는 SDK가 관리하는 세션 값을 사용합니다(배선 정본: [`3-3-android-app.md §3-3-4`·`§3-3-6`](./3-3-android-app.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 로그인 필수 결정으로 앱에 적용되지 않으므로([`3-1-client.md §3-1-1`](./3-1-client.md) 안드로이드 앱의 플랫폼 예외), 이전 판이 기록한 "매핑 결정 전까지 해당 흐름의 Android 구현 불가" 제약은 해소됐습니다.
 
 | 식별자           | 분석 이벤트 타입 | 생성·관리                                      | 사용처                            |
 | ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
-| `device_id`      | string           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 플랫폼 매핑 결정 필요 | 익명 사용자 단위 분석             |
-| `session_id`     | number           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 플랫폼 매핑 결정 필요 | 한 번의 방문 흐름                 |
+| `device_id`      | string           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 앱 생성 UUID를 `setDeviceId`로 주입([`3-3-android-app.md §3-3-4`](./3-3-android-app.md)) | 익명 사용자 단위 분석             |
+| `session_id`     | number           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: Amplitude Android SDK 세션 값 | 한 번의 방문 흐름                 |
 | `request_id`     | string           | **백엔드 생성**(수신 헤더가 없으면 생성, 응답 헤더로 항상 echo — 클라이언트 앱은 생성·주입하지 않음, §6-6-2) | 서버 로그, Sentry, AI 호출 연결   |
 | `device_id_hash` | string           | 백엔드가 `device_id`를 해시                    | 서버 로그, Sentry, `ai_call_logs` |
 | `creation_id`(= `analytics_creation_id`) | string | 간편 제작 진행(세션) 식별자 `simpleCreationId`(원본 `story_creation_sessions.id`, Long)를 문자열로 변환 | 스토리 제작 시도 연결. **AI 트레이스의 `trace_creation_id`와 다른 값**(아래 주의) |
@@ -746,7 +746,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | ---------------- | -------------------- | ---------------------------------------------------------- |
 | Amplitude        | 사용자 행동 분석     | 퍼널, 전환율, 이탈율, 선택지 사용률                        |
 | Meta 픽셀        | 광고 전환 신호       | `PageView`·`StorylinesGenerated`·`StoryCompiled`·`StartTrial` — Meta 캠페인 학습·성과 측정(KNK-616) |
-| 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb. Android Sentry 배선은 미정([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)) |
+| 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb. Android는 Sentry Android SDK로 크래시·ANR만 수집([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
 | CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
@@ -802,7 +802,7 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 
 ### 6-6-4. 프론트엔드 Sentry 기준
 
-수집 기준(최소 context·4xx 제외)은 클라이언트 공통 원칙이고, 아래 배선·`ignoreErrors` 목록은 **웹(브라우저 Sentry) 구현 기준**입니다. Android Sentry 배선은 미정이며 도입 시 같은 원칙을 따릅니다([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)). 프론트엔드 Sentry에는 오류 분석에 필요한 최소 context만 넣습니다.
+수집 기준(최소 context·4xx 제외)은 클라이언트 공통 원칙이고, 아래 배선·`ignoreErrors` 목록은 **웹(브라우저 Sentry) 구현 기준**입니다. Android Sentry 배선(크래시·ANR만 수집, 성능 추적 v1 비활성)은 [`3-3-android-app.md §3-3-6`](./3-3-android-app.md)이 소유하며 같은 수집 원칙을 따릅니다. 프론트엔드 Sentry에는 오류 분석에 필요한 최소 context만 넣습니다.
 
 | 구분       | 수집 내용                                                           |
 | ---------- | ------------------------------------------------------------------- |
