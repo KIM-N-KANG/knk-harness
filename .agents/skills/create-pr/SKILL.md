@@ -1,13 +1,13 @@
 ---
 name: create-pr
-description: 사용자가 "PR 만들어줘", "draft PR 올려줘", "pull request 생성해줘", "gh pr create 해줘"처럼 현재 Git 브랜치의 변경사항으로 팀 규칙에 맞는 Draft Pull Request 생성을 요청할 때 사용합니다. GitHub CLI로 중복 PR을 확인하고 브랜치 Jira 키, 태그, 하네스 docs의 PR 템플릿을 반영합니다.
+description: 사용자가 "PR 만들어줘", "draft PR 올려줘", "pull request 생성해줘", "gh pr create 해줘"처럼 현재 Git 브랜치의 변경사항으로 팀 규칙에 맞는 Draft Pull Request 생성을 요청할 때 사용합니다. GitHub CLI로 중복 PR을 확인하고 브랜치 Jira 키, 태그, 하네스 docs의 PR 템플릿을 반영하며, 새 PR 생성이 성공하면 진행 중인 Jira 티켓을 PR 리뷰 및 검증 상태로 전환합니다.
 ---
 
 # Draft PR 생성
 
 ## 목적
 
-현재 작업 브랜치의 커밋을 `dev` 대상으로 올리는 Draft Pull Request를 만듭니다. 핵심은 PR을 빨리 여는 것이 아니라, 팀 제목 규칙과 본문 템플릿을 지키고 중복 PR을 만들지 않는 것입니다.
+현재 작업 브랜치의 커밋을 `dev` 대상으로 올리는 Draft Pull Request를 만들고 Jira 상태를 리뷰 단계로 맞춥니다. 핵심은 PR을 빨리 여는 것이 아니라, 팀 제목 규칙과 본문 템플릿을 지키고 중복 PR을 만들지 않는 것입니다.
 
 ## 팀 규칙
 
@@ -104,7 +104,16 @@ PR 제목 형식:
    - upstream이 없으면 `git push -u origin HEAD`를 사용합니다.
    - upstream이 있으면 `git push`를 사용합니다.
    - `gh pr create --draft --base dev --head <current-branch> --title "<title>" --body-file <body-file>`로 생성합니다.
-9. 생성된 PR과 남은 로컬 상태를 확인합니다.
+9. 새 Draft PR 생성이 성공한 뒤 Jira 상태를 처리합니다.
+   - 브랜치에서 추출한 Jira 키로 이슈를 조회해 현재 상태를 확인합니다.
+   - 현재 상태가 `진행 중`이면 사용 가능한 전환 목록을 조회합니다.
+   - 전환 이름이 아니라 전환의 목표 상태가 `PR 리뷰 및 검증`인 항목을 선택해 전환 ID로 실행합니다.
+   - 이미 `PR 리뷰 및 검증`이면 상태 변경 없이 계속합니다.
+   - `진행 중`과 `PR 리뷰 및 검증`이 아닌 상태는 임의로 변경하지 않습니다.
+   - 기존 PR을 발견해 새 PR을 만들지 않은 경우에는 Jira 상태를 변경하지 않습니다.
+   - Jira 접근 실패, 권한 부족, 목표 전환 부재 등으로 상태 변경에 실패해도 생성한 PR을 닫거나 브랜치 push를 되돌리지 않습니다. 실패 이유를 보고합니다.
+10. 생성된 PR과 남은 로컬 상태를 확인합니다.
+11. 상태 전환을 실행했다면 Jira 이슈를 다시 조회해 `PR 리뷰 및 검증`인지 확인합니다.
 
 ## 명령 사용법
 
@@ -141,6 +150,9 @@ gh pr create --draft --base dev --head <current-branch> --title "<title>" --body
 - 선택한 템플릿을 읽지 않은 채 PR 본문을 추측으로 만들지 않습니다.
 - 실행하지 않은 테스트, 린트, 타입체크를 체크리스트에 완료로 표시하지 않습니다.
 - 확인하지 않은 스크린샷, API 동작, 평가 결과를 본문에 사실처럼 쓰지 않습니다.
+- 새 PR 생성이 실패했거나 기존 PR을 재사용하면 Jira 상태를 변경하지 않습니다.
+- 현재 Jira 상태가 `진행 중`이 아니면 완료, 중단 등 다른 상태를 `PR 리뷰 및 검증`으로 변경하지 않습니다.
+- 이름만 보고 전환 ID를 추측하지 않습니다. 사용 가능한 전환 목록의 목표 상태를 확인합니다.
 
 ## 완료 보고
 
@@ -149,3 +161,4 @@ gh pr create --draft --base dev --head <current-branch> --title "<title>" --body
 - 실행한 검증 명령과 결과를 알립니다.
 - 검증을 실행하지 못했다면 이유를 짧게 알립니다.
 - 기존 PR이 있어 새 PR을 만들지 않았다면 기존 PR URL을 보고합니다.
+- Jira 상태가 `PR 리뷰 및 검증`으로 변경되었는지, 이미 해당 상태였는지, 변경하지 못했는지 알립니다.
