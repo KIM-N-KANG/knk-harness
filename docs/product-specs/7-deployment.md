@@ -18,9 +18,9 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.6                                                                                                                                                                |
+| 버전      | v0.7                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-08-02                                                                                                                                                          |
+| 수정일    | 2026-08-03                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
@@ -310,7 +310,14 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다(`MANYAK_KAKAO_CLIENT_IDS`는 위 배선이 적용된 뒤에야 같은 경로를 탑니다). `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다(배선 후에는 Langfuse 3키도 같습니다). 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
 
-> **Langfuse 배선과 키 주입은 2026-07-23 완료했습니다(KNK-653, manyak-terraform).** user-data는 Secrets Manager의 Langfuse 3키(`AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST`)를 배포 스크립트의 **export로만** compose에 넘깁니다. 공용 `.env`에 쓰지 않아 server 컨테이너로 새지 않는 대신, `deploy.sh`를 거치지 않은 수동 compose 실행에서는 값이 비어 Langfuse가 꺼집니다(아래 롤백 표 참고). 백엔드가 반응 신호를 보내려면 백엔드용 Langfuse 키·HOST도 별도 정의해야 하는데 아직 없습니다 — 이건 후속 구현 대상입니다.
+> **Langfuse 배선과 키 주입은 2026-07-23 완료했습니다(KNK-653, manyak-terraform).** user-data는 Secrets Manager의 Langfuse 3키(`AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST`)를 배포 스크립트의 **export로만** compose에 넘깁니다. 공용 `.env`에 쓰지 않아 server 컨테이너로 새지 않는 대신, `deploy.sh`를 거치지 않은 수동 compose 실행에서는 값이 비어 Langfuse가 꺼집니다(아래 롤백 표 참고).
+
+**백엔드 score 발행 배선 — `Phase 1 · 계획`(KNK-762).**
+
+- **무엇.** 백엔드가 AI와 같은 Langfuse 프로젝트에 사용자 반응 score를 보내도록 전용 자격 증명과 런타임 설정을 주입합니다.
+- **왜.** AI용 키는 현재 AI 컨테이너에만 전달되며, 백엔드는 사용자 반응을 직접 발행하므로 별도 소비 경계가 필요합니다. 키나 리전 설정이 잘못돼도 제작·채팅 기능은 계속 동작해야 합니다.
+- **어떻게.** manyak-server는 환경 변수 이름, 키 누락·JP 리전·prod 활성화 가드, worker 기동 조건과 운영 로그를 결정합니다. manyak-terraform은 Secrets Manager 키와 운영 user-data·배포 스크립트 배선을 결정하고, manyak-infra는 로컬·통합 compose 배선을 맞춥니다. 두 인프라 레포는 서버 재기동 절차와 score 발행만 끄는 롤백 방법도 함께 기록합니다. 실제 secret 값은 문서와 레포에 넣지 않습니다.
+- **왜 이 방법.** 백엔드 전용 키는 서비스별 권한과 교체 범위를 분리합니다. 서버의 활성화 가드와 인프라의 주입·롤백 책임을 나누면 Langfuse 장애나 설정 누락이 사용자 요청 실패로 번지지 않습니다.
 
 ### EC2 `.env` 생성 결과
 
