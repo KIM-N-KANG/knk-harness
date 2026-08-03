@@ -144,7 +144,7 @@
 
 ### 계층과 책임
 
-계층은 **UI**와 **Data** 둘입니다. Clean Architecture의 Domain 계층(전면 UseCase)과 DDD는 도입하지 않습니다.
+계층은 **UI · Domain · Data** 셋입니다. 다만 Domain은 **Repository 인터페이스와 도메인 모델만 담는 얇은 계층**이며, UseCase 전면 도입과 DDD는 하지 않습니다(아래).
 
 ```mermaid
 graph TD
@@ -152,14 +152,18 @@ graph TD
         C["Compose 화면<br/>상태를 받아 그리고 Intent만 발행"]
         VM["Orbit ViewModel<br/>Intent 처리 → UiState 갱신 → SideEffect 발행"]
     end
-    subgraph DATA["Data 계층 (core/*)"]
-        R["Repository<br/>결과 타입 반환, 데이터 출처 은닉"]
+    subgraph DOMAIN["Domain 계층 (core/domain)"]
+        RI["Repository 인터페이스 · 도메인 모델<br/>순수 Kotlin, 의존 없음"]
+    end
+    subgraph DATA["Data 계층 (core/data)"]
+        R["Repository 구현<br/>결과 타입 반환, 데이터 출처 은닉"]
         API["Retrofit API · okhttp-sse"]
         DS["DataStore<br/>토큰(암호화) · device_id · 플래그 · 퍼널 슬롯"]
     end
     C -->|Intent| VM
     VM -->|"UiState(StateFlow) · SideEffect"| C
-    VM --> R
+    VM --> RI
+    R -.->|구현| RI
     R --> API
     R --> DS
     API -->|"인터셉터: 식별 헤더 → 인증 → 로깅"| BE["백엔드 API (직접 호출)"]
@@ -169,25 +173,28 @@ graph TD
 | --- | --- | --- |
 | Compose 화면 | 상태 렌더, 사용자 입력을 Intent로 발행 | 화면이 직접 데이터를 조회하지 않습니다(`MUST NOT`) |
 | Orbit ViewModel | Intent 처리, 상태 갱신, 1회성 사건 발행 | Retrofit·DataStore를 직접 호출하지 않습니다(`MUST NOT`) |
-| Repository | 네트워크·로컬 접근, 결과 타입 변환 | UI 개념(문구·표시 상태)을 알지 않습니다 |
+| Repository 인터페이스(domain) | 화면이 필요로 하는 데이터 동작의 계약 | 구현 수단(Retrofit·DataStore)을 노출하지 않습니다 |
+| Repository 구현(data) | 네트워크·로컬 접근, 응답을 결과 타입으로 변환 | UI 개념(문구·표시 상태)을 알지 않습니다 |
 
-**UseCase 계층은 기본적으로 두지 않습니다.** 도메인 규칙(크레딧·한도·소유권·멱등·엔딩 판정)이 모두 백엔드에 있어, 대부분의 UseCase가 Repository 호출을 한 줄 위임하는 껍데기가 되기 때문입니다. 다음 조건 중 하나를 만족하는 지점만 UseCase로 추출합니다(`SHOULD`).
+**Repository는 인터페이스와 구현을 나눕니다**(`MUST`). ViewModel은 `core/domain`의 인터페이스만 알고, 구현은 `core/data`가 제공합니다. 의존 역전으로 화면 계층이 네트워크 구현을 모르게 되어, 테스트에서 가짜 구현을 끼우기 쉽고(§3-3-7 필수 테스트) 나중에 모듈을 쪼갤 때 경계가 이미 그어져 있습니다.
 
-- 같은 로직을 ViewModel 두 곳 이상에서 사용하게 될 때
-- ViewModel 하나가 Repository 세 개 이상을 조율하게 될 때
+**단, Clean Architecture를 전면 도입하지는 않습니다.** 다음 둘은 하지 않습니다.
+
+- **UseCase 계층을 기본으로 두지 않습니다.** 도메인 규칙(크레딧·한도·소유권·멱등·엔딩 판정)이 모두 백엔드에 있어 대부분의 UseCase가 Repository 호출을 한 줄 위임하는 껍데기가 됩니다. 다음 조건 중 하나를 만족하는 지점만 추출합니다(`SHOULD`) — 같은 로직을 ViewModel 두 곳 이상에서 사용할 때, 또는 ViewModel 하나가 Repository 세 개 이상을 조율할 때.
+- **응답 모델을 기계적으로 이중화하지 않습니다.** 서버 응답과 화면이 쓰는 모양이 같으면 그대로 씁니다. 별도 도메인 모델은 **여러 응답을 합치거나, 화면이 쓰기에 응답 구조가 불편하거나, 서버 계약 변경으로부터 화면을 격리해야 할 때만** 만듭니다(`SHOULD`). 매퍼를 습관적으로 만들면 파일 수만 배로 늘고 얻는 것이 없습니다.
 
 ### 패키지 구조
 
-단일 모듈(`app`)로 시작하고, 패키지를 기능 단위로 나눕니다.
+**단일 모듈(`app`)로 시작하되, 패키지를 나중에 그대로 모듈로 승격할 수 있는 경계로 나눕니다.** 각 패키지는 멀티 모듈 전환 시 `:core:data`·`:feature:chat`처럼 1:1로 대응합니다.
 
 ```text
 app/src/main/java/app/manyak/
 ├── core/
-│   ├── network/        # Retrofit·OkHttp·인터셉터·SSE·결과 타입
-│   ├── auth/           # 토큰 저장·선제 재발급·세션 상태
-│   ├── datastore/      # Preferences·퍼널 슬롯 직렬화
-│   ├── designsystem/   # 테마(브랜드 토큰)·Material 3 래퍼
-│   ├── analytics/      # Amplitude 배선·이벤트 발화 헬퍼
+│   ├── domain/         # 도메인 모델 · Repository 인터페이스 (안드로이드 의존 없는 순수 Kotlin)
+│   ├── data/           # Repository 구현 · Retrofit API · SSE · DataStore · DI 모듈
+│   ├── ui/             # 디자인 시스템(테마·브랜드 토큰·Material 3 래퍼) · 공용 컴포저블
+│   ├── common/         # 결과 타입 · 오류 매핑 · 디스패처 · 확장 함수
+│   ├── analytics/      # Amplitude 배선 · 이벤트 발화 헬퍼
 │   └── navigation/     # 타입 안전 라우트 정의
 ├── feature/
 │   ├── gate/           # 로그인 게이트(앱 전용 화면)
@@ -201,20 +208,24 @@ app/src/main/java/app/manyak/
 └── MainActivity.kt     # 단일 Activity
 ```
 
-의존 방향 규칙입니다. 두 규칙은 멀티 모듈 전환의 선행 조건이기도 합니다.
+`core/data` 내부는 관심사별로 다시 나눕니다 — `api`(Retrofit 인터페이스·응답 모델), `sse`(스트리밍 수신), `datastore`(Preferences·암호화 토큰·퍼널 슬롯), `repository`(구현), `di`(Hilt 모듈), `interceptor`(식별 헤더·인증·로깅).
+
+의존 방향 규칙입니다. 세 규칙이 멀티 모듈 전환의 선행 조건입니다.
 
 - `feature/*`끼리 직접 참조하지 않습니다(`MUST`). 화면 이동은 내비게이션 계층을 거치고, 공유 로직은 `core/*`로 내립니다.
 - `core/*`는 `feature/*`를 알지 않습니다(`MUST`). 의존은 항상 `feature → core` 단방향입니다.
+- **`core/domain`은 아무것도 의존하지 않습니다**(`MUST`). 안드로이드 프레임워크·Retrofit·DataStore를 참조하지 않는 순수 Kotlin이어야 하며, `core/data`가 `core/domain`을 의존합니다(그 반대가 아닙니다).
 
-**결정 기록 — 단일 모듈로 시작(2026-08-03)**
+**결정 기록 — 단일 모듈로 시작하되 모듈 경계를 미리 긋기(2026-08-03)**
 
-- **배경.** 안드로이드 대형 앱과 구글 샘플은 `:app` + `:core:*` + `:feature:*` 멀티 모듈 구성을 씁니다. 구글의 모듈화 가이드는 모듈화를 "커진 코드베이스의 확장 문제를 푸는 수단"으로 규정합니다.
+- **배경.** 안드로이드 대형 앱과 구글 샘플은 `:app` + `:core:*` + `:feature:*` 멀티 모듈 구성을 씁니다. 구글의 모듈화 가이드는 모듈화를 "커진 코드베이스의 확장 문제를 푸는 수단"으로 규정합니다. 팀이 참고 사례로 검토한 국내 오픈소스 안드로이드 프로젝트도 화면 4개 규모에 `:app` + `:feature` 4개 + `:core` 4개를 두고 Clean Architecture 3계층을 적용한 구성이었습니다.
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
 | 처음부터 멀티 모듈 | 모듈 부트스트랩과 Gradle 규약 플러그인 작업이 초기 며칠을 소모해, 8월 12~14일 첫 배포 마일스톤(§3-3-7)과 충돌합니다. 화면 하나를 추가할 때마다 모듈 배선이 따라옵니다 |
+| 계층 구분 없이 기능별 패키지만 | 나중에 모듈로 쪼갤 때 경계를 새로 그어야 해, 전환이 기계적 작업이 아니라 재설계가 됩니다 |
 
-- **영향.** 빌드 설정이 단순해지는 대신 계층 경계가 컴파일러로 강제되지 않으므로, 위 의존 방향 2규칙을 코드 리뷰가 지킵니다. **출시 후 첫 리팩터링으로 멀티 모듈 전환을 수행합니다**(후속 과제). 패키지를 모듈로 승격하는 형태라 전환 작업은 기계적입니다. 규약 플러그인도 그 시점에 도입하고, Version Catalog(`libs.versions.toml`)는 지금부터 사용합니다.
+- **영향.** 빌드 설정이 단순해지는 대신 계층 경계가 컴파일러로 강제되지 않으므로, 위 의존 방향 3규칙을 코드 리뷰가 지킵니다. 대신 **패키지 이름과 계층 경계를 멀티 모듈 구성과 1:1로 맞춰 두어**(`core/domain`·`core/data`·`core/ui`·`feature/*`), 전환이 패키지를 모듈로 승격하고 `settings.gradle.kts`에 `include`를 추가하는 작업으로 끝나게 합니다. **출시 후 첫 리팩터링으로 멀티 모듈 전환을 수행합니다**(후속 과제 — [`roadmap.md §R-5`](../planning/roadmap.md)). 규약 플러그인도 그 시점에 도입하고, Version Catalog(`libs.versions.toml`)는 지금부터 사용합니다.
 
 ### UI 상태 모델
 
@@ -369,7 +380,7 @@ SSE에 클라이언트 상한이 없는 것은 웹과 공유하는 간극입니�
 | 채팅 헤더 show/hide | 스크롤 연동 상단 바. 숨긴 헤더는 접근성 트리에서 제외합니다 |
 | (웹에 없음) | **당겨서 새로고침** — 홈·채팅 목록에 추가합니다. 안드로이드 관례이며 "자동 재조회 없음" 계약과 충돌하지 않습니다(사용자의 명시적 행동) |
 
-**디자인 시스템** — Material 3 컴포넌트를 뼈대로 쓰고 색·타이포그래피·모서리 반경을 웹 디자인 토큰 값으로 교체합니다. 토큰 정본은 웹 레포의 Tailwind 설정이며, 서체는 공통 계약대로 Pretendard(기본)·MaruBuri(서사 텍스트)를 앱에 번들합니다. 화면 코드는 Material 3 컴포넌트를 직접 호출하지 않고 `core/designsystem`의 래퍼를 사용합니다(`SHOULD`). 목표는 웹과의 픽셀 일치가 아니라 **같은 브랜드로 보이는 네이티브 앱**입니다.
+**디자인 시스템** — Material 3 컴포넌트를 뼈대로 쓰고 색·타이포그래피·모서리 반경을 웹 디자인 토큰 값으로 교체합니다. 토큰 정본은 웹 레포의 Tailwind 설정이며, 서체는 공통 계약대로 Pretendard(기본)·MaruBuri(서사 텍스트)를 앱에 번들합니다. 화면 코드는 Material 3 컴포넌트를 직접 호출하지 않고 `core/ui`의 래퍼를 사용합니다(`SHOULD`). 목표는 웹과의 픽셀 일치가 아니라 **같은 브랜드로 보이는 네이티브 앱**입니다.
 
 ### 플랫폼 구현 상태 매트릭스
 
@@ -461,7 +472,7 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 | --- | --- |
 | DataStore 평문 저장 | 비루팅 기기에서는 충분하지만, refresh 토큰은 유효기간 14일로 계정 탈취와 사실상 등가입니다. 루팅 기기·포렌식·백업 유출 시 파일만으로 토큰이 노출됩니다 |
 
-- **영향.** 소형 암호화 계층을 `core/auth`에 둡니다. Keystore 키가 손상된 기기에서는 복호화가 실패할 수 있으므로, 이 경우 세션을 폐기하고 재로그인을 유도합니다(`MUST`).
+- **영향.** 소형 암호화 계층을 `core/data`의 저장소 구현 쪽에 둡니다. Keystore 키가 손상된 기기에서는 복호화가 실패할 수 있으므로, 이 경우 세션을 폐기하고 재로그인을 유도합니다(`MUST`).
 
 ### 토큰 재발급
 
@@ -752,7 +763,7 @@ Google Play는 계정 생성이 있는 앱에 앱 내 계정 삭제 진입점과
 
 **목표**
 
-- **프로젝트 골격** — Hilt 배선(스코프 2종), Navigation Compose 타입 안전 라우트와 `auth`·`main` 그래프, `core/designsystem` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종), Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
+- **프로젝트 골격** — 패키지 골격(`core/{domain,data,ui,common,analytics,navigation}`·`feature/*`)과 의존 방향 규칙 적용, Hilt 배선(스코프 2종), Navigation Compose 타입 안전 라우트와 `auth`·`main` 그래프, `core/ui` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종), Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
 - **식별자** — 첫 실행 시 `device_id` UUID 생성·보관, 모든 요청 헤더 주입.
 - **로그인 게이트**(앱 전용 화면) — 로고·소개·가입 보상 고지·기존 계정 안내·프로바이더 버튼 2종·진행 중 잠금·실패 표시.
 - **소셜 로그인 2종** — 구글 Credential Manager, 카카오 SDK(앱 간 로그인·계정 로그인 폴백). 로그인 응답으로 세션 수립, `isNewUser` 판정 준비.
