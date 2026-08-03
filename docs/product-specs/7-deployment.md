@@ -1,6 +1,6 @@
 # 7-DEPLOYMENT
 
-이 문서는 마냑 서비스의 배포 단위, 운영 인프라, CI/CD, 런타임 설정, 검수와 롤백 기준을 정의합니다. 운영 배포 기준은 `manyak-terraform`, 로컬 통합 실행 기준은 `manyak-infra`, 서비스별 빌드와 배포 트리거는 `manyak-server`, `manyak-ai`, `manyak-web` 레포지토리의 현재 구현을 따릅니다.
+이 문서는 마냑 서비스의 배포 단위, 운영 인프라, CI/CD, 런타임 설정, 검수와 롤백 기준을 정의합니다. 운영 배포 기준은 `manyak-terraform`, 로컬 통합 실행 기준은 `manyak-infra`, 서비스별 빌드와 배포 트리거는 `manyak-server`, `manyak-ai`, `manyak-web`, `manyak-android` 레포지토리의 현재 구현을 따릅니다.
 
 ```text
 §7-1  목적과 범위
@@ -18,13 +18,13 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.6                                                                                                                                                                |
+| 버전      | v0.7                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-08-02                                                                                                                                                          |
+| 수정일    | 2026-08-03                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
-| 기준 코드 | `../manyak-terraform` dev `447c8fc`, `../manyak-infra` dev `6c892b9`, `../manyak-server` dev `f106b8e`, `../manyak-ai` dev `cddda1f`, `../manyak-web` dev `0fac4bd`. Langfuse 관련 절(§7-6 주석·§7-9)만 `../manyak-ai` dev `604b68ab060d`(운영 릴리스 `v0.2.1`)와 `../manyak-terraform` dev(KNK-653 머지분) 기준입니다. 인프라 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
+| 기준 코드 | `../manyak-terraform` dev `447c8fc`, `../manyak-infra` dev `6c892b9`, `../manyak-server` dev `f106b8e`, `../manyak-ai` dev `cddda1f`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`(CI 절 기준). Langfuse 관련 절(§7-6 주석·§7-9)만 `../manyak-ai` dev `604b68ab060d`(운영 릴리스 `v0.2.1`)와 `../manyak-terraform` dev(KNK-653 머지분) 기준입니다. 인프라 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
 
 ## 7-1. 목적과 범위
 
@@ -50,7 +50,7 @@
 
 ### 제외 범위
 
-- 화면 요구사항과 UX 검수: [`3-frontend.md`](./3-frontend.md)
+- 화면 요구사항과 UX 검수: [`3-1-client.md`](./3-1-client.md)
 - API, 데이터 모델, 인증, 오류 처리: [`4-backend.md`](./4-backend.md)
 - AI 프롬프트와 요청·응답 계약: [`5-ai-server.md`](./5-ai-server.md)
 - 이벤트·지표·관측 수집 정책: [`6-analytics.md`](./6-analytics.md)
@@ -80,6 +80,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | `manyak-server`    | 백엔드 이미지 빌드, 운영 server 배포, API 헬스 스모크 | `.github/workflows/docker-image.yml`, `Dockerfile`, `application-prod.yml`          |
 | `manyak-ai`        | AI 이미지 빌드, 운영 AI 배포, AI 헬스 게이트          | `.github/workflows/docker-image.yml`, `Dockerfile`, `src/api/v1/health.py`          |
 | `manyak-web`       | Next.js 이미지 빌드, GHCR dev/release 이미지 발행     | `.github/workflows/docker-image.yml`, `.github/workflows/release.yml`, `Dockerfile` |
+| `manyak-android`   | Android 앱 소스·Gradle 빌드 소유, PR·push CI(`./gradlew check`·`./gradlew assembleDebug`) | `.github/workflows/android-ci.yml`, `app/build.gradle.kts`                          |
 
 ### 책임 경계
 
@@ -87,6 +88,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 운영 `server`와 `ai` 컨테이너 이미지는 각 서비스 레포의 `main` push가 ECR로 푸시하고 SSM으로 배포합니다.
 - 운영 `web` 호스팅은 현재 확인한 `manyak-terraform`에 정의되어 있지 않습니다. `manyak-web`은 GHCR 이미지 발행까지만 코드로 정의합니다.
 - 로컬 통합 실행은 `manyak-infra`가 GHCR `dev` 이미지를 pull해 실행합니다. 서비스 소스코드는 이 레포에서 빌드하지 않습니다.
+- `manyak-android`는 현재 CI(정적 검사·단위 테스트·debug APK 조립)까지만 코드로 정의합니다. Play Store 배포, 앱 서명, release 빌드·AAB, 내부 테스트 트랙, 운영 배포·롤백 방식은 코드에 근거가 없어 미정입니다([§7-11](#7-11-미정주의-항목)).
 
 ## 7-3. 환경 구분과 배포 단위
 
@@ -247,6 +249,16 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 현재 확인한 운영 Terraform에는 `manyak-web` 컨테이너를 운영 호스팅에 배포하는 리소스가 없습니다. `manyak-web` release PR들은 GHCR release image 발행과 외부 호스팅 반영을 전제로 합니다.
 
 Web Sentry는 Vercel 호스팅 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성화되어 운영 이벤트를 수집하고 있습니다(GHCR release workflow·Dockerfile에는 여전히 이 build arg가 없어 컨테이너 경로는 비활성).
+
+### `manyak-android` CI
+
+컨테이너 이미지가 없는 앱 레포입니다. GitHub Actions(`.github/workflows/android-ci.yml`)가 `dev`·`main` 대상 PR·push와 수동 실행(workflow_dispatch)에서 다음을 수행합니다.
+
+| 트리거                   | 동작                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| PR·push -> `dev`, `main` | Temurin Java 25 설정(Gradle daemon toolchain `gradle-daemon-jvm.properties`와 일치) → `./gradlew check`(ktlint·detekt·Android lint·단위 테스트) → `./gradlew assembleDebug`(debug APK 조립), 리포트 아티팩트 업로드 |
+
+배포 파이프라인(Play Store, 서명, release 빌드·AAB, 내부 테스트 트랙)은 정의되어 있지 않으며 미정입니다([§7-11](#7-11-미정주의-항목)).
 
 Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 때만** 이벤트를 전송합니다(KNK-714). `NODE_ENV`만 보면 로컬 프로덕션 빌드(`pnpm build && pnpm start`)의 이벤트까지 `production` 환경으로 유입되기 때문입니다. 배포 여부는 `NEXT_PUBLIC_VERCEL_ENV`의 존재로 판별하며, 이 값은 대시보드의 시스템 환경 변수 노출 설정에 의존하지 않도록 `next.config.ts`가 `VERCEL_ENV`를 빌드 시점에 직접 인라인합니다. 로컬에서 연동을 확인할 때는 `NEXT_PUBLIC_SENTRY_FORCE_ENABLE=true`로 강제 활성화합니다.
 
@@ -565,6 +577,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | 항목                      | 상태      | 처리 기준                                                                                                                                                                           |
 | ------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web 운영 호스팅           | 미정      | 현재 Terraform에는 web hosting, CDN, web container 배포가 정의되어 있지 않습니다. 호스팅 플랫폼이 정해지면 배포 절차와 도메인 소유를 추가합니다.                                    |
+| Android 배포 파이프라인   | 미정      | `manyak-android`는 PR·push CI(`./gradlew check`·`assembleDebug`)만 코드로 정의합니다. Play Store 배포, 앱 서명, release 빌드·AAB, 내부 테스트 트랙, 운영 배포·롤백 방식은 결정·구현 후 §7-2·§7-5와 함께 갱신합니다. |
 | Terraform apply 자동화    | 미정      | 현재 `manyak-terraform`에는 GitHub Actions apply workflow가 없습니다. 운영 apply는 수동 절차와 plan 리뷰를 기준으로 합니다.                                                         |
 | Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | MVP       | EC2와 RDS는 MVP 단일 AZ 중심입니다. HA 요구가 생기면 ECS/Fargate 또는 multi-AZ 설계를 별도 버전으로 정의합니다.                                                                     |
