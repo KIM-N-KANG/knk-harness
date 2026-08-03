@@ -15,9 +15,9 @@
 
 | 항목      | 값                                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.29                                                                                                                 |
+| 버전      | v0.30                                                                                                                 |
 | 작성일    | 2026-06-30                                                                                                            |
-| 수정일    | 2026-08-02                                                                                                            |
+| 수정일    | 2026-08-03                                                                                                            |
 | 대상      | 마냑 MVP                                                                                                              |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -1032,25 +1032,32 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 ### 6-6-12. AI LLM 트레이싱과 선호 신호 (Langfuse) — 트레이싱 `Phase 1 · 구현` · 선호 신호 `Phase 1 · 계획`
 
-**배경.** 운영 관측(Sentry·`ai_call_logs`)은 오류와 메타(토큰·지연)만 남기고 원문은 남기지 않습니다(§6-7). 그런데 "무엇이 사용자에게 인기 있는가"를 분석하려면 AI가 실제로 만든 원문과, 그에 대한 사용자 반응을 함께 봐야 합니다. Amplitude는 사용자 행동만 갖고 원문이 없으며, `ai_call_logs`는 메타만 갖습니다.
+- **무엇.** AI 프로덕션 호출의 원문은 Langfuse trace에 축적하고, 사용자의 평가·재생성·완주·선택지 행동은 해당 생성 결과의 Langfuse score로 붙입니다. 이번 범위는 행동 신호 기록까지이며 대시보드·목표치·평가 계산식·알림은 만들지 않습니다.
+- **왜.** Sentry와 `ai_call_logs`에는 오류·토큰·지연만 있고 원문이 없으며, Amplitude에는 행동만 있고 어떤 AI 결과에 대한 반응인지 확정할 생성 버전 연결이 없습니다. 행동 라벨은 나중에 소급 복원하기 어렵지만, 지표와 계산식은 라벨이 쌓인 뒤 다시 설계할 수 있습니다. 따라서 지표를 정하기 전에 생성 결과와 반응의 정확한 연결부터 저장합니다.
+- **어떻게.** AI는 요청마다 별도 trace를 유지하고 구조화된 요청 입력과 제품 연결 metadata를 기록합니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 백엔드는 `request_id`와 버전별 생성 연결로 정확한 trace를 지목해 아래 score를 발행합니다([`4-backend.md §4-7`](./4-backend.md)).
 
-**문제와 결정.**
+  | score 이름 | 타입·값 | 붙이는 생성 결과 | 필수 metadata |
+  | --- | --- | --- | --- |
+  | `storyline_rating` | `CATEGORICAL`: `GOOD`·`BAD` | 후보 3개를 만든 스토리라인 trace | `creation_id`, `storyline_id`, `storyline_order` |
+  | `storylines_regenerated` | `BOOLEAN`: `true` | 새 생성이 아니라 버린 이전 스토리라인 trace | `creation_id`, `regenerated_by_creation_id` |
+  | `chat_response_regenerated` | `BOOLEAN`: `true` | 새 답변이 아니라 버린 이전 채팅 응답 trace | `story_id`, `chat_id`, `turn_id`, `turn_number` |
+  | `ending_reached` | `BOOLEAN`: `true` | 엔딩 본문을 만든 마지막 채팅 응답 trace | `story_id`, `chat_id`, `turn_id`, `turn_number`, `ending_id` |
+  | `choice_presented` | `BOOLEAN`: `true` | 시작 추천 입력은 컴파일 trace, 턴 선택지는 선택지 생성 trace | `choice_source`, `story_id`, `chat_id`, `choice_id`, `choice_order` |
+  | `choice_selected` | `CATEGORICAL`: `FILL`·`SEND`·`RANDOM` | 위와 같음 | `choice_source`, `story_id`, `chat_id`, `choice_id`, `choice_order`, `selection_attempt_id` |
+  | `choice_applied` | `BOOLEAN`: `true` | 위와 같음 | `choice_source`, `story_id`, `chat_id`, `choice_id`, `choice_order`, `next_turn_id`, `choice_edited`, `selection_attempt_id` |
+  | `choice_submission_failed` | `BOOLEAN`: `true` | 위와 같음 | `choice_source`, `story_id`, `chat_id`, `choice_id`, `choice_order`, `choice_edited`, `selection_attempt_id` |
+  | `choice_set_skipped` | `BOOLEAN`: `true` | 노출됐지만 쓰지 않은 시작 추천 입력 또는 턴 선택지 묶음의 생성 trace | `choice_source`, `story_id`, `chat_id`, `input_attempt_id` |
 
-- **원문은 Langfuse에 트레이스로 축적합니다.** AI 프로덕션 호출의 프롬프트·응답 원문을 Langfuse Cloud에 요청 단위로 남깁니다. 원문 비수집(§6-7)의 명시적 예외이며, 별도 보안 정책·보존기간·접근통제·리전 선정을 전제로 합니다(§6-7).
-- **원문과 반응을 한자리에서 봅니다.** Amplitude는 행동만, Langfuse는 원문만 갖습니다. 백엔드가 forward하는 연결 식별자로 트레이스를 지목해 **사용자 반응 신호를 그 트레이스에 붙입니다**(Amplitude 테이블을 직접 조인하는 게 아니라, 반응을 원문 기록에 이어 붙이는 방식). 연결·매핑의 정확한 방법은 [`4-backend.md §4-7`](./4-backend.md)가 소유하며 **후속에서 확정**합니다.
-- **선호 신호는 Langfuse score로 붙입니다(백엔드 직접 전송).** 이는 관측·선호 분석용입니다. 벤치 평가는 합성 데이터를 사용하고(§6-6-11), 트레이스 원문의 학습·개선 활용은 §6-7의 예외 조건(방침 v1.2 고지·시행 이후 수집분 한정)을 따릅니다.
+  `choice_source`는 `START_SUGGESTION|TURN_CHOICE`입니다. `TURN_CHOICE`에는 `source_turn_id`, `START_SUGGESTION`에는 `start_setting_id`를 추가합니다. `RANDOM`은 사용자가 특정 문장을 직접 고른 행동이 아니므로 `FILL`·`SEND`와 분리합니다. score metadata에는 사용자 입력·선택지 문장·프롬프트·AI 출력 원문을 추가하지 않습니다.
 
-**선호 신호 카탈로그.**
+  `storyline_rating`은 후보별 고정 `score_id`를 사용합니다. GOOD↔BAD 변경은 같은 score를 덮어쓰고 취소는 삭제하며, 최초 평가 시각을 유지합니다. 재생성 score는 새 결과가 저장된 뒤 버린 이전 결과에만 붙이고 실패하거나 롤백된 재생성에는 붙이지 않습니다. `choice_selected`는 클릭 사실이므로 다음 턴 실패와 무관하게 유지하고, `choice_applied`는 다음 턴 저장 성공 뒤에만 만듭니다. 백엔드가 실패를 확정한 경우에만 `choice_submission_failed`를 만들며, 클라이언트 단절로 결과를 모르면 성공·실패를 추정하지 않습니다. `choice_set_skipped`는 실제 노출 기록 뒤 직접 입력이 왔을 때만 만듭니다.
 
-| 신호 | 방향 | 출처 |
-| --- | --- | --- |
-| `is_regenerated` | 부정(불만족) | 재생성(§6-4-2-6) |
-| `ending_id` | 긍정(완주) | 엔딩 도달(§6-4-2-6) |
-| 스토리라인 GOOD/BAD | 명시 평가 | `story_creation_storyline_ratings`([`4-backend.md §4-3-2`](./4-backend.md)) |
+  score는 행동 저장 트랜잭션과 같은 트랜잭션의 outbox에 넣고 커밋 뒤 별도 작업자가 보냅니다. 신호 종류·대상 제품 ID·`selection_attempt_id`·`next_turn_id`·`input_attempt_id` 등 신호별 고유 재료로 결정적 `score_id`를 만들어 재시도 중복을 막습니다. 전송 실패는 제한 재시도하며 재시도 소진과 대기 건수는 원문 없는 운영 로그로 관측합니다. PR1 검수에서는 요청별 trace 분리, 호출별 metadata 구분, 임의 ID 미생성, 같은 문장의 다른 `choice_id` 구분, 행동 시점 분리, 버려진 이전 결과의 재생성 score, 중복 재전송 멱등성, 장애 격리, score·metadata의 원문 미포함을 자동 검증하고, 운영 trace와 score가 제품 ID로 연결되는지는 실제 Langfuse에서 확인합니다.
 
-**부착 세부는 후속에서 확정합니다.** 위 표는 방향(무엇을·어느 쪽)만 고정합니다. 실제로 붙이려면 더 정해야 합니다 — 각 신호를 어느 트레이스·항목에 붙일지(스토리라인은 한 요청에 3개 생성되므로 어느 항목인지 식별 필요), 재생성은 새 결과가 아니라 **버려진 이전 결과**에 부정 점수, `ending_id`는 식별자이지 점수가 아니므로 점수화 방식, 재시도 중복 방지 키, 그리고 **Langfuse 전송 실패가 사용자 재생성·평가 기능을 깨지 않도록 하는 비동기 전송**.
+  아직 정하지 않은 구현 세부사항은 담당 레포가 결정합니다. manyak-ai는 KNK-752에서 합의한 `request_id`를 Langfuse trace metadata에 기록하며 추가 연결 정책을 결정하지 않습니다. manyak-server는 `request_id`로 정확한 trace ID를 조회·보관하는 방식, API 세부 계약, 공개 ID와 저장 스키마, score 갱신·삭제 호출, outbox와 재시도, 백엔드 Langfuse 설정을 결정합니다. manyak-web은 `selectionAttemptId`의 생성·수명과 노출·선택 상태 보존 방식을 결정합니다. `inputAttemptId`의 생성 주체·형식·수명은 manyak-server와 manyak-web이 함께 확정합니다. manyak-terraform과 manyak-infra는 백엔드 키 주입·재기동·롤백 배선을 결정합니다. 이미 정한 score 의미와 행동 시점은 이 구현 결정으로 바꾸지 않습니다.
+- **왜 이 방법.** 서로 다른 API 요청을 하나의 trace로 합치면 실패·재시도 경계가 사라지므로 trace는 요청 단위로 유지하고 검증된 제품 ID로 조인합니다. 반응이 며칠 뒤 발생할 수 있어 AI 서버를 다시 거치지 않고 도메인 상태를 가진 백엔드가 직접 score를 발행합니다. 노출·선택·반영·실패를 나누면 사용자가 볼 수 있었는지, 눌렀는지, 실제 채팅에 반영됐는지를 섞지 않습니다. outbox는 사용자 기능과 Langfuse 장애를 분리하면서 커밋된 행동의 유실을 막습니다. 원문은 기존 Langfuse 예외 저장소에만 두고 score에는 비원문 식별자만 추가해 §6-7의 수집 경계를 유지합니다.
 
-**트레이스 분석 차원.** AI가 트레이스에 싣는 분석 차원은 장르 라벨·프롬프트 버전 맵·`retry_count`입니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 현재 장르 라벨은 사전 정의 장르와 직접 입력 장르(`customTags` category `GENRE`)를 구분하지 않고 모두 `genre:*`로 저장합니다. 기본 장르 목록에서 빠진 사용자 수요를 확인하기 위한 임시 정책입니다(KNK-669). 직접 입력값이 필터용 라벨로 색인되어 카디널리티가 커지고 사용자 입력이 검색 가능해진다는 점을 수용합니다. 적용 범위는 스토리 제작의 장르뿐이며, 주인공·주변 인물의 직접 입력값은 라벨이나 metadata에 올리지 않습니다. 키워드 단계 개편(KNK-621)이 장르 직접 입력을 400으로 막으면 이 예외는 종료되고 사전 정의 장르만 남습니다. 장르 라벨은 **스토리 제작 트레이스에만** 달며, 채팅 트레이스에서는 KNK-652로 제거했습니다(AI `v0.2.1` 배포 완료 — [`5-ai-server.md §5-6`](./5-ai-server.md)).
+**트레이스 분석 차원.** 현재 AI가 기록하는 분석 차원은 장르 라벨·프롬프트 버전 맵·`retry_count`·`request_id`이며, KNK-762에서 생성·스토리·채팅·턴 연결 식별자와 선택적인 `user_source`를 추가합니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 장르 라벨은 사전 정의 장르와 직접 입력 장르(`customTags` category `GENRE`)를 구분하지 않고 모두 `genre:*`로 저장하는 KNK-669 임시 정책을 유지합니다. 적용 범위는 스토리 제작의 장르뿐이며, 주인공·주변 인물의 직접 입력값은 라벨이나 metadata에 올리지 않습니다. KNK-621이 장르 직접 입력을 차단하면 이 예외는 종료됩니다. 장르 라벨은 채팅 trace에는 달지 않습니다(KNK-652).
 
 ### 6-6-13. Sentry 오류 일일 요약 (슬랙) — `Phase 1 · 구현`
 
