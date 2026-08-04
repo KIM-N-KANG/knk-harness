@@ -53,7 +53,7 @@
 
 ### 범위
 
-- 기술 스택, 앱 아키텍처(계층·상태 모델·패키지 구조)와 요청 흐름
+- 기술 스택, 앱 아키텍처(계층·상태 모델·모듈 구조)와 요청 흐름
 - 로그인 화면(앱 전용), 내비게이션·백스택 규칙, 공통 화면 계약의 안드로이드 대응, 플랫폼 구현 상태 매트릭스
 - API 연동 방식과 인증 세션(토큰 보관·선제 재발급·소셜 로그인·계정 연동)
 - 디바이스 지원 범위, 접근성, 앱 라이프사이클과 상태 보존
@@ -131,7 +131,7 @@
 | 분석·크래시 | **Amplitude Android SDK** · **Sentry Android SDK** · **Timber** | §3-3-6 |
 | 불변 컬렉션 | **kotlinx.collections.immutable** | `UiState`의 컬렉션 필드가 `List`면 Compose가 unstable로 보아 리컴포지션을 스킵하지 못합니다(아래 UI 상태 모델) |
 
-**도입하지 않는 것과 그 이유** — Room(관계형 데이터·오프라인 요구 없음), WorkManager·Foreground Service(서버 복구 계약이 안전망 — §3-3-5), 응답 캐시 계층(§3-3-4), 원격 Feature Flag(§3-3-7), **MVI 프레임워크**(직접 구현 — 아래), 멀티 모듈(출시 후 전환 — 아래).
+**도입하지 않는 것과 그 이유** — Room(관계형 데이터·오프라인 요구 없음), WorkManager·Foreground Service(서버 복구 계약이 안전망 — §3-3-5), 응답 캐시 계층(§3-3-4), 원격 Feature Flag(§3-3-7), **MVI 프레임워크**(직접 구현 — 아래), **Gradle 규약 플러그인**(v1 미도입 — 아래 모듈 구조).
 
 **결정 기록 — UI 상태 관리를 프레임워크 없이 직접 구현(2026-08-04 재결정)**
 
@@ -150,14 +150,14 @@
 
 ```mermaid
 graph TD
-    subgraph UI["UI 계층 (feature/*)"]
+    subgraph UI["UI 계층 (:feature:*)"]
         C["Compose 화면<br/>상태를 받아 그리고 Intent만 발행"]
         VM["MviViewModel<br/>onIntent → dispatch(ReducerEvent) → reduce"]
     end
-    subgraph DOMAIN["Domain 계층 (core/domain)"]
+    subgraph DOMAIN["Domain 계층 (:core:domain)"]
         RI["Repository 인터페이스 · 도메인 모델<br/>순수 Kotlin, 의존 없음"]
     end
-    subgraph DATA["Data 계층 (core/data)"]
+    subgraph DATA["Data 계층 (:core:data)"]
         R["Repository 구현<br/>결과 타입 반환, 데이터 출처 은닉"]
         API["Retrofit API · okhttp-sse"]
         DS["DataStore<br/>토큰(암호화) · device_id · 플래그 · 퍼널 슬롯"]
@@ -179,54 +179,76 @@ graph TD
 | Repository 인터페이스(domain) | 화면이 필요로 하는 데이터 동작의 계약 | 구현 수단(Retrofit·DataStore)을 노출하지 않습니다 |
 | Repository 구현(data) | 네트워크·로컬 접근, 응답을 결과 타입으로 변환 | UI 개념(문구·표시 상태)을 알지 않습니다 |
 
-**Repository는 인터페이스와 구현을 나눕니다**(`MUST`). ViewModel은 `core/domain`의 인터페이스만 알고, 구현은 `core/data`가 제공합니다. 의존 역전으로 화면 계층이 네트워크 구현을 모르게 되어, 테스트에서 가짜 구현을 끼우기 쉽고(§3-3-7 필수 테스트) 나중에 모듈을 쪼갤 때 경계가 이미 그어져 있습니다.
+**Repository는 인터페이스와 구현을 나눕니다**(`MUST`). ViewModel은 `:core:domain`의 인터페이스만 알고, 구현은 `:core:data`가 제공합니다. 의존 역전으로 화면 계층이 네트워크 구현을 모르게 되어, 테스트에서 가짜 구현을 끼우기 쉽습니다(§3-3-7 필수 테스트). 모듈이 나뉘어 있으므로 `:feature:*`가 `:core:data`를 의존하지 않는 한 구현 클래스에 접근할 수조차 없습니다.
 
 **단, Clean Architecture를 전면 도입하지는 않습니다.** 다음 둘은 하지 않습니다.
 
 - **UseCase 계층을 기본으로 두지 않습니다.** 도메인 규칙(크레딧·한도·소유권·멱등·엔딩 판정)이 모두 백엔드에 있어 대부분의 UseCase가 Repository 호출을 한 줄 위임하는 껍데기가 됩니다. 다음 조건 중 하나를 만족하는 지점만 추출합니다(`SHOULD`) — 같은 로직을 ViewModel 두 곳 이상에서 사용할 때, 또는 ViewModel 하나가 Repository 세 개 이상을 조율할 때.
 - **응답 모델을 기계적으로 이중화하지 않습니다.** 서버 응답과 화면이 쓰는 모양이 같으면 그대로 씁니다. 별도 도메인 모델은 **여러 응답을 합치거나, 화면이 쓰기에 응답 구조가 불편하거나, 서버 계약 변경으로부터 화면을 격리해야 할 때만** 만듭니다(`SHOULD`). 매퍼를 습관적으로 만들면 파일 수만 배로 늘고 얻는 것이 없습니다.
 
-### 패키지 구조
+### 모듈 구조
 
-**단일 모듈(`app`)로 시작하되, 패키지를 나중에 그대로 모듈로 승격할 수 있는 경계로 나눕니다.** 각 패키지는 멀티 모듈 전환 시 `:core:data`·`:feature:story`처럼 1:1로 대응합니다. `feature`는 화면이 아니라 **도메인 단위**로 묶습니다 — 화면은 도메인 패키지의 하위(`story/detail`·`chat/room` 등)에 두고, 모듈 승격도 도메인 단위로 수행해 모듈 수를 억제합니다.
+**처음부터 멀티 모듈로 구성합니다.** 계층 경계를 컴파일러가 강제하고, 프로젝트가 비어 있는 지금이 전환 비용이 가장 낮은 시점이기 때문입니다(아래 결정 기록). `feature`는 화면이 아니라 **도메인 단위**로 묶습니다 — 화면은 도메인 모듈의 하위 패키지(`story/detail`·`chat/room` 등)에 두어 모듈 수를 억제합니다.
 
-```text
-app/src/main/java/app/manyak/
-├── core/
-│   ├── domain/         # 도메인 모델 · Repository 인터페이스 · 결과 타입·오류 모델 (안드로이드 의존 없는 순수 Kotlin)
-│   ├── data/           # Repository 구현 · Retrofit API · SSE · DataStore · DI 모듈
-│   ├── ui/             # 디자인 시스템(테마·브랜드 토큰·Material 3 래퍼) · 공용 컴포저블
-│   ├── common/         # 오류 매핑 · 디스패처 · 확장 함수
-│   ├── analytics/      # Amplitude 배선 · 이벤트 발화 헬퍼
-│   └── navigation/     # 타입 안전 라우트 정의
-├── feature/
-│   ├── login/          # 로그인 화면(앱 전용)
-│   ├── story/          # list(FE-SCREEN-001 홈) · detail(003) · create(002 생성 퍼널)
-│   ├── chat/           # list(FE-SCREEN-004) · room(005)
-│   ├── feedback/       # FE-SCREEN-006
-│   └── my/             # FE-SCREEN-008·011 진입
-└── MainActivity.kt     # 단일 Activity
+```kotlin
+// settings.gradle.kts
+include(":app")               // Application · MainActivity(단일) · 루트 컴포저블 · DI 진입
+
+include(":core:domain")       // 순수 Kotlin — 도메인 모델 · Repository 인터페이스 · 결과 타입·오류 모델
+include(":core:common")       // 순수 Kotlin — 오류 매핑 · 디스패처 · 확장 함수
+include(":core:data")         // Repository 구현 · Retrofit API · SSE · DataStore · 인터셉터 · DI 모듈
+include(":core:ui")           // 디자인 시스템 · 공용 컴포저블 · MviViewModel(`mvi` 패키지) · MessageHelper · 문자열 리소스 전량
+include(":core:analytics")    // Amplitude 배선 · 이벤트 발화 헬퍼
+include(":core:navigation")   // 타입 안전 라우트 정의 · NavigationHelper
+
+include(":feature:login")     // 로그인 화면(앱 전용)
+include(":feature:story")     // list(FE-SCREEN-001 홈) · detail(003) · create(002 생성 퍼널)
+include(":feature:chat")      // list(FE-SCREEN-004) · room(005)
+include(":feature:feedback")  // FE-SCREEN-006
+include(":feature:my")        // FE-SCREEN-008·011 진입
 ```
 
-`core/data` 내부는 관심사별로 다시 나눕니다 — `api`(Retrofit 인터페이스·응답 모델), `sse`(스트리밍 수신), `datastore`(Preferences·암호화 토큰·퍼널 슬롯), `repository`(구현), `di`(Hilt 모듈), `interceptor`(식별 헤더·인증·로깅).
+**`:core:domain`과 `:core:common`은 `kotlin-jvm` 모듈입니다**(`MUST`). 안드로이드 플러그인을 적용하지 않아 프레임워크 참조가 컴파일 단계에서 막힙니다.
 
-의존 방향 규칙입니다. 네 규칙이 멀티 모듈 전환의 선행 조건입니다.
+`:core:data` 내부는 관심사별로 패키지를 나눕니다 — `api`(Retrofit 인터페이스·응답 모델), `sse`(스트리밍 수신), `datastore`(Preferences·암호화 토큰·퍼널 슬롯), `repository`(구현), `di`(Hilt 모듈), `interceptor`(식별 헤더·인증·로깅).
 
-- `feature/*`끼리 직접 참조하지 않습니다(`MUST`). 화면 이동은 내비게이션 계층을 거치고, 공유 로직은 `core/*`로 내립니다.
-- `core/*`는 `feature/*`를 알지 않습니다(`MUST`). 의존은 항상 `feature → core` 단방향입니다.
-- **`core/domain`은 아무것도 의존하지 않습니다**(`MUST`). 안드로이드 프레임워크·Retrofit·DataStore를 참조하지 않는 순수 Kotlin이어야 하며, Repository 인터페이스가 반환하는 결과 타입·오류 모델도 이 패키지가 소유하기 때문에 이 규칙이 성립합니다. `core/data`가 `core/domain`을 의존합니다(그 반대가 아닙니다).
-- `core/*` 간 의존은 **`core/data → core/domain`·`core/common`**, 그리고 **그 외 `core/*` → `core/common`** 만 허용합니다(`MUST`). 그 밖의 core 간 참조(예: `core/analytics → core/data`)는 금지이며, `core/analytics`가 필요로 하는 `device_id`는 DI 배선에서 주입받습니다. 예외가 필요하면 결정 기록을 남깁니다.
+`@HiltViewModel`·`@Module`이 있는 모듈마다 Hilt 플러그인과 KSP를 적용합니다(`MUST`) — `:app`에만 두면 다른 모듈의 애너테이션이 처리되지 않습니다. `@HiltAndroidApp`은 `:app`에만 둡니다.
 
-**결정 기록 — 단일 모듈로 시작하되 모듈 경계를 미리 긋기(2026-08-03)**
+**문자열 리소스는 `:core:ui`에 전량 모읍니다**(`MUST`). 사용자 노출 문자열을 코드에 직접 쓰지 않는 규칙(§3-3-5)의 멀티 모듈 대응이며, 나중에 다국어를 추가할 때 파일이 흩어지지 않게 하려는 것입니다. 순수 Kotlin 모듈은 리소스에 접근할 수 없으므로 "Repository 구현은 UI 문구를 알지 않는다"(위 계층 표)를 컴파일러가 강제하게 됩니다.
 
-- **배경.** 안드로이드 대형 앱과 구글 샘플은 `:app` + `:core:*` + `:feature:*` 멀티 모듈 구성을 씁니다. 구글의 모듈화 가이드는 모듈화를 "커진 코드베이스의 확장 문제를 푸는 수단"으로 규정합니다. 팀이 참고 사례로 검토한 국내 오픈소스 안드로이드 프로젝트도 화면 4개 규모에 `:app` + `:feature` 4개 + `:core` 4개를 두고 Clean Architecture 3계층을 적용한 구성이었습니다.
+그 귀결로 **오류가 모듈을 지나는 경로가 고정됩니다.**
+
+| 단계 | 모듈 | 하는 일 |
+| --- | --- | --- |
+| 1 | `:core:domain` | 오류를 **타입으로 정의**합니다(결과 타입·오류 모델). 문구를 모릅니다 |
+| 2 | `:core:data` | 와이어 응답(`ApiErrorResponse`)을 **오류 타입으로 변환**합니다. 와이어 DTO는 이 모듈 밖으로 나가지 않습니다 |
+| 3 | `:core:common` | 오류 타입 기반 **공통 판정 헬퍼**(402 크레딧 부족 판정 등). 와이어도 문구도 모릅니다 |
+| 4 | `:core:ui` | 오류 타입을 **문자열 리소스로 변환**합니다 |
+
+#### 의존 방향 규칙
+
+- **`:core:domain`은 아무것도 의존하지 않습니다**(`MUST`). 의존 그래프의 바닥이며, Repository 인터페이스가 반환하는 결과 타입·오류 모델도 이 모듈이 소유하기 때문에 이 규칙이 성립합니다.
+- `:core:common`은 **`:core:domain`만** 의존합니다(`MUST`).
+- 그 외 `:core:*`(`data`·`ui`·`analytics`·`navigation`)는 **`:core:domain`·`:core:common`** 을 의존할 수 있습니다(`MUST`). 위 오류 경로가 성립하려면 `:core:ui`도 `:core:domain`을 봐야 하기 때문입니다.
+- **`:core:*` 끼리의 그 밖의 참조는 금지합니다**(`MUST`). `:core:analytics` → `:core:data`, `:core:ui` → `:core:navigation` 같은 참조가 대상이며, `:core:analytics`가 필요로 하는 `device_id`는 DI 배선에서 주입받습니다. 예외가 필요하면 결정 기록을 남깁니다.
+- `:feature:*`는 `:core:*`를 의존합니다(`MUST`). ViewModel이 Repository 인터페이스를 알아야 하므로 `:core:domain`이 여기 포함되며, 구현이 있는 `:core:data`는 의존하지 않습니다 — 구현 주입은 `:app`의 Hilt 배선이 담당합니다.
+- `:feature:*`끼리 직접 참조하지 않습니다(`MUST`). 화면 이동은 `:core:navigation`을 거치고, 공유 로직은 `:core:*`로 내립니다.
+- `:core:*`는 `:feature:*`를 알지 않습니다(`MUST`). 의존은 항상 `feature → core` 단방향입니다.
+- 모든 모듈을 의존하는 것은 `:app` 하나입니다.
+
+강제 수준은 규칙마다 다릅니다. **`:core:domain`·`:core:common`의 순수 Kotlin 규칙만 컴파일러가 절대적으로 막고**, 나머지는 모듈 의존 선언이 1차 방어입니다 — 뚫으려면 `build.gradle.kts`에 한 줄을 추가해야 하고 그 줄이 PR diff에 드러납니다. 단일 모듈의 import 한 줄보다 강하지만 절대적이지는 않으므로 코드 리뷰가 2차 방어로 남습니다.
+
+**결정 기록 — 처음부터 멀티 모듈로 구성(2026-08-04 재결정)**
+
+- **배경.** 2026-08-03 인터뷰에서는 "단일 모듈로 시작하되 패키지를 모듈 경계로 나누고 출시 후 전환"으로 정했습니다. 근거는 "모듈 부트스트랩과 Gradle 규약 플러그인 작업이 초기 며칠을 소모해 첫 배포 마일스톤과 충돌한다"였습니다. 리뷰에서 이를 실측한 결과 **과장이었습니다** — 참고한 오픈소스 프로젝트는 24개 모듈을 **규약 플러그인 없이** 운영하고, 모듈별 `build.gradle.kts`가 14~91줄로 대부분 복붙입니다. 12개 모듈이면 총 600줄 수준이고 반나절 작업입니다.
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
-| 처음부터 멀티 모듈 | 모듈 부트스트랩과 Gradle 규약 플러그인 작업이 초기 며칠을 소모해, 8월 12~14일 첫 배포 마일스톤(§3-3-7)과 충돌합니다. 화면 하나를 추가할 때마다 모듈 배선이 따라옵니다 |
-| 계층 구분 없이 기능별 패키지만 | 나중에 모듈로 쪼갤 때 경계를 새로 그어야 해, 전환이 기계적 작업이 아니라 재설계가 됩니다 |
+| 단일 모듈로 시작하고 출시 후 전환 | 지금 프로젝트가 커밋 2개짜리 빈 상태라 **옮길 코드가 0인, 영구적으로 가장 싼 시점**입니다. 미루면 화면 10여 개와 테스트를 옮겨야 하고, 그 시점(Phase 3)에는 크레딧 충전·이미지 생성이 함께 있어 실제로는 수행되지 않을 가능성이 큽니다 |
+| 참고 프로젝트처럼 feature마다 4계층(entity·data·domain·presentation) | 도메인 규칙이 전부 백엔드에 있어 feature별 domain·data 계층이 거의 빕니다(UseCase를 기본으로 두지 않는 것과 같은 이유 — 위 계층과 책임). 모듈 24개의 관리 비용만 남습니다 |
+| Gradle 규약 플러그인 동시 도입 | 12개 규모에서는 복붙 관리가 더 쌉니다. 참고 프로젝트도 24개를 규약 플러그인 없이 운영합니다. 모듈이 늘거나 버전 갱신이 아파지는 시점에 도입합니다(후속 과제 — [`roadmap.md §R-5`](../planning/roadmap.md)) |
 
-- **영향.** 빌드 설정이 단순해지는 대신 계층 경계가 컴파일러로 강제되지 않으므로, 위 의존 방향 4규칙을 코드 리뷰가 지킵니다. 대신 **패키지 이름과 계층 경계를 멀티 모듈 구성과 1:1로 맞춰 두어**(`core/domain`·`core/data`·`core/ui`·`feature/*`), 전환이 패키지를 모듈로 승격하고 `settings.gradle.kts`에 `include`를 추가하는 작업으로 끝나게 합니다. **출시 후 첫 리팩터링으로 멀티 모듈 전환을 수행합니다**(후속 과제 — [`roadmap.md §R-5`](../planning/roadmap.md)). 규약 플러그인도 그 시점에 도입하고, Version Catalog(`libs.versions.toml`)는 지금부터 사용합니다.
+- **영향.** `:core:domain`이 `kotlin-jvm` 모듈이 되어 안드로이드 프레임워크 참조가 **컴파일 에러**가 됩니다. 이전 판이 "코드 리뷰가 지킨다"고 적었던 규칙이 컴파일러로 내려갑니다. 대신 Hilt·KSP가 모듈마다 실행되어 clean build가 느려집니다(증분 빌드는 빨라집니다). Version Catalog(`libs.versions.toml`)를 모든 모듈이 공유합니다.
 
 ### UI 상태 모델
 
@@ -399,7 +421,7 @@ SSE에 클라이언트 전체 상한이 없는 것은 웹과 공유하는 간극
 
 ### 로그인 화면 (앱 전용)
 
-[`3-1-client.md`](./3-1-client.md)의 화면 인벤토리에 없는 앱 전용 화면입니다. 이 문서가 스펙을 소유합니다. 패키지 이름은 `feature/login`입니다. 공통 계약의 FE-SCREEN-008(로그인·마이)과 이름이 겹칠 수 있으므로, 이 화면을 지칭할 때는 **"(앱 전용)"을 병기**합니다.
+[`3-1-client.md`](./3-1-client.md)의 화면 인벤토리에 없는 앱 전용 화면입니다. 이 문서가 스펙을 소유합니다. 모듈 이름은 `:feature:login`입니다. 공통 계약의 FE-SCREEN-008(로그인·마이)과 이름이 겹칠 수 있으므로, 이 화면을 지칭할 때는 **"(앱 전용)"을 병기**합니다.
 
 | 항목 | 값 |
 | --- | --- |
@@ -418,7 +440,7 @@ SSE에 클라이언트 전체 상한이 없는 것은 웹과 공유하는 간극
 
 - **단일 Activity**입니다(`MUST`). 화면 전환은 모두 Compose 내비게이션이 처리합니다.
 - **그래프 2개** — `auth` 그래프(로그인 화면)와 `main` 그래프(나머지 전체)로 나눕니다. 앱 시작 시 세션 유무로 시작 그래프를 정하고, 로그인 성공 시 `auth`를, 로그아웃·세션 만료 시 `main`을 백스택에서 제거합니다(`MUST`). 로그인 화면으로 되돌아가는 뒤로가기가 생기면 안 됩니다.
-- **그래프 전환의 트리거는 앱 수준 세션 상태입니다**(`MUST`). `core/data`가 세션 상태(로그인·로그아웃·만료)를 `Flow`로 노출하고 루트 컴포저블이 관찰해 그래프를 전환합니다. 재발급 실패(§3-3-4)처럼 데이터 계층 깊은 곳에서 일어나는 세션 폐기도 이 경로 하나로 로그인 화면 이동에 도달하며, 개별 화면은 세션 만료를 처리하지 않습니다.
+- **그래프 전환의 트리거는 앱 수준 세션 상태입니다**(`MUST`). `:core:data`가 세션 상태(로그인·로그아웃·만료)를 `Flow`로 노출하고 루트 컴포저블이 관찰해 그래프를 전환합니다. 재발급 실패(§3-3-4)처럼 데이터 계층 깊은 곳에서 일어나는 세션 폐기도 이 경로 하나로 로그인 화면 이동에 도달하며, 개별 화면은 세션 만료를 처리하지 않습니다.
 - 시작 그래프 판정(암호화 저장소 읽기)이 끝날 때까지 SplashScreen API로 스플래시를 유지합니다. 판정 전에 로그인 화면이 스치듯 보이는 것을 막기 위해서입니다.
 - **화면 간 데이터 전달은 식별자만** 넘깁니다(`MUST`). 목적지 화면이 그 식별자로 데이터를 다시 조회합니다.
 
@@ -454,7 +476,7 @@ SSE에 클라이언트 전체 상한이 없는 것은 웹과 공유하는 간극
 | 채팅 헤더 show/hide | 스크롤 연동 상단 바. 숨긴 헤더는 접근성 트리에서 제외합니다 |
 | (웹에 없음) | **당겨서 새로고침** — 홈·채팅 목록에 추가합니다. 안드로이드 관례이며 "자동 재조회 없음" 계약과 충돌하지 않습니다(사용자의 명시적 행동) |
 
-**디자인 시스템** — Material 3 컴포넌트를 뼈대로 쓰고 색·타이포그래피·모서리 반경을 웹 디자인 토큰 값으로 교체합니다. 토큰 정본은 웹 레포의 Tailwind 설정이며, 서체는 공통 계약대로 Pretendard(기본)·MaruBuri(서사 텍스트)를 앱에 번들합니다. 화면 코드는 Material 3 컴포넌트를 직접 호출하지 않고 `core/ui`의 래퍼를 사용합니다(`SHOULD`). 목표는 웹과의 픽셀 일치가 아니라 **같은 브랜드로 보이는 네이티브 앱**입니다.
+**디자인 시스템** — Material 3 컴포넌트를 뼈대로 쓰고 색·타이포그래피·모서리 반경을 웹 디자인 토큰 값으로 교체합니다. 토큰 정본은 웹 레포의 Tailwind 설정이며, 서체는 공통 계약대로 Pretendard(기본)·MaruBuri(서사 텍스트)를 앱에 번들합니다. 화면 코드는 Material 3 컴포넌트를 직접 호출하지 않고 `:core:ui`의 래퍼를 사용합니다(`SHOULD`). 목표는 웹과의 픽셀 일치가 아니라 **같은 브랜드로 보이는 네이티브 앱**입니다.
 
 ### 플랫폼 구현 상태 매트릭스
 
@@ -546,7 +568,7 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 | --- | --- |
 | DataStore 평문 저장 | 비루팅 기기에서는 충분하지만, refresh 토큰은 유효기간 14일로 계정 탈취와 사실상 등가입니다. 루팅 기기·포렌식·백업 유출 시 파일만으로 토큰이 노출됩니다 |
 
-- **영향.** 소형 암호화 계층을 `core/data`의 저장소 구현 쪽에 둡니다. Keystore 키가 손상된 기기에서는 복호화가 실패할 수 있으므로, 이 경우 세션을 폐기하고 재로그인을 유도합니다(`MUST`).
+- **영향.** 소형 암호화 계층을 `:core:data`의 저장소 구현 쪽에 둡니다. Keystore 키가 손상된 기기에서는 복호화가 실패할 수 있으므로, 이 경우 세션을 폐기하고 재로그인을 유도합니다(`MUST`).
 
 ### 토큰 재발급
 
@@ -668,7 +690,7 @@ Google Play는 계정 생성이 있는 앱에 앱 내 계정 삭제 진입점과
 | 언어 | 한국어 단일 | 번역 리소스와 언어 전환 UI는 두지 않습니다 |
 | 네트워크 | 오프라인 미지원 | 연결이 없으면 각 화면의 오류 상태와 재시도로 처리합니다 |
 
-**사용자 노출 문자열은 문자열 리소스로 중앙화합니다(`MUST`).** 코드에 문자열을 직접 쓰지 않습니다. 지금 다국어를 지원하지 않더라도, 나중에 소급하는 비용이 처음부터 지키는 비용보다 훨씬 크기 때문입니다. Compose 코드의 문자열 리터럴은 기본 lint가 잡지 못하므로 코드 리뷰가 확인합니다.
+**사용자 노출 문자열은 문자열 리소스로 중앙화합니다(`MUST`).** 코드에 문자열을 직접 쓰지 않으며, 리소스는 `:core:ui` 한 모듈에 모읍니다(§3-3-2 모듈 구조). 지금 다국어를 지원하지 않더라도, 나중에 소급하는 비용이 처음부터 지키는 비용보다 훨씬 크기 때문입니다. Compose 코드의 문자열 리터럴은 기본 lint가 잡지 못하므로 코드 리뷰가 확인합니다.
 
 ### 접근성
 
@@ -841,7 +863,8 @@ Google Play는 계정 생성이 있는 앱에 앱 내 계정 삭제 진입점과
 
 **목표**
 
-- **프로젝트 골격** — 패키지 골격(`core/{domain,data,ui,common,analytics,navigation}`·`feature/*`)과 의존 방향 규칙 적용, Hilt 배선(스코프 2종), Navigation Compose 타입 안전 라우트와 `auth`·`main` 그래프, `core/ui` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종), Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
+- **모듈 구조** — `settings.gradle.kts`에 12개 모듈 `include`(`:app` + `:core` 6 + `:feature` 5)와 모듈 간 의존 규칙 적용(§3-3-2). `:core:domain`·`:core:common`은 `kotlin-jvm` 모듈로 만들어 안드로이드 참조를 컴파일 단계에서 차단합니다. Version Catalog를 모든 모듈이 공유합니다.
+- **프로젝트 골격** — `:core:ui`에 `MviViewModel` 베이스 클래스와 `MessageHelper`, `:core:navigation`에 `NavigationHelper`(둘 다 `Channel(BUFFERED)`)와 타입 안전 라우트·`auth`·`main` 그래프, Hilt 배선(스코프 2종), `:core:ui` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종)와 **문자열 리소스 중앙화**, 오류 타입 → 문자열 매핑 배치, Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
 - **식별자** — 첫 실행 시 `device_id` UUID 생성·보관, 모든 요청 헤더 주입.
 - **로그인 화면**(앱 전용) — 로고·소개·가입 보상 고지·기존 계정 안내·프로바이더 버튼 2종·진행 중 잠금·실패 표시.
 - **소셜 로그인 2종** — 구글 Credential Manager, 카카오 SDK(앱 간 로그인·계정 로그인 폴백). 로그인 응답으로 세션 수립, `isNewUser` 판정 준비.
