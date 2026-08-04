@@ -399,7 +399,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 `prometheus`는 **로컬 전용**입니다. 운영 메트릭은 Grafana Cloud로 OTLP push하므로(§7-9) 운영에는 스크레이프 대상도 Prometheus 인스턴스도 두지 않습니다. 로컬 Prometheus는 server 컨테이너의 `/actuator/prometheus`를 긁어 pull 경로(스크레이프 설정·relabel·recording rule)를 실물로 확인하는 용도이며, 운영 구성으로 승격하지 않습니다([`4-backend.md §4-7`](./4-backend.md)).
 
-**전제조건 두 가지.** ① 스크레이프 대상(`/actuator/prometheus`)은 **`local` 프로파일에서만** 존재합니다 — exposure 목록도 Security의 무인증 허용도 `application-local.yml`·`SecurityConfig`가 local로 한정합니다. 현재 compose는 `SPRING_PROFILES_ACTIVE`를 주지 않아 `spring.profiles.default: local` 덕분에 local로 뜨는데, 누가 compose에 `SPRING_PROFILES_ACTIVE: dev`를 넣는 순간 스크레이프가 404/401로 조용히 깨집니다. compose에서 프로파일을 지정하게 되면 `local`을 명시해야 합니다. ② 서버 메트릭 구현이 `dev`에 머지돼야 합니다 — compose가 실행하는 것은 GHCR `dev` 이미지인데, 구현은 아직 `manyak-server` `feat/monitoring-grafana-cloud-otlp` 브랜치에 있습니다.
+**전제조건.** 스크레이프 대상(`/actuator/prometheus`)은 **`local` 프로파일에서만** 존재합니다 — exposure 목록도 Security의 무인증 허용도 `application-local.yml`·`SecurityConfig`가 local로 한정합니다. 현재 compose는 `SPRING_PROFILES_ACTIVE`를 주지 않아 `spring.profiles.default: local` 덕분에 local로 뜨는데, 누가 compose에 `SPRING_PROFILES_ACTIVE: dev`를 넣는 순간 스크레이프가 404/401로 조용히 깨집니다. compose에서 프로파일을 지정하게 되면 `local`을 명시해야 합니다. 서버 메트릭 구현은 `manyak-server` `dev`에 머지되어(KNK-779) GHCR `dev` 이미지에 엔드포인트가 들어가므로, 남은 조건은 프로파일 하나입니다.
 
 ### 실행
 
@@ -468,7 +468,7 @@ docker compose ps
 ### 관측
 
 - server는 구조화 로그, Sentry, `ai_call_logs`, Actuator health를 사용합니다.
-- server 메트릭은 Micrometer로 계측해 **Grafana Cloud로 OTLP push**합니다(`Phase 2 · 계획`, [`4-backend.md §4-7`](./4-backend.md)). Prometheus·Grafana를 별도 EC2에 자체 호스팅하지 않습니다. push 방식이라 운영은 `/actuator/prometheus`를 노출하지 않고 인바운드 경로도 열지 않습니다. 환경은 `service.name`으로 가릅니다(운영 `manyak-server` / 로컬 `manyak-server-local`). 전송 주기는 운영 60초입니다. 대시보드는 RED(요청률·5xx 오류율·p95)와 AI 호출 지연(`feature`별 p95), JVM·CPU·HikariCP를 봅니다. **알림 임계값은 운영 기준선이 쌓인 뒤 정하며**, 서버 정지 시 규칙이 No Data로 발화하므로 No Data 동작을 함께 설계합니다.
+- server 메트릭은 Micrometer로 계측해 **Grafana Cloud로 OTLP push**합니다(서버 계측 `Phase 2 · 구현`(KNK-779·784) / **운영 활성화 `Phase 2 · 계획`** — 자격증명 주입이 아직 없어 현재 운영은 꺼져 있습니다. [`4-backend.md §4-7`](./4-backend.md)). Prometheus·Grafana를 별도 EC2에 자체 호스팅하지 않습니다. push 방식이라 운영은 `/actuator/prometheus`를 노출하지 않고 인바운드 경로도 열지 않습니다. 환경은 `service.name`으로 가릅니다(운영 `manyak-server` / 로컬 `manyak-server-local`). 전송 주기는 운영 60초입니다. 대시보드는 RED(요청률·5xx 오류율·p95)와 AI 호출 지연(`feature`별 p95), JVM·CPU·HikariCP를 봅니다. **알림 임계값은 운영 기준선이 쌓인 뒤 정하며**, 서버 정지 시 규칙이 No Data로 발화하므로 No Data 동작을 함께 설계합니다.
 - AI는 Sentry와 request correlation middleware를 사용합니다.
 - AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-ai-server.md §5-6`](./5-ai-server.md)) 미충족 시 no-op입니다. 프로덕션은 2026-07-23 활성화했습니다.
 - web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 운영 Sentry 수집은 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성 상태입니다(§7-5). GHCR release 이미지에는 여전히 주입 경로가 없어 컨테이너 배포 경로는 비활성입니다.
