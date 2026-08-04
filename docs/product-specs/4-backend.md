@@ -83,6 +83,7 @@
 | `Phase 1 · 구현` | Phase 1 범위. 서버 구현 완료, MVP 프론트엔드는 아직 미사용 | 인증 API·랜덤 닉네임([§4-5](#4-5-인증과-권한)), 마이그레이션·내 콘텐츠 목록([§4-3-5](#4-3-api-계약)), 로어북 카탈로그([§4-3-6](#4-3-api-계약))·엔딩 저장([§4-3-10](#4-3-api-계약)), 크레딧([§4-3-7](#4-3-api-계약)), 일반 제작·스토리 수정([§4-3-8](#4-3-api-계약)), AI 응답 재생성([§4-3-9](#4-3-api-계약)) |
 | `Phase 1 · 계획` | Phase 1 범위. 미구현, 방향만 합의됨 | 채팅 이미지 삽입([§4-3-9](#4-3-api-계약)) |
 | `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 크레딧 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 자동 연결·반응형 변형(V45~46·KNK-548, [§4-3-9](#4-3-api-계약))·초대 코드 입력 개편(V47·KNK-567, [§4-3-7](#4-3-api-계약))·피드백 User-Agent 저장(V43·KNK-528)·채팅 상세 턴 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
+| `Phase 2 · 계획` | Phase 2 범위. dev 미반영 | 메트릭([§4-7](#4-7-운영과-관측)) — 구현은 `manyak-server` `feat/monitoring-grafana-cloud-otlp`에 있고 dev 머지 전입니다 |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 
 ---
@@ -1424,6 +1425,73 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 클라이언트 이벤트([`6-analytics.md`](./6-analytics.md) 관할)와의 경계는 `server_` 접두어이며, 서버는 원본 device_id를 보유하지 않아 클라이언트 device 프로필과의 병합에는 Phase 1 한계가 있습니다.
 
+### 메트릭 — `Phase 2 · 계획`
+
+구조화 로그·Sentry·`ai_call_logs`가 개별 사건을 남긴다면, 메트릭은 시계열 집계로 RED(Rate·Error·Duration)와 **AI 호출 지연**을 봅니다. Micrometer로 계측하고 **OTLP push**로 Grafana Cloud에 보냅니다. Prometheus·Grafana를 별도 EC2에 자체 호스팅하지 않습니다 — 단일 인스턴스 운영에서 스크레이프 대상과 관리 대상을 늘리는 비용이 이득보다 큽니다.
+
+**수집 경로** — `OtlpMeterRegistry`(micrometer-registry-otlp)가 step 주기마다 Grafana Cloud OTLP 게이트웨이로 push합니다. 운영은 스크레이프 엔드포인트(`/actuator/prometheus`)를 **노출하지 않습니다**. push 방식이라 인바운드 경로가 필요 없고, 노출하면 인증 없이 내부 지표가 공개됩니다. actuator 노출 목록은 운영에서 `health,info`를 유지하고 로컬에만 `prometheus`를 더합니다 — export 내용을 눈으로 확인하는 용도이자, 로컬 Compose의 Prometheus가 긁는 대상입니다. **pull 경로는 로컬 전용이며 운영 구성으로 승격하지 않습니다**([`7-deployment.md §7-8`](./7-deployment.md)).
+
+**지표 카탈로그**
+
+| 메트릭 | 태그 | 출처 | 용도 |
+| --- | --- | --- | --- |
+| `http.server.requests` | `uri`(경로 템플릿)·`method`·`status`·`outcome` | Spring Boot 자동 | RED — 요청률·5xx 오류율·p95 응답시간 |
+| `manyak.ai.call.duration` | `feature`(enum 4종)·`outcome`(`success`/`failure`) | `AiCallRecorder` | AI API 호출 지연·실패율. `ai_call_logs.latency_ms`와 같은 구간을 재는 집계 뷰 |
+| `manyak.story.creation.duration` | `outcome`(`success`/`failure`) | `SimpleStoryCreationService` | 간편 스토리 완성 처리시간(AI 호출 + 저장 포함) |
+| JVM·프로세스·DB 커넥션 풀 | 바인더별 기본 태그 | Micrometer 기본 바인더(자동 등록) | CPU·힙·GC·스레드·커넥션 풀 — 이름은 아래 표 |
+
+기본 바인더 지표는 대시보드 패널 단위로 묶어 씁니다.
+
+| 패널 | 메트릭 |
+| --- | --- |
+| CPU | `process.cpu.usage`·`system.cpu.usage`·`system.load.average.1m` |
+| 힙 | `jvm.memory.used`·`jvm.memory.max`·`jvm.memory.committed`·`jvm.memory.usage.after.gc` |
+| GC | `jvm.gc.pause`·`jvm.gc.overhead`·`jvm.gc.memory.allocated` |
+| 스레드 | `jvm.threads.live`·`jvm.threads.states` |
+| DB 커넥션 풀 | `hikaricp.connections.{active,idle,pending,max}` **또는** `jdbc.connections.{active,idle,max}` |
+
+DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자체 tracker)와 `jdbc.*`(Boot pool metadata)가 함께 등록되어 같은 값을 두 이름으로 내보내므로, 두 계열로 패널을 만들면 중복입니다. `jvm.gc.pause`는 GC가 실제로 발생한 뒤에야 나타나므로 기동 직후 패널이 비어 보이는 것이 정상입니다.
+
+위 이름은 바인더 실측 기준이며, 전체 앱 컨텍스트에서 최종 등록까지 확인한 것은 아닙니다. 로컬 기동 후 `/actuator/prometheus`로 확인합니다(서버 레포 `http/common/metrics-prometheus.http`).
+
+**카디널리티 규칙** — 메트릭 태그에는 **고유값을 넣지 않습니다**. `user_id`·`story_id`·`chat_id`·`request_id`·`device_id_hash`는 금지이며, 개별 추적은 구조화 로그와 `ai_call_logs`의 몫입니다. 태그는 유한 enum으로만 둡니다(`feature` 4종 × `outcome` 2종 = 8 시계열). `uri`는 Spring이 경로 변수를 템플릿(`/api/v1/stories/{storyId}`)으로 치환해 적재하므로 안전합니다.
+
+**히스토그램 비용** — p95를 서버측에서 계산하려면 percentile histogram이 필요한데, 시계열 하나가 `le` 버킷 수만큼 불어납니다. Micrometer Timer의 기본 구간은 1ms\~30s이고 이때 버킷은 **69개**입니다(micrometer 1.16.5 실측). 엔드포인트 39개 × 상태 코드 3\~5종 × 69이면 8k\~13k로 Grafana Cloud 무료 티어 한도(10k active series)에 걸리므로, 메트릭별 기대 구간을 좁혀 버킷을 자릅니다.
+
+| 메트릭 | 구간 | 버킷 수(실측) | 근거 |
+| --- | --- | ---: | --- |
+| (기본값 참고) | 1ms\~30s | 69 | Micrometer `AbstractTimerBuilder` 기본 |
+| `http.server.requests` | 10ms\~10s | 47 | 일반 HTTP 응답 구간 |
+| `manyak.ai.call.duration` | 100ms\~240s | 54 | AI 타임아웃 최대 180초(compile)보다 **위**여야 타임아웃 직전 분포가 보인다 |
+| `manyak.story.creation.duration` | 100ms\~240s | 54 | 위와 같음(스토리 완성 = compile 호출 포함) |
+
+버킷 수는 **scrape 프레임 기준**입니다 — `registry.scrape()`가 실제로 뱉는 `_bucket` 라인 수(min/max clamp 경계와 `+Inf` 포함)이고, Grafana Cloud가 과금·집계에서 보는 것도 이 프레임입니다. `PercentileHistogramBuckets.buckets()`의 순수 버킷 집합을 직접 세면 프레임 차이로 일관되게 3 적게 나옵니다(66·44·51). 100ms\~240s의 54는 100ms\~120s(49)에 상한 확대분 +5를 더한 값이고, 증가분 +5는 두 프레임에서 동일합니다.
+
+상한은 **타임아웃 값 자체가 아니라 그보다 위**로 잡습니다. 상한을 타임아웃과 같거나 낮게 두면 정상 동작하는 느린 호출이 `+Inf`로 뭉뚱그려져, 정작 보고 싶은 타임아웃 직전 구간의 p95·p99가 상한에 붙어 버립니다.
+
+`http.server.requests`의 10초 상한은 **의도적으로 AI 대기 엔드포인트를 덮지 않습니다.** 그 경로의 지연은 전용 `manyak.*` 타이머가 담당하고, HTTP 히스토그램 상한을 올리면 버킷이 엔드포인트 수만큼 곱해져 비용이 큽니다. 대신 AI 엔드포인트의 HTTP p95는 10초에서 뭉개진다는 점을 알고 받아들입니다.
+
+**환경 구분** — `service.name` 하나로 가릅니다. 운영은 `spring.application.name`(=`manyak-server`)이 그대로 리소스 속성이 되고, 로컬만 `OTEL_SERVICE_NAME=manyak-server-local`로 덮어씁니다. Grafana Cloud는 `service.name`을 모든 메트릭의 `job` 라벨로 승격하므로 조인 없이 환경을 나눌 수 있습니다. `deployment.environment` 리소스 속성은 `target_info`에만 실려 조회 때마다 조인이 필요하므로 쓰지 않습니다.
+
+**전송 주기** — 운영 60초, 로컬 10초. 주기가 짧을수록 DPM(datapoints per minute) 과금이 비례해 늘고, 단일 인스턴스 서비스에서 60초보다 촘촘한 해상도가 주는 이득은 없습니다.
+
+**기본 off와 fail-safe** — `micrometer-registry-otlp`가 classpath에 있으면 OTLP 레지스트리는 **모든 프로파일에서 자동 구성**되고, endpoint를 주지 않으면 micrometer 기본값 `http://localhost:4318/v1/metrics`로 push를 시도합니다. 그래서 export는 기본 `false`로 두고 **로컬·운영 모두 같은 토글(`MANYAK_OTLP_METRICS_ENABLED=true`)로 명시적으로 켭니다** — 켜지 않은 환경(test 포함)에서 매 step마다 연결 거부가 쌓이는 것을 막습니다. 로컬 프로파일도 예외를 두지 않습니다: 프로파일 yml에 `true`를 박아 두면 endpoint 환경 변수 없이 앱을 띄운 팀원에게 같은 헛푸시가 발생합니다. 순서는 어느 환경이든 **endpoint·헤더 주입이 먼저, 토글이 나중**입니다. 메트릭 기록 실패는 격리해 비즈니스 요청을 깨뜨리지 않습니다(관측 < 비즈니스 — 위 `ai_call_logs` 절과 같은 원칙).
+
+**미주입과 빈 값은 다릅니다.** Spring Boot의 `PropertiesConfigAdapter.obtain()`은 **null 검사만** 하므로(Boot 4.0.6 실측), URL 속성이 빈 문자열이면 그 빈 값이 그대로 micrometer에 전달됩니다 — 기본값으로 폴백하지 않습니다.
+
+| URL 속성 상태 | 결과 |
+| --- | --- |
+| 미주입(null) | `OtlpConfig.url()` 폴백 — `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` → `OTEL_EXPORTER_OTLP_ENDPOINT` → `http://localhost:4318/v1/metrics` 순으로 찾아 push 시도 |
+| 빈 문자열(`""`) | 빈 URL로 push 시도. localhost 헛푸시가 아니라 매 step 전송 오류 |
+
+운영 Secrets Manager는 키를 지우는 대신 빈 값으로 두는 관례가 있으므로([`7-deployment.md §7-6`](./7-deployment.md)) **OTLP 키는 빈 값으로 남기지 않습니다.** 끄려면 키를 넣지 않거나, 토글을 `false`로 둡니다.
+
+폴백 경로가 `System.getenv()`를 직접 읽는다는 점도 같은 실측에서 확인했습니다 — Spring `Environment`를 거치지 않으므로, 컨테이너에 표준 `OTEL_*` 변수가 있으면 프로파일·yml과 무관하게 집힙니다. 운영에서 Spring 전용 이름을 쓰는 이유가 이것입니다([§4-7 환경 변수](#4-7-운영과-관측)).
+
+**측정 범위 주의** — `manyak.story.creation.duration`은 실제 생성 콜백만 감쌉니다. 멱등 재요청(`recordOrRun`의 COMPLETED replay — [§4-3-8](#4-3-api-계약))은 AI 호출 없이 저장된 결과를 돌려주는 경로라 의도적으로 제외합니다. 포함하면 p95가 실제 생성 비용보다 낙관적으로 왜곡됩니다.
+
+**알림** — 임계값은 운영 기준선이 쌓인 뒤 정합니다. 서버가 내려가면 규칙이 No Data로 발화하므로, 운영 알림은 임계값과 **No Data 동작**(무시 / 별도 심각도)을 함께 설계합니다. AI 호출 지연·실패율 알림은 실 운영 데이터로 기준선을 잡은 뒤 추가합니다([§7-9](./7-deployment.md)).
+
 ### 환경 변수
 
 값은 배포 파이프라인이 주입하며 문서·레포에 싣지 않습니다.
@@ -1448,10 +1516,14 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | `MANYAK_ASSET_BASE_URL` | 아니오 | 프로필 프리셋 이미지 서빙 base URL(기본 `https://api.manyak.app`) — `profile_image_url = {base}/profile-presets/{명사}.png`([§4-5](#4-5-인증과-권한) B7). 후속 S3/CDN 전환은 이 값 치환만으로 됨 |
 | `MANYAK_GOOGLE_FORM_FEEDBACK_ID` · `MANYAK_GOOGLE_FORM_FEEDBACK_{BODY,EMAIL,PLATFORM,APP_VERSION}_ENTRY` · `MANYAK_GOOGLE_FORM_BASE_URL` | 아니오 | 피드백 구글 폼 적재(KNK-618, [§4-3-4](#4-3-api-계약)). form ID 미설정이면 건너뜀 — live form ID는 운영에만 둬 로컬 실행이 실 스프레드시트를 오염시키지 않음. entry ID는 공개 식별자라 yml 기본값 보유, base URL은 테스트 mock 전용 오버라이드 |
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` · `SENTRY_TRACES_SAMPLE_RATE` | 아니오 | Sentry 연동. DSN 미설정 시 비활성 |
+| `MANYAK_OTLP_METRICS_ENABLED` | 아니오(`Phase 2 · 계획`) | 메트릭 OTLP push 토글(`management.otlp.metrics.export.enabled`). 기본 `false` — 켠 채 endpoint를 주지 않으면 레지스트리가 `localhost:4318`로 헛푸시합니다([위 메트릭 절](#4-7-운영과-관측)) |
+| `MANAGEMENT_OTLP_METRICS_EXPORT_URL` · `MANAGEMENT_OTLP_METRICS_EXPORT_HEADERS_AUTHORIZATION` | 메트릭 사용 시 예(`Phase 2 · 계획`) | Grafana Cloud OTLP 게이트웨이 URL과 인증 헤더. **운영은 이 Spring 전용 이름으로 주입합니다** — 표준 `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`도 micrometer `OtlpConfig`가 폴백으로 읽지만, 공용 `.env`를 AI 컨테이너와 공유하는 운영에서는 AI의 OTel SDK까지 같은 값을 집어 듭니다([`7-deployment.md §7-6`](./7-deployment.md)). 로컬은 단일 프로세스라 표준 이름을 씁니다. 헤더 값은 시크릿이라 레포·문서에 싣지 않습니다 |
+| `OTEL_SERVICE_NAME` | 아니오(`Phase 2 · 계획`) | 리소스 `service.name` 오버라이드. 미설정 시 `spring.application.name`(=`manyak-server`)이 쓰이므로 **운영은 주입하지 않습니다**. 로컬만 `manyak-server-local`로 구분합니다 |
 
 ### 헬스체크·API 문서·배포
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
+- Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([위 메트릭 절](#4-7-운영과-관측)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
 - OpenAPI: `GET /v3/api-docs`, Swagger UI `GET /swagger-ui.html`. 운영 환경에서는 비공개입니다 — 경로 차단이 아니라 springdoc 기능 비활성(`api-docs`·`swagger-ui` enabled=false)으로 구현해 해당 경로는 404로 응답합니다.
 - readiness의 Redis 검사는 운영 프로파일에서 일시 비활성 상태입니다(`management.health.redis.enabled=false` — 후속 재활성 예정). 스케줄러는 기본 단일 스레드이며 현재 태스크는 크레딧 대사 배치 하나입니다.
 - 배포: Docker 이미지 빌드 후 `dev`는 GHCR, `main`은 AWS ECR(OIDC)로 푸시합니다. DB 마이그레이션은 앱 기동 시 Flyway가 자동 실행합니다.
