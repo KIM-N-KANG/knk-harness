@@ -120,7 +120,7 @@
 
 | 분류 | 선택 | 선택 이유(요약) |
 | --- | --- | --- |
-| UI 상태 관리 | **Orbit MVI** | 화면마다 단일 상태·인텐트·사이드이펙트를 강제해 상태 흐름이 균일해집니다. 팀 기술 학습 목표도 결정 요인입니다(아래 결정 기록) |
+| UI 상태 관리 | **직접 구현 MVI**(`MviViewModel` 베이스 클래스) | 프레임워크 의존 없이 `UiState`·`Intent`·`ReducerEvent` 3요소를 베이스 클래스가 강제합니다. `reduce`가 순수 함수라 테스트가 단순합니다(아래 결정 기록) |
 | 의존성 주입 | **Hilt** | 컴파일 타임에 의존 그래프 오류를 잡고, ViewModel 생성 배선과 테스트 대역 교체의 표준 경로를 제공합니다 |
 | 내비게이션 | **Navigation Compose**(타입 안전 라우트) | 성숙도·자료·Hilt 통합이 가장 두텁습니다. Navigation 3은 구현 시점에 안정화 상태를 재확인합니다 |
 | HTTP·직렬화 | **Retrofit + OkHttp + kotlinx.serialization** | 인터셉터가 토큰 주입·식별 헤더·로깅의 단일 지점이 되고, SSE도 같은 클라이언트 위에서 해결됩니다 |
@@ -129,19 +129,20 @@
 | 이미지 로딩 | **Coil** | Compose 전용 API로 placeholder·실패 처리 계약을 그대로 구현합니다 |
 | 소셜 로그인 | **Credential Manager**(구글) · **Kakao SDK v2**(카카오) | §3-3-4 |
 | 분석·크래시 | **Amplitude Android SDK** · **Sentry Android SDK** · **Timber** | §3-3-6 |
+| 불변 컬렉션 | **kotlinx.collections.immutable** | `UiState`의 컬렉션 필드가 `List`면 Compose가 unstable로 보아 리컴포지션을 스킵하지 못합니다(아래 UI 상태 모델) |
 
-**도입하지 않는 것과 그 이유** — Room(관계형 데이터·오프라인 요구 없음), WorkManager·Foreground Service(서버 복구 계약이 안전망 — §3-3-5), 응답 캐시 계층(§3-3-4), 원격 Feature Flag(§3-3-7), 멀티 모듈(출시 후 전환 — 아래).
+**도입하지 않는 것과 그 이유** — Room(관계형 데이터·오프라인 요구 없음), WorkManager·Foreground Service(서버 복구 계약이 안전망 — §3-3-5), 응답 캐시 계층(§3-3-4), 원격 Feature Flag(§3-3-7), **MVI 프레임워크**(직접 구현 — 아래), 멀티 모듈(출시 후 전환 — 아래).
 
-**결정 기록 — UI 상태 관리로 Orbit MVI 채택(2026-08-03)**
+**결정 기록 — UI 상태 관리를 프레임워크 없이 직접 구현(2026-08-04 재결정)**
 
-- **배경.** 화면 상태를 어떤 패턴으로 관리할지의 갈림길입니다. 이 앱의 복잡도는 채팅(스트리밍 상태 기계)·퍼널(단계 상태와 임시 저장)·인증 세션 세 곳에 집중되고, 나머지 화면은 조회 후 렌더에 가깝습니다.
+- **배경.** 2026-08-03 인터뷰에서는 Orbit MVI를 채택했습니다. 근거는 "화면마다 단일 상태·인텐트·사이드이펙트를 강제해 균일해진다"와 "팀의 MVI 프레임워크 경험"이었습니다. 리뷰 과정에서 두 근거를 검증한 결과 **첫 번째가 사실이 아니었습니다** — Orbit이 타입으로 강제하는 것은 State와 SideEffect뿐이고 **Intent라는 개념 자체가 없습니다**(공식 예제도 액션마다 public 메서드를 씁니다). 균일성을 만드는 것은 프레임워크가 아니라 팀 관례였습니다.
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
-| ViewModel + `StateFlow` 수제 UDF (공식 가이드 기본형) | 기술적으로 충분하지만, 인텐트·사이드이펙트의 형식화를 관례에만 의존해 화면마다 편차가 생길 수 있습니다. 팀의 기술 학습 목표(MVI 프레임워크 경험)도 충족하지 못합니다 |
-| 수제 MVI(프레임워크 없이 3요소 직접 구현) | 상태 갱신 직렬화·사이드이펙트 전달 보장을 직접 처리해야 하고, 학습 목표 측면의 이득도 프레임워크 채택보다 작습니다 |
+| Orbit MVI | 실제로 제공하는 것은 사이드이펙트 무손실 전달·reduce 직렬화·라이프사이클 인지 수집이고, 베이스 클래스 25줄과 `Channel(BUFFERED)`로 직접 구현되는 범위입니다. 반면 12.0.0(2026-07-13)에서 타입 계층을 전면 개명(`ContainerHost` → `OrbitContainerHost`)해 메이저 마이그레이션이 실재하고, 외부 자료 대부분이 구 API 기준이라 학습에도 불리합니다 |
+| ViewModel + `StateFlow`만 사용(베이스 클래스 없음) | 사이드이펙트 채널 배선·`repeatOnLifecycle` 수집·인텐트 디스패처를 화면마다 다시 작성해 편차가 생깁니다. 베이스 클래스 하나로 막을 수 있는 편차입니다 |
 
-- **영향.** 화면마다 `UiState`·`Intent`·`SideEffect` 3요소를 고정 관례로 작성합니다(아래 UI 상태 모델). 테스트는 "인텐트를 넣고 상태를 단언"하는 형태로 단순해집니다(§3-3-7). 재검토 조건 — Orbit이 Compose·Kotlin 버전 추종을 막거나 유지보수가 정체되면 수제 MVI로 회귀합니다. 같은 패턴이라 이행은 기계적입니다.
+- **영향.** `:core:ui`에 `MviViewModel<I, S, E>` 베이스 클래스를 두고 모든 화면이 상속합니다(아래 UI 상태 모델). 3요소는 `UiState`·`Intent`·**`ReducerEvent`**이며, Orbit의 `SideEffect`가 있던 자리를 `ReducerEvent`가 대신하고 **사이드이펙트는 앱 스코프 헬퍼로 분리**합니다. `reduce(state, event)`가 순수 함수라 단위 테스트가 입력·출력 대조로 끝납니다(§3-3-7). 재검토 조건 — 화면 수가 늘어 베이스 클래스만으로 편차를 못 막거나 KMP 공유가 요구될 때 프레임워크 도입을 다시 봅니다.
 
 ### 계층과 책임
 
@@ -151,7 +152,7 @@
 graph TD
     subgraph UI["UI 계층 (feature/*)"]
         C["Compose 화면<br/>상태를 받아 그리고 Intent만 발행"]
-        VM["Orbit ViewModel<br/>Intent 처리 → UiState 갱신 → SideEffect 발행"]
+        VM["MviViewModel<br/>onIntent → dispatch(ReducerEvent) → reduce"]
     end
     subgraph DOMAIN["Domain 계층 (core/domain)"]
         RI["Repository 인터페이스 · 도메인 모델<br/>순수 Kotlin, 의존 없음"]
@@ -162,7 +163,8 @@ graph TD
         DS["DataStore<br/>토큰(암호화) · device_id · 플래그 · 퍼널 슬롯"]
     end
     C -->|Intent| VM
-    VM -->|"UiState(StateFlow) · SideEffect"| C
+    VM -->|"UiState(StateFlow)"| C
+    VM -->|"화면 이동 · 메시지"| HELP["앱 스코프 헬퍼<br/>NavigationHelper · MessageHelper<br/>Channel(BUFFERED) — 루트가 단일 수집"]
     VM --> RI
     R -.->|구현| RI
     R --> API
@@ -173,7 +175,7 @@ graph TD
 | 계층 | 책임 | 금지 |
 | --- | --- | --- |
 | Compose 화면 | 상태 렌더, 사용자 입력을 Intent로 발행 | 화면이 직접 데이터를 조회하지 않습니다(`MUST NOT`) |
-| Orbit ViewModel | Intent 처리, 상태 갱신, 1회성 사건 발행 | Retrofit·DataStore를 직접 호출하지 않습니다(`MUST NOT`) |
+| `MviViewModel` | `onIntent`로 입력 수신, 부수효과 수행, `ReducerEvent` 발행으로 상태 갱신 | Retrofit·DataStore를 직접 호출하지 않습니다(`MUST NOT`). `reduce` 안에서 부수효과를 수행하지 않습니다(`MUST NOT`) |
 | Repository 인터페이스(domain) | 화면이 필요로 하는 데이터 동작의 계약 | 구현 수단(Retrofit·DataStore)을 노출하지 않습니다 |
 | Repository 구현(data) | 네트워크·로컬 접근, 응답을 결과 타입으로 변환 | UI 개념(문구·표시 상태)을 알지 않습니다 |
 
@@ -228,35 +230,106 @@ app/src/main/java/app/manyak/
 
 ### UI 상태 모델
 
+`:core:ui`가 베이스 클래스와 마커 인터페이스를 소유하고, 모든 화면 ViewModel이 이를 상속합니다(`MUST`).
+
+```kotlin
+interface MviIntent      // View → ViewModel (사용자 입력)
+@Stable interface UiState // ViewModel → View (불변 상태)
+interface ReducerEvent   // 상태 변이의 원인 — 외부에서 직접 dispatch 하지 않습니다
+
+abstract class MviViewModel<I : MviIntent, S : UiState, E : ReducerEvent>(
+    initialState: S,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(initialState)
+    val uiState: StateFlow<S> = _uiState.asStateFlow()
+
+    protected val currentState: S get() = _uiState.value
+
+    abstract fun onIntent(intent: I)                     // 유일한 외부 진입점
+    protected abstract fun reduce(state: S, event: E): S  // 순수 함수
+    protected fun dispatch(event: E) {
+        _uiState.update { current -> reduce(current, event) }
+    }
+}
+```
+
+흐름은 `View → onIntent(Intent) → (Repository 호출 등 부수효과) → dispatch(ReducerEvent) → reduce → StateFlow → Compose`입니다.
+
 모든 화면은 다음 3요소를 정의합니다(`MUST`). 화면 코드의 구조가 균일해져 리뷰와 테스트가 같은 형태로 반복됩니다.
 
 ```kotlin
 // 1. UiState — 화면이 그릴 수 있는 상태 전부를 담은 단일 불변 객체
 data class ChatUiState(
-    val turns: List<TurnUi> = emptyList(),
+    val turns: ImmutableList<TurnUi> = persistentListOf(),
     val streaming: StreamingUi? = null,
     val composer: ComposerUi = ComposerUi(),
     val error: ErrorUi? = null,
-)
+    val creditDialog: Boolean = false,
+) : UiState {
+    companion object { val empty = ChatUiState() }
+}
 
 // 2. Intent — 화면에서 일어날 수 있는 사용자 행동 전부
-sealed interface ChatIntent {
+sealed interface ChatIntent : MviIntent {
     data class Send(val text: String, val source: UserSource) : ChatIntent
     data object Regenerate : ChatIntent
     data object DeleteConfirmed : ChatIntent
+    data object CreditDialogDismissed : ChatIntent
 }
 
-// 3. SideEffect — 상태가 아닌 1회성 사건
-sealed interface ChatSideEffect {
-    data class Snackbar(val message: String) : ChatSideEffect
-    data object NavigateToChatList : ChatSideEffect
-    data object ShowCreditDialog : ChatSideEffect
+// 3. ReducerEvent — 상태가 바뀌는 원인 전부. 사용자 입력이 아닌 변화(스트림 수신 등)도 여기로 들어옵니다
+sealed interface ChatReducerEvent : ReducerEvent {
+    data object SendStarted : ChatReducerEvent
+    data class TokenReceived(val text: String) : ChatReducerEvent
+    data class TurnsConfirmed(val turns: ImmutableList<TurnUi>) : ChatReducerEvent
+    data object StreamFailed : ChatReducerEvent
+    data object CreditShortage : ChatReducerEvent
 }
 ```
 
+**`Intent`와 `ReducerEvent`를 나누는 것이 이 구조의 요점입니다.** 사용자 입력 하나가 상태 변이 여러 개를 낳고(`Send` → `SendStarted` → `TokenReceived`×N → `TurnsConfirmed`), 사용자 입력이 아닌 변이도 같은 통로로 들어옵니다. 그 결과 `reduce`가 코루틴도 네트워크도 없는 순수 함수가 되어, 테스트가 "상태와 이벤트를 넣고 상태를 단언"으로 끝납니다.
+
+작성 규칙입니다.
+
+- `UiState`의 컬렉션은 **`ImmutableList`·`ImmutableSet`** 을 씁니다(`MUST`). `List`는 Compose가 unstable로 보아 리컴포지션을 스킵하지 못합니다.
+- 상태 가공 로직은 `UiState`의 메서드로 둡니다(`SHOULD`). **`reduce`는 분기만** 하고, Compose는 반영만 합니다.
+- 부수효과(Repository 호출·화면 이동·메시지)는 `onIntent` 쪽 private 함수에서 수행합니다(`MUST`). `reduce` 안에서 `suspend` 함수를 호출하지 않습니다(`MUST NOT`).
+- 외부 변화 구독은 `init`에서 `launchIn(viewModelScope)`으로 collect한 뒤 `dispatch`합니다(`MUST`). 상태를 직접 갱신하지 않습니다.
+- 화면은 `uiState.collectAsStateWithLifecycle()`로 상태를 받고 `viewModel::onIntent`만 호출합니다(`MUST`).
+
+**화면별 `SideEffect` 채널을 두지 않습니다**(`MUST NOT`). 1회성 사건은 성격에 따라 셋으로 나뉩니다.
+
+| 사건 | 수단 | 소유 |
+| --- | --- | --- |
+| 화면 이동 | `NavigationHelper` | `:core:navigation` |
+| 스낵바·토스트 | `MessageHelper` | `:core:ui` |
+| **그 밖의 화면 고유 사건** | **`UiState`의 소비형 필드** | 각 `:feature:*` |
+
+**앱 스코프 헬퍼 두 개**는 `Channel(BUFFERED)` + `receiveAsFlow()`로 구현하고(`MUST`) 루트 컴포저블이 각각 한 번만 수집합니다. `MutableSharedFlow`를 쓰지 않습니다(`MUST NOT`) — 구독자가 잠시 떨어진 사이(회전, 백그라운드 복귀) 발행된 이동·메시지가 유실됩니다.
+
+**나머지 1회성 사건은 전부 `UiState`의 소비형 필드로 표현합니다**(`MUST`). 대상은 OS 공유 시트 열기(FE-SCREEN-005 채팅 공유), Chrome Custom Tabs 열기(약관·서비스 안내), 소셜 로그인 SDK 호출, 채팅 스크롤 하단 이동, 402 크레딧 부족 다이얼로그처럼 **Activity 컨텍스트나 화면 고유 컴포넌트가 필요한 요청**입니다.
+
+```kotlin
+data class ChatUiState(
+    // ...
+    val pendingShare: ShareRequest? = null,   // 소비형 필드
+) : UiState
+
+// 화면
+LaunchedEffect(state.pendingShare) {
+    state.pendingShare?.let { request ->
+        shareLauncher.launch(request)
+        viewModel.onIntent(ChatIntent.ShareConsumed)   // 소비 후 반드시 해제
+    }
+}
+```
+
+**실행한 뒤 반드시 인텐트로 해제합니다**(`MUST`). 해제하지 않으면 회전할 때마다 `LaunchedEffect`가 다시 실행됩니다. 채널 대신 상태로 두는 이유는 셋입니다 — 회전·프로세스 복귀에 안전하고, 화면마다 채널을 새로 배선하지 않아 구조가 균일해지며, 402처럼 **사건과 함께 화면별 상태 복구가 필요한 경우**(퍼널은 입력·선택 유지, 채팅은 낙관적 버블 제거 — 아래 에러 표현)를 같은 `reduce` 안에서 처리할 수 있습니다.
+
 ### 코루틴·Flow 사용 원칙
 
-- 비동기 작업은 화면 스코프(Orbit 컨테이너)에서 실행합니다. `GlobalScope`를 사용하지 않습니다(`MUST NOT`).
+- 비동기 작업은 화면 스코프(`viewModelScope`)에서 실행합니다. `GlobalScope`를 사용하지 않습니다(`MUST NOT`).
 - 화면보다 오래 살아야 하는 작업은 주입한 앱 스코프에서 실행하며, 허용 대상은 **토큰 재발급 · 분석 이벤트 발송 · 퍼널 슬롯 기록** 셋뿐입니다. 그 밖의 앱 스코프 사용은 코드 리뷰에서 사유를 요구합니다.
 - 퍼널 생성 요청은 화면 스코프에 둡니다. 화면이 사라져 요청이 끊겨도 서버가 처리를 완주하고 복구 조회가 결과를 되찾기 때문입니다([`3-1-client.md §3-1-4`](./3-1-client.md#3-1-4-스토리-생성-퍼널)).
 - 1회성 조회·변경은 `suspend` 함수로 반환합니다. `Flow`는 실제로 관찰이 필요한 대상(DataStore 값, SSE 스트림)에만 씁니다(`SHOULD`).
@@ -265,7 +338,7 @@ sealed interface ChatSideEffect {
 ### 에러 표현과 재시도
 
 - Repository는 실패를 예외로 던지지 않고 결과 타입으로 반환합니다(`MUST`). 분류는 **성공 / API 오류 / 네트워크 실패** 셋입니다. API 오류는 응답의 `code`·`status`를 **도메인 오류 모델로 옮겨** 보존하며, 와이어 DTO(`ApiErrorResponse`)를 결과 타입에 그대로 싣지 않습니다(`MUST NOT` — 계층 경계 유지). ViewModel이 `when`으로 모든 분기를 처리하므로 누락이 컴파일 단계에서 드러납니다.
-- 402 응답은 화면마다 따로 처리하지 않고 공통 분기로 크레딧 부족 다이얼로그를 띄웁니다(`MUST`, 공통 계약 FE-SCREEN-008). 구현 형태는 **공통 오류 매핑 헬퍼 + 화면별 ViewModel의 SideEffect 발화**입니다(위 UI 상태 모델 예시의 `ShowCreditDialog`) — 402 계약이 다이얼로그와 함께 화면별 상태 복구(퍼널은 해당 단계의 입력·선택 유지, 채팅 턴은 낙관적 사용자 버블 제거 — [`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에러-처리-계약) 402 공통)를 요구하므로, 발화와 복구는 화면이 소유해야 하고 앱 수준 단일 다이얼로그 호스트로는 충족할 수 없습니다. 앱에는 게스트가 없어 로그인 유도 분기는 없습니다.
+- 402 응답은 화면마다 따로 처리하지 않고 공통 분기로 크레딧 부족 다이얼로그를 띄웁니다(`MUST`, 공통 계약 FE-SCREEN-008). 구현 형태는 **공통 오류 매핑 헬퍼 + 화면별 `UiState`의 다이얼로그 플래그**입니다(위 UI 상태 모델 예시의 `creditDialog`) — 402 계약이 다이얼로그와 함께 화면별 상태 복구(퍼널은 해당 단계의 입력·선택 유지, 채팅 턴은 낙관적 사용자 버블 제거 — [`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에러-처리-계약) 402 공통)를 요구하므로, 판정과 복구는 화면이 소유해야 하고 앱 수준 단일 다이얼로그 호스트(`MessageHelper`)로는 충족할 수 없습니다. 상태로 표현하므로 회전에도 다이얼로그가 유지됩니다. 앱에는 게스트가 없어 로그인 유도 분기는 없습니다.
 - 자동 재시도와 화면 복귀 자동 재조회를 두지 않습니다(`MUST`, [`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에러-처리-계약)). 재시도는 항상 사용자의 명시적 행동입니다.
 
 ### 요청 흐름
@@ -274,7 +347,7 @@ sealed interface ChatSideEffect {
 
 ```mermaid
 graph LR
-    App["앱<br/>Compose → Orbit ViewModel → Repository"] -->|"Retrofit · OkHttp 인터셉터<br/>Authorization · X-Manyak-* 주입"| Server["백엔드 API<br/>계약: 4-backend.md §4-3"]
+    App["앱<br/>Compose → MviViewModel → Repository"] -->|"Retrofit · OkHttp 인터셉터<br/>Authorization · X-Manyak-* 주입"| Server["백엔드 API<br/>계약: 4-backend.md §4-3"]
 ```
 
 **결정 기록 — 백엔드 직접 호출(2026-08-03)**
@@ -310,7 +383,7 @@ SSE에 클라이언트 전체 상한이 없는 것은 웹과 공유하는 간극
 | Retrofit `@Streaming` + 직접 파싱 | 웹의 직접 구현을 재연하는 선택입니다. 앱에는 검증된 SSE 파서가 있는데 줄 분할·멀티라인 `data:`·주석 처리 같은 엣지 케이스를 다시 떠안을 이유가 없습니다 |
 | 서드파티 SSE 라이브러리 | `okhttp-sse`가 공식·경량으로 충분해 의존을 늘릴 명분이 없습니다 |
 
-- **영향.** 스트리밍 전용 OkHttp 인스턴스를 별도로 구성합니다. 전체 상한은 두지 않되(공통 계약 — 위 요청 타임아웃), **이벤트 간 무수신 상한(`readTimeout`)을 150초로 둡니다.** 정상 스트림의 무수신 구간은 백엔드의 두 층 상한이 이미 막고 있으므로(AI 무진행은 idle 60초에 `error` 이벤트로, 총 길이는 클라이언트향 전체 상한 120초에 스트림 종료로 끝남 — [`4-backend.md §4-3-3`](./4-backend.md)) 이 값은 정상 경로에서 발화하지 않고, 서버의 종료 신호가 도달할 수 없는 죽은 연결(무선망의 FIN 없는 단절 — 모바일에서 웹보다 흔한 실패 모드)의 영구 대기만 자릅니다. 값의 불변식은 **"두 백엔드 상한의 최댓값을 여유 있게 상회"**입니다 — 백엔드 상한은 과거에 조정된 적이 있으므로(160→120초, KNK-645) 그 값이 바뀌면 150초도 재도출합니다. 인증·식별 헤더 인터셉터가 스트림 요청에도 그대로 적용되어 선제 재발급이 자동으로 걸립니다. 이벤트는 `callbackFlow`로 감싸 `Flow`로 노출하되 **스트림 Flow도 예외를 던지지 않습니다**(`MUST`) — `token`·`completed`·`error`·스트림 종료(EOF·무수신 상한 포함)를 sealed 이벤트로 정규화해 ViewModel이 `when`으로 소진합니다. 화면 이탈 시 Flow 취소가 곧 스트림 중단입니다(계약의 "조용히 종료").
+- **영향.** 스트리밍 전용 OkHttp 인스턴스를 별도로 구성합니다. 전체 상한은 두지 않되(공통 계약 — 위 요청 타임아웃), **이벤트 간 무수신 상한(`readTimeout`)을 150초로 둡니다.** 정상 스트림의 무수신 구간은 백엔드의 두 층 상한이 이미 막고 있으므로(AI 무진행은 idle 60초에 `error` 이벤트로, 총 길이는 클라이언트향 전체 상한 120초에 스트림 종료로 끝남 — [`4-backend.md §4-3-3`](./4-backend.md)) 이 값은 정상 경로에서 발화하지 않고, 서버의 종료 신호가 도달할 수 없는 죽은 연결(무선망의 FIN 없는 단절 — 모바일에서 웹보다 흔한 실패 모드)의 영구 대기만 자릅니다. 값의 불변식은 **"두 백엔드 상한의 최댓값을 여유 있게 상회"**입니다 — 백엔드 상한은 과거에 조정된 적이 있으므로(160→120초, KNK-645) 그 값이 바뀌면 150초도 재도출합니다. 인증·식별 헤더 인터셉터가 스트림 요청에도 그대로 적용되어 선제 재발급이 자동으로 걸립니다. 이벤트는 `callbackFlow`로 감싸 `Flow`로 노출하되 **스트림 Flow도 예외를 던지지 않습니다**(`MUST`) — `token`·`completed`·`error`·스트림 종료(EOF·무수신 상한 포함)를 sealed 이벤트로 정규화합니다. **ViewModel은 이 스트림 이벤트를 `onIntent` 쪽에서 수집해 `when`으로 소진하고, 각 분기를 `ReducerEvent`로 변환해 `dispatch`합니다**(§3-3-2 UI 상태 모델) — 스트림 이벤트 타입과 `ReducerEvent`를 같은 타입으로 겸용하지 않습니다(`MUST NOT`). 전자는 데이터 계층의 와이어 개념이고 후자는 화면 상태의 변이 원인이라, 겸용하면 `:core:data`의 타입이 화면 계약이 됩니다. 화면 이탈 시 Flow 취소가 곧 스트림 중단입니다(계약의 "조용히 종료").
 
 구현이 충족해야 하는 계약입니다(원천: [`3-1-client.md §3-1-5`](./3-1-client.md#3-1-5-채팅-플레이와-sse-스트리밍)).
 
@@ -613,7 +686,7 @@ Google Play는 계정 생성이 있는 앱에 앱 내 계정 삭제 진입점과
 
 | 층 | 생존 범위 | 담는 것 |
 | --- | --- | --- |
-| ViewModel(Orbit 컨테이너) | 구성 변경 생존, 프로세스 사망 시 소멸 | 화면 상태 일반 |
+| ViewModel(`viewModelScope`) | 구성 변경 생존, 프로세스 사망 시 소멸 | 화면 상태 일반 |
 | 저장 가능 상태(`rememberSaveable`·`SavedStateHandle`) | 프로세스 사망 생존(소량) | 입력 중 텍스트, 스크롤 위치 |
 | DataStore | 완전 영속 | 토큰, `device_id`, 기기 단위 플래그, **퍼널 진행 슬롯** |
 
