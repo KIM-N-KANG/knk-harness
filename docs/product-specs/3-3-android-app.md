@@ -16,13 +16,13 @@
 
 | 항목      | 값                                                             |
 | --------- | -------------------------------------------------------------- |
-| 버전      | v1.1                                                           |
+| 버전      | v1.2                                                           |
 | 작성일    | 2026-08-02                                                     |
 | 수정일    | 2026-08-04                                                     |
 | 대상      | 마냑 안드로이드 네이티브 앱 (`Phase 2`)                        |
 | 작성 목적 | 안드로이드 앱의 플랫폼 구현·연동·검수 기준을 정의합니다.       |
 | 기준 코드 | `../manyak-android` (Kotlin, Jetpack Compose)                  |
-| 이력      | v0.5 골격을 KNK-772 기술 선택 인터뷰(2026-08-03) 결과로 본문 확정. v0.7 교차 리뷰 반영(2026-08-04) — 테스트 트랙 용어를 비공개 테스트로 통일, 재조회 규칙의 복귀 판정 명확화, 예외 표·흐름 표를 3-1 정본과 정렬, `minSdk` 26 정렬을 W1 목표에 명시. v0.8 아키텍처 리뷰 반영(2026-08-04) — 결과 타입·오류 모델을 `core/domain`으로 이동, core 간 의존 규칙 추가, 앱 수준 세션 상태 전파 경로·반응형 재발급·회전 저장 순서·SSE 무수신 상한(150초)·sealed 스트림 이벤트 정의. v0.9 명명 정리(2026-08-04) — "로그인 게이트"를 "로그인 화면(앱 전용)"으로 개칭, 패키지 `feature/gate` → `feature/login`. v0.10(2026-08-04) — `feature`를 화면 단위에서 도메인 그룹형(`story`·`chat` 하위에 화면 배치)으로 재편, 모듈 승격 단위를 도메인으로 명시. **v1.0 멘토 리뷰 반영(2026-08-04)** — 결정 4건을 뒤집었습니다: ① UI 상태 관리를 Orbit에서 **직접 구현 MVI**로(3요소를 `UiState`·`Intent`·`ReducerEvent`로 재정의, 사이드이펙트를 앱 스코프 헬퍼로 분리), ② 단일 모듈에서 **처음부터 멀티 모듈 12개**로(문자열 리소스를 `:core:ui`에 중앙화), ③ 크래시 수집을 Sentry에서 **Firebase Crashlytics**로(릴리스 R8 활성화 포함), ④ 폰 세로 고정을 해제하고 **전 기기 회전 지원**으로. 범위 변경 1건 — **FCM 생성 완료 알림을 v1에 편입**(서버 계약은 [`4-backend.md §4-3-12`](./4-backend.md) `계획`). 미반영 리뷰 항목은 Room 표현 정정·SSE 정책 요약 표·토큰 만료 이중 시계로, 후속 판에서 다룹니다. **v1.1(2026-08-04)** — App Link 표기를 정합화했습니다. 시점 표현 없이 "선언하지 않습니다"로 적혀 영구 결정처럼 읽히던 4곳을 "v1 미선언 · Phase 3 도입"으로 바꾸고([`3-1-client.md`](./3-1-client.md) 2곳도 동일), Phase 3 딥링크 도입에 대비한 이음매 3건(목적지 보류·라우트 단일 등록처·백스택 방침)을 §3-3-3에 기록했습니다 |
+| 이력      | v0.5 골격을 KNK-772 기술 선택 인터뷰(2026-08-03) 결과로 본문 확정. v0.7 교차 리뷰 반영(2026-08-04) — 테스트 트랙 용어를 비공개 테스트로 통일, 재조회 규칙의 복귀 판정 명확화, 예외 표·흐름 표를 3-1 정본과 정렬, `minSdk` 26 정렬을 W1 목표에 명시. v0.8 아키텍처 리뷰 반영(2026-08-04) — 결과 타입·오류 모델을 `core/domain`으로 이동, core 간 의존 규칙 추가, 앱 수준 세션 상태 전파 경로·반응형 재발급·회전 저장 순서·SSE 무수신 상한(150초)·sealed 스트림 이벤트 정의. v0.9 명명 정리(2026-08-04) — "로그인 게이트"를 "로그인 화면(앱 전용)"으로 개칭, 패키지 `feature/gate` → `feature/login`. v0.10(2026-08-04) — `feature`를 화면 단위에서 도메인 그룹형(`story`·`chat` 하위에 화면 배치)으로 재편, 모듈 승격 단위를 도메인으로 명시. **v1.0 멘토 리뷰 반영(2026-08-04)** — 결정 4건을 뒤집었습니다: ① UI 상태 관리를 Orbit에서 **직접 구현 MVI**로(3요소를 `UiState`·`Intent`·`ReducerEvent`로 재정의, 사이드이펙트를 앱 스코프 헬퍼로 분리), ② 단일 모듈에서 **처음부터 멀티 모듈 12개**로(문자열 리소스를 `:core:ui`에 중앙화), ③ 크래시 수집을 Sentry에서 **Firebase Crashlytics**로(릴리스 R8 활성화 포함), ④ 폰 세로 고정을 해제하고 **전 기기 회전 지원**으로. 범위 변경 1건 — **FCM 생성 완료 알림을 v1에 편입**(서버 계약은 [`4-backend.md §4-3-12`](./4-backend.md) `계획`). 미반영 리뷰 항목은 Room 표현 정정·SSE 정책 요약 표·토큰 만료 이중 시계로, 후속 판에서 다룹니다. **v1.1(2026-08-04)** — App Link 표기를 정합화했습니다. 시점 표현 없이 "선언하지 않습니다"로 적혀 영구 결정처럼 읽히던 4곳을 "v1 미선언 · Phase 3 도입"으로 바꾸고([`3-1-client.md`](./3-1-client.md) 2곳도 동일), Phase 3 딥링크 도입에 대비한 이음매 3건(목적지 보류·라우트 단일 등록처·백스택 방침)을 §3-3-3에 기록했습니다. **v1.2(2026-08-04)** — 참고 오픈소스 아키텍처(`AI-SW-Maestro-OSS/26-mobile-eng-class`) 대조 리뷰를 반영했습니다. ① `compose_stability.conf` 등록 규칙 추가 — `:core:domain`이 `kotlin-jvm` 모듈이라 그 값 객체가 unstable로 취급되어 `ImmutableList` 규칙만으로는 리컴포지션 스킵이 성립하지 않는 문제를 막습니다. ② 앱 스코프 헬퍼 2종의 **인터페이스를 `:core:domain`으로 이동**하고 구현만 `:core:ui`·`:core:navigation`에 남겼습니다 — 교차 참조 금지 규칙과 오류 경로 3단계(`:core:common` 판정 헬퍼)가 충돌해 UI 아래 계층이 안내를 띄울 수 없던 문제를 해소하며, 문자열 리소스 id 대신 오류 타입을 넘기는 제약과 라우트 마커 규칙이 함께 붙습니다. 헬퍼 발행의 `trySend` 유실 정책도 명시했습니다. 미반영 리뷰 항목은 `reduce` 순수성 근거 보강·필수 테스트 항목 분리·명시적 백킹 필드 주의·Baseline Profile 도입 판단으로, 후속 판에서 다룹니다 |
 
 **규칙 강도 표기** — `MUST`(위반하면 계약 위반)와 그 부정형 `MUST NOT`(금지), `SHOULD`(정당한 사유 없이 어기지 않음), `MAY`(선택)를 이 문서 전체에서 일관되게 사용합니다.
 
@@ -165,7 +165,7 @@ graph TD
     end
     C -->|Intent| VM
     VM -->|"UiState(StateFlow)"| C
-    VM -->|"화면 이동 · 메시지"| HELP["앱 스코프 헬퍼<br/>NavigationHelper · MessageHelper<br/>Channel(BUFFERED) — 루트가 단일 수집"]
+    VM -->|"화면 이동 · 메시지"| HELP["앱 스코프 헬퍼<br/>NavigationHelper · MessageHelper<br/>인터페이스는 :core:domain, 구현은 :core:navigation·:core:ui<br/>Channel(BUFFERED) — 루트가 단일 수집"]
     VM --> RI
     R -.->|구현| RI
     R --> API
@@ -195,12 +195,12 @@ graph TD
 // settings.gradle.kts
 include(":app")               // Application · MainActivity(단일) · 루트 컴포저블 · DI 진입
 
-include(":core:domain")       // 순수 Kotlin — 도메인 모델 · Repository 인터페이스 · 결과 타입·오류 모델
+include(":core:domain")       // 순수 Kotlin — 도메인 모델 · Repository 인터페이스 · 결과 타입·오류 모델 · 앱 스코프 헬퍼 인터페이스 2종 · 라우트 마커
 include(":core:common")       // 순수 Kotlin — 오류 매핑 · 디스패처 · 확장 함수
 include(":core:data")         // Repository 구현 · Retrofit API · SSE · DataStore · 인터셉터 · DI 모듈
-include(":core:ui")           // 디자인 시스템 · 공용 컴포저블 · MviViewModel(`mvi` 패키지) · MessageHelper · 문자열 리소스 전량
+include(":core:ui")           // 디자인 시스템 · 공용 컴포저블 · MviViewModel(`mvi` 패키지) · MessageHelper 구현 · 문자열 리소스 전량
 include(":core:analytics")    // Amplitude 배선 · 이벤트 발화 헬퍼
-include(":core:navigation")   // 타입 안전 라우트 정의(단일 등록처) · NavigationHelper
+include(":core:navigation")   // 타입 안전 라우트 정의(단일 등록처) · NavigationHelper 구현
 
 include(":feature:login")     // 로그인 화면(앱 전용)
 include(":feature:story")     // list(FE-SCREEN-001 홈) · detail(003) · create(002 생성 퍼널)
@@ -223,12 +223,13 @@ include(":feature:my")        // FE-SCREEN-008·011 진입
 | --- | --- | --- |
 | 1 | `:core:domain` | 오류를 **타입으로 정의**합니다(결과 타입·오류 모델). 문구를 모릅니다 |
 | 2 | `:core:data` | 와이어 응답(`ApiErrorResponse`)을 **오류 타입으로 변환**합니다. 와이어 DTO는 이 모듈 밖으로 나가지 않습니다 |
-| 3 | `:core:common` | 오류 타입 기반 **공통 판정 헬퍼**(402 크레딧 부족 판정 등). 와이어도 문구도 모릅니다 |
-| 4 | `:core:ui` | 오류 타입을 **문자열 리소스로 변환**합니다 |
+| 3 | `:core:common` | 오류 타입 기반 **공통 판정 헬퍼**(402 크레딧 부족 판정 등). 와이어도 문구도 모릅니다. 안내가 필요하면 `:core:domain`의 `MessageHelper` 인터페이스에 **오류 타입 그대로** 넘깁니다 |
+| 4 | `:core:ui` | 오류 타입을 **문자열 리소스로 변환**합니다. `MessageHelper` 구현이 이 변환을 수행합니다 |
 
 #### 의존 방향 규칙
 
-- **`:core:domain`은 아무것도 의존하지 않습니다**(`MUST`). 의존 그래프의 바닥이며, Repository 인터페이스가 반환하는 결과 타입·오류 모델도 이 모듈이 소유하기 때문에 이 규칙이 성립합니다.
+- **`:core:domain`은 아무것도 의존하지 않습니다**(`MUST`). 의존 그래프의 바닥이며, Repository 인터페이스가 반환하는 결과 타입·오류 모델도 이 모듈이 소유하기 때문에 이 규칙이 성립합니다. 코루틴(`Flow`)은 안드로이드 의존이 아니므로 허용합니다.
+- **앱 스코프 헬퍼(`MessageHelper`·`NavigationHelper`)의 인터페이스도 `:core:domain`이 소유합니다**(`MUST`). 그래야 아래 교차 참조 금지 규칙을 지키면서도 모든 계층이 안내와 화면 이동을 요청할 수 있습니다. 구현은 각각 `:core:ui`·`:core:navigation`에 두며, 배선은 `:app`의 Hilt가 담당합니다(위 UI 상태 모델).
 - `:core:common`은 **`:core:domain`만** 의존합니다(`MUST`).
 - 그 외 `:core:*`(`data`·`ui`·`analytics`·`navigation`)는 **`:core:domain`·`:core:common`** 을 의존할 수 있습니다(`MUST`). 위 오류 경로가 성립하려면 `:core:ui`도 `:core:domain`을 봐야 하기 때문입니다.
 - **`:core:*` 끼리의 그 밖의 참조는 금지합니다**(`MUST`). `:core:analytics` → `:core:data`, `:core:ui` → `:core:navigation` 같은 참조가 대상이며, `:core:analytics`가 필요로 하는 `device_id`는 DI 배선에서 주입받습니다. 예외가 필요하면 결정 기록을 남깁니다.
@@ -316,6 +317,7 @@ sealed interface ChatReducerEvent : ReducerEvent {
 작성 규칙입니다.
 
 - `UiState`의 컬렉션은 **`ImmutableList`·`ImmutableSet`** 을 씁니다(`MUST`). `List`는 Compose가 unstable로 보아 리컴포지션을 스킵하지 못합니다.
+- **`:core:domain`의 값 객체를 `UiState` 필드나 컴포저블 파라미터로 쓰면 루트의 `compose_stability.conf`에 등록합니다**(`MUST`). Compose 컴파일러는 자신이 컴파일한 모듈의 클래스에만 안정성 판정을 붙이는데, `:core:domain`은 `kotlin-jvm` 모듈이라 대상이 아닙니다(위 모듈 구조). 판정이 없으면 unstable로 취급되므로 **바깥을 `ImmutableList`로 감싸도 리컴포지션 스킵이 깨집니다.** 순수 Kotlin 규칙 때문에 `@Immutable`을 붙일 수도 없어(Compose 런타임 의존이 생깁니다) 설정 파일이 유일한 수단입니다. 등록 기준은 모든 필드가 `val`이고 원시 타입·enum·`String`인 값 객체이며, `kotlinx.collections.immutable`은 기본 stable이라 등록하지 않습니다. 파일은 루트에 하나 두고 Compose를 적용하는 모듈마다 `composeCompiler { stabilityConfigurationFiles }`로 등록합니다.
 - 상태 가공 로직은 `UiState`의 메서드로 둡니다(`SHOULD`). **`reduce`는 분기만** 하고, Compose는 반영만 합니다.
 - 부수효과(Repository 호출·화면 이동·메시지)는 `onIntent` 쪽 private 함수에서 수행합니다(`MUST`). `reduce` 안에서 `suspend` 함수를 호출하지 않습니다(`MUST NOT`).
 - 외부 변화 구독은 `init`에서 `launchIn(viewModelScope)`으로 collect한 뒤 `dispatch`합니다(`MUST`). 상태를 직접 갱신하지 않습니다.
@@ -323,13 +325,20 @@ sealed interface ChatReducerEvent : ReducerEvent {
 
 **화면별 `SideEffect` 채널을 두지 않습니다**(`MUST NOT`). 1회성 사건은 성격에 따라 셋으로 나뉩니다.
 
-| 사건 | 수단 | 소유 |
-| --- | --- | --- |
-| 화면 이동 | `NavigationHelper` | `:core:navigation` |
-| 스낵바·토스트 | `MessageHelper` | `:core:ui` |
-| **그 밖의 화면 고유 사건** | **`UiState`의 소비형 필드** | 각 `:feature:*` |
+| 사건 | 수단 | 인터페이스 | 구현 |
+| --- | --- | --- | --- |
+| 화면 이동 | `NavigationHelper` | `:core:domain` | `:core:navigation` |
+| 스낵바·토스트 | `MessageHelper` | `:core:domain` | `:core:ui` |
+| **그 밖의 화면 고유 사건** | **`UiState`의 소비형 필드** | — | 각 `:feature:*` |
 
-**앱 스코프 헬퍼 두 개**는 `Channel(BUFFERED)` + `receiveAsFlow()`로 구현하고(`MUST`) 루트 컴포저블이 각각 한 번만 수집합니다. `MutableSharedFlow`를 쓰지 않습니다(`MUST NOT`) — 구독자가 잠시 떨어진 사이(회전, 백그라운드 복귀) 발행된 이동·메시지가 유실됩니다.
+**앱 스코프 헬퍼 두 개**는 `Channel(BUFFERED)` + `receiveAsFlow()`로 구현하고(`MUST`) 루트 컴포저블이 각각 한 번만 수집합니다. `MutableSharedFlow`를 쓰지 않습니다(`MUST NOT`) — 구독자가 잠시 떨어진 사이(회전, 백그라운드 복귀) 발행된 이동·메시지가 유실됩니다. 헬퍼는 `suspend`가 아닌 곳에서 호출되므로 발행은 `trySend`로 하고, 버퍼가 차서 실패하면 **버리고 경고 로그를 남깁니다**(`MUST`) — 이동·메시지 때문에 호출자를 멈추지 않기 위해서입니다.
+
+**두 헬퍼의 인터페이스는 `:core:domain`이 소유하고 구현만 위쪽 모듈에 둡니다**(`MUST`). 인터페이스를 구현 모듈에 두면 `:core:*` 교차 참조 금지 규칙(아래 의존 방향 규칙) 때문에 **UI보다 아래 계층이 영영 메시지를 띄울 수 없습니다.** 실제로 오류 경로 3단계의 공통 판정 헬퍼가 `:core:common`에 있으므로(위 오류 경로 표) 그 지점에서 막힙니다.
+
+두 가지 제약이 따릅니다.
+
+- **문자열 리소스 id를 인터페이스로 넘기지 않습니다**(`MUST NOT`). 리소스 id는 `:core:ui`의 것이라 아래 계층이 참조할 수 없습니다. 대신 `:core:domain`의 **오류 타입을 그대로 넘기고 구현이 문자열로 바꿉니다** — 오류 경로 4단계("`:core:ui`가 오류 타입을 문자열 리소스로 변환")를 그대로 수행하는 자리가 `MessageHelper` 구현입니다.
+- **`NavigationHelper`는 라우트 마커 인터페이스를 받습니다**(`MUST`). 타입 안전 라우트의 구체 타입은 `:core:navigation`에 있어 `:core:domain`이 알 수 없으므로, `:core:domain`에 마커를 두고 구체 라우트가 이를 구현합니다. 목적지 해석은 구현이 담당합니다.
 
 **나머지 1회성 사건은 전부 `UiState`의 소비형 필드로 표현합니다**(`MUST`). 대상은 OS 공유 시트 열기(FE-SCREEN-005 채팅 공유), Chrome Custom Tabs 열기(약관·서비스 안내), 소셜 로그인 SDK 호출, 채팅 스크롤 하단 이동, 402 크레딧 부족 다이얼로그처럼 **Activity 컨텍스트나 화면 고유 컴포넌트가 필요한 요청**입니다.
 
@@ -941,7 +950,7 @@ Google Play는 계정 생성이 있는 앱에 앱 내 계정 삭제 진입점과
 **목표**
 
 - **모듈 구조** — `settings.gradle.kts`에 12개 모듈 `include`(`:app` + `:core` 6 + `:feature` 5)와 모듈 간 의존 규칙 적용(§3-3-2). `:core:domain`·`:core:common`은 `kotlin-jvm` 모듈로 만들어 안드로이드 참조를 컴파일 단계에서 차단합니다. Version Catalog를 모든 모듈이 공유합니다.
-- **프로젝트 골격** — `:core:ui`에 `MviViewModel` 베이스 클래스와 `MessageHelper`, `:core:navigation`에 `NavigationHelper`(둘 다 `Channel(BUFFERED)`)와 타입 안전 라우트·`auth`·`main` 그래프, Hilt 배선(스코프 2종), `:core:ui` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종)와 **문자열 리소스 중앙화**, 오류 타입 → 문자열 매핑 배치, Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
+- **프로젝트 골격** — `:core:domain`에 앱 스코프 헬퍼 인터페이스 2종과 라우트 마커, `:core:ui`에 `MviViewModel` 베이스 클래스와 `MessageHelper` 구현, `:core:navigation`에 `NavigationHelper` 구현(둘 다 `Channel(BUFFERED)`)과 타입 안전 라우트 단일 등록처·`auth`·`main` 그래프, Hilt 배선(스코프 2종), `:core:ui` 테마(웹 토큰 이식·라이트/다크 2벌·폰트 2종)와 **문자열 리소스 중앙화**, 오류 타입 → 문자열 매핑 배치, 루트 `compose_stability.conf`와 Compose 모듈별 등록, Retrofit·OkHttp 클라이언트와 인터셉터 3종(식별 헤더 → 인증 → 로깅), DataStore 3종(암호화 토큰·Preferences·퍼널 슬롯 직렬화 준비).
 - **식별자** — 첫 실행 시 `device_id` UUID 생성·보관, 모든 요청 헤더 주입.
 - **로그인 화면**(앱 전용) — 로고·소개·가입 보상 고지·기존 계정 안내·프로바이더 버튼 2종·진행 중 잠금·실패 표시.
 - **소셜 로그인 2종** — 구글 Credential Manager, 카카오 SDK(앱 간 로그인·계정 로그인 폴백). 로그인 응답으로 세션 수립, `isNewUser` 판정 준비.
