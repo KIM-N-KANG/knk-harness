@@ -746,7 +746,8 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | ---------------- | -------------------- | ---------------------------------------------------------- |
 | Amplitude        | 사용자 행동 분석     | 퍼널, 전환율, 이탈율, 선택지 사용률                        |
 | Meta 픽셀        | 광고 전환 신호       | `PageView`·`StorylinesGenerated`·`StoryCompiled`·`StartTrial` — Meta 캠페인 학습·성과 측정(KNK-616) |
-| 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb. Android는 Sentry Android SDK로 크래시·ANR만 수집([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)) |
+| 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
+| Firebase Crashlytics | 안드로이드 앱 크래시 분석 | 크래시와 ANR만 수집합니다. **앱은 Sentry를 쓰지 않습니다**(2026-08-04 결정 — 비용·Play Console 정합) — 배선과 결정 근거는 [`3-3-android-app.md §3-3-6`](./3-3-android-app.md)이 소유합니다 |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
 | CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
@@ -802,7 +803,7 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 
 ### 6-6-4. 프론트엔드 Sentry 기준
 
-수집 기준(최소 context·4xx 제외)은 클라이언트 공통 원칙이고, 아래 배선·`ignoreErrors` 목록은 **웹(브라우저 Sentry) 구현 기준**입니다. Android Sentry 배선(크래시·ANR만 수집, 성능 추적 v1 비활성)은 [`3-3-android-app.md §3-3-6`](./3-3-android-app.md)이 소유하며 같은 수집 원칙을 따릅니다. 프론트엔드 Sentry에는 오류 분석에 필요한 최소 context만 넣습니다.
+수집 기준(최소 context·4xx 제외)은 클라이언트 공통 원칙이고, 아래 배선·`ignoreErrors` 목록은 **웹(브라우저 Sentry) 구현 기준**입니다. **Android는 Sentry가 아니라 Firebase Crashlytics를 쓰며**(크래시·ANR만 수집, 성능 추적 미도입), 배선과 결정 근거는 [`3-3-android-app.md §3-3-6`](./3-3-android-app.md)이 소유합니다 — 도구는 다르지만 같은 수집 원칙(최소 context, 원문 비저장 — §6-7)을 따릅니다. 프론트엔드 Sentry에는 오류 분석에 필요한 최소 context만 넣습니다.
 
 | 구분       | 수집 내용                                                           |
 | ---------- | ------------------------------------------------------------------- |
