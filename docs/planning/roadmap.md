@@ -141,7 +141,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
     - 채팅 메모리 구현
     - 채팅 메모리 편집
 - **모바일 앱 확장**
-    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발과 Play 스토어 출시 심사 등록 (기술 선택 확정 KNK-772 선행 완료). **출시 일정·마일스톤·선행 작업은 [`3-3-android-app.md §3-3-7`](../product-specs/3-3-android-app.md#3-3-7-테스트빌드definition-of-done)이 소유하며, 개발이 Phase 2 검증 스프린트 기간까지 이어집니다**
+    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발과 Play 스토어 출시 심사 등록 (기술 선택 확정 KNK-772 선행 완료). **출시 일정·마일스톤·선행 작업은 [`3-3-android-app.md §3-3-7`](../product-specs/3-3-android-app.md#3-3-7-테스트빌드출시-일정definition-of-done)이 소유하며, 개발이 Phase 2 검증 스프린트 기간까지 이어집니다**
 - **스토리 피드**
     - 다른 사용자가 만든 스토리 조회
         - 누적 채팅 수 조회
