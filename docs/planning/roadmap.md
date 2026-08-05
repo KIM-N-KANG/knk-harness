@@ -16,9 +16,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.3 |
+| 버전 | v0.4 |
 | 작성일 | 2026-07-04 |
-| 수정일 | 2026-08-03 |
+| 수정일 | 2026-08-05 |
 | 대상 | 마냑 서비스 |
 | 작성 목적 | 마냑의 Phase 0~3 개발 목표·기간·작업 범위와 백로그를 정의한다. |
 
@@ -141,7 +141,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
     - 채팅 메모리 구현
     - 채팅 메모리 편집
 - **모바일 앱 확장**
-    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발과 Play 스토어 출시 심사 등록 (기술 선택 확정 KNK-772 선행 완료). **출시 일정·마일스톤·선행 작업은 [`3-3-android-app.md §3-3-7`](../product-specs/3-3-android-app.md#3-3-7-테스트빌드출시-일정definition-of-done)이 소유하며, 개발이 Phase 2 검증 스프린트 기간까지 이어집니다**
+    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발과 Play 스토어 출시 심사 등록 (기술 선택 확정 KNK-772 선행 완료). **출시 일정·마일스톤·선행 작업은 [`android-v1-release-plan.md`](./android-v1-release-plan.md)가, 구현 계약과 검수 기준은 [`3-3-android-app.md`](../product-specs/3-3-android-app.md)가 소유하며, 개발이 Phase 2 검증 스프린트 기간까지 이어집니다**
 - **스토리 피드**
     - 다른 사용자가 만든 스토리 조회
         - 누적 채팅 수 조회
@@ -223,4 +223,5 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 ## R-7. 참고 문서
 
 - [`1-background.md`](../product-specs/1-background.md) — 서비스 배경과 MVP 개발 범위(§1-6). Phase 0(MVP)의 상세 기능 범위를 정의합니다.
+- [`android-v1-release-plan.md`](./android-v1-release-plan.md) — Phase 2의 안드로이드 앱 출시 일정·마일스톤·선행 작업. 이 문서가 위임한 상세 일정을 소유합니다.
 - [`0-glossary.md`](../product-specs/0-glossary.md) — 이 문서의 용어 표기 기준입니다.
