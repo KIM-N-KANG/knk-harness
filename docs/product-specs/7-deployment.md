@@ -152,7 +152,7 @@ flowchart LR
 | 항목             | 현재 값·정책                                                                  |
 | ---------------- | ----------------------------------------------------------------------------- |
 | EC2              | Amazon Linux 2023, `t3.small`, private app subnet 2a                          |
-| 배포 위치        | `/opt/manyak/docker-compose.yml`, `/opt/manyak/.env`, `/opt/manyak/deploy.sh` |
+| 배포 위치        | `/opt/manyak/docker-compose.yml`, 공용 `/opt/manyak/.env`, AI 모델 전용 `/opt/manyak/.env.ai`, `/opt/manyak/deploy.sh` |
 | Compose 서비스   | `server`, `ai`                                                                |
 | ALB target group | instance target, HTTP 8080, health path `/actuator/health`                    |
 | TLS              | ALB가 ACM 인증서로 종단                                                       |
@@ -240,7 +240,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 3. 최신 `main` SHA가 아니면 stale 배포를 건너뜁니다.
 4. SSM 문서에 `ImageUri=<ECR manyak-ai short-sha image>` 파라미터를 전달합니다.
 5. 문서가 EC2에서 `AI_IMAGE_OVERRIDE='{{ImageUri}}' bash /opt/manyak/deploy.sh`를 실행합니다.
-6. `deploy.sh`가 `docker compose up -d --wait ai`로 AI 컨테이너 healthcheck 통과까지 대기합니다. SendCommand 성공은 배포와 AI health 통과를 의미합니다.
+6. `deploy.sh`가 새 이미지와 Parameter Store의 모델 설정으로 임시 컨테이너 기동 검사를 먼저 실행합니다. 검사가 성공한 경우에만 설정 파일과 기존 AI 컨테이너를 교체하고, `docker compose up -d --wait ai`로 healthcheck 통과까지 대기합니다. SendCommand 성공은 기동 검사, 배포, AI health 통과를 의미합니다.
 
 ### `manyak-web` CI/CD
 
@@ -274,9 +274,11 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 - 모든 배포 호출은 EC2의 `flock`으로 직렬화합니다. server와 ai는 서로 다른 GitHub 레포라 workflow concurrency만으로는 동시 배포를 막을 수 없습니다.
 - 매 실행마다 Secrets Manager를 다시 읽고 `/opt/manyak/.env`를 재생성합니다.
 - AI 전용 OpenAI·Langfuse 키는 공용 `.env`에 쓰지 않고 `deploy.sh`가 셸 환경변수로만 AI compose에 전달합니다.
-- `SERVER_IMAGE_OVERRIDE`가 있으면 server만 pull/up 합니다.
-- `AI_IMAGE_OVERRIDE`가 있으면 ai만 pull/up 하고 `--wait`로 health를 확인합니다.
-- override가 없으면 server를 기동하고, ECR에 AI 이미지가 존재할 때만 ai를 함께 기동합니다.
+- `SERVER_IMAGE_OVERRIDE`만 있으면 AI 모델 Parameter Store를 읽지 않고 server만 pull/up 합니다.
+- `AI_IMAGE_OVERRIDE`가 있으면 새 이미지와 모델 설정의 기동 검사를 통과한 뒤 ai만 교체하고 `--wait`로 health를 확인합니다.
+- `AI_CONFIG_RELOAD=1`이면 이미지는 유지하고 새 모델 설정의 기동 검사를 통과한 뒤 ai만 재생성합니다.
+- override가 없으면 공용 `.env`를 적용하고 server를 먼저 기동합니다. 이후 ECR에 AI 이미지가 존재할 때만 모델 기동 검사를 거쳐 ai를 기동합니다. AI 검사나 ECR 조회가 실패해도 이미 기동한 server는 유지됩니다.
+- AI 모델 전용 `.env.ai`는 모든 AI 교체 경로에서 기동 검사 성공 후 적용합니다. `AI_IMAGE_OVERRIDE`와 수동 모델 재적용은 실패한 이미지 핀이나 AI 시크릿이 공용 `.env`에 남지 않도록 공용 `.env`도 검사 뒤 함께 적용합니다.
 - 한 서비스만 배포할 때 다른 서비스 이미지가 `latest`로 덮이지 않도록 기존 `.env`의 이미지 좌표를 보존합니다.
 
 ## 7-6. 런타임 설정과 시크릿
@@ -324,6 +326,29 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 - **어떻게.** `manyak-infra`는 OpenAI 키를 AI 컨테이너에만 전달하고 컴파일 기본값을 Terra로 맞춥니다. 운영에서는 Secrets Manager의 키를 `deploy.sh`가 읽어 셸 환경변수로 export하고, compose가 AI 컨테이너의 `OPENAI_API_KEY`로 옮깁니다. 공용 필수 키 검사에는 넣지 않아, 키가 없을 때 server 배포는 계속되고 GPT를 선택한 AI만 자체 기동 검사에서 실패합니다. 선택된 키에 개행·앞뒤 공백·비 ASCII·공백·제어문자가 있으면 AI가 기동에서 거부하며, 오류에는 키 원문을 남기지 않습니다. Terraform의 `ignore_changes = [secret_string]` 때문에 코드에 키 이름을 추가해도 기존 Secrets Manager 값은 자동으로 바뀌지 않습니다.
 - **왜 그 방법.** 공용 `.env`는 server 컨테이너도 통째로 읽으므로 OpenAI 키를 적으면 AI 전용 비밀이 server까지 전달됩니다. Langfuse 키와 같은 export-only 방식을 써서 소비 범위를 AI로 제한했습니다. 공용 필수 키 검사에서 제외한 것은 조건부 AI 키 하나가 server 배포와 EC2 부팅까지 막는 실패를 피하기 위해서입니다. 키 형식은 외부 요청 없이 기동에서 검사해 복사·붙여넣기 오류를 빨리 드러냅니다. 대가로 글자 형식은 맞지만 값 자체가 틀린 키는 잡지 못하므로 실제 컴파일 검수가 필요하고, `deploy.sh`를 거치지 않고 compose를 직접 실행하면 OpenAI 키가 비어 Terra를 선택한 AI가 기동하지 않으므로 배포와 롤백은 반드시 `deploy.sh`를 거칩니다.
 
+**운영 AI 모델을 이미지 배포 없이 바꾸는 방법 — `Phase 2 · 구현 중`(KNK-815·816).**
+
+- **무엇.** 운영자는 스토리 컴파일, 스토리라인, 채팅 본문·선택지·판정 모델을 각각 독립적으로 바꾸고, AI 이미지나 Terraform을 다시 배포하지 않은 채 현재 AI 컨테이너에 적용할 수 있습니다. 이 절은 KNK-816의 `manyak-terraform` 작업 브랜치 기준이며 아직 `dev` 병합과 운영 apply 전입니다.
+- **왜.** 기존 운영 Compose는 모델 환경변수를 전달하지 않아 AI 코드 기본값만 사용했습니다. 모델 하나를 바꾸려면 AI 이미지를 새로 배포해야 했고, Secrets Manager에 모델명을 넣으면 비밀이 아닌 값 하나를 바꿀 때 JWT·API 키가 든 JSON 전체를 다시 덮어써야 합니다. 또한 잘못된 모델 설정을 먼저 파일에 저장하거나 기존 AI를 먼저 교체하면, 수동 변경은 실패해도 다음 AI 배포에서 정상 컨테이너가 내려갈 수 있습니다.
+- **어떻게.** Terraform은 모델 선택값을 세 개의 SSM Parameter Store `String`으로 만들고 EC2 role에 세 Parameter의 `ssm:GetParameter`만 허용합니다. compute 모듈은 Parameter 이름을 user-data에 넘깁니다. `deploy.sh`는 AI 관련 배포에서 세 값을 읽어 문자열·공백 아님·한 줄 조건을 검사하고, 권한 `0600`인 `/opt/manyak/.env.ai.tmp`를 만듭니다. 운영 Compose의 `ai` 서비스만 선택적인 `.env.ai`를 읽으며 server에는 모델 변수가 전달되지 않습니다. 수동 전환은 SSM 문서 `manyak-prod-ai-model-reload`가 `AI_CONFIG_RELOAD=1 bash /opt/manyak/deploy.sh`를 실행하고, Terraform output은 이 문서 이름과 세 Parameter 이름을 제공합니다.
+
+| AI 용도 | 환경변수 | Parameter Store | 최초 값 |
+| --- | --- | --- | --- |
+| 스토리 컴파일 | `STORY_COMPILE_MODEL` | `/manyak/prod/ai/story-compile-model` | `gpt-5.6-terra` |
+| 스토리라인 생성 | `STORYLINES_MODEL` | `/manyak/prod/ai/storylines-model` | `deepseek-v4-flash` |
+| 채팅 본문·선택지·판정 | `CHAT_MODEL` | `/manyak/prod/ai/chat-model` | `deepseek-v4-flash` |
+
+| `deploy.sh` 진입 경로 | 모델 설정 갱신 | 기존 AI 교체 전 검사 | 결과 |
+| --- | --- | --- | --- |
+| `AI_CONFIG_RELOAD=1` | 예 | 현재 이미지와 새 모델 설정으로 검사 | 성공 시 ai만 재생성 |
+| `AI_IMAGE_OVERRIDE` | 예 | 새 이미지와 새 모델 설정으로 검사 | 성공 시 ai만 교체 |
+| override 없음 | 예 | server를 먼저 기동한 뒤, ECR에 AI 이미지가 있을 때 검사 | AI 성공 시 함께 기동하며, AI 이미지·설정·ECR 조회 실패에도 server 유지 |
+| `SERVER_IMAGE_OVERRIDE`만 있음 | 아니오 | AI를 건드리지 않음 | server만 교체 |
+
+기동 검사는 `docker compose run --rm --no-deps --entrypoint python ai -c 'from src.main import app'`과 새 모델 환경변수를 사용합니다. `--entrypoint python`은 AI 이미지에 나중에 다른 `ENTRYPOINT`가 생겨도 `-c`가 그 프로그램의 인자로 잘못 해석되지 않게 Python 실행기를 고정합니다. CLI의 `-e` 세 줄은 아직 교체하지 않은 기존 `.env.ai`보다 우선해 실제 적용할 새 모델을 검사합니다. 미등록 모델, 해당 용도에서 금지된 공급자, 필요한 공급자 키 누락은 기존 AI 교체 전에 실패합니다. AI 전용 `.env.ai`는 검사 성공 뒤에만 실제 파일로 옮기므로 실패하면 기존 AI 설정과 컨테이너가 남습니다. 전체 배포의 공용 `.env`와 server는 AI 검사보다 먼저 적용해 AI 실패가 플랫폼 전체 기동을 막지 않게 합니다. 이 검사는 외부 LLM API를 호출하지 않아 계정의 모델 사용 권한, 상류 모델 폐기, 실제 응답 형식·품질은 확인하지 못합니다.
+
+- **왜 그 방법.** 모델명은 비밀이 아니고 세 값은 서로 독립적으로 바뀌므로 전체 JSON을 덮어쓰는 Secrets Manager보다 Parameter Store가 맞습니다. 각 Parameter의 `lifecycle.ignore_changes`는 운영자가 CLI로 고른 값을 다음 `terraform apply`가 최초 값으로 되돌리는 일을 막습니다. `.env.ai`를 공용 `.env`와 분리하면 server가 AI 모델 설정을 받을 필요가 없고, server 단독 배포와 전체 부팅을 Parameter Store 장애나 AI 오설정에서 분리할 수 있습니다. 모든 AI 교체 경로에서 `.env.ai`와 AI 컨테이너를 기동 검사로 보호하면서 전체 부팅에서는 server를 먼저 살리므로, 잘못된 AI 설정이 플랫폼 전체 장애로 번지지 않습니다. 사전검사 실행기를 이미지 설정과 분리하면 AI 레포의 Dockerfile에 `ENTRYPOINT`가 추가되어도 배포 명령이 깨지지 않습니다. 대신 외부 공급자까지 검증하지는 않으므로 적용 후 바꾼 기능의 실제 API를 한 번 호출해야 하며, user-data와 내장 Compose가 바뀌는 최초 Terraform apply는 EC2 교체와 짧은 다운타임을 수반합니다.
+
 **카카오 로그인 배선 — `Phase 1 · 계획`(KNK-721). 아래는 전부 미구현 목표 상태이며, 현재 상태는 아래 'EC2 `.env` 생성 결과' 표가 정본입니다(카카오 키 없음).** compute user-data(`user-data.sh.tftpl`)는 시크릿 JSON에서 키를 하나씩 명시적으로 추출해 `.env`에 기록하므로, 시크릿에 `MANYAK_KAKAO_CLIENT_IDS`를 넣는 것만으로는 서버에 전달되지 않습니다. 배선에는 세 가지가 필요합니다: ① `manyak-terraform` user-data에 추출·기록 라인 추가(적용 시 아래 표에도 반영), ② 로컬·통합용 `manyak-infra` compose에 환경변수 전달 추가, ③ 웹 런타임에 `AUTH_KAKAO_ID`(REST API 키)·`AUTH_KAKAO_SECRET`(클라이언트 시크릿) 주입 — 운영 웹이 호스팅되는 **Vercel 환경 변수**로 넣습니다(Web Sentry DSN과 같은 경로, §7-5. GHCR 컨테이너 배포를 쓰게 되면 주입 방식을 별도 결정). 배포 순서는 **서버 환경변수 반영이 먼저**입니다(미주입은 fail-closed로 Kakao 401만 발생, Google 무영향 — 순서가 바뀌면 웹 버튼이 먼저 노출돼 전원 401). 웹 카카오 버튼 릴리스 전에 서버 컨테이너 `.env`의 키 존재를 릴리스 게이트로 확인하고, 릴리스 후 카카오 로그인 1회 완주(카카오 인가 화면 → 콜백 → 백엔드 200)를 운영 스모크로 확인합니다. 시크릿의 카카오 키는 **단일 카카오 앱의 REST API 키 1개**여야 합니다([`4-backend.md §4-5`](./4-backend.md) — pairwise `sub` 계정 오귀속 방지).
 
 **메트릭(Grafana Cloud OTLP) 배선 — `Phase 2 · 구현`(KNK-781·793, 2026-08-06 활성화 완료).** user-data가 시크릿에서 두 값을 뽑아 `.env`에 기록하며, 적용 결과는 위 'EC2 `.env` 생성 결과' 표에 반영돼 있습니다. 다만 **주입할 환경변수 이름은 표준 `OTEL_EXPORTER_OTLP_*`가 아니라 Spring 전용 이름(`MANAGEMENT_OTLP_METRICS_EXPORT_URL`·`MANAGEMENT_OTLP_METRICS_EXPORT_HEADERS_AUTHORIZATION`)을 씁니다.** 공용 `.env`는 server와 ai 컨테이너가 함께 읽는데, `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`는 **OpenTelemetry 표준 변수라 AI 컨테이너의 SDK도 그대로 집어 듭니다**(Langfuse Python SDK는 OTel 기반 — [`5-ai-server.md §5-6`](./5-ai-server.md)). 공용 `.env`에 표준 이름으로 넣으면 AI 트레이스가 서버용 Grafana Cloud 자격증명으로 새어 나갈 수 있습니다. Spring 전용 이름은 AI 컨테이너가 무시하므로 Langfuse 키처럼 export-only로 우회할 필요 없이 공용 `.env`에 그대로 둘 수 있습니다. 로컬(IntelliJ 단일 프로세스)은 컨테이너 공유가 없으므로 표준 `OTEL_*` 이름을 그대로 써도 됩니다. 켜는 순서는 **주입이 먼저, 토글(`MANYAK_OTLP_METRICS_ENABLED=true`)이 나중**입니다 — 토글만 켜면 레지스트리가 `localhost:4318`로 헛푸시합니다([`4-backend.md §4-7`](./4-backend.md)). 토글 자체는 **시크릿이 아닙니다** — 위 Secrets Manager 표가 아니라 user-data가 `.env`에 직접 쓰는 리터럴이며, 끄고 켜는 데 시크릿 갱신이 필요 없어야 합니다.
@@ -364,6 +389,14 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 `OPENAI_API_KEY`와 Langfuse 3키는 이 표의 공용 `.env`에 들어가지 않습니다. `deploy.sh`가 같은 셸에서 export하고 AI compose에만 전달합니다.
 
+AI 모델 세 값은 공용 `.env`가 아니라 `/opt/manyak/.env.ai`에 기록합니다. 파일은 AI 컨테이너만 읽고, 파일이 아직 없으면 Compose가 선택 항목으로 건너뛰어 AI 코드 기본값을 사용합니다.
+
+| 환경변수 | 소비 서비스 | 출처 |
+| --- | --- | --- |
+| `STORY_COMPILE_MODEL` | ai | SSM Parameter Store `/manyak/prod/ai/story-compile-model` |
+| `STORYLINES_MODEL` | ai | SSM Parameter Store `/manyak/prod/ai/storylines-model` |
+| `CHAT_MODEL` | ai | SSM Parameter Store `/manyak/prod/ai/chat-model` |
+
 ## 7-7. 운영 배포 절차
 
 ### Terra 컴파일 전환과 복구 완료(KNK-803·805·807·808·809·813·814)
@@ -396,7 +429,18 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 1. `manyak-ai` 변경을 `dev`에 병합해 GHCR `dev` 이미지를 검증합니다.
 2. release branch를 `main`에 merge commit으로 병합합니다.
 3. `main` push workflow가 ECR 이미지를 만들고 전용 SSM 문서로 AI를 배포합니다.
-4. SendCommand 성공을 확인합니다. 현재 AI 배포는 전용 문서가 내부 healthcheck까지 수행하므로 별도 외부 smoke endpoint가 없습니다.
+4. `deploy.sh`가 Parameter Store의 세 모델을 읽고, 새 이미지와 모델 설정으로 임시 기동 검사를 실행합니다.
+5. 기동 검사가 성공하면 설정 파일과 AI 컨테이너를 교체하고 내부 healthcheck까지 기다립니다. SendCommand 성공을 확인합니다.
+6. 모델·공급자·호출 설정이 바뀐 배포는 health만으로 완료하지 않고 바뀐 기능의 실제 운영 API를 한 번 호출합니다.
+
+### 운영 AI 모델만 변경
+
+1. 대상 Parameter의 현재 값을 먼저 조회해 롤백 값으로 보관합니다.
+2. 대상 Parameter만 `aws ssm put-parameter --overwrite`로 바꿉니다. 여러 모델을 바꾸면 세 값을 모두 수정한 뒤 재적용은 한 번만 실행합니다.
+3. Terraform output에서 EC2 instance id와 `ai_model_reload_ssm_document_name`을 읽고 SSM SendCommand를 실행합니다.
+4. 기본 `aws ssm wait command-executed`는 약 100초 뒤 아직 기동 중인 작업을 실패로 오판할 수 있으므로 사용하지 않습니다. `get-command-invocation`을 10초 간격으로 최대 60회 조회하고 `Success`, `Failed`, `Cancelled`, `TimedOut`, `Undeliverable`, `Terminated` 중 하나가 될 때까지 기다립니다.
+5. 성공하면 AI health와 바꾼 기능의 실제 운영 API 1건을 확인합니다. 기동 검사는 외부 LLM을 호출하지 않으므로 실제 요청 검수를 생략하지 않습니다.
+6. 실패하거나 결과가 좋지 않으면 보관한 직전 값을 같은 Parameter에 다시 쓰고 SSM 재적용을 반복합니다. 직전 값을 잃었으면 `aws ssm get-parameter-history`에서 버전 이력을 확인합니다.
 
 ### Terraform 변경 배포
 
@@ -470,7 +514,7 @@ docker compose ps
 | ------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Terraform     | `terraform fmt -recursive -check`, `terraform validate`, `terraform plan`                                        |
 | server        | `./gradlew test`, Docker build workflow, 운영 health smoke                                                       |
-| AI            | `pytest`, Docker build workflow, AI healthcheck                                                                  |
+| AI            | `pytest`, Docker build workflow, 새 이미지·모델 설정 기동 검사, AI healthcheck, 모델 변경 시 해당 기능 실제 API 1건 |
 | web           | `pnpm typecheck`, `pnpm lint`, `pnpm test`, Playwright E2E·비주얼 회귀, Docker build workflow, tag release build |
 | infra Compose | `docker compose config`, 필요 시 `docker compose up -d`와 health 확인                                            |
 
@@ -494,6 +538,7 @@ docker compose ps
 - 운영 server·AI 배포는 ECR에 `latest`와 `<short-sha>` 태그가 존재하고, GitHub Actions가 최신 `main` SHA 기준으로 SSM 배포를 실행해야 합니다.
 - server 배포는 외부 `https://api.manyak.app/actuator/health`가 200과 `status=UP`을 반환해야 합니다.
 - AI 배포는 `docker compose up -d --wait ai`가 성공하고 컨테이너 healthcheck가 `status=ok`를 확인해야 합니다.
+- 운영 AI 모델 변경은 대상 Parameter의 직전 값을 보관하고, 전용 SSM 재적용이 성공하며, 바꾼 기능의 실제 운영 API 1건이 성공해야 완료입니다. 모델명과 provider는 확인하되 API 키 값은 출력하지 않습니다.
 - Terra 컴파일 전환은 운영 AI 컨테이너에 `OPENAI_API_KEY`가 전달되고, 컴파일 1건의 응답 metadata가 `provider=openai`·`model=gpt-5.6-terra`인 것까지 확인해야 합니다. 키 값 자체는 로그나 검수 결과에 출력하지 않습니다.
 - Terraform 변경은 `terraform plan` 리뷰 후 적용해야 하며, 적용 후 대상 리소스, SSM 문서, ALB target group health 중 변경 영향이 있는 항목을 확인해야 합니다.
 - 시크릿 변경은 해당 값을 소비하는 서비스 재기동까지 완료해야 반영된 것으로 봅니다.
@@ -535,6 +580,7 @@ docker compose ps
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | server 이미지 문제       | ECR의 직전 정상 `<short-sha>` 이미지를 `SERVER_IMAGE_OVERRIDE`로 지정해 `bash /opt/manyak/deploy.sh`를 실행합니다. 배포 스크립트가 이미지를 고정하고 server만 pull/up합니다. |
 | AI 이미지 문제           | ECR의 직전 정상 `<short-sha>` 이미지를 `AI_IMAGE_OVERRIDE`로 지정해 `bash /opt/manyak/deploy.sh`를 실행합니다. 배포 스크립트가 OpenAI·Langfuse 키를 다시 읽어 AI에 전달하고 `--wait`로 health를 확인합니다. `/opt/manyak/.env` 수정 뒤 Compose를 직접 실행하면 export-only 키가 비므로 금지합니다. |
+| AI 모델 설정 문제        | 변경 전에 보관한 직전 모델명을 해당 Parameter Store 값에 다시 쓰고 `manyak-prod-ai-model-reload`를 재실행합니다. 값을 잃었으면 Parameter 이력에서 이전 버전을 확인합니다. 기동 검사 실패 시 기존 `.env.ai`와 AI 컨테이너는 유지됩니다. |
 | main release 문제        | revert PR 또는 이전 정상 커밋을 release합니다. 단, 이미 실행된 Flyway 마이그레이션은 전진 전용으로 취급합니다.                                                                 |
 | DB 마이그레이션 문제     | 보상 마이그레이션 또는 RDS snapshot 복구가 필요합니다. 파괴적 스키마 변경은 배포 직전 snapshot을 남깁니다.                                                                     |
 | Terraform user-data 문제 | Terraform revert apply가 EC2 교체를 유발할 수 있습니다. 다운타임 창을 잡고 plan을 먼저 확인합니다.                                                                             |
