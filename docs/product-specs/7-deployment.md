@@ -18,13 +18,13 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.8                                                                                                                                                                |
+| 버전      | v0.9                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-08-07                                                                                                                                                          |
+| 수정일    | 2026-08-08                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
-| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `21d2dee2a21f`(PR #74), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07 완료했습니다. Terraform apply와 AI 운영 배포는 남아 있습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
+| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `21d2dee2a21f`(PR #74), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증은 2026-08-08 완료했습니다. AI 운영 배포는 남아 있습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
 
 ## 7-1. 목적과 범위
 
@@ -312,7 +312,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 **OpenAI 키를 Terra 컴파일에 전달하는 방법(KNK-803·807·808).**
 
-- **무엇.** 컴파일 모델을 `gpt-5.6-terra`로 바꾸면서 로컬·통합 환경과 운영 AI 컨테이너에 `OPENAI_API_KEY`를 전달합니다. OpenAI 키 등록과 AI·Infra·Terraform 변경의 `dev` 병합은 2026-08-07 완료했고, Terraform apply는 남아 있습니다.
+- **무엇.** 컴파일 모델을 `gpt-5.6-terra`로 바꾸면서 로컬·통합 환경과 운영 AI 컨테이너에 `OPENAI_API_KEY`를 전달합니다. OpenAI 키 등록과 AI·Infra·Terraform 변경의 `dev` 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증은 2026-08-08 완료했습니다.
 - **왜.** AI 서버는 선택된 모델의 공급자 키를 기동할 때 검사합니다([`5-ai-server.md`](./5-ai-server.md) D13). Terra가 기본 컴파일 모델인데 OpenAI 키가 없으면 AI 컨테이너가 기동하지 않습니다. 반대로 OpenAI를 쓰지 않는 구성에서는 이 키 때문에 server 배포나 EC2 부팅까지 막을 이유가 없습니다.
 - **어떻게.** `manyak-infra`는 OpenAI 키를 AI 컨테이너에만 전달하고 컴파일 기본값을 Terra로 맞춥니다. 운영에서는 Secrets Manager의 키를 `deploy.sh`가 읽어 셸 환경변수로 export하고, compose가 AI 컨테이너의 `OPENAI_API_KEY`로 옮깁니다. 공용 필수 키 검사에는 넣지 않아, 키가 없을 때 server 배포는 계속되고 GPT를 선택한 AI만 자체 기동 검사에서 실패합니다. Terraform의 `ignore_changes = [secret_string]` 때문에 코드에 키 이름을 추가해도 기존 Secrets Manager 값은 자동으로 바뀌지 않습니다.
 - **왜 그 방법.** 공용 `.env`는 server 컨테이너도 통째로 읽으므로 OpenAI 키를 적으면 AI 전용 비밀이 server까지 전달됩니다. Langfuse 키와 같은 export-only 방식을 써서 소비 범위를 AI로 제한했습니다. 공용 필수 키 검사에서 제외한 것은 조건부 AI 키 하나가 server 배포와 EC2 부팅까지 막는 실패를 피하기 위해서입니다. 대가로 `deploy.sh`를 거치지 않고 compose를 직접 실행하면 OpenAI 키가 비어 Terra를 선택한 AI가 기동하지 않으므로, 배포와 롤백은 반드시 `deploy.sh`를 거칩니다.
@@ -361,9 +361,9 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 ### Terra 컴파일 전환 순서(KNK-803·805·807·808·809)
 
-- **무엇.** AI의 컴파일 모델 선택, 통합 Compose의 모델·키 전달, 운영 Terraform의 키 전달을 함께 반영한 뒤 운영 컴파일을 `gpt-5.6-terra`로 전환합니다. OpenAI 키 등록과 세 레포 병합은 끝났고, Terraform apply와 AI 운영 배포는 남아 있습니다.
+- **무엇.** AI의 컴파일 모델 선택, 통합 Compose의 모델·키 전달, 운영 Terraform의 키 전달을 함께 반영한 뒤 운영 컴파일을 `gpt-5.6-terra`로 전환합니다. OpenAI 키 등록, 세 레포 병합, Terraform apply는 끝났고 AI 운영 배포만 남아 있습니다.
 - **왜.** AI 코드만 먼저 배포하면 운영 Compose가 OpenAI 키를 컨테이너에 전달하지 못해 AI가 기동하지 않습니다. 반대로 Terraform 코드만 준비해도 apply 전에는 실행 중인 EC2의 배포 스크립트와 Compose가 바뀌지 않으므로 Terra를 안전하게 호출할 수 없습니다.
-- **어떻게.** ① `manyak-ai`·`manyak-infra`·`manyak-terraform` 작업 브랜치를 각각 `dev`에 병합했습니다. ② 후속 운영 작업에서 Terraform plan으로 EC2 교체와 다운타임을 확인한 뒤 apply합니다. ③ 외부 server health와 AI health를 확인합니다. ④ 마지막으로 AI release를 `main`에 반영해 Terra 기본값이 든 이미지를 배포하고, 컴파일 1건의 성공과 응답 metadata의 `provider=openai`·`model=gpt-5.6-terra`를 확인합니다.
+- **어떻게.** ① `manyak-ai`·`manyak-infra`·`manyak-terraform` 작업 브랜치를 각각 `dev`에 병합했습니다. ② 2026-08-08 Terraform plan으로 변경 범위를 확인한 뒤 apply해 EC2를 교체했습니다. ③ 약 100초 뒤 외부 server health가 `UP`으로 복구됐고, AI API의 `status=ok`와 컨테이너의 `healthy`, 값 노출 없는 `OPENAI_API_KEY` 전달 검사를 모두 통과했습니다. ④ 마지막으로 AI release를 `main`에 반영해 Terra 기본값이 든 이미지를 배포하고, 컴파일 1건의 성공과 응답 metadata의 `provider=openai`·`model=gpt-5.6-terra`를 확인합니다.
 - **왜 그 방법.** 키는 이미 등록돼 있으므로 코드 병합 자체를 기다릴 이유는 없지만, 실제 운영 전달 경로는 Terraform apply가 만들어 줍니다. 세 레포를 먼저 병합하고 인프라를 적용한 뒤 모델 이미지를 배포하면, 키 전달 경로가 없는 상태에서 Terra가 먼저 선택되는 실패를 피할 수 있습니다. Terraform apply는 EC2 교체를 일으킬 수 있어 코드 병합과 분리한 후속 운영 작업으로 실행합니다.
 
 ### 최초 인프라 준비
