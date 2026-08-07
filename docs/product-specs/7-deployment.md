@@ -18,13 +18,13 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.7                                                                                                                                                                |
+| 버전      | v1.0                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-08-03                                                                                                                                                          |
+| 수정일    | 2026-08-08                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
-| 기준 코드 | `../manyak-terraform` dev `447c8fc`, `../manyak-infra` dev `6c892b9`, `../manyak-server` dev `f106b8e`, `../manyak-ai` dev `cddda1f`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`(CI 절 기준). Langfuse 관련 절(§7-6 주석·§7-9)만 `../manyak-ai` dev `604b68ab060d`(운영 릴리스 `v0.2.1`)와 `../manyak-terraform` dev(KNK-653 머지분) 기준입니다. 인프라 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
+| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다 |
 
 ## 7-1. 목적과 범위
 
@@ -222,9 +222,16 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 | 트리거         | 동작                                                                |
 | -------------- | ------------------------------------------------------------------- |
-| PR -> `dev`    | Python 3.11, `pytest`, multi-arch Docker build 검증, 이미지 스모크 2종(기본 health · 더미 키로 Langfuse 활성 경로 health+기동 로그) |
+| PR -> `dev`    | Python 3.11, `pytest`, multi-arch Docker build 검증, DeepSeek·OpenAI 더미 키를 넣은 이미지 스모크 2종(기본 health · 더미 키로 Langfuse 활성 경로 health+기동 로그) |
 | push -> `dev`  | 테스트 후 GHCR `dev`, `<short-sha>` push                            |
 | push -> `main` | 테스트 후 ECR `latest`, `<short-sha>` push, 전용 SSM 문서로 AI 배포 |
+
+**AI CI는 선택된 모델의 공급자 경로를 검사합니다(KNK-804).**
+
+- **무엇.** AI 테스트와 이미지 스모크는 저장소가 선택한 모델을 등록부에서 해석하고, DeepSeek 모델이면 DeepSeek 경로를, GPT 모델이면 OpenAI 경로를 검사합니다.
+- **왜.** 컴파일 기본값이 DeepSeek일 때는 OpenAI 분기가 CI에서 한 번도 실행되지 않았습니다. 기본 모델을 Terra로 바꾸기만 하면 기존 하드코딩 검사는 실패하거나, 반대로 더미 키로 기동만 성공해 실제 OpenAI 호출 인자 연결을 놓칠 수 있었습니다.
+- **어떻게.** 비라이브 CI에 DeepSeek·OpenAI 더미 키를 함께 넣고, 컴파일 계약 테스트가 현재 선택된 모델의 공급자와 어댑터 호출 인자를 확인합니다. 기본 모델 값 자체를 고정하는 테스트는 운영 기본값과 함께 바꾸되, 공급자 라우팅 테스트는 등록부 해석값을 따릅니다.
+- **왜 그 방법.** 현재 실제로 선택된 모델 경로를 항상 검사하면 쓰지 않는 모든 후보 모델 때문에 CI가 늘어나지 않습니다. 운영에서 여러 모델을 동시에 선택하게 되면 그때 선택된 모델 수만큼 같은 계약 테스트를 매개변수화해 모두 실행합니다.
 
 운영 AI 배포는 `manyak-prod-ai-deploy` SSM 문서를 사용합니다.
 
@@ -266,6 +273,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 - 모든 배포 호출은 EC2의 `flock`으로 직렬화합니다. server와 ai는 서로 다른 GitHub 레포라 workflow concurrency만으로는 동시 배포를 막을 수 없습니다.
 - 매 실행마다 Secrets Manager를 다시 읽고 `/opt/manyak/.env`를 재생성합니다.
+- AI 전용 OpenAI·Langfuse 키는 공용 `.env`에 쓰지 않고 `deploy.sh`가 셸 환경변수로만 AI compose에 전달합니다.
 - `SERVER_IMAGE_OVERRIDE`가 있으면 server만 pull/up 합니다.
 - `AI_IMAGE_OVERRIDE`가 있으면 ai만 pull/up 하고 `--wait`로 health를 확인합니다.
 - override가 없으면 server를 기동하고, ECR에 AI 이미지가 존재할 때만 ai를 함께 기동합니다.
@@ -299,7 +307,8 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 | `AI_LANGFUSE_HOST` | 아니오 | ai `LANGFUSE_HOST` | Langfuse 리전 엔드포인트. JP `https://jp.cloud.langfuse.com` 필수 — 비우면 활성화 가드가 막아 관측 비활성(no-op) |
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL`    | 아니오            | server              | 피드백 Slack 알림. 비우면 발송 생략                                                                                                          |
 | `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 아니오            | server              | 현재 Terraform과 infra가 주입하는 pepper 키. 서버 코드는 새 `MANYAK_ANALYTICS_DEVICE_ID_PEPPER`를 먼저 보고 이 키를 fallback으로 인식합니다. |
-| `DEEPSEEK_API_KEY`                     | 예(AI)            | ai                  | AI 서버 기동 필수 secret                                                                                                                     |
+| `DEEPSEEK_API_KEY`                     | 예(AI)            | ai                  | 기본 스토리라인·채팅 모델을 호출하는 키                                                                                                      |
+| `OPENAI_API_KEY`                       | GPT 모델 선택 시 예 | ai `OPENAI_API_KEY` | 기본 컴파일 모델 Terra를 호출하는 키. `deploy.sh`가 셸 환경변수로만 전달하며 공용 `.env`에는 기록하지 않음                                      |
 | `MANYAK_AUTH_JWT_SECRET`               | 예(server)        | server              | access JWT HS256 서명·검증 키. 미주입 또는 빈 값이면 server 부팅 실패                                                                        |
 | `MANYAK_GOOGLE_CLIENT_IDS`             | 로그인 사용 시 예 | server              | 허용할 Google OAuth client-id 목록. 비우면 모든 Google 로그인 토큰 거부                                                                      |
 | `MANYAK_KAKAO_CLIENT_IDS`              | 카카오 로그인 사용 시 예 | server       | 허용할 Kakao REST API 키 목록(ID 토큰 `aud` 검증). 비우면 모든 Kakao 로그인 토큰 거부. provider별 독립이라 미주입이 Google 로그인에 영향을 주지 않음. **시크릿에 키를 추가하는 것만으로는 서버에 전달되지 않음** — 아래 배선 문단 참조(`Phase 1 · 계획` KNK-721) |
@@ -308,11 +317,18 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 `aws secretsmanager put-secret-value`는 secret 전체를 덮어씁니다. 일부 키만 바꿀 때도 기존 키를 모두 포함해야 합니다.
 
+**OpenAI 키를 Terra 컴파일에 전달하는 방법(KNK-803·807·808).**
+
+- **무엇.** 컴파일 모델을 `gpt-5.6-terra`로 바꾸면서 로컬·통합 환경과 운영 AI 컨테이너에 `OPENAI_API_KEY`를 전달합니다. OpenAI 키 등록과 AI·Infra·Terraform 변경의 `dev` 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증은 2026-08-08 완료했습니다.
+- **왜.** AI 서버는 선택된 모델의 공급자 키를 기동할 때 검사합니다([`5-ai-server.md`](./5-ai-server.md) D13). Terra가 기본 컴파일 모델인데 OpenAI 키가 없으면 AI 컨테이너가 기동하지 않습니다. 반대로 OpenAI를 쓰지 않는 구성에서는 이 키 때문에 server 배포나 EC2 부팅까지 막을 이유가 없습니다.
+- **어떻게.** `manyak-infra`는 OpenAI 키를 AI 컨테이너에만 전달하고 컴파일 기본값을 Terra로 맞춥니다. 운영에서는 Secrets Manager의 키를 `deploy.sh`가 읽어 셸 환경변수로 export하고, compose가 AI 컨테이너의 `OPENAI_API_KEY`로 옮깁니다. 공용 필수 키 검사에는 넣지 않아, 키가 없을 때 server 배포는 계속되고 GPT를 선택한 AI만 자체 기동 검사에서 실패합니다. 선택된 키에 개행·앞뒤 공백·비 ASCII·공백·제어문자가 있으면 AI가 기동에서 거부하며, 오류에는 키 원문을 남기지 않습니다. Terraform의 `ignore_changes = [secret_string]` 때문에 코드에 키 이름을 추가해도 기존 Secrets Manager 값은 자동으로 바뀌지 않습니다.
+- **왜 그 방법.** 공용 `.env`는 server 컨테이너도 통째로 읽으므로 OpenAI 키를 적으면 AI 전용 비밀이 server까지 전달됩니다. Langfuse 키와 같은 export-only 방식을 써서 소비 범위를 AI로 제한했습니다. 공용 필수 키 검사에서 제외한 것은 조건부 AI 키 하나가 server 배포와 EC2 부팅까지 막는 실패를 피하기 위해서입니다. 키 형식은 외부 요청 없이 기동에서 검사해 복사·붙여넣기 오류를 빨리 드러냅니다. 대가로 글자 형식은 맞지만 값 자체가 틀린 키는 잡지 못하므로 실제 컴파일 검수가 필요하고, `deploy.sh`를 거치지 않고 compose를 직접 실행하면 OpenAI 키가 비어 Terra를 선택한 AI가 기동하지 않으므로 배포와 롤백은 반드시 `deploy.sh`를 거칩니다.
+
 **카카오 로그인 배선 — `Phase 1 · 계획`(KNK-721). 아래는 전부 미구현 목표 상태이며, 현재 상태는 아래 'EC2 `.env` 생성 결과' 표가 정본입니다(카카오 키 없음).** compute user-data(`user-data.sh.tftpl`)는 시크릿 JSON에서 키를 하나씩 명시적으로 추출해 `.env`에 기록하므로, 시크릿에 `MANYAK_KAKAO_CLIENT_IDS`를 넣는 것만으로는 서버에 전달되지 않습니다. 배선에는 세 가지가 필요합니다: ① `manyak-terraform` user-data에 추출·기록 라인 추가(적용 시 아래 표에도 반영), ② 로컬·통합용 `manyak-infra` compose에 환경변수 전달 추가, ③ 웹 런타임에 `AUTH_KAKAO_ID`(REST API 키)·`AUTH_KAKAO_SECRET`(클라이언트 시크릿) 주입 — 운영 웹이 호스팅되는 **Vercel 환경 변수**로 넣습니다(Web Sentry DSN과 같은 경로, §7-5. GHCR 컨테이너 배포를 쓰게 되면 주입 방식을 별도 결정). 배포 순서는 **서버 환경변수 반영이 먼저**입니다(미주입은 fail-closed로 Kakao 401만 발생, Google 무영향 — 순서가 바뀌면 웹 버튼이 먼저 노출돼 전원 401). 웹 카카오 버튼 릴리스 전에 서버 컨테이너 `.env`의 키 존재를 릴리스 게이트로 확인하고, 릴리스 후 카카오 로그인 1회 완주(카카오 인가 화면 → 콜백 → 백엔드 200)를 운영 스모크로 확인합니다. 시크릿의 카카오 키는 **단일 카카오 앱의 REST API 키 1개**여야 합니다([`4-backend.md §4-5`](./4-backend.md) — pairwise `sub` 계정 오귀속 방지).
 
 **메트릭(Grafana Cloud OTLP) 배선 — `Phase 2 · 구현`(KNK-781·793, 2026-08-06 활성화 완료).** user-data가 시크릿에서 두 값을 뽑아 `.env`에 기록하며, 적용 결과는 위 'EC2 `.env` 생성 결과' 표에 반영돼 있습니다. 다만 **주입할 환경변수 이름은 표준 `OTEL_EXPORTER_OTLP_*`가 아니라 Spring 전용 이름(`MANAGEMENT_OTLP_METRICS_EXPORT_URL`·`MANAGEMENT_OTLP_METRICS_EXPORT_HEADERS_AUTHORIZATION`)을 씁니다.** 공용 `.env`는 server와 ai 컨테이너가 함께 읽는데, `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`는 **OpenTelemetry 표준 변수라 AI 컨테이너의 SDK도 그대로 집어 듭니다**(Langfuse Python SDK는 OTel 기반 — [`5-ai-server.md §5-6`](./5-ai-server.md)). 공용 `.env`에 표준 이름으로 넣으면 AI 트레이스가 서버용 Grafana Cloud 자격증명으로 새어 나갈 수 있습니다. Spring 전용 이름은 AI 컨테이너가 무시하므로 Langfuse 키처럼 export-only로 우회할 필요 없이 공용 `.env`에 그대로 둘 수 있습니다. 로컬(IntelliJ 단일 프로세스)은 컨테이너 공유가 없으므로 표준 `OTEL_*` 이름을 그대로 써도 됩니다. 켜는 순서는 **주입이 먼저, 토글(`MANYAK_OTLP_METRICS_ENABLED=true`)이 나중**입니다 — 토글만 켜면 레지스트리가 `localhost:4318`로 헛푸시합니다([`4-backend.md §4-7`](./4-backend.md)). 토글 자체는 **시크릿이 아닙니다** — 위 Secrets Manager 표가 아니라 user-data가 `.env`에 직접 쓰는 리터럴이며, 끄고 켜는 데 시크릿 갱신이 필요 없어야 합니다.
 
-시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다(`MANYAK_KAKAO_CLIENT_IDS`는 위 배선이 적용된 뒤에야 같은 경로를 탑니다). `DEEPSEEK_API_KEY`, `AI_SENTRY_DSN`은 AI 재배포로 반영합니다(배선 후에는 Langfuse 3키도 같습니다). 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
+시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다(`MANYAK_KAKAO_CLIENT_IDS`는 위 배선이 적용된 뒤에야 같은 경로를 탑니다). `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `AI_SENTRY_DSN`과 Langfuse 3키는 AI 재배포로 반영합니다. 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
 
 > **Langfuse 배선과 키 주입은 2026-07-23 완료했습니다(KNK-653, manyak-terraform).** user-data는 Secrets Manager의 Langfuse 3키(`AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST`)를 배포 스크립트의 **export로만** compose에 넘깁니다. 공용 `.env`에 쓰지 않아 server 컨테이너로 새지 않는 대신, `deploy.sh`를 거치지 않은 수동 compose 실행에서는 값이 비어 Langfuse가 꺼집니다(아래 롤백 표 참고).
 
@@ -346,7 +362,16 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 현재 server 코드는 `MANYAK_ANALYTICS_DEVICE_ID_PEPPER`를 우선하고 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER`를 fallback으로 읽습니다. Terraform과 infra는 아직 fallback 키를 주입하므로, 배포 스펙에서는 현재 주입 키와 코드 우선순위를 함께 기록합니다.
 
+`OPENAI_API_KEY`와 Langfuse 3키는 이 표의 공용 `.env`에 들어가지 않습니다. `deploy.sh`가 같은 셸에서 export하고 AI compose에만 전달합니다.
+
 ## 7-7. 운영 배포 절차
+
+### Terra 컴파일 전환과 복구 완료(KNK-803·805·807·808·809·813·814)
+
+- **무엇.** 스토리 컴파일을 `gpt-5.6-terra`의 추론 강도 `medium`으로 전환하고, 통합·운영 환경의 OpenAI 키 전달, AI 기동 검사, 실제 운영 컴파일 검수까지 완료했습니다.
+- **왜.** AI 코드만 먼저 배포하면 운영 Compose가 OpenAI 키를 컨테이너에 전달하지 못해 AI가 기동하지 않습니다. 인프라만 준비해도 Terra 기본값이 든 AI 이미지가 배포되기 전에는 전환되지 않습니다. 또한 `v0.2.3`에서 헬스체크가 성공했는데도 키에 ASCII가 아닌 문자가 섞여 첫 컴파일이 500으로 실패해, 헬스만으로는 모델 전환 성공을 판단할 수 없다는 사실이 확인됐습니다.
+- **어떻게.** ① `manyak-ai`·`manyak-infra`·`manyak-terraform` 변경을 각각 `dev`에 병합하고 운영 OpenAI 키를 등록했습니다. ② Terraform plan을 확인한 뒤 apply해 EC2를 교체하고, 약 100초 뒤 server health `UP`, AI `status=ok`, 컨테이너 `healthy`, 값 노출 없는 키 전달을 확인했습니다. ③ AI `v0.2.3`을 배포해 자동 배포와 헬스는 통과했지만 실제 컴파일 1건이 500으로 실패했습니다. ④ 운영 키를 원본과 대조해 바로잡고 다른 시크릿 필드가 바뀌지 않았는지 확인했습니다. ⑤ KNK-813에서 선택된 공급자 키의 잘못된 문자를 기동에서 거부하고 키 원문을 숨기는 검사와 회귀 테스트를 추가했습니다. ⑥ `v0.2.4`를 배포한 뒤 health의 정확한 버전과 실제 컴파일 HTTP 200, `provider=openai`, `model=gpt-5.6-terra`, 재시도 0회를 확인했습니다.
+- **왜 그 방법.** 인프라를 먼저 적용하고 모델 이미지를 나중에 배포하면 키 전달 경로가 없는 상태에서 Terra가 먼저 선택되는 실패를 피할 수 있습니다. 키 형식 검사는 잘못된 설정을 사용자 요청 시점의 500이 아니라 배포 시점의 기동 실패로 바꿉니다. 마지막에 실제 컴파일을 실행하면 외부 공급자를 호출하지 않는 헬스체크가 놓치는 잘못된 키, 호출 인자, 모델 라우팅까지 한 번에 확인할 수 있습니다. Terraform apply는 EC2 교체를 일으킬 수 있으므로 코드 병합과 분리한 운영 작업으로 실행했습니다.
 
 ### 최초 인프라 준비
 
@@ -430,6 +455,13 @@ docker compose ps
 - `NEXT_PUBLIC_*` 값은 web 이미지 빌드 시점에 반영됩니다. `manyak-infra` Compose 실행 시점에는 주입하지 않습니다.
 - 실제 secret 값은 `.env`에만 두고 커밋하지 않습니다.
 
+**통합 환경의 AI 모델·키 선택(KNK-807).**
+
+- **무엇.** 통합 환경은 컴파일에 `gpt-5.6-terra`, 스토리라인·채팅에 `deepseek-v4-flash`를 기본으로 사용합니다.
+- **왜.** Compose가 예전 컴파일 기본값 `deepseek-v4-pro`를 계속 주입하면 AI 코드의 Terra 기본값을 덮어써서, 통합 검수와 운영이 서로 다른 모델을 조용히 사용합니다.
+- **어떻게.** `MANYAK_AI_STORY_COMPILE_MODEL`의 Compose 기본값을 Terra로 맞추고 `OPENAI_API_KEY`를 AI 컨테이너에만 전달합니다. 기본 구성을 실행하려면 OpenAI 키와 DeepSeek 키가 모두 필요하며, 실제 값은 로컬 `.env`에만 둡니다.
+- **왜 그 방법.** 모델 변수 구조는 유지하고 기본값만 AI 코드와 맞추면 사용자가 명시한 다른 등록 모델로 바꾸는 기능을 보존할 수 있습니다. 키를 서비스별 명시 매핑으로 전달하면 OpenAI 키가 server·web 등 사용하지 않는 컨테이너로 퍼지지 않습니다.
+
 ## 7-9. 검수, 관측, 롤백
 
 ### 배포 전 검수
@@ -462,6 +494,7 @@ docker compose ps
 - 운영 server·AI 배포는 ECR에 `latest`와 `<short-sha>` 태그가 존재하고, GitHub Actions가 최신 `main` SHA 기준으로 SSM 배포를 실행해야 합니다.
 - server 배포는 외부 `https://api.manyak.app/actuator/health`가 200과 `status=UP`을 반환해야 합니다.
 - AI 배포는 `docker compose up -d --wait ai`가 성공하고 컨테이너 healthcheck가 `status=ok`를 확인해야 합니다.
+- Terra 컴파일 전환은 운영 AI 컨테이너에 `OPENAI_API_KEY`가 전달되고, 컴파일 1건의 응답 metadata가 `provider=openai`·`model=gpt-5.6-terra`인 것까지 확인해야 합니다. 키 값 자체는 로그나 검수 결과에 출력하지 않습니다.
 - Terraform 변경은 `terraform plan` 리뷰 후 적용해야 하며, 적용 후 대상 리소스, SSM 문서, ALB target group health 중 변경 영향이 있는 항목을 확인해야 합니다.
 - 시크릿 변경은 해당 값을 소비하는 서비스 재기동까지 완료해야 반영된 것으로 봅니다.
 - `web` release는 GHCR release 이미지 태그가 발행되어야 합니다. 운영 호스팅 반영은 현재 스펙상 별도 외부 절차로 확인합니다.
@@ -500,8 +533,8 @@ docker compose ps
 
 | 상황                     | 기준 롤백                                                                                                                                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| server 이미지 문제       | ECR에 직전 정상 `<short-sha>` 태그가 남아 있으면 해당 이미지를 `/opt/manyak/.env`의 `SERVER_IMAGE`에 반영하고 `docker compose pull server && docker compose up -d server` 실행 |
-| AI 이미지 문제           | ECR에 직전 정상 `<short-sha>` 태그가 남아 있으면 해당 이미지를 `/opt/manyak/.env`의 `AI_IMAGE`에 반영하고 `docker compose pull ai && docker compose up -d --wait ai` 실행. **Langfuse 활성화 이후에는** 이 수동 실행이 `AI_LANGFUSE_*`를 비워 관측을 조용히 끄므로(값은 `deploy.sh`의 export로만 들어옴 — §7-6), `AI_IMAGE_OVERRIDE`를 넘긴 SSM 배포나 `bash /opt/manyak/deploy.sh`로 되돌립니다 |
+| server 이미지 문제       | ECR의 직전 정상 `<short-sha>` 이미지를 `SERVER_IMAGE_OVERRIDE`로 지정해 `bash /opt/manyak/deploy.sh`를 실행합니다. 배포 스크립트가 이미지를 고정하고 server만 pull/up합니다. |
+| AI 이미지 문제           | ECR의 직전 정상 `<short-sha>` 이미지를 `AI_IMAGE_OVERRIDE`로 지정해 `bash /opt/manyak/deploy.sh`를 실행합니다. 배포 스크립트가 OpenAI·Langfuse 키를 다시 읽어 AI에 전달하고 `--wait`로 health를 확인합니다. `/opt/manyak/.env` 수정 뒤 Compose를 직접 실행하면 export-only 키가 비므로 금지합니다. |
 | main release 문제        | revert PR 또는 이전 정상 커밋을 release합니다. 단, 이미 실행된 Flyway 마이그레이션은 전진 전용으로 취급합니다.                                                                 |
 | DB 마이그레이션 문제     | 보상 마이그레이션 또는 RDS snapshot 복구가 필요합니다. 파괴적 스키마 변경은 배포 직전 snapshot을 남깁니다.                                                                     |
 | Terraform user-data 문제 | Terraform revert apply가 EC2 교체를 유발할 수 있습니다. 다운타임 창을 잡고 plan을 먼저 확인합니다.                                                                             |
