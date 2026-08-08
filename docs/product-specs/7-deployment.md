@@ -328,9 +328,9 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 **운영 AI 모델을 이미지 배포 없이 바꾸는 방법 — `Phase 2 · 구현`(KNK-815·816).**
 
-- **무엇.** 운영자는 스토리 컴파일, 스토리라인, 채팅 본문·선택지·판정 모델을 각각 독립적으로 바꾸고, AI 이미지나 Terraform을 다시 배포하지 않은 채 현재 AI 컨테이너에 적용할 수 있습니다. KNK-816의 `manyak-terraform` 변경은 2026-08-08 `dev`에 병합됐으며 운영 apply 전입니다.
+- **무엇.** 운영자는 스토리 컴파일, 스토리라인, 채팅 본문·선택지·판정 모델을 각각 독립적으로 바꾸고, AI 이미지나 Terraform을 다시 배포하지 않은 채 현재 AI 컨테이너에 적용할 수 있습니다. KNK-816의 `manyak-terraform` 변경은 2026-08-08 `dev`에 병합됐고 같은 날 운영 apply와 검수를 완료했습니다.
 - **왜.** 기존 운영 Compose는 모델 환경변수를 전달하지 않아 AI 코드 기본값만 사용했습니다. 모델 하나를 바꾸려면 AI 이미지를 새로 배포해야 했고, Secrets Manager에 모델명을 넣으면 비밀이 아닌 값 하나를 바꿀 때 JWT·API 키가 든 JSON 전체를 다시 덮어써야 합니다. 또한 잘못된 모델 설정을 먼저 파일에 저장하거나 기존 AI를 먼저 교체하면, 수동 변경은 실패해도 다음 AI 배포에서 정상 컨테이너가 내려갈 수 있습니다.
-- **어떻게.** Terraform은 모델 선택값을 세 개의 SSM Parameter Store `String`으로 만들고 EC2 role에 세 Parameter의 `ssm:GetParameter`만 허용합니다. compute 모듈은 Parameter 이름을 user-data에 넘깁니다. `deploy.sh`는 AI 관련 배포에서 세 값을 읽어 문자열·공백 아님·한 줄 조건을 검사하고, 권한 `0600`인 `/opt/manyak/.env.ai.tmp`를 만듭니다. 운영 Compose의 `ai` 서비스만 선택적인 `.env.ai`를 읽으며 server에는 모델 변수가 전달되지 않습니다. 수동 전환은 SSM 문서 `manyak-prod-ai-model-reload`가 `AI_CONFIG_RELOAD=1 bash /opt/manyak/deploy.sh`를 실행하고, Terraform output은 이 문서 이름과 세 Parameter 이름을 제공합니다.
+- **어떻게.** Terraform은 모델 선택값을 세 개의 SSM Parameter Store `String`으로 만들고 EC2 role에 세 Parameter의 `ssm:GetParameter`만 허용합니다. compute 모듈은 Parameter 이름을 user-data에 넘깁니다. `deploy.sh`는 AI 관련 배포에서 세 값을 읽어 문자열·공백 아님·한 줄 조건을 검사하고, 권한 `0600`인 `/opt/manyak/.env.ai.tmp`를 만듭니다. 운영 Compose의 `ai` 서비스만 선택적인 `.env.ai`를 읽으며 server에는 모델 변수가 전달되지 않습니다. 수동 전환은 SSM 문서 `manyak-prod-ai-model-reload`가 `AI_CONFIG_RELOAD=1 bash /opt/manyak/deploy.sh`를 실행하고, Terraform output은 이 문서 이름과 세 Parameter 이름을 제공합니다. 운영 적용 검수에서 server·AI health, 모델 재적용 SSM 문서 실행, `gpt-5.6-terra`·`provider=openai` 컴파일 응답을 확인했습니다.
 
 | AI 용도 | 환경변수 | Parameter Store | 최초 값 |
 | --- | --- | --- | --- |
