@@ -466,11 +466,11 @@ AI 모델 세 값은 공용 `.env`가 아니라 `/opt/manyak/.env.ai`에 기록�
 | `manyak-ai`     | `ghcr.io/kim-n-kang/manyak-ai:dev`     | AI API                  |
 | `postgres`      | `postgres:16-alpine`                   | 로컬 DB                 |
 | `redis`         | `redis:7-alpine`                       | refresh token 저장소 등 |
-| `prometheus`    | `prom/prometheus`(태그는 배선 시 고정) | 로컬 메트릭 스크레이프(`Phase 2 · 계획`) |
+| `prometheus`    | `prom/prometheus:v3.13.2`              | 로컬 메트릭 스크레이프(`Phase 2 · 구현`) |
 
-`prometheus`는 **로컬 전용**입니다. 운영 메트릭은 Grafana Cloud로 OTLP push하므로(§7-9) 운영에는 스크레이프 대상도 Prometheus 인스턴스도 두지 않습니다. 로컬 Prometheus는 server 컨테이너의 `/actuator/prometheus`를 긁어 pull 경로(스크레이프 설정·relabel·recording rule)를 실물로 확인하는 용도이며, 운영 구성으로 승격하지 않습니다([`4-backend.md §4-7`](./4-backend.md)).
+`prometheus`는 **로컬 전용**입니다. 운영 메트릭은 Grafana Cloud로 OTLP push하므로(§7-9) 운영에는 스크레이프 대상도 Prometheus 인스턴스도 두지 않습니다. 로컬 Prometheus는 server 컨테이너의 `/actuator/prometheus`를 15초마다 긁어 pull 경로(스크레이프 설정·relabel·recording rule)를 실물로 확인하는 용도이며, 운영 구성으로 승격하지 않습니다. 스크레이프 단계에서 `environment=local`, `service_name=manyak-server-local` 라벨을 붙이고, recording rule은 `prometheus/rules.yml`에서 관리합니다([`4-backend.md §4-7`](./4-backend.md)).
 
-**전제조건.** 스크레이프 대상(`/actuator/prometheus`)은 **`local` 프로파일에서만** 존재합니다 — exposure 목록도 Security의 무인증 허용도 `application-local.yml`·`SecurityConfig`가 local로 한정합니다. 현재 compose는 `SPRING_PROFILES_ACTIVE`를 주지 않아 `spring.profiles.default: local` 덕분에 local로 뜨는데, 누가 compose에 `SPRING_PROFILES_ACTIVE: dev`를 넣는 순간 스크레이프가 404/401로 조용히 깨집니다. compose에서 프로파일을 지정하게 되면 `local`을 명시해야 합니다. 서버 메트릭 구현은 `manyak-server` `dev`에 머지되어(KNK-779) GHCR `dev` 이미지에 엔드포인트가 들어가므로, 남은 조건은 프로파일 하나입니다.
+**전제조건.** 스크레이프 대상(`/actuator/prometheus`)은 **`local` 프로파일에서만** 존재합니다 — exposure 목록도 Security의 무인증 허용도 `application-local.yml`·`SecurityConfig`가 local로 한정합니다. Compose는 이 계약이 기본 프로파일 변경으로 조용히 깨지지 않도록 `SPRING_PROFILES_ACTIVE: local`을 명시합니다. 이를 `dev`로 바꾸면 스크레이프가 404/401로 깨집니다. 서버 메트릭 구현은 `manyak-server` `dev`에 머지되어(KNK-779) GHCR `dev` 이미지에 엔드포인트가 들어갑니다.
 
 ### 실행
 
@@ -490,6 +490,7 @@ docker compose ps
 | `http://localhost:3000`                 | Web           |
 | `http://localhost:8080/actuator/health` | Server health |
 | `http://localhost:8000/api/v1/health`   | AI health     |
+| `http://localhost:9090`                 | Prometheus    |
 
 ### 로컬 환경변수 기준
 
