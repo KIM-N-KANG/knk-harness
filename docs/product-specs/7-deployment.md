@@ -326,9 +326,9 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 - **어떻게.** `manyak-infra`는 OpenAI 키를 AI 컨테이너에만 전달하고 컴파일 기본값을 Terra로 맞춥니다. 운영에서는 Secrets Manager의 키를 `deploy.sh`가 읽어 셸 환경변수로 export하고, compose가 AI 컨테이너의 `OPENAI_API_KEY`로 옮깁니다. 공용 필수 키 검사에는 넣지 않아, 키가 없을 때 server 배포는 계속되고 GPT를 선택한 AI만 자체 기동 검사에서 실패합니다. 선택된 키에 개행·앞뒤 공백·비 ASCII·공백·제어문자가 있으면 AI가 기동에서 거부하며, 오류에는 키 원문을 남기지 않습니다. Terraform의 `ignore_changes = [secret_string]` 때문에 코드에 키 이름을 추가해도 기존 Secrets Manager 값은 자동으로 바뀌지 않습니다.
 - **왜 그 방법.** 공용 `.env`는 server 컨테이너도 통째로 읽으므로 OpenAI 키를 적으면 AI 전용 비밀이 server까지 전달됩니다. Langfuse 키와 같은 export-only 방식을 써서 소비 범위를 AI로 제한했습니다. 공용 필수 키 검사에서 제외한 것은 조건부 AI 키 하나가 server 배포와 EC2 부팅까지 막는 실패를 피하기 위해서입니다. 키 형식은 외부 요청 없이 기동에서 검사해 복사·붙여넣기 오류를 빨리 드러냅니다. 대가로 글자 형식은 맞지만 값 자체가 틀린 키는 잡지 못하므로 실제 컴파일 검수가 필요하고, `deploy.sh`를 거치지 않고 compose를 직접 실행하면 OpenAI 키가 비어 Terra를 선택한 AI가 기동하지 않으므로 배포와 롤백은 반드시 `deploy.sh`를 거칩니다.
 
-**운영 AI 모델을 이미지 배포 없이 바꾸는 방법 — `Phase 2 · 구현 중`(KNK-815·816).**
+**운영 AI 모델을 이미지 배포 없이 바꾸는 방법 — `Phase 2 · 구현`(KNK-815·816).**
 
-- **무엇.** 운영자는 스토리 컴파일, 스토리라인, 채팅 본문·선택지·판정 모델을 각각 독립적으로 바꾸고, AI 이미지나 Terraform을 다시 배포하지 않은 채 현재 AI 컨테이너에 적용할 수 있습니다. 이 절은 KNK-816의 `manyak-terraform` 작업 브랜치 기준이며 아직 `dev` 병합과 운영 apply 전입니다.
+- **무엇.** 운영자는 스토리 컴파일, 스토리라인, 채팅 본문·선택지·판정 모델을 각각 독립적으로 바꾸고, AI 이미지나 Terraform을 다시 배포하지 않은 채 현재 AI 컨테이너에 적용할 수 있습니다. KNK-816의 `manyak-terraform` 변경은 2026-08-08 `dev`에 병합됐으며 운영 apply 전입니다.
 - **왜.** 기존 운영 Compose는 모델 환경변수를 전달하지 않아 AI 코드 기본값만 사용했습니다. 모델 하나를 바꾸려면 AI 이미지를 새로 배포해야 했고, Secrets Manager에 모델명을 넣으면 비밀이 아닌 값 하나를 바꿀 때 JWT·API 키가 든 JSON 전체를 다시 덮어써야 합니다. 또한 잘못된 모델 설정을 먼저 파일에 저장하거나 기존 AI를 먼저 교체하면, 수동 변경은 실패해도 다음 AI 배포에서 정상 컨테이너가 내려갈 수 있습니다.
 - **어떻게.** Terraform은 모델 선택값을 세 개의 SSM Parameter Store `String`으로 만들고 EC2 role에 세 Parameter의 `ssm:GetParameter`만 허용합니다. compute 모듈은 Parameter 이름을 user-data에 넘깁니다. `deploy.sh`는 AI 관련 배포에서 세 값을 읽어 문자열·공백 아님·한 줄 조건을 검사하고, 권한 `0600`인 `/opt/manyak/.env.ai.tmp`를 만듭니다. 운영 Compose의 `ai` 서비스만 선택적인 `.env.ai`를 읽으며 server에는 모델 변수가 전달되지 않습니다. 수동 전환은 SSM 문서 `manyak-prod-ai-model-reload`가 `AI_CONFIG_RELOAD=1 bash /opt/manyak/deploy.sh`를 실행하고, Terraform output은 이 문서 이름과 세 Parameter 이름을 제공합니다.
 
