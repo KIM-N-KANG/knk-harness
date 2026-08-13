@@ -102,7 +102,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | 환경              | 목적                    | 배포 단위                                  | 레지스트리·태그                               | 실행 위치                             |
 | ----------------- | ----------------------- | ------------------------------------------ | --------------------------------------------- | ------------------------------------- |
 | 운영 `prod`       | 실제 사용자 API·AI 운영 | `manyak-server`, `manyak-ai`               | ECR `latest`, `<short-sha>`                   | AWS EC2의 Docker Compose              |
-| 개발 `dev`(AWS)   | 클라이언트가 붙는 공용 개발 API, 배포 파이프라인 리허설 | `manyak-server`, `manyak-ai` | ECR `<short-sha>`(태그 정책은 구현 시 확정)   | AWS ECS Fargate (`Phase 2 · 계획`)    |
+| 개발 `dev`(AWS)   | 클라이언트가 붙는 공용 개발 API, 배포 파이프라인 리허설 | `manyak-server`, `manyak-ai` | 미정 — 레지스트리·태그 모두 KNK-827에서 확정  | AWS ECS Fargate (`Phase 2 · 계획`)    |
 | 개발 이미지 `dev` | 통합 실행과 개발 검증   | `manyak-server`, `manyak-ai`, `manyak-web` | GHCR `dev`, `<short-sha>`                     | `manyak-infra` Compose 또는 개별 실행 |
 | 웹 릴리스 이미지  | 프론트엔드 버전 릴리스  | `manyak-web`                               | GHCR `{version}`, `{major}.{minor}`, `latest` | 현재 운영 호스팅 리소스는 미정        |
 | 로컬·통합         | 전체 스택 수동 검증     | server, web, ai, postgres, redis           | GHCR `dev`, Docker Hub DB·Redis               | 개발자 Docker Compose                 |
@@ -208,31 +208,41 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 - **무엇.** 클라이언트가 상시 붙을 수 있는 개발 API를 ECS Fargate로 만듭니다. 운영과 같은 `manyak-terraform`이 소유하며 state만 분리합니다(`terraform/envs/dev`, key `dev/terraform.tfstate`).
 - **왜.** 현재 통합 실행 수단은 `manyak-infra` 로컬 Compose뿐이라 web·android가 붙을 공용 엔드포인트가 없고, 운영 배포를 리허설할 곳도 없습니다. 동시에 운영 컴퓨트는 `user_data_replace_on_change=true` 때문에 설정 한 줄을 바꿔도 EC2 교체와 짧은 다운타임을 수반하며(위 `컴퓨트와 엣지`), 배포 경로가 `deploy.sh`와 전용 SSM 문서라는 자체 제작 기계입니다.
-- **어떻게.** 최종 목표는 운영·개발 모두 Fargate지만 **개발을 먼저 만들어 검증하고 운영 전환은 별도로 진행합니다.** 개발에서 태스크 정의, execution role과 task role 분리, 시크릿 주입, 롤링 배포를 확인한 뒤 같은 모듈을 운영에 적용합니다. 개발이 검증될 때까지 운영은 EC2로 유지합니다.
+- **어떻게.** 최종 목표는 운영·개발 모두 Fargate지만 **개발을 먼저 만들어 검증하고 운영 전환은 별도로 진행합니다.** 개발에서 태스크 정의, execution role과 task role 분리, 시크릿 주입, 태스크 교체 배포를 확인한 뒤 같은 모듈을 운영에 적용합니다. 개발이 검증될 때까지 운영은 EC2로 유지합니다.
 - **왜 그 방법.** 운영을 먼저 전환하면 Fargate 고유 실패(태스크 ENI 네트워킹, execution role과 task role 혼동, 시크릿 주입 실패 시 조용한 재시작 루프)를 살아 있는 서비스 위에서 디버깅하게 됩니다. 대가로 전환 기간 동안 개발과 운영의 컴퓨트가 갈라져 **개발이 운영 배포 경로를 검증하지 못하며, 이는 의도된 임시 상태입니다.**
 
-| 항목        | 개발 계획값                                    | 운영 현재값과의 차이                       |
-| ----------- | ---------------------------------------------- | ------------------------------------------ |
-| 컴퓨트      | ECS Fargate Spot                               | 운영은 EC2 `t3.small` + Docker Compose     |
-| 실행 단위   | `manyak-server`, `manyak-ai` 태스크            | 운영과 같은 2개 서비스                     |
-| DB          | 태스크 컨테이너 `postgres`                     | 운영은 RDS PostgreSQL 16 관리형            |
-| 캐시        | 태스크 컨테이너 `redis`                        | 운영은 ElastiCache Redis 7.1               |
-| 네트워크    | 퍼블릭 서브넷 + 태스크 퍼블릭 IP               | 운영은 인터넷 라우트 없는 private app subnet |
-| NAT Gateway | 없음                                           | 운영은 단일 NAT Gateway                    |
-| 인바운드    | ALB SG에서 오는 트래픽만 허용                  | 운영과 같은 정책                           |
-| 엣지        | ALB + ACM + Cloudflare `dev-api.manyak.app`    | 운영과 같은 구조                           |
-| 시크릿 주입 | Secrets Manager → 태스크 정의 `secrets`        | 운영은 `deploy.sh`가 `.env`를 생성          |
-| 배포        | `aws ecs update-service` 롤링 교체             | 운영은 SSM SendCommand → `deploy.sh`       |
+| 항목            | 개발 계획값                                                                        | 운영 현재값과의 차이                         |
+| --------------- | ---------------------------------------------------------------------------------- | -------------------------------------------- |
+| 컴퓨트          | ECS Fargate Spot                                                                   | 운영은 EC2 `t3.small` + Docker Compose       |
+| 실행 단위       | **태스크 정의 1개**에 `manyak-server`·`manyak-ai`·`postgres`·`redis` 컨테이너      | 운영은 EC2 한 대의 Compose에 server·ai 2개   |
+| 서비스 간 통신  | 같은 태스크 ENI를 공유하므로 `localhost` — `MANYAK_AI_BASE_URL=http://localhost:8000` | 운영은 Compose 서비스명 DNS `http://ai:8000` |
+| 런타임 프로파일 | `SPRING_PROFILES_ACTIVE`를 반드시 명시(아래 주의)                                  | 운영은 `prod`                                |
+| DB              | 태스크 컨테이너 `postgres` — 영속 볼륨 없음                                        | 운영은 RDS PostgreSQL 16 관리형, 백업 7일    |
+| 캐시            | 태스크 컨테이너 `redis` — 영속 볼륨 없음                                           | 운영은 ElastiCache Redis 7.1                 |
+| 네트워크        | 퍼블릭 서브넷 + 태스크 퍼블릭 IP                                                   | 운영은 인터넷 라우트 없는 private app subnet |
+| NAT Gateway     | 없음                                                                               | 운영은 단일 NAT Gateway                      |
+| 인바운드        | ALB SG에서 오는 트래픽만 허용                                                      | 운영과 같은 정책                             |
+| 엣지            | ALB + ACM + Cloudflare `dev-api.manyak.app`                                        | 운영과 같은 구조                             |
+| 시크릿 주입     | Secrets Manager → 태스크 정의 `secrets`                                            | 운영은 `deploy.sh`가 `.env`를 생성           |
+| 배포            | `aws ecs update-service` 롤링 교체                                                 | 운영은 SSM SendCommand → `deploy.sh`         |
 
 관리형 DB·캐시와 NAT Gateway를 두지 않는 것은 비용 결정입니다. 개발은 데이터 계층 고유 동작을 검증 대상에서 제외하는 대신 배포 파이프라인 검증에 집중합니다.
+
+**컨테이너를 태스크 하나에 모으는 이유.** ECS `awsvpc` 네트워킹에서 태스크를 나누면 Compose 서비스명 DNS가 존재하지 않습니다. 운영 Compose는 `MANYAK_AI_BASE_URL: http://ai:8000`을 쓰고 "`localhost` 아님"을 주석으로 못박고 있는데(`../manyak-terraform/docker-compose.prod.yml`), 이 값을 그대로 Fargate 별도 태스크에 옮기면 이름이 풀리지 않습니다. server 헬스체크는 AI에 연결하지 않고 뜨므로(WebClient 지연 연결) **ALB 헬스는 초록인데 스토리·채팅 호출만 전부 실패하는 상태**가 됩니다. 태스크를 나눌 경우 Service Connect 또는 Cloud Map과 server SG → ai SG 규칙이 추가로 필요하므로, 개발은 태스크 1개로 묶고 `localhost`를 씁니다. AI 주소는 운영과 달라지므로 환경변수로 주입합니다.
+
+**런타임 프로파일을 반드시 명시해야 하는 이유.** `manyak-server`의 기본 프로파일은 `local`입니다(`application.yml`의 `spring.profiles.default: local`). 프로파일을 주지 않으면 채팅·스토리 AI 스텁이 모두 켜지고(`application-local.yml`의 `stub: true`), 더미 JWT 서명 키와 `/actuator/prometheus` 무인증 노출이 함께 따라옵니다. **공개된 개발 엔드포인트가 별도로 띄운 AI를 호출하지 않고 스텁으로 응답하면서도 헬스는 정상으로 보입니다.** 현재 프로파일은 `local`과 `prod` 둘뿐이라, 개발이 `prod`를 재사용할지 `manyak-server`에 `dev` 프로파일을 새로 만들지는 KNK-827에서 정합니다([§7-11](#7-11-미정주의-항목)). `manyak-server` 변경이 필요한 선택지이므로 레포 간 의존이 생깁니다.
+
+**개발 데이터는 휘발성입니다.** `postgres`·`redis` 컨테이너에 영속 볼륨을 붙이지 않으므로 태스크가 교체되면 계정·스토리·refresh 토큰이 모두 사라집니다. 배포로 인한 롤링 교체뿐 아니라 **Fargate Spot 회수가 임의 시점에 같은 초기화를 일으킵니다.** 개발 데이터는 언제든 버려질 수 있는 것으로 취급하고, 유지가 필요한 검증 데이터는 재생성 스크립트로 다시 만듭니다. 데이터 유지가 실제로 필요해지면 EFS 볼륨 또는 관리형 DB 부착 비용을 다시 판단합니다([§7-11](#7-11-미정주의-항목)).
 
 ### 개발 환경의 검증 경계 — `Phase 2 · 계획`
 
 | 구분           | 항목                                                                                                                                                                                    |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 검증됨         | 이미지 배포와 롤링 교체, 태스크 기동, Secrets Manager 주입, ALB 헬스체크, CORS·도메인 배선                                                                                              |
+| 검증됨         | 이미지 배포와 태스크 교체, 태스크 기동, Secrets Manager 주입, ALB 헬스체크, CORS·도메인 배선                                                                                            |
 | 검증되지 않음 | RDS 고유 동작 — 관리형 마스터 비밀번호 자동 로테이션과 재동기화(위 `DB 비밀번호 로테이션 재동기화`, KNK-359), 백업·스냅샷 복구, ElastiCache 파라미터 그룹(`maxmemory-policy=volatile-ttl`) |
 | 검증되지 않음 | 운영과 다른 네트워크 경로 — NAT 경유 egress, private subnet 격리                                                                                                                        |
+| 검증되지 않음 | 운영과 다른 server→AI 경로 — 개발은 태스크 내 `localhost`, 운영은 Compose 서비스명 DNS                                                                                                  |
+| 검증되지 않음 | 데이터 보존을 동반한 무중단 배포 — 개발은 태스크 교체마다 DB가 초기화되므로 교체 중 데이터 연속성을 확인할 수 없습니다                                                                  |
 | 검증되지 않음 | 운영이 EC2로 남아 있는 동안의 운영 배포 경로 전체(`deploy.sh`, 전용 SSM 문서, user-data)                                                                                                |
 
 개발 환경은 컨테이너 DB를 쓰므로 **데이터 계층 사고는 재현되지 않습니다.** 관리형 서비스와 관련된 변경은 개발 통과를 근거로 삼지 않고, 운영 `plan` 리뷰와 운영 검수([§7-9](#7-9-검수-관측-롤백))로 판단합니다.
@@ -732,6 +742,8 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
 | 개발 환경 구현            | 계획      | KNK-825·826·827. `terraform/envs/dev`와 `modules/compute-ecs`는 아직 존재하지 않습니다. §7-3·§7-4의 개발 항목은 전부 계획값이며, 코드 병합 후 실제 값으로 갱신합니다. 계획과 구현이 갈라지면 구현을 기준으로 이 표에 차이를 남깁니다. |
 | 개발 환경 배포 트리거     | 미정      | 개발 환경이 배포 대상으로 삼을 이미지 태그와 트리거(`dev` push 자동 배포 여부, ECR·GHCR 중 어느 레지스트리)는 KNK-827 구현 시 확정합니다. 확정 후 §7-3·§7-5를 함께 갱신합니다. |
+| 개발 서버 런타임 프로파일 | 미정      | `manyak-server` 기본 프로파일이 `local`이라 개발 태스크는 `SPRING_PROFILES_ACTIVE`를 반드시 명시해야 합니다(§7-4). 현재 프로파일은 `local`·`prod` 둘뿐이며, `prod`를 재사용할지 `dev` 프로파일을 신설할지는 KNK-827에서 정합니다. 신설을 택하면 `manyak-server` 변경이 선행되어야 합니다. |
+| 개발 데이터 영속성        | 의도된 격차 | 개발 `postgres`·`redis`에 영속 볼륨을 붙이지 않아 태스크 교체와 Fargate Spot 회수마다 데이터가 초기화됩니다(§7-4). 클라이언트 개발에서 계정·스토리 유지가 필요해지면 EFS 볼륨 또는 관리형 DB 부착 비용을 다시 판단하고, 그때 Spot 사용 여부도 함께 재검토합니다. |
 | 개발 환경 데이터 계층     | 의도된 격차 | 개발은 컨테이너 `postgres`·`redis`를 써서 RDS·ElastiCache 고유 동작을 재현하지 않습니다(§7-4 검증 경계). 관리형 서비스 관련 변경은 개발 통과를 근거로 삼지 않습니다. RDS 경로까지 검증이 필요해지면 개발에 관리형 DB를 붙이는 비용을 다시 판단합니다. |
 | 운영 Fargate 전환         | 미정      | 개발 환경 검증 후 별도 티켓으로 진행합니다. 전환 시 §7-4 컴퓨트, §7-5 배포 절차, §7-7, §7-9 롤백을 함께 갱신하고 `deploy.sh`·전용 SSM 문서·`db-creds-resync`의 존치 여부를 결정합니다. 컴퓨트 비용은 EC2 대비 증가가 예상되며, 전환 근거는 비용 절감이 아니라 무중단 배포와 배포 경로 단순화입니다. |
 | Cloudflare proxy/WAF      | 미적용    | `api.manyak.app` 레코드는 `proxied=false`입니다. CDN/WAF 요구가 생기면 edge 정책을 별도 정의합니다.                                                                                 |
