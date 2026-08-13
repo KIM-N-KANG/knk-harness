@@ -237,7 +237,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 **컨테이너를 태스크 하나에 모으는 이유.** ECS `awsvpc` 네트워킹에서 태스크를 나누면 Compose 서비스명 DNS가 존재하지 않습니다. 운영 Compose는 `MANYAK_AI_BASE_URL: http://ai:8000`을 쓰고 "`localhost` 아님"을 주석으로 못박고 있는데(`../manyak-terraform/docker-compose.prod.yml`), 이 값을 그대로 Fargate 별도 태스크에 옮기면 이름이 풀리지 않습니다. server 헬스체크는 AI에 연결하지 않고 뜨므로(WebClient 지연 연결) **ALB 헬스는 초록인데 스토리·채팅 호출만 전부 실패하는 상태**가 됩니다. 태스크를 나눌 경우 Service Connect 또는 Cloud Map과 server SG → ai SG 규칙이 추가로 필요하므로, 개발은 태스크 1개로 묶고 `localhost`를 씁니다. AI 주소는 운영과 달라지므로 환경변수로 주입합니다.
 
-**런타임 프로파일 — `prod` 잠정 재사용, `dev` 프로파일 신설이 목표.** `manyak-server`의 기본 프로파일은 `local`입니다(`application.yml`의 `spring.profiles.default: local`). 프로파일을 주지 않으면 채팅·스토리 AI 스텁이 모두 켜지고(`application-local.yml`의 `stub: true`), 더미 JWT 서명 키와 `/actuator/prometheus` 무인증 노출이 따라옵니다 — **공개된 개발 엔드포인트가 스텁으로 응답하면서 헬스는 정상으로 보입니다.**
+**런타임 프로파일 — `prod` 잠정 재사용, `dev` 프로파일은 코드 완료·전환 전.** `manyak-server`의 기본 프로파일은 `local`입니다(`application.yml`의 `spring.profiles.default: local`). 프로파일을 주지 않으면 채팅·스토리 AI 스텁이 모두 켜지고(`application-local.yml`의 `stub: true`), 더미 JWT 서명 키와 `/actuator/prometheus` 무인증 노출이 따라옵니다 — **공개된 개발 엔드포인트가 스텁으로 응답하면서 헬스는 정상으로 보입니다.**
 
 현재 프로파일은 `local`과 `prod` 둘뿐이라 개발은 `prod`를 재사용하고 차이를 환경변수로 덮습니다. `@Profile` 애노테이션은 코드에 하나도 없어 프로파일은 YAML만 갈아끼우고, 스텁 빈은 `@ConditionalOnProperty(havingValue = "false", matchIfMissing = true)`라 실 클라이언트가 기본입니다. 환경변수는 프로파일 YAML보다 우선순위가 높아 아래 오버라이드가 소스 변경 없이 성립합니다.
 
@@ -249,9 +249,39 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 | `MANAGEMENT_HEALTH_REDIS_ENABLED` | `true` | 운영이 배포 사정으로 끈 Redis health가 개발에서도 꺼집니다 |
 | `SENTRY_ENVIRONMENT` | `dev` | **개발 프롬프트 원문이 운영 Langfuse(JP)로 흘러갑니다**(활성화 가드가 이 값을 봅니다) |
 
+**5종은 두 경로로 나뉘고, 그 차이가 `dev` 프로파일이 YAML로 되찾을 수 있는 범위를 결정합니다.**
+
+| 경로 | 해당 환경변수 | YAML로 잠글 수 있나 |
+| --- | --- | --- |
+| **placeholder 경유.** 대상 프로퍼티의 relaxed binding 이름이 아니고, `application.yml`이 `${...}`로 참조해서 값이 들어옵니다 | `MANYAK_GOOGLE_FORM_FEEDBACK_ID`(정규 이름은 `MANYAK_GOOGLEFORM_FEEDBACK_FORMID`), `MANYAK_ASSET_BASE_URL`(정규 이름은 `MANYAK_ASSET_PROFILEPRESETBASEURL`) | **가능.** 프로파일 파일에 리터럴을 두면 환경변수가 남아 있어도 리터럴이 이깁니다 |
+| **relaxed binding 직결.** 프로퍼티의 정규 환경변수 이름이라 `systemEnvironment` property source가 프로파일 YAML보다 우선합니다 | `SENTRY_ENVIRONMENT`, `SPRINGDOC_APIDOCS_ENABLED`, `SPRINGDOC_SWAGGERUI_ENABLED`, `MANAGEMENT_HEALTH_REDIS_ENABLED` | **불가능.** 리터럴을 박아도 환경변수가 이깁니다 |
+
+검증 상태를 구분해 둡니다. **실측한 것은 셋입니다**(KNK-828 구현 중 `dev` 프로파일을 실제로 기동해 `/actuator/env`로 확인). `MANYAK_GOOGLE_FORM_FEEDBACK_ID`에 운영 폼 id를 주입한 채 프로파일에서 키를 생략하면 유효값이 운영 폼 id가 되고 origin이 `application.yml`로 잡히며, 빈 문자열 리터럴을 넣으면 리터럴이 이깁니다. `MANYAK_ASSET_BASE_URL`은 환경변수 값이 이기고, `SENTRY_ENVIRONMENT`는 `systemEnvironment`가 최상위 property source로 잡힙니다. **`SPRINGDOC_*` 두 키와 `MANAGEMENT_HEALTH_REDIS_ENABLED`는 실측하지 않았고, 같은 규칙에 따른 추론입니다.**
+
 Amplitude 관련 변수는 **의도적으로 주입하지 않습니다.** 운영에서 켜지는 것은 프로파일이 아니라 user-data가 `.env`에 굽기 때문이며, 개발 태스크 정의에 넣지 않아 개발 이벤트가 운영 프로젝트로 가지 않게 합니다.
 
-**이 재사용은 잠정입니다.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례). `logback-spring.xml`의 `<springProfile name="prod">`도 의도가 아니라 부수 효과로 걸립니다. 목표 상태는 `manyak-server`에 **`dev` 프로파일을 신설해 위 값을 YAML로 고정**하고 환경변수는 환경별 값(DB URL·CORS·Sentry 환경)만 남기는 것입니다(KNK-828, [§7-11](#7-11-미정주의-항목)). Terraform은 프로파일을 변수로 받으므로 서버 릴리스 후 값 하나만 바꾸면 전환됩니다.
+**이 재사용은 잠정입니다.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례).
+
+**`dev` 프로파일은 코드가 완료됐고 아직 머지 전입니다**(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)). 구현에서 확정된 것은 셋입니다.
+
+- `SPRING_PROFILES_ACTIVE=prod,dev` 겹쳐쓰기가 아니라 **`application-dev.yml` 단독**입니다. 겹쳐 쓰면 `dev`가 `application-prod.yml`의 현재·미래 기본값을 계속 상속해, 이 프로파일을 만든 이유 자체가 사라집니다. 중복되는 datasource·JPA·Flyway 12줄은 감수했습니다(`application-local.yml`도 같은 12줄을 이미 중복합니다).
+- `logback-spring.xml`의 JSON 로깅에 `dev`를 **의도적으로 포함**했습니다(`<springProfile name="prod,dev">`). 개발도 CloudWatch로 나가고 개발 환경의 존재 이유가 운영 배포 리허설이라, 운영용 CloudWatch Insights 쿼리를 개발에서 그대로 리허설할 수 있어야 합니다. 반대편 조건도 `!prod & !dev`로 함께 좁혔습니다 — 한쪽만 고치면 JSON과 콘솔 두 appender가 동시에 붙어 로그가 두 줄씩 찍힙니다.
+- 구글 폼 id는 **빈 문자열 리터럴**로 잠갔습니다(placeholder가 아닙니다). 키를 생략하면 base의 placeholder가 환경변수 값을 받아 개발 피드백이 운영 폼에 적재되는 경로가 실재했고, 실측으로 재현했습니다.
+
+**목표 상태 서술을 정정합니다.** "위 값을 YAML로 고정한다"는 5종 전부에 성립하지 않습니다. `dev` 프로파일이 YAML로 되찾는 것은 구글 폼 id 하나이고, Swagger 두 키와 Redis health는 `dev`가 `prod`를 상속하지 않아 base·Spring 기본값이 그대로 살아 **환경변수가 불필요해질 뿐 YAML에 적지는 않습니다**(둘 다 relaxed binding 직결이라, YAML에 적어도 환경변수가 남아 있으면 환경변수가 이깁니다). asset base URL과 `SENTRY_ENVIRONMENT`는 프로파일이 생겨도 환경변수로 남습니다.
+
+**전환 후 정리도 5종이 균등하지 않습니다.**
+
+| 환경변수 | 전환 후 | 이유 |
+| --- | --- | --- |
+| `MANYAK_ASSET_BASE_URL` | 유지 | 환경별로 다른 실값을 공급받아야 합니다. `dev` 프로파일 기본값(`https://dev-api.manyak.app`)은 잠금이 아니라 주입 부재에 대한 fail-safe입니다 |
+| `SENTRY_ENVIRONMENT` | 유지 | `server`만 보면 `dev` 프로파일 기본값이 `dev`라 없어도 되지만, **`ai` 컨테이너에는 반드시 필요합니다** — `manyak-ai`의 Langfuse 활성화 가드가 이 값을 봅니다. 두 컨테이너에 각각 `var.environment`로 배선돼 있어(`terraform/modules/compute-ecs/main.tf`) `server` 쪽을 지워도 `ai` 쪽은 남지만, 같은 값을 두 곳에서 같게 유지하는 편이 안전합니다 |
+| `MANYAK_GOOGLE_FORM_FEEDBACK_ID` | 중복 | `dev` 프로파일의 빈 문자열 리터럴이 이기므로 남아 있어도 무해합니다. "YAML이 정본"을 흐리지 않게 지우는 편이 낫습니다. 개발 전용 폼이 생겨 이 값에 실제 id를 넣게 되면, 리터럴이 이기므로 YAML을 함께 바꿔야 합니다 |
+| `SPRINGDOC_APIDOCS_ENABLED`·`SPRINGDOC_SWAGGERUI_ENABLED`·`MANAGEMENT_HEALTH_REDIS_ENABLED` | 중복 | `dev`는 `prod`를 상속하지 않아 base·Spring 기본값이 그대로 살아, 환경변수가 주던 값과 같아집니다 |
+
+**프로파일을 바꿔도 계속 필요한 환경변수는 따로 있습니다.** `MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`은 `application.yml`에 기본값이 없어 주입하지 않으면 기동에 실패합니다(DB 접속정보와 시크릿도 마찬가지입니다). 전환을 "이제 환경변수를 다 지워도 된다"로 읽으면 안 됩니다.
+
+Terraform은 프로파일을 변수로 받으므로 서버 릴리스 후 값 하나만 바꾸면 전환됩니다([§7-11](#7-11-미정주의-항목)).
 
 **DB만 EFS로 유지하고 캐시는 휘발로 둡니다.** Fargate 태스크의 컨테이너 저장소는 태스크가 사라지면 함께 사라지고, Fargate Spot은 임의 시점에 회수됩니다. `postgres` 데이터 디렉터리를 EFS 볼륨에 두면 배포·Spot 회수와 무관하게 계정·스토리가 유지됩니다. `redis`는 붙이지 않습니다 — 저장 대상이 refresh 토큰 위주라 초기화돼도 재로그인으로 회복되고, 볼륨을 하나 더 얹을 값어치가 없습니다.
 
@@ -778,7 +808,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
 | 개발 환경 구현            | 코드 완료·apply 전 | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). `terraform/envs/dev`·`modules/compute-ecs`가 작성됐고 `fmt`·`validate`·`plan`을 통과했습니다. **`apply`는 하지 않았습니다** — EFS access point uid/gid 999 + `PGDATA` 조합의 `initdb` 통과, 컨테이너 healthcheck 바이너리(`pg_isready`·`redis-cli`·`wget`) 실재 여부는 `apply` 전 확인 불가입니다. 실물 검증 후 이 행을 갱신합니다. |
 | 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 배선하지 않았습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 별도 티켓으로 둡니다. |
-| 개발 서버 런타임 프로파일 | 잠정      | 개발은 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). **목표 상태는 `manyak-server`에 `dev` 프로파일 신설(KNK-828)** 입니다 — 오버라이드 중 셋(구글 폼 id·asset base URL·Sentry 환경)은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이며, 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. |
+| 개발 서버 런타임 프로파일 | 코드 완료·전환 전 | 개발은 아직 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). `dev` 프로파일은 **코드가 완료됐고 머지 전**입니다(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)) — `application-dev.yml` 단독 작성, JSON 로깅에 `dev` 포함, 구글 폼 id 빈 문자열 잠금. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이며, 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. **순서를 뒤집으면 실패합니다** — 서버 릴리스 없이 Terraform 값만 먼저 바꾸면 `application-dev.yml`이 없는 이미지가 `dev`로 떠서 datasource가 비어 기동에 실패합니다. 전환 후에도 `MANYAK_ASSET_BASE_URL`·`SENTRY_ENVIRONMENT`는 남기고, 기본값 없는 3종(`MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`)은 계속 주입해야 합니다(§7-4). |
 | 개발 데이터 영속성        | 코드 완료·apply 전 | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 그 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. EFS access point·NFS 2049 SG 규칙·플랫폼 버전 `1.4.0`은 코드에 들어갔고, 실제 마운트와 `initdb` 동작은 `apply` 시 확인합니다. |
 | 개발 AI 장애의 false-green | 수용     | `ai`가 `essential = false`라 AI가 죽어도 태스크와 ALB 헬스는 정상으로 남고 스토리·채팅만 실패합니다(§7-4). 운영 Compose의 성질을 유지하려는 의도적 선택이며, 대신 개발 배포 검수에 AI health를 별도 게이트로 포함합니다. |
 | 개발 무중단 배포 검증     | 이월      | 개발은 단일 writer 제약으로 겹치는 롤링 교체를 쓸 수 없어 무중단 배포를 검증하지 못합니다. 운영은 DB가 RDS라 이 제약이 없으므로, 무중단 확인은 운영 Fargate 전환 검수 항목으로 넘깁니다. |
