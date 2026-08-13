@@ -251,7 +251,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 Amplitude 관련 변수는 **의도적으로 주입하지 않습니다.** 운영에서 켜지는 것은 프로파일이 아니라 user-data가 `.env`에 굽기 때문이며, 개발 태스크 정의에 넣지 않아 개발 이벤트가 운영 프로젝트로 가지 않게 합니다.
 
-**이 재사용은 잠정입니다.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례). `logback-spring.xml`의 `<springProfile name="prod">`도 의도가 아니라 부수 효과로 걸립니다. 목표 상태는 `manyak-server`에 **`dev` 프로파일을 신설해 위 값을 YAML로 고정**하고 환경변수는 환경별 값(DB URL·CORS·Sentry 환경)만 남기는 것입니다([§7-11](#7-11-미정주의-항목)). Terraform은 프로파일을 변수로 받으므로 서버 릴리스 후 값 하나만 바꾸면 전환됩니다.
+**이 재사용은 잠정입니다.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례). `logback-spring.xml`의 `<springProfile name="prod">`도 의도가 아니라 부수 효과로 걸립니다. 목표 상태는 `manyak-server`에 **`dev` 프로파일을 신설해 위 값을 YAML로 고정**하고 환경변수는 환경별 값(DB URL·CORS·Sentry 환경)만 남기는 것입니다(KNK-828, [§7-11](#7-11-미정주의-항목)). Terraform은 프로파일을 변수로 받으므로 서버 릴리스 후 값 하나만 바꾸면 전환됩니다.
 
 **DB만 EFS로 유지하고 캐시는 휘발로 둡니다.** Fargate 태스크의 컨테이너 저장소는 태스크가 사라지면 함께 사라지고, Fargate Spot은 임의 시점에 회수됩니다. `postgres` 데이터 디렉터리를 EFS 볼륨에 두면 배포·Spot 회수와 무관하게 계정·스토리가 유지됩니다. `redis`는 붙이지 않습니다 — 저장 대상이 refresh 토큰 위주라 초기화돼도 재로그인으로 회복되고, 볼륨을 하나 더 얹을 값어치가 없습니다.
 
@@ -778,7 +778,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
 | 개발 환경 구현            | 코드 완료·apply 전 | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). `terraform/envs/dev`·`modules/compute-ecs`가 작성됐고 `fmt`·`validate`·`plan`을 통과했습니다. **`apply`는 하지 않았습니다** — EFS access point uid/gid 999 + `PGDATA` 조합의 `initdb` 통과, 컨테이너 healthcheck 바이너리(`pg_isready`·`redis-cli`·`wget`) 실재 여부는 `apply` 전 확인 불가입니다. 실물 검증 후 이 행을 갱신합니다. |
 | 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 배선하지 않았습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 별도 티켓으로 둡니다. |
-| 개발 서버 런타임 프로파일 | 잠정      | 개발은 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). **목표 상태는 `manyak-server`에 `dev` 프로파일 신설**입니다 — 오버라이드 중 셋(구글 폼 id·asset base URL·Sentry 환경)은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다. 신설은 `manyak-server` 변경이 선행되며, Terraform은 프로파일을 변수로 받으므로 서버 릴리스 후 값 하나만 바꾸면 전환됩니다. |
+| 개발 서버 런타임 프로파일 | 잠정      | 개발은 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). **목표 상태는 `manyak-server`에 `dev` 프로파일 신설(KNK-828)** 입니다 — 오버라이드 중 셋(구글 폼 id·asset base URL·Sentry 환경)은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이며, 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. |
 | 개발 데이터 영속성        | 코드 완료·apply 전 | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 그 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. EFS access point·NFS 2049 SG 규칙·플랫폼 버전 `1.4.0`은 코드에 들어갔고, 실제 마운트와 `initdb` 동작은 `apply` 시 확인합니다. |
 | 개발 AI 장애의 false-green | 수용     | `ai`가 `essential = false`라 AI가 죽어도 태스크와 ALB 헬스는 정상으로 남고 스토리·채팅만 실패합니다(§7-4). 운영 Compose의 성질을 유지하려는 의도적 선택이며, 대신 개발 배포 검수에 AI health를 별도 게이트로 포함합니다. |
 | 개발 무중단 배포 검증     | 이월      | 개발은 단일 writer 제약으로 겹치는 롤링 교체를 쓸 수 없어 무중단 배포를 검증하지 못합니다. 운영은 DB가 RDS라 이 제약이 없으므로, 무중단 확인은 운영 Fargate 전환 검수 항목으로 넘깁니다. |
