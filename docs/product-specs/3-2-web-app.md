@@ -80,7 +80,7 @@ graph LR
     BFF -->|"API_BASE_URL로 그대로 전달 · 응답 스트리밍 통과"| Server["백엔드 API<br/>계약: 4-backend.md §4-3"]
 ```
 
-`API_BASE_URL`은 클라이언트 번들에 노출되지 않는 서버 전용 값입니다. 브라우저는 항상 동일 출처 `/api`만 호출합니다([§3-2-4](#3-2-4-bff-프록시토큰-세션)).
+`API_BASE_URL`은 클라이언트 번들에 노출되지 않는 서버 전용 값입니다. 브라우저는 항상 동일 출처 `/api`만 호출합니다([§3-2-4](#3-2-4-bff-프록시토큰-세션)). Orval 코드 생성도 Next.js 환경 변수 우선순위로 같은 값을 읽어 `${API_BASE_URL}/v3/api-docs`를 스펙 출처로 사용하므로, 런타임 프록시와 생성 계약이 서로 다른 백엔드를 조용히 가리키지 않습니다(KNK-832, 정본: `manyak-web/orval.config.ts`).
 
 > React Compiler를 사용하므로 `useMemo`, `useCallback`을 직접 작성하지 않습니다.
 
@@ -365,6 +365,10 @@ graph LR
 | 모바일 Chrome 최신          | 필수(e2e 기준)              |
 | 모바일 Safari 최신          | 필수                        |
 | 데스크톱 Chrome·Safari 최신 | 권장(모바일 셸 그대로 표시) |
+
+### 원격 이미지 최적화
+
+원격 이미지는 Next.js 이미지 최적화 허용 목록을 최소 경로로 제한합니다. Google 계정 이미지는 `lh3.googleusercontent.com`, 프로필 프리셋은 운영 `api.manyak.app/profile-presets/**`와 개발 `dev-api.manyak.app/profile-presets/**`, 스토리 썸네일은 `cdn.manyak.app/thumbnails/**`만 허용합니다. 개발 백엔드는 환경별 base URL을 `profile_image_url`에 전체 URL로 저장하므로, 개발 호스트가 빠지면 로그인은 성공해도 해당 사용자의 프로필 프리셋 렌더링이 Next.js에서 차단됩니다(KNK-388·KNK-827·KNK-832, 정본: `manyak-web/next.config.ts`).
 
 ### 인앱 브라우저 감지와 탈출 스킴 — `Phase 1 · 구현`(KNK-567·KNK-592·KNK-681)
 

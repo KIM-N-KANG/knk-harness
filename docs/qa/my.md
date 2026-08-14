@@ -35,6 +35,7 @@
 | MY-MENU-16   | P2  | 세션 판별 중(`loading`)                           | `/my` 진입 직후 관찰   | 닉네임·크레딧 카드 자리에 스켈레톤 표시(게스트 UI 깜빡임 없음)                                                          | 수동                                           | 구현(`profile-header`·`credit-balance-card`) |
 | MY-MENU-17   | P1  | 게스트/회원                                       | 피드백 메뉴 탭         | `/my/feedback`으로 이동                                                                                                 | ◐ e2e `my/my-page`(링크 표시만)                | US-7-1, §3-2-3                                 |
 | MY-MENU-18   | P1  | 게스트/회원                                       | 테마 변경 메뉴 반복 탭      | 시스템 설정 → 라이트 모드 → 다크 모드 순으로 순환. 왼쪽 아이콘(모니터·해·달)과 오른쪽 문구가 함께 바뀌고 테마 즉시 적용 | ✅ e2e `my/my-page`                            | 구현(`theme-menu-item`)                      |
+| MY-MENU-19   | P2  | 회원, base64 썸네일 없음·세션 이미지가 환경별 프로필 프리셋 URL | 프로필 이미지 확인 | 운영 `api.manyak.app`과 개발 `dev-api.manyak.app`의 `/profile-presets/**` 이미지가 원형으로 렌더링 | 수동 | §3-2-5 원격 이미지 최적화, KNK-832 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 

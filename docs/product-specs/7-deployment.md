@@ -250,6 +250,8 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 걷어낸 셋은 프로파일이 대체했습니다. `MANYAK_GOOGLE_FORM_FEEDBACK_ID`는 프로파일이 빈 문자열 리터럴로 잠그고, `SPRINGDOC_*` 두 키와 `MANAGEMENT_HEALTH_REDIS_ENABLED`는 `dev`가 `prod`를 상속하지 않아 base·Spring 기본값이 살아납니다. **구글 폼 id는 환경변수를 다시 넣으면 안 됩니다** — base의 `${MANYAK_GOOGLE_FORM_FEEDBACK_ID:}`는 relaxed binding이 아니라 placeholder라, 값이 남아 있으면 그걸 받아 옵니다.
 
+`MANYAK_ASSET_BASE_URL`의 환경 분리는 웹 이미지 허용 목록과 한 쌍입니다. `manyak-web/next.config.ts`는 운영·개발 호스트 모두에서 `/profile-presets/**`만 허용하며, 새 API 환경을 추가할 때는 해당 호스트도 함께 등록해야 합니다. 그렇지 않으면 백엔드가 정상 URL을 반환해도 Next.js 이미지 최적화 계층이 프로필 이미지를 거부합니다(KNK-827·KNK-832).
+
 **이 차이는 두 경로에서 나옵니다.**
 
 | 경로 | 해당 환경변수 | YAML로 잠글 수 있나 |
@@ -700,7 +702,7 @@ docker compose ps
 
 ### 로컬 환경변수 기준
 
-- `API_BASE_URL`은 web 컨테이너가 server 컨테이너를 호출하는 URL입니다. Compose 내부 기본값은 `http://manyak-server:8080`입니다.
+- `API_BASE_URL`은 web 컨테이너가 server 컨테이너를 호출하는 URL입니다. Compose 내부 기본값은 `http://manyak-server:8080`입니다. `manyak-web`의 `pnpm api:generate`도 `.env.local`에서 같은 값을 읽어 `${API_BASE_URL}/v3/api-docs`를 사용하므로, 공용 개발 서버를 지정하면 로컬 server 없이 생성할 수 있습니다. 이때 대상 환경에서 OpenAPI 문서가 공개되어 있어야 합니다(KNK-832).
 - `MANYAK_AI_BASE_URL`은 server가 AI를 호출하는 URL입니다. Compose 내부 기본값은 `http://manyak-ai:8000`입니다.
 - `MANYAK_AI_CHAT_STUB=false`가 통합 실행 기본값입니다. AI 없이 server만 빠르게 확인하려면 `true`로 바꿀 수 있습니다.
 - `NEXT_PUBLIC_*` 값은 web 이미지 빌드 시점에 반영됩니다. `manyak-infra` Compose 실행 시점에는 주입하지 않습니다.
