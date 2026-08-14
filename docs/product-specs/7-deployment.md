@@ -112,7 +112,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 운영 ECR을 공유하지 않는 이유: ECR lifecycle이 `tagStatus=any, imageCountMoreThan=10`이라 개발 푸시가 **운영 이미지를 만료**시킵니다.
 - GHCR 패키지가 비공개라 태스크 정의에 `repositoryCredentials`가 필요합니다. `read:packages` PAT를 담는 전용 시크릿(`manyak/dev/ghcr-pull`)을 앱 시크릿과 분리해 둡니다.
 - `dev` 태그는 가변이라 태스크 정의만으로는 어느 커밋이 도는지 알 수 없습니다. 특정 커밋을 고정해 재현할 때는 `<short-sha>` 태그를 씁니다(GHCR이 둘 다 발행).
-- 배포 트리거는 **수동 `aws ecs update-service --force-new-deployment`** 입니다. GitHub Actions 자동 배포는 아직 배선하지 않았습니다([§7-11](#7-11-미정주의-항목)).
+- 배포 트리거는 **수동 `aws ecs update-service --force-new-deployment`** 입니다. GitHub Actions 자동 배포는 아직 없습니다(KNK-829, [§7-11](#7-11-미정주의-항목)).
 
 ### 공개 엔드포인트
 
@@ -863,7 +863,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
 | 개발 환경 구현            | 완료      | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 2026-08-14 `apply` 완료, `https://dev-api.manyak.app` 동작 확인. EFS access point uid/gid 70에서 `initdb` 통과, 컨테이너 4개 `HEALTHY`, 실제 API 200까지 검수했습니다([§7-7](#7-7-배포-절차)). |
-| 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 배선하지 않았습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 별도 티켓으로 둡니다. |
+| 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 아직 없습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 KNK-829로 분리했습니다. |
 | 개발 서버 런타임 프로파일 | 코드 완료·전환 전 | 개발은 아직 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). `dev` 프로파일은 **`manyak-server` `dev` 브랜치에 머지됐습니다**(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)) — `application-dev.yml` 단독 작성, JSON 로깅에 `dev` 포함, 구글 폼 id 빈 문자열 잠금. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이고, **남은 것은 뒤의 둘**입니다. 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. **순서를 뒤집으면 실패합니다** — 서버 릴리스 없이 Terraform 값만 먼저 바꾸면 `application-dev.yml`이 없는 이미지가 `dev`로 떠서 datasource가 비어 기동에 실패합니다. 전환 후에도 `MANYAK_ASSET_BASE_URL`·`SENTRY_ENVIRONMENT`는 남기고, 기본값 없는 3종(`MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`)은 계속 주입해야 합니다(§7-4). |
 | 개발 데이터 영속성        | 완료      | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 2026-08-14 apply에서 마운트와 `initdb`, Flyway 마이그레이션 적용까지 확인했습니다. 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. **`MANYAK_DB_PASSWORD`는 첫 기동 뒤 바꿀 수 없습니다**([§7-7](#7-7-배포-절차)). |
 | 개발 AI 장애의 false-green | 수용     | `ai`가 `essential = false`라 AI가 죽어도 태스크와 ALB 헬스는 정상으로 남고 스토리·채팅만 실패합니다(§7-4). 운영 Compose의 성질을 유지하려는 의도적 선택이며, 대신 개발 배포 검수에 AI health를 별도 게이트로 포함합니다. |
