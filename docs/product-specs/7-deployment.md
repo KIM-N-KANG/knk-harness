@@ -2,7 +2,7 @@
 
 이 문서는 마냑 서비스의 배포 단위, 운영·개발 인프라, CI/CD, 런타임 설정, 검수와 롤백 기준을 정의합니다. 운영·개발 배포 기준은 `manyak-terraform`, 로컬 통합 실행 기준은 `manyak-infra`, 서비스별 빌드와 배포 트리거는 `manyak-server`, `manyak-ai`, `manyak-web`, `manyak-android` 레포지토리의 현재 구현을 따릅니다.
 
-개발 환경(AWS)은 **Terraform 코드까지 작성됐고 아직 `apply`하지 않았습니다**(KNK-827, [manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 따라서 아래 개발 항목은 코드에 근거가 있는 값이지만 **실물로 검증되지 않았습니다.** `apply` 전까지 확인할 수 없는 항목은 [§7-11](#7-11-미정주의-항목)에 따로 적었습니다.
+개발 환경(AWS)은 **2026-08-14 `apply`를 완료해 `https://dev-api.manyak.app`이 실제로 동작합니다**(KNK-827, [manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 검수 결과와 최초 구축에서 밟은 함정은 [§7-7](#7-7-배포-절차)에 있습니다.
 
 ```text
 §7-1  목적과 범위
@@ -11,7 +11,7 @@
 §7-4  인프라 아키텍처
 §7-5  이미지 빌드와 CI/CD
 §7-6  런타임 설정과 시크릿
-§7-7  운영 배포 절차
+§7-7  배포 절차
 §7-8  로컬·통합 실행
 §7-9  검수, 관측, 롤백
 §7-10 Jira·PR 추적 근거
@@ -20,7 +20,7 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v1.2                                                                                                                                                                |
+| 버전      | v1.3                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
 | 수정일    | 2026-08-14                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
@@ -47,7 +47,7 @@
 - 서비스 이미지 빌드와 레지스트리: GHCR, ECR, multi-arch 이미지 태그
 - 운영 배포 파이프라인: `manyak-server`와 `manyak-ai`의 `main` 배포
 - 프론트엔드 이미지 릴리스: `manyak-web`의 GHCR `dev` 이미지와 tag 기반 release 이미지
-- 개발 AWS 인프라(`Phase 2 · 계획`): ECS Fargate, EFS, ALB, ACM, Cloudflare DNS, ECR, Secrets Manager
+- 개발 AWS 인프라(`Phase 2 · 구현`): ECS Fargate, EFS, ALB, ACM, Cloudflare DNS, ECR, Secrets Manager
 - 로컬·통합 실행: `manyak-infra` Docker Compose
 - 검수, 관측, 롤백, 시크릿 회전 기준
 - 배포 관련 Jira 키와 GitHub PR 근거
@@ -70,7 +70,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 운영 배포 동작은 `manyak-terraform`의 운영 Terraform, SSM 문서, `deploy.sh`, `docker-compose.prod.yml`을 우선 기준으로 씁니다.
 - 서비스별 이미지 빌드와 배포 트리거는 각 서비스 레포의 GitHub Actions workflow와 Dockerfile을 기준으로 씁니다.
 - 로컬·통합 실행은 `manyak-infra`의 Docker Compose와 `.env.example`을 기준으로 씁니다.
-- 개발 환경은 **`terraform apply`로 실물이 생기기 전까지** `Phase 2 · 계획`으로 표기합니다. 인프라는 코드가 병합돼도 apply 전에는 존재하지 않으므로, 병합만으로 `구현`으로 올리지 않습니다. 계획값을 구현 사실처럼 적지 않고, 구현이 계획과 갈라지면 문서를 사후에 맞추지 말고 차이를 [§7-11](#7-11-미정주의-항목)에 기록합니다.
+- 인프라 항목은 **`terraform apply`로 실물이 생기기 전까지** `계획`으로 표기합니다. 코드가 병합돼도 apply 전에는 존재하지 않으므로 병합만으로 `구현`으로 올리지 않고, 계획값을 구현 사실처럼 적지 않습니다. 구현이 계획과 갈라지면 문서를 사후에 맞추지 말고 차이를 [§7-11](#7-11-미정주의-항목)에 기록합니다.
 - 문서, PR 설명, 코드가 다르면 병합된 코드를 기준으로 하고 차이는 [§7-11](#7-11-미정주의-항목)에 기록합니다.
 - 실제 secret 값, 로컬 전용 설정, Terraform state, 사용자 입력 원문은 예시에도 넣지 않습니다.
 - 운영 웹 호스팅처럼 구현 근거가 없는 영역은 추정하지 않고 `미정`으로 표기합니다.
@@ -80,7 +80,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | 레포지토리         | 배포 책임                                             | 주요 근거                                                                           |
 | ------------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `knk-harness`      | 제품·스펙 문서 정본                                   | `docs/product-specs/`                                                               |
-| `manyak-terraform` | 운영·개발 AWS IaC와 운영 compose 원본                 | `terraform/envs/prod`, `terraform/modules`, `docker-compose.prod.yml`. 개발은 `terraform/envs/dev`(`Phase 2 · 계획`)  |
+| `manyak-terraform` | 운영·개발 AWS IaC와 운영 compose 원본                 | `terraform/envs/prod`, `terraform/modules`, `docker-compose.prod.yml`. 개발은 `terraform/envs/dev`(`Phase 2 · 구현`)  |
 | `manyak-infra`     | 로컬·통합 Docker Compose 실행                         | `docker-compose.yml`, `.env.example`, `README.md`                                   |
 | `manyak-server`    | 백엔드 이미지 빌드, 운영 server 배포, API 헬스 스모크 | `.github/workflows/docker-image.yml`, `Dockerfile`, `application-prod.yml`          |
 | `manyak-ai`        | AI 이미지 빌드, 운영 AI 배포, AI 헬스 게이트          | `.github/workflows/docker-image.yml`, `Dockerfile`, `src/api/v1/health.py`          |
@@ -93,7 +93,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 운영 `server`와 `ai` 컨테이너 이미지는 각 서비스 레포의 `main` push가 ECR로 푸시하고 SSM으로 배포합니다.
 - 운영 `web` 호스팅은 현재 확인한 `manyak-terraform`에 정의되어 있지 않습니다. `manyak-web`은 GHCR 이미지 발행까지만 코드로 정의합니다.
 - 로컬 통합 실행은 `manyak-infra`가 GHCR `dev` 이미지를 pull해 실행합니다. 서비스 소스코드는 이 레포에서 빌드하지 않습니다.
-- 개발 AWS 환경도 `manyak-terraform`이 소유합니다(`Phase 2 · 계획`). 운영과 같은 레포·같은 모듈을 쓰고 state만 분리합니다(S3 backend key `dev/terraform.tfstate`, 버킷은 운영과 공유). 별도 인프라 레포를 만들지 않습니다 — 모듈 하나를 고칠 때 PR이 둘로 갈라지는 비용을 피하기 위해서입니다.
+- 개발 AWS 환경도 `manyak-terraform`이 소유합니다(`Phase 2 · 구현`). 운영과 같은 레포·같은 모듈을 쓰고 state만 분리합니다(S3 backend key `dev/terraform.tfstate`, 버킷은 운영과 공유). 별도 인프라 레포를 만들지 않습니다 — 모듈 하나를 고칠 때 PR이 둘로 갈라지는 비용을 피하기 위해서입니다.
 - `manyak-infra`는 개발 AWS 환경이 생겨도 유지합니다. 둘은 대체 관계가 아니며 경계는 [§7-8](#7-8-로컬통합-실행)에 있습니다.
 - `manyak-android`는 현재 CI(정적 검사·단위 테스트·debug APK 조립)까지만 코드로 정의합니다. Play Store 배포, 앱 서명, release 빌드·AAB, 내부 테스트 트랙, 운영 배포·롤백 방식은 코드에 근거가 없어 미정입니다([§7-11](#7-11-미정주의-항목)).
 
@@ -102,7 +102,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | 환경              | 목적                    | 배포 단위                                  | 레지스트리·태그                               | 실행 위치                             |
 | ----------------- | ----------------------- | ------------------------------------------ | --------------------------------------------- | ------------------------------------- |
 | 운영 `prod`       | 실제 사용자 API·AI 운영 | `manyak-server`, `manyak-ai`               | ECR `latest`, `<short-sha>`                   | AWS EC2의 Docker Compose              |
-| 개발 `dev`(AWS)   | 클라이언트가 붙는 공용 개발 API, 배포 파이프라인 리허설 | `manyak-server`, `manyak-ai` | **GHCR `dev`**(재현이 필요하면 `<short-sha>`) | AWS ECS Fargate (`Phase 2 · 계획`)    |
+| 개발 `dev`(AWS)   | 클라이언트가 붙는 공용 개발 API, 배포 파이프라인 리허설 | `manyak-server`, `manyak-ai` | **GHCR `dev`**(재현이 필요하면 `<short-sha>`) | AWS ECS Fargate (`Phase 2 · 구현`)    |
 | 개발 이미지 `dev` | 통합 실행과 개발 검증   | `manyak-server`, `manyak-ai`, `manyak-web` | GHCR `dev`, `<short-sha>`                     | `manyak-infra` Compose 또는 개별 실행 |
 | 웹 릴리스 이미지  | 프론트엔드 버전 릴리스  | `manyak-web`                               | GHCR `{version}`, `{major}.{minor}`, `latest` | 현재 운영 호스팅 리소스는 미정        |
 | 로컬·통합         | 전체 스택 수동 검증     | server, web, ai, postgres, redis           | GHCR `dev`, Docker Hub DB·Redis               | 개발자 Docker Compose                 |
@@ -119,7 +119,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | 엔드포인트                                     | 소유 서비스     | 용도                                    | 공개 여부                    |
 | ---------------------------------------------- | --------------- | --------------------------------------- | ---------------------------- |
 | `https://api.manyak.app`                       | `manyak-server` | 운영 백엔드 API와 헬스체크              | 공개                         |
-| `https://dev-api.manyak.app`                   | `manyak-server` | 개발 백엔드 API와 헬스체크(`Phase 2 · 계획`) | 공개                    |
+| `https://dev-api.manyak.app`                   | `manyak-server` | 개발 백엔드 API와 헬스체크(`Phase 2 · 구현`) | 공개                    |
 | `http://ai:8000`                               | `manyak-ai`     | server에서 호출하는 compose 내부 AI API | 비공개                       |
 | `https://manyak.app`, `https://www.manyak.app` | `manyak-web`    | 프론트엔드 origin으로 CORS 허용         | 운영 호스팅 스택은 현재 미정 |
 
@@ -209,7 +209,7 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 | 권한        | EC2 인스턴스 role에 해당 버킷 읽기 권한 추가(presigned 발급 권한 불필요)                                                                                                                                                                                                                           |
 | 소유        | S3·CloudFront·IAM 리소스 정의는 `manyak-terraform` 소유. 이 문서는 경계와 경로만 고정                                                                                                                                                                                                              |
 
-### 개발 환경 인프라 — `Phase 2 · 계획`(KNK-825)
+### 개발 환경 인프라 — `Phase 2 · 구현`(KNK-825)
 
 - **무엇.** 클라이언트가 상시 붙을 수 있는 개발 API를 ECS Fargate로 만듭니다. 운영과 같은 `manyak-terraform`이 소유하며 state만 분리합니다(`terraform/envs/dev`, key `dev/terraform.tfstate`).
 - **왜.** 현재 통합 실행 수단은 `manyak-infra` 로컬 Compose뿐이라 web·android가 붙을 공용 엔드포인트가 없고, 운영 배포를 리허설할 곳도 없습니다. 동시에 운영 컴퓨트는 `user_data_replace_on_change=true` 때문에 설정 한 줄을 바꿔도 EC2 교체와 짧은 다운타임을 수반하며(위 `컴퓨트와 엣지`), 배포 경로가 `deploy.sh`와 전용 SSM 문서라는 자체 제작 기계입니다.
@@ -297,7 +297,7 @@ EFS를 붙일 때 함께 필요한 것은 세 가지입니다.
 
 이 제약은 **개발에만 해당합니다.** 운영은 DB가 태스크 밖(RDS)에 있어 겹치는 롤링 교체에 걸림돌이 없습니다. 따라서 개발 환경은 ECS 배포 기계 자체는 검증하지만 **무중단 롤링 교체는 검증하지 못하며**, 그 확인은 운영 전환 시점으로 넘어갑니다.
 
-### 개발 환경의 검증 경계 — `Phase 2 · 계획`
+### 개발 환경의 검증 경계 — `Phase 2 · 구현`
 
 | 구분           | 항목                                                                                                                                                                                    |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -519,7 +519,9 @@ AI 모델 세 값은 공용 `.env`가 아니라 `/opt/manyak/.env.ai`에 기록�
 | `STORYLINES_MODEL` | ai | SSM Parameter Store `/manyak/prod/ai/storylines-model` |
 | `CHAT_MODEL` | ai | SSM Parameter Store `/manyak/prod/ai/chat-model` |
 
-## 7-7. 운영 배포 절차
+## 7-7. 배포 절차
+
+이 절은 운영 절차를 기준으로 씁니다. 개발 환경 고유 절차는 마지막의 `개발 환경 최초 구축`에 있습니다.
 
 ### Terra 컴파일 전환과 복구 완료(KNK-803·805·807·808·809·813·814)
 
@@ -577,13 +579,67 @@ AI 모델 세 값은 공용 `.env`가 아니라 `/opt/manyak/.env.ai`에 기록�
 2. release tag `v*`를 push하면 `release.yml`이 GHCR release 이미지를 빌드합니다.
 3. 현재 이 문서 기준으로 운영 웹 호스팅 반영 절차는 코드화되어 있지 않습니다. 별도 호스팅 플랫폼 또는 인프라 문서가 정해지면 이 절차를 갱신합니다.
 
+### 개발 환경 최초 구축 — `Phase 2 · 구현`(KNK-827, 2026-08-14 완료)
+
+시크릿이 빈 상태로 태스크가 뜨면 조용한 재시도 루프에 빠지므로 **2단계로 나눠 올립니다.** `desired_count` 기본값이 `0`인 이유입니다.
+
+```sh
+cd terraform/envs/dev
+# backend.hcl 과 terraform.tfvars 를 로컬에 작성(둘 다 커밋 금지)
+terraform init -reconfigure -backend-config=backend.hcl
+
+terraform apply -var desired_count=0          # ① 인프라만
+# ② 시크릿 2개 주입 — manyak/dev/ghcr-pull, manyak/dev/app
+terraform apply -var desired_count=1          # ③ 태스크 기동
+```
+
+`manyak/dev/app`은 `put-secret-value`가 전체를 덮어쓰므로 **키 12개를 모두 포함**해야 합니다. 하나라도 빠지면 ECS가 시크릿 해석에 실패해 태스크가 시작되지 않습니다. 필수는 `MANYAK_DB_PASSWORD`·`MANYAK_AUTH_JWT_SECRET`·`DEEPSEEK_API_KEY`·`OPENAI_API_KEY`이고, 나머지는 빈 값으로 두어도 기동합니다.
+
+**`MANYAK_DB_PASSWORD`는 첫 기동 뒤 바꿀 수 없습니다.** `initdb`가 이 값으로 DB를 만들고 EFS에 영속하므로, 이후 시크릿만 바꾸면 server는 새 비밀번호로 접속하는데 DB는 옛 비밀번호라 인증이 깨집니다. 바꾸려면 EFS 데이터를 지우고 다시 초기화해야 합니다.
+
+**OTLP 메트릭 2개는 개발에서 비워 둡니다.** 채우면 개발 메트릭이 운영 Grafana Cloud로 전송됩니다.
+
+#### 최초 구축에서 실제로 걸린 것
+
+세 가지 모두 `plan`과 코드 리뷰로는 드러나지 않고 `apply`에서만 나타났습니다.
+
+| 증상 | 원인 | 대응 |
+| --- | --- | --- |
+| `must provide exactly one of "api_key", "api_token"` | `terraform.tfvars` 미작성. Cloudflare provider 설정 단계에서 중단(리소스 생성 없음) | 운영과 같은 zone 토큰을 `terraform.tfvars`에 작성 |
+| `PutClusterCapacityProviders ... Unable to assume the service linked role` | ECS 클러스터 생성이 서비스 연결 역할을 만들었지만 IAM 전파 전에 capacity provider 연결이 들어감 | **재실행하면 통과.** 계정에서 ECS를 처음 쓸 때만 발생하므로 코드에 대기 리소스를 넣지 않았습니다 |
+| 태스크는 `RUNNING`인데 `ai` 컨테이너만 `STOPPED` | `OPENAI_API_KEY` 51번째 문자가 하이픈이 아니라 em dash(`U+2014`). 편집기 자동 서식 변환 | 키 재주입 후 `update-service --force-new-deployment`. 키는 평문 편집기로만 다룹니다 |
+
+세 번째는 **[§7-4](#7-4-인프라-아키텍처)가 경고한 false-green이 그대로 재현된 사례**입니다. `ai`가 `essential = false`라 태스크와 ALB 헬스는 정상으로 남았고, 컨테이너 상태를 따로 보지 않았다면 정상 배포로 판정했을 것입니다. KNK-813의 기동 검사가 잘못된 키를 사용자 요청 시점이 아니라 기동 시점에 잡아 준 결과이기도 합니다.
+
+#### 최초 구축 검수 결과(2026-08-14)
+
+| 항목 | 결과 |
+| --- | --- |
+| `https://dev-api.manyak.app/actuator/health` | 200 `{"status":"UP"}`, TLS 검증 통과 |
+| HTTP → HTTPS | 301 리다이렉트 |
+| ALB 타깃 | `healthy` |
+| 컨테이너 4개 | `postgres`·`redis`·`server`·`ai` 모두 `HEALTHY` |
+| EFS + `initdb` | access point uid/gid 70에서 초기화 성공, Flyway 마이그레이션 적용 |
+| server → AI | 태스크 내 `localhost:8000` 헬스 200 |
+| 실제 API | `GET /api/v1/stories/simple/tags` 200(DB 조회 경로 확인) |
+| Swagger | 개발 200 / 운영 404 — `prod` 프로파일 재사용 오버라이드가 운영에 회귀를 만들지 않음 |
+
+#### 개발 환경 이미지 갱신
+
+`manyak-server`·`manyak-ai`를 `dev`에 병합하면 GHCR `dev` 태그는 갱신되지만 **개발 환경에 자동 반영되지 않습니다.** 수동으로 교체합니다.
+
+```sh
+aws ecs update-service --cluster manyak-dev --service manyak-dev \
+  --force-new-deployment --region ap-northeast-2
+```
+
 ## 7-8. 로컬·통합 실행
 
 `manyak-infra`는 GHCR에 publish된 `dev` 이미지를 실행하는 통합 환경입니다. 서비스 소스코드를 빌드하지 않습니다.
 
 **`manyak-infra`는 개발 AWS 환경([§7-4](#7-4-인프라-아키텍처))이 생겨도 폐기하지 않습니다.** 둘은 대체 관계가 아닙니다.
 
-| 구분        | `manyak-infra` 로컬 Compose                    | 개발 환경(AWS, `Phase 2 · 계획`)                          |
+| 구분        | `manyak-infra` 로컬 Compose                    | 개발 환경(AWS, `Phase 2 · 구현`)                          |
 | ----------- | ---------------------------------------------- | --------------------------------------------------------- |
 | 포함 서비스 | server, web, ai, postgres, redis, prometheus   | server, ai (+ 컨테이너 postgres·redis)                    |
 | `manyak-web` | 포함                                          | 미포함 — 운영과 마찬가지로 AWS에 web 리소스가 없습니다     |
@@ -806,10 +862,10 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | Terraform apply 자동화    | 미정      | 현재 `manyak-terraform`에는 GitHub Actions apply workflow가 없습니다. 운영 apply는 수동 절차와 plan 리뷰를 기준으로 합니다.                                                         |
 | Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
-| 개발 환경 구현            | 코드 완료·apply 전 | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). `terraform/envs/dev`·`modules/compute-ecs`가 작성됐고 `fmt`·`validate`·`plan`을 통과했습니다. **`apply`는 하지 않았습니다** — EFS access point uid/gid 999 + `PGDATA` 조합의 `initdb` 통과, 컨테이너 healthcheck 바이너리(`pg_isready`·`redis-cli`·`wget`) 실재 여부는 `apply` 전 확인 불가입니다. 실물 검증 후 이 행을 갱신합니다. |
+| 개발 환경 구현            | 완료      | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 2026-08-14 `apply` 완료, `https://dev-api.manyak.app` 동작 확인. EFS access point uid/gid 70에서 `initdb` 통과, 컨테이너 4개 `HEALTHY`, 실제 API 200까지 검수했습니다([§7-7](#7-7-배포-절차)). |
 | 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 배선하지 않았습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 별도 티켓으로 둡니다. |
 | 개발 서버 런타임 프로파일 | 코드 완료·전환 전 | 개발은 아직 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). `dev` 프로파일은 **`manyak-server` `dev` 브랜치에 머지됐습니다**(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)) — `application-dev.yml` 단독 작성, JSON 로깅에 `dev` 포함, 구글 폼 id 빈 문자열 잠금. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이고, **남은 것은 뒤의 둘**입니다. 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. **순서를 뒤집으면 실패합니다** — 서버 릴리스 없이 Terraform 값만 먼저 바꾸면 `application-dev.yml`이 없는 이미지가 `dev`로 떠서 datasource가 비어 기동에 실패합니다. 전환 후에도 `MANYAK_ASSET_BASE_URL`·`SENTRY_ENVIRONMENT`는 남기고, 기본값 없는 3종(`MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`)은 계속 주입해야 합니다(§7-4). |
-| 개발 데이터 영속성        | 코드 완료·apply 전 | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 그 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. EFS access point·NFS 2049 SG 규칙·플랫폼 버전 `1.4.0`은 코드에 들어갔고, 실제 마운트와 `initdb` 동작은 `apply` 시 확인합니다. |
+| 개발 데이터 영속성        | 완료      | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 2026-08-14 apply에서 마운트와 `initdb`, Flyway 마이그레이션 적용까지 확인했습니다. 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. **`MANYAK_DB_PASSWORD`는 첫 기동 뒤 바꿀 수 없습니다**([§7-7](#7-7-배포-절차)). |
 | 개발 AI 장애의 false-green | 수용     | `ai`가 `essential = false`라 AI가 죽어도 태스크와 ALB 헬스는 정상으로 남고 스토리·채팅만 실패합니다(§7-4). 운영 Compose의 성질을 유지하려는 의도적 선택이며, 대신 개발 배포 검수에 AI health를 별도 게이트로 포함합니다. |
 | 개발 무중단 배포 검증     | 이월      | 개발은 단일 writer 제약으로 겹치는 롤링 교체를 쓸 수 없어 무중단 배포를 검증하지 못합니다. 운영은 DB가 RDS라 이 제약이 없으므로, 무중단 확인은 운영 Fargate 전환 검수 항목으로 넘깁니다. |
 | 개발 환경 데이터 계층     | 의도된 격차 | 개발은 컨테이너 `postgres`·`redis`를 써서 RDS·ElastiCache 고유 동작을 재현하지 않습니다(§7-4 검증 경계). 관리형 서비스 관련 변경은 개발 통과를 근거로 삼지 않습니다. RDS 경로까지 검증이 필요해지면 개발에 관리형 DB를 붙이는 비용을 다시 판단합니다. |
