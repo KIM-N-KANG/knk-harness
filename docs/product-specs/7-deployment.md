@@ -20,7 +20,7 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v1.3                                                                                                                                                                |
+| 버전      | v1.4                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
 | 수정일    | 2026-08-14                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
@@ -112,7 +112,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 운영 ECR을 공유하지 않는 이유: ECR lifecycle이 `tagStatus=any, imageCountMoreThan=10`이라 개발 푸시가 **운영 이미지를 만료**시킵니다.
 - GHCR 패키지가 비공개라 태스크 정의에 `repositoryCredentials`가 필요합니다. `read:packages` PAT를 담는 전용 시크릿(`manyak/dev/ghcr-pull`)을 앱 시크릿과 분리해 둡니다.
 - `dev` 태그는 가변이라 태스크 정의만으로는 어느 커밋이 도는지 알 수 없습니다. 특정 커밋을 고정해 재현할 때는 `<short-sha>` 태그를 씁니다(GHCR이 둘 다 발행).
-- 배포 트리거는 **수동 `aws ecs update-service --force-new-deployment`** 입니다. GitHub Actions 자동 배포는 아직 없습니다(KNK-829, [§7-11](#7-11-미정주의-항목)).
+- 배포 트리거는 **`dev` 병합 시 GitHub Actions 자동 배포**입니다(KNK-829). 각 레포 워크플로가 `:dev` 승격 후 개발 ECS 서비스에 새 배포를 걸고 배포 완료·컨테이너 health·엔드포인트까지 확인합니다([§7-7](#7-7-배포-절차)).
 
 ### 공개 엔드포인트
 
@@ -237,21 +237,22 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 **컨테이너를 태스크 하나에 모으는 이유.** ECS `awsvpc` 네트워킹에서 태스크를 나누면 Compose 서비스명 DNS가 존재하지 않습니다. 운영 Compose는 `MANYAK_AI_BASE_URL: http://ai:8000`을 쓰고 "`localhost` 아님"을 주석으로 못박고 있는데(`../manyak-terraform/docker-compose.prod.yml`), 이 값을 그대로 Fargate 별도 태스크에 옮기면 이름이 풀리지 않습니다. server 헬스체크는 AI에 연결하지 않고 뜨므로(WebClient 지연 연결) **ALB 헬스는 초록인데 스토리·채팅 호출만 전부 실패하는 상태**가 됩니다. 태스크를 나눌 경우 Service Connect 또는 Cloud Map과 server SG → ai SG 규칙이 추가로 필요하므로, 개발은 태스크 1개로 묶고 `localhost`를 씁니다. AI 주소는 운영과 달라지므로 환경변수로 주입합니다.
 
-**런타임 프로파일 — `prod` 잠정 재사용, `dev` 프로파일은 코드 완료·전환 전.** `manyak-server`의 기본 프로파일은 `local`입니다(`application.yml`의 `spring.profiles.default: local`). 프로파일을 주지 않으면 채팅·스토리 AI 스텁이 모두 켜지고(`application-local.yml`의 `stub: true`), 더미 JWT 서명 키와 `/actuator/prometheus` 무인증 노출이 따라옵니다 — **공개된 개발 엔드포인트가 스텁으로 응답하면서 헬스는 정상으로 보입니다.**
+**런타임 프로파일 — `dev` 단독 프로파일(2026-08-14 전환 완료, KNK-830).** `manyak-server`의 기본 프로파일은 `local`입니다(`application.yml`의 `spring.profiles.default: local`). 프로파일을 주지 않으면 채팅·스토리 AI 스텁이 모두 켜지고(`application-local.yml`의 `stub: true`), 더미 JWT 서명 키와 `/actuator/prometheus` 무인증 노출이 따라옵니다 — **공개된 개발 엔드포인트가 스텁으로 응답하면서 헬스는 정상으로 보입니다.**
 
-현재 프로파일은 `local`과 `prod` 둘뿐이라 개발은 `prod`를 재사용하고 차이를 환경변수로 덮습니다. `@Profile` 애노테이션은 코드에 하나도 없어 프로파일은 YAML만 갈아끼우고, 스텁 빈은 `@ConditionalOnProperty(havingValue = "false", matchIfMissing = true)`라 실 클라이언트가 기본입니다. 환경변수는 프로파일 YAML보다 우선순위가 높아 아래 오버라이드가 소스 변경 없이 성립합니다.
+`application-dev.yml`은 **`prod`를 상속하지 않는 단독 프로파일**입니다. `@Profile` 애노테이션은 코드에 하나도 없어 프로파일은 YAML만 갈아끼우고, 스텁 빈은 `@ConditionalOnProperty(havingValue = "false", matchIfMissing = true)`라 실 클라이언트가 기본입니다.
 
-| 환경변수 | 값 | 덮지 않으면 |
+전환 전에는 `prod`를 재사용하며 환경변수 5종으로 덮었고, 전환 후 **태스크 정의에 남는 것은 둘뿐**입니다.
+
+| 환경변수 | 값 | 남는 이유 |
 | --- | --- | --- |
-| `SPRINGDOC_APIDOCS_ENABLED`·`SPRINGDOC_SWAGGERUI_ENABLED` | `true` | 운영이 비공개화한 Swagger가 개발에서도 꺼져 클라이언트 개발자가 API 문서를 못 봅니다 |
-| `MANYAK_GOOGLE_FORM_FEEDBACK_ID` | `""` | **개발 피드백이 운영 구글 폼에 적재됩니다**(기본값이 실제 운영 폼 id) |
-| `MANYAK_ASSET_BASE_URL` | `https://dev-api.manyak.app` | **개발 가입자의 `profile_image_url`에 운영 주소가 영구 저장됩니다**(전체 URL을 DB에 기록) |
-| `MANAGEMENT_HEALTH_REDIS_ENABLED` | `true` | 운영이 배포 사정으로 끈 Redis health가 개발에서도 꺼집니다 |
-| `SENTRY_ENVIRONMENT` | `dev` | **개발 프롬프트 원문이 운영 Langfuse(JP)로 흘러갑니다**(활성화 가드가 이 값을 봅니다) |
+| `MANYAK_ASSET_BASE_URL` | `https://dev-api.manyak.app` | 프로파일 값이 placeholder(`${MANYAK_ASSET_BASE_URL:...}`)라 환경변수가 이깁니다. 환경별로 실제 값을 공급받아야 하는 값이고, 프로파일 기본값은 주입 부재에 대한 fail-safe입니다 |
+| `SENTRY_ENVIRONMENT` | `dev` | `sentry.environment`의 relaxed binding 이름이라 환경변수가 프로파일 YAML보다 우선합니다. YAML에 리터럴을 박아도 이기지 못하므로, 잘못된 값 주입을 막는 일은 인프라 몫입니다 — `envs/dev`의 `environment == "dev"` validation이 그 역할입니다 |
+
+걷어낸 셋은 프로파일이 대체했습니다. `MANYAK_GOOGLE_FORM_FEEDBACK_ID`는 프로파일이 빈 문자열 리터럴로 잠그고, `SPRINGDOC_*` 두 키와 `MANAGEMENT_HEALTH_REDIS_ENABLED`는 `dev`가 `prod`를 상속하지 않아 base·Spring 기본값이 살아납니다. **구글 폼 id는 환경변수를 다시 넣으면 안 됩니다** — base의 `${MANYAK_GOOGLE_FORM_FEEDBACK_ID:}`는 relaxed binding이 아니라 placeholder라, 값이 남아 있으면 그걸 받아 옵니다.
 
 `MANYAK_ASSET_BASE_URL`의 환경 분리는 웹 이미지 허용 목록과 한 쌍입니다. `manyak-web/next.config.ts`는 운영·개발 호스트 모두에서 `/profile-presets/**`만 허용하며, 새 API 환경을 추가할 때는 해당 호스트도 함께 등록해야 합니다. 그렇지 않으면 백엔드가 정상 URL을 반환해도 Next.js 이미지 최적화 계층이 프로필 이미지를 거부합니다(KNK-827·KNK-832).
 
-**5종은 두 경로로 나뉘고, 그 차이가 `dev` 프로파일이 YAML로 되찾을 수 있는 범위를 결정합니다.**
+**이 차이는 두 경로에서 나옵니다.**
 
 | 경로 | 해당 환경변수 | YAML로 잠글 수 있나 |
 | --- | --- | --- |
@@ -262,15 +263,15 @@ RDS 관리형 마스터 비밀번호는 자동 로테이션될 수 있지만, EC
 
 Amplitude 관련 변수는 **의도적으로 주입하지 않습니다.** 운영에서 켜지는 것은 프로파일이 아니라 user-data가 `.env`에 굽기 때문이며, 개발 태스크 정의에 넣지 않아 개발 이벤트가 운영 프로젝트로 가지 않게 합니다.
 
-**이 재사용은 잠정입니다.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례).
+**`prod` 재사용을 그만둔 이유.** 오버라이드 5종 중 셋은 빠뜨리면 운영 데이터를 오염시키고, `application-prod.yml`에 운영 리소스를 가리키는 기본값이 추가되면 개발이 조용히 물려받습니다(위 구글 폼·asset URL이 그 사례). 개수 자체가 프로파일이 맞지 않는다는 신호였습니다.
 
-**`dev` 프로파일은 `manyak-server` `dev` 브랜치에 머지됐고, 아직 전환 전입니다**(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)). 남은 것은 GHCR `dev` 이미지 반영과 Terraform `spring_profiles_active` 값 변경 둘뿐입니다. 구현에서 확정된 것은 셋입니다.
+**전환은 2026-08-14 완료했습니다**(KNK-828 [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185) → KNK-830 [manyak-terraform #18](https://github.com/KIM-N-KANG/manyak-terraform/pull/18)). 구현에서 확정된 것은 셋입니다.
 
 - `SPRING_PROFILES_ACTIVE=prod,dev` 겹쳐쓰기가 아니라 **`application-dev.yml` 단독**입니다. 겹쳐 쓰면 `dev`가 `application-prod.yml`의 현재·미래 기본값을 계속 상속해, 이 프로파일을 만든 이유 자체가 사라집니다. 중복되는 datasource·JPA·Flyway 12줄은 감수했습니다(`application-local.yml`도 같은 12줄을 이미 중복합니다).
 - `logback-spring.xml`의 JSON 로깅에 `dev`를 **의도적으로 포함**했습니다(`<springProfile name="prod,dev">`). 개발도 CloudWatch로 나가고 개발 환경의 존재 이유가 운영 배포 리허설이라, 운영용 CloudWatch Insights 쿼리를 개발에서 그대로 리허설할 수 있어야 합니다. 반대편 조건도 `!prod & !dev`로 함께 좁혔습니다 — 한쪽만 고치면 JSON과 콘솔 두 appender가 동시에 붙어 로그가 두 줄씩 찍힙니다.
 - 구글 폼 id는 **빈 문자열 리터럴**로 잠갔습니다(placeholder가 아닙니다). 키를 생략하면 base의 placeholder가 환경변수 값을 받아 개발 피드백이 운영 폼에 적재되는 경로가 실재했고, 실측으로 재현했습니다.
 
-**목표 상태 서술을 정정합니다.** "위 값을 YAML로 고정한다"는 5종 전부에 성립하지 않습니다. `dev` 프로파일이 YAML로 되찾는 것은 구글 폼 id 하나이고, Swagger 두 키와 Redis health는 `dev`가 `prod`를 상속하지 않아 base·Spring 기본값이 그대로 살아 **환경변수가 불필요해질 뿐 YAML에 적지는 않습니다**(둘 다 relaxed binding 직결이라, YAML에 적어도 환경변수가 남아 있으면 환경변수가 이깁니다). asset base URL과 `SENTRY_ENVIRONMENT`는 프로파일이 생겨도 환경변수로 남습니다.
+**전환 검수(2026-08-14).** server 로그의 `The following 1 profile is active: "dev"`, 환경변수 4종을 제거했는데도 Swagger가 개발에서 200·운영에서 404, JSON 로깅 유지, 컨테이너 4개 `HEALTHY`를 확인했습니다. Swagger가 특히 직접적인 증거입니다 — `SPRINGDOC_*`를 걷어냈는데 열린다는 것은 `dev`가 `prod`의 `enabled: false`를 상속하지 않았다는 뜻입니다.
 
 **전환 후 정리도 5종이 균등하지 않습니다.**
 
@@ -626,9 +627,25 @@ terraform apply -var desired_count=1          # ③ 태스크 기동
 | 실제 API | `GET /api/v1/stories/simple/tags` 200(DB 조회 경로 확인) |
 | Swagger | 개발 200 / 운영 404 — `prod` 프로파일 재사용 오버라이드가 운영에 회귀를 만들지 않음 |
 
-#### 개발 환경 이미지 갱신
+#### 개발 환경 이미지 갱신 — 자동(KNK-829, 2026-08-14)
 
-`manyak-server`·`manyak-ai`를 `dev`에 병합하면 GHCR `dev` 태그는 갱신되지만 **개발 환경에 자동 반영되지 않습니다.** 수동으로 교체합니다.
+`manyak-server`·`manyak-ai`를 `dev`에 병합하면 각 레포 워크플로의 `deploy-dev` 잡이 개발 환경까지 배포합니다. 두 레포는 각각 전용 OIDC 역할(`manyak-dev-gha-server`·`manyak-dev-gha-ai`)로 인증하며, 권한은 개발 서비스 하나에 대한 `ecs:UpdateService`·`ecs:DescribeServices`와 클러스터 조건이 걸린 태스크 조회뿐입니다. 역할 ARN은 각 레포의 `AWS_DEV_ROLE_ARN` variable에 있습니다(운영용 `AWS_ROLE_ARN`과 별개).
+
+잡의 순서와 각 단계가 막는 실패는 이렇습니다.
+
+| 단계 | 막는 것 |
+| --- | --- |
+| 최신 `dev` SHA 게이트 | 늦게 끝난 옛 실행이 새 배포를 되돌리는 것 |
+| `<short-sha>` → `:dev` 승격 | 빌드 잡은 직렬화돼 있지 않아, 승격을 빌드에서 하면 옛 빌드가 `:dev`를 되돌릴 수 있습니다. 게이트 뒤에서만 승격합니다 |
+| 배포 id 폴링(`COMPLETED` 대기) | **circuit breaker 롤백을 성공으로 오판하는 것.** `wait services-stable`은 롤백 후에도 성공하고, 이후 헬스 검사가 옛 태스크를 보게 됩니다 |
+| 컨테이너 health 폴링 | `ai`가 `essential = false`라 죽어도 태스크와 ALB 헬스가 정상으로 남는 false-green. start period 때문에 단발 검사는 정상 기동을 실패로 떨어뜨리므로 폴링합니다 |
+| `dev-api.manyak.app` 스모크 | 태스크는 떴는데 엔드포인트가 응답하지 않는 상태 |
+
+**배포마다 짧은 중단이 있습니다.** 개발은 stop-then-start라(EFS 위 postgres 단일 writer 제약) `dev` 병합마다 개발 API가 잠깐 끊깁니다.
+
+**한쪽 레포만 병합해도 두 컨테이너가 함께 갱신됩니다.** `server`와 `ai`가 태스크 정의 하나를 공유하므로, 배포는 둘 다 현재 GHCR `dev` 이미지로 바꿉니다.
+
+수동 배포가 필요하면(워크플로 우회, 시크릿 변경 반영 등) 같은 명령을 직접 실행합니다.
 
 ```sh
 aws ecs update-service --cluster manyak-dev --service manyak-dev \
@@ -865,8 +882,8 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
 | 개발 환경 구현            | 완료      | KNK-825·826·827([manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 2026-08-14 `apply` 완료, `https://dev-api.manyak.app` 동작 확인. EFS access point uid/gid 70에서 `initdb` 통과, 컨테이너 4개 `HEALTHY`, 실제 API 200까지 검수했습니다([§7-7](#7-7-배포-절차)). |
-| 개발 환경 배포 트리거     | 부분 확정 | 레지스트리·태그는 GHCR `dev`로 확정했습니다(§7-3). 배포는 **수동 `aws ecs update-service --force-new-deployment`** 이며, GitHub Actions 자동 배포는 아직 없습니다. 자동화하려면 ECS 배포용 OIDC 역할(`ecs:UpdateService`·`RegisterTaskDefinition`·`iam:PassRole`)과 `manyak-server`·`manyak-ai` 워크플로 변경이 필요해 KNK-829로 분리했습니다. |
-| 개발 서버 런타임 프로파일 | 코드 완료·전환 전 | 개발은 아직 `SPRING_PROFILES_ACTIVE=prod`를 재사용하고 차이를 환경변수 5종으로 덮습니다(§7-4). `dev` 프로파일은 **`manyak-server` `dev` 브랜치에 머지됐습니다**(KNK-828, [manyak-server #185](https://github.com/KIM-N-KANG/manyak-server/pull/185)) — `application-dev.yml` 단독 작성, JSON 로깅에 `dev` 포함, 구글 폼 id 빈 문자열 잠금. 전환 순서는 `manyak-server` `dev` 병합 → GHCR `dev` 이미지 반영 → Terraform `spring_profiles_active` 값 변경이고, **남은 것은 뒤의 둘**입니다. 개발 환경이 `apply`로 실제 뜬 뒤에 진행합니다. **순서를 뒤집으면 실패합니다** — 서버 릴리스 없이 Terraform 값만 먼저 바꾸면 `application-dev.yml`이 없는 이미지가 `dev`로 떠서 datasource가 비어 기동에 실패합니다. 전환 후에도 `MANYAK_ASSET_BASE_URL`·`SENTRY_ENVIRONMENT`는 남기고, 기본값 없는 3종(`MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`)은 계속 주입해야 합니다(§7-4). |
+| 개발 환경 배포 트리거     | 완료      | 레지스트리·태그는 GHCR `dev`, 배포는 `dev` 병합 시 GitHub Actions 자동입니다(KNK-829, §7-7). 두 레포 모두 실제 배포까지 통과했습니다. `ecs:RegisterTaskDefinition`·`iam:PassRole`은 결국 넣지 않았습니다 — 태스크 정의가 이미 GHCR 좌표를 들고 있어 새 리비전을 등록할 일이 없습니다. |
+| 개발 서버 런타임 프로파일 | 완료      | 2026-08-14 `SPRING_PROFILES_ACTIVE=dev`로 전환했습니다(KNK-828 → KNK-830, §7-4). `application-dev.yml` 단독 프로파일이며 태스크 정의에 남은 환경변수는 `MANYAK_ASSET_BASE_URL`·`SENTRY_ENVIRONMENT` 둘뿐입니다. 기본값 없는 3종(`MANYAK_AI_BASE_URL`·`MANYAK_CORS_ALLOWED_ORIGINS`·`MANYAK_AUTH_JWT_SECRET`)은 계속 주입합니다. |
 | 개발 데이터 영속성        | 완료      | `postgres` 데이터 디렉터리는 EFS 볼륨으로 유지하고 `redis`는 휘발로 둡니다(§7-4). 2026-08-14 apply에서 마운트와 `initdb`, Flyway 마이그레이션 적용까지 확인했습니다. 대가로 개발 배포는 겹치지 않는 stop-then-start이며 짧은 중단이 생깁니다. **`MANYAK_DB_PASSWORD`는 첫 기동 뒤 바꿀 수 없습니다**([§7-7](#7-7-배포-절차)). |
 | 개발 AI 장애의 false-green | 수용     | `ai`가 `essential = false`라 AI가 죽어도 태스크와 ALB 헬스는 정상으로 남고 스토리·채팅만 실패합니다(§7-4). 운영 Compose의 성질을 유지하려는 의도적 선택이며, 대신 개발 배포 검수에 AI health를 별도 게이트로 포함합니다. |
 | 개발 무중단 배포 검증     | 이월      | 개발은 단일 writer 제약으로 겹치는 롤링 교체를 쓸 수 없어 무중단 배포를 검증하지 못합니다. 운영은 DB가 RDS라 이 제약이 없으므로, 무중단 확인은 운영 Fargate 전환 검수 항목으로 넘깁니다. |
