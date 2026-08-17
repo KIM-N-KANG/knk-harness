@@ -15,9 +15,9 @@
 
 | 항목      | 값                                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.30                                                                                                                 |
+| 버전      | v0.31                                                                                                                 |
 | 작성일    | 2026-06-30                                                                                                            |
-| 수정일    | 2026-08-03                                                                                                            |
+| 수정일    | 2026-08-17                                                                                                            |
 | 대상      | 마냑 MVP                                                                                                              |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -357,7 +357,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 임시 저장 관련 이벤트([`3-1-client.md §3-1-4`](./3-1-client.md) 제작 임시 저장)는 이탈 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`(저장) → `client_storyCreate_continueBanner_shown`/`_clicked`(홈 배너 회수) 또는 `client_storyCreate_resumeDialog_shown`/`_continued`(퍼널 재진입 회수)로 이어지며, `_dismissed`와 `_discarded`는 저장본을 버린 이탈입니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 임시 저장본(`STORY_DRAFT`) 회수를 구분합니다.
 
-`client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 1 · 계획`(KNK-621) — 키워드 단계 개편([`3-1-client.md §3-1-4`](./3-1-client.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
+`client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 키워드 단계 개편([`3-1-client.md §3-1-4`](./3-1-client.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다. `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
 `selectedTagsButton_clicked`는 스토리라인 선택(`storylineSelect`) 단계 탭 우측의 키워드 보기 버튼으로 선택 키워드 드로워를 열 때 발생합니다. 드로워에 노출되는 태그 이름은 이벤트에 넣지 않고 `creation_id`만 보냅니다.
 
