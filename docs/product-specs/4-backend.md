@@ -23,12 +23,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.33 |
+| 버전 | v0.34 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-08-17 |
+| 수정일 | 2026-08-19 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-server` `dev` 브랜치 `dc534e96461a` (2026-08-02, Kotlin 2.2, Spring Boot 4, Flyway V54) |
+| 기준 코드 | `../manyak-server` `dev` 브랜치 `89947407590f` (2026-08-19, Kotlin 2.2, Spring Boot 4, Flyway V58) |
 
 ---
 
@@ -274,13 +274,20 @@ graph LR
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
 | `requestId` | UUID, 필수 | 클라이언트 생성 요청 ID — 복구 조회·멱등 키(아래 KNK-623 블록). 누락 시 400 |
-| `selectedTagIds` | 최대 20개, 각 ≥ 1 | 선택한 제공 태그 ID |
-| `customTags` | 최대 20개 | 직접 추가 태그 `{name(≤30자), category}` |
+| `genreTagIds` | 최대 20개, 각 ≥ 1 | 선택한 제공 장르 태그 ID |
+| `customGenreTags` | 최대 20개, 각 trim 후 1~30자 | 직접 입력한 장르 이름 |
+| `protagonist` | 필수 | 주인공 입력(아래 인물 객체) |
+| `supportingCharacters` | 최대 5개 | 주변 인물 입력 목록(아래 인물 객체) |
+| `parentCreationId` | UUID, null 허용 | 재생성이면 직전 생성의 `creation_id`(아래 KNK-751 블록) |
+| `isRegenerated` | boolean, null 허용 | 재생성 여부. 서버가 판단하지 않고 AI 호출에 그대로 전달 |
 
-- `selectedTagIds`와 `customTags` 중 하나 이상은 있어야 합니다. 둘 다 비면 400입니다.
-- `selectedTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 누락 ID 목록을 `details`에 담아 400을 반환합니다.
-- `customTags`는 정규화 키 기준으로 요청 내 중복을 제거하며, 동일한 기존 태그가 있으면 재사용합니다(find-or-create — 아래 정규화 블록). 원문 키 시절에는 대소문자·공백 변형(BL / Bl / bl / b l)이 별개 태그로 저장돼 파편화됐습니다(KNK-717로 교체).
-- AI 요청에는 태그를 카테고리별 3필드(`genre_tags` · `protagonist_tags` · `supporting_tags`)로 나눠 사전 정의 태그(요청 ID 순) 뒤에 직접 추가 태그를 이어 전달합니다. **수정 필요(KNK-833)** — AI 서버가 `protagonist_tags`·`supporting_tags` 대신 인물 세트(`protagonist`·`supporting_characters[]`)를 받도록 바뀌었으므로, 백엔드도 같은 형식으로 전달해야 합니다([`5-ai-server.md §5-3-2`](./5-ai-server.md)).
+인물 객체(`protagonist`·`supportingCharacters[]`)는 `{name(≤30자, null 허용), gender("MALE"·"FEMALE"·null), featureTagIds[], customTags[](각 ≤30자)}`입니다. 네 항목 모두 선택이며 비우면 AI가 채웁니다.
+
+- 장르는 `genreTagIds` + `customGenreTags` 합산 20개, 인물은 `featureTagIds` + `customTags` 합산 3개가 상한입니다. 필드별 상한만 두면 합산이 두 배로 열려 옛 계약의 실질 상한을 넘기 때문에, 중복 제거 전 요청 항목 수로 세어 400을 반환합니다(KNK-859).
+- `genreTagIds`·`featureTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 누락 ID 목록을 `details`에 담아 400을 반환합니다.
+- `customGenreTags`·인물 `customTags`는 정규화 키 기준으로 요청 내 중복을 제거하며, 동일한 기존 태그가 있으면 재사용합니다(find-or-create — 아래 정규화 블록). 원문 키 시절에는 대소문자·공백 변형(BL / Bl / bl / b l)이 별개 태그로 저장돼 파편화됐습니다(KNK-717로 교체).
+- 저장은 장르와 인물 특징 모두 `story_creation_tags`(직접 입력분은 `CUSTOM`) → `story_creation_session_tags`로 이어집니다. 인물 특징 행은 `character` FK로 어느 인물의 것인지 구분하고, 장르 행은 이 FK가 비어 있습니다. 세션 태그 저장 순서(`st.id`)가 곧 회수 재구성 응답 순서입니다(KNK-848).
+- AI 요청에는 `genre_tags`(제공 장르 뒤에 직접 입력 장르를 잇고 정규화 키로 중복 제거) · `protagonist` · `supporting_characters[]`로 전달합니다. 인물 객체의 `features`는 제공 특징 뒤에 직접 입력 특징을 이은 이름 배열입니다([`5-ai-server.md §5-3-2`](./5-ai-server.md)).
 - AI 호출은 저장 트랜잭션 밖에서 먼저 수행하고, 성공 후 한 트랜잭션에서 진행(세션) → 세션 태그 → 스토리라인(`storyline_order` 1부터) → 추천 추가 정보(`info_order` 1부터) 순으로 저장합니다. 게스트 카운터는 AI 호출 전에 예약하고 생성·저장이 실패하면(모든 예외) 복원합니다.
 
 `Phase 1 · 구현`(KNK-717, server `v0.2.5` 배포) — 커스텀 태그 정규화입니다.
@@ -289,22 +296,25 @@ graph LR
 - **PREDEFINED 연결** — 커스텀 입력이 같은 카테고리의 사전 정의 태그와 정규화 키가 일치하면 새 `CUSTOM` 태그를 만들지 않고 해당 `PREDEFINED` 태그로 연결합니다.
 - **기존 중복 병합(이행, V51)** — 정규화 키가 겹치는 기존 행은 `(tag_source, tag_type, normalized_name)` 그룹별 정본 1행으로 참조를 재지정한 뒤 중복 행을 삭제하고, 유니크 제약을 원문 키에서 `(tag_source, tag_type, normalized_name)`으로 교체합니다(DB 컬럼 `tag_source`=`PREDEFINED`·`CUSTOM` 구분, `tag_type`=API `category`). `CUSTOM`뿐 아니라 `PREDEFINED` 그룹도 병합 대상입니다 — V2 시드의 `현대판타지`·`로맨스판타지`와 V13이 추가한 `현대 판타지`·`로맨스 판타지`가 정규화 키에서 충돌해, "CUSTOM 행만 삭제"로는 유니크 제약을 붙일 수 없습니다. 정본은 **활성 행 우선 → 최소 id**로 고릅니다(최소 id만 쓰면 V13이 비활성화한 옛 행이 정본이 되어 활성 장르가 태그 목록에서 사라짐). 기존 `CUSTOM` 행이 같은 카테고리 `PREDEFINED` 태그와 정규화 키가 일치하는 경우는 위 연결 규칙과 동일하게 predefined 정본으로 재지정 후 삭제합니다. 재지정 시 `story_creation_session_tags`의 `(creation_session_id, tag_id)` 유니크와 충돌하는 행(같은 세션이 변형 표기를 중복 선택)은 중복 제거하며, 나머지 FK 참조처인 `image_preset_genres`도 PREDEFINED 병합에 걸리면 같은 방식(PK 충돌분 제거 후 정본으로 재지정)으로 처리합니다.
 
+`Phase 2 · 구현`(KNK-845·846·859) — 인물 단위 입력입니다. 위 현행 계약이 이 결과입니다.
+
+- **인물 단위 교체** — 카테고리별 태그 묶음(`selectedTagIds`·`customTags{category}`)을 장르(`genreTagIds`·`customGenreTags`)와 인물(`protagonist`·`supportingCharacters[]`)로 갈랐습니다. 인물은 이름·성별을 함께 받아 그대로 AI에 전달합니다(KNK-845·846). 제공 특징 태그(`PROTAGONIST`·`SUPPORTING_CHARACTER` 마스터)는 선택 칩의 소스이자 저장 연결 대상입니다.
+- **장르 직접 입력 복원** — 인물 단위로 교체할 때 장르 직접 입력이 함께 빠졌다가 `customGenreTags`로 되살아났습니다(KNK-859). 아래 `Phase 2 · 계획`의 커스텀 태그 제한은 세계관 탭 개편(KNK-621)과 함께 적용할 항목이지 현행 규칙이 아닙니다 — 그때까지 장르 직접 입력은 유효합니다.
+- **인물 이름 중복 금지** — 한 요청 안에서 주인공과 주변 인물의 이름이 겹치면 400입니다(KNK-841). 판정 키는 NFC 정규화 → trim → 내부 공백 정리 → 공백 제거 → lowercase이며, 비운 이름(null·공백만)은 검사 대상이 아닙니다. 클라이언트도 입력 단계에서 막지만([`3-1-client.md §3-1-4`](./3-1-client.md)) 서버가 함께 막는 이유는, AI가 이름 글자로 인물의 등장 여부를 확인하기 때문입니다. 같은 이름이 두 명이면 한 명만 등장해도 확인을 통과해, 사용자가 만든 인물이 조용히 사라집니다([`5-ai-server.md §5-3-2`](./5-ai-server.md)).
+
 `Phase 2 · 계획`(KNK-621) — 키워드 단계 개편(2026-07-20 팀 결정, [`3-1-client.md §3-1-4`](./3-1-client.md))의 서버 반영분입니다. 구현 전까지 위 현행 계약이 유효합니다.
 
 - **배경 카테고리 추가** — 태그 카테고리에 `BACKGROUND`(배경)를 추가하고 `GET /stories/simple/tags`가 함께 반환합니다(카테고리 4종 — [`0-glossary.md §0-3-1`](./0-glossary.md)).
-- **커스텀 태그 제한** — 장르·배경은 제공 태그만 선택할 수 있습니다. `customTags`의 `category`가 `GENRE`·`BACKGROUND`이면 400입니다(주인공 특징의 직접 추가는 유지).
+- **커스텀 태그 제한** — 장르·배경은 제공 태그만 선택할 수 있게 바꿉니다. `customGenreTags`와 배경 직접 입력을 400으로 막습니다(인물 특징의 직접 추가는 유지). 현재는 장르 직접 입력이 허용되므로, 이 항목은 개편과 함께 적용합니다.
 - **선택 규칙 변경** — 장르·배경은 각 1~2개이고 각 최소 1개 필수입니다(기존 장르 3 상한·장르만 필수 대체). 서버는 개수 범위를 검증하며 위반 시 400입니다.
 - **제공 키워드 시드(팀 큐레이션)** — 장르 8종: 로맨스 · 복수극 · 생존물 · 미스터리 · 재벌물 · 육아물 · 요리물 · 오컬트. 배경 11종: 무협 · 현대 · 중세 · 디스토피아 · 포스트 아포칼립스 · 아포칼립스 · 게임•시스템 · 아카데미 · 던전 · SF · 탑. 주인공(나) 태그 목록도 새 체계에 맞춰 갱신합니다(목록 미정). **주의** — 썸네일·배경 이미지 매칭(`image_presets.genres[]`)과 로어북 선별(`lorebooks.genre`)이 GENRE 마스터 태그명과 문자열 정확 일치로 동작하므로([§4-3-9](#4-3-api-계약)·[§4-3-6](#4-3-api-계약)), 장르 마스터 개편 시 두 자산의 표기를 함께 마이그레이션해야 합니다.
-- **주변 인물 세트** — 주변 인물 특징 태그 대신 주변 인물 세트 `supportingCharacters[]`(최대 5)를 받습니다. 각 세트 `{name(≤30자), gender("MALE"·"FEMALE"·null), features[](세트당 최대 3, 각 30자 — 제공 태그 + 직접 입력)}`는 전부 선택 항목이며 빈 항목은 AI가 자동 생성합니다. `features`는 기존 태그 시스템에 연결하지 않고 세트 구조로만 저장합니다(세트 행의 JSON 배열 컬럼 — 직접 입력분도 `CUSTOM` 태그·세션 태그를 만들지 않음). 제공 특징 태그(`SUPPORTING_CHARACTER` 마스터)는 선택 칩의 읽기 전용 소스로만 씁니다. AI 요청 필드 구성은 [`5-ai-server.md §5-3-2`](./5-ai-server.md)가 소유합니다. **수정 필요(KNK-833)** — AI 서버가 `supporting_characters[]`로 구현 완료됐으므로, 백엔드도 이 형식으로 전달해야 합니다.
-- **주인공 세트** — 주인공 특징 태그에 이름·성별을 더해 `protagonist {name(≤30자), gender("MALE"·"FEMALE"·null), features[](최대 3)}`로 AI에 전달합니다. 이름·성별은 선택 항목이며 빈 값은 AI가 자동 생성합니다. AI 요청 필드 구성은 [`5-ai-server.md §5-3-2`](./5-ai-server.md)가 소유합니다. **수정 필요(KNK-833)** — AI 서버가 `protagonist`로 구현 완료됐으므로, 백엔드도 이 형식으로 전달해야 합니다.
-- **인물 이름 중복 금지** — 한 요청 안에서 주인공과 주변 인물 세트의 이름이 겹치면 400입니다. 동일성 판정은 커스텀 태그와 같은 정규화 키(trim → 내부 공백 제거 → lowercase)를 쓰고, 비운 이름(null·공백만)은 검사 대상이 아닙니다. 클라이언트도 입력 단계에서 막지만([`3-1-client.md §3-1-4`](./3-1-client.md)) 서버가 함께 막는 이유는, AI가 이름 글자로 인물의 등장 여부를 확인하기 때문입니다. 같은 이름이 두 명이면 한 명만 등장해도 확인을 통과해, 사용자가 만든 인물이 조용히 사라집니다([`5-ai-server.md §5-3-2`](./5-ai-server.md)). **수정 필요(KNK-841)** — AI 서버가 중복 이름을 422로 거부하도록 구현 완료됐으므로, 백엔드도 400으로 막아야 합니다.
 
 **응답(201)**
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `simpleCreationId` | number | 간편 제작 진행(세션) ID. 제품 분석 개념은 **`analytics_creation_id`**이고 분석 이벤트의 와이어 키는 `creation_id`입니다([`0-glossary.md §0-3-2`](./0-glossary.md)·[`6-analytics.md §6-2`](./6-analytics.md)). AI 트레이스의 `trace_creation_id`(§4-7)와 다른 값입니다 |
-| `selectedTags` | object[] | 선택·직접 추가된 태그 목록 |
+| `selectedTags` | object | 저장된 입력을 장르와 인물별로 정리한 객체 `{genreTags: {id, name, category}[], protagonist, supportingCharacters[]}`. 인물은 `{name, gender, features: {id, name, category}[]}`이며 직접 입력분도 저장된 태그 행으로 돌아옵니다 |
 | `storylines` | object[] | 정확히 3개. 각 항목은 `{id, storyline, recommendedInfos: {id, text}[3]}` |
 
 **`POST /stories/simple`** — 선택한 스토리라인과 추가 정보로 최종 스토리를 생성합니다. AI 서버 `POST /story/compile`을 동기 호출합니다. `Phase 1 · 구현` — 회원은 20 크레딧, 게스트는 디바이스 ID별 스토리 생성 1회 한도를 사용합니다([§4-3-7](#4-3-api-계약)).
@@ -1365,7 +1375,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 **② 사용자 반응 신호를 Langfuse score로 전송.** `Phase 1 · 계획`(KNK-762)입니다. 백엔드가 직접 전송하며, 저장·검증·비동기 발행 계약은 아래 `Langfuse 선호 행동 저장과 score 발행` 절이 소유합니다. score 이름·값·분석 의미는 [`6-analytics.md §6-6-12`](./6-analytics.md)가 정본입니다.
 
-**③ 직접 입력 장르도 임시 관측.** 현재 백엔드는 사전 정의 장르와 직접 입력 장르(`customTags` category `GENRE`)를 합쳐 AI의 `genre_tags`로 보냅니다([§4-3-2](#4-3-api-계약)). AI는 출처를 구분할 수 없으므로 두 종류를 모두 스토리 제작 트레이스의 `genre:*` 필터용 라벨로 저장합니다. 기본 장르 목록에서 빠진 사용자 수요를 확인하기 위한 임시 정책이며(KNK-669), 높은 카디널리티와 사용자 입력이 색인된다는 점을 수용합니다. 적용 범위는 장르뿐이고, 주인공·주변 인물의 직접 입력값은 필터용 라벨로 올리지 않습니다. 키워드 단계 개편(KNK-621, [§4-3-2](#4-3-api-계약))이 `GENRE` 직접 입력을 400으로 막으면 이 예외는 종료되고 `genre_tags`에는 사전 정의 장르만 남습니다. Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다([`7-deployment.md §7-9`](./7-deployment.md)). 장르 라벨은 **스토리 제작 트레이스에만** 달고, 채팅 트레이스에는 달지 않습니다(KNK-652, AI `v0.2.1` 배포 완료 — [`5-ai-server.md §5-6`](./5-ai-server.md)).
+**③ 직접 입력 장르도 임시 관측.** 현재 백엔드는 사전 정의 장르와 직접 입력 장르(`customGenreTags`)를 합쳐 AI의 `genre_tags`로 보냅니다([§4-3-2](#4-3-api-계약)). AI는 출처를 구분할 수 없으므로 두 종류를 모두 스토리 제작 트레이스의 `genre:*` 필터용 라벨로 저장합니다. 기본 장르 목록에서 빠진 사용자 수요를 확인하기 위한 임시 정책이며(KNK-669), 높은 카디널리티와 사용자 입력이 색인된다는 점을 수용합니다. 적용 범위는 장르뿐이고, 주인공·주변 인물의 직접 입력값은 필터용 라벨로 올리지 않습니다. 키워드 단계 개편(KNK-621, [§4-3-2](#4-3-api-계약))이 `GENRE` 직접 입력을 400으로 막으면 이 예외는 종료되고 `genre_tags`에는 사전 정의 장르만 남습니다. Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다([`7-deployment.md §7-9`](./7-deployment.md)). 장르 라벨은 **스토리 제작 트레이스에만** 달고, 채팅 트레이스에는 달지 않습니다(KNK-652, AI `v0.2.1` 배포 완료 — [`5-ai-server.md §5-6`](./5-ai-server.md)).
 
 - 클라이언트의 선택지 노출·선택·입력 출처 전달은 `Phase 1 · 계획`(KNK-762)이며 [`3-1-client.md §3-1-7`](./3-1-client.md)이 소유합니다.
 - 신호 카탈로그·원문 결합·원문 수집 정책과의 관계는 [`6-analytics.md §6-6-12·§6-7`](./6-analytics.md)가 소유합니다.
