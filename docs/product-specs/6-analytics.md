@@ -325,7 +325,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_viewed`                              | P0       | 제작 화면 진입                                                                 | 없음                                                                                                             |
 | `client_storyCreate_step_viewed`                         | P0       | 각 제작 단계 진입                                                              | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
 | `client_storyCreate_tagCategory_selected`                | P1       | 태그 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
-| `client_storyCreate_addTag_submitted`                    | P2       | 태그 직접 추가 제출                                                            | `category` (string, 필수: `PROTAGONIST` / `SUPPORTING_CHARACTER`)                                                |
+| `client_storyCreate_addTag_submitted`                    | P2       | 태그 직접 추가 제출                                                            | `category` (string, 필수: `GENRE` / `PROTAGONIST` / `SUPPORTING_CHARACTER`)                                      |
 | `client_storyCreate_storyGeneration_requested`           | P0       | 스토리라인 생성 요청 전송                                                      | 없음                                                                                                             |
 | `server_storyCreate_storyGeneration_processed_succeeded` | P0       | 스토리라인 생성 성공                                                           | `creation_id` (string, 필수)                                                                                     |
 | `server_storyCreate_storyGeneration_processed_failed`    | P0       | 스토리라인 생성 실패                                                           | `creation_id` (string, 필수 — 현재 구현은 발급 전 실패에서 누락 가능, §6-8-7 A1), `error_type` (string, 필수)    |
@@ -359,7 +359,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client.md §3-1-4`](./3-1-client.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
-`client_storyCreate_addTag_submitted`의 `category`는 인물 단위 입력(KNK-834·858) 이후 `PROTAGONIST`·`SUPPORTING_CHARACTER` 둘만 발생합니다. 장르는 제공 태그만 고를 수 있어 직접 추가 트리거가 없습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+`client_storyCreate_addTag_submitted`의 `category`는 세 카테고리에서 모두 발생합니다. 세계관 탭 개편(KNK-621)이 구현되면 장르에서 직접 추가가 사라져 `GENRE`가 더 이상 발생하지 않으므로, 그 시점에 값 집합을 함께 갱신합니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 
 `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
