@@ -23,12 +23,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.34 |
+| 버전 | v0.35 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-08-19 |
+| 수정일 | 2026-08-20 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `../manyak-server` `dev` 브랜치 `89947407590f` (2026-08-19, Kotlin 2.2, Spring Boot 4, Flyway V58) |
+| 기준 코드 | `../manyak-server` `dev` 브랜치 `e2d659bb920a` (2026-08-20, Kotlin 2.2, Spring Boot 4, Flyway V58) |
 
 ---
 
@@ -284,10 +284,13 @@ graph LR
 인물 객체(`protagonist`·`supportingCharacters[]`)는 `{name(≤30자, null 허용), gender("MALE"·"FEMALE"·null), featureTagIds[], customTags[](각 ≤30자)}`입니다. 네 항목 모두 선택이며 비우면 AI가 채웁니다.
 
 - 장르는 `genreTagIds` + `customGenreTags` 합산 20개, 인물은 `featureTagIds` + `customTags` 합산 3개가 상한입니다. 필드별 상한만 두면 합산이 두 배로 열려 옛 계약의 실질 상한을 넘기 때문에, 중복 제거 전 요청 항목 수로 세어 400을 반환합니다(KNK-859).
-- `genreTagIds`·`featureTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 누락 ID 목록을 `details`에 담아 400을 반환합니다.
+- `genreTagIds`·`featureTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 400을 반환합니다. **누락 ID 목록은 `message`에 담깁니다** — `details`는 Bean Validation 위반(개수 상한·원소 길이·이름 중복)에만 채워집니다([§4-6](#4-6-오류와-예외-처리)).
+- **원소 단위 검증** — `customGenreTags`와 인물 `customTags`의 각 원소는 빈 문자열이거나 30자를 넘으면 400입니다. 코틀린이 컬렉션 원소 애노테이션을 클래스 파일에 내보내지 않아 이 제약이 발동하지 않던 것을 `Phase 1 · 구현`(KNK-862)에서 컴파일 옵션으로 살렸습니다 — 그전에는 빈 문자열이 201로 통과했고, 31자는 요청 검증을 지나 `story_creation_tags.name`(30자) 저장에서 터져 500이었습니다. 직접 입력 장르는 여기에 더해 **trim 후** 길이도 1~30자여야 합니다(KNK-859 — 서버가 trim한 값을 저장하므로 저장 값 기준 상한).
+- **최소 입력 요건은 없습니다** — 장르와 인물 특징이 모두 비어도 201입니다(빈 자리는 AI가 채웁니다). 옛 계약의 "선택 태그와 직접 추가 태그 중 하나 이상" 규칙은 인물 단위 교체(KNK-845)와 함께 사라졌습니다. 클라이언트는 장르 1개 이상 **그리고** 주인공 특징 1개 이상을 생성 조건으로 두지만([`3-1-client.md §3-1-4`](./3-1-client.md)), 서버는 강제하지 않습니다.
 - `customGenreTags`·인물 `customTags`는 정규화 키 기준으로 요청 내 중복을 제거하며, 동일한 기존 태그가 있으면 재사용합니다(find-or-create — 아래 정규화 블록). 원문 키 시절에는 대소문자·공백 변형(BL / Bl / bl / b l)이 별개 태그로 저장돼 파편화됐습니다(KNK-717로 교체).
 - 저장은 장르와 인물 특징 모두 `story_creation_tags`(직접 입력분은 `CUSTOM`) → `story_creation_session_tags`로 이어집니다. 인물 특징 행은 `character` FK로 어느 인물의 것인지 구분하고, 장르 행은 이 FK가 비어 있습니다. 세션 태그 저장 순서(`st.id`)가 곧 회수 재구성 응답 순서입니다(KNK-848).
 - AI 요청에는 `genre_tags`(제공 장르 뒤에 직접 입력 장르를 잇고 정규화 키로 중복 제거) · `protagonist` · `supporting_characters[]`로 전달합니다. 인물 객체의 `features`는 제공 특징 뒤에 직접 입력 특징을 이은 이름 배열입니다([`5-ai-server.md §5-3-2`](./5-ai-server.md)).
+- **스토리라인 AI 요청의 표기는 저장·응답과 갈릴 수 있습니다** — 이 요청은 태그 해석(저장 트랜잭션)보다 **먼저** 조립합니다. 그래서 직접 입력이 같은 정규화 키의 `PREDEFINED` 태그로 연결되는 경우, AI에는 **사용자 입력 원문**이 가고 저장·응답에는 **제공 표시명**이 나갑니다(`현대판타지` 입력 → AI `현대판타지`, 응답 `현대 판타지`). 장르와 인물 특징 모두 같습니다. 컴파일 요청(`POST /stories/simple`)은 저장된 태그를 읽어 조립하므로 제공 표시명입니다.
 - AI 호출은 저장 트랜잭션 밖에서 먼저 수행하고, 성공 후 한 트랜잭션에서 진행(세션) → 세션 태그 → 스토리라인(`storyline_order` 1부터) → 추천 추가 정보(`info_order` 1부터) 순으로 저장합니다. 게스트 카운터는 AI 호출 전에 예약하고 생성·저장이 실패하면(모든 예외) 복원합니다.
 
 `Phase 1 · 구현`(KNK-717, server `v0.2.5` 배포) — 커스텀 태그 정규화입니다.
@@ -307,7 +310,7 @@ graph LR
 - **배경 카테고리 추가** — 태그 카테고리에 `BACKGROUND`(배경)를 추가하고 `GET /stories/simple/tags`가 함께 반환합니다(카테고리 4종 — [`0-glossary.md §0-3-1`](./0-glossary.md)).
 - **커스텀 태그 제한** — 장르·배경은 제공 태그만 선택할 수 있게 바꿉니다. `customGenreTags`와 배경 직접 입력을 400으로 막습니다(인물 특징의 직접 추가는 유지). 현재는 장르 직접 입력이 허용되므로, 이 항목은 개편과 함께 적용합니다.
 - **선택 규칙 변경** — 장르·배경은 각 1~2개이고 각 최소 1개 필수입니다(기존 장르 3 상한·장르만 필수 대체). 서버는 개수 범위를 검증하며 위반 시 400입니다.
-- **제공 키워드 시드(팀 큐레이션)** — 장르 8종: 로맨스 · 복수극 · 생존물 · 미스터리 · 재벌물 · 육아물 · 요리물 · 오컬트. 배경 11종: 무협 · 현대 · 중세 · 디스토피아 · 포스트 아포칼립스 · 아포칼립스 · 게임•시스템 · 아카데미 · 던전 · SF · 탑. 주인공(나) 태그 목록도 새 체계에 맞춰 갱신합니다(목록 미정). **주의** — 썸네일·배경 이미지 매칭(`image_presets.genres[]`)과 로어북 선별(`lorebooks.genre`)이 GENRE 마스터 태그명과 문자열 정확 일치로 동작하므로([§4-3-9](#4-3-api-계약)·[§4-3-6](#4-3-api-계약)), 장르 마스터 개편 시 두 자산의 표기를 함께 마이그레이션해야 합니다.
+- **제공 키워드 시드(팀 큐레이션)** — **계획 당시 시드 목록은 KNK-847(V57, 2026-08-18 팀 확정)이 대체했습니다.** 계획 목록은 장르 8종(로맨스 · 복수극 · 생존물 · 미스터리 · 재벌물 · 육아물 · 요리물 · 오컬트)과 배경 11종(무협 · 현대 · 중세 · 디스토피아 · 포스트 아포칼립스 · 아포칼립스 · 게임•시스템 · 아카데미 · 던전 · SF · 탑)이었으나, 현행 마스터는 3분류 40종입니다 — `GENRE` 15종(로맨스 판타지 · 현대 판타지 · 로맨스 · 무협 · 헌터 · 학원 · 중세 판타지 · 재벌 · 게임 · 아포칼립스 · 생존 · BL · SF · 요리 · 탈출) · `PROTAGONIST` 15종 · `SUPPORTING_CHARACTER` 10종이고, 노출 순서는 카테고리별 10 단위 `sort_order`입니다. 개편이 배경 카테고리를 도입한다면 시드 목록은 이 40종을 기준으로 다시 정해야 합니다 — 계획이 배경으로 분리하려던 `무협` · `게임` · `아포칼립스`는 현재 `GENRE`에 있습니다. **주의** — 썸네일·배경 이미지 매칭(`image_presets.genres[]`)과 로어북 선별(`lorebooks.genre`)이 GENRE 마스터 태그명과 문자열 정확 일치로 동작하므로([§4-3-9](#4-3-api-계약)·[§4-3-6](#4-3-api-계약)), 장르 마스터 개편 시 두 자산의 표기를 함께 마이그레이션해야 합니다.
 
 **응답(201)**
 
@@ -1018,7 +1021,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 간편 제작 | `story_creation_tags` | 태그. `PREDEFINED` · `CUSTOM`, 카테고리 3종. `normalized_name` 컬럼(KNK-717, V51) — trim → 내부 공백 제거 → lowercase, 유니크 제약을 `(tag_source, tag_type, normalized_name)`으로 교체 — 태그 파편화 병합([§4-3-2](#4-3-api-계약)) |
 | 간편 제작 | `story_creation_sessions` | 간편 제작 진행(퍼널 1회). `Phase 1 · 구현` 컬럼 — `creation_request_id`(UUID nullable, V49 — FK 제약 없는 요청 ID 바인딩. 익명 세션의 회수 재실행이 "이 세션을 만든 그 요청"인지 검증, [§4-3-2](#4-3-api-계약)) |
 | 간편 제작 | `story_creation_requests` | `Phase 1 · 구현`(KNK-623, V48) 생성 요청 복구·멱등. `request_id`(UUID 유니크) · `stage` · `status`(`PENDING`·`COMPLETED`·`FAILED`) · 소유 주체(회원 또는 게스트 디바이스 ID 해시) · `result_json`(COMPLETED 응답 replay용) · `updated_at`(aged PENDING 회수 판정 앵커, [§4-3-2](#4-3-api-계약)) |
-| 간편 제작 | `story_creation_session_tags` | 진행이 선택한 태그(유니크) |
+| 간편 제작 | `story_creation_characters` | `Phase 1 · 구현`(KNK-845, V56) 진행의 인물 행. `role`(`PROTAGONIST` · `SUPPORTING_CHARACTER`) · `name`(≤30자, nullable) · `gender`(`MALE` · `FEMALE`, nullable) · `sort_order`. 주인공은 세션당 1행(부분 유니크 인덱스)이고 `sort_order`는 1 고정, 주변 인물은 `(세션, role, sort_order)` 유니크입니다. 인물 특징 태그는 `story_creation_session_tags`가 이 행을 참조합니다([§4-3-2](#4-3-api-계약)) |
+| 간편 제작 | `story_creation_session_tags` | 진행이 선택한 태그. 유니크 키는 `(creation_session_id, character_id, tag_id)`이며 `NULLS NOT DISTINCT`(PostgreSQL 16)라 `character_id`가 NULL인 장르 행도 세션 안에서 중복되지 않습니다(V56). **장르는 `character_id`가 NULL**이고 인물 특징은 `character_id`로 인물에 귀속합니다. 행 id 오름차순이 곧 저장·회수 재구성 응답 순서입니다(KNK-848) |
 | 간편 제작 | `story_creation_storylines` | AI 생성 스토리라인 후보 |
 | 간편 제작 | `story_creation_storyline_recommended_infos` | 스토리라인별 추천 추가 정보 |
 | 간편 제작 | `story_creation_storyline_ratings` | 스토리라인 평가(GOOD·BAD, 사용자당 1건) |
@@ -1603,7 +1607,7 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 - 배치 조회는 존재하지 않는 ID를 오류 없이 제외하고, 100개 초과·빈 배열 요청에 400을 반환해야 합니다.
 - 삭제는 최초 204, 재시도 404를 반환하고, 삭제된 리소스가 상세·배치 조회에서 사라져야 합니다.
-- 간편 제작은 태그 없이 스토리라인 생성 요청 시 400, 게스트 스토리라인 한도 소진 시 AI 호출 전 402, 같은 진행으로 두 번째 스토리 생성 시 409, AI 실패 시 502를 반환해야 합니다.
+- 간편 제작은 계약 위반(장르 합산 20 초과·인물당 특징 3 초과·직접 입력 원소가 빈 문자열이거나 30자 초과·인물 이름 중복·무효 태그 ID) 시 400, 게스트 스토리라인 한도 소진 시 AI 호출 전 402, 같은 진행으로 두 번째 스토리 생성 시 409, AI 실패 시 502를 반환해야 합니다. **장르와 인물 특징이 모두 빈 요청은 400이 아니라 201입니다**([§4-3-2](#4-3-api-계약) — 최소 입력 요건 없음).
 - 스토리라인 평가는 설정 → 같은 값 재설정 → 취소 → 재취소가 모두 성공해야 합니다(취소 멱등).
 - 채팅 스트림은 `started` → `token` → `completed` 순서로 도착하고, `completed`의 `aiOutput`이 이후 `GET /chats/{chatId}`의 마지막 턴과 일치해야 합니다.
 - 채팅 스트림 실패 시 `error` 이벤트에 `code`·`message`가 실려야 하며, 실패한 턴은 저장되지 않아야 합니다.
