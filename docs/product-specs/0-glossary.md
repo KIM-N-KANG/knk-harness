@@ -14,7 +14,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.12 |
+| 버전 | v0.13 |
 | 작성일 | 2026-07-05 |
 | 대상 | 마냑 전 레포지토리 (manyak-web · manyak-android · manyak-server · manyak-ai · llm-wiki · knk-harness) |
 | 작성 목적 | 레포지토리 간 용어 불일치를 없애고, 앞으로의 개발에서 통일된 단어 사용 기준을 정의한다. |
@@ -56,7 +56,7 @@
 | 프롤로그 | `prologue` | 채팅 시작 시 먼저 보여주는 도입 서사 텍스트 | "채팅 첫 메시지", "도입부 내레이션", first message, greeting |
 | 추천 입력 | `suggested_inputs` | 채팅 시작 화면에서 제안하는 첫 입력 후보 문구(3개). 선택지(§0-3-3)와 다른 개념 | `recommendedInputs`, 선택지를 "추천 입력"으로 부르는 것 |
 | 태그 | `tag`, `tag_id` | 간편 제작에서 선택하거나 직접 추가하는 스토리 속성. `PREDEFINED`(제공)와 `CUSTOM`(직접 추가)으로 나뉨. Phase 1 구현(KNK-717) — 직접 추가 태그의 동일성은 정규화 키(trim → 내부 공백 제거 → lowercase)로 판정하고 표시명은 최초 입력의 trim본 유지([`4-backend.md §4-3-2`](./4-backend.md)) | "키워드"(코드·데이터·이벤트·문서. UI 카피 전환은 별도 논의) |
-| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고, 장르·배경은 UI에서 "세계관" 탭으로 묶는다(제공 태그만 선택). 주변 인물은 특징 태그 대신 인물 세트(이름·성별·특징)로 전환([`4-backend.md §4-3-2`](./4-backend.md)) | `tag_type` |
+| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 구현(KNK-834·858) — 주인공·주변 인물은 특징 태그 묶음이 아니라 인물 단위(이름·성별·특징)로 입력받고, 장르는 제공 태그만 고른다([`3-1-client.md §3-1-4`](./3-1-client.md)). Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고 장르·배경을 UI에서 "세계관" 탭으로 묶는 것은 미구현([`4-backend.md §4-3-2`](./4-backend.md)) | `tag_type` |
 | 추가 정보 | `additional_infos` | 사용자가 스토리라인에 첨부하는 보강 정보(추천 채택분 포함, 총 13개 상한) | `extra_info` |
 | 추천 추가 정보 | `recommended_infos` | 스토리라인마다 AI가 제안하는 추가 정보 후보 3개 | "추천 질문"(`questions`, 레거시) |
 | 로어북 | `lorebook` | 장르 공용 용어 사전. 트리거 키워드 없는 카탈로그 | world info |
