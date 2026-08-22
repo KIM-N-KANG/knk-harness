@@ -16,7 +16,7 @@
 
 | 항목      | 값                                                             |
 | --------- | -------------------------------------------------------------- |
-| 버전      | v0.8                                                           |
+| 버전      | v0.9                                                           |
 | 작성일    | 2026-08-02                                                     |
 | 수정일    | 2026-08-22                                                     |
 | 대상      | 마냑 안드로이드 네이티브 앱 (`Phase 2`)                        |
@@ -139,6 +139,56 @@
 **백엔드는 직접 호출합니다.** 웹의 BFF 프록시에 대응하는 중간 계층을 두지 않습니다 — 웹이 프록시를 둔 이유는 브라우저 JS에 토큰을 노출하지 않기 위해서인데([`3-2-web-app.md §3-2-4`](./3-2-web-app.md#3-2-4-bff-프록시토큰-세션)), 앱은 토큰을 데이터 계층 안에 가둘 수 있어 같은 목적을 프록시 없이 달성합니다(§3-3-4).
 
 **도입하지 않는 것** — MVI 프레임워크(직접 구현 — 아래 UI 상태 모델), BFF 대응 계층(위).
+
+### 계층과 책임
+
+계층은 **UI · Domain · Data** 셋입니다. 다만 Domain은 **Repository 인터페이스와 도메인 모델, 결과·오류 타입만 담는 얇은 계층**이며, UseCase 전면 도입과 DDD는 하지 않습니다(아래 결정 기록).
+
+```mermaid
+graph TD
+    subgraph UI["UI 계층 (:feature:*)"]
+        C["Compose 화면<br/>상태를 받아 그리고 Intent만 발행"]
+        VM["MviViewModel<br/>onIntent → dispatch(ReducerEvent) → reduce"]
+    end
+    subgraph DOMAIN["Domain 계층 (:core:domain)"]
+        RI["Repository 인터페이스 · 도메인 모델<br/>결과 타입 · 오류 모델<br/>순수 Kotlin, 의존 없음"]
+    end
+    subgraph DATA["Data 계층 (:core:data)"]
+        R["Repository 구현<br/>결과 타입 반환, 데이터 출처 은닉"]
+        API["Retrofit API · okhttp-sse"]
+        DS["DataStore<br/>토큰(암호화) · device_id · 기기 플래그"]
+    end
+    C -->|Intent| VM
+    VM -->|"UiState(StateFlow)"| C
+    VM --> RI
+    R -.->|구현| RI
+    R --> API
+    R --> DS
+    API -->|"인터셉터: 식별 헤더 → 인증 → 로깅"| BE["백엔드 API (직접 호출)"]
+```
+
+| 계층 | 책임 | 금지 |
+| --- | --- | --- |
+| Compose 화면 | 상태 렌더, 사용자 입력을 Intent로 발행 | 화면이 직접 데이터를 조회하지 않습니다(`MUST NOT`) |
+| `MviViewModel` | `onIntent`로 입력 수신, 부수효과 수행, `ReducerEvent` 발행으로 상태 갱신 | Retrofit·DataStore를 직접 호출하지 않습니다(`MUST NOT`). `reduce` 안에서 부수효과를 수행하지 않습니다(`MUST NOT`) |
+| Repository 인터페이스(domain) | 화면이 필요로 하는 데이터 동작의 계약 | 구현 수단(Retrofit·DataStore)을 노출하지 않습니다(`MUST NOT`) |
+| Repository 구현(data) | 네트워크·로컬 접근, 응답을 결과 타입으로 변환 | UI 개념(문구·표시 상태)을 알지 않습니다(`MUST NOT`) |
+
+**Repository는 인터페이스와 구현을 나눕니다**(`MUST`). ViewModel은 `:core:domain`의 인터페이스만 알고 구현은 `:core:data`가 제공합니다. 의존 역전으로 화면 계층이 네트워크 구현을 모르게 되어 테스트에서 가짜 구현을 끼울 수 있고, 모듈이 나뉘어 있으므로 `:feature:*`가 `:core:data`를 의존하지 않는 한 **구현 클래스에 접근할 수조차 없습니다**(아래 모듈 구조).
+
+**결정 기록 — Clean Architecture를 전면 도입하지 않습니다(2026-08-22)**
+
+- **배경.** 계층을 나누기로 한 이상 UseCase 계층과 계층별 모델 이중화까지 갈지가 갈림길입니다. 이 제품은 **도메인 규칙(크레딧 차감·체험 한도·소유권·멱등·엔딩 판정)이 전부 백엔드에 있습니다**([`4-backend.md`](./4-backend.md)).
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| UseCase 계층을 기본으로 둔다 | 규칙이 서버에 있어 대부분의 UseCase가 Repository 호출을 한 줄 위임하는 껍데기가 됩니다. 파일과 타입만 늘고 읽는 사람이 한 단계를 더 거칩니다 |
+| 응답 모델을 계층마다 이중화한다(DTO ↔ 도메인 모델 기계적 매핑) | 서버 응답과 화면이 쓰는 모양이 같은 경우가 대부분이라, 매핑 코드가 필드를 그대로 옮기는 반복이 됩니다 |
+
+- **영향.** 다음 조건에서만 예외를 둡니다(`SHOULD`).
+    - **UseCase 추출** — 같은 로직을 ViewModel 두 곳 이상에서 쓰거나, ViewModel 하나가 Repository 셋 이상을 조율할 때.
+    - **별도 도메인 모델** — 여러 응답을 합치거나, 화면이 쓰기에 응답 구조가 불편하거나, 서버 계약 변경으로부터 화면을 격리해야 할 때.
+- 이 예외 조건을 만족하지 않는데 만든 UseCase·매핑은 리뷰에서 되돌립니다.
 
 ### 아직 결정하지 않은 것 — `결정 필요`
 
