@@ -772,7 +772,7 @@ graph LR
 | 경로 | 모델 | temperature | max_tokens | 형식 | 타임아웃 |
 | --- | --- | --- | --- | --- | --- |
 | 스토리라인 | deepseek-v4-flash | 0.75 | 6144 | JSON 모드 | 90초 |
-| 컴파일(+refill) | gpt-5.6-terra | (미전송) | 16384 | JSON 모드 | 90초 |
+| 컴파일(+refill) | `STORY_COMPILE_MODEL` 의존 — 개발: `gemini-3.6-flash`(thinking medium), 운영: `gpt-5.6-terra`(추론 medium) | (미전송) | 16384 | JSON 모드 | 90초 |
 | 채팅 본문 | deepseek-v4-flash | (공급자 기본값) | (미지정) | 스트리밍 + usage 동봉 | 90초(첫 토큰 상한) |
 | 선택지 | deepseek-v4-flash | (공급자 기본값) | 512 | JSON 모드 | 60초(호출 1회당 — 누적 재호출 시 합산) |
 | 판정(D12) | deepseek-v4-flash | (공급자 기본값) | 256 | JSON 모드 | 60초(**SDK 재시도까지 포함한 전체**)와 이 턴에 남은 시간 중 작은 값 |
