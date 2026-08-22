@@ -15,7 +15,7 @@
 
 | 항목      | 값                                                                                                                    |
 | --------- | --------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v0.32                                                                                                                 |
+| 버전      | v0.33                                                                                                                 |
 | 작성일    | 2026-06-30                                                                                                            |
 | 수정일    | 2026-08-19                                                                                                            |
 | 대상      | 마냑 MVP                                                                                                              |
@@ -60,12 +60,12 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 현재 MVP는 로그인 기능이 없는 전원 게스트 서비스입니다. 사용자 단위는 익명 `device_id`로 식별합니다.
 
-**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, Android는 공통 이벤트 카탈로그를 구현해야 한다는 계약은 확정이되 SDK 제품 선택·생성·보관·reset 매핑이 미정입니다([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관이 `device_id`에 의존하므로 매핑 결정 전까지 해당 흐름의 Android 구현을 시작할 수 없습니다.
+**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유합니다**(로그아웃 시 재발급 — [`3-3-android-app.md §3-3-4`](./3-3-android-app.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 앱에 게스트가 없어 비적용입니다([`3-3-android-app.md §3-3-1`](./3-3-android-app.md)).
 
 | 식별자           | 분석 이벤트 타입 | 생성·관리                                      | 사용처                            |
 | ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
-| `device_id`      | string           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 플랫폼 매핑 결정 필요 | 익명 사용자 단위 분석             |
-| `session_id`     | number           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 플랫폼 매핑 결정 필요 | 한 번의 방문 흐름                 |
+| `device_id`      | string           | 논리 식별자 — 웹: Amplitude Browser SDK 자동 수집 / Android: 앱이 생성한 UUID | 익명 사용자 단위 분석             |
+| `session_id`     | number           | 논리 식별자 — 웹·Android 모두 Amplitude SDK 자동 수집 | 한 번의 방문 흐름                 |
 | `request_id`     | string           | **백엔드 생성**(수신 헤더가 없으면 생성, 응답 헤더로 항상 echo — 클라이언트 앱은 생성·주입하지 않음, §6-6-2) | 서버 로그, Sentry, AI 호출 연결   |
 | `device_id_hash` | string           | 백엔드가 `device_id`를 해시                    | 서버 로그, Sentry, `ai_call_logs` |
 | `creation_id`(= `analytics_creation_id`) | string | 간편 제작 진행(세션) 식별자 `simpleCreationId`(원본 `story_creation_sessions.id`, Long)를 문자열로 변환 | 스토리 제작 시도 연결. **AI 트레이스의 `trace_creation_id`와 다른 값**(아래 주의) |
