@@ -16,7 +16,7 @@
 
 | 항목      | 값                                                             |
 | --------- | -------------------------------------------------------------- |
-| 버전      | v0.9                                                           |
+| 버전      | v0.10                                                           |
 | 작성일    | 2026-08-02                                                     |
 | 수정일    | 2026-08-22                                                     |
 | 대상      | 마냑 안드로이드 네이티브 앱 (`Phase 2`)                        |
@@ -189,6 +189,59 @@ graph TD
     - **UseCase 추출** — 같은 로직을 ViewModel 두 곳 이상에서 쓰거나, ViewModel 하나가 Repository 셋 이상을 조율할 때.
     - **별도 도메인 모델** — 여러 응답을 합치거나, 화면이 쓰기에 응답 구조가 불편하거나, 서버 계약 변경으로부터 화면을 격리해야 할 때.
 - 이 예외 조건을 만족하지 않는데 만든 UseCase·매핑은 리뷰에서 되돌립니다.
+
+### 모듈 구조
+
+**처음부터 멀티 모듈로 구성합니다.** 계층 경계를 컴파일러가 강제하게 하고, 프로젝트가 비어 있는 지금이 전환 비용이 가장 낮은 시점이기 때문입니다(아래 결정 기록). `feature`는 화면이 아니라 **도메인 단위**로 묶습니다 — 화면은 도메인 모듈의 하위 패키지(`story/detail`·`chat/room` 등)에 두어 모듈 수를 억제합니다.
+
+```kotlin
+// settings.gradle.kts
+include(":app")               // Application · MainActivity(단일) · 루트 컴포저블 · DI 진입
+
+include(":core:domain")       // 순수 Kotlin — 도메인 모델 · Repository 인터페이스 · 결과 타입·오류 모델 · 앱 스코프 헬퍼 인터페이스 · 라우트 마커
+include(":core:common")       // 순수 Kotlin — 오류 판정 헬퍼 · 디스패처 · 확장 함수
+include(":core:data")         // Repository 구현 · Retrofit API · SSE · DataStore · 인터셉터 · DI 모듈
+include(":core:ui")           // 디자인 시스템 · 공용 컴포저블 · MviViewModel · 문자열 리소스 전량
+include(":core:analytics")    // Amplitude 배선 · 이벤트 발화 헬퍼
+include(":core:navigation")   // 타입 안전 라우트 정의(단일 등록처) · 화면 이동 헬퍼 구현
+
+include(":feature:login")     // 로그인 화면(앱 전용)
+include(":feature:story")     // FE-SCREEN-001 홈 · 003 상세 · 002 생성 퍼널
+include(":feature:chat")      // FE-SCREEN-004 목록 · 005 채팅
+include(":feature:feedback")  // FE-SCREEN-006
+include(":feature:my")        // FE-SCREEN-008 · 011 진입
+```
+
+**`:core:domain`과 `:core:common`은 `kotlin-jvm` 모듈입니다**(`MUST`). 안드로이드 플러그인을 적용하지 않아 `Context`·`Uri` 같은 프레임워크 참조가 **컴파일 에러**가 됩니다. 코루틴(`Flow`)은 안드로이드 의존이 아니므로 허용합니다.
+
+`:core:data` 내부는 관심사별로 패키지를 나눕니다 — `api`(Retrofit 인터페이스·응답 모델), `sse`(스트리밍 수신), `datastore`(Preferences·암호화 토큰), `repository`(구현), `di`(Hilt 모듈), `interceptor`(식별 헤더·인증·로깅).
+
+**`@HiltViewModel`·`@Module`이 있는 모듈마다 Hilt 플러그인과 KSP를 적용합니다**(`MUST`) — `:app`에만 두면 다른 모듈의 애너테이션이 처리되지 않습니다. `@HiltAndroidApp`은 `:app`에만 둡니다.
+
+#### 의존 방향 규칙
+
+- **`:core:domain`은 아무것도 의존하지 않습니다**(`MUST`). 의존 그래프의 바닥이며, Repository 인터페이스가 반환하는 결과 타입·오류 모델도 이 모듈이 소유하기 때문에 이 규칙이 성립합니다.
+- `:core:common`은 **`:core:domain`만** 의존합니다(`MUST`).
+- 그 외 `:core:*`(`data`·`ui`·`analytics`·`navigation`)는 **`:core:domain`·`:core:common`** 을 의존할 수 있습니다(`MUST`).
+- **`:core:*`끼리의 그 밖의 참조는 금지합니다**(`MUST`). `:core:analytics` → `:core:data`, `:core:ui` → `:core:navigation` 같은 참조가 대상이며, `:core:analytics`가 필요로 하는 `device_id`는 DI 배선에서 주입받습니다(§3-3-4). 예외가 필요하면 결정 기록을 남깁니다.
+- `:feature:*`는 `:core:*`를 의존하되 **구현이 있는 `:core:data`는 의존하지 않습니다**(`MUST`). ViewModel이 Repository 인터페이스만 알아야 하므로 `:core:domain`은 포함되고, 구현 주입은 `:app`의 Hilt 배선이 담당합니다.
+- **`:feature:*`끼리 직접 참조하지 않습니다**(`MUST`). 화면 이동은 `:core:navigation`을 거치고, 공유 로직은 `:core:*`로 내립니다.
+- **`:core:*`는 `:feature:*`를 알지 않습니다**(`MUST`). 의존은 항상 `feature → core` 단방향입니다.
+- 모든 모듈을 의존하는 것은 **`:app` 하나**입니다.
+
+**강제 수준은 규칙마다 다릅니다.** `:core:domain`·`:core:common`의 순수 Kotlin 규칙만 컴파일러가 절대적으로 막고, 나머지는 모듈 의존 선언이 1차 방어입니다 — 뚫으려면 `build.gradle.kts`에 한 줄을 추가해야 하고 그 줄이 PR diff에 드러납니다. 단일 모듈의 import 한 줄보다 강하지만 절대적이지는 않으므로 코드 리뷰가 2차 방어로 남습니다.
+
+**결정 기록 — 처음부터 멀티 모듈로 구성(2026-08-22)**
+
+- **배경.** 단일 모듈로 시작해 나중에 쪼갤지, 처음부터 나눌지가 갈림길입니다. 기준 코드는 현재 `:app` 하나뿐이고 화면 코드가 사실상 없습니다.
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| 단일 모듈로 시작하고 출시 후 전환 | 지금이 **옮길 코드가 거의 없는, 영구적으로 가장 싼 시점**입니다. 미루면 화면 10여 개와 테스트를 옮겨야 하고, 그 시점에는 다른 기능이 함께 얹혀 있어 실제로는 수행되지 않을 가능성이 큽니다 |
+| feature마다 4계층(entity·data·domain·presentation)으로 다시 나눔 | 도메인 규칙이 전부 백엔드에 있어 feature별 domain·data 계층이 거의 빕니다(위 계층과 책임의 결정 기록과 같은 이유). 모듈 수만 늘고 관리 비용이 남습니다 |
+| Gradle 규약 플러그인 동시 도입 | 이 규모에서는 모듈별 빌드 스크립트 복제 관리가 더 쌉니다. 모듈이 늘거나 버전 갱신 부담이 커지는 시점에 도입합니다 |
+
+- **영향.** `:core:domain`이 `kotlin-jvm` 모듈이 되어 안드로이드 프레임워크 참조가 컴파일 에러가 됩니다 — 코드 리뷰가 지키던 규칙이 컴파일러 강제로 내려갑니다. 대신 Hilt·KSP가 모듈마다 실행되어 clean build가 느려집니다(증분 빌드는 빨라집니다). Version Catalog(`libs.versions.toml`)는 모든 모듈이 공유합니다.
 
 ### 아직 결정하지 않은 것 — `결정 필요`
 
