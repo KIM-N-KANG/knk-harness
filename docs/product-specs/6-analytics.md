@@ -554,12 +554,15 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 인앱 게스트 허용·로그인 핸드오프 개편([`3-2-web-app.md §3-2-5`](./3-2-web-app.md))의 관측 이벤트입니다. 인앱 브라우저와 외부 브라우저는 Amplitude `device_id`가 서로 달라, 서버가 핸드오프 생성 시 발급하는 분석용 `handoff_id`가 두 구간을 잇는 유일한 키입니다. `handoff_id`는 비밀 핸드오프 코드와 별개의 값이며, 비밀 코드는 분석 이벤트·Sentry에 넣지 않습니다.
 
+**유입 출처 연속성** — 전환 URL에 UTM 계열 6종을 함께 실어 외부 브라우저의 어트리뷰션을 잇습니다([`3-2-web-app.md §3-2-5`](./3-2-web-app.md) 흐름 4, KNK-964). 이전에는 전환 URL을 코드만으로 새로 만들어 광고 유입 사용자의 외부 구간이 전부 direct로 집계됐고, 가입이 외부 브라우저에서 일어나므로 광고 전환이 캠페인에서 누락됐습니다. **`device_id`는 여전히 끊기므로 핸드오프를 탄 사용자는 캠페인에 인앱·외부 두 명으로 집계됩니다** — 캠페인 유입 수를 중복 없이 보려면 `client_inappBrowser_detected` 기준으로 셉니다. `device_id` 연속성을 붙이더라도 UTM 전달은 함께 유지해야 합니다. SDK가 캠페인 없는 진입에 빈 문자열을 기록해, UTM 없이 같은 `device_id`로 랜딩하면 기존 귀속을 빈 값으로 덮어쓰기 때문입니다.
+
 | 이벤트                                     | 우선순위 | 발생 시점                               | 고유 프로퍼티                                    |
 | ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
 | `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
-| `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | `handoff_id` (string, 필수)                      |
-| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `handoff_id` (string, 필수) · `provider` (string, 필수 — `google` · `kakao`, KNK-728) |
+| `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | 없음 (아래 `handoff_id` 갭 참조)                 |
+| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `provider` (string, 필수 — `google` · `kakao`, KNK-728) |
 
+- **`handoff_id` 갭(미결)** — 랜딩 이벤트 2종에는 `handoff_id`가 실려 있지 않습니다. 외부 랜딩이 호출하는 핸드오프 확인 응답에 id가 없어 KNK-682 구현 시 이벤트에서 뺐습니다. 그 결과 **인앱 생성 → 외부 랜딩 구간은 사용자 단위로도 `handoff_id`로도 이을 수 없어 Amplitude 퍼널 전환이 0%로 나옵니다**(이벤트 자체는 정상 발생). 해소하려면 백엔드가 확인 응답에 `handoffId`를 추가해야 합니다([`4-backend.md §4-3-5`](./4-backend.md) 소유 — 협의 필요).
 - 목표 퍼널은 `인앱 유입(detected) → 스토리 생성 → 첫 채팅 → 핸드오프 생성 → 외부 랜딩 → 로그인 성공 → 이관 성공`입니다. 로그인·이관 구간은 서버 이벤트(§6-4-3)에 `handoff_id`를 실어 연결하며, 서버 측 프로퍼티 추가는 [`4-backend.md`](./4-backend.md) 소유로 협의합니다.
 - **카카오톡 인앱의 카카오 로그인은 이 퍼널을 타지 않습니다** (`Phase 1 · 구현`, KNK-721·KNK-728). 같은 브라우저에서 핸드오프 없이 완료되므로([`3-2-web-app.md §3-2-5`](./3-2-web-app.md) 분기 표) 핸드오프 이벤트가 발생하지 않고, `device_id`가 연속이라 연결 키도 필요 없습니다. 카카오 로그인 배포 후 핸드오프 생성 건수 감소는 퍼널 이탈이 아니라 이 경로 전환의 정상 신호이므로, 인앱 로그인 전환은 핸드오프 퍼널과 `client_login_kakaoButton_clicked` → `server_login_kakaoLogin_processed_succeeded`를 합쳐 봅니다.
 - 게스트 체험 이중 사용(미결, [`3-2-web-app.md §3-2-5`](./3-2-web-app.md)) 규모 판단을 위해, 개편 배포 시 공통 프로퍼티(§6-3-2)에 인앱 여부(`in_app_browser`: 동일 enum 또는 null)를 추가하는 것을 검토합니다 — 게스트 한도 도달 이벤트의 인앱 분포가 판단 근거입니다.
