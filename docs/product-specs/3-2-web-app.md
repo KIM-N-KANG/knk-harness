@@ -227,6 +227,16 @@ graph LR
 
 - 활성 탭은 경로 정확 일치로 판단하고 `aria-current="page"`를 적용합니다. 탭은 `replace`로 이동해 히스토리에 쌓지 않습니다.
 
+### 오리지널 태그 이미지 (웹)
+
+오리지널 카드 썸네일 좌상단에 얹는 ORIGINAL 태그(계약은 [`3-1-client.md §3-1-3` FE-SCREEN-001](./3-1-client.md#3-1-3-화면별-스펙))의 웹 자산 정본은 `public/stories/manyak-original-tag-black-green-translucent.svg`이며, 경로 정본은 상수 `ORIGINAL_TAG_SRC`(`src/features/stories/list/constants.ts`)입니다.
+
+- 디자인 에셋에 같은 도안의 변형(색 3종 `green-white`·`black-green`·`black-white` × 불투명·`-translucent`)이 함께 있어 **파일명을 원본 그대로** 두고, 교체는 파일을 `public/stories/`에 추가한 뒤 상수의 파일명만 바꾸는 것으로 끝냅니다. **변형이 필요하면 SVG를 직접 손보지 말고 디자인 에셋의 공식 파일을 가져옵니다** — 손으로 고치면 디자인 원본과 갈라집니다.
+- 현재 값은 검정 반투명(배경만 `fill-opacity` 0.20, 초록 심볼·흰 글자는 불투명)입니다. 배경 도형에만 투명도를 주는 구조라 CSS `opacity`로 태그 전체를 흐리게 하는 것과는 다릅니다 — 글자·심볼 대비는 그대로 유지해야 합니다.
+- **블러는 CSS가 담당합니다.** 태그 이미지에 `backdrop-blur-md`를 걸어 썸네일 우하단의 누적 턴 수 뱃지(`bg-black/20 backdrop-blur-md`)와 질감을 맞춥니다. SVG에는 `backdrop-filter`가 없어 자산만으로는 재현되지 않습니다. 블러는 요소의 border box 전체에 적용되므로 태그 도안의 라운드(원본 92/46 → 표시 폭 72px 기준 좌상단 11px·우하단 6px)로 클리핑해 도형 밖 직사각형 모서리로 새지 않게 합니다.
+- PNG 대신 SVG를 씁니다 — 카드에서 쓰는 크기(72×26)가 작아 래스터는 고밀도 화면에서 뭉개지고, 파일도 SVG가 2.6KB로 PNG(35KB)보다 훨씬 작습니다.
+- `next/image`에 `unoptimized`를 붙여 서빙합니다. 벡터라 최적화할 것이 없고, 이미지 최적화기는 기본 설정에서 SVG를 거부합니다(`dangerouslyAllowSVG` 미설정 — 켜지 않습니다).
+
 ### 법적 콘텐츠 소스 (웹)
 
 서비스이용약관·개인정보처리방침의 화면 계약과 "모든 플랫폼 동일 시행일·버전·본문" 동일성 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-010](./3-1-client.md#3-1-3-화면별-스펙)이 소유합니다. 웹의 콘텐츠 정본은 웹 레포 `src/features/legal/content/terms-content.ts`·`privacy-content.ts`이며 페이지가 이를 렌더합니다(초기의 `docs/legal/*.md` 마크다운 초안은 TS 모듈로 정본을 일원화하며 삭제 — KNK-616). 플랫폼 중립 공유 정본은 아직 없어, Android 구현 전에 공유 정본 또는 동기화 방법 결정이 필요합니다(공통 문서의 간극 기록 참조).
