@@ -313,14 +313,14 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                  | 우선순위 | 발생 시점             | 고유 프로퍼티                                        |
 | --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
 | `client_storyList_viewed`               | P0       | 홈 오리지널 목록 진입 | 없음                                                 |
-| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭 | `source` (string, 필수: `header` / `emptyState`)   |
+| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`)      |
 | `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈 헤더 로그인 버튼 클릭(게스트) | 없음 |
 
 `client_storyList_loginButton_clicked`는 게스트가 홈 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 마이발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
-제작하기 CTA는 `/create`의 제목 행 버튼과 빈 목록 상태 버튼 두 곳에 있습니다(KNK-988). 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`header`: 제목 행 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다. `client_storyList_viewed`는 전체 방문 퍼널의 시작점인 홈 진입을 계속 측정하고, 카드 이벤트는 `section`으로 홈 오리지널과 제작 탭의 내 스토리를 구분합니다.
+제작하기 CTA는 `/create`의 FAB와 빈 목록 상태 버튼 두 곳에 있습니다(KNK-988). 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: FAB, `emptyState`: 빈 목록 버튼)로 구분합니다. `client_storyList_viewed`는 전체 방문 퍼널의 시작점인 홈 진입을 계속 측정하고, 카드 이벤트는 `section`으로 홈 오리지널과 제작 탭의 내 스토리를 구분합니다.
 
 #### 6-4-2-3. 스토리 제작
 
