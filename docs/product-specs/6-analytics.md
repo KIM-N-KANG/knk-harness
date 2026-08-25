@@ -25,7 +25,7 @@
 
 마냑 MVP 분석의 목적은 사용자가 다음 흐름을 자연스럽게 완료하는지 확인하는 것입니다.
 
-1. 스토리 목록에서 스토리 제작을 시작합니다.
+1. 제작 탭의 내 스토리 목록에서 스토리 제작을 시작합니다.
 2. 키워드 선택, 스토리라인 선택, 추가 정보 입력을 거쳐 스토리를 완성합니다.
 3. 완성한 스토리의 상세 화면에서 채팅을 시작합니다.
 4. 채팅에서 첫 메시지를 보내고 여러 턴 동안 이야기를 이어갑니다.
@@ -308,19 +308,19 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_onboarding_createButton_clicked` | P1       | 스토리 만들기 버튼 클릭 | 없음          |
 | `client_onboarding_skipButton_clicked`   | P1       | 나중에 하기 버튼 클릭   | 없음          |
 
-#### 6-4-2-2. 스토리 목록
+#### 6-4-2-2. 홈·제작 스토리 목록
 
 | 이벤트                                  | 우선순위 | 발생 시점             | 고유 프로퍼티                                        |
 | --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
-| `client_storyList_viewed`               | P0       | 스토리 목록 화면 진입 | 없음                                                 |
-| `client_storyList_createButton_clicked` | P0       | 제작하기 CTA 클릭     | `source` (string, 필수: `fab` / `emptyState`)        |
-| `client_storyList_storyCard_clicked`    | P1       | 스토리 카드 클릭      | `story_id` (string, 필수), `position` (number, 선택) |
-| `client_storyList_storyCard_impressed`  | P1       | 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택) |
+| `client_storyList_viewed`               | P0       | 홈 오리지널 목록 진입 | 없음                                                 |
+| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`)      |
+| `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
+| `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈 헤더 로그인 버튼 클릭(게스트) | 없음 |
 
 `client_storyList_loginButton_clicked`는 게스트가 홈 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 마이발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
-제작하기 CTA는 플로팅 버튼과 빈 목록 상태 버튼 두 곳에 있습니다. 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: 플로팅 버튼, `emptyState`: 빈 목록 버튼)로 구분합니다.
+제작하기 CTA는 `/create`의 FAB와 빈 목록 상태 버튼 두 곳에 있습니다(KNK-988). 버튼 역할이 같으므로 이벤트는 하나로 두고, 어느 CTA에서 제작을 시작했는지는 `source`(`fab`: FAB, `emptyState`: 빈 목록 버튼)로 구분합니다. `client_storyList_viewed`는 전체 방문 퍼널의 시작점인 홈 진입을 계속 측정하고, 카드 이벤트는 `section`으로 홈 오리지널과 제작 탭의 내 스토리를 구분합니다.
 
 #### 6-4-2-3. 스토리 제작
 
@@ -359,7 +359,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-임시 저장 관련 이벤트([`3-1-client.md §3-1-4`](./3-1-client.md) 제작 임시 저장)는 이탈 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`(저장) → `client_storyCreate_continueBanner_shown`/`_clicked`(홈 배너 회수) 또는 `client_storyCreate_resumeDialog_shown`/`_continued`(퍼널 재진입 회수)로 이어지며, `_dismissed`와 `_discarded`는 저장본을 버린 이탈입니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 임시 저장본(`STORY_DRAFT`) 회수를 구분합니다.
+임시 저장 관련 이벤트([`3-1-client.md §3-1-4`](./3-1-client.md) 제작 임시 저장)는 이탈 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`(저장) → `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 배너 회수) 또는 `client_storyCreate_resumeDialog_shown`/`_continued`(퍼널 재진입 회수)로 이어지며, `_dismissed`와 `_discarded`는 저장본을 버린 이탈입니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 임시 저장본(`STORY_DRAFT`) 회수를 구분합니다.
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client.md §3-1-4`](./3-1-client.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
