@@ -410,7 +410,7 @@ graph LR
 | --- | --- | --- |
 | `started` | `{chatId}` | 스트리밍 시작 |
 | `token` | `{text}` | AI 토큰 청크. AI 서버 스트림을 1:1 중계 |
-| `character_image` | `{name, image_url}` | `Phase 2 · 계획`(KNK-981). AI 서버가 스트리밍 중 인물 태그를 감지해 변환한 이벤트. 백엔드는 프론트에 그대로 중계 |
+| `character_image` | `{name, imageUrl}` | `Phase 2 · 계획`(KNK-981). AI 서버가 스트리밍 중 인물 태그를 감지해 변환한 이벤트. 백엔드는 프론트에 그대로 중계 |
 | `completed` | `{chatId, turnId, aiOutput, choices[], reachedEnding}` | 턴 저장 완료. `aiOutput`은 서버 확정본 전문. `reachedEnding`(string·null)은 `Phase 1 · 구현`(KNK-522·523) — 이번 턴이 엔딩 도달이면 도달 엔딩 **이름**, 아니면 null([§4-3-10](#4-3-api-계약)) |
 | `error` | `{code, message}` | 실패. `completed`를 대체. 백엔드 자체 실패의 `message`는 "AI 응답 생성 중 오류가 발생했습니다." 고정 문구 |
 
@@ -860,7 +860,7 @@ graph TD
 
 채팅 진행 중 표시할 이미지는 인물 이미지 1종입니다. 배경 이미지 마커 방식(`[[image:<imageKey>]]` + `completed` 동봉 `images[]`)은 인물 이미지 태그 치환 방식 확정(KNK-981)에 따라 **인물에는 적용하지 않습니다**. 배경 마커 트랙은 미구현 상태로 보류합니다.
 
-**인물 이미지 — `character_image` SSE 이벤트(`Phase 2 · 계획`, KNK-981).** AI 서버가 스트리밍 중 `[character:이름]` 태그를 감지해 `character_image` 이벤트(`{name, image_url}`)로 변환합니다. 백엔드는 이 이벤트를 프론트에 그대로 중계합니다. 본문(`aiOutput`)에는 인물 이미지 관련 마커가 포함되지 않습니다. 상세는 위 "채팅 인물 이미지 전달" 절과 [`5-ai-server.md §5-3-4`](./5-ai-server.md)를 참조합니다.
+**인물 이미지 — `character_image` SSE 이벤트(`Phase 2 · 계획`, KNK-981).** AI 서버가 스트리밍 중 `[character:이름]` 태그를 감지해 `character_image` 이벤트(`{name, imageUrl}`)로 변환합니다. 백엔드는 이 이벤트를 프론트에 그대로 중계합니다. 본문(`aiOutput`)에는 인물 이미지 관련 마커가 포함되지 않습니다. 상세는 위 "채팅 인물 이미지 전달" 절과 [`5-ai-server.md §5-3-4`](./5-ai-server.md)를 참조합니다.
 
 ```json
 {
@@ -896,7 +896,9 @@ graph TD
 **어떻게.** 백엔드가 할 일은 두 가지입니다:
 
 1. **채팅 요청에 인물-URL 매핑 실어 보내기.** DB의 `story_characters`에서 인물 이름과 이미지 URL을 조회해, 채팅 요청의 `character_images[]` 필드에 채워 AI 서버에 보냅니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)). 이미지가 없는 인물(생성 실패·비활성)은 목록에서 제외합니다.
-2. **`character_image` SSE 이벤트를 프론트에 그대로 중계.** AI 서버가 스트리밍 중에 보내는 `character_image` 이벤트(`{name, image_url}`)를 프론트에 그대로 전달합니다. 백엔드가 추가로 변환하거나 검증할 것은 없습니다 — 매핑 자체를 백엔드가 보냈으므로 AI 서버가 돌려주는 URL은 이미 검증된 값입니다.
+2. **`character_image` SSE 이벤트를 프론트에 그대로 중계.** AI 서버가 스트리밍 중에 보내는 `character_image` 이벤트(`{name, imageUrl}`)를 프론트에 그대로 전달합니다. 백엔드가 추가로 변환하거나 검증할 것은 없습니다 — 매핑 자체를 백엔드가 보냈으므로 AI 서버가 돌려주는 URL은 이미 검증된 값입니다.
+
+**표기.** 이벤트 페이로드 키는 `imageUrl`(camelCase)입니다 — 서버 SSE 이벤트 표기 관례가 camelCase이고 AI 구현도 camelCase로 내보내기 때문입니다(KNK-943 정정). 반면 요청 필드 `character_images[].image_url`은 AI 서버 수신 입력이므로 snake_case를 유지합니다.
 
 **왜 그 방법.** 마커 방식(배경과 동일)을 인물에도 쓰는 안을 기각했습니다. 마커는 `completed`에서 확정하므로 본문 스트림이 끝날 때까지 이미지가 안 보입니다. 인물이 말하거나 등장하는 시점에 즉시 이미지를 띄우려면 스트리밍 중 전달이 필요하고, 태그 치환이 이를 가능하게 합니다.
 
