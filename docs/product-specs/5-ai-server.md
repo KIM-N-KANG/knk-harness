@@ -549,7 +549,7 @@ AI가 발행하는 SSE 이벤트는 5개입니다(시작 이벤트 `started`는 
 | 이벤트 | 페이로드 | 설명 |
 | --- | --- | --- |
 | `token` | `{"text": string}` | 본문 생성 토큰(델타). 선택지는 토큰으로 흘리지 않음 |
-| `character_image` | `{"name": string, "image_url": string}` | 인물 이미지(`Phase 2 · 계획`, KNK-981). 스트리밍 중 태그를 감지하면 이 이벤트로 변환해 전송. 백엔드는 프론트에 그대로 중계 |
+| `character_image` | `{"name": string, "imageUrl": string}` | 인물 이미지(`Phase 2 · 계획`, KNK-981). 스트리밍 중 태그를 감지하면 이 이벤트로 변환해 전송. 백엔드는 프론트에 그대로 중계 |
 | `ping` | `{}` | 판정을 기다리는 동안만 10초 간격으로 나가는 빈 신호(KNK-750). 백엔드의 이벤트 간 상한 시계를 되돌리는 것이 유일한 목적이라 담는 값이 없음 |
 | `completed` | `{"aiOutput": string, "choices": [], "meta": {...}}` | 턴 완료. camelCase 표기. `aiOutput`은 본문만(선택지 제외) — 백엔드는 이 값만 History에 저장. `choices`는 **항상 빈 배열**(선택지는 별도 API — D6) |
 | `error` | `{"code": string, "message": string}` | 스트림 실패([§5-5](#5-5-오류와-실패-코드)) |
@@ -635,6 +635,8 @@ sequenceDiagram
 3. AI 서버가 스트리밍 중에 태그를 감지합니다. `[`이 들어오면 `]`가 올 때까지 버퍼에 잡아둡니다.
 4. 태그가 완성되면 매핑에서 URL을 찾아 `character_image` 이벤트로 변환해 백엔드에 전송합니다. 태그 텍스트 자체는 삭제됩니다.
 5. 백엔드는 이 이벤트를 프론트에 그대로 중계합니다.
+
+이벤트 페이로드 키는 `imageUrl`(camelCase)입니다 — 백엔드 SSE 이벤트 표기 관례가 camelCase이고 AI 구현도 camelCase로 내보내기 때문입니다(KNK-943 정정). 요청 필드 `character_images[].image_url`은 수신 입력이라 snake_case 그대로입니다.
 
 태그 깨짐 안전장치: `[` 이후 30자 안에 `]`가 오지 않으면 태그가 아니라고 판단하고, 버퍼에 쌓아둔 텍스트를 `token` 이벤트로 그대로 내보냅니다.
 
