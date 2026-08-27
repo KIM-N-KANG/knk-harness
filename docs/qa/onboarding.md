@@ -35,6 +35,7 @@
 | ONBD-GUEST-10 | P2 | 프라이빗 모드 등 쿠키·localStorage 차단 환경           | 첫 진입 → CTA → 재진입                                          | 저장 실패는 조용히 무시되어 매 진입마다 온보딩으로 다시 이동할 수 있음(쿠키만 차단이면 가드가 열람 상태를 보고 목적지로 되돌림, ⚠️3)                                                                                                                                                                                                      | 수동                                | 구현(`onboarding-storage`)               |
 | ONBD-GUEST-20 | P1 | 첫 방문 조건 충족 | `/?utm_source=th&utm_medium=social&utm_campaign=organic&utm_content=bio`로 진입 | 리다이렉트된 `/onboarding` URL에 원본 쿼리(UTM 4개)와 `from=/`가 모두 유지됨. 화이트리스트가 아닌 전체 쿼리 전달이므로 임의 파라미터도 동일하게 보존 | ✅ e2e `smoke/onboarding` | FE-SCREEN-007 진입 조건, KNK-695 |
 | ONBD-GUEST-21 | P1 | 쿠키·로컬 데이터 없음 | 검색 크롤러 User-Agent(예: Googlebot)로 `/` 요청 | 온보딩으로 리다이렉트되지 않고 홈이 200으로 응답됨. 메인 4탭 모두 동일. 인앱브라우저(카카오톡·다음 앱·네이버 앱) UA는 크롤러로 판정되지 않고 기존대로 온보딩으로 이동 | ✅ e2e `seo/crawler-indexing` | KNK-699·988, 구현(`search-crawler`·`proxy`) |
+| ONBD-GUEST-22 | P2 | 온보딩 페이지 표시됨 | 하단 액션 영역 여백 확인 | 미리보기 영역 바로 아래에 추가 상단 패딩 없이 "나중에 하기"·"첫 장면 만들기" 버튼 행이 붙고 좌우 16px·하단 안전 영역은 유지 | ✅ e2e `smoke/onboarding`·`visual/onboarding-visual` | §3-2-3 단일 프레임, KNK-1012 |
 
 ## ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩
 
