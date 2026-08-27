@@ -97,6 +97,7 @@ graph LR
 | 표준 `EventSource` | GET만 지원해 `POST` 본문(`userInput`)을 보낼 수 없습니다 |
 
 - **영향.** 이벤트 파싱과 스트림 종료 감지를 직접 구현합니다(EOF 처리 계약은 공통 문서 소유). 채팅 스트림은 공용 요청 계층(`fetchWithTimeout`)을 우회해 맨 `fetch`를 쓰므로 클라이언트 타임아웃이 없습니다.
+- **인물 이미지 스트리밍 — `Phase 2 · 구현`(KNK-1013·1015).** SSE 파서는 `character_image {name, imageUrl}`를 알 수 없는 이벤트로 버리지 않고 `token`과 같은 순서로 내보냅니다. 진행 중 턴은 단일 문자열 대신 순서가 있는 `text | character_image` 조각 목록을 소유하며, 이미지 이벤트가 오면 `completed`를 기다리지 않고 즉시 렌더합니다. `completed` 뒤 상세 refetch로 받은 `aiOutput`은 `[[인물이름:URL]]` 마커를 같은 조각 목록으로 파싱하고, 진행 중 목록과 한 프레임에 교체합니다. 이어쓰기·재생성의 진행 중 렌더와 상세 턴 렌더는 같은 조각 컴포넌트를 사용합니다. 텍스트 조각은 각각 문단으로, 이미지 조각은 그 문단의 형제가 되는 블록으로 렌더해 블록 이미지를 `<p>` 안에 중첩하지 않습니다. AI 메시지 컨테이너 전체에 `p-4`를 적용하지 않고 텍스트·배지 조각만 좌우 16px을 소유하게 하며, 이미지 조각은 `width: 100%`·좌우 패딩 0으로 메시지 양 끝에 닿습니다. 이미지 조각에는 `border-y border-border`를 적용하고 조각 목록의 `gap-4`로 앞뒤 텍스트와 16px을 띄웁니다. 공통 순서·실패·공유 계약은 [`3-1-client.md §3-1-5`](./3-1-client.md#3-1-5-채팅-플레이와-sse-스트리밍)가 소유합니다.
 
 ### 게스트 서재 상태 판정 (웹)
 
@@ -395,7 +396,7 @@ graph LR
 
 ### 원격 이미지 최적화
 
-원격 이미지는 Next.js 이미지 최적화 허용 목록을 최소 경로로 제한합니다. Google 계정 이미지는 `lh3.googleusercontent.com`, 프로필 프리셋은 운영 `api.manyak.app/profile-presets/**`와 개발 `dev-api.manyak.app/profile-presets/**`, 스토리 썸네일은 `cdn.manyak.app/thumbnails/**`만 허용합니다. 개발 백엔드는 환경별 base URL을 `profile_image_url`에 전체 URL로 저장하므로, 개발 호스트가 빠지면 로그인은 성공해도 해당 사용자의 프로필 프리셋 렌더링이 Next.js에서 차단됩니다(KNK-388·KNK-827·KNK-832, 정본: `manyak-web/next.config.ts`).
+원격 이미지는 Next.js 이미지 최적화 허용 목록을 최소 경로로 제한합니다. Google 계정 이미지는 `lh3.googleusercontent.com`, 프로필 프리셋은 운영 `api.manyak.app/profile-presets/**`와 개발 `dev-api.manyak.app/profile-presets/**`, 스토리 썸네일은 `cdn.manyak.app/thumbnails/**`, 생성 인물 이미지는 운영 `cdn.manyak.app/characters/generated/**`와 개발 `dev-cdn.manyak.app/characters/generated/**`만 허용합니다. 인물 이미지는 백엔드가 저장·검증한 URL만 `character_image`와 `[[인물이름:URL]]` 마커로 오며 임의 사용자 URL은 허용하지 않습니다(KNK-1013). 개발 백엔드는 인물 이미지 전용 base URL(`MANYAK_CHARACTER_IMAGE_BASE_URL`)을 저장하므로 개발 CDN이 허용 목록에서 빠지면 개발 채팅의 저장 마커 렌더가 Next.js에서 차단됩니다. 프로필 프리셋도 환경별 base URL을 `profile_image_url`에 전체 URL로 저장하므로 개발 API 호스트가 필요합니다(KNK-388·KNK-827·KNK-832, 정본: `manyak-web/next.config.ts`).
 
 ### 인앱 브라우저 감지와 탈출 스킴 — `Phase 1 · 구현`(KNK-567·KNK-592·KNK-681)
 
