@@ -766,7 +766,7 @@ FE-SCREEN-005(채팅 화면)의 안드로이드 구조입니다. 턴 모델·SSE
 
 모서리는 웹 `--radius: 10px` 스케일이 앱 토큰과 그대로 맞습니다 — `rounded-md`(14px)=`shapes.control`, `rounded-lg`(16px)=`shapes.card`, `rounded-xl`(20px)=`shapes.overlay`, 아이콘 버튼의 `min(--radius-sm, 10px)`=`shapes.menuItem`, 배지의 `rounded-4xl`=`shapes.pill`.
 
-**20dp 간격 토큰을 새로 추가합니다.** 웹 본문은 `py-5`·`gap-5`(20px)를 쓰는데 앱 간격 토큰은 16(`gutter`)과 24(`section`) 사이가 비어 있습니다. 16이면 사용자 밴드가 좁아 보이고 24면 턴 간격이 48까지 벌어져 둘 다 웹과 갈립니다. 토큰 생성기 → `design/design-tokens.json` → Kotlin 순서로 `spacing.passage = 20.dp`를 추가하고 본문 세로 여백은 이 토큰만 씁니다(`DESIGN.md` 갱신 지침).
+**20dp 간격 토큰 `{spacing.passage}`를 새로 추가했습니다.** 웹 본문은 `py-5`·`gap-5`(20px)를 쓰는데 앱 간격 토큰은 16(`gutter`)과 24(`section`) 사이가 비어 있었습니다. 16이면 사용자 밴드가 좁아 보이고 24면 턴 간격이 48까지 벌어져 둘 다 웹과 갈립니다. 프리미티브 `space.250`(20px)과 시맨틱 `space.passage`를 토큰에 넣고 Kotlin `ManyakTheme.spacing.passage`로 옮겼으며, **본문 세로 여백은 이 토큰만 씁니다**(`MUST`).
 
 #### 메시지 렌더 — 말풍선이 아니라 밴드입니다
 
