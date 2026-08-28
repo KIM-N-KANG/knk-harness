@@ -391,7 +391,7 @@ graph LR
 | `id` | number | 턴 ID |
 | `userInput` | string | 사용자 입력 |
 | `aiOutput` | string | AI 출력 전문. `Phase 2 · 계획`(KNK-982) — 이미지가 표시된 대사 줄 **위 별도 줄**(뒤에 빈 줄)에 `[[URL]]` 저장 마커가 포함됩니다(KNK-1002·KNK-1025). 프론트엔드는 마커 줄을 글자로 표시하지 않고 그 줄을 통째로 이미지로 렌더링합니다([§4-3-9](#4-3-api-계약)) |
-| `characterImages` | `{name, imageUrl}[]` | `Phase 2 · 계획`(KNK-982). `aiOutput`의 유효한 인물 저장 마커를 등장 순서대로 복원한 목록. 같은 인물이 여러 번 말하면 같은 항목도 여러 번 포함됩니다. 변경 계획(KNK-1002): 항목이 `{name, imageName, imageUrl}`로 바뀝니다 — `imageName`은 이미지 이름(아래 [§4-3-9](#4-3-api-계약) "채팅 인물 이미지 전달") |
+| `characterImages` | `{name, imageName, imageUrl}[]` | `Phase 2 · 계획`(KNK-982). `aiOutput`의 유효한 인물 저장 마커를 등장 순서대로 복원한 목록. 같은 인물이 여러 번 말하면 같은 항목도 여러 번 포함됩니다. `imageName`은 이미지 이름(KNK-1026, 아래 [§4-3-9](#4-3-api-계약) "채팅 인물 이미지 전달") |
 | `choices` | string[] | 선택지 |
 | `reachedEnding` | string·null | `Phase 1 · 구현`(KNK-527) 이 턴이 엔딩 도달 턴이면 도달 엔딩 **이름**, 아니면 null(`story_messages.reached_ending_id` 기반 — [§4-3-10](#4-3-api-계약)) |
 | `createdAt` | string | 생성 시각 |
@@ -411,8 +411,8 @@ graph LR
 | --- | --- | --- |
 | `started` | `{chatId}` | 스트리밍 시작 |
 | `token` | `{text}` | AI 토큰 청크. AI 서버 스트림을 1:1 중계 |
-| `character_image` | `{name, imageUrl}` | `Phase 2 · 계획`(KNK-982). AI 서버가 이미지 보유 인물의 대사 바로 앞 내부 태그를 감지해 변환한 이벤트. 같은 인물이 다시 말해도 매번 오며, 백엔드는 프론트에 그대로 중계. 변경 계획(KNK-1002): 태그 대신 줄 머리의 `인물명:` 라벨을 감지하고, 페이로드는 `{name, imageName, imageUrl}` |
-| `completed` | `{chatId, turnId, aiOutput, characterImages[], choices[], reachedEnding}` | 턴 저장 완료. `Phase 2 · 계획`(KNK-982)으로 `aiOutput`에는 대사 줄 위 별도 줄의 `[[URL]]` 저장 마커가 포함되고(KNK-1002·KNK-1025) `characterImages[]`에는 표시 순서와 횟수가 담깁니다. 변경 계획(KNK-1014): `characterImages[]`는 `{name, imageName, imageUrl}`. `reachedEnding`(string·null)은 `Phase 1 · 구현`(KNK-522·523) — 이번 턴이 엔딩 도달이면 도달 엔딩 **이름**, 아니면 null([§4-3-10](#4-3-api-계약)) |
+| `character_image` | `{name, imageName, imageUrl}` | `Phase 2 · 계획`(KNK-982). AI 서버가 이미지 보유 인물의 줄 머리 `인물명:` 라벨을 감지해 만든 이벤트(KNK-1002, `imageName`은 KNK-1026). 같은 인물이 다시 말해도 매번 오며, 백엔드는 프론트에 그대로 중계 |
+| `completed` | `{chatId, turnId, aiOutput, characterImages[], choices[], reachedEnding}` | 턴 저장 완료. `Phase 2 · 계획`(KNK-982)으로 `aiOutput`에는 대사 줄 위 별도 줄의 `[[URL]]` 저장 마커가 포함되고(KNK-1002·KNK-1025) `characterImages[]`에는 표시 순서와 횟수가 `{name, imageName, imageUrl}`(KNK-1026)로 담깁니다. `reachedEnding`(string·null)은 `Phase 1 · 구현`(KNK-522·523) — 이번 턴이 엔딩 도달이면 도달 엔딩 **이름**, 아니면 null([§4-3-10](#4-3-api-계약)) |
 | `error` | `{code, message}` | 실패. `completed`를 대체. 백엔드 자체 실패의 `message`는 "AI 응답 생성 중 오류가 발생했습니다." 고정 문구 |
 
 - 이벤트는 위 5종이며(`character_image`와 `completed.characterImages[]`는 백엔드 `Phase 2 · 계획`으로 미구현), heartbeat(주기 ping)는 없습니다. 페이로드는 이벤트별 DTO의 JSON 직렬화입니다.
@@ -880,7 +880,7 @@ graph TD
 
 백엔드가 할 일:
 
-1. 컴파일 응답의 `character_images[]`를 순회합니다. 각 항목은 `{name, image_base64, content_type, error}`입니다. 변경 계획(KNK-1014, 2026-08-28 확정): `name`은 인물 이름 그대로 두고 AI가 지은 **이미지 이름** `image_name`(지금은 `인물이름_기본`)이 더해집니다. 백엔드는 `image_name`에 uuid를 붙여 파일명으로 쓰고, 이미지를 인물에 연결하는 것은 지금처럼 `name`으로 합니다.
+1. 컴파일 응답의 `character_images[]`를 순회합니다. 각 항목은 `{name, image_name, image_base64, content_type, error}`입니다(KNK-1027). `name`은 인물 이름 그대로이고, `image_name`은 AI가 지은 **이미지 이름**(지금은 `인물이름_기본`)으로 성공·실패 항목 모두에 있습니다. 백엔드는 `image_name`에 uuid를 붙여 파일명으로 쓰고 `story_characters.image_name`에 저장하며, 이미지를 인물에 연결하는 것은 지금처럼 `name`으로 합니다(2026-08-28 확정).
 2. `image_base64`가 있는 인물: base64를 디코딩해 S3에 업로드하고(`content_type`을 Content-Type으로 설정), URL을 `story_characters`([§4-4](#4-4-데이터-모델))에 저장합니다.
 3. `image_base64`가 null인 인물(에러 코드: `timeout`, `rate_limited`, `rejected`, `appearance_missing`, `generation_failed`): 이미지 없이 저장합니다. 이미지 실패가 스토리 생성을 막지 않습니다(graceful — 엔딩 빈 배열과 같은 원칙).
 4. `character_images`가 빈 배열이면 인물 이미지가 하나도 없는 것이며, 기존 스토리처럼 이미지 없이 진행합니다.
@@ -898,20 +898,20 @@ graph TD
 
 **어떻게.** 백엔드는 다음 순서로 처리합니다:
 
-1. **채팅 요청에 인물-URL 매핑 실어 보내기.** DB의 `story_characters`에서 인물 이름과 이미지 URL을 조회해, 채팅 요청의 `character_images[]` 필드에 채워 AI 서버에 보냅니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)). 이미지 URL이 없는 인물은 목록에서 제외합니다. 변경 계획(KNK-1014): 항목은 `{name, image_name, image_url}`입니다. `name`은 대사 줄의 `인물명:`과 맞추는 키라 **반드시 인물 이름**이어야 하고, `image_name`은 이미지 이름(`story_characters.image_name`)입니다.
-2. **`character_image` SSE 이벤트를 프론트에 그대로 중계.** AI 서버가 스트리밍 중에 보내는 `character_image` 이벤트(`{name, imageUrl}` — 변경 계획(KNK-1002): `{name, imageName, imageUrl}`)를 프론트에 그대로 전달합니다. 백엔드가 추가로 변환하거나 검증할 것은 없습니다 — 매핑 자체를 백엔드가 보냈으므로 AI 서버가 돌려주는 URL은 이미 확인된 값입니다. 이미지 이벤트를 보낸 뒤 턴이 실패해도 제거 이벤트를 보내지 않습니다. 이미 표시한 이미지를 현재 화면에만 유지하는 규칙은 [`3-1-client.md §3-1-5`](./3-1-client.md)이 소유합니다.
-3. **완료 결과를 저장하고 중계.** AI 서버의 `completed.aiOutput`을 `[[URL]]` 마커(대사 줄 위 별도 줄, 뒤에 빈 줄)가 든 상태로 저장합니다. `completed.characterImages[]`도 프론트에 그대로 전달합니다. 목록에는 대사가 나온 순서대로 항목을 넣으며, 같은 인물이 두 번 말하면 두 항목을 유지합니다. 변경 계획(KNK-1014): `characterImages[]` 항목은 `{name, imageName, imageUrl}`입니다.
+1. **채팅 요청에 인물-URL 매핑 실어 보내기.** DB의 `story_characters`에서 인물 이름과 이미지 URL을 조회해, 채팅 요청의 `character_images[]` 필드에 채워 AI 서버에 보냅니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)). 이미지 URL이 없는 인물은 목록에서 제외합니다. 항목은 `{name, image_name, image_url}`입니다(KNK-1026). `name`은 대사 줄의 `인물명:`과 맞추는 키라 **반드시 인물 이름**이어야 하고, `image_name`은 이미지 이름(`story_characters.image_name`)입니다. AI 서버는 `image_name`이 비어 있거나 null이어도 받아 그대로 돌려주므로, 컬럼을 채우기 전에 먼저 배포해도 채팅이 막히지 않습니다.
+2. **`character_image` SSE 이벤트를 프론트에 그대로 중계.** AI 서버가 스트리밍 중에 보내는 `character_image` 이벤트(`{name, imageName, imageUrl}`, KNK-1026)를 프론트에 그대로 전달합니다. 백엔드가 추가로 변환하거나 검증할 것은 없습니다 — 매핑 자체를 백엔드가 보냈으므로 AI 서버가 돌려주는 URL은 이미 확인된 값입니다. 이미지 이벤트를 보낸 뒤 턴이 실패해도 제거 이벤트를 보내지 않습니다. 이미 표시한 이미지를 현재 화면에만 유지하는 규칙은 [`3-1-client.md §3-1-5`](./3-1-client.md)이 소유합니다.
+3. **완료 결과를 저장하고 중계.** AI 서버의 `completed.aiOutput`을 `[[URL]]` 마커(대사 줄 위 별도 줄, 뒤에 빈 줄)가 든 상태로 저장합니다. `completed.characterImages[]`도 프론트에 그대로 전달합니다. 목록에는 대사가 나온 순서대로 항목을 넣으며, 같은 인물이 두 번 말하면 두 항목을 유지합니다. 항목은 `{name, imageName, imageUrl}`입니다(KNK-1026).
 4. **과거 턴을 복원.** 채팅 상세 조회에서는 저장한 `aiOutput`의 마커를 앞에서부터 읽어 `{name, imageUrl}` 목록을 만듭니다. URL이 마커에 들어 있으므로 `story_characters`를 다시 조회하지 않습니다. `aiOutput`의 마커는 제거하지 않고 함께 반환하며, 프론트가 마커를 숨기고 그 위치에 이미지를 렌더링합니다. 변경 계획(2026-08-28 확정): 상세 조회는 저장된 `aiOutput`을 마커가 든 상태 그대로 반환하고 목록을 따로 만들지 않습니다. 마커에 URL이 들어 있어 본문만으로 복원이 되므로, 마커를 이미지로 바꾸는 것은 실시간 스트림과 같은 파서로 프론트가 합니다([`3-1-client.md §3-1-5`](./3-1-client.md)). `completed.characterImages[]`는 스트림 시점 산물이라 백엔드가 저장하지 않으며, 상세·공유 응답에 실리지 않습니다. 백엔드 코드 변경은 없습니다.
 5. **재생성 결과를 교체.** 재생성이 성공하면 새 마커 본문과 새 `characterImages[]`가 활성 결과가 됩니다. 재생성이 실패하면 기존 본문을 유지하므로 기존 이미지도 그대로 복원됩니다.
 6. **공유 응답은 이미지 목록을 제외.** `ChatShareTurnResponse`에는 `characterImages`를 추가하지 않습니다. 공유 `aiOutput`의 저장 마커와 매핑 실패로 남은 `[character:이름]` 태그도 백엔드가 제거하지 않습니다. 공유 화면은 저장 마커만 숨기고 본문을 표시합니다. 변경 계획(KNK-1002): 태그 자체가 없어지므로 "남은 태그" 규칙은 사라지고, 공유 화면은 `[[URL]]` 마커 줄만 숨깁니다.
 
-**표기.** 이벤트 페이로드 키는 `imageUrl`(camelCase)입니다 — 서버 SSE 이벤트 표기 관례가 camelCase이고 AI 구현도 camelCase로 내보내기 때문입니다(KNK-943 정정). 반면 요청 필드 `character_images[].image_url`은 AI 서버 수신 입력이므로 snake_case를 유지합니다. 변경 계획(KNK-1002)의 이미지 이름도 같은 규칙입니다 — 요청은 `image_name`, 이벤트·응답은 `imageName`.
+**표기.** 이벤트 페이로드 키는 `imageUrl`(camelCase)입니다 — 서버 SSE 이벤트 표기 관례가 camelCase이고 AI 구현도 camelCase로 내보내기 때문입니다(KNK-943 정정). 반면 요청 필드 `character_images[].image_url`은 AI 서버 수신 입력이므로 snake_case를 유지합니다. 이미지 이름도 같은 규칙입니다(KNK-1026) — 요청은 `image_name`, 이벤트·응답은 `imageName`.
 
 **왜 그 방법.** LLM에는 긴 URL 대신 짧은 `[character:이름]`만 출력시킵니다. URL을 직접 쓰게 하면 한 글자만 틀려도 이미지가 깨지고 입력 토큰도 늘기 때문입니다. AI 서버가 백엔드가 준 매핑으로 이벤트와 `[[URL]]`을 만들면, 실시간 화면과 저장 결과가 같은 대사 위치를 공유합니다. 저장 마커에 URL을 두면 과거 턴을 열 때 현재 인물 테이블이나 바뀐 이미지에 의존하지 않고 당시 이미지를 그대로 복원할 수 있습니다. 인물 이름은 URL 파일명과 `characterImages[]`에 있어 마커에 넣지 않습니다(KNK-1025). `characterImages[]`는 프론트가 완료 시점의 표시 순서와 횟수를 바로 확정하게 합니다.
 
 매핑에 없는 `[character:이름]` 태그는 이미지 이벤트나 저장 마커로 바꾸지 않습니다. AI 서버가 태그 원문을 `token`과 `completed.aiOutput`에 그대로 남기며, 백엔드도 그대로 중계·저장합니다. 이 경우 과거 이미지 복원은 하지 않습니다.
 
-**변경 계획 — 화자 라벨 감지와 이미지 이름(`Phase 2 · 계획`, KNK-1002 구현 · KNK-1003 스펙, 2026-08-27 합의).** 위 태그 방식 서술에서 백엔드가 달라지는 부분입니다. AI 서버 쪽 전체 계획은 [`5-ai-server.md §5-3-4`](./5-ai-server.md)가 정본입니다.
+**변경 계획 — 화자 라벨 감지와 이미지 이름(`Phase 2 · 계획`, KNK-1002 구현 · KNK-1003 스펙, 2026-08-27 합의. AI 서버 쪽은 KNK-1002·1014로 구현 완료, 백엔드 몫은 아래 (1)·(2)).** 위 태그 방식 서술에서 백엔드가 달라지는 부분입니다. AI 서버 쪽 전체 계획은 [`5-ai-server.md §5-3-4`](./5-ai-server.md)가 정본입니다.
 
 **무엇.** 세 가지가 바뀝니다. ① 이미지 위치의 근거가 LLM 태그에서 AI 서버가 직접 찾는 `인물명:` 라벨로 바뀌어, 매핑에 없는 인물의 대사는 태그 없이 본문 글자 그대로 흘러갑니다. ② 저장 마커가 `[[인물이름:URL]]`(대사 옆)에서 `[[URL]]`(대사 줄 위 별도 줄, 뒤에 빈 줄)로 바뀝니다(KNK-1002·KNK-1025 구현). ③ 이미지에 이름이 생깁니다 — 컴파일 응답 `character_images[]`에 `image_name`(지금은 `인물이름_기본`)이 더해지고(`name`은 인물 이름 그대로), 채팅 요청 `character_images[]`에 `image_name`, `character_image`·`completed.characterImages[]`에 `imageName`이 더해집니다(2026-08-28 확정).
 
@@ -1103,7 +1103,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 채팅 | `story_messages.reached_ending_id` | `Phase 1 · 구현`(V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
 | 이미지 | `image_presets` | `Phase 1 · 구현`(V45 스키마·V46 시드) 팀 이미지 카탈로그(시드 매니페스트를 Flyway 마이그레이션으로 등재 — 런타임 매칭 정본, 원본 파일명은 매니페스트 생성 도구의 입력일 뿐, [§4-3-9](#4-3-api-계약)). `image_key`(unique·불변·`[a-z0-9_]{1,64}` — 서빙 URL 구성은 백엔드) · `type`(`THUMBNAIL`·`BACKGROUND`·`CHARACTER`) · 의미 태그(장르[복수 가능 — **값은 GENRE 마스터 태그명과 정확 일치**]·분위기/성격·장소/성별·소품 — 타입별 축 상이) · `deactivated_at`(nullable timestamptz — 비활성 시각, NULL이면 활성. 재활성화는 NULL 복귀. 활성 여부는 이 컬럼의 파생) · 등록 시각(재구성 컷오프용). **행 삭제 금지**(운영 제외는 비활성 시각 기록으로만 — 신규 매칭·새 턴 전달·`images[]` 구성에서 제외, 지난 턴 재구성은 확정 시각과의 비교로 판정, [§4-3-9](#4-3-api-계약) 비활성 적용 범위). 삭제 금지(사라짐 방지)와 등록·비활성 시각 컷오프(나타남 방지·`completed` 대칭)가 지난 턴 `images[]` 재구성의 불변 전제 |
 | 이미지 | `story_images` | `Phase 1 · 계획` 스토리↔배경 후보 연결. 등록 시 장르 매칭으로 5~8장 확정하고 매 턴 AI 요청에 동일 목록 전달([§4-3-9](#4-3-api-계약)). 썸네일 확정값은 별도로 `stories` 썸네일 컬럼에 저장 |
-| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable — 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 변경 계획(KNK-1002): 이미지 이름 `image_name` 컬럼 추가 예정([§4-3-9](#4-3-api-계약) 변경 계획). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](#4-3-api-계약)) |
+| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable — 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 이미지 이름 `image_name` 컬럼 추가 예정(AI 컴파일 응답은 KNK-1027로 이미 `image_name`을 보냄, [§4-3-9](#4-3-api-계약) 변경 계획). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](#4-3-api-계약)) |
 | 채팅 | `story_message_versions` | `Phase 1 · 구현` 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](#4-3-api-계약)) |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](#4-7-운영과-관측)) |
 
