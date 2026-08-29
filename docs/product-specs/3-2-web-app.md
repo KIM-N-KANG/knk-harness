@@ -253,7 +253,7 @@ graph LR
 
 ### 법적 콘텐츠 소스 (웹)
 
-서비스 이용약관·개인정보 처리방침의 화면 계약과 "모든 플랫폼 동일 시행일·버전·본문" 동일성 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-010](./3-1-client.md#3-1-3-화면별-스펙)이 소유합니다. 웹의 콘텐츠 정본은 웹 레포 `src/features/legal/content/terms-content.ts`·`privacy-content.ts`이며 페이지가 이를 렌더합니다(초기의 `docs/legal/*.md` 마크다운 초안은 TS 모듈로 정본을 일원화하며 삭제 — KNK-616). 웹 문서 화면은 뒤로가기·헤더 제목 없이 홈(`/`)으로 가는 마냑 로고 헤더를 사용하며, `/login`과 `/my/about`의 문서 링크는 원래 화면을 유지한 채 새 브라우저 탭에서 엽니다(KNK-1037). 플랫폼 중립 공유 정본은 아직 없어, Android 구현 전에 공유 정본 또는 동기화 방법 결정이 필요합니다(공통 문서의 간극 기록 참조).
+서비스 이용약관·개인정보 처리방침의 화면 계약과 "모든 플랫폼 동일 시행일·버전·본문" 동일성 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-010](./3-1-client.md#3-1-3-화면별-스펙)이 소유합니다. 웹의 콘텐츠 정본은 웹 레포 `src/features/legal/content/terms-content.ts`·`privacy-content.ts`이며 페이지가 이를 렌더합니다(초기의 `docs/legal/*.md` 마크다운 초안은 TS 모듈로 정본을 일원화하며 삭제 — KNK-616). Android는 별도 콘텐츠 사본을 두지 않고 `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`WEB_BASE_URL/privacy`를 만들고 `LegalDocumentScreen`의 WebView가 이 웹 정본을 표시합니다. 웹 문서 화면은 뒤로가기·헤더 제목 없이 홈(`/`)으로 가는 마냑 로고 헤더를 사용하며, `/login`과 `/my/about`의 문서 링크는 원래 화면을 유지한 채 새 브라우저 탭에서 엽니다(KNK-1037). 현재 시행본은 서비스 이용약관 v1.2·개인정보 처리방침 v1.3(2026-09-01)입니다.
 
 ### 온보딩 진입 게이트 (웹)
 
