@@ -189,6 +189,9 @@ graph LR
 | 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 | Phase 1 · 구현 |
+| 스토리 | `POST /stories/{storyId}/like` | 스토리 좋아요 등록(멱등) | 204 | 401·404 | 필수 | Phase 2 · 계획 |
+| 스토리 | `DELETE /stories/{storyId}/like` | 스토리 좋아요 취소(멱등) | 204 | 401·404 | 필수 | Phase 2 · 계획 |
+| 스토리 | `POST /stories/{storyId}/reports` | 스토리 신고 등록 | 201 | 400·401·404 | 필수 | Phase 2 · 계획 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | — | 불필요 | MVP |
 | 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·402·409·502 | 선택 | MVP |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·402·403·404·409·502 | 선택 | MVP |
@@ -216,6 +219,7 @@ graph LR
 | 인증 | `GET /auth/handoffs/status` | 핸드오프 상태 조회(인앱 복귀 정리용) | 200 | 404 | 불필요 | Phase 1 · 구현 |
 | 인증 | `POST /auth/links/reauth` | 계정 연동 재인증(일회용 링크 코드 발급) | 201 | 400·401·403 | 필수 | Phase 1 · 구현 |
 | 인증 | `POST /auth/links/{provider}` | 계정 연동 추가(링크 코드 필요, 본문 없는 201) | 201 | 400·401·403·409 | 필수 | Phase 1 · 구현 |
+| 사용자 | `DELETE /users/me` | 회원 탈퇴(soft delete) | 204 | 401 | 필수 | Phase 2 · 계획 |
 | 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/credits` | 크레딧 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
@@ -239,9 +243,9 @@ graph LR
 | `title` | string | 제목 |
 | `oneLineIntro` | string | 한 줄 소개. 저장값이 NULL이면 빈 문자열 |
 | `genres` | string[] | 장르 태그명 목록 — `stories.genre`를 쉼표 분리 후 각 항목 trim·빈 항목 제거 |
-| `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 `author` 자체가 null. `profileImageUrl`은 이미지 미배정 회원이면 null(클라이언트는 기본 아바타로 처리). 현행 구현은 회원 스토리도 `author`를 항상 null로 반환합니다(placeholder — 채움은 후속 과제) |
+| `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 `author` 자체가 null. `profileImageUrl`은 이미지 미배정 회원이면 null(클라이언트는 기본 아바타로 처리). `Phase 2 · 계획`(KNK-1024) — 회원 소유 스토리는 목록·상세 모두 실제 작성자의 `nickname`·`profileImageUrl`을 채웁니다(2026-08-28 팀 결정 — 스토리 상세의 공개 소비 전환). `author.id`는 내부 PK 비노출 원칙([§4-4](#4-4-데이터-모델)·B24)에 따라 null을 유지합니다. 현행 구현은 회원 스토리도 `author`를 항상 null로 반환합니다(placeholder) |
 | `turnCount` | number | `Phase 1 · 구현`(KNK-515) 누적 사용자 입력 턴 수 — 스토리의 모든 미삭제 채팅 `current_turn` 합(목록은 배치 집계로 N+1 방지). 이전 와이어 필드 `chatCount`(채팅 수)를 대체 |
-| `likeCount` | number | 좋아요 수(placeholder, 현재 0) |
+| `likeCount` | number | 좋아요 수. `Phase 2 · 계획`(KNK-1024) — `story_likes` 실 집계로 전환([아래 스토리 좋아요](#4-3-api-계약)). 현행 구현은 placeholder 0 |
 | `status` | enum | `DRAFT` · `PUBLISHED` |
 | `thumbnailUrlSm` | string·null | `Phase 1 · 구현`(KNK-548) 썸네일 축소 변형(`_sm`) 서빙 URL — 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
@@ -258,10 +262,25 @@ graph LR
 | `lorebooks` | object[] | `Phase 1 · 구현` 로어북 `{id, name, genre, content}`(스토리 스코프) |
 | `mainEvents` | object[] | `Phase 1 · 구현` 주요 사건 `{name, description, keySentence, sortOrder}`(스토리 스코프) — `sort_order` 오름차순. 런타임 의미는 [§4-3-10](#4-3-api-계약) |
 | `reachedEndings` | string[] | `Phase 1 · 구현`(KNK-523) 요청자가 이 스토리에서 도달한 엔딩 **이름** 목록(엔딩은 이름으로 식별). 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
+| `isOwner` | boolean | `Phase 2 · 계획`(KNK-1024) 요청 회원이 이 스토리의 소유자인지. 서버가 요청자 `user_id`와 `stories.user_id`를 비교해 판단하며(클라이언트 id 비교 없음 — `author.id`가 null이라 클라이언트는 판단 불가), 게스트·미인증은 false. 용도는 상세 헤더 메뉴(수정·삭제 등) 노출 판단 |
+| `isLiked` | boolean | `Phase 2 · 계획`(KNK-1024) 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
 
 - `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다([`3-1-client.md §3-1-9`](./3-1-client.md) G3).
 
 **`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([`3-1-client.md §3-1-6`](./3-1-client.md)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다(`Phase 1 · 구현`). 404 판정(형식 오류·순차 정수·부재·이미 삭제 — 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69 — 채팅 삭제 동일).
+
+#### 스토리 좋아요 — `Phase 2 · 계획`(KNK-1024)
+
+스토리 상세의 공개 소비 전환(2026-08-28 팀 결정)에 따른 좋아요 계약입니다. **like만 있고 dislike는 없습니다.**
+
+- **`POST /stories/{storyId}/like`** — 좋아요 등록, 204. **`DELETE /stories/{storyId}/like`** — 좋아요 취소, 204. 둘 다 멱등입니다 — 이미 좋아요한 스토리의 재등록, 좋아요 없는 스토리의 취소도 204입니다(스토리라인 평가 취소와 같은 결).
+- 인증 필수입니다(게스트 불가 — 미인증 401). 대상 스토리에는 읽기 가시성([위](#4-3-api-계약) — `Story.isReadableBy`)을 적용하며, 읽을 수 없는 스토리는 404입니다(존재 여부 비노출).
+- 저장은 `story_likes`에 `(user_id, story_id)` UNIQUE 1행입니다([§4-4](#4-4-데이터-모델)). `likeCount`(목록·상세)는 이 테이블의 실 집계, 상세 `isLiked`는 요청 회원의 행 존재 여부입니다.
+
+#### 스토리 신고 — `Phase 2 · 계획`(KNK-1024)
+
+- **`POST /stories/{storyId}/reports`** — 신고 등록, 201. 인증 필수(미인증 401)이며, 대상 스토리에는 좋아요와 동일하게 읽기 가시성을 적용합니다(읽을 수 없는 스토리는 404).
+- 사유 분류(enum) 체계, 같은 회원의 같은 스토리 중복 신고 정책, 신고 접수 후 처리(운영 알림·노출 제재)는 **구현 시 확정**합니다 — 이 절은 엔드포인트 골격만 고정합니다.
 
 ### 4-3-2. 간편 제작
 
@@ -583,6 +602,15 @@ graph LR
 
 쿼리 `limit`(기본 100). 정수 값은 `[1, 100]`으로 clamp합니다 — 1 미만은 1로, 100 초과는 100으로 보정합니다(`limit.coerceIn(1, 100)`). 비정수·비수치 값은 타입 변환 실패로 400입니다. Phase 1은 페이지네이션 없이 상한 100을 유지하고, 초과분 처리는 Phase 2 스토리 피드 설계와 함께 확장합니다. 소프트 삭제된 항목은 제외합니다. 정렬의 동일 시각 tie는 내부 PK 내림차순을 2차 키로 확정합니다(스토리는 `OrderByCreatedAtDescIdDesc`, 채팅은 `OrderByUpdatedAtDescIdDesc`).
 
+#### 회원 탈퇴 — `Phase 2 · 계획`(KNK-1019)
+
+앱 심사 요건(계정 삭제 제공)에 따른 탈퇴 계약입니다.
+
+**`DELETE /users/me`** — 인증 필수, 204.
+
+- **soft delete** — `users.status`를 `DELETED`로 전환합니다(행 물리 삭제 없음). 탈퇴 계정의 refresh 토큰은 즉시 전부 폐기합니다(Redis `rt:user:{userId}`의 family 전체 — [§4-5](#4-5-인증과-권한) 토큰 정책). 이후 만료 전 access 토큰이 남아도 선택적 인증이 삭제 사용자를 익명 처리하고 인증 필수 경로는 401이므로([§4-5](#4-5-인증과-권한)) 계정으로는 더 행위할 수 없습니다.
+- **열린 결정** — 탈퇴자 소유 스토리(특히 PUBLIC 공개분)의 처리(노출 유지·비공개 전환·삭제)와 소셜 연동(`social_accounts`)·닉네임 등 개인정보의 파기 범위·시점은 미확정입니다. 구현 전 팀 결정이 필요합니다.
+
 ### 4-3-6. 로어북 — `Phase 1 · 구현`
 
 **`GET /stories/lorebooks`** — 장르 공용 용어 사전 카탈로그 `{id, name, genre}[]`를 반환합니다. 쿼리 `genre`로 필터할 수 있습니다. 스토리 상세 응답의 `lorebooks`·`endings`와 함께 Phase 1 퀄리티 개선 범위이며 MVP 프론트엔드는 사용하지 않습니다.
@@ -768,6 +796,7 @@ graph TD
 **`PATCH /stories/{storyId}`** — 부분 갱신입니다. 보낸 필드만 교체하고 나머지는 유지합니다. 수정 가능 필드는 일반 제작 요청과 동일 전체이며, **간편 제작으로 만든 스토리도 같은 계약으로 수정**할 수 있습니다(제작 방식 무관 — US-4-5의 "아쉬운 설정 고치기"가 주 사용처).
 
 - 소유권: [§4-5](#4-5-인증과-권한) 규칙을 따릅니다. 회원 소유 스토리는 소유자만 수정할 수 있습니다. `user_id`가 NULL인 게스트 스토리는 `GET /stories/{storyId}/edit`와 `PATCH` 모두 익명(게스트) 요청만 허용하고 인증된 회원은 403입니다(`Phase 1 · 구현`). 서버는 게스트끼리는 구분할 수 없으므로, 프론트엔드가 로컬 서재에 해당 `storyId`가 있을 때만 수정 진입점을 표시합니다.
+- **공개 전환(`visibility`) — `Phase 2 · 계획`(KNK-1024).** 스토리 공개 전환(PRIVATE → PUBLIC, 되돌림 포함)은 별도 엔드포인트 없이 이 수정 API의 `visibility` 부분 갱신으로 수행합니다 — 수정 가능 필드가 "일반 제작 요청과 동일 전체"이므로 `visibility`(PUBLIC · PRIVATE)가 계약상 이미 포함되며, 소유권 규칙에 따라 소유자만 전환할 수 있습니다. 전환 즉시 읽기 가시성([§4-3-1](#4-3-api-계약))에 반영됩니다. 현행 구현은 수정 요청 DTO에 `visibility`가 없어 이 필드의 부분 갱신을 지원하지 않습니다(간극 — [§4-8](#4-8-검수-체크리스트) B26). `GET /stories/{storyId}/edit` 응답에도 `visibility`를 함께 실어 폼 왕복을 보장합니다.
 - 진행 중 채팅 반영: 백엔드는 채팅 턴을 만들 때 최신 스토리 설정을 다시 읽어 AI 서버에 전달합니다. 따라서 **같은 스토리 설정을 참조하는 채팅**은 다음 턴부터 새 설정을 사용합니다. 이미 저장된 지난 턴은 다시 쓰지 않습니다. 공개 스토리를 타인이 플레이하는 경우의 스냅샷/공유 정책은 Phase 2 스토리 피드에서 별도 정의합니다.
 - 응답 200: `GET /stories/{storyId}/edit`과 동일한 편집 폼 스키마. 검증 규칙은 일반 제작과 동일(400), 없는 스토리는 404, 권한 위반은 403입니다.
 - 부분 갱신 검증: 보낸 필드에만 검증을 적용합니다. "보낸 필드" 판정은 요청 DTO의 nullable 필드로 구현하므로 **`null`을 명시 전송해도 미전송과 동일**합니다(해당 필드 유지). `title`·`oneLineIntro`를 빈 문자열(공백만 포함)로 보내면 서비스 계층 수동 검사로 400입니다(미전송은 유지). 보낸 `genres`는 1~8개·각 30자 검증 후 `", "` 결합으로 교체합니다. `mainEvents`(스토리 스코프)는 보내면 전체 교체(기존 행 삭제 후 재삽입), 빈 배열이면 전부 삭제입니다.
@@ -1090,6 +1119,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 로어북 | `story_lorebooks` | `Phase 1 · 구현` 스토리-로어북 연결 |
 | 스토리 | `story_endings` | `Phase 1 · 구현` 엔딩 — `name` · `min_turns` · `achievement_condition` · `epilogue`(V33), `start_setting_id` 스코프·시작 설정당 최대 10(유형 없음). 레거시 행(제목·내용·`condition_text`)은 `enabled=false` 보존([§4-3-10](#4-3-api-계약)) |
 | 피드백 | `feedbacks` | 피드백 본문·이메일·플랫폼·앱 버전. `Phase 1 · 구현`(V43) — `user_agent`(nullable, 512자 — 요청 헤더 원문, [§4-3-4](#4-3-api-계약)) |
+| 스토리 | `story_likes` | `Phase 2 · 계획`(KNK-1024) 스토리 좋아요. `user_id` · `story_id` · `created_at`, `(user_id, story_id)` UNIQUE — 등록·취소 멱등과 `likeCount` 실 집계·`isLiked` 판정의 앵커([§4-3-1](#4-3-api-계약)) |
+| 스토리 | `story_reports` | `Phase 2 · 계획`(KNK-1024) 스토리 신고. `user_id` · `story_id` · `created_at` 골격 — 사유 분류·중복 정책 컬럼은 구현 시 확정([§4-3-1](#4-3-api-계약)) |
 | 크레딧 | `credit_wallets` | `Phase 1 · 구현` 사용자별 지갑(V24). `user_id`(unique FK) · `balance`. 최초 적립 시 지연 생성. 조회 잔액의 정본은 로트 합([§4-3-7](#4-3-api-계약))이며 지갑 행은 차감·적립 직렬화 락의 앵커 |
 | 크레딧 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) — 30일 만료·FIFO 차감의 잔여 추적 |
 | 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
@@ -1271,6 +1302,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | `구현`(KNK-401·464) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)) — 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
 | 채팅 공유 발급(`POST /chats/{chatId}/shares`) | `Phase 1 · 구현`(KNK-706) | 채팅 상세 조회와 동일 규칙 — 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
 | 채팅 공유 열람(`GET /shares/{shareId}`) | `Phase 1 · 구현`(KNK-706) | 인증 불필요 — 공유 토큰(UUID) 보유가 접근 수단. 소유자가 명시 발급한 별도 경로라 채팅 상세 비공개 결정(아래 결정 기록)과 충돌하지 않음([§4-3-11](#4-3-api-계약) 결정 기록) |
+| 스토리 좋아요·신고(`POST·DELETE /stories/{storyId}/like` · `POST /stories/{storyId}/reports`) | `Phase 2 · 계획`(KNK-1024) | 인증 필수(게스트 불가) + 대상 스토리에 읽기 가시성 게이트 적용 — 읽을 수 없는 스토리는 404([§4-3-1](#4-3-api-계약)) |
 
 게스트 간 접근(UUID를 아는 다른 게스트의 NULL 리소스 접근)은 서버가 게스트를 식별할 수 없어 차단하지 못합니다. 프론트엔드가 로컬 서재 ID 보유 여부로 수정·삭제 진입점을 제한하는 현행 완화를 유지하고, 이관 완료 후에는 소유자가 생겨 소유자 전용 규칙이 적용됩니다.
 
@@ -1711,5 +1743,6 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 | B21 | Sybil 보상 파밍 | 가입 500·초대 양측 500 크레딧이 계정 생성 제한 없이 지급([§4-3-7](#4-3-api-계약)). 다수 소셜 계정으로 유료 AI 재화를 대량 확보 가능(게스트 이관 파밍(B8)과 다른 벡터). 카카오 로그인 추가(KNK-721)는 계정 생성 경로를 하나 늘려 이 벡터를 넓히며, provider가 달라도 `(provider, provider_user_id)`가 다르면 별개 계정이므로 같은 사람이 Google·Kakao로 각 1회씩 가입 보상을 받을 수 있습니다. 초대 방식 개편(KNK-567)으로 자격이 회원 평생 1회로 넓어져 기존 계정 쌍의 상호 코드 입력(쌍당 최대 2,000 크레딧)도 같은 벡터에 포함 — 의도된 정책으로 수용(2026-07-11) | Phase 1 수용 — 보상 지급량을 관측으로 추적. 계정 신뢰 신호 기반 dedup·보상 지연은 후속 결정 |
 | B22 | 초대 방식 개편 — prod 릴리스 대기 | **서버·프론트엔드 구현 완료**(KNK-567, 2026-07-21 코드 대조 확인) — 코드 입력 적립 `POST /users/me/invite/redeem`(`InviteController.kt:100`, 양측 적립·평생 1회), 혼동 문자 제외 코드 재발급(V47), 적립 월 귀속(`monthlyRewardCount`), 로그인 `inviteCode` 폐기·`inviteUrl` 제거([§4-3-7](#4-3-api-계약)). 프론트엔드도 redeem 훅·온보딩 폼·로그인 분리 반영([`3-1-client.md`](./3-1-client.md)) | 링크 방식 실사용자가 없어 전환기 호환 불필요 — 서버·프론트엔드 prod 동반 릴리스로 종결 |
 | B23 | 선택지 분리의 과도기 배선(stopgap) | **해소** — stopgap은 KNK-645로 제거됐고(server `v0.2.2`), 프론트 트리거 전환(KNK-643, web `v0.2.5`)과 AI 분리(KNK-625, `v0.2.1`)까지 2026-07-22 3자 동시 배포로 반영됐습니다. 이제 문서 기준([§4-3-3](#4-3-api-계약))대로 SSE `completed`의 `choices`는 항상 빈 배열이고 프론트가 트리거 엔드포인트로 채웁니다. **이전 판의 "프론트 동시 배포 불요"는 폐기합니다** — stopgap이 사라졌으므로 AI·백엔드만 배포하면 선택지가 비고, 롤백도 3자 동시여야 합니다. KNK-645는 SSE 전체 상한도 조정했습니다(AI 스트림 idle 예산 위로 여유를 둔 값 — §4-3-3 표기 현행화 완료) | `계획` — 타임아웃 역전 재조정(choices 90초 vs AI 최악 180초 — [`5-ai-server.md` A11](./5-ai-server.md)) |
-| B24 | `StoryAuthorResponse.id`의 Long 노출형 | DTO(`story/dto/StoryDtos.kt`)의 `author.id`가 내부 Long 타입 — 외부 노출 식별자는 공개 UUID만 쓰는 정책([§4-4](#4-4-데이터-모델))과 충돌. 현재는 `StoryService`가 `author = null` 고정이라 실제 노출은 없음(placeholder — [§4-3-1](#4-3-api-계약)) | 후속에서 author를 채우기 전에 `id`를 `public_id`(UUID)로 교체 — 채우는 순간 식별자 정책 위반이 되므로 선행 조건 |
+| B24 | `StoryAuthorResponse.id`의 Long 노출형 | DTO(`story/dto/StoryDtos.kt`)의 `author.id`가 내부 Long 타입 — 외부 노출 식별자는 공개 UUID만 쓰는 정책([§4-4](#4-4-데이터-모델))과 충돌. 현재는 `StoryService`가 `author = null` 고정이라 실제 노출은 없음(placeholder — [§4-3-1](#4-3-api-계약)) | **`author.id`는 null 유지로 확정(2026-08-28, KNK-1024)** — author 실 전달(B26)에서 `nickname`·`profileImageUrl`만 채우고 `id`는 채우지 않음. 채우는 시점이 오면 Long이 아니라 `public_id`(UUID)여야 한다는 선행 조건은 유지 |
 | B25 | Langfuse 선호 행동 저장·발행 | AI 호출 연결 헤더·`userSource` 전달과 `ai_call_logs` 내보내기에 더해, **선택 결과 저장(`is_selected`·`selected_at`·`is_edited`)이 KNK-819로 구현**됐습니다(V55, 턴 요청의 `sourceTurnId`+`choiceOrder` 기반 — [§4-3-3](#4-3-api-계약)). 잔여는 객체형 선택지 응답(`choiceId`)·노출(`PRESENTED`) 기록 API·선택지 버전 연결·score outbox 발행입니다([§4-7](#4-7-운영과-관측)). **선택지 세대 판정도 잔여입니다** — 현행 `created_at` 가드는 요청 시작 이후에 생긴 세대만 막고, 재생성·선택지 재생성이 요청 시작 전에 끝난 뒤 낡은 클라이언트가 보내는 경우는 통과합니다([§4-3-3](#4-3-api-계약) 선택 기록) | `Phase 1 · 계획`(KNK-762) — 객체형 선택지 응답, 상호작용 검증 API, 도메인 결과 기반 score 생성, 결정적 ID와 outbox 재시도를 함께 구현. 선택 기록은 KNK-819 결과를 그대로 흡수하고 다시 만들지 않되, `choiceId`가 생기면 시각 기반 세대 가드를 세대 식별자 대조로 대체 |
+| B26 | 스토리 소셜·공개 소비 전환·회원 탈퇴 — 구현 대기 | 스토리 상세의 공개 소비 전환(2026-08-28~29 팀 확정)으로 스펙이 구현을 앞서감: ① author 실 전달(`nickname`·`profileImageUrl` — 현행 null 고정)과 상세 `isOwner`([§4-3-1](#4-3-api-계약)), ② 좋아요 API·`likeCount` 실 집계·`isLiked`(현행 placeholder 0), ③ 신고 API 골격, ④ 수정 API의 `visibility` 부분 갱신(현행 요청 DTO에 필드 없음 — [§4-3-8](#4-3-api-계약)), ⑤ 회원 탈퇴 `DELETE /users/me`([§4-3-5](#4-3-api-계약)). 신고 사유·중복 정책과 탈퇴자 소유 스토리 처리는 열린 결정 | `Phase 2 · 계획` — 상위 KNK-1024(서브태스크 KNK-1016~1018·1020~1022)·탈퇴 KNK-1019로 서버 구현. 구현·배포 후 이 행을 계약 본문으로 흡수하고 결번 처리 |
