@@ -760,10 +760,13 @@ FE-SCREEN-005(채팅 화면)의 안드로이드 구조입니다. 턴 모델·SSE
 | --- | --- | --- | --- |
 | `bg-muted` | `oklch(0.96 0 0)` / `oklch(0.285 0 0)` | `colors.backgroundNeutral` | 사용자 입력 밴드, 선택지 버튼 |
 | `text-foreground` | — | `colors.text` | 본문, 대사 블럭 |
-| `text-foreground-secondary` | `oklch(0.556)` / `oklch(0.738)` | `colors.textSubtle` | 강조(`*...*`), 상황 블럭, 보조 아이콘 버튼, 힌트 |
+| `text-foreground-secondary` | `oklch(0.556)` / `oklch(0.738)` | `colors.textNarration` | 강조(`*...*`), 상황 블럭 |
+| `text-foreground-secondary` | 〃 | `colors.textSubtle` | 보조 아이콘 버튼, 힌트 |
 | `text-foreground-tertiary` | `oklch(0.768)` / `oklch(0.512)` | `colors.textSubtlest` | "작성 중" 자리표시자 |
 | `text-primary` · `bg-primary/10` | 브랜드 그린 | `colors.textBrand` · `colors.backgroundBrandSubtle` | 엔딩 배지, 추천 입력 토글 on |
 | `border-border` | `oklch(0.922)` / `oklch(0.315)` | `colors.border` | 인물 이미지 테두리, 입력 그룹 테두리 |
+
+**상황 묘사에는 `colors.textNarration`을 따로 둡니다.** 앱의 `textSubtle`·`textSubtlest`는 어느 쪽도 웹 `text-foreground-secondary`와 두 테마에서 함께 맞지 않았습니다 — 라이트는 `textSubtlest`(#747474)가, 다크는 그보다 훨씬 밝은 값이 웹과 같습니다. `textSubtlest`를 그대로 쓰면 다크에서 상황 묘사가 대사보다 지나치게 어두워 읽히지 않습니다. 그래서 라이트 #747474 · 다크 #B9B9B9인 토큰을 새로 만들고 강조·상황 블럭이 이것만 씁니다(`MUST`). 보조 아이콘 버튼과 힌트는 UI 요소라 `textSubtle`에 그대로 둡니다.
 
 모서리는 웹 `--radius: 10px` 스케일이 앱 토큰과 그대로 맞습니다 — `rounded-md`(14px)=`shapes.control`, `rounded-lg`(16px)=`shapes.card`, `rounded-xl`(20px)=`shapes.overlay`, 아이콘 버튼의 `min(--radius-sm, 10px)`=`shapes.menuItem`, 배지의 `rounded-4xl`=`shapes.pill`.
 
@@ -798,7 +801,7 @@ AI 출력 안의 조각(텍스트·인물 이미지) 사이는 `passage`(20)이�
 ```
 
 - `**...**`를 먼저 잡고, 그다음 이중이 아닌 단일 `*...*`를 잡습니다.
-- `**볼드**`는 **굵기만** 바꾸고 색은 그대로, `*강조*`는 **색만** `colors.textSubtle`로 바꿉니다 — 기울임을 쓰지 않습니다(`MUST NOT`). 웹도 `font-bold`와 `text-foreground-secondary` 두 클래스뿐입니다.
+- `**볼드**`는 **굵기만** 바꾸고 색은 그대로, `*강조*`는 **색만** `colors.textNarration`으로 바꿉니다 — 기울임을 쓰지 않습니다(`MUST NOT`). 웹도 `font-bold`와 `text-foreground-secondary` 두 클래스뿐입니다.
 - `[^*\n]`이라 **한 줄을 넘는 마커는 매칭되지 않고** 짝이 맞지 않는 `*`는 평문으로 남습니다.
 - 매칭된 마커 문자는 화면에서 제거하고, 줄바꿈은 원문 그대로 보존합니다(`whitespace-pre-wrap` 대응).
 
@@ -843,7 +846,7 @@ AI 출력에 섞이는 인물 이미지는 **스트리밍 중에는 이벤트로
 **블럭 모드**
 
 - 시작 상태는 **상황 1개 + 대사 1개**입니다.
-- 블럭 하나 = 라벨 + 입력창 + 오른쪽 삭제(X) 버튼. 라벨은 "상황"·"대사"이고, **상황 블럭은 라벨과 입력 글자를 모두 `colors.textSubtle`로, 대사 블럭은 `colors.text`로** 그립니다(`MUST`) — 강조 렌더와 같은 색 규칙이라 입력 중에도 결과가 보입니다.
+- 블럭 하나 = 라벨 + 입력창 + 오른쪽 삭제(X) 버튼. 라벨은 "상황"·"대사"이고, **상황 블럭은 라벨과 입력 글자를 모두 `colors.textNarration`으로, 대사 블럭은 `colors.text`로** 그립니다(`MUST`) — 강조 렌더와 같은 색 규칙이라 입력 중에도 결과가 보입니다.
 - 자리표시자는 상황 "어떤 상황을 묘사할까요?", 대사 "어떤 대사를 건넬까요?"입니다.
 - 입력창은 **한 블럭당 최대 4줄**이고 넘치면 그 블럭 안에서 스크롤합니다. 블럭 목록 전체는 **화면 높이의 30%**를 넘지 않고 그 안에서 스크롤합니다. 시스템 글자 크기를 키우면 줄 수보다 비율 상한이 먼저 걸립니다.
 - 입력창 안쪽 여백은 좌우 `controlHorizontal`(14) · 상하 `controlVertical`(10)입니다. 웹은 9px이지만 1px 때문에 토큰을 늘리지 않습니다.
