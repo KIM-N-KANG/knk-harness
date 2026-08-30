@@ -79,9 +79,9 @@
 | MY-INVITE-16   | P2  | 코드 입력창                                                                               | 공백 포함 문자열 붙여넣기·9자 이상 입력 | 공백 제거·대문자 변환 후 8자까지만 반영                                                                                                                      | ◐ e2e `my/invite`(대문자 표시만)   | 구현(`invite-code`)                    |
 | MY-INVITE-17   | P2  | 임의 사용자                                                                               | 폐기된 초대 URL `/invite/{code}` 진입   | 404 표시. 초대 코드 쿠키 저장·로그인 리다이렉트 없음                                                                                                         | ✅ e2e `my/invite`                 | FE-SCREEN-008 결정 기록(초대 URL 폐기) |
 
-## MY-ONBOARD — 신규 가입 초대 코드 다이얼로그 (FE-SCREEN-008)
+## MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)
 
-신규 가입 첫 로그인 직후의 초대 코드 다이얼로그 케이스는 [`onboarding.md`](./onboarding.md)의 ONBD-INVITE 섹션이 소유합니다. 코드 입력의 사유별 오류 규칙은 이 문서의 MY-INVITE 섹션과 공유합니다.
+신규 가입 첫 로그인 직후의 초대 코드 바텀 시트 케이스는 [`onboarding.md`](./onboarding.md)의 ONBD-INVITE 섹션이 소유합니다. 코드 입력의 사유별 오류 규칙은 이 문서의 MY-INVITE 섹션과 공유합니다.
 
 ## MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011) `미배포`
 

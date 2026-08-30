@@ -254,9 +254,6 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_chatShare_ctaButton_clicked`                     |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
 | P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed`                      |
-| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_earnButton_clicked`         |
-| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_attendanceButton_clicked`   |
-| P1 `Phase 1 · 구현` | client | `client_creditShortageDialog_dismissed`                  |
 | P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
 | P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
 | P1 `Phase 1 · 구현` | client | `client_login_kakaoButton_clicked`                       |
@@ -497,20 +494,17 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_invite_codeInput_submitted`              | P1       | 초대 코드 제출(`POST /users/me/invite/redeem` 호출, KNK-567)                     | `source` (string, 필수: `invite_page` / `onboarding`)                                                          |
 | `client_invite_codeInput_succeeded`              | P0       | 초대 코드 제출 성공 — 양측 적립(KNK-567, 초대 전환의 종점)                       | `source` (동일)                                                                                                |
 | `client_invite_codeInput_failed`                 | P1       | 초대 코드 제출 실패(KNK-567)                                                     | `source` (동일), `error_type` (string, 필수: `not_found` / `self_code` / `already_redeemed` / `network`)       |
-| `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 스텝 노출(KNK-567)                                  | 없음                                                                                                           |
-| `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "나중에 하기" 버튼·배경 탭·ESC 공통(KNK-567, KNK-715)  | 없음                                                                                                           |
+| `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 모달 바텀 시트 노출(KNK-567·1045)                   | 없음                                                                                                           |
+| `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "닫기" 버튼·배경 탭·ESC 공통(KNK-567·1045)           | 없음                                                                                                           |
 | `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
-| `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 다이얼로그 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
-| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 다이얼로그의 로그인 CTA 클릭                                         | `trigger` (동일) · `provider` (string, 필수 — `google` · `kakao`, KNK-728)                                                                                               |
-| `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_shown`              | P0       | 402(INSUFFICIENT_CREDIT)로 크레딧 부족 다이얼로그 노출(회원)                     | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_earnButton_clicked` | P1       | 크레딧 부족 다이얼로그의 크레딧 받으러 가기 CTA 클릭(친구 초대로 이동)           | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_attendanceButton_clicked` | P1  | 크레딧 부족 다이얼로그의 출석 보상 받기 버튼 클릭(오늘 미출석일 때만 노출)       | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_dismissed`          | P1       | 크레딧 부족 다이얼로그 닫기                                                      | `trigger` (동일)                                                                                               |
+| `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 바텀 시트 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
+| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 바텀 시트의 로그인 CTA 클릭                                          | `trigger` (동일) · `provider` (string, 필수 — `google` · `kakao`, KNK-728)                                     |
+| `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 바텀 시트 닫기                                                       | `trigger` (동일)                                                                                               |
+| `client_creditShortageDialog_shown`              | P0       | 402 `INSUFFICIENT_CREDIT`로 회원 크레딧 부족 토스트 노출. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
 
-- `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 전환 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 보상 행동·향후 과금(Phase 3) 수요의 선행 지표.
-- 두 다이얼로그는 화면 횡단 전역 오버레이라 네이밍 원칙(§6-3-1)의 screenName 자리에 다이얼로그명을 씁니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하며, 이전 개정판의 화면 분리형 이벤트(`client_storyCreate_creditShortage_shown` 등 4종)와 `limit_type`·`chat_id` 프로퍼티를 대체합니다. CTA·닫기 클릭(P1)까지 수집해 전환 다이얼로그의 효과를 관찰합니다.
-- 실패성 다이얼로그 노출은 기존 오버레이 관례(`completeError_shown` 등)에 맞춰 `shown`을 씁니다.
+- `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 한도 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
+- 게스트 한도는 화면 횡단 모달 바텀 시트지만 기존 대시보드 호환을 위해 `Dialog` 이벤트 이름을 유지합니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하고 로그인 CTA·닫기까지 수집합니다.
+- 회원 크레딧 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
