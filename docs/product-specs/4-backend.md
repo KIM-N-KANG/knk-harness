@@ -1766,6 +1766,7 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 | US-10-3 | 소모량 사전 고지 `Phase 1 · 계획` | 소모 표시 UI([`3-1-client.md`](./3-1-client.md) FE-SCREEN-008) — 스토리라인 무료, 스토리 생성 20 크레딧, 채팅 턴 10 크레딧 |
 | US-10-4 | 부족 안내 `Phase 1 · 구현` | `POST /stories/simple`·`POST /chats/{chatId}/turns/stream`·`POST /chats/{chatId}/turns/regenerate/stream` 402 |
 | US-10-5 | 게스트 체험 한도 `Phase 1 · 구현` | `POST /stories/simple/storylines`·`POST /stories/simple`·채팅 턴 계열의 디바이스 ID별 카운터, 402 |
+| US-10-6 | 이프 내역 조회 `Phase 2 · 구현`(서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044 — [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client.md`](./3-1-client.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
 
