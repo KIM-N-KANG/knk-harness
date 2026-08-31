@@ -40,6 +40,7 @@
 | STORY-LIST-23 | P1 | 홈 오리지널 카드                            | 카드 우상단 확인                           | 옵션 버튼을 표시하지 않아 삭제할 수 없음 | ✅ e2e `stories/story-list` | FE-SCREEN-001·013, KNK-1012 |
 | STORY-LIST-24 | P2 | 내가 만든 스토리 카드                       | 제목 첫 줄 오른쪽 옵션 버튼 규격 확인       | 공용 `icon-xs` 버튼 변형(현재 24×24px)과 기본 16px 더보기 아이콘을 사용 | ✅ e2e `stories/story-list`·`visual/stories-visual` | §3-1-3 FE-SCREEN-013, KNK-1043 |
 | STORY-LIST-25 | P1 | 개발 환경, `thumbnailUrl`·`thumbnailUrlSm`이 `dev-cdn.manyak.app/thumbnails/**` URL(한글 파일명 포함) | 목록·상세 썸네일 확인 | 운영과 동일하게 이미지가 렌더되고 placeholder로 남지 않음 | 수동 | §3-2-5 원격 이미지 최적화, KNK-1079 |
+| STORY-LIST-26 | P1 | 홈 오리지널 카드 | 제목 아래 제작자 줄 확인 | 닉네임 앞에 `@`를 붙여 표시(공식 계정은 "@마냑"). 상세의 제작자 값에는 `@`를 붙이지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001, KNK-1079 |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
@@ -47,7 +48,7 @@
 
 | ID              | P   | 사전조건                    | 절차                                               | 기대 결과                                                                                                                                                     | 자동화                                                   | 근거                                |
 | --------------- | --- | --------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------- |
-| STORY-DETAIL-01 | P0  | 유효한 스토리 ID            | 진입                                               | 제목(h1)·한 줄 소개·장르 배지·본 엔딩 배지(`reachedEndings`)·주요 내용(`description` 있을 때)·턴 수 뱃지(천 단위 콤마)·생성일(YYYY-MM-DD) 표시 | ✅ e2e `stories/story-detail`·`visual/stories-visual` | US-4-1·4-6, §3-1-3, KNK-1012 |
+| STORY-DETAIL-01 | P0  | 유효한 스토리 ID            | 진입                                               | 제목(h1)·한 줄 소개·장르 배지·본 엔딩 배지(`reachedEndings`)·주요 내용(`description` 있을 때)·턴 수 뱃지(천 단위 콤마)·제작자(`author.nickname`)·생성일(YYYY-MM-DD) 표시 | ✅ e2e `stories/story-detail`·`visual/stories-visual` | US-4-1·4-6, §3-1-3, KNK-1012 |
 | STORY-DETAIL-02 | P1  | `thumbnailUrl` 있는 스토리  | 상단 히어로 확인                                   | 3:4 썸네일 이미지 + 우하단 턴 수 뱃지 오버레이                                                                                                                | ✅ e2e `stories/story-detail`                            | US-4-1, §3-1-3                        |
 | STORY-DETAIL-03 | P2  | `thumbnailUrl` 없는 스토리  | 히어로 확인·탭                                     | placeholder 아이콘 표시. 탭해도 이미지 뷰어가 열리지 않음                                                                                                     | ◐ e2e `visual/stories-visual`(표시만)                    | §3-1-3, 구현(`story-detail`)          |
 | STORY-DETAIL-04 | P1  | `thumbnailUrl` 있는 스토리  | 썸네일 탭 → X·화면 탭·뒤로가기로 각각 닫기         | 풀스크린 이미지 뷰어 열림. 어느 방법으로든 페이지 이동 없이 뷰어만 닫힘(더미 히스토리 트래핑, UI로 닫으면 더미 소비)                                          | ◐ e2e `stories/story-detail`·`visual/stories-visual`(화면 탭 닫기 제외) | US-4-8, §3-1-3                        |
@@ -65,6 +66,8 @@
 | STORY-DETAIL-21 | P1  | `characters`에 이름·이미지가 있는 스토리 | 주요 내용 아래 확인 | "주변 인물" 섹션이 주요 내용과 채팅 시작 상황 사이에 표시. 인물마다 이름 소제목 + 그 아래 채팅 화면과 같은 4:3 인물 이미지 카드를 저장 순서대로 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
 | STORY-DETAIL-22 | P2  | `characters`의 일부 인물이 `imageUrl: null` | 해당 인물 확인 | 이름만 표시하고 이미지 카드는 만들지 않음. 나머지 인물은 정상 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
 | STORY-DETAIL-23 | P2  | `characters`가 빈 배열(컴파일 이전·일반 제작 스토리) | 주요 내용 아래 확인 | "주변 인물" 섹션 자체를 표시하지 않음 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1058 |
+| STORY-DETAIL-24 | P1  | `author.nickname`이 있는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행이 생성일 행 위에 오고, 닉네임은 `@` 없이 그대로 표시. 블록 안쪽 여백 16px, 두 행 사이 간격 16px | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1079 |
+| STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 
