@@ -1,11 +1,11 @@
-# QA — 마이 (메뉴 · 회원 탈퇴 · 피드백 · 친구 초대 · 서비스 안내 · 하단 탭)
+# QA — 마이 (메뉴 · 회원 탈퇴 · 피드백 · 친구 초대 · 이프 내역 · 서비스 안내 · 하단 탭)
 
 | 항목      | 값                                                                                                                                                                                                                                               |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 화면      | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-3](../product-specs/3-2-web-app.md))                                                                                       |
+| 화면      | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 내역 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-3](../product-specs/3-2-web-app.md))                                                                                       |
 | 관련 스펙 | [`3-1-client.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../product-specs/3-1-client.md), [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../product-specs/2-user-stories.md)                                                                         |
-| 관련 E2E  | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
-| 기준 코드 | KNK-1052는 `manyak-web` `feat/KNK-1052-integrate-account-deletion-api`의 `418453b`, 그 외 케이스는 dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(서비스 안내 페이지·메뉴 #72, 구 리다이렉트 shim 제거 #73). 화면 이름과 경로를 "더보기" `/more*`에서 "마이" `/my*`로 바꾼 KNK-687도 v0.2.2에는 미포함이라, 경로·라벨에 의존하는 케이스는 릴리스 기준으로 읽을 때 구 이름으로 치환해야 합니다 |
+| 관련 E2E  | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+| 기준 코드 | KNK-1052는 `manyak-web` `feat/KNK-1052-integrate-account-deletion-api`의 `418453b`, 그 외 케이스는 dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(서비스 안내 페이지·메뉴 #72, 구 리다이렉트 shim 제거 #73). 화면 이름과 경로를 "더보기" `/more*`에서 "마이" `/my*`로 바꾼 KNK-687도 v0.2.2에는 미포함이라, 경로·라벨에 의존하는 케이스는 릴리스 기준으로 읽을 때 구 이름으로 치환해야 합니다. MY-CREDITS와 MY-MENU-21은 `manyak-web` `feat/KNK-1083-credit-transaction-history-page` 기준(`미배포`) |
 
 컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
 
@@ -37,6 +37,7 @@
 | MY-MENU-18   | P1  | 게스트/회원                                       | 테마 변경 메뉴 반복 탭      | 시스템 설정 → 라이트 모드 → 다크 모드 순으로 순환. 왼쪽 아이콘(모니터·해·달)과 오른쪽 문구가 함께 바뀌고 테마 즉시 적용 | ✅ e2e `my/my-page`                            | 구현(`theme-menu-item`)                      |
 | MY-MENU-19   | P2  | 회원, base64 썸네일 없음·세션 이미지가 환경별 프로필 프리셋 URL | 프로필 이미지 확인 | 운영 `api.manyak.app`과 개발 `dev-api.manyak.app`의 `/profile-presets/**` 이미지가 원형으로 렌더링 | 수동 | §3-2-5 원격 이미지 최적화, KNK-832 |
 | MY-MENU-20   | P0  | 회원                                              | 회원 탈퇴 메뉴 탭      | `/my/account-deletion`으로 이동. 사용자 제거 아이콘(`UserRemove02Icon`)과 위험색 문구 표시                               | ✅ e2e `my/account-deletion`                  | US-9-11, FE-SCREEN-008 회원 탈퇴            |
+| MY-MENU-21 `미배포` | P1 | 회원                                       | 이프 카드 확인         | 출석 체크 버튼 왼쪽에 보조 버튼 "내역" 표시(주 동작인 출석과 배경으로만 구분). 탭하면 `/my/credits`로 이동                | ✅ e2e `my/credits`·`visual/my-visual`        | FE-SCREEN-008 마이 페이지 회원 상태 구성, KNK-1083 |
 
 ## MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)
 
@@ -52,6 +53,27 @@
 | MY-ACCOUNT-DELETION-06 | P1  | 탈퇴 요청 응답 대기               | CTA 관찰                        | 버튼 크기를 유지한 중앙 스피너("회원 탈퇴 중") 표시 + CTA 비활성으로 중복 요청 차단                                                                                                           | ✅ e2e `my/account-deletion`                    | FE-SCREEN-008 요청 중 상태           |
 | MY-ACCOUNT-DELETION-07 | P0  | 탈퇴 API 5xx·네트워크 실패        | CTA 탭                          | "회원 탈퇴에 실패했어요" 토스트 + 현재 경로·체크 상태 유지. 요청 종료 후 CTA가 다시 활성화되어 재시도 가능. 세션 만료가 확정된 401은 전역 세션 만료 흐름을 따름                               | ✅ e2e `my/account-deletion`(5xx)               | §3-1-7 회원 탈퇴 실패                |
 | MY-ACCOUNT-DELETION-08 | P2  | `/my`에서 진입                    | 뒤로가기 헤더 탭                | 탈퇴 요청 없이 `/my`로 복귀                                                                                                                                                                   | 수동                                            | §3-2-3 뒤로가기 헤더                 |
+
+## MY-CREDITS — 이프 내역 `/my/credits` (FE-SCREEN-008, KNK-1083) `미배포`
+
+회원 전용 화면입니다. 잔액 상자 하나와 그 아래 원장 목록뿐이고 분류 필터 UI는 두지 않습니다. 잔액 정본은 `GET /auth/me`의 `creditBalance`이고 목록은 `GET /users/me/credits/transactions`(기본값 `type=ALL`·50건)이라 **내역 금액을 합산해 잔액을 만들지 않습니다**. 사유의 한국어 라벨과 금액 부호는 클라이언트가 붙이며, 화면 카피의 코드 정본은 `manyak-web/src/features/my/credits/constants.ts`입니다.
+
+| ID             | P   | 사전조건                                   | 절차                       | 기대 결과                                                                                                                                       | 자동화                        | 근거                                        |
+| -------------- | --- | ------------------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------- |
+| MY-CREDITS-01  | P0  | 게스트                                     | 경로 직접 진입             | `/login`으로 replace 이동                                                                                                                        | ✅ e2e `my/credits`           | §3-2-3 회원 전용 라우트                     |
+| MY-CREDITS-02  | P0  | 회원                                       | 마이 이프 카드 "내역" 탭   | `/my/credits`로 이동. 뒤로가기 헤더 "이프 내역" 표시, 하단 탭 없음                                                                                | ✅ e2e `my/credits`           | FE-SCREEN-008 이프 내역, §3-2-3 라우팅 테이블 |
+| MY-CREDITS-03  | P1  | 회원                                       | 최상단 잔액 상자 확인      | 친구 초대 코드 카드와 같은 상자에 "내 이프" 라벨과 잔액(천 단위 콤마). 값은 진입마다 다시 읽은 `creditBalance`이며 내역 합산이 아님              | ✅ e2e `my/credits`           | FE-SCREEN-008 잔액 박스                     |
+| MY-CREDITS-04  | P0  | 회원, 내역 여러 건                         | 목록 확인                  | 잔액 상자 32px 아래에 최신순 목록. 한 줄은 사유 라벨·대상 스토리·날짜와 오른쪽 금액이고, 획득은 `+`·소모/소멸은 `-`에 절대값·천 단위 콤마       | ✅ e2e `my/credits`           | FE-SCREEN-008 내역 목록·항목 구성·금액 표기 |
+| MY-CREDITS-05  | P1  | 소모·사용 취소 행의 `title`이 null         | 항목 확인                  | 제목 줄에 "삭제된 스토리" 표시. 보상·소멸 행은 제목 줄 자체를 그리지 않음                                                                        | ✅ e2e `my/credits`           | FE-SCREEN-008 제목·날짜                     |
+| MY-CREDITS-06  | P1  | `expiresAt`이 있는 획득·소멸 행            | 날짜 줄 확인               | `YYYY-MM-DD · YYYY-MM-DD 만료` 표시. 소멸 행의 만료일은 `expiresAt`이며 `createdAt`을 만료일로 읽지 않음                                          | ✅ e2e `my/credits`           | FE-SCREEN-008 제목·날짜                     |
+| MY-CREDITS-07  | P1  | 첫 조회 중                                 | 진입 직후 관찰             | 잔액과 목록 자리에 골격 표시                                                                                                                     | 수동                          | FE-SCREEN-008 화면 상태                     |
+| MY-CREDITS-08  | P1  | 내역 0건                                   | 진입                       | "아직 이프 내역이 없어요" 표시                                                                                                                   | ✅ e2e `my/credits`           | FE-SCREEN-008 화면 상태                     |
+| MY-CREDITS-09  | P0  | 첫 조회가 5xx·네트워크 오류                | 진입                       | 목록 자리에 "이프 내역을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시하고, 조회 중에는 버튼이 "다시 시도 중..." 비활성 | ✅ e2e `my/credits`           | FE-SCREEN-008 화면 상태                     |
+| MY-CREDITS-10  | P0  | `nextCursor`가 있는 목록                   | 목록 끝까지 스크롤         | 받은 `nextCursor`를 그대로 실어 다음 페이지를 요청하고 아래에 이어 붙임. "더 보기" 버튼 없음                                                      | ✅ e2e `my/credits`           | FE-SCREEN-008 페이징, §3-2-2 커서 목록 패칭 |
+| MY-CREDITS-11  | P1  | 다음 페이지 조회가 실패                    | 목록 끝까지 스크롤         | 이미 그린 목록을 지우지 않고 목록 아래 재시도 버튼만 표시하며 자동 재요청을 멈춤. 탭하면 다음 페이지를 이어 붙임                                  | ✅ e2e `my/credits`           | FE-SCREEN-008 화면 상태, §3-2-2 커서 목록 패칭 |
+| MY-CREDITS-12  | P2  | 서버가 라벨 없는 `reason`(예: `PURCHASE`)을 내려줌 | 항목 확인          | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시                                                                                          | 수동                          | FE-SCREEN-008 항목 구성(라벨은 클라이언트 소유) |
+| MY-CREDITS-13  | P2  | `/my`에서 진입                             | 뒤로가기 헤더 탭           | `/my`로 복귀                                                                                                                                     | 수동                          | §3-2-3 뒤로가기 헤더                        |
+| MY-CREDITS-14  | P1  | 화면을 한 번 보고 `/my`로 돌아온 상태      | "내역"으로 다시 진입      | 남겨 둔 목록을 그대로 쓰지 않고 첫 페이지부터 다시 조회(스크롤 위치도 목록 맨 위). 그사이 발생한 내역이 바로 보임                                  | ✅ e2e `my/credits`           | §3-2-2 커서 목록 패칭, KNK-1083             |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 
