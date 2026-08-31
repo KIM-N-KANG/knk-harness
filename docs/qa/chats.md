@@ -106,6 +106,7 @@ AI·백엔드는 이미지가 있는 인물의 대사 앞에서 `character_image
 | CHAT-IMAGE-09 | P1  | 이미지 앞뒤에 텍스트가 있는 확정·스트리밍 턴  | 이미지와 텍스트 경계·간격 비교                   | 이미지는 AI 메시지 양쪽에서 16px씩 띄우고 20px 곡률·전체 1px 보더를 적용. 앞 텍스트와 40px, 뒤 텍스트와 20px 간격이며 텍스트·엔딩 배지와 좌우 기준선이 같음 | ✅ e2e `chats/chat-room` | §3-1-5 레이아웃·접근성, KNK-1029 |
 | CHAT-IMAGE-10 | P0  | 외부 호스트·잘못된 경로의 URL이 이벤트 또는 저장 마커에 포함됨 | 스트리밍·상세·공유 화면 관찰 | 이미지 최적화 요청을 만들지 않음. 스트림 이벤트는 무시하고, 저장 마커 모양 문자열은 제거하지 않고 일반 본문으로 유지                                           | ✅ unit `chat-message-segments` + e2e `share/shared-chat` | §3-1-5 저장 마커·§3-2-5 원격 이미지 |
 | CHAT-IMAGE-11 | P1  | 허용 CDN URL이지만 마커가 독립 줄이 아니거나 뒤에 인물명 대사 라벨이 없음 | 상세·공유 화면 관찰 | 이미지로 해석하지 않고 마커 모양 문자열과 나머지 내용을 일반 본문으로 유지                                                                        | ✅ unit `chat-message-segments` | §3-1-5 저장 마커             |
+| CHAT-IMAGE-12 | P0  | 오리지널 스토리 인물 이미지가 `/characters/originals/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch | 스트리밍 중 이미지가 즉시 표시되고 확정 뒤에도 같은 위치에 유지되며, 저장 마커 글자와 URL은 노출되지 않음                                         | ✅ e2e `chats/chat-room` + unit `chat-message-segments` | §3-1-5 인물 이미지 렌더, KNK-1055 |
 
 ## CHAT-INPUT — 입력창·추천 입력·선택지
 
