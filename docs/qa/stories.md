@@ -39,6 +39,7 @@
 | STORY-LIST-22 | P1 | 삭제 API가 5xx로 실패                       | 카드 옵션에서 삭제 확정                   | 게스트는 로컬 목록 롤백(카드 복원) + "스토리 삭제에 실패했어요" 토스트 | 수동 | §3-1-6 쓰기·삭제 |
 | STORY-LIST-23 | P1 | 홈 오리지널 카드                            | 카드 우상단 확인                           | 옵션 버튼을 표시하지 않아 삭제할 수 없음 | ✅ e2e `stories/story-list` | FE-SCREEN-001·013, KNK-1012 |
 | STORY-LIST-24 | P2 | 내가 만든 스토리 카드                       | 제목 첫 줄 오른쪽 옵션 버튼 규격 확인       | 공용 `icon-xs` 버튼 변형(현재 24×24px)과 기본 16px 더보기 아이콘을 사용 | ✅ e2e `stories/story-list`·`visual/stories-visual` | §3-1-3 FE-SCREEN-013, KNK-1043 |
+| STORY-LIST-25 | P1 | 개발 환경, `thumbnailUrl`·`thumbnailUrlSm`이 `dev-cdn.manyak.app/thumbnails/**` URL(한글 파일명 포함) | 목록·상세 썸네일 확인 | 운영과 동일하게 이미지가 렌더되고 placeholder로 남지 않음 | 수동 | §3-2-5 원격 이미지 최적화, KNK-1079 |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
