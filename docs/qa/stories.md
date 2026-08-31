@@ -62,6 +62,9 @@
 | STORY-DETAIL-18 | P1  | 상세 조회가 404             | 진입                                               | 헤더와 "스토리를 찾을 수 없어요"만 표시하고 재시도 버튼은 표시하지 않음 | ✅ e2e `stories/story-detail` | §3-1-3 상태, KNK-1012 |
 | STORY-DETAIL-19 | P1  | 상세 조회가 300ms 넘게 지연 | 로딩 상태 관찰                                     | 히어로·제목·소개·태그·주요 내용 구조의 전용 스켈레톤을 1.4초 펄스로 표시 | ◐ e2e `visual/stories-visual`(정적 구조) | §3-1-3 상태, KNK-1012 |
 | STORY-DETAIL-20 | P1  | 유효한 스토리               | 헤더 구성 확인                                     | 뒤로가기만 표시하고 스토리 옵션 버튼은 없음 | ✅ e2e `visual/stories-visual` | US-4-3, KNK-1012 |
+| STORY-DETAIL-21 | P1  | `characters`에 이름·이미지가 있는 스토리 | 주요 내용 아래 확인 | "주변 인물" 섹션이 주요 내용과 채팅 시작 상황 사이에 표시. 인물마다 이름 소제목 + 그 아래 채팅 화면과 같은 4:3 인물 이미지 카드를 저장 순서대로 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
+| STORY-DETAIL-22 | P2  | `characters`의 일부 인물이 `imageUrl: null` | 해당 인물 확인 | 이름만 표시하고 이미지 카드는 만들지 않음. 나머지 인물은 정상 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
+| STORY-DETAIL-23 | P2  | `characters`가 빈 배열(컴파일 이전·일반 제작 스토리) | 주요 내용 아래 확인 | "주변 인물" 섹션 자체를 표시하지 않음 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1058 |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 
