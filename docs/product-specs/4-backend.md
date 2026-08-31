@@ -224,6 +224,7 @@ graph LR
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/credits` | 크레딧 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `POST /users/me/credits/attendance` | 출석체크 적립(1일 1회 멱등) | 200 | 401 | 필수 | Phase 1 · 구현 |
+| 크레딧 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `GET /users/me/invite` | 내 초대 코드·보상 진행 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 크레딧 | `POST /users/me/invite/redeem` | 초대 코드 입력·양측 보상 적립 | 200 | 400·401·404·409 | 필수 | Phase 1 · 구현 |
 
@@ -629,6 +630,7 @@ graph LR
 | --- | --- | --- | --- |
 | `GET /users/me/credits` | — | `{balance}` | 인증 필수. 지갑이 없으면 0 반환 |
 | `POST /users/me/credits/attendance` | — | `{rewarded, amount, balance}` | 인증 필수. KST 자정 기준 1일 1회(`ZoneId "Asia/Seoul"` 고정). 보상 250 크레딧. 이미 받았으면 `rewarded: false`·`amount: 0`으로 200(멱등) |
+| `GET /users/me/credits/transactions` | `type`·`limit`·`cursor`(쿼리) | `{items, nextCursor}` | `Phase 1 · 구현`(KNK-1044) 인증 필수. 원장을 최신순 커서 페이지로 반환합니다. 계약은 아래 이용내역 조회 |
 | `GET /users/me/invite` | — | `{inviteCode, monthlyRewardCount, monthlyRewardLimit}` | 인증 필수. 내 초대 코드·이번 달 초대 보상 진행 조회. 진행 필드 2종은 `Phase 1 · 구현`(KNK-513). `inviteUrl` 필드는 제거 완료(`Phase 1 · 구현` KNK-567) |
 | `POST /users/me/invite/redeem` | `{code}` | `{amount, balance}` | `Phase 1 · 구현`(KNK-567) 인증 필수. 초대 코드 입력으로 양측 500 크레딧 적립. 계정당 평생 1회. 오류 계약은 아래 초대 코드 입력 규칙 |
 
@@ -639,7 +641,14 @@ graph LR
 - **초대 코드 입력 규칙 — `Phase 1 · 구현`(KNK-567)** — 제출된 `code`는 trim·대문자 정규화 후 비교합니다. 링크 방식의 "오류 없이 무시" 규칙은 폐기합니다 — 사용자가 직접 타이핑하는 값이므로 실패 사유를 구분해 응답해야 프론트엔드가 안내할 수 있습니다. 빈 값·형식 위반은 400, 매칭되는 코드 없음은 404, 자기 코드 제출은 409 `INVITE_SELF_CODE`, 이미 입력을 마친 계정의 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다(같은 상태를 바디 `code`로 구분 — 402 전례(KNK-524)와 같은 방식, [§4-6](#4-6-오류와-예외-처리)). 정지 계정은 공통 게이트가 403으로 차단합니다([§4-5](#4-5-인증과-권한)).
 - **초대 코드 발급** — 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. `Phase 1 · 구현`(KNK-567·V47) — 문자 집합은 **혼동 문자(`O`·`0`·`I`·`1`·`L`)를 제외한 대문자+숫자 집합**입니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이므로 시각 혼동이 곧 입력 실패율입니다. 기존 발급분(영대소문자+숫자 62종)은 V47 마이그레이션으로 전량 리셋해 새 집합으로 재발급합니다 — 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다. `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기했습니다.
 - **초대 상한 진행 표시 — `Phase 1 · 구현`(KNK-513)** — `GET /users/me/invite` 응답에 `monthlyRewardCount`(이번 KST 월에 요청자가 **초대자 역할로** 수령한 초대 보상 횟수, `Long` — 제출자 역할 수령분은 세지 않음, KNK-581)·`monthlyRewardLimit`(월 상한, 현재 10 — `manyak.credit.invite-monthly-cap` 재사용)을 동봉합니다. `monthlyRewardCount`는 상한 판정과 **같은 쿼리·같은 창**(초대자 역할 `INVITE_REWARD` 원장의 KST 월 집계, `[월 시작, 익월 시작)`)을 재사용하므로 진행 표시가 상한 스킵 경계와 정확히 일치합니다. 월 귀속은 초대 보상 판정과 동일한 기준인 **적립 시점 KST 월**입니다(KNK-567 개편에서 피초대자 가입 월 귀속을 대체). 잔여(`limit - count`)·리셋(KST 월 경계)은 클라이언트가 계산하며, 별도 `remaining` 필드는 없습니다. 보상 크레딧 30일 만료와 무관합니다 — 만료로 잔액이 줄어도 그 달 수령 건수는 감소하지 않습니다. 상한 도달 후 초대자 적립은 건너뛰므로(위 초대 보상 규칙), 프론트엔드가 "이번 달 N/10회"를 고지해 보상 없는 코드 공유로 인한 혼란을 줄입니다. 상한값을 응답에 함께 싣는 이유: 상한은 정책 수치라 변할 수 있어 클라이언트 하드코딩을 피합니다.
-- 거래 내역 조회 API는 Phase 1 범위 밖입니다(원장은 운영·정산용).
+- **이용내역 조회 — `Phase 1 · 구현`(KNK-1044)** — `GET /users/me/credits/transactions`로 원장을 사용자에게 공개합니다. 잔액만으로는 그 값이 나온 이유(적립·소모·환불·만료)를 설명할 수 없어, 원장(`credit_transactions`)을 화면용으로 가공해 내려줍니다. 원장을 운영·정산 전용으로 두던 이전 방침을 대체합니다.
+  - **분류(`type`)** — 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`) · `EXPIRE`(`EXPIRE`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** — 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. **`PURCHASE`는 이용내역에서 제외합니다**(`ALL`에서도) — 결제 도입 시 구매내역이 따로 가져갈 몫이라 미리 섞지 않습니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
+  - **응답 항목** — `{type, reason, amount, title, expiresAt, createdAt}`. `reason`은 원장 enum 원문이고 **한국어 라벨은 클라이언트가 붙입니다** — 문구 변경에 서버 배포와 3레포 동반 배포가 걸리지 않게 하기 위해서이며, 402의 `code` 계약과 같은 원칙입니다. `ref_type`·`ref_id`는 순차 PK라 노출하지 않습니다.
+  - **`title`(대상 스토리 제목)** — 소모 행은 어느 스토리에 썼는지가 정보의 전부라 원장의 참조를 역으로 풀어 채웁니다. 채팅 소모·환불은 `story_chats`를 거쳐, 제작 소모·환불은 **`story_creation_sessions`를 한 단계 거쳐** 스토리에 닿습니다(원장의 `ref_type`이 `"STORY"`여도 `ref_id`는 스토리 PK가 아니라 제작 세션 PK입니다 — 곧장 조인하면 다른 스토리가 붙습니다). 보상·소멸 행과 삭제된 스토리는 `null`이며 클라이언트가 폴백 문구를 씁니다. 조회는 페이지 단위 배치라 항목 수와 무관하게 쿼리 횟수가 고정입니다.
+  - **`expiresAt`** — 획득 행은 그 적립이 만든 로트의 만료 예정일, 소멸 행은 **회수된 로트의 실제 만료일**, 소모 행은 `null`입니다. 소멸 행의 `createdAt`을 만료일로 읽으면 안 됩니다 — 만료 회수가 배치가 아니라 다음 지갑 락에서 처리되는 지연 정리라 실제 만료보다 며칠 늦게 기록됩니다. 화면의 날짜 표시는 `expiresAt`을 씁니다.
+  - **페이징** — 정렬은 `created_at DESC, id DESC`이고 커서는 `(createdAt, id)` 복합입니다. 시각만으로는 같은 시각의 행이 갈리지 않고, 순차 PK 단독으로는 커밋 순서가 시각 순서와 어긋날 수 있어 둘 다 필요합니다. 시각은 **초와 나노초로 보존**합니다 — 밀리초로 절삭하면 마이크로초 정밀도인 `created_at`과 어긋나 페이지 경계의 행이 누락됩니다. 커서는 **AES-GCM으로 봉인한 불투명 문자열**입니다(순차 PK가 그대로 드러나면 전역 시퀀스 특성상 커서 두 개의 차이로 서비스 전체 거래량이 추정됩니다). 키는 JWT 대칭키에서 용도 분리 파생이라 주입할 시크릿이 늘지 않습니다. 클라이언트는 받은 값을 그대로 되돌려줄 뿐 파싱하거나 조립하지 않습니다(같은 위치라도 매번 다른 문자열입니다). `limit`은 기본 50·최대 100이며, `nextCursor`는 `limit + 1`건을 조회해 판정하므로 총 건수가 `limit`의 배수여도 빈 페이지를 한 번 더 요청하지 않습니다. 잘못된 커서·지원하지 않는 `type`은 400입니다.
+  - **인덱스** — 이용내역이 새로 만드는 두 접근 경로를 덮습니다: `credit_transactions (user_id, created_at DESC, id DESC)`(V65) · `credit_lots (transaction_id)`(V64, 만료일 배치 해석).
+  - **알려진 간극** — 다른 회원의 공개 스토리로 채팅한 뒤 소유자가 비공개로 돌리고 제목을 바꾸면, 이용내역에 바뀐 최신 제목이 보입니다. 회원 서재(`GET /users/me/chats`)에도 같은 노출이 있어(제목·썸네일) 두 화면을 함께 다루는 별도 과제로 분리했습니다(KNK-1059 — 채팅 생성 시점 스냅샷을 폴백으로 두고, 읽을 수 있을 때만 현재 값을 보여주는 방향).
 
 **결정 기록 — 초대 방식 개편: 링크 어트리뷰션 → 코드 입력(2026-07-11, KNK-567)**
 
@@ -1124,8 +1133,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 스토리 | `story_likes` | `Phase 2 · 계획`(KNK-1024) 스토리 좋아요. `user_id` · `story_id` · `created_at`, `(user_id, story_id)` UNIQUE — 등록·취소 멱등과 `likeCount` 실 집계·`isLiked` 판정의 앵커([§4-3-1](#4-3-api-계약)) |
 | 스토리 | `story_reports` | `Phase 2 · 계획`(KNK-1024) 스토리 신고. `user_id` · `story_id` · `created_at` 골격 — 사유 분류·중복 정책 컬럼은 구현 시 확정([§4-3-1](#4-3-api-계약)) |
 | 크레딧 | `credit_wallets` | `Phase 1 · 구현` 사용자별 지갑(V24). `user_id`(unique FK) · `balance`. 최초 적립 시 지연 생성. 조회 잔액의 정본은 로트 합([§4-3-7](#4-3-api-계약))이며 지갑 행은 차감·적립 직렬화 락의 앵커 |
-| 크레딧 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) — 30일 만료·FIFO 차감의 잔여 추적 |
-| 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id` |
+| 크레딧 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) — 30일 만료·FIFO 차감의 잔여 추적. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
+| 크레딧 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id`. 이용내역 커서 조회용 `(user_id, created_at DESC, id DESC)` 인덱스는 V65(KNK-1044) |
 | 크레딧 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 크레딧 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
 | 크레딧 | Redis `member_trial:{users.id}:story_creation` · `member_trial:{users.id}:chat_turn` | `Phase 1 · 구현` 회원 공유 체험 **사용량** 카운터. 키 없음은 사용량 0이며 일일 리셋·TTL이 없습니다. 정상 시드와 운영 보정 계약은 [§4-3-7](#4-3-api-계약)을 따릅니다 |
