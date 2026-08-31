@@ -144,13 +144,16 @@ graph LR
 
 공통 계약("자동 재시도·화면 복귀 자동 재조회 없이 오류를 상태로 반환" — [`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에러-처리-계약))의 웹 구현은 TanStack Query 기본 옵션으로 고정합니다: `retry: false`, `staleTime: 60초`, `refetchOnWindowFocus: false`, `throwOnError: false`.
 
-### 커서 목록 패칭 (웹) — `Phase 2 · 계획`(KNK-1083)
+### 커서 목록 패칭 (웹) — `Phase 2 · 구현`(KNK-1083)
 
 이프 내역(FE-SCREEN-008)이 웹의 **첫 커서 페이지 목록**입니다. 회원 서재·채팅 목록은 서버 계약에 커서가 없어 한 번에 받으므로 이 절의 규칙은 이프 내역에만 적용합니다.
 
 - **생성된 fetcher 를 `useInfiniteQuery` 로 감쌉니다.** orval 설정(`orval.config.ts`)은 무한 쿼리 훅을 만들지 않으므로, 생성된 `getMyCreditTransactions`(`src/api/generated/endpoints/credits/credits.ts`)를 기능 훅에서 직접 호출합니다. 엔드포인트 하나 때문에 생성물 전체의 모양을 바꾸지 않습니다.
 - **`getNextPageParam` 은 응답의 `nextCursor` 를 그대로 넘깁니다.** 커서는 서버가 봉인한 불투명 문자열이라 파싱하거나 조립하지 않고, 값이 없으면 마지막 페이지입니다. `limit`·`type` 은 보내지 않고 서버 기본값(50건·전체)을 씁니다.
 - **다음 페이지는 목록 끝 sentinel 요소의 교차로 요청합니다.** 관찰은 기존 `useInView`(`src/hooks/use-in-view.ts`)를 재사용하고 "더 보기" 버튼은 두지 않습니다. `isFetchingNextPage` 동안에는 다시 요청하지 않으며, **실패하면 그 자리 재시도 버튼으로 넘기고 자동 재요청을 멈춥니다** — 목록 끝에 머무는 동안 같은 실패를 반복하게 되기 때문이며, 기본 옵션 `retry: false` 와 같은 판단입니다.
+  - `useInView` 의 초기값은 "보이는 중"(`true`)이라 sentinel 은 `initialInView: false` 로 관찰해야 합니다(KNK-1083에서 옵션 추가). IntersectionObserver 의 첫 보고는 관찰을 시작한 렌더 다음에 오므로, 초기값을 그대로 두면 첫 페이지가 도착하자마자 화면에 없는 sentinel 로 다음 페이지까지 받습니다.
+  - 첫 조회 실패와 다음 페이지 실패는 화면에서 갈라 그립니다. `useInfiniteQuery` 는 다음 페이지가 실패해도 쿼리 전체를 `isError` 로 만들므로, 목록 자리의 재시도 상태는 **받아 둔 항목이 없을 때만** 그리고 그 밖에는 `isFetchNextPageError` 로 목록 아래 재시도만 붙입니다.
+- **목록도 진입할 때마다 첫 페이지부터 다시 읽습니다.** 무한 쿼리에 `gcTime: 0` 을 줘 화면을 떠나면 받아 둔 페이지를 버립니다(KNK-1083) — 이프는 채팅·제작에서 계속 줄어들어 남겨 둔 목록이 곧 낡습니다. 쌓아 둔 페이지를 `refetchOnMount` 로 함께 다시 읽는 방식은 쓰지 않습니다: 커서는 특정 행을 가리키므로 그사이 앞에 끼어든 항목만큼 페이지 경계가 밀려 같은 줄이 겹쳐 보입니다.
 - **잔액은 목록과 다른 출처입니다.** 화면 상단 상자는 `useMe`(`refetchOnMount: 'always'` — 마이 이프 카드와 같은 규칙)의 `creditBalance` 를 쓰고 내역 금액을 합산하지 않습니다.
 
 ---
@@ -182,7 +185,7 @@ graph LR
 | `/login/continue` `Phase 1 · 구현`      | FE-SCREEN-008 | `(auth)`    | 로그인 핸드오프 외부 랜딩([§3-2-5](#3-2-5-반응형접근성브라우저-지원)) | 뒤로가기 헤더(탭 없음, 폴백 홈) |
 | `/my` `Phase 1 · 구현`                  | FE-SCREEN-008 | `(main)`    | 마이 페이지               | 헤더 + 하단탭          |
 | `/my/invite` `Phase 1 · 구현`           | FE-SCREEN-008 | `(my)`      | 친구 초대                 | 뒤로가기 헤더(탭 없음) |
-| `/my/credits` `Phase 2 · 계획`          | FE-SCREEN-008 | `(my)`      | 이프 내역                 | 뒤로가기 헤더(탭 없음) |
+| `/my/credits` `Phase 2 · 구현`          | FE-SCREEN-008 | `(my)`      | 이프 내역                 | 뒤로가기 헤더(탭 없음) |
 | `/my/account-deletion` `Phase 1 · 구현` | FE-SCREEN-008 | `(my)`      | 회원 탈퇴 확인            | 뒤로가기 헤더(탭 없음) |
 | `/my/link/continue` `Phase 1 · 구현`    | FE-SCREEN-008 | `(my)`      | 계정 연동 중계(스피너만)  | 없음                   |
 | `/studio/story/general` `Phase 1 · 계획` | FE-SCREEN-009 | `(story)`  | 일반 제작 폼              | 없음(자체 헤더)        |
@@ -578,7 +581,7 @@ graph LR
 | `my/login-page`                           | 소셜 로그인(Google·Kakao 구현)·이관 안내·약관 링크·로그인 로딩                      | US-9-1·2·10               |
 | `my/my-page`                              | 마이 게스트·회원 상태·헤더                                                                             | US-9-1·5, US-10-1·2       |
 | `my/invite`                               | 초대 코드 조회·복사·공유·입력 오류·등록 스피너·신규 가입 온보딩                                        | US-10-2                   |
-| `my/credit-history` `Phase 2 · 계획`      | 잔액 상자·내역 목록 표시·끝에서 다음 페이지 이어 붙임·빈 상태·조회 실패 재시도                         | US-10-6                   |
+| `my/credits`                              | 잔액 상자·내역 목록·끝에서 다음 페이지 이어 붙임·빈 상태·첫 조회 실패 재시도·다음 페이지 실패 목록 유지 | US-10-6                   |
 | `visual/*-visual`                         | 계정·채팅·약관·마이·온보딩·스토리의 안정된 정적 상태                                                   | 각 화면의 연결 US         |
 
 ### Definition of Done
