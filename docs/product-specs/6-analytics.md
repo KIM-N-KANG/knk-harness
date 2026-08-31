@@ -214,7 +214,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | client | `client_feedback_form_submitted`                         |
 | P1                  | client | `client_onboarding_viewed`                               |
 | P1                  | client | `client_onboarding_createButton_clicked`                 |
-| P1                  | client | `client_onboarding_skipButton_clicked`                   |
+| P1                  | client | `client_onboarding_logo_clicked`                         |
 | P1                  | client | `client_storyList_storyCard_clicked`                     |
 | P1                  | client | `client_storyList_storyCard_impressed`                   |
 | P1 `Phase 1 · 구현` | client | `client_storyList_loginButton_clicked`                   |
@@ -300,9 +300,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 | 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
-| `client_onboarding_viewed`               | P1       | 환영 다이얼로그 노출    | 없음          |
+| `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
 | `client_onboarding_createButton_clicked` | P1       | 스토리 만들기 버튼 클릭 | 없음          |
-| `client_onboarding_skipButton_clicked`   | P1       | 나중에 하기 버튼 클릭   | 없음          |
+| `client_onboarding_logo_clicked`         | P1       | 헤더 로고 탭(홈으로 이탈, 기존 `client_onboarding_skipButton_clicked`를 대체 — "나중에 하기" 버튼 제거, KNK-1004) | 없음          |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
 
