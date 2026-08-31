@@ -179,7 +179,7 @@ event_time, event_id
 
 P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 안정적으로 수집된 뒤 추가합니다. P2 이벤트는 세부 인터랙션 계측으로, P1 이후 필요에 따라 추가합니다.
 
-> **P0·P1·P2는 수집 우선순위이며, 로드맵의 Phase 0~3과 무관합니다.** 로드맵 단계 표기는 3·4·5 스펙 문서와 동일하게 `{로드맵 Phase} · {구현 상태}` 라벨(예: `Phase 1 · 계획`)을 사용합니다([`roadmap.md`](../planning/roadmap.md). 유저 스토리 문서만 `Phase 1` 단축 라벨을 씁니다). Phase 1 기능(계정 · 크레딧 · 제작/채팅 확장)의 이벤트는 Phase 1 스펙 반영에서 이 라벨로 추가합니다.
+> **P0·P1·P2는 수집 우선순위이며, 로드맵의 Phase 0~3과 무관합니다.** 로드맵 단계 표기는 3·4·5 스펙 문서와 동일하게 `{로드맵 Phase} · {구현 상태}` 라벨(예: `Phase 1 · 계획`)을 사용합니다([`roadmap.md`](../planning/roadmap.md). 유저 스토리 문서만 `Phase 1` 단축 라벨을 씁니다). Phase 1 기능(계정 · 이프 · 제작/채팅 확장)의 이벤트는 Phase 1 스펙 반영에서 이 라벨로 추가합니다.
 
 | 우선순위            | 소유   | 이벤트                                                   |
 | ------------------- | ------ | -------------------------------------------------------- |
@@ -340,7 +340,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_additionalInfoRemoveButton_clicked`  | P2       | 추가 정보 입력란 삭제 클릭                                                     | 없음                                                                                                             |
 | `client_storyCreate_storyCompletion_requested`           | P1       | 스토리 완성 요청 전송                                                          | `creation_id` (string, 필수)                                                                                     |
 | `client_storyCreate_completeError_shown`                 | P1       | 스토리 완성 실패 에러 표시                                                     | `stage` (string, 필수: `story` / `chat`)                                                                         |
-| `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 크레딧 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
+| `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 이프 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
 | `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확정(헤더 X·브라우저 뒤로가기 즉시, 소실 이탈은 경고 다이얼로그의 나가기 클릭) | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
 | `client_storyCreate_draftSaved`                          | P1       | 300ms 자동 저장 쓰기 성공                                                      | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
 | `client_storyCreate_continueBanner_shown`                | P2       | 제작 탭 이어서 만들기 배너 노출(임프레션)                                      | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)            |
@@ -481,9 +481,9 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - `client_account_loginButton_clicked`는 게스트가 마이 페이지에서 로그인 화면으로 이동한 유입을 구분합니다. 로그인 화면 진입 자체는 `client_login_viewed`로 측정합니다.
 - 계정 연동(KNK-740)의 클라이언트 이벤트는 시도 시점(`client_account_linkAccountButton_clicked`) 하나뿐입니다. 성공·실패는 서버가 `server_link_socialLink_processed_*`로 이미 잡고 있어 중복이며, 클라이언트에서 결과를 다시 보내면 재인증·연동 2단계를 한 시도로 세기 어려워집니다. 이 이벤트는 인앱 브라우저 차단으로 플로우가 시작되지 않은 경우에도 발화해 차단 빈도를 함께 측정합니다. 링크 코드는 비밀값이라 어떤 이벤트에도 싣지 않습니다(§6-6 관측 금지 규칙).
 
-#### 6-4-2-9. 크레딧 — `Phase 1 · 구현`
+#### 6-4-2-9. 이프 — `Phase 1 · 구현`
 
-마이 페이지의 적립 인터랙션과 크레딧·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 크레딧 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+마이 페이지의 적립 인터랙션과 이프·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 이프 원장(`credit_transactions`)이 정본이고([`4-backend.md §4-3-7`](./4-backend.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
 | 이벤트                                           | 우선순위 | 발생 시점                                                                        | 고유 프로퍼티                                                                                                  |
 | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -500,11 +500,11 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 바텀 시트 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
 | `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 바텀 시트의 로그인 CTA 클릭                                          | `trigger` (동일) · `provider` (string, 필수 — `google` · `kakao`, KNK-728)                                     |
 | `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 바텀 시트 닫기                                                       | `trigger` (동일)                                                                                               |
-| `client_creditShortageDialog_shown`              | P0       | 402 `INSUFFICIENT_CREDIT`로 회원 크레딧 부족 토스트 노출. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
+| `client_creditShortageDialog_shown`              | P0       | 402 `INSUFFICIENT_CREDIT`로 회원 이프 부족 토스트 노출. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
 
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 한도 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
 - 게스트 한도는 화면 횡단 모달 바텀 시트지만 기존 대시보드 호환을 위해 `Dialog` 이벤트 이름을 유지합니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하고 로그인 CTA·닫기까지 수집합니다.
-- 회원 크레딧 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
+- 회원 이프 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.

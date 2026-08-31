@@ -559,7 +559,7 @@ graph LR
 | `stories/general-create` `Phase 1 · 계획` | 방식 선택·일반 제작 등록·수정 폼 왕복                                                                  | US-3-15·16, US-4-5        |
 | `chats/chat-list`                         | 채팅 목록·재개·빈 상태                                                                                 | US-5-1·2·4                |
 | `chats/chat-room`                         | 프롤로그·빈 입력의 무작위 추천 전송·스트리밍·선택지·실패·옵션 메뉴 삭제·응답 재생성·엔딩 배지         | US-5-3, US-6-1·2·3·4·8·10·13·14 |
-| `chats/chat-guest-limit`                  | 채팅 턴의 게스트 선차단·체험 한도/크레딧 부족 402 분기                                                 | US-10-4·5                 |
+| `chats/chat-guest-limit`                  | 채팅 턴의 게스트 선차단·체험 한도/이프 부족 402 분기                                                 | US-10-4·5                 |
 | `feedback/feedback`                       | 제출·이메일 선택·빈 본문 클릭 검증·제출 스피너·실패                                                    | US-7-1·2·3                |
 | `my/login-page`                           | 소셜 로그인(Google·Kakao 구현)·이관 안내·약관 링크·로그인 로딩                      | US-9-1·2·10               |
 | `my/my-page`                              | 마이 게스트·회원 상태·헤더                                                                             | US-9-1·5, US-10-1·2       |
