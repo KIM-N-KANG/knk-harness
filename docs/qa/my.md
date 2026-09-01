@@ -63,6 +63,7 @@
 | MY-CREDITS-04 | P0 | 회원, 내역 여러 건 | 내역 탭에서 목록 확인 | 최신순 목록. 한 줄은 사유 라벨·대상 스토리·날짜와 오른쪽 금액이고, 획득은 `+`·소모/소멸은 `-`에 절대값·천 단위 콤마. 줄 위아래 여백은 8px | ✅ e2e `my/credits` | FE-SCREEN-008 내역 목록·항목 구성·금액 표기 |
 | MY-CREDITS-05  | P1  | 소모·사용 취소 행의 `title`이 null         | 항목 확인                  | 제목 줄에 "삭제된 스토리" 표시. 보상·소멸 행은 제목 줄 자체를 그리지 않음                                                                        | ✅ e2e `my/credits`           | FE-SCREEN-008 제목·날짜                     |
 | MY-CREDITS-06  | P1  | `expiresAt`이 있는 획득·소멸 행            | 날짜 줄 확인               | `YYYY-MM-DD · YYYY-MM-DD 만료` 표시. 소멸 행의 만료일은 `expiresAt`이며 `createdAt`을 만료일로 읽지 않음                                          | ✅ e2e `my/credits`           | FE-SCREEN-008 제목·날짜                     |
+| MY-CREDITS-24  | P1  | KST 자정~오전 9시에 적립된 행(예: `createdAt: 2026-09-01T15:10:00Z`) | 날짜 줄 확인 | 발생일·만료일 모두 KST 기준 날짜(`2026-09-02 · 2026-10-02 만료`). UTC 문자열을 그대로 잘라 하루 전으로 표시하지 않음 | ✅ 단위 — 웹 `lib/format-date`·`my/credits/utils/credit-transaction-display`, 앱 `DisplayDateTest` | §3-1-7 날짜 표시 기준 |
 | MY-CREDITS-07 | P1 | 첫 조회 중 | 진입 직후·내역 탭 전환 직후 관찰 | 잔액 상자와 내역 목록 자리에 각각 골격 표시 | 수동 | FE-SCREEN-008 화면 상태 |
 | MY-CREDITS-08 | P1 | 내역 0건 | 내역 탭 진입 | "아직 이프 내역이 없어요" 표시 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 상태 |
 | MY-CREDITS-09 | P0 | 첫 조회가 5xx·네트워크 오류 | 내역 탭 진입 | 목록 자리에 "이프 내역을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시하고, 조회 중에는 버튼이 "다시 시도 중..." 비활성 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 상태 |
