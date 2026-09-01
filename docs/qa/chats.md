@@ -5,7 +5,7 @@
 | 화면      | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]`                                                                          |
 | 관련 스펙 | [`3-1-client.md §3-1-3·§3-1-5·§3-1-6`](../product-specs/3-1-client.md), [`2-user-stories.md §2-5·§2-6`](../product-specs/2-user-stories.md)                                             |
 | 관련 E2E  | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
-| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성)                                                                                                 |
+| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성). CHAT-LIST-16은 `manyak-web` `feat/KNK-1092-add-if-management-page` 기준(`미배포`)                |
 
 컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
 
@@ -25,6 +25,7 @@
 | CHAT-LIST-08 | P2  | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨                    | `/chats` 진입                        | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                      | 수동                         | §3-1-6 배치 재조회              |
 | CHAT-LIST-09 | P2  | `lastStoryPreview`가 빈 문자열인 채팅                        | `/chats` 진입                        | 미리보기 자리에 "채팅을 시작하고 이야기를 이어가 보세요" fallback 표시                                              | ✅ e2e `visual/chats-visual` | §3-1-3                          |
 | CHAT-LIST-10 | P2  | `lastStoryPreview`가 `null`인 채팅                           | `/chats` 진입                        | 해당 채팅은 목록 변환 단계에서 제외되어 카드가 나타나지 않음                                                        | 수동                         | §3-1-3                          |
+| CHAT-LIST-16 `미배포` | P1 | 참조 스토리가 삭제된 채팅(`storyTitle`이 빈 문자열) | `/chats` 진입 | 카드가 목록에 남고 제목 자리에 보조색으로 "삭제된 스토리예요" 표시. 카드 링크의 접근 가능한 이름도 같은 문구를 씀 | ✅ e2e `chats/chat-list` | §3-1-3 화면 구성(채팅 카드), KNK-1092 |
 | CHAT-LIST-11 | P0  | 회원 로그인 상태                                             | `/chats` 진입                        | 로컬 ID와 무관하게 `GET /users/me/chats` 서버 목록으로 카드 표시(이관 미발동)                                       | ✅ e2e `chats/chat-list`     | §3-1-6 쓰기·삭제, FE-SCREEN-008 |
 | CHAT-LIST-12 | P1  | 회원, 서버 채팅 없음 + 서버 스토리 있음                      | `/chats` 진입                        | 빈 안내 + "스토리 목록으로 가기" CTA(`/studio`)                                                                     | ✅ e2e `chats/chat-list`     | US-5-4                        |
 | CHAT-LIST-13 | P2  | 세션 판별 중(`loading`)                                      | `/chats` 진입 직후 관찰              | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                   | 수동                         | 구현(`use-created-chats`)     |
