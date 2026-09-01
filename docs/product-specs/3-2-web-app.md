@@ -146,7 +146,7 @@ graph LR
 
 ### 커서 목록 패칭 (웹) — `Phase 2 · 구현`(KNK-1083)
 
-이프 내역(FE-SCREEN-008)이 웹의 **첫 커서 페이지 목록**입니다. 회원 서재·채팅 목록은 서버 계약에 커서가 없어 한 번에 받으므로 이 절의 규칙은 이프 내역에만 적용합니다.
+이프 충전의 내역 탭(FE-SCREEN-008)이 웹의 **첫 커서 페이지 목록**입니다. 회원 서재·채팅 목록은 서버 계약에 커서가 없어 한 번에 받으므로 이 절의 규칙은 이 목록에만 적용합니다.
 
 - **생성된 fetcher 를 `useInfiniteQuery` 로 감쌉니다.** orval 설정(`orval.config.ts`)은 무한 쿼리 훅을 만들지 않으므로, 생성된 `getMyCreditTransactions`(`src/api/generated/endpoints/credits/credits.ts`)를 기능 훅에서 직접 호출합니다. 엔드포인트 하나 때문에 생성물 전체의 모양을 바꾸지 않습니다.
 - **`getNextPageParam` 은 응답의 `nextCursor` 를 그대로 넘깁니다.** 커서는 서버가 봉인한 불투명 문자열이라 파싱하거나 조립하지 않고, 값이 없으면 마지막 페이지입니다. `limit`·`type` 은 보내지 않고 서버 기본값(50건·전체)을 씁니다.
@@ -185,7 +185,7 @@ graph LR
 | `/login/continue` `Phase 1 · 구현`      | FE-SCREEN-008 | `(auth)`    | 로그인 핸드오프 외부 랜딩([§3-2-5](#3-2-5-반응형접근성브라우저-지원)) | 뒤로가기 헤더(탭 없음, 폴백 홈) |
 | `/my` `Phase 1 · 구현`                  | FE-SCREEN-008 | `(main)`    | 마이 페이지               | 헤더 + 하단탭          |
 | `/my/invite` `Phase 1 · 구현`           | FE-SCREEN-008 | `(my)`      | 친구 초대                 | 뒤로가기 헤더(탭 없음) |
-| `/my/credits` `Phase 2 · 구현`          | FE-SCREEN-008 | `(my)`      | 이프 내역                 | 뒤로가기 헤더(탭 없음) |
+| `/my/credits` `Phase 2 · 구현`          | FE-SCREEN-008 | `(my)`      | 이프 충전(무료 충전·내역 탭) | 뒤로가기 헤더(탭 없음) |
 | `/my/account-deletion` `Phase 1 · 구현` | FE-SCREEN-008 | `(my)`      | 회원 탈퇴 확인            | 뒤로가기 헤더(탭 없음) |
 | `/my/link/continue` `Phase 1 · 구현`    | FE-SCREEN-008 | `(my)`      | 계정 연동 중계(스피너만)  | 없음                   |
 | `/studio/story/general` `Phase 1 · 계획` | FE-SCREEN-009 | `(story)`  | 일반 제작 폼              | 없음(자체 헤더)        |
