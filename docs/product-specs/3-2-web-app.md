@@ -144,6 +144,16 @@ graph LR
 
 공통 계약("자동 재시도·화면 복귀 자동 재조회 없이 오류를 상태로 반환" — [`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에러-처리-계약))의 웹 구현은 TanStack Query 기본 옵션으로 고정합니다: `retry: false`, `staleTime: 60초`, `refetchOnWindowFocus: false`, `throwOnError: false`.
 
+### 이프 정책 수치 패칭 (웹) — `Phase 2 · 구현`(KNK-1095)
+
+수치 출처와 표시 규칙은 [`3-1-client.md §3-1-7` 이프 정책 수치 표시](./3-1-client.md#이프-정책-수치-표시)가 소유합니다. 웹 구현만 여기서 고정합니다.
+
+- **`useCreditPolicy()`(`src/hooks/use-credit-policy.ts`) 하나로만 읽습니다.** 생성된 `useGetCreditPolicies` 를 감싸 200 응답의 본문만 꺼내고, 아직 못 받았거나 실패하면 `undefined` 를 돌려줍니다. 화면은 로딩·에러 분기 대신 쓰려는 필드가 `undefined` 인지만 봅니다. 도메인이 셋(스토리·채팅·마이)에 걸쳐 있어 특정 feature 가 아니라 `src/hooks/` 에 둡니다.
+- **`staleTime` 을 따로 두지 않습니다.** 서버 정책 스냅샷 갱신 주기가 약 1분이라 기본값(60초)과 맞습니다.
+- **대체 수치를 두지 않습니다.** `src/constants/credit.ts` 의 `formatCreditAmount()` 가 값이 없으면 자리표시 숫자(`CREDIT_AMOUNT_PLACEHOLDER` — `000`)를 돌려주고, 쓰는 쪽이 `animate-pulse` 를 함께 걸어 확정된 값이 아님을 드러냅니다. 정책값을 클라이언트에 복제해 두면 서버가 값을 바꾸는 순간 그 자리가 다시 거짓이 됩니다.
+- **토스트·카카오 공유 제목은 `useCreditPolicySnapshot()` 으로 캐시를 한 번만 읽습니다.** 이 자리에서 `useCreditPolicy()` 로 구독하면 수치가 도착할 때 같은 화면의 코드 입력 폼까지 다시 그려져 입력 중이던 값이 흔들립니다. 조회 자체는 같은 화면의 다른 자리가 이미 구독해 캐시에 채워집니다.
+- **E2E 는 `CREDIT_POLICY_FIXTURE`·`mockCreditPolicies`(`e2e/fixtures/api-mock.ts`)로 값을 고정합니다.** 앱에 기본 수치가 없으므로 픽스처가 화면 문구의 정본이고, `mockApi` 가 이를 기본 응답으로 깔아 둡니다(안 그러면 catch-all 의 `[]` 가 내려가 모든 수치가 자리표시로 갈립니다). 다른 값을 넘기면 서버 추종을, 5xx 를 응답하면 자리표시·쉬머를 각각 검증할 수 있습니다.
+
 ### 커서 목록 패칭 (웹) — `Phase 2 · 구현`(KNK-1083)
 
 이프 충전의 내역 탭(FE-SCREEN-008)이 웹의 **첫 커서 페이지 목록**입니다. 회원 서재·채팅 목록은 서버 계약에 커서가 없어 한 번에 받으므로 이 절의 규칙은 이 목록에만 적용합니다.
@@ -581,7 +591,7 @@ graph LR
 | `my/login-page`                           | 소셜 로그인(Google·Kakao 구현)·이관 안내·약관 링크·로그인 로딩                      | US-9-1·2·10               |
 | `my/my-page`                              | 마이 게스트·회원 상태·헤더                                                                             | US-9-1·5, US-10-1·2       |
 | `my/invite`                               | 초대 코드 조회·복사·공유·입력 오류·등록 스피너·신규 가입 온보딩                                        | US-10-2                   |
-| `my/credits`                              | 잔액 상자·내역 목록·끝에서 다음 페이지 이어 붙임·빈 상태·첫 조회 실패 재시도·다음 페이지 실패 목록 유지 | US-10-6                   |
+| `my/credits`                              | 잔액 상자·내역 목록·끝에서 다음 페이지 이어 붙임·빈 상태·첫 조회 실패 재시도·다음 페이지 실패 목록 유지·출석 문구가 서버 이프 수치를 따라감 | US-10-6                   |
 | `visual/*-visual`                         | 계정·채팅·약관·마이·온보딩·스토리의 안정된 정적 상태                                                   | 각 화면의 연결 US         |
 
 ### Definition of Done
