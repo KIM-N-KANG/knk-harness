@@ -157,7 +157,7 @@ event_time, event_id
 
 `device_id`도 커스텀 이벤트 프로퍼티로 보내지 않지만 생성 주체는 플랫폼별로 다릅니다. 웹은 Browser SDK 자동 값을 사용하고, Android는 앱 소유 UUID를 SDK `setDeviceId`로 **첫 이벤트 전에 주입**합니다. 따라서 Android 검수에서 “SDK 자동 생성”을 요구하면 안 됩니다.
 
-웹·Android 이벤트는 **커스텀 프로퍼티가 아니라 SDK 자동 수집 값으로 구분합니다** — `platform`·`os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`으로 검증됨, Android 값은 SDK 도입 시 확인해 이 절에 기록), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 합니다. 이벤트 이름·커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§6-4)를 재사용합니다.
+웹·Android 이벤트는 **커스텀 프로퍼티가 아니라 SDK 자동 수집 값으로 구분합니다** — `platform`·`os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`, Android SDK 1.30은 `platform: Android`로 각각 운영 프로젝트 적재를 확인 — 2026-09-04, KNK-1178), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 합니다. 이벤트 이름·커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§6-4)를 재사용합니다.
 
 다음 프로퍼티는 관련 기능 도입 시점에 추가합니다.
 
@@ -584,6 +584,82 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
 - CTA 클릭은 공유 링크가 신규 유입으로 이어졌는지를 보는 지표입니다. 열람 대비 클릭(`client_chatShare_viewed` 수 대비 `client_chatShare_ctaButton_clicked` 수)이 공유 열람 화면의 전환율입니다.
 - 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 비밀 토큰과 분리된 분석용 ID를 서버가 발급하는 핸드오프 `handoff_id` 패턴(§6-4-2-12)을 따라 추가합니다.
+
+#### 6-4-2-15. 안드로이드 앱 보강 이벤트 — `Phase 2 · 구현`(KNK-1178)
+
+앱은 공통 카탈로그를 그대로 재사용합니다(§3-3-6 원칙). 아래는 **앱에만 있는 화면·동작**이라 카탈로그에 없던 이벤트이고, 이름·프로퍼티 규칙은 §6-3-1을 따릅니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다.
+
+**기존 화면 보강** — 목록 카드 옵션·삭제·조회 실패는 웹에 없는 앱 동작입니다. 시작 설정 선택은 앱 스토리 상세에만 있는 UX입니다.
+
+| 이벤트                                      | 우선순위 | 발생 시점                                          | 고유 프로퍼티                                            |
+| ------------------------------------------- | -------- | -------------------------------------------------- | -------------------------------------------------------- |
+| `client_storyList_storyOptions_opened`      | P2       | 스튜디오 카드 길게 누르기·더보기로 옵션 시트 열기   | `story_id` (string, 필수)                                |
+| `client_storyList_story_deleted`            | P1       | 삭제 확인 다이얼로그에서 삭제 확정                  | `story_id` (string, 필수)                                |
+| `client_storyList_loadError_shown`          | P1       | 홈·스튜디오 목록 조회 실패 화면 노출                | `section` (string, 필수: `original` / `created`)         |
+| `client_storyDetail_startSetting_selected`  | P1       | 시작 설정(프롤로그 분기) 선택                       | `story_id` (string, 필수), `start_setting_id` (string, 필수) |
+| `client_storyDetail_story_deleted`          | P1       | 헤더 메뉴 → 삭제 확정                               | `story_id` (string, 필수)                                |
+| `client_chatList_chatOptions_opened`        | P2       | 채팅 카드 길게 누르기로 옵션 시트 열기              | `chat_id` (string, 필수)                                 |
+| `client_chatList_chat_deleted`              | P1       | 삭제 확인 다이얼로그에서 삭제 확정                  | `chat_id` (string, 필수)                                 |
+| `client_chatList_loadError_shown`           | P1       | 채팅 목록 조회 실패 화면 노출                       | 없음                                                     |
+| `client_account_creditChargeButton_clicked` | P1       | 마이 이프 카드에서 충전 화면 진입                   | 없음                                                     |
+| `client_invite_shareButton_clicked`         | P1       | 시스템 공유 시트 열기(웹 `kakaoShareButton`의 앱 대응) | 없음                                                  |
+
+`client_storyList_viewed`는 앱에서 `section`(선택, `original` / `created`)을 함께 보냅니다. 앱은 홈 탭과 스튜디오 탭이 별도 화면이라 진입을 구분해야 하고, 웹은 `/`만 발화하므로 보내지 않습니다. 이 프로퍼티는 웹 계약을 바꾸지 않는 선택 확장입니다.
+
+**신고 시트** — 스토리 상세·스튜디오·채팅 목록·채팅방 네 화면이 `StoryReportController` 하나를 공유하므로 화면별 이벤트를 만들지 않고 `source`로 구분합니다. `screen_name`은 네 화면 모두 `report`입니다.
+
+| 이벤트                        | 우선순위 | 발생 시점               | 고유 프로퍼티                                                                                                        |
+| ----------------------------- | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `client_report_sheet_opened`  | P1       | 신고 시트 열기          | `target_type` (string, 필수: `story` / `chat`), `target_id` (string, 필수), `source` (string, 필수: `storyDetail` / `studio` / `chatList` / `chat`) |
+| `client_report_submitted`     | P0       | 신고 제출 요청 전송     | `target_type`, `target_id`, `reason` (string, 필수: `StoryReportReason`), `has_detail` (boolean, 필수)               |
+| `client_report_failed`        | P1       | 신고 제출 실패 안내 노출 | `target_type`, `error_type` (string, 필수: `DomainError` 종류)                                                       |
+
+상세 본문은 자유 입력이라 싣지 않고 `has_detail`만 보냅니다(§6-7).
+
+**이프 충전** — 웹은 `/my/credits` 라우트가 있으나 이벤트가 없습니다. 출석 버튼이 웹은 마이(`client_account_attendanceButton_clicked`), 앱은 충전 화면에 있어 `screen_name`이 달라지므로 앱은 아래 이름을 씁니다.
+
+| 이벤트                                       | 우선순위 | 발생 시점                | 고유 프로퍼티                                    |
+| -------------------------------------------- | -------- | ------------------------ | ------------------------------------------------ |
+| `client_creditCharge_viewed`                 | P1       | 충전 화면 진입           | 없음                                             |
+| `client_creditCharge_attendanceButton_clicked` | P0     | 출석(이프 받기) 클릭     | 없음                                             |
+| `client_creditCharge_tab_selected`           | P2       | 무료 충전 / 내역 탭 전환 | `tab` (string, 필수: `free` / `history`)         |
+
+**회원 탈퇴** — 웹은 `/my/account-deletion` 라우트가 있으나 이벤트가 없습니다.
+
+| 이벤트                         | 우선순위 | 발생 시점                       | 고유 프로퍼티 |
+| ------------------------------ | -------- | ------------------------------- | ------------- |
+| `client_withdrawal_viewed`     | P1       | 탈퇴 화면 진입                  | 없음          |
+| `client_withdrawal_completed`  | P0       | 탈퇴 요청 성공(세션 종료 직전)  | 없음          |
+
+`client_withdrawal_completed`는 **사용자 식별자 해제보다 먼저** 전송해야 탈퇴가 그 사용자에게 귀속됩니다(§6-2).
+
+#### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
+
+카탈로그 이벤트 92개 중 앱이 그대로 쓰는 것은 58개, 이름을 바꿔 쓰는 것은 1개(`client_account_attendanceButton_clicked` → `client_creditCharge_attendanceButton_clicked`), 앱에 해당 없는 것은 24개입니다. 화면별 대응은 [`3-3-android-app.md §3-3-6`](./3-3-android-app.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+
+**앱 비적용(웹 전용) 24개** — 앱에 해당 화면·상태가 없습니다.
+
+| 그룹                | 이벤트                                                                                                                                                            | 사유                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| 인앱 브라우저 (6)   | `client_inappBrowser_*` 4개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
+| 게스트 한도 (3)     | `client_guestLimitDialog_*`                                                                                                                                        | 앱은 로그인 필수              |
+| 온보딩 (3)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
+| 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
+| 채팅 투어 (4)       | `client_chat_tour_*` · `client_chat_tourStep_viewed` · `client_chat_tourSkipButton_clicked`                                                                          | 앱 미구현                     |
+| 대화 공유 (5)       | `client_chat_shareButton_clicked` · `client_chatShareDialog_*` 2개 · `client_chatShare_*` 2개                                                                        | 앱 미구현                     |
+| 상황 삽입 (1)       | `client_chat_situationInsertButton_clicked`                                                                                                                        | 앱은 `addBlockButton_clicked`로 통합 |
+
+**웹 후속 작업** — 앱 보강 이벤트(§6-4-2-15) 중 웹에 같은 화면·동작이 있는데 계측이 빠진 항목입니다. 웹이 같은 이름으로 따라와야 플랫폼 비교가 됩니다.
+
+| 항목                                   | 웹 현황                                 | 필요한 작업                                                                                             |
+| -------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 이프 충전 화면                         | `/my/credits` 라우트 있음, 이벤트 없음  | `client_creditCharge_viewed` 추가. 출석 버튼이 충전 화면으로 옮겨지면 `client_creditCharge_attendanceButton_clicked`로 통일 |
+| 회원 탈퇴                              | `/my/account-deletion` 있음, 이벤트 없음 | `client_withdrawal_viewed` · `client_withdrawal_completed` 추가                                          |
+| 스토리·채팅 삭제                       | 삭제 기능 있음, 이벤트 없음             | `client_storyList_story_deleted` · `client_storyDetail_story_deleted` · `client_chatList_chat_deleted` 추가 |
+| 목록 조회 실패                         | 실패 화면 있음, 이벤트 없음             | `client_storyList_loadError_shown` · `client_chatList_loadError_shown` 추가                              |
+| 신고                                   | 웹 미구현                               | 기능 도입 시 `client_report_*` 3개를 같은 이름으로                                                      |
+| 시작 설정 선택                         | 웹 미구현(앱 전용 UX)                    | 도입 시 `client_storyDetail_startSetting_selected`                                                       |
+| `client_storyList_viewed`의 `section`  | 미전송                                  | 선택 프로퍼티이므로 웹은 유지. `/studio` 진입을 따로 보려면 `created`로 발화                            |
 
 ### 6-4-3. impression 수집 기준
 

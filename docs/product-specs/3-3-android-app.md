@@ -2,7 +2,7 @@
 
 이 문서는 **마냑 안드로이드 네이티브 앱의 플랫폼 구현 계약**을 정의합니다. 화면·사용자 흐름·API 계약 등 플랫폼 무관 스펙은 [`3-1-client.md`](./3-1-client.md)가 소유하며, 이 문서는 그 계약을 안드로이드 앱이 어떻게 충족하는지만 적습니다. 웹 구현의 병렬 문서는 [`3-2-web-app.md`](./3-2-web-app.md)입니다.
 
-> **작성 상태** — 안드로이드 앱 확장은 **Phase 2** 범위입니다([`roadmap.md §R-4`](../planning/roadmap.md)). **아키텍처·내비게이션 게이트·인증 세션 프로토콜(§3-3-2~§3-3-4)은 구현을 착수할 만큼 확정됐습니다.** 다만 로그인 사용자 흐름을 완료하려면 로그인 전 열람 가능한 법적 문서(FE-SCREEN-010)의 콘텐츠 공급 방식을 먼저 확정해야 합니다. 화면별 전체 목표 범위, 디바이스 지원 중 화면 크기·접근성(§3-3-5 — 구성 변경 대응은 확정), 관측의 화면별 이벤트·P0 수동 log 발화 목록(§3-3-6), 전체 화면 검수 범위(§3-3-7)는 아직 채워지지 않았습니다. 값이 없는 항목을 추측으로 채우지 않습니다.
+> **작성 상태** — 안드로이드 앱 확장은 **Phase 2** 범위입니다([`roadmap.md §R-4`](../planning/roadmap.md)). **아키텍처·내비게이션 게이트·인증 세션 프로토콜(§3-3-2~§3-3-4)은 구현을 착수할 만큼 확정됐습니다.** 다만 로그인 사용자 흐름을 완료하려면 로그인 전 열람 가능한 법적 문서(FE-SCREEN-010)의 콘텐츠 공급 방식을 먼저 확정해야 합니다. 화면별 전체 목표 범위, 디바이스 지원 중 화면 크기·접근성(§3-3-5 — 구성 변경 대응은 확정), 전체 화면 검수 범위(§3-3-7)는 아직 채워지지 않았습니다. 관측은 화면별 이벤트 발화 지점까지 확정·구현됐습니다(§3-3-6, KNK-1178). 값이 없는 항목을 추측으로 채우지 않습니다.
 
 ```text
 §3-3-1  문서 목적·범위와 관련 문서
@@ -10,7 +10,7 @@
 §3-3-3  내비게이션·화면 구조 대응       (그래프·메인 탭 셸·제작 퍼널 구조·화면 전환 확정 · 딥링크 작성 예정)
 §3-3-4  API 연동·인증 세션             (확정)
 §3-3-5  디바이스 지원·접근성·라이프사이클 (퍼널 이탈 가드·백그라운드 복구·구성 변경 확정 · 화면 크기·접근성 작성 예정)
-§3-3-6  관측 연동                      (제품 선택·식별자 매핑 확정 · 배선 작성 예정)
+§3-3-6  관측 연동                      (제품 선택·식별자 매핑·화면별 배선 확정)
 §3-3-7  테스트·Definition of Done      (CI·도구 확정 · 검수 범위 작성 예정)
 ```
 
@@ -1182,7 +1182,7 @@ AI 출력에 섞이는 인물 이미지는 **스트리밍 중에는 이벤트로
 
 - **웹 전용 항목(Android 비적용)** — 인앱 브라우저 감지·로그인 핸드오프, BFF 프록시, SSR·하이드레이션, 브라우저 지원·SEO 기준([`3-2-web-app.md`](./3-2-web-app.md) 소유). 공통 계약이 아니므로 위 표에 두지 않으며 Android 상태와 섞지 않습니다.
 - **앱 전용 항목(공통 계약 없음)** — 오픈소스 라이선스 고지·버전 정보(§3-3-3 마이). 웹에 대응 화면이 없어 위 표에 행을 두지 않습니다.
-- **별도 결정 필요 항목** — 공유 URL 딥링크 처리(FE-SCREEN-012). 관측의 플랫폼 계약은 확정됐고 화면별 이벤트·P0 수동 log 발화 목록만 작성 예정입니다(§3-3-6). 온보딩 첫 실행 판정은 앱 비적용이라 결정 대상이 아닙니다.
+- **별도 결정 필요 항목** — 공유 URL 딥링크 처리(FE-SCREEN-012). 관측은 플랫폼 계약과 화면별 이벤트 발화 지점까지 확정·구현됐고, Crashlytics breadcrumb 만 Crashlytics 도입과 함께 남습니다(§3-3-6). 온보딩 첫 실행 판정은 앱 비적용이라 결정 대상이 아닙니다.
 
 ### Android 흐름 구현 매트릭스
 
@@ -1583,7 +1583,7 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 
 ---
 
-## 3-3-6. 관측 연동 — `플랫폼 계약 확정 · 화면별 배선 작성 예정`
+## 3-3-6. 관측 연동 — `플랫폼 계약 확정 · 화면별 배선 확정`
 
 이벤트 카탈로그·식별자 정책은 [`6-analytics.md`](./6-analytics.md)가 소유합니다. 다음 **원칙**은 확정입니다 — Android는 **공통 이벤트 카탈로그를 재사용해야 하고**(이벤트 이름·프로퍼티를 플랫폼별로 새로 만들지 않으며 `platform`·`os_name` 등으로 웹과 구분), 웹과 **동일한 논리적 `device_id`·`session_id`·`user_id` 의미·타입과 API 헤더 계약(`X-Manyak-*`)을 충족해야 합니다**([`6-analytics.md §6-2`](./6-analytics.md)·[`§6-6-2`](./6-analytics.md)).
 
@@ -1599,7 +1599,33 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 4. 예상하지 못한 API 5xx·네트워크·파싱 오류의 non-fatal에는 해당 응답의 `request_id`를 event-local custom key로 붙입니다. 전역 request key, 사용자 입력, 토큰, 비밀 링크/코드는 금지합니다. 예상 가능한 4xx와 취소는 수집하지 않습니다.
 5. Crashlytics ANR은 API 30+만, NDK 수집은 미도입입니다. API 24~29 ANR은 Android vitals를 별도 확인하되 완전한 대체로 간주하지 않습니다(§3-3-2 결정 기록).
 
-남은 `작성 예정`은 화면별 이벤트 발화 지점과 P0 수동 breadcrumb 목록입니다. 위 SDK 선택·식별자 순서·수집 범위는 더 이상 결정 항목이 아닙니다.
+### 화면별 이벤트 발화 지점 — KNK-1178
+
+이벤트 정의는 [`6-analytics.md §6-4-2`](./6-analytics.md)가, 앱 보강 이벤트와 웹 전용 목록은 [`§6-4-2-15`·`§6-4-2-16`](./6-analytics.md)이 소유합니다. 이 표는 **앱 화면이 카탈로그의 어느 `screen_name`에 대응하고 어느 Intent·Effect에서 발화하는지**만 고정합니다.
+
+| 앱 화면                                       | `screen_name`                  | 발화 지점(Intent·Effect)                                                                                                                                         |
+| --------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LoginScreen                                   | `login`                        | 진입 `viewed` · `SignIn(provider)` → `googleButton`/`kakaoButton_clicked` · 실패 안내 → `oauthError_shown`(앱은 `provider` 항상 채움, `ProviderCancelled`는 미발화) |
+| HomeScreen(홈 탭)                             | `storyList` (`section=original`) | 진입 `viewed` · 카드 탭 `storyCard_clicked` · 노출 `storyCard_impressed` · 조회 실패 `loadError_shown`                                                        |
+| StudioScreen(스튜디오 탭)                     | `storyList` (`section=created`) | 위와 같음 + `CreateStory` → `createButton_clicked(source)` · `OpenStoryOptions` → `storyOptions_opened` · `ConfirmDeleteStory` → `story_deleted` · 배너·재개 다이얼로그는 `storyCreate_*` 이름 유지 |
+| Create*Screen 3단계                           | `storyCreate`                  | `step_name`은 `keyword`/`storylineSelect`/`additionalInfo` 3개만. `SelectStoryline` → `storylineTab_selected` · `ConfirmSelection` → `storylineOption_selected` · `SaveDraft` → `draftSaved` · `LeaveFunnel` 확정 → `exitButton_clicked` |
+| StoryDetailScreen                             | `storyDetail`                  | `ScreenShown` → `viewed` · `StartChat` → `chatStartButton_clicked` · `OpenImageViewer` → `thumbnail_clicked` · `SelectStartSetting` → `startSetting_selected` · `ConfirmDelete` → `story_deleted` |
+| ChatListScreen(채팅 탭)                       | `chatList`                     | `ScreenShown` → `viewed` · 카드 탭·노출 · `OpenOptions` → `chatOptions_opened` · `ConfirmDelete` → `chat_deleted` · 조회 실패 `loadError_shown`                    |
+| ChatRoomScreen                                | `chat`                         | 진입 `viewed` · `Sent` → `messageInput_submitted` · `SuggestionSent` → `choiceOption_selected` · `SuggestionFilled` → `choiceFillButton_clicked` · `BlockAdded/Removed` → `add/removeBlockButton_clicked` · `RegenerateRequested` → `regenerateButton_clicked` · 스트림 실패 `streamError_shown` · 상세 실패 `loadError_shown` · `Retry` → `retryButton_clicked` · 402 → `creditShortageDialog_shown(trigger=chat_turn)` |
+| CreateAdditionalInfoScreen 완성 402           | `creditShortageDialog`         | 완성 실패 사유 이프 부족 → `creditShortageDialog_shown(trigger=story_create)`                                                                                    |
+| 신고 시트(`StoryReportController`)            | `report`                       | `Open` → `sheet_opened(source)` · `Submit` → `submitted` · 제출 실패 → `failed`. 네 화면이 컨트롤러를 공유하므로 발화도 컨트롤러 한 곳                          |
+| MyScreen(마이 탭)                             | `account`                      | 진입 `viewed` · `LogOut` → `logoutButton_clicked`(종료 흐름 **시작 전** enqueue) · `RequestAccountLink` → `linkAccountButton_clicked` · 충전 카드 → `creditChargeButton_clicked` |
+| CreditChargeScreen                            | `creditCharge`                 | `ScreenShown` → `viewed` · `ClaimAttendance` → `attendanceButton_clicked` · 탭 전환 → `tab_selected`                                                            |
+| InviteScreen · InviteOnboarding               | `invite` · `inviteOnboarding`  | 진입 `viewed` · 복사 → `copyButton_clicked` · 시스템 공유 → `shareButton_clicked` · `Redeem` → `codeInput_submitted/succeeded/failed` · 온보딩 `shown`/`Skip` → `skipped` |
+| FeedbackScreen                                | `feedback`                     | 진입 `viewed` · `Submit` → `form_submitted`                                                                                                                      |
+| WithdrawalScreen                              | `withdrawal`                   | 진입 `viewed` · 탈퇴 성공 → `completed`(**식별자 해제 전** 전송)                                                                                                  |
+| LegalDocumentScreen                           | `terms` / `privacy` / `serviceInfo` | `LegalRoute(document)`로 분기해 `client_terms_viewed` / `client_privacy_viewed` / `client_serviceInfo_viewed`                                                 |
+
+**발화 위치 원칙** — 이벤트는 ViewModel의 부수효과 단계에서 보냅니다(`reduce`는 순수 함수라 발화하지 않습니다). 화면 진입 `viewed`만 컴포저블의 `LaunchedEffect(Unit)`에서 보내되, 구성 변경 재실행을 막기 위해 ViewModel이 `viewedReported` 플래그를 들거나 `ScreenShown` Intent가 있는 화면은 그 Intent에서 보냅니다. 노출(`impressed`)은 `:core:analytics`의 `Modifier.trackImpression`이 §6-4-3 기준(50% · 1초 · 30초 중복 제거)을 구현합니다.
+
+**P0 Crashlytics breadcrumb** — `:core:analytics` 래퍼가 모든 이벤트 이름을 `FirebaseCrashlytics.log()`로 남깁니다. 프로퍼티는 `story_id`·`chat_id`·`creation_id`·`screen_name`만 붙이고 나머지는 생략합니다. Crashlytics 도입 전에는 이 단계를 건너뜁니다.
+
+위 SDK 선택·식별자 순서·수집 범위는 더 이상 결정 항목이 아닙니다.
 
 > **`device_id`는 로그인 구현의 선행 조건입니다.** 첫 로그인 요청에서 이 헤더가 비면 회원 체험 잔여가 소진 상태로 시드되고 정상 앱 흐름에는 자동 복구가 없습니다(운영 보정만 가능 — §3-3-4 식별자 배선). 분석 SDK 도입 여부와 무관하게 값이 먼저 존재해야 하므로, 이 매핑은 관측 배선을 기다리지 않습니다.
 
