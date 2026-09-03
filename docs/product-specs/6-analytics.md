@@ -157,7 +157,7 @@ event_time, event_id
 
 `device_id`도 커스텀 이벤트 프로퍼티로 보내지 않지만 생성 주체는 플랫폼별로 다릅니다. 웹은 Browser SDK 자동 값을 사용하고, Android는 앱 소유 UUID를 SDK `setDeviceId`로 **첫 이벤트 전에 주입**합니다. 따라서 Android 검수에서 “SDK 자동 생성”을 요구하면 안 됩니다.
 
-웹·Android 이벤트는 **커스텀 프로퍼티가 아니라 SDK 자동 수집 값으로 구분합니다** — `platform`·`os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`으로 검증됨, Android 값은 SDK 도입 시 확인해 이 절에 기록), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 합니다. 이벤트 이름·커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§6-4)를 재사용합니다.
+웹·Android 이벤트는 **커스텀 프로퍼티가 아니라 SDK 자동 수집 값으로 구분합니다** — `platform`·`os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`, Android SDK 1.30은 `platform: Android`로 각각 운영 프로젝트 적재를 확인 — 2026-09-04, KNK-1178), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 합니다. 이벤트 이름·커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§6-4)를 재사용합니다.
 
 다음 프로퍼티는 관련 기능 도입 시점에 추가합니다.
 
