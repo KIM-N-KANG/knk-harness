@@ -777,11 +777,13 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 당일 출석 보상([§4-3-7](#4-3-api-계약) `POST /users/me/credits/attendance`)을 아직 받지 않은 회원에게 하루 한 번 리마인드를 보냅니다. **광고성 알림**입니다(보상 수령 유도 = 재이용 유도, KNK-1129).
 
 - **대상.** `ACTIVE` 회원 ∩ `marketing_push_agreed_at IS NOT NULL` ∩ 등록 토큰 보유 ∩ 당일(KST) 출석 미수령. 미수령 판정은 새 상태 없이 이프 원장의 멱등 키 부재로 합니다 — `credit_transactions`에 `attendance:{보상 신원}:{KST 날짜}`가 없으면 미출석. **보상 신원은 `reward_identity_user_id ?: id`**입니다(재가입 계정은 최초 계정 id로 키가 묶임 — [§4-4](#4-4-데이터-모델) `users`). 게스트는 토큰이 없어 자연히 제외됩니다.
-- **시각.** 하루 한 번 KST 고정 시각의 `@Scheduled(cron)`이며 설정으로 켜고 끕니다(`manyak.push.attendance-reminder.enabled`, 테스트 프로파일은 끔 — 이프 대사 스케줄러와 같은 관례). **발송 시각은 미결정**(제안 20:00 KST — 퇴근 뒤·야간 제한 전). 낮 시각이면 야간 동의는 관여하지 않지만, 판정은 `canReceiveMarketingPush(발송 시각)`으로 하므로 21~08시로 옮겨도 코드 변경 없이 야간 동의자로 좁혀집니다.
-- **같은 날 1회.** 운영 태스크가 1대(`ecs_desired_count = 1`)라 정상 경로에서는 cron이 하루 한 번만 돕니다. 배포 교체로 태스크 두 개가 cron 시각에 걸치는 창은 Redis `SET NX`(`push:attendance-reminder:{KST 날짜}`, TTL 24h)를 잡은 인스턴스만 발송해 막습니다. 회원별 발송 기록 테이블은 두지 않습니다 — 한 회차가 중간에 죽으면 그날 나머지는 놓칩니다(`ponytail:` 한도로 남기고, 놓친 리마인드는 다음 날 회차가 덮습니다).
-- **페이로드**(data 전용): `type` = `ATTENDANCE_REMINDER`, `date` = KST 날짜(`YYYY-MM-DD`). 표시 문구는 앱이 조립하되 **`(광고)`로 시작**해야 합니다(정보통신망법 제50조 — 앱 몫 KNK-1134·1135). 문구 확정은 미결정입니다.
+- **시각 — 매일 09:00 KST**(2026-09-04 결정). `@Scheduled(cron)`이며 설정으로 켜고 끕니다(`manyak.push.attendance-reminder.enabled`, 테스트 프로파일은 끔 — 이프 대사 스케줄러와 같은 관례). 아침으로 정한 이유: 하루의 첫 확인 타이밍이고, 08:00 정각은 야간 구간(21:00~08:00) 경계라 cron 지연 하나로 야간 판정에 걸릴 수 있어 한 시간 뒤로 뒀습니다. 판정은 `canReceiveMarketingPush(발송 시각)`으로 하므로 21~08시로 옮겨도 코드 변경 없이 야간 동의자로 좁혀집니다.
+- **같은 날 1회.** 운영 태스크가 1대(`ecs_desired_count = 1`)라 정상 경로에서는 cron이 하루 한 번만 돕니다. 배포 교체로 태스크 두 개가 cron 시각에 걸치는 창은 Redis `SET NX`(`push:attendance-reminder:{KST 날짜}`, TTL 24h)를 잡은 인스턴스만 발송해 막습니다. Redis 장애면 그날 발송을 **건너뜁니다** — 광고성이라 중복보다 누락이 낫습니다. 회원별 발송 기록 테이블은 두지 않습니다 — 한 회차가 중간에 죽으면 그날 나머지는 놓칩니다(`ponytail:` 한도로 남기고, 놓친 리마인드는 다음 날 회차가 덮습니다).
+- **문구는 DB 템플릿.** 이벤트 때마다 바뀌는 문구를 앱 배포 없이 갈아끼우기 위해 이프 수치(`credit_policies`, [§4-3-7](#4-3-api-계약))와 같은 패턴의 테이블 `push_message_templates`(V74)를 둡니다 — `template_key`(`attendance_reminder`) · `title` · `body` · `effective_from` · `effective_until`(NULL이면 영구). 읽기 규칙도 같습니다: 유효한 오버라이드 행이 있으면 그 값, 없으면 yml 기본 문구. 부팅 1회 적재 + 주기 갱신이고 만료는 읽을 때 판정해 이벤트 종료가 즉시 반영됩니다. 관리자 API 없이 SQL로 운영합니다. `credit_policies`를 재사용하지 않는 이유: 그 표는 0~10000 정수 전용입니다.
+- **`(광고)` 접두는 서버가 발송 시점에 항상 붙입니다**(정보통신망법 제50조). DB 값에 맡기면 이벤트 문구를 넣다가 법정 표기를 빠뜨리는 사고가 구조적으로 가능해집니다. 이미 `(광고)`로 시작하는 값에 중복으로 붙이지는 않습니다.
+- **페이로드**(data 전용): `type` = `ATTENDANCE_REMINDER`, `date` = KST 날짜(`YYYY-MM-DD`), `title` = `(광고) ` + 템플릿 제목, `body` = 템플릿 본문. 앱은 그대로 표시합니다.
 - **처리.** 대상을 한 쿼리로 뽑아 `sendToUser`를 회원마다 순차 호출합니다. 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 이벤트(`attendance_reminder_sent{targets, sent}`)로 남깁니다. 회원 수가 수천을 넘기면 발송 모듈의 멀티캐스트로 전환합니다.
-- **결정 필요.** 발송 시각, 알림 문구, 출석 화면 딥링크에 필요한 키(앱과 합의).
+- **딥링크 키는 두지 않습니다**(2026-09-04 보류 결정). data 전용 메시지라 탭 시 어느 화면을 열지는 앱이 `type`만 보고 정합니다(`ATTENDANCE_REMINDER` → 출석 화면, `STORY_COMPLETED` → `storyId` 상세). 앱이 특정 키를 원하면 페이로드에 더하는 것은 하위 호환이라 그때 붙입니다.
 
 ### 4-3-6. 로어북 — `Phase 1 · 구현`
 
