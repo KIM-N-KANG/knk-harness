@@ -214,7 +214,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | client | `client_feedback_form_submitted`                         |
 | P1                  | client | `client_onboarding_viewed`                               |
 | P1                  | client | `client_onboarding_createButton_clicked`                 |
-| P1                  | client | `client_onboarding_logo_clicked`                         |
+| P1                  | client | `client_onboarding_browseButton_clicked`                 |
 | P1                  | client | `client_storyList_storyCard_clicked`                     |
 | P1                  | client | `client_storyList_storyCard_impressed`                   |
 | P1 `Phase 1 · 구현` | client | `client_storyList_loginButton_clicked`                   |
@@ -296,13 +296,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 #### 6-4-2-1. 온보딩
 
-홈 최초 진입 시 노출되는 환영 다이얼로그입니다. 사용자는 `스토리 만들기` 버튼을 누르기 전까지 다이얼로그를 닫을 수 없고, 다이얼로그는 최초 1회만 노출됩니다.
+첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 시작 버튼은 헤더와 본문 끝 두 곳에 있어 `source`로 구분하고, "둘러보기"는 홈으로 이탈합니다(KNK-1185).
 
 | 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
 | `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
-| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기 버튼 클릭 | 없음          |
-| `client_onboarding_logo_clicked`         | P1       | 헤더 로고 탭(홈으로 이탈, 기존 `client_onboarding_skipButton_clicked`를 대체 — "나중에 하기" 버튼 제거, KNK-1004) | 없음          |
+| `client_onboarding_createButton_clicked` | P1       | "바로 시작하기" 버튼 클릭 | `source` (string, 필수: `header` / `bottom`, KNK-1185) |
+| `client_onboarding_browseButton_clicked` | P1       | 헤더 "둘러보기" 탭(홈으로 이탈. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | 없음          |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
 
