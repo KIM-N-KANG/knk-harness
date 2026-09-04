@@ -85,7 +85,7 @@
 | `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 이프 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 자동 연결·반응형 변형(V45~46·KNK-548, [§4-3-9](#4-3-api-계약))·초대 코드 입력 개편(V47·KNK-567, [§4-3-7](#4-3-api-계약))·피드백 User-Agent 저장(V43·KNK-528)·채팅 상세 턴 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
 | `Phase 2 · 구현` | Phase 2 범위. 구현 완료 | 공개 스토리 목록·게스트 공개 제한(KNK-149, [§4-3-1](#4-3-api-계약)·[§4-3-8](#4-3-api-계약)), 스토리 좋아요·신고·공개 전환(KNK-1017·1020·1021), 회원 탈퇴(KNK-1019·1053, [§4-3-5](#4-3-api-계약)), 메트릭([§4-7](#4-7-운영과-관측)) — OTLP export 배선(KNK-779)·완성 타이머 거부 outcome 분리(KNK-784). 운영 배선(KNK-781·793)과 **v0.2.7 배포로 2026-08-06 활성화 완료**([`7-deployment.md §7-6`](./7-deployment.md)) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
-| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130, [§4-3-5](#4-3-api-계약)). 시나리오별 발송(스토리 완성·출석·프로모션·검수)은 `Phase 3 · 계획` |
+| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약)). 프로모션(KNK-1117)·검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
 
 ---
 
@@ -227,6 +227,8 @@ graph LR
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `PUT /users/me/push-tokens` | 디바이스 푸시 토큰 등록·갱신(같은 토큰 재등록은 갱신, 멱등) | 204 | 400·401·403 | 필수 | Phase 3 · 구현 |
 | 사용자 | `DELETE /users/me/push-tokens` | 디바이스 푸시 토큰 삭제(본문 `token`, 없거나 남의 토큰이어도 204) | 204 | 400·401·403 | 필수 | Phase 3 · 구현 |
+| 사용자 | `GET /users/me/push-settings` | 알림 수신 동의 조회(세 boolean) | 200 | 401·403 | 필수 | Phase 3 · 구현 |
+| 사용자 | `PUT /users/me/push-settings` | 알림 수신 동의 전체 교체(세 필드 필수, 야간 단독 400) | 200 | 400·401·403 | 필수 | Phase 3 · 구현 |
 | 이프 | `GET /users/me/credits` | 이프 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 이프 | `POST /users/me/credits/attendance` | 출석체크 적립(1일 1회 멱등) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 이프 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 | Phase 1 · 구현 |
@@ -719,7 +721,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 푸시 발송 모듈 — `Phase 3 · 구현`(KNK-1130)
 
-서버가 FCM HTTP v1로 푸시를 보내는 공통 모듈입니다. 시나리오별 발송(스토리 완성 KNK-1115 · 출석 리마인드 KNK-1116 · 프로모션 KNK-1117 · 검수 완료 KNK-1118)은 `Phase 3 · 계획`이며 전부 이 모듈의 `sendToUser(userId, data)` 하나를 부릅니다.
+서버가 FCM HTTP v1로 푸시를 보내는 공통 모듈입니다. 시나리오별 발송은 전부 이 모듈의 `sendToUser(userId, data)` 하나를 부릅니다 — 스토리 완성(KNK-1115)·출석 리마인드(KNK-1116)는 `Phase 3 · 구현`, 프로모션(KNK-1117)·검수 완료(KNK-1118)는 `Phase 3 · 계획`입니다([아래 시나리오 절](#4-3-api-계약)).
 
 - **data 전용 메시지, 안드로이드 우선순위 HIGH.** `notification` 필드를 싣지 않습니다 — 백그라운드에서 OS가 알아서 띄우면 앱이 딥링크·문구를 제어할 수 없습니다. HIGH가 아니면 data 전용 메시지가 Doze에서 미뤄집니다. 페이로드 키는 camelCase이고 시나리오별 키(`type`·대상 식별자 등)는 각 시나리오 계약이 정합니다.
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다 — 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
@@ -731,7 +733,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **수신 동의·야간 제한**은 시나리오 계약(KNK-1129 정책 결정, KNK-1132 동의 API)에서 정합니다. 정보성 알림(스토리 완성·검수 완료)은 동의 없이, 광고성(프로모션·출석 리마인드)은 사전 동의·야간 별도 동의·`(광고)` 표기가 필요합니다(정보통신망법 제50조). 광고성 발송에 FCM 토픽은 쓰지 않습니다 — 서버가 수신자 명단을 알아야 동의 증빙이 가능합니다.
 
 
-#### 푸시 수신 동의 — `Phase 3 · 계획`(정책 KNK-1129 확정, 구현 KNK-1132)
+#### 푸시 수신 동의 — `Phase 3 · 구현`(정책 KNK-1129 확정, 구현 KNK-1132, V73)
 
 푸시는 종류에 따라 동의 요건이 다릅니다(정보통신망법 제50조). 2026-09-04 결정 기록입니다.
 
@@ -745,6 +747,43 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **철회.** 앱 설정 토글(KNK-1135) → 동의 API(KNK-1132) → **다음 발송부터 즉시** 반영. 별도 확인 절차 없음. 동의·철회 **이력 테이블은 두지 않습니다** — 현재 상태와 동의 시각으로 충분하며, 법의 "2년마다 수신 동의 여부 재확인"은 첫 동의 2년 뒤 별도 과제입니다.
 - **발송 판정.** 발송기([위 푸시 발송 모듈](#4-3-api-계약))가 시나리오별로 해당 동의를 확인합니다. 서비스 알림은 `service_push_enabled`, 광고 알림은 `marketing_push_agreed_at IS NOT NULL`, 야간(21~08시 KST)이면 추가로 `marketing_push_night_agreed_at IS NOT NULL`. 게스트(`user_id` NULL)는 토큰을 등록하지 않으므로 어떤 푸시도 받지 않습니다. 정지·탈퇴 회원은 발송기가 제외합니다.
 - **토픽 금지.** 광고성 발송에 FCM 토픽을 쓰지 않습니다 — 구독은 클라이언트가 하므로 서버가 수신자 명단을 몰라 동의 증빙이 불가능합니다. 토큰 목록으로 직접 보냅니다.
+
+**동의 API — `Phase 3 · 구현`(KNK-1132).** 앱 설정 화면(KNK-1135)이 부릅니다. 세션 부트스트랩 응답에는 싣지 않습니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `GET /users/me/push-settings` | 없음 | 200 `{ "servicePush": boolean, "marketingPush": boolean, "marketingNightPush": boolean }` |
+| `PUT /users/me/push-settings` | 위 세 필드 **전부 필수** | 200 갱신 후 상태(같은 스키마) |
+
+- **응답은 boolean만.** 광고성 두 값의 정본은 동의 시각이지만 시각은 내부 증빙이라 노출하지 않습니다.
+- **PUT은 전체 교체.** 필드 누락이나 명시한 `null`은 400(silent wipe 방지 — 컬렉션 전체 교체 PUT과 같은 관례). Jackson 3은 primitive에 `null`을 기본 거부하므로 별도 검증 없이 역직렬화 단계에서 400이며, 이 동작은 회귀 테스트로 고정돼 있습니다(기본값이 바뀌면 조용히 깨지는 부류).
+- **저장 규칙.** `marketingPush=true`이고 미동의면 지금을 기록하고, **이미 동의 상태면 최초 시각을 유지**합니다(증빙은 최초 동의 시점 — 재동의마다 밀리면 안 됩니다). `marketingPush=false`면 광고·야간 둘 다 NULL(철회). `marketingNightPush=true`인데 `marketingPush=false`면 400이고 바디 `code`는 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-6](#4-6-오류와-예외-처리)) — 조용히 무시하면 사용자가 켰다고 믿는 토글이 실제로는 꺼져 있게 됩니다. 이 판정은 사용자 행을 잠그기 전에 합니다(요청 자체가 모순이라 DB를 건드릴 이유가 없음).
+- **계정 상태.** 조회·변경 모두 사용자 행을 잠근 뒤 상태를 재검사합니다(푸시 토큰 API와 같은 관례). `SUSPENDED`는 **조회도 403**(정지 계정은 설정 화면 자체를 쓸 수 없음), `DELETED`·사용자 없음은 401. 조회 트랜잭션에 `readOnly`를 쓰지 않습니다 — PostgreSQL은 read-only 트랜잭션의 `SELECT … FOR UPDATE`를 거부하는데 H2 테스트는 통과하므로, 실 DB에서만 터지는 부류입니다.
+- **판정 헬퍼.** `User.canReceiveMarketingPush(at)` — 광고 동의가 있고, `at`이 야간(21:00~08:00 KST)이면 야간 동의까지 있을 때 true. 광고성 시나리오(KNK-1116·1117)는 발송 시각을 이 헬퍼에 넣어 야간 규칙을 자동으로 따릅니다. 서비스 알림은 `service_push_enabled` 필드를 그대로 봅니다.
+
+#### 스토리 완성 푸시 — `Phase 3 · 구현`(KNK-1115)
+
+회원이 간편 제작으로 스토리를 완성하면 제작자 기기에 서비스 알림을 보냅니다. 앱을 백그라운드로 보낸 채 기다리는 사용자를 위한 알림이며, 진실의 원천은 여전히 복귀 조회([§4-3-8](#4-3-api-계약) 백그라운드 복구)입니다.
+
+- **발행 지점.** 스토리 생성 요청 기록기(`StoryCreationRequestRecorder`)가 요청 행을 `COMPLETED`로 마킹하는 **그 트랜잭션 안**에서 이벤트를 발행하고, 리스너가 `AFTER_COMMIT`에서 받습니다. 스토리 저장 트랜잭션이 아니라 마킹 트랜잭션인 이유: 둘은 별개(`REQUIRES_NEW`)라 "저장은 됐지만 마킹이 실패해 `PENDING`으로 남은" 창에서 완료 알림이 먼저 나가면 안 됩니다. 발행 값(스토리 `publicId`·제목)은 방금 만든 응답 객체에서 꺼내며 저장된 `result_json`을 다시 읽지 않습니다.
+- **대상.** `STORY_COMPLETION` 단계만(스토리라인 생성은 보내지 않음). 요청 소유 회원이 있어야 하고(게스트는 발행 자체를 하지 않음), `service_push_enabled`가 true여야 합니다. 서비스 알림이라 광고 판정은 쓰지 않습니다. 토큰 없음·정지·탈퇴는 발송 모듈이 걸러 냅니다.
+- **페이로드**(data 전용, 값은 전부 문자열): `type` = `STORY_COMPLETED`, `storyId` = 스토리 `publicId`, `title` = 스토리 제목. 알림 문구·딥링크는 앱이 조립합니다(KNK-1134).
+- **중복 없음.** 같은 `requestId` 재요청(멱등 replay)은 기록기 앞단에서 저장 결과를 돌려주고 끝나므로 마킹 줄에 도달하지 않습니다. 저장 JSON이 현재 DTO와 호환되지 않아 다시 만드는 폴백 경로는 `COMPLETED`를 다시 마킹하지만 **콜백을 건너뜁니다**(최초 완성 때 이미 보냈음). 발송 이력 테이블은 두지 않습니다.
+- **비동기·격리.** 리스너는 `@Async`입니다([§4-3-4](#4-3-api-계약) 피드백 알림과 동일). `AFTER_COMMIT` 콜백은 원 트랜잭션의 커넥션이 반납되기 **전에** 돌아, 거기서 DB를 읽으면 요청 하나가 커넥션 두 개를 동시에 쥡니다 — 풀이 포화되면 두 번째 획득이 타임아웃으로 실패하고 그 실패는 `try` 바깥이라 **이미 커밋된 생성의 응답이 500이 됩니다**. 스레드를 분리해 원 커넥션이 먼저 반납되게 합니다. 발송 실패는 로그만 남기고 생성 응답에 영향을 주지 않습니다.
+- **검증 한계.** 통합 테스트(7건)는 발송 모듈 호출까지를 고정합니다. 실기기 도달은 Firebase에 Android 앱이 등록되고(KNK-1133) 기기가 토큰을 등록한 뒤 dev에서 확인합니다.
+
+#### 출석 리마인드 푸시 — `Phase 3 · 구현`(KNK-1116, V74)
+
+당일 출석 보상([§4-3-7](#4-3-api-계약) `POST /users/me/credits/attendance`)을 아직 받지 않은 회원에게 하루 한 번 리마인드를 보냅니다. **광고성 알림**입니다(보상 수령 유도 = 재이용 유도, KNK-1129).
+
+- **대상.** `ACTIVE` 회원 ∩ `marketing_push_agreed_at IS NOT NULL` ∩ 등록 토큰 보유 ∩ 당일(KST) 출석 미수령. 미수령 판정은 새 상태 없이 이프 원장의 멱등 키 부재로 합니다 — `credit_transactions`에 `attendance:{보상 신원}:{KST 날짜}`가 없으면 미출석. **보상 신원은 `reward_identity_user_id ?: id`**입니다(재가입 계정은 최초 계정 id로 키가 묶임 — [§4-4](#4-4-데이터-모델) `users`). 게스트는 토큰이 없어 자연히 제외됩니다.
+- **시각 — 매일 09:00 KST**(2026-09-04 결정). `@Scheduled(cron)`이며 설정으로 켜고 끕니다(`manyak.push.attendance-reminder.enabled`, 테스트 프로파일은 끔 — 이프 대사 스케줄러와 같은 관례). 아침으로 정한 이유: 하루의 첫 확인 타이밍이고, 08:00 정각은 야간 구간(21:00~08:00) 경계라 cron 지연 하나로 야간 판정에 걸릴 수 있어 한 시간 뒤로 뒀습니다. 판정은 `canReceiveMarketingPush(발송 시각)`으로 하므로 21~08시로 옮겨도 코드 변경 없이 야간 동의자로 좁혀집니다.
+- **같은 날 1회.** 운영 태스크가 1대(`ecs_desired_count = 1`)라 정상 경로에서는 cron이 하루 한 번만 돕니다. 배포 교체로 태스크 두 개가 cron 시각에 걸치는 창은 Redis `SET NX`(`push:attendance-reminder:{KST 날짜}`, TTL 24h)를 잡은 인스턴스만 발송해 막습니다. Redis 장애면 그날 발송을 **건너뜁니다** — 광고성이라 중복보다 누락이 낫습니다. 회원별 발송 기록 테이블은 두지 않습니다 — 한 회차가 중간에 죽으면 그날 나머지는 놓칩니다(`ponytail:` 한도로 남기고, 놓친 리마인드는 다음 날 회차가 덮습니다).
+- **문구는 DB 템플릿.** 이벤트 때마다 바뀌는 문구를 앱 배포 없이 갈아끼우기 위해 이프 수치(`credit_policies`, [§4-3-7](#4-3-api-계약))와 같은 패턴의 테이블 `push_message_templates`(V74)를 둡니다 — `template_key`(`attendance_reminder`) · `title` · `body` · `effective_from` · `effective_until`(NULL이면 영구). 읽기 규칙도 같습니다: 유효한 오버라이드 행이 있으면 그 값, 없으면 yml 기본 문구. 부팅 1회 적재 + 주기 갱신이고 만료는 읽을 때 판정해 이벤트 종료가 즉시 반영됩니다. 관리자 API 없이 SQL로 운영합니다. `credit_policies`를 재사용하지 않는 이유: 그 표는 0~10000 정수 전용입니다.
+- **`(광고)` 접두는 서버가 발송 시점에 항상 붙입니다**(정보통신망법 제50조). DB 값에 맡기면 이벤트 문구를 넣다가 법정 표기를 빠뜨리는 사고가 구조적으로 가능해집니다. 이미 `(광고)`로 시작하는 값에 중복으로 붙이지는 않습니다.
+- **페이로드**(data 전용): `type` = `ATTENDANCE_REMINDER`, `date` = KST 날짜(`YYYY-MM-DD`), `title` = `(광고) ` + 템플릿 제목, `body` = 템플릿 본문. 앱은 그대로 표시합니다.
+- **처리.** 대상 id를 한 쿼리로 뽑고, 회원마다 **발송 직전에 다시 읽어** `ACTIVE`와 동의를 재확인한 뒤 `sendToUser`를 순차 호출합니다 — 조회 스냅샷을 믿으면 회차 도중의 철회가 반영되지 않습니다(회차 길이만 한 창을 밀리초로 좁힘). 건너뛴 수는 로그 `skipped`로 남깁니다. 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 이벤트(`attendance_reminder_sent{targets, sent}`)로 남깁니다. 회원 수가 수천을 넘기면 발송 모듈의 멀티캐스트로 전환합니다.
+- **딥링크 키는 두지 않습니다**(2026-09-04 보류 결정). data 전용 메시지라 탭 시 어느 화면을 열지는 앱이 `type`만 보고 정합니다(`ATTENDANCE_REMINDER` → 출석 화면, `STORY_COMPLETED` → `storyId` 상세). 앱이 특정 키를 원하면 페이로드에 더하는 것은 하위 호환이라 그때 붙입니다.
 
 ### 4-3-6. 로어북 — `Phase 1 · 구현`
 
@@ -1281,9 +1320,10 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
-| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19). `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `rejoined_at`(timestamptz nullable — 탈퇴 계정의 소셜 신원으로 재가입해 만들어진 계정 표시) · `reward_identity_user_id`(bigint nullable — 계정 단위 1회성 보상의 멱등 키 신원. **NULL이면 자기 자신**이라 기존 회원의 키 문자열이 불변. 자기참조 FK를 걸지 않습니다 — `inviter_user_id`(V27)의 `ON DELETE SET NULL`과 정반대로 **삭제 안정성**이 존재 이유이기 때문입니다, [§4-3-7](#4-3-api-계약)) · `withdrawn_from_status`(varchar(20) nullable — 탈퇴 직전 `status` 보존. 정지 승계 판정용). `Phase 3 · 계획` 컬럼(KNK-1132, 정책 KNK-1129) — `service_push_enabled`(boolean not null default true — 서비스 알림 옵트아웃) · `marketing_push_agreed_at` · `marketing_push_night_agreed_at`(timestamptz nullable — 광고·야간 광고 동의 시각, 철회는 NULL. [§4-3-5](#4-3-api-계약) 푸시 수신 동의) |
+| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19). `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `rejoined_at`(timestamptz nullable — 탈퇴 계정의 소셜 신원으로 재가입해 만들어진 계정 표시) · `reward_identity_user_id`(bigint nullable — 계정 단위 1회성 보상의 멱등 키 신원. **NULL이면 자기 자신**이라 기존 회원의 키 문자열이 불변. 자기참조 FK를 걸지 않습니다 — `inviter_user_id`(V27)의 `ON DELETE SET NULL`과 정반대로 **삭제 안정성**이 존재 이유이기 때문입니다, [§4-3-7](#4-3-api-계약)) · `withdrawn_from_status`(varchar(20) nullable — 탈퇴 직전 `status` 보존. 정지 승계 판정용). `Phase 3 · 구현` 컬럼(V73, KNK-1132, 정책 KNK-1129) — `service_push_enabled`(boolean not null default true — 서비스 알림 옵트아웃) · `marketing_push_agreed_at` · `marketing_push_night_agreed_at`(timestamptz nullable — 광고·야간 광고 동의 시각, 철회는 NULL, 재동의는 최초 시각 유지. [§4-3-5](#4-3-api-계약) 푸시 수신 동의) |
 | 사용자 | `social_accounts` | 소셜 연동. 유니크 2개 — `(provider, provider_user_id)`(V16, 한 소셜 계정이 두 회원에게 붙는 것을 차단)와 `(user_id, provider)`(`Phase 1 · 구현` V52, KNK-739 — 한 회원에 같은 provider 연동은 하나. 동시 연동 요청 경합의 최종 방어선). `user_id`는 다대일이라 한 사용자가 여러 provider를 연동할 수 있습니다([§4-5](#4-5-인증과-권한) 계정 연동). provider 체크 제약(V16)이 GOOGLE·KAKAO·APPLE·NAVER를 허용. `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `deleted_at`(timestamptz nullable — 탈퇴로 끊긴 연동의 tombstone. 로그인 조회는 `deleted_at IS NULL`만 매칭하고, 재가입·계정 연동은 이 행을 claim해 재사용합니다. 유니크 2개를 그대로 두는 것이 재사용 강제의 전제, [§4-3-5](#4-3-api-계약)) |
 | 사용자 | `device_push_tokens` | `Phase 3 · 구현`(V72, KNK-1131) 회원 기기의 FCM 등록 토큰. `user_id`(FK users, `ON DELETE CASCADE` — 탈퇴는 soft delete라 실제 정리는 서비스) · `token`(varchar 512, **UNIQUE** — 토큰은 설치본 주소라 전역 유일, 재등록=갱신·소유자 이전의 최종 방어선) · `platform`(CHECK `ANDROID`) · `created_at` · `updated_at`(마지막 등록 시각, 상한 축출 기준). `user_id` 인덱스. 게스트 기기는 저장하지 않습니다([§4-3-5](#4-3-api-계약)) |
+| 사용자 | `push_message_templates` | `Phase 3 · 구현`(V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스 — PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now()) · `effective_until`(timestamptz nullable — NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](#4-3-api-계약) 출석 리마인드) |
 | 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 구현` 컬럼 — `thumbnail_image_key`(V45, nullable — 등록 시 자동 연결로 1회 확정, 응답 `thumbnailUrl`·`thumbnailUrlSm`은 백엔드가 URL 조합, [§4-3-9](#4-3-api-계약)). `Phase 2 · 구현` 컬럼 — `thumbnail_image_url`(V68, nullable — 컴파일이 생성한 표지의 절대 URL. 프리셋 키와 공존하며 이 값이 있으면 노출이 이 값을 우선, [§4-3-9](#4-3-api-계약)) |
 | 스토리 | `story_settings` | 스토리 설정 통글 4필드(1:1) |
 | 스토리 | `story_start_settings` | 시작 설정(스토리 1:N — `Phase 1 · 구현` 복수화, KNK-515·V42): `public_id`(UUID, 유니크 — `POST /chats`의 `startSettingId`) · `name` · `prologue` · `start_situation`. 스토리당 1개 제약(V42에서 제거) 대신 `story_id` 비유니크 인덱스, 순서는 PK 오름차순(등록 순). 추천 입력·엔딩이 이 설정에 스코프 |
@@ -1487,6 +1527,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | NULL 리소스(`user_id` NULL) — 턴 진행·재생성·수정·NULL 스토리로 채팅 생성(`POST /chats`)·채팅 상세 조회(`GET /chats/{chatId}`) | `Phase 1 · 구현` | 익명(게스트) 요청만 허용. 인증된 회원은 `403`(공통 판정 `isOwnerAccessAllowed`) |
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | `Phase 1 · 구현` | 위 두 규칙을 동일 적용 — 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403(KNK-69) |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | `Phase 3 · 구현`(KNK-1131) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
+| 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | `Phase 3 · 구현`(KNK-1132) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | `Phase 1 · 구현`(KNK-497) | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | `구현`(KNK-401·464) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)) — 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
 | 채팅 공유 발급(`POST /chats/{chatId}/shares`) | `Phase 1 · 구현`(KNK-706) | 채팅 상세 조회와 동일 규칙 — 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
@@ -1554,7 +1595,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
-| 400 | `BAD_REQUEST` | 본문 형식 오류, 필드 검증 실패 |
+| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` | 본문 형식 오류, 필드 검증 실패. `Phase 2 · 구현`(KNK-149) — 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1132) — 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)) |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | `Phase 1 · 구현`(KNK-524) 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다.") — 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 403 | `FORBIDDEN` | `Phase 1 · 구현` 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청 — [§4-5](#4-5-인증과-권한) |
