@@ -4,7 +4,7 @@
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 화면      | 홈 오리지널 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003)                                                                                                                     |
 | 관련 스펙 | [`3-1-client.md §3-1-3·§3-1-4·§3-1-8`](../product-specs/3-1-client.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../product-specs/2-user-stories.md)                                                                                                                                                         |
-| 관련 E2E  | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts` |
+| 관련 E2E  | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인) |
 | 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(게스트 스토리라인 선차단 한도 10→5 정정)                                                                                                                                                                                      |
 
 컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
@@ -41,6 +41,7 @@
 | STORY-LIST-24 | P2 | 내가 만든 스토리 카드                       | 제목 첫 줄 오른쪽 옵션 버튼 규격 확인       | 공용 `icon-xs` 버튼 변형(현재 24×24px)과 기본 16px 더보기 아이콘을 사용 | ✅ e2e `stories/story-list`·`visual/stories-visual` | §3-1-3 FE-SCREEN-013, KNK-1043 |
 | STORY-LIST-25 | P1 | 개발 환경, `thumbnailUrl`·`thumbnailUrlSm`이 `dev-cdn.manyak.app/thumbnails/**` URL(한글 파일명 포함) | 목록·상세 썸네일 확인 | 운영과 동일하게 이미지가 렌더되고 placeholder로 남지 않음 | 수동 | §3-2-5 원격 이미지 최적화, KNK-1079 |
 | STORY-LIST-26 | P1 | 홈 오리지널 카드 | 제목 아래 제작자 줄 확인 | 닉네임 앞에 `@`를 붙여 표시(공식 계정은 "@마냑"). 상세의 제작자 값에는 `@`를 붙이지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001, KNK-1079 |
+| STORY-LIST-27 | P1 | 백엔드 도달 가능(`API_BASE_URL`), 오리지널 존재 | 스크립트 비활성 또는 페이지 소스로 `/` 첫 HTML 확인 | 첫 HTML에 오리지널 카드(제목·제작자·상세 링크)가 포함됨. 스켈레톤 없이 첫 렌더부터 카드 표시. 서버 조회 실패(백엔드 미도달·타임아웃 5초) 시에는 기존대로 스켈레톤 → 클라이언트 조회 | 수동 | KNK-1183, [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md) 라우팅 규칙(홈 서버 렌더), 구현(`(main)/page`·`use-original-stories`) |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
@@ -68,6 +69,8 @@
 | STORY-DETAIL-23 | P2  | `characters`가 빈 배열(컴파일 이전·일반 제작 스토리) | 주요 내용 아래 확인 | "주변 인물" 섹션 자체를 표시하지 않음 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1058 |
 | STORY-DETAIL-24 | P1  | `author.nickname`이 있는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행이 생성일 행 위에 오고, 닉네임은 `@` 없이 그대로 표시. 블록 안쪽 여백 16px, 두 행 사이 간격 16px | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1079 |
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
+| STORY-DETAIL-26 | P1  | 오리지널 목록에 포함된 스토리 ID | 페이지 소스의 `<head>` 확인                        | robots `noindex` 없음. 제목 `스토리 제목 - 마냑`, description = 한 줄 소개, canonical `/stories/{id}`, 오픈그래프 이미지 = 상세 썸네일(없으면 브랜드 이미지). `/sitemap.xml`에 해당 URL 포함 | 수동 | KNK-1183, [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md) 색인 범위, 구현(`generateMetadata`) |
+| STORY-DETAIL-27 | P1  | 사용자 생성 스토리 ID 또는 백엔드 미도달 | 페이지 소스의 robots 메타 확인                     | `noindex, nofollow`. 제목은 서버에서 넣지 않고 클라이언트가 데이터를 받은 뒤 덮어씀. robots.txt는 `/stories/`를 막지 않음 | ✅ e2e `seo/crawler-indexing`(미도달) | KNK-1183, [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md) 색인 범위 |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 
