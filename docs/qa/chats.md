@@ -5,7 +5,7 @@
 | 화면      | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]`                                                                          |
 | 관련 스펙 | [`3-1-client.md §3-1-3·§3-1-5·§3-1-6`](../product-specs/3-1-client.md), [`2-user-stories.md §2-5·§2-6`](../product-specs/2-user-stories.md)                                             |
 | 관련 E2E  | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
-| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성). CHAT-LIST-16은 `manyak-web` `feat/KNK-1092-add-if-management-page` 기준(`미배포`)                |
+| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성)                |
 
 컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
 
@@ -16,7 +16,10 @@
 | ID           | P   | 사전조건                                                     | 절차                                 | 기대 결과                                                                                                           | 자동화                       | 근거                          |
 | ------------ | --- | ------------------------------------------------------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- |
 | CHAT-LIST-01 | P0  | 게스트, 로컬에 채팅 ID 2개 이상                              | `/chats` 진입                        | 배치 조회로 채팅 카드 목록 표시. 서버 응답 순서(최근 활동순) 유지                                                   | ✅ e2e `chats/chat-list`     | US-5-1, §3-1-3                  |
-| CHAT-LIST-02 | P1  | CHAT-LIST-01                                                 | 카드 구성 확인                       | 내부 패딩 가로 16px·세로 8px. 12px 곡률의 썸네일 자리(placeholder) · 스토리 제목 · 마지막 장면 미리보기 · 턴 수 · 상대 시간 표시. 카드에 옵션(삭제) 메뉴 없음 | ✅ e2e `visual/chats-visual` | US-5-1, §3-1-3, KNK-994         |
+| CHAT-LIST-02 | P1  | CHAT-LIST-01                                                 | 카드 구성 확인                       | 내부 패딩 가로 16px·세로 8px. 12px 곡률의 썸네일 자리(placeholder) · 스토리 제목 + 제목 줄 오른쪽 끝 옵션 버튼(`icon-xs` 24px, 세로 중심이 제목 행 중심보다 1px 위 — 잉크 보정) · 마지막 장면 미리보기 · 턴 수 · 상대 시간 표시 | ✅ e2e `chats/chat-list`·`visual/chats-visual` | US-5-1, §3-1-3, KNK-994·1186    |
+| CHAT-LIST-17 | P1  | CHAT-LIST-01                                                 | 카드 옵션 버튼 탭                    | 화면 가운데 다이얼로그. 상단 회색 상자에 그 채팅 카드의 축소판(다른 카드 내용 없음), 아래 항목은 게스트 "삭제하기"만 / 회원 "신고하기" → "삭제하기" | ✅ e2e `chats/chat-list`     | §3-1-3 FE-SCREEN-004, KNK-1186  |
+| CHAT-LIST-18 | P0  | 게스트, 채팅 카드 2개                                        | 옵션 다이얼로그 → "삭제하기" → 같은 창의 "채팅을 삭제할까요?"("삭제하면 나눈 이야기가 모두 사라지며 되돌릴 수 없어요") 확정 | "채팅이 삭제되었어요" 토스트 + 이동 없이 그 카드만 목록에서 제거(로컬 ID 선제거, 나머지 카드 유지) | ✅ e2e `chats/chat-list`     | §3-1-3·§3-1-6, KNK-1186         |
+| CHAT-LIST-19 | P1  | 회원 채팅 카드                                               | 옵션 다이얼로그 → "신고하기"        | 옵션 다이얼로그가 닫히고 스토리 신고 시트가 열림. 대상은 카드의 참조 스토리 `storyId`(`POST /stories/{storyId}/reports`). 시트 동작은 STORY-DETAIL-29~31 | ✅ e2e `chats/chat-list`     | §3-1-3 스토리 신고, KNK-1186    |
 | CHAT-LIST-03 | P0  | CHAT-LIST-01                                                 | 카드 탭                              | 해당 채팅 화면(`/chats/{id}`)으로 이동                                                                              | ✅ e2e `chats/chat-list`     | US-5-2                        |
 | CHAT-LIST-04 | P1  | 게스트, 로컬 채팅 ID·스토리 ID 모두 없음(온보딩은 열람 처리) | `/chats` 진입                        | "아직 진행중인 채팅이 없어요" + "스토리 만들기" CTA(`/studio/story/simple`)                                               | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3                  |
 | CHAT-LIST-05 | P1  | 게스트, 채팅 ID 없음 + 스토리 ID 있음                        | `/chats` 진입                        | 같은 빈 안내 + "스토리 목록으로 가기" CTA(`/studio`)                                                                 | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3                  |
@@ -25,7 +28,7 @@
 | CHAT-LIST-08 | P2  | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨                    | `/chats` 진입                        | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                      | 수동                         | §3-1-6 배치 재조회              |
 | CHAT-LIST-09 | P2  | `lastStoryPreview`가 빈 문자열인 채팅                        | `/chats` 진입                        | 미리보기 자리에 "채팅을 시작하고 이야기를 이어가 보세요" fallback 표시                                              | ✅ e2e `visual/chats-visual` | §3-1-3                          |
 | CHAT-LIST-10 | P2  | `lastStoryPreview`가 `null`인 채팅                           | `/chats` 진입                        | 해당 채팅은 목록 변환 단계에서 제외되어 카드가 나타나지 않음                                                        | 수동                         | §3-1-3                          |
-| CHAT-LIST-16 `미배포` | P1 | 참조 스토리가 삭제된 채팅(`storyTitle`이 빈 문자열) | `/chats` 진입 | 카드가 목록에 남고 제목 자리에 보조색으로 "삭제된 스토리예요" 표시. 카드 링크의 접근 가능한 이름도 같은 문구를 씀 | ✅ e2e `chats/chat-list` | §3-1-3 화면 구성(채팅 카드), KNK-1092 |
+| CHAT-LIST-16 | P1 | 참조 스토리가 삭제된 채팅(`storyTitle`이 빈 문자열) | `/chats` 진입 → 카드 옵션 탭 | 카드가 목록에 남고 제목 자리에 보조색으로 "삭제된 스토리" 표시. 카드 링크의 접근 가능한 이름도 같은 문구를 씀. 옵션 다이얼로그에는 회원이라도 "신고하기" 없음(대상 스토리가 없음) | ◐ e2e `chats/chat-list`(문구·링크 이름) | §3-1-3 화면 구성(채팅 카드), KNK-1092·1186 |
 | CHAT-LIST-11 | P0  | 회원 로그인 상태                                             | `/chats` 진입                        | 로컬 ID와 무관하게 `GET /users/me/chats` 서버 목록으로 카드 표시(이관 미발동)                                       | ✅ e2e `chats/chat-list`     | §3-1-6 쓰기·삭제, FE-SCREEN-008 |
 | CHAT-LIST-12 | P1  | 회원, 서버 채팅 없음 + 서버 스토리 있음                      | `/chats` 진입                        | 빈 안내 + "스토리 목록으로 가기" CTA(`/studio`)                                                                     | ✅ e2e `chats/chat-list`     | US-5-4                        |
 | CHAT-LIST-13 | P2  | 세션 판별 중(`loading`)                                      | `/chats` 진입 직후 관찰              | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                   | 수동                         | 구현(`use-created-chats`)     |
@@ -47,6 +50,7 @@
 | CHAT-ENTRY-07 | P2  | AI 출력에 `**볼드**`·`*강조*` 포함 | 본문 확인                   | `**볼드**`는 굵게, `*...*`는 서술·독백 강조로 렌더                                                              | ✅ e2e `visual/chats-visual`                  | US-6-5, §3-1-5           |
 | CHAT-ENTRY-08 | P1  | 회원이 이관되지 않은 게스트 채팅에 진입(상세 조회 403 — 이관 1회 제한 도달 계정 등) | 진입                        | "지금 계정에서는 볼 수 없어요" + "스토리와 채팅을 이미 한 번 옮긴 계정이라 옮기지 못했어요" + "채팅 목록으로 가기" 버튼. 성공할 수 없는 "다시 시도하기"는 제공하지 않음 | ✅ e2e `auth/migration`                       | 백엔드 §4-5 교차 접근 차단, AUTH-MIGRATE-03 |
 | CHAT-ENTRY-09 | P1  | 임의 채팅                          | 헤더 우측 구성 확인         | 공유 버튼(share 아이콘)과 옵션 메뉴(⋮) 두 개만 있음. 홈 버튼은 없음(KNK-715에서 공유 버튼으로 대체 — 하단 네비의 홈 탭과 중복이었음). 공유 버튼 동작은 CHAT-SHARE-01 | ✅ e2e `chats/chat-share`                     | §3-1-5, KNK-715          |
+| CHAT-ENTRY-11 | P1  | 참조 스토리가 삭제된 채팅(`storyTitle`이 빈 문자열) | 진입 → 옵션 메뉴 탭       | 헤더 제목(h1) 자리에 보조색 "삭제된 스토리". 옵션 메뉴에는 회원이라도 "삭제하기"만(신고 대상 스토리가 없음) | ✅ e2e `chats/chat-room`                      | §3-1-3 FE-SCREEN-005, KNK-1186 |
 | CHAT-ENTRY-10 | P2  | 임의 채팅                          | 브라우저 탭 제목 확인       | 데이터 도착 후 `스토리 제목 - 마냑`. 화면을 벗어나면 기본 문서 제목([§3-2-3](../product-specs/3-2-web-app.md))으로 복귀 | ✅ e2e `chats/chat-room`                      | 구현(`chat-room`)      |
 
 ## CHAT-TOUR — 채팅 화면 안내 투어
@@ -154,11 +158,12 @@ AI·백엔드는 이미지가 있는 인물의 대사 앞에서 `character_image
 
 ## CHAT-SET — 옵션 메뉴·채팅 삭제
 
-헤더 우측 옵션 메뉴(⋮)가 드랍다운을 엽니다. 삭제는 이 메뉴의 "삭제하기"가 유일한 진입점이며 낙관적 삭제(§3-1-6) 규칙을 따릅니다. 공유 발급은 이 메뉴가 아니라 헤더 공유 버튼이 담당합니다(CHAT-SHARE, KNK-715).
+헤더 우측 옵션 메뉴(⋮)가 드랍다운을 엽니다. 항목은 회원에게 "신고하기" → "삭제하기", 게스트에게 "삭제하기"만이며, 삭제는 낙관적 삭제(§3-1-6) 규칙을 따릅니다(채팅 목록 카드의 옵션 다이얼로그도 같은 절차 — CHAT-LIST-18). 공유 발급은 이 메뉴가 아니라 헤더 공유 버튼이 담당합니다(CHAT-SHARE, KNK-715).
 
 | ID          | P   | 사전조건                  | 절차                                             | 기대 결과                                                                            | 자동화                               | 근거              |
 | ----------- | --- | ------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------ | ----------------- |
-| CHAT-SET-01 | P1  | 임의 채팅                 | 옵션 메뉴(⋮) 버튼 탭                             | 드랍다운 표시: destructive "삭제하기" 항목 하나(공유 항목은 헤더 버튼으로 이동, 문구도 "채팅 삭제하기"에서 축약 — KNK-715) | ✅ e2e `chats/chat-room`·`visual/chats-visual` | §3-1-5, KNK-715     |
+| CHAT-SET-01 | P1  | 게스트 채팅               | 옵션 메뉴(⋮) 버튼 탭                             | 드랍다운 표시: destructive "삭제하기" 항목 하나(공유 항목은 헤더 버튼으로 이동, 문구도 "채팅 삭제하기"에서 축약 — KNK-715). 게스트에게 신고하기는 없음 | ✅ e2e `chats/chat-room`·`visual/chats-visual` | §3-1-5, KNK-715·1186 |
+| CHAT-SET-08 | P0  | 회원 채팅                 | 옵션 메뉴(⋮) → "신고하기" → 사유 선택 → 전송     | 메뉴 순서는 "신고하기" → destructive "삭제하기". 시트의 대상은 이 채팅이 참조하는 스토리(`POST /stories/{storyId}/reports`)이고, 201이면 "신고가 접수되었어요" 토스트 + 시트 닫힘. 시트 상세 동작은 STORY-DETAIL-29~31 | ✅ e2e `chats/chat-room`             | §3-1-5 옵션 메뉴, §3-1-3 스토리 신고, KNK-1186 |
 | CHAT-SET-02 | P0  | 게스트 채팅               | 삭제하기 → 다이얼로그("채팅을 삭제할까요?") 확정 | "채팅이 삭제되었어요" 토스트 + `/chats`로 replace 이동. 로컬 ID 제거로 목록에서 사라짐 | ✅ e2e `chats/chat-room`             | US-5-3, §3-1-5·§3-1-6 |
 | CHAT-SET-03 | P1  | 회원 채팅                 | 삭제 확정                                        | 완료 토스트 + 목록 복귀 시 회원 목록에서도 사라짐(회원 쿼리 무효화)                  | ✅ e2e `chats/chat-room`             | US-5-3            |
 | CHAT-SET-04 | P2  | 이미 서버에서 삭제된 채팅 | 삭제 확정(404 응답)                              | 이미 삭제된 것으로 간주해 토스트 없이 목록 제거 유지(무음 성공)                      | 수동                                 | §3-1-6 쓰기·삭제    |
