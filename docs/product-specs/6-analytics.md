@@ -242,6 +242,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_chat_choiceOption_selected`                      |
 | P1                  | client | `client_chat_choiceFillButton_clicked`                   |
 | P1                  | client | `client_chat_loadError_shown`                            |
+| P0                  | client | `client_report_submitted`                                |
+| P1                  | client | `client_report_sheet_opened`                             |
+| P1                  | client | `client_report_failed`                                   |
 | P1                  | client | `client_chat_retryButton_clicked`                        |
 | P1                  | client | `client_chat_streamError_shown`                          |
 | P1 `Phase 1 · 계획` | client | `client_chat_regenerateButton_clicked`                   |
@@ -380,6 +383,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
 | `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
+
+스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
 
 추천 스토리 카드는 아직 도입되지 않은 기능입니다. 기능 도입 시 `client_storyDetail_recommendStoryCard_clicked`와 `client_storyDetail_recommendStoryCard_impressed`(P1, `story_id` string 필수, `position` number 선택)를 추가합니다. 이때 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
@@ -589,7 +594,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 앱은 공통 카탈로그를 그대로 재사용합니다(§3-3-6 원칙). 아래는 **앱에만 있는 화면·동작**이라 카탈로그에 없던 이벤트이고, 이름·프로퍼티 규칙은 §6-3-1을 따릅니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다.
 
-**기존 화면 보강** — 목록 카드 옵션·삭제·조회 실패는 웹에 없는 앱 동작입니다. 시작 설정 선택은 앱 스토리 상세에만 있는 UX입니다.
+**기존 화면 보강** — 목록 카드 옵션·삭제·조회 실패는 앱이 먼저 계측한 동작입니다(웹은 KNK-1186으로 카드 옵션 다이얼로그가 생겼지만 옵션·삭제 이벤트는 아직 후속 — §6-4-2-16). 시작 설정 선택은 앱 스토리 상세에만 있는 UX입니다.
 
 | 이벤트                                      | 우선순위 | 발생 시점                                          | 고유 프로퍼티                                            |
 | ------------------------------------------- | -------- | -------------------------------------------------- | -------------------------------------------------------- |
@@ -606,7 +611,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 `client_storyList_viewed`는 앱에서 `section`(선택, `original` / `created`)을 함께 보냅니다. 앱은 홈 탭과 스튜디오 탭이 별도 화면이라 진입을 구분해야 하고, 웹은 `/`만 발화하므로 보내지 않습니다. 이 프로퍼티는 웹 계약을 바꾸지 않는 선택 확장입니다.
 
-**신고 시트** — 스토리 상세·스튜디오·채팅 목록·채팅방 네 화면이 `StoryReportController` 하나를 공유하므로 화면별 이벤트를 만들지 않고 `source`로 구분합니다. `screen_name`은 네 화면 모두 `report`입니다.
+**신고 시트** — 스토리 상세·스튜디오·채팅 목록·채팅방 네 화면이 시트 하나(앱 `StoryReportController`, 웹 `story-report-sheet`)를 공유하므로 화면별 이벤트를 만들지 않고 `source`로 구분합니다. `screen_name`은 네 화면 모두 `report`입니다. **웹도 같은 이름·프로퍼티로 발화합니다**(KNK-1186).
 
 | 이벤트                        | 우선순위 | 발생 시점               | 고유 프로퍼티                                                                                                        |
 | ----------------------------- | -------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -657,7 +662,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | 회원 탈퇴                              | `/my/account-deletion` 있음, 이벤트 없음 | `client_withdrawal_viewed` · `client_withdrawal_completed` 추가                                          |
 | 스토리·채팅 삭제                       | 삭제 기능 있음, 이벤트 없음             | `client_storyList_story_deleted` · `client_storyDetail_story_deleted` · `client_chatList_chat_deleted` 추가 |
 | 목록 조회 실패                         | 실패 화면 있음, 이벤트 없음             | `client_storyList_loadError_shown` · `client_chatList_loadError_shown` 추가                              |
-| 신고                                   | 웹 미구현                               | 기능 도입 시 `client_report_*` 3개를 같은 이름으로                                                      |
+| 신고                                   | ~~웹 미구현~~ → 구현(KNK-1186)          | `client_report_*` 3개를 같은 이름으로 발화 중                                                          |
 | 시작 설정 선택                         | 웹 미구현(앱 전용 UX)                    | 도입 시 `client_storyDetail_startSetting_selected`                                                       |
 | `client_storyList_viewed`의 `section`  | 미전송                                  | 선택 프로퍼티이므로 웹은 유지. `/studio` 진입을 따로 보려면 `created`로 발화                            |
 
