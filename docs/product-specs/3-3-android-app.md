@@ -1182,7 +1182,7 @@ AI 출력에 섞이는 인물 이미지는 **스트리밍 중에는 이벤트로
 
 - **웹 전용 항목(Android 비적용)** — 인앱 브라우저 감지·로그인 핸드오프, BFF 프록시, SSR·하이드레이션, 브라우저 지원·SEO 기준([`3-2-web-app.md`](./3-2-web-app.md) 소유). 공통 계약이 아니므로 위 표에 두지 않으며 Android 상태와 섞지 않습니다.
 - **앱 전용 항목(공통 계약 없음)** — 오픈소스 라이선스 고지·버전 정보(§3-3-3 마이). 웹에 대응 화면이 없어 위 표에 행을 두지 않습니다.
-- **별도 결정 필요 항목** — 공유 URL 딥링크 처리(FE-SCREEN-012). 관측은 플랫폼 계약과 화면별 이벤트 발화 지점까지 확정·구현됐고, Crashlytics breadcrumb 만 Crashlytics 도입과 함께 남습니다(§3-3-6). 온보딩 첫 실행 판정은 앱 비적용이라 결정 대상이 아닙니다.
+- **별도 결정 필요 항목** — 공유 URL 딥링크 처리(FE-SCREEN-012). 관측은 플랫폼 계약·화면별 이벤트 발화 지점·Crashlytics breadcrumb까지 구현됐고, API non-fatal `recordException`만 남습니다(§3-3-6). 온보딩 첫 실행 판정은 앱 비적용이라 결정 대상이 아닙니다.
 
 ### Android 흐름 구현 매트릭스
 
@@ -1623,7 +1623,9 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 
 **발화 위치 원칙** — 이벤트는 ViewModel의 부수효과 단계에서 보냅니다(`reduce`는 순수 함수라 발화하지 않습니다). 화면 진입 `viewed`만 컴포저블의 `LaunchedEffect(Unit)`에서 보내되, 구성 변경 재실행을 막기 위해 ViewModel이 `viewedReported` 플래그를 들거나 `ScreenShown` Intent가 있는 화면은 그 Intent에서 보냅니다. 노출(`impressed`)은 `:core:analytics`의 `Modifier.trackImpression`이 §6-4-3 기준(50% · 1초 · 30초 중복 제거)을 구현합니다.
 
-**P0 Crashlytics breadcrumb** — `:core:analytics` 래퍼가 모든 이벤트 이름을 `FirebaseCrashlytics.log()`로 남깁니다. 프로퍼티는 `story_id`·`chat_id`·`creation_id`·`screen_name`만 붙이고 나머지는 생략합니다. Crashlytics 도입 전에는 이 단계를 건너뜁니다.
+**P0 Crashlytics breadcrumb — `구현`(KNK-1179).** `:core:analytics`의 `AmplitudeAnalytics`가 분석 이벤트를 발행하는 그 자리에서 `CrashReporter`로 이름을 넘겨 `FirebaseCrashlytics.log()`에 남깁니다. 화면이 같은 사실을 두 번 알리지 않게 하려는 것입니다. `screen_name`만 지속 custom key로 두고 `story_id`·`chat_id`·`creation_id`는 breadcrumb 줄에만 싣습니다 — 지속 key로 두면 그 화면을 떠난 뒤 난 크래시에도 옛 식별자가 붙어 무관한 리포트를 그 스토리·채팅 탓으로 읽게 됩니다. 나머지 프로퍼티는 생략합니다. breadcrumb은 `device_id` 주입 대기열을 타지 않습니다 — 식별자가 붙기 전에 죽어도 직전 행동은 리포트에 남아야 합니다.
+
+**API non-fatal `recordException`은 미배선입니다.** 유일한 오류 변환 지점인 `:core:data`의 `apiCall`이 최상위 함수라 주입 지점이 없고, OkHttp 인터셉터로 옮기려면 5xx를 어떤 예외로 합성해 이슈를 묶을지와 취소된 호출을 어떻게 거를지를 함께 정해야 합니다. `DomainError.Server`가 이미 `requestId`를 들고 있어 붙일 자리는 남아 있습니다.
 
 위 SDK 선택·식별자 순서·수집 범위는 더 이상 결정 항목이 아닙니다.
 
