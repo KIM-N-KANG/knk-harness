@@ -1003,7 +1003,7 @@ graph TD
 
 #### 스토리 수정
 
-**`GET /stories/{storyId}/edit`** — 수정 폼을 채우기 위한 전용 조회입니다. 스토리 상세(`GET /stories/{storyId}`)는 사용자 표시용이라 통글 4필드와 편집 초안 필드를 모두 반환하지 않습니다.
+**`GET /stories/{storyId}/edit`** — 수정 폼을 채우기 위한 전용 조회입니다. `Phase 3 · 구현`(KNK-1126) — 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면이라 검수 게이트를 적용하지 않은 원본을 상태와 함께 줍니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 스토리 상세(`GET /stories/{storyId}`)는 사용자 표시용이라 통글 4필드와 편집 초안 필드를 모두 반환하지 않습니다.
 
 응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings[]` — 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다 — 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
 
@@ -1036,9 +1036,10 @@ graph TD
 - **인물 이미지 이름은 필수이며 형식을 강제합니다.** `{인물이름}_{접미}` — 접미는 1~20자 한글·영문·숫자, 같은 인물 안에서 유일(위반 400, 중복 409 `CONFLICT`). 접미는 표정·상황·감정입니다(`세린_기본`, `세린_웃음`, `세린_분노`). 컴파일이 만든 첫 장은 `{인물이름}_기본`입니다. AI가 대사 문맥으로 여러 장 중 하나를 고르는 것은 AI 서버 몫(KNK-1199)이며, 그 전까지 AI는 같은 이름의 마지막 항목 한 장만 씁니다. **인물당 상한 10장.**
 - **채팅 요청에는 인물별 전부를 실어 보냅니다.** 채팅 요청 `character_images[]`는 `story_character_images` 전체를 `{name, image_name, image_url}`로 싣습니다(같은 `name`의 항목이 여러 개 — [§4-3-9](#4-3-api-계약) 채팅 인물 이미지 전달). 상세 응답 `characters[].imageUrl`은 `_기본` 이미지, 없으면 첫 장입니다.
 - **삭제·교체는 DB 참조만 지웁니다. S3 객체는 남깁니다.** 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리키고 있어 지우면 옛 대화가 깨집니다. 객체 키가 uuid라 재사용 충돌이 없고 저장 비용은 무시할 수준입니다. 연결되지 않은 고아 객체(PUT 뒤 연결 안 함)도 같은 이유로 방치합니다 — 쌓이면 lifecycle 규칙으로 정리합니다.
-- **권한.** 회원 소유 스토리만입니다. 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물·이미지가 없으면 404. 정지 계정은 403.
+- **권한.** 네 경로 모두 인증 필수라 미인증은 **401**입니다(좋아요·신고와 같은 결). 회원 소유 스토리만이며 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물·이미지가 없으면 404(존재 비노출을 위해 403보다 먼저 판정). 정지 계정은 403.
+- **저장소 미설정 시 503.** 버킷·base URL 설정(`manyak.asset.character-image.*`)이 비어 있으면 presign은 503("이미지 업로드가 설정되지 않았습니다.")입니다. 생성 이미지처럼 조용히 건너뛸 수 없는 기능이라 로컬·미구성 환경에서 명시적으로 실패합니다.
 - **검수 게이트 — 저장은 즉시, 반영은 상태에 따라.** 업로드 이미지 행(`story_character_images.moderation_status`)과 표지(`stories.thumbnail_moderation_status`)에 검수 상태(`APPROVED` · `PENDING` · `REJECTED`, varchar 20)를 둡니다. **노출·AI 전달은 `APPROVED`만** 합니다 — 상세·목록·채팅 카드의 `thumbnailUrl`, 상세 `characters[].imageUrl`, 채팅 요청 `character_images[]` 전부 이 한 판정을 지납니다. `PENDING`·`REJECTED`는 소유자의 편집 폼(`characters[].images[].moderationStatus`, `thumbnailModerationStatus`)에만 보입니다. **지금은 기본값 `APPROVED`**라 즉시 반영이고 신고([§4-3-1](#4-3-api-계약))로 대응합니다. 검수 도입 시(자동 Rekognition 또는 공개 스토리 검수 KNK-1160~1162) 기본값을 `PENDING`으로 바꾸고 승인 경로를 붙이면 되며, 노출 코드는 손대지 않습니다. 자동 검수 훅 자리는 연결 API(HEAD 검증 직후) 한 곳입니다. 이 기능의 **프로덕션 릴리스는 검수 트랙과 함께** 합니다.
-- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 그대로 씁니다 — 업로드가 생성 표지를 대체하고, 지우면 프리셋 키 폴백으로 내려갑니다(프리셋 키는 건드리지 않음). 인물은 새 테이블 `story_character_images`(V76 — [§4-4](#4-4-데이터-모델))이고, 기존 `story_characters.image_url`·`image_name`의 한 장은 V76이 `{인물이름}_기본` 행으로 옮깁니다. 옛 컬럼은 읽는 코드가 사라진 릴리스 **다음** 릴리스에서 지웁니다([`7-deployment.md`](./7-deployment.md) 계약 마이그레이션 두 릴리스 규칙).
+- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 그대로 씁니다 — 업로드가 생성 표지를 대체하고, 지우면 프리셋 키 폴백으로 내려갑니다(프리셋 키는 건드리지 않음). 인물은 새 테이블 `story_character_images`(V76 — [§4-4](#4-4-데이터-모델))이고, 기존 `story_characters.image_url`의 한 장은 V76이 `name || '_기본'` 이름의 행으로 옮깁니다(`story_characters`에는 `image_name` 컬럼이 없습니다 — 예정만 있었고 만들지 않은 채 이 테이블로 대체). 옛 컬럼은 읽는 코드가 사라진 릴리스 **다음** 릴리스에서 지웁니다([`7-deployment.md`](./7-deployment.md) 계약 마이그레이션 두 릴리스 규칙).
 - **인프라(KNK-1200, `manyak-terraform`).** 서버 역할의 S3 쓰기 범위에 `thumbnails/uploaded/*`·`characters/uploaded/*`(Put·Delete·Head)를 더하고, assets 버킷에 CORS(`PUT`·`HEAD`, 웹 origin)를 신설합니다. apply 전에는 presign 발급은 되지만 PUT이 403입니다. 안드로이드는 CORS와 무관합니다.
 
 **결정 기록 — 사용자 이미지 업로드 허용(2026-09-05, KNK-1126)**
@@ -1190,7 +1191,7 @@ graph TD
 
 **어떻게.** 백엔드는 다음 순서로 처리합니다:
 
-1. **채팅 요청에 인물-URL 매핑 실어 보내기.** DB의 `story_characters`에서 인물 이름과 이미지 URL을 조회해, 채팅 요청의 `character_images[]` 필드에 채워 AI 서버에 보냅니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)). 이미지 URL이 없는 인물은 목록에서 제외합니다. 항목은 `{name, image_name, image_url}`입니다(KNK-1026). `name`은 대사 줄의 `인물명:`과 맞추는 키라 **반드시 인물 이름**이어야 하고, `image_name`은 이미지 이름(`story_characters.image_name`)입니다. AI 서버는 `image_name`이 비어 있거나 null이어도 받아 그대로 돌려주므로, 컬럼을 채우기 전에 먼저 배포해도 채팅이 막히지 않습니다.
+1. **채팅 요청에 인물-URL 매핑 실어 보내기.** `Phase 3 · 구현`(KNK-1126) — DB의 `story_character_images`([§4-4](#4-4-데이터-모델))에서 `APPROVED` 행 전부를 읽어 채팅 요청의 `character_images[]`에 `{name, image_name, image_url}`로 채워 AI 서버에 보냅니다([`5-ai-server.md §5-3-4`](./5-ai-server.md)). 같은 `name`의 항목이 여러 개일 수 있으며(인물당 여러 장), AI가 문맥으로 고르기 전(KNK-1199)에는 AI가 마지막 항목만 씁니다. 이미지가 없는 인물은 목록에 없습니다. `name`은 대사 줄의 `인물명:`과 맞추는 키라 **반드시 인물 이름**이어야 하고, `image_name`은 이미지 한 장의 이름(`{인물이름}_{접미}`)입니다. AI 서버는 `image_name`이 비어 있거나 null이어도 받아 그대로 돌려주므로, 컬럼을 채우기 전에 먼저 배포해도 채팅이 막히지 않습니다.
 2. **`character_image` SSE 이벤트를 프론트에 그대로 중계.** AI 서버가 스트리밍 중에 보내는 `character_image` 이벤트(`{name, imageName, imageUrl}`, KNK-1026)를 프론트에 그대로 전달합니다. 백엔드가 추가로 변환하거나 검증할 것은 없습니다 — 매핑 자체를 백엔드가 보냈으므로 AI 서버가 돌려주는 URL은 이미 확인된 값입니다. 이미지 이벤트를 보낸 뒤 턴이 실패해도 제거 이벤트를 보내지 않습니다. 이미 표시한 이미지를 현재 화면에만 유지하는 규칙은 [`3-1-client.md §3-1-5`](./3-1-client.md)이 소유합니다.
 3. **완료 결과를 저장하고 중계.** AI 서버의 `completed.aiOutput`을 `[[URL]]` 마커(대사 줄 위 별도 줄, 뒤에 빈 줄)가 든 상태로 저장합니다. `completed.characterImages[]`도 프론트에 그대로 전달합니다. 목록에는 대사가 나온 순서대로 항목을 넣으며, 같은 인물이 두 번 말하면 두 항목을 유지합니다. 항목은 `{name, imageName, imageUrl}`입니다(KNK-1026).
 4. **과거 턴을 복원.** 채팅 상세 조회에서는 저장한 `aiOutput`의 마커를 앞에서부터 읽어 `{name, imageUrl}` 목록을 만듭니다. URL이 마커에 들어 있으므로 `story_characters`를 다시 조회하지 않습니다. `aiOutput`의 마커는 제거하지 않고 함께 반환하며, 프론트가 마커를 숨기고 그 위치에 이미지를 렌더링합니다. 변경 계획(2026-08-28 확정): 상세 조회는 저장된 `aiOutput`을 마커가 든 상태 그대로 반환하고 목록을 따로 만들지 않습니다. 마커에 URL이 들어 있어 본문만으로 복원이 되므로, 마커를 이미지로 바꾸는 것은 실시간 스트림과 같은 파서로 프론트가 합니다([`3-1-client.md §3-1-5`](./3-1-client.md)). `completed.characterImages[]`는 스트림 시점 산물이라 백엔드가 저장하지 않으며, 상세·공유 응답에 실리지 않습니다. 백엔드 코드 변경은 없습니다.
