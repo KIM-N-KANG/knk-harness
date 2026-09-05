@@ -1,10 +1,10 @@
-# Android 모듈 재구성 설계 제안
+# Android 모듈 아키텍처
 
 - 작성일: 2026-09-05
 - 작업: KNK-1197
-- 상태: **구현 진행 중**. 현행 스펙의 KNK-1197 전환 절에 따라 모듈 단위로 적용합니다.
+- 상태: **구현·로컬 검증 완료**. Android 작업 브랜치의 구현이며 아직 병합·배포된 상태를 뜻하지 않습니다.
 - 기준: 하네스 `dev`의 `eaf081c`, Android `refactor/KNK-1197-improve-folder-structure`의 `5ee07c6`.
-- 설계 소유 문서: 이 문서. 파일 이동·검증 실행 계획은 [Android 실행 계획](../../../manyak-android/docs/plans/module-reorganization.md)이 소유합니다.
+- `3-3-android-app.md`에서 위임한 모듈 상세 규칙의 정본: 이 문서. 파일 이동·검증 실행 계획은 [Android 실행 계획](../../../manyak-android/docs/plans/module-reorganization.md)이 소유합니다.
 
 ## 1. 목표와 변경 경계
 
@@ -12,19 +12,19 @@
 
 사용자와 합의한 방향은 다음과 같습니다.
 
-- 최상위: `app`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `common`, `chat`, `create`, `home`, `studio`, `my`, `story`, `login`, `legal`.
+- 최상위: `app`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `common`, `chat`, `create`, `home`, `studio`, `my`, `story`, `login`, `legal`, `report`.
 - `build-logic`은 공통 빌드 플러그인을 제공하는 included build입니다. `gradle/`은 Wrapper·버전 카탈로그 디렉터리입니다.
 - `entity`, `domain`, `data`, `presentation` 및 `chat/list` 같은 하위 기능은 **패키지**입니다. 각각을 Gradle 모듈로 만들지 않습니다.
 - 실제 코드가 없는 계층, 단순 Repository 위임 UseCase, 각 기능의 일괄 `api`/`impl` 모듈 분리는 만들지 않습니다.
 - 이번 계획의 구현은 구조 변경입니다. API·사용자 흐름·UI·분석 이벤트·저장 형식·인증 정책 변경을 섞지 않습니다.
 
-코드 검토 결과 추가 제안은 공유 업무 모듈 `report` 하나입니다(§6). 이는 기존 대화에서 후보로 둔 항목을 계획의 권장안으로 구체화한 것이며, 아직 생성된 모듈이 아닙니다. 권장안의 최종 런타임 모듈은 16개입니다.
+코드 검토에서 확인한 네 신고 화면의 공유 업무는 `report`가 소유합니다(§6). 런타임 모듈은 16개이며, `build-logic`은 별도 included build입니다.
 
 ## 2. 기준과 현행 스펙의 관계
 
 현행 정본은 [3-3-android-app.md](../product-specs/3-3-android-app.md)이며 현재 `dev`에 있는 내용을 확인했습니다. Android `_project.md`에 남은 초기 구조 PR의 병합 대기 안내보다 이 기준 커밋과 실제 `settings.gradle.kts`를 우선했습니다.
 
-이 제안은 현행 정본의 중앙 `core:domain`/`core:data`, 화면 루트 패키지 강제, 문자열 전량 `core:ui` 배치, 순수 Kotlin 모듈을 통한 계층 강제 규칙을 바꾸는 계획입니다. 구현 첫 단계에서 관련 절에 전환 범위와 상태를 반영하고, 종료 시 최종 규칙과 구현 상태 매트릭스를 갱신합니다. 구조 전환이 검증되기 전에는 구현 완료로 표시하지 않습니다.
+KNK-1197은 중앙 core의 데이터 소유, 화면 루트 패키지 강제, 문자열 전량 core:ui 배치, 계층별 JVM 모듈 규칙을 대체합니다. 화면·사용자 흐름의 구현 상태는 바꾸지 않으며 구조 검증 기록은 Android 실행 계획에서 관리합니다.
 
 [3-1-client.md](../product-specs/3-1-client.md)의 화면·상태·사용자 흐름과 [6-analytics.md](../product-specs/6-analytics.md)의 이벤트 의미는 유지합니다. API 소유권 분석은 현재 Android 인터페이스의 배치 분석이며 서버 계약을 새로 검증한 결과가 아닙니다. 구현 중 서버 필드·상태 코드 판단이 필요하면 Swagger 또는 서버 코드를 별도로 확인합니다.
 
@@ -50,7 +50,7 @@ manyak-android/
 ├── story/                      # 상세·시작 설정·이미지 뷰어
 ├── login/                      # 로그인 화면
 ├── legal/                      # 공용 웹 문서 화면
-└── report/                     # 권장 추가: 공유 신고 업무
+└── report/                     # 공유 신고 업무
 ```
 
 `app`만 Application입니다. `common`은 MVI·Android 리소스·공통 저장 기반을 포함하므로 Android Library로 구성합니다. 다른 코드 모듈도 실제 Android 사용에 맞는 Library 플러그인을 사용합니다. 독립 JVM 모듈이 필요한 경우에만 별도 결정하며, 이번에 계층별 Gradle 모듈을 추가하지 않습니다.
@@ -81,7 +81,7 @@ manyak-android/
 
 ### 4.1 허용하는 공통 코드
 
-| 계층 | 초기 후보 | 소유권 기준 |
+| 계층 | 공통 소유 코드 | 소유권 기준 |
 | --- | --- | --- |
 | entity | 공통 오류가 사용하는 `AuthProvider`, 여러 소비자가 쓰는 UserProfile·CreditPolicy·재개 요약 값 | 같은 의미로 실제 교환하는 최소 값만. 제작 명령·전체 채팅 모델은 제외 |
 | domain | DomainError·DomainResult, UserProfileRepository·CreditPolicyRepository, 제작 재개/폐기·채팅 시작의 최소 계약, UserScopedStore | 소비 기능이 구현 모듈을 의존하지 않도록 하는 경계만 공개 |
@@ -134,14 +134,14 @@ graph TD
 ### 4.3 공개 범위와 강제 수준
 
 - 모듈 밖에서 사용하는 진입 컴포저블·계약·입출력 타입만 공개합니다. DTO·Repository 구현·내부 UI는 가능한 한 internal/private로 둡니다. Hilt 생성에 필요한 가시성은 실제 컴파일로 확인합니다.
-- domain/entity에서 Android·Compose·Retrofit·Room·data/presentation 구현 참조를 금지합니다. presentation에서 data·network 구현과 리소스 이외의 저장 세부 참조를 금지합니다.
+- domain/entity에서 Android·Compose·Retrofit·Room·data/presentation 구현 참조를 금지합니다. entity의 domain 참조도 금지하되 공통 값 타입인 DomainError는 스트림 실패 페이로드 등에 사용할 수 있습니다. presentation에서 data·network 구현과 리소스 이외의 저장 세부 참조를 금지합니다.
 - 한 Gradle 모듈 안의 패키지는 컴파일 격리가 아닙니다. common 통합으로 기존 core:domain의 JVM 모듈 강제를 잃는 비용을 수용하고, 의존 검사·리뷰를 필수로 둡니다.
-- 검사는 모듈 의존 그래프와 소스 참조를 모두 봅니다. fully qualified 참조와 typealias 우회도 다루는 Kotlin PSI/타입 기반 방식으로 정하고, import 정규식만으로 완전 강제한다고 보고하지 않습니다.
+- `checkModuleArchitecture`는 Gradle 프로젝트 의존과 프로덕션 Kotlin PSI를 검사합니다. import 별칭·전체 경로 참조·typealias 연결을 포함하며, 루트 check와 CI에 연결됩니다. 컴파일러의 전체 의미 분석이나 리플렉션·문자열 기반 로딩 검사는 아니므로 공개 API의 의미는 리뷰에서도 확인합니다.
 - 공용 Compose 의존성을 designsystem의 `api`로 전부 노출하지 않습니다. 소비 모듈의 실제 라이브러리는 명시하거나 build-logic으로 반복 설정합니다. 모듈이 의존하지 않은 라이브러리를 우연히 사용하는 구조를 만들지 않습니다.
 
 ## 5. 데이터 소유권과 기능 간 연결
 
-현재 StoryRepository·ChatRepository·UserApi의 모든 동작을 common에 그대로 옮기지 않습니다. 다음 계약 이름은 **구현 시 사용할 후보 이름**이며 서버 API 신설을 뜻하지 않습니다.
+현재 StoryRepository·ChatRepository·UserApi의 모든 동작을 common에 그대로 옮기지 않습니다. 아래 계약은 구현된 내부 경계이며 서버 API 신설을 뜻하지 않습니다.
 
 | 기능/데이터 | 구현 소유자 | 소비자에게 제공할 것 |
 | --- | --- | --- |
@@ -165,7 +165,7 @@ graph TD
 
 현재 신고는 **chat의 목록·채팅방, studio, story의 네 화면(세 모듈)**이 사용합니다. Home에는 현재 신고 소비가 없습니다. StoryReportController가 Repository·분석·비동기 작업을 다루므로 순수 디자인 시스템이 아닙니다.
 
-권장안은 `report/{entity,domain,data,presentation}`입니다. 신고 API·사유·상태·Controller·시트를 모으고 각 화면은 필요한 공개 타입과 진입점만 사용합니다. 기존 화면 ViewModel의 상태 전이와 주입한 CoroutineScope를 유지하며, 별도 싱글턴 상태나 ViewModel을 만들어 신고 상태를 화면 사이에 공유하지 않습니다.
+신고는 `report/{entity,domain,data,presentation}`이 소유합니다. 신고 API·사유·상태·Controller·시트를 모으고 각 화면은 필요한 공개 타입과 진입점만 사용합니다. 기존 화면 ViewModel의 상태 전이와 주입한 CoroutineScope를 유지하며, 별도 싱글턴 상태나 ViewModel을 만들어 신고 상태를 화면 사이에 공유하지 않습니다.
 
 대안인 common 배치는 data가 network를, presentation이 designsystem을 역참조하므로 채택하지 않습니다. 각 화면에 복제하는 방법도 네 벌의 제출/분석 규칙을 만들어 채택하지 않습니다. 추가 모듈 수를 엄격히 제한해야 한다는 새 제약이 생기면 이 한 항목을 재검토하고, 구현 중 임의로 common으로 되돌리지 않습니다.
 
@@ -175,7 +175,7 @@ StoryThumbnail·StoryGenreBadge·CharacterImage처럼 문자열·URL·값만 받
 
 ### 7.1 auth와 network
 
-현재 AuthInterceptor는 SessionTokenManager를 직접 참조합니다. network에 토큰 접근 계약(현재 세대, 유효 토큰 조회, 401 이후 갱신)과 필요한 결과 타입을 두고 auth의 토큰 관리자가 구현합니다. network는 auth의 구현이나 세션 클래스에 의존하지 않습니다.
+AuthInterceptor는 network의 SessionTokenAccess를 참조하고 auth의 SessionTokenManager가 구현합니다. network에 토큰 접근 계약(현재 세대, 유효 토큰 조회, 401 이후 갱신)과 필요한 결과 타입을 두고 auth의 토큰 관리자가 구현합니다. network는 auth의 구현이나 세션 클래스에 의존하지 않습니다.
 
 런타임 주입 경로도 확인합니다. `인증 클라이언트 → 인터셉터 → 토큰 접근 구현 → 토큰 갱신 API → 비인증 클라이언트`로 끝나야 합니다. 갱신 API가 인증 클라이언트를 다시 사용해서는 안 됩니다. 현재 Lazy·단일 갱신 작업·세대 검사 의미를 유지하고, 모듈 의존 검사만으로 Hilt 런타임 순환까지 해결됐다고 보지 않습니다.
 
@@ -183,7 +183,7 @@ StoryThumbnail·StoryGenreBadge·CharacterImage처럼 문자열·URL·값만 받
 
 ### 7.2 신규 가입 안내·프로필
 
-SessionRepositoryImpl은 현재 InviteOnboardingStore를 직접 주입받습니다. 구현을 my/invite로 이동하고 common/domain의 최소 표시 writer를 주입받도록 바꿉니다. 이는 ViewModel Effect나 로그인 화면 콜백으로 옮길 일이 아닙니다.
+SessionRepositoryImpl은 common/domain의 SignupOnboardingWriter를 주입받습니다. my/invite의 InviteOnboardingStore가 구현합니다. 이는 ViewModel Effect나 로그인 화면 콜백으로 옮길 일이 아닙니다.
 
 기존 순서인 토큰 영속 → 세대 확인 후 회원 상태 공개 → 프로필 갱신 시작 → 신규 가입 안내 기록을 유지합니다. 안내 쓰기 실패의 현재 처리도 보존합니다. 실패 정책이나 경쟁 상태의 동작 개선 필요가 발견되면 구조 변경과 별도 문제로 기록합니다.
 
@@ -228,8 +228,17 @@ SessionRepositoryImpl은 현재 InviteOnboardingStore를 직접 주입받습니�
 
 가장 큰 위험은 **인증 경계 이동 중 토큰 갱신·세션 세대·종료 정리의 동작이 바뀌는 것**입니다. 이를 독립 단계로 검증하며 폴더 이동과 동시에 실패 정책을 고치지 않습니다.
 
-이번 검토는 현재 Android 코드·하네스 문서를 읽은 설계 검토입니다. 서버 Swagger 최신성, 기기 UI, 실제 업그레이드 복원, Gradle/Hilt 동작을 실행 검증한 결과는 아닙니다. 실행 시점과 완료 조건은 Android 실행 계획에 둡니다.
+설계 검토 뒤 수행한 모듈별 빌드·Hilt·테스트·저장 호환성 검증과 기기 확인 범위는 Android 실행 계획의 실행 기록이 소유합니다. 서버 API 계약과 제품 동작을 새로 정의하지 않았습니다.
 
-## 10. 구현 진행 방식
+## 10. 구현 기록
 
-사용자의 후속 요청에 따라 Android 변경은 한 모듈의 소유 코드·소비자 연결·관련 검증을 하나의 커밋으로 묶습니다. 기반 모듈부터 준비한 뒤 각 기능은 화면·데이터·리소스를 함께 이동합니다. 전환 중 이전 core:domain의 잔여 계약은 Android common에서 임시로 소유할 수 있으며 해당 기능 커밋에서 제거합니다. 이는 JVM 모듈이 Android common을 의존하는 variant 불일치를 피하기 위한 전환 조치이며 최종 common의 범위를 넓히는 결정이 아닙니다.
+Android의 모듈 이전은 한 모듈의 소유 코드·소비자 연결·관련 검증을 하나의 커밋으로 묶었습니다. 기반 모듈과 각 기능을 순차 이전한 뒤 app을 최종 조립했으며, 전환 중 common에 임시로 남겼던 기능 계약도 모두 해당 기능으로 이동했습니다. 최종 모듈 등록에는 core/feature가 없습니다.
+
+[Android 실행 기록](../../../manyak-android/docs/plans/module-reorganization.md)에 전체 검사·릴리스 조립·설치 및 로그인 화면 비교 결과를 기록합니다. 인증 이후 실제 기기 흐름과 사용자 제작 데이터의 기기 재개는 미실행이며, 저장 호환성은 합성 JSON fixture·스키마 비교·단위 테스트로 확인했습니다. 이 범위를 넘어 실제 계정의 모든 흐름을 검증했다고 해석하지 않습니다.
+
+### 최종 소유권 보완
+
+- StoryDeletion은 common의 최소 삭제 계약이고 studio가 구현합니다. 상세는 이 계약을 사용하며 studio를 직접 의존하지 않습니다. 목록·상세에서 삭제 API를 중복 구현하지 않습니다.
+- StorySummary와 기존 StorySummaryDto·StoryAuthorDto는 home/studio 및 상세의 실제 공유 타입이므로 common에 남깁니다. common에는 업무 API·Repository 구현을 두지 않습니다.
+- CreationProgressAccess는 진행 요약 관찰·폐기를 공개하고, CreationProgressSummary는 단계·재개 지점과 계산된 완성 중 여부만 담습니다. 전체 제작 입력·명령·Room 행은 create가 소유합니다.
+- common/domain의 SignupOnboardingWriter를 auth가 호출하고 my가 구현합니다. 전체 초대 안내 Repository는 my/invite가 소유합니다.
