@@ -85,7 +85,7 @@
 | `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 이프 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 자동 연결·반응형 변형(V45~46·KNK-548, [§4-3-9](#4-3-api-계약))·초대 코드 입력 개편(V47·KNK-567, [§4-3-7](#4-3-api-계약))·피드백 User-Agent 저장(V43·KNK-528)·채팅 상세 턴 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
 | `Phase 2 · 구현` | Phase 2 범위. 구현 완료 | 공개 스토리 목록·게스트 공개 제한(KNK-149, [§4-3-1](#4-3-api-계약)·[§4-3-8](#4-3-api-계약)), 스토리 좋아요·신고·공개 전환(KNK-1017·1020·1021), 회원 탈퇴(KNK-1019·1053, [§4-3-5](#4-3-api-계약)), 메트릭([§4-7](#4-7-운영과-관측)) — OTLP export 배선(KNK-779)·완성 타이머 거부 outcome 분리(KNK-784). 운영 배선(KNK-781·793)과 **v0.2.7 배포로 2026-08-06 활성화 완료**([`7-deployment.md §7-6`](./7-deployment.md)) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
-| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한)). 프로모션(KNK-1117)·검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
+| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한))·스토리 이미지 업로드(KNK-1126, V76, [§4-3-8](#4-3-api-계약)). 프로모션(KNK-1117)·검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
 
 ---
 
@@ -191,6 +191,10 @@ graph LR
 | 스토리 | `GET /stories/lorebooks` | 로어북 카탈로그 조회(`?genre` 필터) | 200 | — | 불필요 | Phase 1 · 구현 |
 | 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 | Phase 1 · 구현 |
 | 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 | Phase 1 · 구현 |
+| 스토리 | `POST /stories/{storyId}/images/presign` | 이미지 업로드용 presigned PUT 발급(표지·인물) | 201 | 400·401·403·404 | 필수 | Phase 3 · 구현 |
+| 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드·생성 표지 제거(프리셋 폴백, 멱등) | 204 | 401·403·404 | 필수 | Phase 3 · 구현 |
+| 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 인물 이미지 연결(업로드 완료 객체 + 이름) | 201 | 400·401·403·404·409 | 필수 | Phase 3 · 구현 |
+| 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) | 204 | 401·403·404 | 필수 | Phase 3 · 구현 |
 | 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 | Phase 1 · 구현 |
 | 스토리 | `POST /stories/{storyId}/like` | 스토리 좋아요 등록(멱등) | 204 | 401·403·404 | 필수 | Phase 2 · 구현 |
 | 스토리 | `DELETE /stories/{storyId}/like` | 스토리 좋아요 취소(멱등) | 204 | 401·403·404 | 필수 | Phase 2 · 구현 |
@@ -961,7 +965,7 @@ graph TD
 
 - **영향.** 초안 저작 API 8종이 제거됐습니다(KNK-464 — **하네스 스펙을 단일 정본으로 삼고 코드를 스펙에 맞춘다**). draft 전용으로 추가됐던 스펙 외 컬럼(`story_start_settings.opening_scene`·`first_ai_message`, V32)도 함께 제거했습니다(V34). `visibility`(PUBLIC/PRIVATE) 모델은 Phase 2 스토리 피드·채팅 게이팅이 의존하므로 draft 저작 단계만 걷어내고 유지했습니다.
 
-이미지는 요청 대상이 아닙니다. 스토리 이미지는 전부 팀이 사전 제작해 운영 시드로 관리하며 사용자가 업로드하거나 선택하지 않습니다. 요청 본문에 이미지 필드가 없고 업로드 API도 없습니다([§4-3-9](#4-3-api-계약)).
+등록 요청에 이미지 필드는 없습니다. 등록 시점의 표지·배경은 팀 제작 자산(자동 연결)이고 인물 이미지는 컴파일 산출물입니다([§4-3-9](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1126) — 등록 **이후** 표지·인물 이미지는 사용자가 직접 올리고 지울 수 있습니다([아래 스토리 이미지 업로드](#4-3-api-계약)).
 
 일반 제작이 저장한 주요 사건·엔딩이 채팅 턴, 선택지, 엔딩 판정으로 실제 반영되는 계약은 [§4-3-10](#4-3-api-계약)이 정의합니다. 이미지의 런타임 반영(썸네일·채팅 이미지 표시)은 [§4-3-9](#4-3-api-계약)가 정의합니다. 이 절은 **편집 폼의 저장·왕복 계약**을 정의합니다.
 
@@ -1013,6 +1017,40 @@ graph TD
 - **`startSettings` 동기화 — `Phase 1 · 구현`(KNK-515).** 보내면 최소 1개(빈 배열 400)이며 컬렉션 전체를 동기화합니다: 각 항목의 `id`(시작 설정 공개 식별자)가 기존과 일치하면 **행 identity를 보존한 채 in-place 갱신**(진행 중 채팅의 `start_setting_id` 참조 유지), `id`가 없으면 신규 추가, 요청에서 빠진 기존 시작 설정은 자식(추천 입력·엔딩)과 함께 삭제(그 설정을 참조하던 채팅은 FK `ON DELETE SET NULL`로 해제)합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`는 모두 400입니다(조용한 무시·silent wipe 금지). 각 시작 설정의 `suggestedInputs`(정확히 3개)·`endings`는 보낸 값으로 전체 교체하며, `endings` 교체 시 레거시 행(`enabled=false`)도 함께 삭제됩니다 — 새 엔딩이 `(start_setting_id, sort_order)` 유니크 제약에서 레거시 행과 충돌하지 않게 하기 위해서입니다(KNK-404).
 - 보낸 `storySettings`는 기존 행이 없으면 생성하고 있으면 교체합니다(upsert). PATCH는 스토리 행 비관적 쓰기 락으로 동시 수정을 스토리 단위 직렬화합니다(자식 리스트 교체·시작 설정 동기화의 유니크 충돌 방지).
 - 저장 순번: 추천 입력 `input_order` 1부터, 주요 사건 `sort_order` 0부터, 엔딩 `sort_order` 1부터(`> 0` 체크 제약) — 모두 요청 배열 순서를 그대로 씁니다. 등록되는 스토리의 `status`는 항상 PUBLISHED입니다(초안 저장 경로 없음).
+- **표지 교체 `thumbnailObjectKey` — `Phase 3 · 구현`(KNK-1126).** 아래 presign으로 올린 객체 키를 보내면 표지가 그 이미지로 바뀝니다(`stories.thumbnail_image_url`에 서빙 URL 저장 — 생성 표지와 같은 컬럼이라 노출 폴백 규칙([§4-3-9](#4-3-api-계약))이 그대로 적용). 다른 필드와 같은 부분 갱신이며, 회원 소유 스토리만 허용합니다(게스트 스토리는 400). `GET /stories/{storyId}/edit` 응답에는 `thumbnailUrl`과 `characters[]`(`{id, name, images: [{id, imageName, imageUrl}]}`)를 실어 편집 화면이 현재 이미지를 보여 줍니다.
+
+#### 스토리 이미지 업로드 — `Phase 3 · 구현`(KNK-1126, V76)
+
+등록 이후 소유자가 **표지 1장**과 **인물당 여러 장**의 이미지를 직접 올리고 지웁니다. 2026-09-05 결정 기록입니다. 배경은 제외합니다 — 배경은 매 턴 AI가 의미 태그로 고르는 후보라 태그 입력 UI까지 함께 설계해야 해 별도 티켓입니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `POST /stories/{storyId}/images/presign` | `{ "kind": "COVER" \| "CHARACTER", "contentType": "image/jpeg" \| "image/png" \| "image/webp", "contentLength": number(1~5,242,880) }` | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
+| `PATCH /stories/{storyId}` | `{ "thumbnailObjectKey": string }`(위 표지 교체) | 200 편집 폼 |
+| `DELETE /stories/{storyId}/thumbnail` | 없음 | 204 — 업로드·생성 표지 URL을 지워 프리셋 폴백으로 내림. 없어도 204 |
+| `POST /stories/{storyId}/characters/{characterId}/images` | `{ "objectKey": string, "imageName": string }` | 201 `{ "id": uuid, "imageName": string, "imageUrl": string }` |
+| `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 없음 | 204 — 없어도 204 |
+
+- **클라이언트가 S3에 직접 올립니다(presigned PUT).** 서버를 거치지 않는 이유는 파일이 서버 메모리·대역폭을 지날 이유가 없기 때문입니다. presign은 `Content-Type`과 `Content-Length`를 서명에 고정하므로 클라이언트는 요청한 값 그대로 PUT해야 합니다. 객체 키는 서버가 정합니다 — `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}` · `characters/uploaded/{storyPublicId}/{uuid}.{ext}`. 표지가 `thumbnails/` 아래인 이유는 웹이 원격 이미지를 `cdn.manyak.app/thumbnails/**`만 허용하기 때문입니다([§4-3-9](#4-3-api-계약)). 만료 10분.
+- **연결 시 서버가 검증합니다.** `thumbnailObjectKey`·`objectKey`는 이 스토리의 업로드 prefix 아래여야 하고(다른 스토리·프리셋 키는 400), 서버가 `HEAD`로 객체 존재·`Content-Length`(5MB 이하)·`Content-Type`(3종)을 확인합니다. 객체가 없으면 400이고 바디 `code`는 `UPLOAD_NOT_FOUND`(클라이언트가 PUT 완료 뒤 다시 부르면 됨). 픽셀 크기·비율은 검증하지 않습니다 — 변환 없이 원본을 저장하므로 비율 크롭(표지 3:4)은 클라이언트 몫입니다.
+- **인물 이미지 이름은 필수이며 형식을 강제합니다.** `{인물이름}_{접미}` — 접미는 1~20자 한글·영문·숫자, 같은 인물 안에서 유일(위반 400, 중복 409 `CONFLICT`). 접미는 표정·상황·감정입니다(`세린_기본`, `세린_웃음`, `세린_분노`). 컴파일이 만든 첫 장은 `{인물이름}_기본`입니다. AI가 대사 문맥으로 여러 장 중 하나를 고르는 것은 AI 서버 몫(KNK-1199)이며, 그 전까지 AI는 같은 이름의 마지막 항목 한 장만 씁니다. **인물당 상한 10장.**
+- **채팅 요청에는 인물별 전부를 실어 보냅니다.** 채팅 요청 `character_images[]`는 `story_character_images` 전체를 `{name, image_name, image_url}`로 싣습니다(같은 `name`의 항목이 여러 개 — [§4-3-9](#4-3-api-계약) 채팅 인물 이미지 전달). 상세 응답 `characters[].imageUrl`은 `_기본` 이미지, 없으면 첫 장입니다.
+- **삭제·교체는 DB 참조만 지웁니다. S3 객체는 남깁니다.** 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리키고 있어 지우면 옛 대화가 깨집니다. 객체 키가 uuid라 재사용 충돌이 없고 저장 비용은 무시할 수준입니다. 연결되지 않은 고아 객체(PUT 뒤 연결 안 함)도 같은 이유로 방치합니다 — 쌓이면 lifecycle 규칙으로 정리합니다.
+- **권한.** 회원 소유 스토리만입니다. 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물·이미지가 없으면 404. 정지 계정은 403.
+- **부적절 이미지.** 업로드 즉시 반영하고 신고([§4-3-1](#4-3-api-계약))로 대응합니다. 공개 스토리 검수(KNK-1160~1162)가 생기면 이미지도 검수 대상에 넣으며, 이 기능의 **프로덕션 릴리스는 검수 트랙과 함께** 합니다.
+- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 그대로 씁니다 — 업로드가 생성 표지를 대체하고, 지우면 프리셋 키 폴백으로 내려갑니다(프리셋 키는 건드리지 않음). 인물은 새 테이블 `story_character_images`(V76 — [§4-4](#4-4-데이터-모델))이고, 기존 `story_characters.image_url`·`image_name`의 한 장은 V76이 `{인물이름}_기본` 행으로 옮깁니다. 옛 컬럼은 읽는 코드가 사라진 릴리스 **다음** 릴리스에서 지웁니다([`7-deployment.md`](./7-deployment.md) 계약 마이그레이션 두 릴리스 규칙).
+- **인프라(KNK-1200, `manyak-terraform`).** 서버 역할의 S3 쓰기 범위에 `thumbnails/uploaded/*`·`characters/uploaded/*`(Put·Delete·Head)를 더하고, assets 버킷에 CORS(`PUT`·`HEAD`, 웹 origin)를 신설합니다. apply 전에는 presign 발급은 되지만 PUT이 403입니다. 안드로이드는 CORS와 무관합니다.
+
+**결정 기록 — 사용자 이미지 업로드 허용(2026-09-05, KNK-1126)**
+
+- **배경.** Phase 1 이미지 정책은 "팀 제작 자산만, 사용자 업로드 없음"이었습니다(검수·스토리지 부담). 스토리 수정에서 표지와 인물 이미지를 사용자가 바꿀 수 있어야 한다는 요구가 확정돼 이 범위에서 원칙을 뒤집습니다. 프로필 이미지는 여전히 프리셋 전용입니다([§4-5](#4-5-인증과-권한)).
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| 서버 경유 multipart 업로드 | 이미 있는 S3 업로드 코드를 쓸 수 있지만, 파일이 서버를 지날 이유가 없고 변환도 하지 않기로 해 직접 업로드가 더 짧습니다 |
+| 서버 리사이즈·WebP 변환 | 이미지 처리 라이브러리가 하나 들어가고 서버 경유가 강제됩니다. 원본 저장 + 클라이언트 크롭으로 충분합니다 |
+| 삭제 시 S3 객체 즉시 삭제 | 지난 채팅 마커가 깨집니다. tombstone(참조만 제거)이 계약과 맞습니다 |
+
 
 ### 4-3-9. 채팅 확장 — AI 응답 재생성 `Phase 1 · 구현` · 인물 이미지 `Phase 2 · 계획` · 배경 이미지 `Phase 1 · 계획`
 
@@ -1090,6 +1128,7 @@ graph TD
 - **왜 컬럼을 새로 두는가** — `stories.thumbnail_image_key`에는 `image_presets.image_key` FK가 걸려 있어 카탈로그 행이 없는 생성 자산을 가리킬 수 없습니다. 인물 이미지(`story_characters.image_url`)와 같은 방식으로 절대 URL을 굳힙니다. 생성 표지의 서빙 URL은 업로드 시점에 확정해 저장하고, 프리셋처럼 조회 때 조합하지 않습니다.
 - **생성 표지에는 `_sm` 변형이 없습니다.** 목록·채팅 카드도 원본 URL을 받습니다(카드 무게는 후속 과제 — 업로드 시 축소본을 함께 만들거나 CDN 리사이즈를 붙이는 방향). 프리셋 표지의 `_sm` 규칙은 그대로입니다.
 - **저장소는 프리셋과 같은 assets 버킷**이며(같은 CloudFront로 서빙, path 제한 없음) 서버 태스크 역할의 쓰기 허용 범위에 `thumbnails/generated/*`를 추가했습니다(KNK-1072, `manyak-terraform`). 프리셋 자산 키(`thumbnails/{imageKey}.png`)는 서버가 덮어쓰지 못하도록 허용 범위에서 제외합니다. 권한 적용이 서버 배포보다 늦으면 업로드가 403으로 실패하고 프리셋으로 폴백합니다.
+- **사용자 업로드 표지 — `Phase 3 · 구현`(KNK-1126).** 소유자가 올린 표지도 같은 `thumbnail_image_url` 컬럼에 들어가 생성 표지와 같은 폴백·노출 규칙을 탑니다. 객체 키는 `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}`이고 `_sm` 변형은 없습니다([§4-3-8](#4-3-api-계약) 스토리 이미지 업로드).
 - **채팅 카드의 스냅샷 한계** — `story_chats`에는 프리셋 키 스냅샷만 있고(KNK-1059) 생성 URL 스냅샷은 두지 않았습니다. 그래서 공개였던 스토리가 비공개·삭제로 바뀌면 그 채팅 카드는 생성 표지가 아니라 프리셋 표지로 내려앉습니다. 정보가 새는 것이 아니라 화면이 열화되는 것이라 수용합니다.
 
 #### 이미지 자산 카탈로그와 저장소
@@ -1362,7 +1401,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 채팅 | `story_messages.reached_ending_id` | `Phase 1 · 구현`(V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
 | 이미지 | `image_presets` | `Phase 1 · 구현`(V45 스키마·V46 시드) 팀 이미지 카탈로그(시드 매니페스트를 Flyway 마이그레이션으로 등재 — 런타임 매칭 정본, 원본 파일명은 매니페스트 생성 도구의 입력일 뿐, [§4-3-9](#4-3-api-계약)). `image_key`(unique·불변·`[a-z0-9_]{1,64}` — 서빙 URL 구성은 백엔드) · `type`(`THUMBNAIL`·`BACKGROUND`·`CHARACTER`) · 의미 태그(장르[복수 가능 — **값은 GENRE 마스터 태그명과 정확 일치**]·분위기/성격·장소/성별·소품 — 타입별 축 상이) · `deactivated_at`(nullable timestamptz — 비활성 시각, NULL이면 활성. 재활성화는 NULL 복귀. 활성 여부는 이 컬럼의 파생) · 등록 시각(재구성 컷오프용). **행 삭제 금지**(운영 제외는 비활성 시각 기록으로만 — 신규 매칭·새 턴 전달·`images[]` 구성에서 제외, 지난 턴 재구성은 확정 시각과의 비교로 판정, [§4-3-9](#4-3-api-계약) 비활성 적용 범위). 삭제 금지(사라짐 방지)와 등록·비활성 시각 컷오프(나타남 방지·`completed` 대칭)가 지난 턴 `images[]` 재구성의 불변 전제 |
 | 이미지 | `story_images` | `Phase 1 · 계획` 스토리↔배경 후보 연결. 등록 시 장르 매칭으로 5~8장 확정하고 매 턴 AI 요청에 동일 목록 전달([§4-3-9](#4-3-api-계약)). 썸네일 확정값은 별도로 `stories` 썸네일 컬럼에 저장 |
-| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable — 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 이미지 이름 `image_name` 컬럼 추가 예정(AI 컴파일 응답은 KNK-1027로 이미 `image_name`을 보냄, [§4-3-9](#4-3-api-계약) 변경 계획). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](#4-3-api-계약)). 스토리 상세 `characters[]`(이름·이미지)의 소스이기도 합니다(KNK-1058, [§4-3-1](#4-3-api-계약)) |
+| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable — 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 이미지 이름 `image_name` 컬럼 추가 예정(AI 컴파일 응답은 KNK-1027로 이미 `image_name`을 보냄, [§4-3-9](#4-3-api-계약) 변경 계획). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](#4-3-api-계약)). 스토리 상세 `characters[]`(이름·이미지)의 소스이기도 합니다(KNK-1058, [§4-3-1](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1126, V76) — 이미지 정본이 `story_character_images`로 옮겨가며 `image_url`·`image_name`은 읽지 않는 릴리스 다음에 제거 예정 |
+| 이미지 | `story_character_images` | `Phase 3 · 구현`(V76, KNK-1126) 인물별 이미지 여러 장. `public_id`(UUID) · `character_id`(FK story_characters, `ON DELETE CASCADE`) · `image_name`(varchar 120, `{인물이름}_{접미}`) · `image_url`(TEXT, 서빙 절대 URL) · `sort_order` · `created_at`. `(character_id, image_name)` UNIQUE. V76이 기존 `story_characters.image_url`을 `{이름}_기본` 행으로 백필. 채팅 요청 `character_images[]`와 상세 `characters[].imageUrl`의 소스([§4-3-8](#4-3-api-계약) 스토리 이미지 업로드) |
 | 채팅 | `story_message_versions` | `Phase 1 · 구현` 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](#4-3-api-계약)) |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](#4-7-운영과-관측)) |
 
@@ -1556,6 +1596,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | `Phase 1 · 구현` | 위 두 규칙을 동일 적용 — 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403(KNK-69) |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | `Phase 3 · 구현`(KNK-1131) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | `Phase 3 · 구현`(KNK-1132) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
+| 스토리 이미지 업로드(`POST /stories/{storyId}/images/presign` · `PATCH` `thumbnailObjectKey` · `DELETE …/thumbnail` · `POST·DELETE …/characters/{characterId}/images`) | `Phase 3 · 구현`(KNK-1126) | **회원 소유 스토리만**(게스트 소유는 400). 소유자만, 타인·익명 403. 정지 계정 403([§4-3-8](#4-3-api-계약)) |
 | 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | `Phase 3 · 구현`(KNK-1147) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사 — `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | `Phase 1 · 구현`(KNK-497) | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | `구현`(KNK-401·464) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)) — 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
@@ -1624,7 +1665,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
-| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` | 본문 형식 오류, 필드 검증 실패. `Phase 2 · 구현`(KNK-149) — 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1132) — 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)) |
+| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` | 본문 형식 오류, 필드 검증 실패. `Phase 2 · 구현`(KNK-149) — 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1132) — 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). `Phase 3 · 구현`(KNK-1126) — presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)) |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | `Phase 1 · 구현`(KNK-524) 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다.") — 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 403 | `FORBIDDEN` | `Phase 1 · 구현` 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청 — [§4-5](#4-5-인증과-권한) |
