@@ -16,9 +16,9 @@
 
 | 항목      | 값                                                             |
 | --------- | -------------------------------------------------------------- |
-| 버전      | v0.28                                                           |
+| 버전      | v0.29                                                           |
 | 작성일    | 2026-08-02                                                     |
-| 수정일    | 2026-08-29                                                     |
+| 수정일    | 2026-09-05                                                     |
 | 대상      | 마냑 안드로이드 네이티브 앱 (`Phase 2`)                        |
 | 작성 목적 | 안드로이드 앱의 플랫폼 구현·연동·검수 기준을 정의합니다.       |
 | 기준 코드 | `../manyak-android` (Kotlin, Jetpack Compose)                  |
@@ -175,7 +175,7 @@ Repository 계약과 구현은 분리합니다. ViewModel은 기능 또는 commo
 
 ### 모듈 구조
 
-**KNK-1197(2026-09-05)**에서 기능·기반을 최상위 Gradle 모듈로 이전했습니다. 상세 정본은 [Android 모듈 아키텍처](../planning/android-module-architecture.md), 이동 순서·커밋·실행 검증은 [Android 실행 기록](../../../manyak-android/docs/plans/module-reorganization.md)입니다. 작업 브랜치의 변경이며 병합·배포 완료를 뜻하지 않습니다.
+**KNK-1197(2026-09-05)**에서 기능·기반을 최상위 Gradle 모듈로 이전했습니다. 상세 정본은 [Android 모듈 아키텍처](../planning/android-module-architecture.md), 이동 순서·커밋·실행 검증은 [Android 실행 기록](../../../manyak-android/docs/plans/module-reorganization.md)입니다. 하네스 `docs/KNK-1197-improve-folder-structure`와 Android `refactor/KNK-1197-improve-folder-structure`의 대응 변경이며 병합·배포 완료를 뜻하지 않습니다.
 
 런타임 모듈은 `app`, `common`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `report`, `home`, `chat`, `studio`, `story`, `create`, `my`, `login`, `legal`입니다. 공통 빌드 설정은 included build `build-logic`으로 관리합니다. 이전 core/feature 모듈과 화면 루트 패키지 강제 규칙은 적용하지 않습니다.
 

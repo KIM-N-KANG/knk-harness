@@ -2,6 +2,7 @@
 
 - 작성일: 2026-09-05
 - 작업: KNK-1197
+- 대응 브랜치: 하네스 `docs/KNK-1197-improve-folder-structure`, Android `refactor/KNK-1197-improve-folder-structure`. 이 브랜치의 구조 변경은 `dev` 병합 전 변경으로 구분합니다.
 - 상태: **구현·로컬 검증 완료**. Android 작업 브랜치의 구현이며 아직 병합·배포된 상태를 뜻하지 않습니다.
 - 기준: 하네스 `dev`의 `eaf081c`, Android `refactor/KNK-1197-improve-folder-structure`의 `5ee07c6`.
 - `3-3-android-app.md`에서 위임한 모듈 상세 규칙의 정본: 이 문서. 파일 이동·검증 실행 계획은 [Android 실행 계획](../../../manyak-android/docs/plans/module-reorganization.md)이 소유합니다.
@@ -22,7 +23,7 @@
 
 ## 2. 기준과 현행 스펙의 관계
 
-현행 정본은 [3-3-android-app.md](../product-specs/3-3-android-app.md)이며 현재 `dev`에 있는 내용을 확인했습니다. Android `_project.md`에 남은 초기 구조 PR의 병합 대기 안내보다 이 기준 커밋과 실제 `settings.gradle.kts`를 우선했습니다.
+기준 스펙은 하네스 `dev`의 `eaf081c`에서 확인했습니다. 이번 변경의 정본은 대응 작업 브랜치의 [3-3-android-app.md](../product-specs/3-3-android-app.md)와 이 문서입니다. Android `_project.md`에 남은 초기 구조 PR의 병합 대기 안내보다 이 기준 커밋과 실제 `settings.gradle.kts`를 우선했습니다.
 
 KNK-1197은 중앙 core의 데이터 소유, 화면 루트 패키지 강제, 문자열 전량 core:ui 배치, 계층별 JVM 모듈 규칙을 대체합니다. 화면·사용자 흐름의 구현 상태는 바꾸지 않으며 구조 검증 기록은 Android 실행 계획에서 관리합니다.
 
@@ -231,6 +232,8 @@ SessionRepositoryImpl은 common/domain의 SignupOnboardingWriter를 주입받습
 설계 검토 뒤 수행한 모듈별 빌드·Hilt·테스트·저장 호환성 검증과 기기 확인 범위는 Android 실행 계획의 실행 기록이 소유합니다. 서버 API 계약과 제품 동작을 새로 정의하지 않았습니다.
 
 ## 10. 구현 기록
+
+후속 사용자 요청에 따라 하네스 문서 커밋 `4c3468d`·`c2abefc`를 `docs/KNK-1197-improve-folder-structure` 브랜치로 옮겼습니다. 두 커밋은 그대로 보존했고 로컬 `dev`는 작업 전 `eaf081c`로 복원했습니다. Android의 모듈 커밋은 기존 브랜치에 유지합니다.
 
 Android의 모듈 이전은 한 모듈의 소유 코드·소비자 연결·관련 검증을 하나의 커밋으로 묶었습니다. 기반 모듈과 각 기능을 순차 이전한 뒤 app을 최종 조립했으며, 전환 중 common에 임시로 남겼던 기능 계약도 모두 해당 기능으로 이동했습니다. 최종 모듈 등록에는 core/feature가 없습니다.
 
