@@ -85,7 +85,7 @@
 | `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 이프 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 자동 연결·반응형 변형(V45~46·KNK-548, [§4-3-9](#4-3-api-계약))·초대 코드 입력 개편(V47·KNK-567, [§4-3-7](#4-3-api-계약))·피드백 User-Agent 저장(V43·KNK-528)·채팅 상세 턴 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
 | `Phase 2 · 구현` | Phase 2 범위. 구현 완료 | 공개 스토리 목록·게스트 공개 제한(KNK-149, [§4-3-1](#4-3-api-계약)·[§4-3-8](#4-3-api-계약)), 스토리 좋아요·신고·공개 전환(KNK-1017·1020·1021), 회원 탈퇴(KNK-1019·1053, [§4-3-5](#4-3-api-계약)), 메트릭([§4-7](#4-7-운영과-관측)) — OTLP export 배선(KNK-779)·완성 타이머 거부 outcome 분리(KNK-784). 운영 배선(KNK-781·793)과 **v0.2.7 배포로 2026-08-06 활성화 완료**([`7-deployment.md §7-6`](./7-deployment.md)) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
-| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약)). 프로모션(KNK-1117)·검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
+| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한)). 프로모션(KNK-1117)·검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
 
 ---
 
@@ -223,6 +223,8 @@ graph LR
 | 인증 | `POST /auth/links/reauth` | 계정 연동 재인증(일회용 링크 코드 발급) | 201 | 400·401·403 | 필수 | Phase 1 · 구현 |
 | 인증 | `POST /auth/links/{provider}` | 계정 연동 추가(링크 코드 필요, 본문 없는 201) | 201 | 400·401·403·409 | 필수 | Phase 1 · 구현 |
 | 사용자 | `DELETE /users/me` | 회원 탈퇴(soft delete) | 204 | 401 | 필수 | Phase 2 · 구현 |
+| 사용자 | `PATCH /users/me` | 프로필 부분 수정(닉네임·프로필 프리셋, 보낸 필드만) | 200 | 400·401·403·409 | 필수 | Phase 3 · 구현 |
+| 사용자 | `GET /profile-presets` | 프로필 프리셋 이미지 목록(선택 화면용) | 200 | 401 | 필수 | Phase 3 · 구현 |
 | 사용자 | `GET /users/me/stories` | 내 스토리 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `GET /users/me/chats` | 내 채팅 목록(서버 정본) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 사용자 | `PUT /users/me/push-tokens` | 디바이스 푸시 토큰 등록·갱신(같은 토큰 재등록은 갱신, 멱등) | 204 | 400·401·403 | 필수 | Phase 3 · 구현 |
@@ -1320,7 +1322,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
-| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19). `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `rejoined_at`(timestamptz nullable — 탈퇴 계정의 소셜 신원으로 재가입해 만들어진 계정 표시) · `reward_identity_user_id`(bigint nullable — 계정 단위 1회성 보상의 멱등 키 신원. **NULL이면 자기 자신**이라 기존 회원의 키 문자열이 불변. 자기참조 FK를 걸지 않습니다 — `inviter_user_id`(V27)의 `ON DELETE SET NULL`과 정반대로 **삭제 안정성**이 존재 이유이기 때문입니다, [§4-3-7](#4-3-api-계약)) · `withdrawn_from_status`(varchar(20) nullable — 탈퇴 직전 `status` 보존. 정지 승계 판정용). `Phase 3 · 구현` 컬럼(V73, KNK-1132, 정책 KNK-1129) — `service_push_enabled`(boolean not null default true — 서비스 알림 옵트아웃) · `marketing_push_agreed_at` · `marketing_push_night_agreed_at`(timestamptz nullable — 광고·야간 광고 동의 시각, 철회는 NULL, 재동의는 최초 시각 유지. [§4-3-5](#4-3-api-계약) 푸시 수신 동의) |
+| 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19). `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `rejoined_at`(timestamptz nullable — 탈퇴 계정의 소셜 신원으로 재가입해 만들어진 계정 표시) · `reward_identity_user_id`(bigint nullable — 계정 단위 1회성 보상의 멱등 키 신원. **NULL이면 자기 자신**이라 기존 회원의 키 문자열이 불변. 자기참조 FK를 걸지 않습니다 — `inviter_user_id`(V27)의 `ON DELETE SET NULL`과 정반대로 **삭제 안정성**이 존재 이유이기 때문입니다, [§4-3-7](#4-3-api-계약)) · `withdrawn_from_status`(varchar(20) nullable — 탈퇴 직전 `status` 보존. 정지 승계 판정용). `Phase 3 · 구현`(V75, KNK-1147) — `nickname` 정규화 키(소문자·공백 제거 식)에 유니크 인덱스, 기존 중복은 `#<id>` 접미 백필([§4-5](#4-5-인증과-권한) 프로필 수정). `Phase 3 · 구현` 컬럼(V73, KNK-1132, 정책 KNK-1129) — `service_push_enabled`(boolean not null default true — 서비스 알림 옵트아웃) · `marketing_push_agreed_at` · `marketing_push_night_agreed_at`(timestamptz nullable — 광고·야간 광고 동의 시각, 철회는 NULL, 재동의는 최초 시각 유지. [§4-3-5](#4-3-api-계약) 푸시 수신 동의) |
 | 사용자 | `social_accounts` | 소셜 연동. 유니크 2개 — `(provider, provider_user_id)`(V16, 한 소셜 계정이 두 회원에게 붙는 것을 차단)와 `(user_id, provider)`(`Phase 1 · 구현` V52, KNK-739 — 한 회원에 같은 provider 연동은 하나. 동시 연동 요청 경합의 최종 방어선). `user_id`는 다대일이라 한 사용자가 여러 provider를 연동할 수 있습니다([§4-5](#4-5-인증과-권한) 계정 연동). provider 체크 제약(V16)이 GOOGLE·KAKAO·APPLE·NAVER를 허용. `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `deleted_at`(timestamptz nullable — 탈퇴로 끊긴 연동의 tombstone. 로그인 조회는 `deleted_at IS NULL`만 매칭하고, 재가입·계정 연동은 이 행을 claim해 재사용합니다. 유니크 2개를 그대로 두는 것이 재사용 강제의 전제, [§4-3-5](#4-3-api-계약)) |
 | 사용자 | `device_push_tokens` | `Phase 3 · 구현`(V72, KNK-1131) 회원 기기의 FCM 등록 토큰. `user_id`(FK users, `ON DELETE CASCADE` — 탈퇴는 soft delete라 실제 정리는 서비스) · `token`(varchar 512, **UNIQUE** — 토큰은 설치본 주소라 전역 유일, 재등록=갱신·소유자 이전의 최종 방어선) · `platform`(CHECK `ANDROID`) · `created_at` · `updated_at`(마지막 등록 시각, 상한 축출 기준). `user_id` 인덱스. 게스트 기기는 저장하지 않습니다([§4-3-5](#4-3-api-계약)) |
 | 사용자 | `push_message_templates` | `Phase 3 · 구현`(V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스 — PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now()) · `effective_until`(timestamptz nullable — NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](#4-3-api-계약) 출석 리마인드) |
@@ -1478,13 +1480,39 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 항목 | 상태 | 규칙 |
 | --- | --- | --- |
-| 닉네임 | `구현` | 한국어 형용사+명사 조합 랜덤 생성(예: "몽환적인 이야기꾼") — 풀은 형용사 40 × 명사 40(1,600 조합), 각 토큰 무공백. 50자 초과는 절단으로 방어(재시도 없음), 중복 허용(식별은 `public_id`) |
+| 닉네임 | `구현` | 한국어 형용사+명사 조합 랜덤 생성(예: "몽환적인 이야기꾼") — 풀은 형용사 40 × 명사 40(1,600 조합), 각 토큰 무공백. 50자 초과는 절단으로 방어. `Phase 3 · 구현`(KNK-1147) — 정규화 키가 이미 있으면 최대 5회 재생성 후 `#난수4자리` 접미(명사는 원본 유지 — 프리셋 매핑 키), 중복은 더 이상 허용하지 않음([아래 프로필 수정](#4-5-인증과-권한)) |
 | 프로필 이미지 | `구현` | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 `ProfileImagePresetService`가 자동 배정(KNK-388). `profile_image_url`에 원본 자산 URL(`imageUrlFor(noun)`), `profile_thumbnail_base64`에 48×48 저해상도 인라인 썸네일(`thumbnailBase64For(noun)`)을 저장(후자는 `GET /auth/me` 첫 페인트용으로도 반환 — [§4-3-5](#4-3-api-계약)). 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타 — [§4-3-1](#4-3-api-계약)) |
 | 소셜 클레임 | `구현` | `name`·`picture`를 프로필에 사용하지 않습니다. `email`은 `social_accounts`에만 저장하고 어디서도 읽지 않습니다. Kakao는 동의항목을 요청하지 않아 세 클레임이 애초에 오지 않으며(scope `openid` 단독), 세 값 모두 nullable이라 계약 변경이 없습니다 |
 
 프리셋 배정 도입 전 가입해 Google `name`·`picture`가 저장된 기존 회원의 백필(재발급) 여부는 별도 결정합니다(신규 가입분은 프리셋 배정 적용).
 
-닉네임·프로필 이미지 변경 기능은 Phase 1 범위 밖입니다(백로그).
+닉네임·프로필 이미지 변경은 아래 **프로필 수정** 절(`Phase 3 · 구현`, KNK-1147)입니다.
+
+#### 프로필 수정 — `Phase 3 · 구현`(정책 KNK-1146 확정, 구현 KNK-1147, V75)
+
+회원이 닉네임과 프로필 이미지를 바꾸는 계약입니다. 2026-09-05 결정 기록입니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `PATCH /users/me` | `{ "nickname"?: string, "profileImagePreset"?: string }` — 보낸 필드만 반영, 둘 다 없으면 400 | 200 `MeResponse`(`GET /auth/me`와 같은 스키마) |
+| `GET /profile-presets` | 없음 | 200 `[{ "key": string, "imageUrl": string, "thumbnailBase64": string? }]` — 명사 풀 순서로 고정, 40종 |
+
+**닉네임 규칙**
+
+- 앞뒤 공백을 지운 뒤 **2~20자**. 허용 문자는 완성형 한글·영문·숫자·공백이며, 연속 공백·자모 단독·특수문자·이모지는 400입니다. 명시한 `null`은 **보내지 않은 것과 같습니다** — 어떤 필드도 null로 지워지지 않으며(둘 다 필수값), `{"nickname": null}`처럼 반영할 값이 하나도 없으면 400입니다. 미전송과 null을 구분하는 래퍼는 이득 대비 기계장치가 커서 두지 않습니다.
+- **정규화 유일.** 정규화 키는 소문자화 + 공백 제거이며 이 식에 유니크 인덱스를 겁니다(V75). "홍길동"과 "홍 길동", "Kang"과 "kang"은 같은 이름입니다. 이유는 **공개 스토리 작성자 사칭 방지**([§4-3-1](#4-3-api-계약) 작성자 표시가 닉네임뿐이라 같은 이름이면 구분할 수 없음). 다른 회원과 충돌하면 **409**이고 바디 `code`는 `NICKNAME_TAKEN`([§4-6](#4-6-오류와-예외-처리)). 자기 자신의 현재 닉네임과 정규화 키가 같은 변경(대소문자·공백만 바꿈)은 허용합니다. 동시 변경 경합은 유니크 위반을 같은 409로 변환합니다.
+- **기존 중복 백필.** 랜덤 발급 조합이 1,600개뿐이라 운영에 이미 중복이 있습니다. V75가 유니크 인덱스를 만들기 **전에** 같은 정규화 키 그룹의 두 번째 이후 행(`id` 오름차순, 곧 가입 순)에 `#<id>` 접미를 붙여 확정 유일하게 만듭니다(50자 초과는 앞을 잘라 맞춤). 접미가 붙은 회원은 다음 프로필 수정에서 원하는 이름으로 바꿉니다.
+- **가입 랜덤 발급도 유일해야 합니다.** 발급 시 정규화 키가 이미 있으면 재생성(최대 5회)하고, 그래도 충돌하면 짧은 난수 접미로 빠져나갑니다. 동시 가입의 유니크 위반은 같은 폴백으로 1회 재시도합니다.
+- 변경 주기 제한과 금칙어 필터는 두지 않습니다 — 수요가 없고 신고 경로가 백스톱입니다. 유사 문자 사칭("l"과 "1", 자모 분리)은 유니크로 막을 수 없으므로 신고로 대응합니다.
+
+**프로필 이미지**
+
+- **프리셋 선택만** 허용하고 업로드는 열지 않습니다(Phase 1 이미지 정책 "팀 제작 자산만"과 검수·스토리지 부담 — 위 결정 기록과 동일). 식별자는 가입 배정에 쓰는 **프리셋 명사 키**(40종)이며 없는 키는 400입니다. 반영 시 `profile_image_url`·`profile_thumbnail_base64`를 그 프리셋 값으로 함께 바꿉니다.
+- 닉네임을 바꿔도 이미지는 **자동 재매핑하지 않습니다**. 가입 시 명사 1:1 배정은 초기값일 뿐이고 이후에는 사용자가 고릅니다(위 결정 기록의 "재매핑 정책 필요"를 이렇게 닫음).
+
+**계정 상태·권한.** 인증 필수(게스트 불가). 사용자 행을 잠근 뒤 상태를 재검사합니다 — `SUSPENDED` 403, `DELETED`·사용자 없음 401(푸시 토큰·수신 동의 API와 같은 관례).
+
+**이메일 중복은 처리하지 않습니다.** 계정 식별은 `(provider, provider_user_id)`이고 `email`은 저장만 하고 읽지 않습니다. 유니크를 걸면 카카오(null)·다른 제공자로 각각 가입한 별개 계정·탈퇴 시 `email` 삭제와 충돌합니다. "같은 이메일이면 같은 계정" 정책이 필요해지면 별도 결정입니다(현재는 계정 연동이 명시적).
 
 **결정 기록 — 프로필 이미지 배정 방식(2026-07-08)**
 
@@ -1528,6 +1556,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | `Phase 1 · 구현` | 위 두 규칙을 동일 적용 — 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403(KNK-69) |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | `Phase 3 · 구현`(KNK-1131) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | `Phase 3 · 구현`(KNK-1132) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사 — `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
+| 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | `Phase 3 · 구현`(KNK-1147) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사 — `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | `Phase 1 · 구현`(KNK-497) | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | `구현`(KNK-401·464) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)) — 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
 | 채팅 공유 발급(`POST /chats/{chatId}/shares`) | `Phase 1 · 구현`(KNK-706) | 채팅 상세 조회와 동일 규칙 — 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
@@ -1602,7 +1631,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 404 | `NOT_FOUND` | 리소스 없음·이미 삭제됨·읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드. 응답에 `Allow` 헤더 동봉 |
 | 406 | `NOT_ACCEPTABLE` | Accept 협상 실패 |
-| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `SOCIAL_ACCOUNT_WITHDRAWN` | 이미 스토리를 생성한 간편 제작 진행으로 재생성 시도. `Phase 1 · 구현` — AI 응답 재생성의 `turnId`가 마지막 턴이 아님([§4-3-9](#4-3-api-계약)). `Phase 1 · 구현`(KNK-567) — 초대 코드 입력의 자기 코드 제출(`INVITE_SELF_CODE`)·재제출(`INVITE_ALREADY_REDEEMED`)은 바디 `code`로 구분([§4-3-7](#4-3-api-계약)). `Phase 2 · 구현`(KNK-1053) — 초대자 탈퇴(`INVITE_INVITER_WITHDRAWN`)·초대자 정지(`INVITE_INVITER_UNAVAILABLE`), 탈퇴 계정 tombstone 소셜 계정의 연동 시도(`SOCIAL_ACCOUNT_WITHDRAWN`, [§4-5](#4-5-인증과-권한)) |
+| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 스토리를 생성한 간편 제작 진행으로 재생성 시도. `Phase 1 · 구현` — AI 응답 재생성의 `turnId`가 마지막 턴이 아님([§4-3-9](#4-3-api-계약)). `Phase 1 · 구현`(KNK-567) — 초대 코드 입력의 자기 코드 제출(`INVITE_SELF_CODE`)·재제출(`INVITE_ALREADY_REDEEMED`)은 바디 `code`로 구분([§4-3-7](#4-3-api-계약)). `Phase 2 · 구현`(KNK-1053) — 초대자 탈퇴(`INVITE_INVITER_WITHDRAWN`)·초대자 정지(`INVITE_INVITER_UNAVAILABLE`), 탈퇴 계정 tombstone 소셜 계정의 연동 시도(`SOCIAL_ACCOUNT_WITHDRAWN`, [§4-5](#4-5-인증과-권한)) `Phase 3 · 구현`(KNK-1147) — 다른 회원이 쓰는 정규화 닉네임으로 변경(`NICKNAME_TAKEN`, [§4-5](#4-5-인증과-권한) 프로필 수정) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
 | 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일·선택지 생성 트리거 — [§4-3-3](#4-3-api-계약)) |
