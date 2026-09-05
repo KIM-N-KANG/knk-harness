@@ -235,7 +235,7 @@ SessionRepositoryImpl은 common/domain의 SignupOnboardingWriter를 주입받습
 
 후속 사용자 요청에 따라 하네스 문서 커밋 `4c3468d`·`c2abefc`를 `docs/KNK-1197-improve-folder-structure` 브랜치로 옮겼습니다. 두 커밋은 그대로 보존했고 로컬 `dev`는 작업 전 `eaf081c`로 복원했습니다. Android의 모듈 커밋은 기존 브랜치에 유지합니다.
 
-Android의 모듈 이전은 한 모듈의 소유 코드·소비자 연결·관련 검증을 하나의 커밋으로 묶었습니다. 기반 모듈과 각 기능을 순차 이전한 뒤 app을 최종 조립했으며, 전환 중 common에 임시로 남겼던 기능 계약도 모두 해당 기능으로 이동했습니다. 최종 모듈 등록에는 core/feature가 없습니다.
+Android의 모듈 이전은 한 모듈의 소유 코드·소비자 연결·관련 검증을 하나의 커밋으로 묶었습니다. 기반 모듈과 각 기능을 순차 이전한 뒤 app을 최종 조립했으며, 전환 중 common에 임시로 남겼던 기능 계약도 모두 해당 기능으로 이동했습니다. 최종 모듈 등록에는 core/feature가 없습니다. 등록에서 빠진 뒤에도 작업 트리에 남아 있던 빈 `core/`·`feature/` 디렉터리는 2026-09-05에 삭제해 등록과 폴더가 일치합니다.
 
 [Android 실행 기록](../../../manyak-android/docs/plans/module-reorganization.md)에 전체 검사·릴리스 조립·설치 및 로그인 화면 비교 결과를 기록합니다. 인증 이후 실제 기기 흐름과 사용자 제작 데이터의 기기 재개는 미실행이며, 저장 호환성은 합성 JSON fixture·스키마 비교·단위 테스트로 확인했습니다. 이 범위를 넘어 실제 계정의 모든 흐름을 검증했다고 해석하지 않습니다.
 
