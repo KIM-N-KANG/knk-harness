@@ -24,6 +24,7 @@
 | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 확인 | `docs/product-specs/3-1-client.md` |
 | 웹 라우팅, BFF 프록시·토큰 세션, 브라우저 지원, 웹 검수 기준 확인 | `docs/product-specs/3-2-web-app.md` |
 | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 확인 | `docs/product-specs/3-3-android-app.md` |
+| 안드로이드 모듈 소유권·내부 계층·의존 규칙 확인 | `docs/planning/android-module-architecture.md` (3-3에서 위임) |
 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 확인 | `docs/product-specs/4-backend.md` |
 | AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 확인 | `docs/product-specs/5-ai-server.md` |
 | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 확인 | `docs/product-specs/6-analytics.md` |
