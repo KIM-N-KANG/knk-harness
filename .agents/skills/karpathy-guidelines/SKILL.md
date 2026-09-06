@@ -8,17 +8,17 @@ license: MIT
 
 Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+**Scope:** Preserve the requested outcome and project contracts. Use judgment for routine implementation details.
 
 ## 1. Think Before Coding
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**Make routine decisions from evidence. Surface consequential uncertainty.**
 
 Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
+- Use existing code and documentation to decide routine implementation details. State material assumptions and proceed.
+- Ask when unresolved ambiguity affects product policy, API contracts, or the requested scope. Do not invent missing contracts.
+- Continue work that does not depend on the answer while awaiting clarification.
 - If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
 
 ## 2. Simplicity First
 

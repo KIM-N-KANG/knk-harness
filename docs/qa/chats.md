@@ -32,7 +32,7 @@
 | CHAT-LIST-11 | P0  | 회원 로그인 상태                                             | `/chats` 진입                        | 로컬 ID와 무관하게 `GET /users/me/chats` 서버 목록으로 카드 표시(이관 미발동)                                       | ✅ e2e `chats/chat-list`     | §3-1-6 쓰기·삭제, FE-SCREEN-008 |
 | CHAT-LIST-12 | P1  | 회원, 서버 채팅 없음 + 서버 스토리 있음                      | `/chats` 진입                        | 빈 안내 + "스토리 목록으로 가기" CTA(`/studio`)                                                                     | ✅ e2e `chats/chat-list`     | US-5-4                        |
 | CHAT-LIST-13 | P2  | 세션 판별 중(`loading`)                                      | `/chats` 진입 직후 관찰              | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                   | 수동                         | 구현(`use-created-chats`)     |
-| CHAT-LIST-14 | P1  | 게스트                                                       | `/chats` 헤더 오른쪽 확인             | 제목 오른쪽 끝에 secondary "로그인" 버튼 표시. 탭하면 `/login`으로 이동                                              | ◐ e2e `smoke/navigation`(노출) | §3-2-3 상단 헤더              |
+| CHAT-LIST-14 | P1  | 게스트                                                       | `/chats` 헤더 오른쪽 확인             | 제목 오른쪽 끝에 secondary "로그인" 버튼을 기본 사이즈(높이 40px)로 표시. 탭하면 `/login`으로 이동                                              | ◐ e2e `smoke/navigation`(노출·높이) | §3-2-3 상단 헤더              |
 | CHAT-LIST-15 | P1  | 회원 로그인 상태 또는 세션 판별 중                           | `/chats` 헤더 오른쪽 확인             | 로그인 버튼 없음. 세션 판별 중에도 표시하지 않아 회원에게 버튼이 깜빡이지 않음                                      | ◐ e2e `stories/story-list`(회원 상태만) | §3-2-3 상단 헤더              |
 
 ## CHAT-ENTRY — 채팅 화면 진입·렌더
