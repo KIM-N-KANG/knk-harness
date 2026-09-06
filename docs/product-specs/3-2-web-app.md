@@ -284,7 +284,7 @@ graph LR
 
 2026-09-06 사용자 요청(KNK-1207). 화면·API 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-003](./3-1-client.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**가 소유합니다.
 
-- `StoryDetailCta`의 in-flow CTA 행 맨 왼쪽에 `Button variant="ghost" size="icon-lg"`(48×48px, 아이콘 24px)를 두고 `gap-1`(4px)로 채팅 시작 버튼과 띄웁니다. 채팅 CTA는 `min-w-0 flex-1`로 남은 폭을 채웁니다. 선택 상태는 `aria-pressed`, 요청 중은 `aria-busy`와 `disabled`로 전달합니다.
+- `StoryDetailCta`의 in-flow CTA 행 맨 왼쪽에 `Button variant="ghost" size="icon-lg"`(48×48px, 아이콘 24px)를 두고 `gap-4`(16px)로 채팅 시작 버튼과 띄웁니다. 채팅 CTA는 `min-w-0 flex-1`로 남은 폭을 채웁니다. 선택 상태는 `aria-pressed`, 요청 중은 `aria-busy`와 `disabled`로 전달합니다.
 - 사용자가 제공한 `heart-outline.svg`·`heart-filled.svg`의 path를 `src/components/icons/heart-outline-icon.tsx`·`heart-filled-icon.tsx`에 보존합니다. `currentColor`로 기본 `text-foreground`, 선택 `text-destructive`를 적용하며 hover에서도 선택 색상을 유지합니다.
 - 회원 소유 판별은 상세 `isOwner`, 게스트는 `useCreatedStoryIds`의 로컬 ID로 판단합니다. 세션 로딩·게스트 저장소 초기화 중에는 버튼을 렌더하지 않습니다. 게스트 좋아요 탭은 `StoryDetailCta`의 `isLikeLoginOpen`을 켜 `LoginRequiredSheet`를 표시합니다. `open`으로 일반 로그인 필요 시트를 열고, 체험 한도 `trigger`가 있으면 기존 한도 문구를 사용합니다. 세션이 회원으로 바뀌면 좋아요용 시트를 숨깁니다. 공통 `useSocialLogin`에 현재 상세 pathname을 `redirectTo`로 전달해 복귀 경로를 보존합니다. 시트 닫기는 두 진입점의 열림 상태를 정리합니다.
 - 생성된 `useLikeStory`·`useUnlikeStory`가 기존 `/api` BFF 프록시를 거칩니다. 성공하면 상세 캐시의 `isLiked`·`likeCount`를 갱신하고 상세·오리지널·공개 목록 쿼리를 무효화해 서버 집계와 맞춥니다.

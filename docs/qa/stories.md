@@ -93,7 +93,7 @@
 | STORY-DETAIL-36 | P0 | 내가 만든 스토리(회원 isOwner / 게스트 로컬 ID) | 상세 진입 | 좋아요 버튼 비노출, 좋아요 수 배지는 표시 | ✅ e2e `stories/story-like` | 동상 |
 | STORY-DETAIL-37 | P0 | 게스트, 내가 만들지 않은 스토리 | 좋아요 탭 | API 미호출, FE-SCREEN-003 스토리 좋아요 절의 문구로 로그인 바텀 시트 표시. 카카오·Google 버튼 제공, 닫기·재열기 후 상세 유지. 로그인 요청의 상세 복귀 경로 보존, 진행 중 버튼·시트 해제 잠금, 실패 후 재시도 가능 | ✅ e2e `stories/story-like`·`visual/stories-visual` | 동상 |
 | STORY-DETAIL-38 | P1 | 좋아요 수 0·누락 또는 1,000 이상 | 목록·상세 확인 | 누락은 0, 천 단위 콤마, 턴 수 왼쪽에 같은 크기·질감으로 배치 | ✅ e2e `stories/story-like` | 동상 |
-| STORY-DETAIL-39 | P1 | 미선택·선택 상태, 라이트·다크 테마 | 하단 CTA 확인 | 정본의 아이콘·색상·48px 크기·4px 간격과 배지 아웃라인 하트 유지 | ◐ e2e `stories/story-like`(크기·간격), `visual/stories-visual`(정적 상태) | 동상 |
+| STORY-DETAIL-39 | P1 | 미선택·선택 상태, 라이트·다크 테마 | 하단 CTA 확인 | 정본의 아이콘·색상·48px 크기·16px 간격과 배지 아웃라인 하트 유지 | ◐ e2e `stories/story-like`(크기·간격), `visual/stories-visual`(정적 상태) | 동상 |
 | STORY-DETAIL-40 | P1 | 제작자·생성일이 있는 상세, 라이트·다크 테마 | 끝부분까지 스크롤 → 최하단 → 화면 높이 변경 → 위로 스크롤 | 메타 블록이 나타나기 전부터 CTA 배경이 중간색을 거쳐 부드럽게 메타 블록과 같은 색이 되고 위로 가면 기본색으로 복원. 크기 변경에도 재계산하며 CTA 위치·크기는 스크롤로 변하지 않음. 메타 정보가 없으면 끝에서도 기본색 유지 | ✅ e2e `stories/story-detail-footer`·`visual/stories-visual` | FE-SCREEN-003 웹 하단 CTA 배경, KNK-1207 |
 | STORY-DETAIL-41 | P1 | 탄성 스크롤 지원 브라우저, 라이트·다크 테마 | 상세 최하단에서 더 아래로 당김 → 위로 복귀 | 메타 블록과 CTA 사이에 드러난 빈 영역도 CTA와 같은 색. 일반 본문 배경은 유지하고 최상단으로 복귀하면 스크롤 배경도 기본색 | ◐ e2e `stories/story-detail-footer`(배경색 분리·복원), 네이티브 탄성 동작 수동 | FE-SCREEN-003 웹 하단 CTA 배경, KNK-1207 |
 
