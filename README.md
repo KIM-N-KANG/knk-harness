@@ -99,9 +99,9 @@ git clone <manyak-infra-repository-url>
 
 | 스킬 | 사용하는 상황 | 주요 확인 항목 |
 | --- | --- | --- |
-| `create-branch` | Jira 티켓 번호로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 | Jira 키, 브랜치 태그, `dev` 기준 분기, 워크트리 변경사항 |
+| `create-branch` | Jira 티켓 번호로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 | Jira 키, 브랜치 태그, 최신 `origin/dev` 기준 분기, 워크트리 변경사항 |
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
-| `create-pr` | 현재 브랜치의 변경사항으로 Draft Pull Request를 만들 때 | base `dev`, 기존 PR 여부, PR 제목, PR 본문, 검증 결과 |
+| `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목·본문, 검증 결과 |
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
 | `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
 
@@ -121,7 +121,7 @@ git clone <manyak-infra-repository-url>
 
 ### create-branch
 
-`create-branch`는 가능하면 Atlassian Rovo/Jira MCP로 Jira 이슈를 조회합니다. MCP를 사용할 수 없으면 스킬은 사용자가 제공한 Jira 키와 제목으로 브랜치를 만들 수 있습니다.
+`create-branch`는 대상 저장소에서 실행하며, 새 브랜치는 기본적으로 fetch한 `origin/dev`에서 분기합니다. 원격 접근이 안 되면 로컬 `dev`로 자동 대체하지 않습니다. 사용자가 로컬 기준이나 오프라인 작업을 지정하면 `--base`로 기존 Git ref를 명시합니다. 기존 브랜치 전환은 fetch 없이 처리합니다. 가능하면 Jira 이슈를 조회하고, Jira를 사용할 수 없으면 대화에서 확정된 키와 충분한 작업 맥락으로 진행합니다.
 
 필수:
 
@@ -142,7 +142,7 @@ git clone <manyak-infra-repository-url>
 
 ### create-pr
 
-`create-pr`는 현재 브랜치를 원격에 push하고 GitHub에 Draft Pull Request를 만듭니다. GitHub MCP는 필수가 아니며, 현재 스킬은 GitHub CLI(`gh`)를 사용합니다. PR 본문은 `docs/templates/pull-request/`의 템플릿 중 작업 레포지토리와 변경 유형에 맞는 파일을 참고해 작성합니다.
+`create-pr`는 요청된 변경을 원격에 push하고 Draft PR을 생성하거나 기존 PR에 반영합니다. 기본 base는 `dev`이며 사용자 지정 또는 기존 PR의 base를 존중합니다. 본문·캡처를 준비한 뒤 PR을 생성하고, 확보한 PR URL에서 이미지를 첨부합니다. GitHub CLI(`gh`)를 사용하며, 이미지 첨부에는 로그인된 브라우저가 필요합니다. 본문은 `docs/templates/pull-request/`에서 가장 가까운 템플릿을 골라 변경에 맞게 조정합니다.
 
 필수:
 
