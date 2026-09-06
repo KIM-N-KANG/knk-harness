@@ -290,6 +290,16 @@ graph LR
 - 생성된 `useLikeStory`·`useUnlikeStory`가 기존 `/api` BFF 프록시를 거칩니다. 성공하면 상세 캐시의 `isLiked`·`likeCount`를 갱신하고 상세·오리지널·공개 목록 쿼리를 무효화해 서버 집계와 맞춥니다.
 - `StoryLikeCount`는 흰색 아웃라인 하트와 `StoryTurnCount`와 같은 배지 스타일을 사용하며, 공용 `StoryCard`와 상세의 이미지·placeholder 양쪽에서 턴 수 배지 왼쪽에 `gap-1`(4px)로 배치합니다. 목록은 작은 반투명 블러 배지, 상세는 기존 검정 70% 배지를 따릅니다. 제작 목록 `CreatedStoryCardBody`는 하단 메타에 아웃라인 하트·좋아요 수 → 턴 수 → 제작일 순서로 표시합니다. 기존 `text-foreground-secondary`와 아이콘 크기(일반 14px·축소판 12px)를 공유하며, 항목 내부는 `gap-1`, 항목 사이는 가로 8px·세로 4px입니다. `flex-wrap`으로 지표 단위 줄바꿈을 허용하고 각 지표는 `whitespace-nowrap`로 유지합니다. 옵션 다이얼로그도 같은 본체를 사용합니다.
 
+### 바텀 시트 닫기 버튼 (웹)
+
+2026-09-06 사용자 요청(KNK-1207). 닫기 동작을 보조 버튼으로 간결하게 표시하도록, 닫기 버튼이 있는 바텀 시트는 `Button size="xs"`(높이 24px)·`w-fit self-center`를 사용합니다. 기존 `h-10`·`w-full` 덮어쓰기는 제거합니다.
+
+- 신고 시트(`StoryReportForm`): 기존 버튼 행의 간격 없음 → `gap-1`(4px).
+- 초대 코드 시트 일반 폼(`InviteOnboardingCodeForm`): 기존 `gap-1` → `gap-2`(8px).
+- 초대 코드 시트 저장 실패 후 닫기 재시도: 동일한 xs·내용 너비·가운데 정렬을 적용합니다. 바로 위에는 버튼이 아닌 안내문이 있으므로 안내문 간격은 유지합니다.
+
+신고 시트는 스토리 상세·채팅방·카드의 모든 신고 진입점에서 공유합니다. 전송 중 비활성·닫기 재시도·시트 해제 동작은 각 화면 계약을 유지합니다. 화면 계약은 `3-1-client.md`의 FE-SCREEN-003 스토리 신고·FE-SCREEN-008 신규 가입 온보딩 절이 소유합니다.
+
 ### 법적 콘텐츠 소스 (웹)
 
 서비스 이용약관·개인정보 처리방침의 화면 계약과 "모든 플랫폼 동일 시행일·버전·본문" 동일성 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-010](./3-1-client.md#3-1-3-화면별-스펙)이 소유합니다. 웹의 콘텐츠 정본은 웹 레포 `src/features/legal/content/terms-content.ts`·`privacy-content.ts`이며 페이지가 이를 렌더합니다(초기의 `docs/legal/*.md` 마크다운 초안은 TS 모듈로 정본을 일원화하며 삭제 — KNK-616). Android는 별도 콘텐츠 사본을 두지 않고 `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`WEB_BASE_URL/privacy`를 만들고 `LegalDocumentScreen`의 WebView가 이 웹 정본을 표시합니다. 웹 문서 화면은 뒤로가기·헤더 제목 없이 홈(`/`)으로 가는 마냑 로고 헤더를 사용하며, `/login`과 `/about`의 문서 링크는 원래 화면을 유지한 채 새 브라우저 탭에서 엽니다(KNK-1037). 현재 시행본은 서비스 이용약관 v1.2·개인정보 처리방침 v1.3(2026-09-01)입니다.
