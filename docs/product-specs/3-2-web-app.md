@@ -280,6 +280,16 @@ graph LR
 - PNG 대신 SVG를 씁니다 — 카드에서 쓰는 크기(72×26)가 작아 래스터는 고밀도 화면에서 뭉개지고, 파일도 SVG가 2.6KB로 PNG(35KB)보다 훨씬 작습니다.
 - `next/image`에 `unoptimized`를 붙여 서빙합니다. 벡터라 최적화할 것이 없고, 이미지 최적화기는 기본 설정에서 SVG를 거부합니다(`dangerouslyAllowSVG` 미설정 — 켜지 않습니다).
 
+### 스토리 좋아요 버튼·집계 배지 (웹)
+
+2026-09-06 사용자 요청(KNK-1207). 화면·API 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-003](./3-1-client.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**가 소유합니다.
+
+- `StoryDetailCta`의 in-flow CTA 행 맨 왼쪽에 `Button variant="ghost" size="icon-lg"`(48×48px, 아이콘 24px)를 두고 `gap-1`(4px)로 채팅 시작 버튼과 띄웁니다. 채팅 CTA는 `min-w-0 flex-1`로 남은 폭을 채웁니다. 선택 상태는 `aria-pressed`, 요청 중은 `aria-busy`와 `disabled`로 전달합니다.
+- 사용자가 제공한 `heart-outline.svg`·`heart-filled.svg`의 path를 `src/components/icons/heart-outline-icon.tsx`·`heart-filled-icon.tsx`에 보존합니다. `currentColor`로 기본 `text-foreground`, 선택 `text-destructive`를 적용하며 hover에서도 선택 색상을 유지합니다.
+- 회원 소유 판별은 상세 `isOwner`, 게스트는 `useCreatedStoryIds`의 로컬 ID로 판단합니다. 세션 로딩·게스트 저장소 초기화 중에는 버튼을 렌더하지 않습니다. 게스트 좋아요 탭은 `StoryDetailCta`의 `isLikeLoginOpen`을 켜 `LoginRequiredSheet`를 표시합니다. `open`으로 일반 로그인 필요 시트를 열고, 체험 한도 `trigger`가 있으면 기존 한도 문구를 사용합니다. 세션이 회원으로 바뀌면 좋아요용 시트를 숨깁니다. 공통 `useSocialLogin`에 현재 상세 pathname을 `redirectTo`로 전달해 복귀 경로를 보존합니다. 시트 닫기는 두 진입점의 열림 상태를 정리합니다.
+- 생성된 `useLikeStory`·`useUnlikeStory`가 기존 `/api` BFF 프록시를 거칩니다. 성공하면 상세 캐시의 `isLiked`·`likeCount`를 갱신하고 상세·오리지널·공개 목록 쿼리를 무효화해 서버 집계와 맞춥니다.
+- `StoryLikeCount`는 흰색 아웃라인 하트와 `StoryTurnCount`와 같은 배지 스타일을 사용하며, 공용 `StoryCard`와 상세의 이미지·placeholder 양쪽에서 턴 수 배지 왼쪽에 `gap-1`(4px)로 배치합니다. 목록은 작은 반투명 블러 배지, 상세는 기존 검정 70% 배지를 따릅니다. 제작 목록 `CreatedStoryCardBody`는 하단 메타에 아웃라인 하트·좋아요 수 → 턴 수 → 제작일 순서로 표시합니다. 기존 `text-foreground-secondary`와 아이콘 크기(일반 14px·축소판 12px)를 공유하며, 항목 내부는 `gap-1`, 항목 사이는 가로 8px·세로 4px입니다. `flex-wrap`으로 지표 단위 줄바꿈을 허용하고 각 지표는 `whitespace-nowrap`로 유지합니다. 옵션 다이얼로그도 같은 본체를 사용합니다.
+
 ### 법적 콘텐츠 소스 (웹)
 
 서비스 이용약관·개인정보 처리방침의 화면 계약과 "모든 플랫폼 동일 시행일·버전·본문" 동일성 계약은 [`3-1-client.md §3-1-3` FE-SCREEN-010](./3-1-client.md#3-1-3-화면별-스펙)이 소유합니다. 웹의 콘텐츠 정본은 웹 레포 `src/features/legal/content/terms-content.ts`·`privacy-content.ts`이며 페이지가 이를 렌더합니다(초기의 `docs/legal/*.md` 마크다운 초안은 TS 모듈로 정본을 일원화하며 삭제 — KNK-616). Android는 별도 콘텐츠 사본을 두지 않고 `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`WEB_BASE_URL/privacy`를 만들고 `LegalDocumentScreen`의 WebView가 이 웹 정본을 표시합니다. 웹 문서 화면은 뒤로가기·헤더 제목 없이 홈(`/`)으로 가는 마냑 로고 헤더를 사용하며, `/login`과 `/about`의 문서 링크는 원래 화면을 유지한 채 새 브라우저 탭에서 엽니다(KNK-1037). 현재 시행본은 서비스 이용약관 v1.2·개인정보 처리방침 v1.3(2026-09-01)입니다.

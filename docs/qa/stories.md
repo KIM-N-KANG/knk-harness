@@ -16,7 +16,7 @@
 | ID            | P  | 사전조건                                   | 절차                                      | 기대 결과                                                                                                                                                    | 자동화                                          | 근거                                        |
 | ------------- | -- | ------------------------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ------------------------------------------- |
 | STORY-LIST-01 | P0 | 게스트, 로컬에 스토리 ID 2개 이상          | `/studio` 진입                            | 별도 섹션 제목 없이 제작 헤더 바로 아래에 배치 조회 결과를 1열 가로 카드 목록으로 표시. 로컬 저장 순서(최신 생성순) 유지, 서버가 반환한 순서로 재정렬하지 않음 | ✅ e2e `stories/story-list`                     | US-2-1, §3-1-3 FE-SCREEN-013, KNK-1043       |
-| STORY-LIST-02 | P1 | STORY-LIST-01                              | 카드 구성 확인                            | 목록과 카드 전체 링크가 콘텐츠 폭을 모두 사용하고 각 행은 가로 16px·세로 8px 패딩과 16px 열 간격을 가짐. 왼쪽 폭 128px 3:4 썸네일 자리(placeholder 아이콘), 오른쪽에 제목(최대 2줄)+옵션 버튼·한 줄 소개(최대 2줄)·장르 배지(넘치면 `+N`), 우측 하단에 턴 수(천 단위 콤마)·제작일 표시. 기존 웹 아이콘·시맨틱 글자색 유지 | ✅ e2e `stories/story-list`·`visual/stories-visual` | US-2-1·2-4, §3-1-3, KNK-1012·1043        |
+| STORY-LIST-02 | P1 | STORY-LIST-01                              | 카드 구성 확인                            | 목록과 카드 전체 링크가 콘텐츠 폭을 모두 사용하고 각 행은 가로 16px·세로 8px 패딩과 16px 열 간격을 가짐. 왼쪽 폭 128px 3:4 썸네일 자리(placeholder 아이콘), 오른쪽에 제목(최대 2줄)+옵션 버튼·한 줄 소개(최대 2줄)·장르 배지(넘치면 `+N`), 우측 하단에 좋아요 수·턴 수(천 단위 콤마)·제작일을 순서대로 표시. 좋아요는 아웃라인 하트이며 누락 값은 0. 옵션 다이얼로그 축소판도 같은 순서이고 좁은 폭에서는 지표 단위로 줄바꿈. 기존 웹 아이콘·시맨틱 글자색 유지 | ✅ e2e `stories/story-list`·`visual/stories-visual` | US-2-1·2-4, §3-1-3, KNK-1012·1043        |
 | STORY-LIST-03 | P0 | STORY-LIST-01                              | 카드 탭                                   | 해당 스토리 상세(`/stories/{id}`)로 이동                                                                                                                     | ✅ e2e `stories/story-list`                     | US-2-2                                      |
 | STORY-LIST-04 | P1 | 배치 응답에 `thumbnailUrlSm`이 있는 스토리 | 카드 확인                                 | placeholder 대신 썸네일 이미지 렌더. `null`이면 placeholder 유지                                                                                             | 수동                                            | US-2-7, §3-1-3, 구현(`story-card`)          |
 | STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음              | `/studio` 진입                            | 별도 섹션 제목과 FAB를 숨김. "아직 만든 스토리가 없어요" + "3단계로 간단하게 스토리를 만들어보세요" + "스토리 만들기" CTA(`/studio/story/simple`) 표시 | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3                           |
@@ -79,6 +79,19 @@
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
 | STORY-DETAIL-26 | P1  | 오리지널 목록에 포함된 스토리 ID | 페이지 소스의 `<head>` 확인                        | robots `noindex` 없음. 제목 `스토리 제목 - 마냑`, description = 한 줄 소개, canonical `/stories/{id}`, 오픈그래프 이미지 = 상세 썸네일(없으면 브랜드 이미지). `/sitemap.xml`에 해당 URL 포함 | 수동 | KNK-1183, [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md) 색인 범위, 구현(`generateMetadata`) |
 | STORY-DETAIL-27 | P1  | 사용자 생성 스토리 ID 또는 백엔드 미도달 | 페이지 소스의 robots 메타 확인                     | `noindex, nofollow`. 제목은 서버에서 넣지 않고 클라이언트가 데이터를 받은 뒤 덮어씀. robots.txt는 `/stories/`를 막지 않음 | ✅ e2e `seo/crawler-indexing`(미도달) | KNK-1183, [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md) 색인 범위 |
+
+### 좋아요 검증 (2026-09-06, KNK-1207)
+
+문구·동작 정본은 [`3-1-client.md §3-1-3` FE-SCREEN-003](../product-specs/3-1-client.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**, 배치·크기는 [`3-2-web-app.md §3-2-3`](../product-specs/3-2-web-app.md#3-2-3-라우팅레이아웃공통-셸)의 **스토리 좋아요 버튼·집계 배지 (웹)**를 따릅니다.
+
+| ID | 우선 | 사전 조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| STORY-DETAIL-34 | P0 | 회원, 다른 제작자 스토리 | 좋아요 등록 → 목록 복귀 → 상세 재진입 → 취소 | POST·DELETE 각 1회, 204 후 하트 상태·수 갱신, 목록 수 동기화 | ✅ e2e `stories/story-like` | FE-SCREEN-003 스토리 좋아요 |
+| STORY-DETAIL-35 | P0 | 회원, 등록·취소 요청 지연 후 500 | 좋아요 탭·재탭 시도 | 진행 중 비활성, 중복 요청 없음, 실패 토스트·기존 상태와 수 유지 | ✅ e2e `stories/story-like` | 동상 |
+| STORY-DETAIL-36 | P0 | 내가 만든 스토리(회원 isOwner / 게스트 로컬 ID) | 상세 진입 | 좋아요 버튼 비노출, 좋아요 수 배지는 표시 | ✅ e2e `stories/story-like` | 동상 |
+| STORY-DETAIL-37 | P0 | 게스트, 내가 만들지 않은 스토리 | 좋아요 탭 | API 미호출, FE-SCREEN-003 스토리 좋아요 절의 문구로 로그인 바텀 시트 표시. 카카오·Google 버튼 제공, 닫기·재열기 후 상세 유지. 로그인 요청의 상세 복귀 경로 보존, 진행 중 버튼·시트 해제 잠금, 실패 후 재시도 가능 | ✅ e2e `stories/story-like`·`visual/stories-visual` | 동상 |
+| STORY-DETAIL-38 | P1 | 좋아요 수 0·누락 또는 1,000 이상 | 목록·상세 확인 | 누락은 0, 천 단위 콤마, 턴 수 왼쪽에 같은 크기·질감으로 배치 | ✅ e2e `stories/story-like` | 동상 |
+| STORY-DETAIL-39 | P1 | 미선택·선택 상태, 라이트·다크 테마 | 하단 CTA 확인 | 정본의 아이콘·색상·48px 크기·4px 간격과 배지 아웃라인 하트 유지 | ◐ e2e `stories/story-like`(크기·간격), `visual/stories-visual`(정적 상태) | 동상 |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 

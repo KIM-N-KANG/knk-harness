@@ -509,6 +509,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 한도 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
 - 게스트 한도는 화면 횡단 모달 바텀 시트지만 기존 대시보드 호환을 위해 `Dialog` 이벤트 이름을 유지합니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하고 로그인 CTA·닫기까지 수집합니다.
+- 좋아요의 일반 로그인 필요 바텀 시트는 체험 한도 초과가 아니므로 `client_guestLimitDialog_*`를 보내지 않습니다. `LoginRequiredSheet`를 재사용하더라도 해당 이벤트는 기존 한도 `trigger`가 있는 경우에만 수집합니다(2026-09-06 사용자 요청, KNK-1207).
 - 회원 이프 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend.md §4-3-7`](./4-backend.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
