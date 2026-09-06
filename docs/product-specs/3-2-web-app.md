@@ -290,6 +290,12 @@ graph LR
 - 생성된 `useLikeStory`·`useUnlikeStory`가 기존 `/api` BFF 프록시를 거칩니다. 성공하면 상세 캐시의 `isLiked`·`likeCount`를 갱신하고 상세·오리지널·공개 목록 쿼리를 무효화해 서버 집계와 맞춥니다.
 - `StoryLikeCount`는 흰색 아웃라인 하트와 `StoryTurnCount`와 같은 배지 스타일을 사용하며, 공용 `StoryCard`와 상세의 이미지·placeholder 양쪽에서 턴 수 배지 왼쪽에 `gap-1`(4px)로 배치합니다. 목록은 작은 반투명 블러 배지, 상세는 기존 검정 70% 배지를 따릅니다. 제작 목록 `CreatedStoryCardBody`는 하단 메타에 아웃라인 하트·좋아요 수 → 턴 수 → 제작일 순서로 표시합니다. 기존 `text-foreground-secondary`와 아이콘 크기(일반 14px·축소판 12px)를 공유하며, 항목 내부는 `gap-1`, 항목 사이는 가로 8px·세로 4px입니다. `flex-wrap`으로 지표 단위 줄바꿈을 허용하고 각 지표는 `whitespace-nowrap`로 유지합니다. 옵션 다이얼로그도 같은 본체를 사용합니다.
 
+### 스토리 상세 CTA 배경 연결 (웹)
+
+`useStoryFooterBackground`는 실제 스크롤 컨테이너와 마지막 메타 블록의 마운트를 기준으로 연결됩니다. 스크롤 끝까지 남은 거리가 메타 블록 높이의 2배(최소 160px)보다 작아지는 구간에서 공유 배경을 `--background` → `--muted`로 `smoothstep` 곡선(시작·끝은 느리게)과 `color-mix(in oklab, …)`을 사용해 보간하고, 최하단에서는 메타 블록과 같은 `--muted`를 사용합니다. CTA와 스크롤 컨테이너(`main`)는 `bg-inherit`로 배경을 공유합니다. 실제 스크롤 콘텐츠인 히어로·정보 래퍼에만 `bg-background`를 두고 기존 `scroll-fade-b`를 유지합니다. 최하단에서 더 당겨 탄성 스크롤의 빈 영역이 드러나도 CTA와 같은 색이며, 일반 본문 배경은 바뀌지 않습니다. 메타 블록이 없으면 기본 배경입니다.
+
+수동 스크롤은 passive listener와 `requestAnimationFrame`으로 처리하며 React 스크롤 상태를 만들지 않습니다. `ResizeObserver`가 컨테이너·본문·메타 블록 크기 변경을 반영하고 언마운트 시 관찰·listener·예약 프레임을 해제합니다. CTA의 위치·크기·클릭 동작은 그대로입니다(2026-09-06 사용자 요청, KNK-1207; 화면 계약: `3-1-client.md` FE-SCREEN-003 웹 하단 CTA 배경).
+
 ### 바텀 시트 닫기 버튼 (웹)
 
 2026-09-06 사용자 요청(KNK-1207). 닫기 동작을 보조 버튼으로 간결하게 표시하도록, 닫기 버튼이 있는 바텀 시트는 `Button size="xs"`(높이 24px)·`w-fit self-center`를 사용합니다. 기존 `h-10`·`w-full` 덮어쓰기는 제거합니다.
