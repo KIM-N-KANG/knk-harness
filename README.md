@@ -77,25 +77,23 @@ git clone <manyak-infra-repository-url>
 
 ## 개발 레포지토리에 하네스 연결
 
-현재 워크트리에서 하네스의 공통 진입점은 `CLAUDE.md`입니다. 각 개발 레포지토리 루트에는 도구별 지침 파일을 두고, 작업을 시작하기 전에 `../knk-harness/CLAUDE.md`를 먼저 읽게 만듭니다.
+하네스의 공통 진입점과 지침 정본은 `AGENTS.md`입니다. 하네스와 웹 레포지토리의 `CLAUDE.md`는 같은 디렉터리의 `AGENTS.md`를 가리키는 Claude Code 호환 링크입니다. 지침을 수정할 때는 정본을 수정하고 링크는 유지합니다.
 
-### CLAUDE.md
+### AGENTS.md
 
-Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md` 맨 위에 아래 내용을 둡니다. 레포지토리별 추가 규칙은 이 블록 아래에 작성합니다.
+개발 레포지토리의 `AGENTS.md` 맨 위에 아래 내용을 둡니다. 레포지토리별 추가 규칙은 이 블록 아래에 작성합니다. Claude Code를 함께 쓰는 레포지토리는 `CLAUDE.md`가 이 파일을 가리키도록 연결합니다.
 
 ```markdown
 # 기본 지침
 
-작업을 시작하기 전에 다음 문서를 먼저 확인하세요.
-
-- `../knk-harness/CLAUDE.md`
+작업 시작 시 `../knk-harness/AGENTS.md`를 읽으세요. 이후에는 작업과 관련된 문서와 스킬만 확인하세요.
 
 ## <레포별 독립 작업 규칙>
 ```
 
 ## 팀 공용 스킬
 
-공용 스킬은 `.claude/skills/` 아래에 있습니다. 스킬을 추가하거나 수정할 때는 해당 스킬의 `SKILL.md`와 필요한 보조 파일을 이 경로에서 변경합니다.
+공용 스킬의 정본은 `.agents/skills/` 아래에 있습니다. 스킬을 추가하거나 수정할 때는 해당 스킬의 `SKILL.md`와 필요한 보조 파일을 이 경로에서 변경합니다. `.claude/skills/`의 스킬별 항목은 정본을 가리키는 Claude Code 호환 링크입니다.
 
 현재 제공하는 스킬은 아래와 같습니다.
 
@@ -116,7 +114,7 @@ Claude Code를 쓰는 개발 레포지토리에서는 `CLAUDE.md` 맨 위에 아
 | Git | 전체 | `git status --short --branch` | Git 저장소인지 먼저 확인합니다. |
 | Python 3 | `create-branch` | `python3 --version` | 브랜치 이름 생성 스크립트를 실행할 수 없습니다. |
 | GitHub CLI | `create-pr` | `gh auth status` | PR 생성 전에 GitHub 로그인을 설정합니다. |
-| GitHub push 권한 | `create-pr` | `git push -u origin HEAD` | 권한이 없으면 PR을 만들 수 없습니다. |
+| GitHub 원격 설정 | `create-pr` | `git remote -v` | 인증·원격 설정 확인은 push 권한을 보장하지 않습니다. 실제 push는 요청된 PR 생성 절차에서 수행하고, 실패하면 원인을 보고합니다. |
 | Atlassian Rovo/Jira MCP | `create-branch` | Codex/Claude에서 Jira 이슈 조회 도구를 사용할 수 있는지 확인 | Jira 제목을 자동 조회할 수 없으므로 사용자가 이슈 제목을 제공해야 합니다. |
 
 ## 스킬별 외부 의존성
