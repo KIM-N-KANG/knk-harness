@@ -4,3 +4,5 @@
 # Agent-local settings (per-developer, not shared)
 .claude/settings.local.json
 .agents/settings.local.json
+
+__pycache__/

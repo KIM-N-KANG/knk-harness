@@ -66,23 +66,17 @@ def branch_exists(branch: str) -> bool:
     return proc.returncode == 0
 
 
-def resolve_base(base: str) -> str:
-    local = run_git(["show-ref", "--verify", "--quiet", f"refs/heads/{base}"], check=False)
-    if local.returncode == 0:
-        return base
+def resolve_base(base: str | None) -> str:
+    if base is None:
+        run_git(["fetch", "origin", "refs/heads/dev:refs/remotes/origin/dev"])
+        return "refs/remotes/origin/dev"
 
-    remote = run_git(
-        ["show-ref", "--verify", "--quiet", f"refs/remotes/origin/{base}"],
-        check=False,
-    )
-    if remote.returncode == 0:
-        return f"origin/{base}"
-
-    raise ValueError(f"Base branch {base!r} was not found locally or at origin/{base}.")
+    run_git(["rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}"])
+    return base
 
 
 def is_dirty() -> bool:
-    return bool(git_output(["status", "--porcelain", "-uno"]))
+    return bool(git_output(["status", "--porcelain", "--untracked-files=normal"]))
 
 
 def build_branch(ticket: str, tag: str, title: str, max_slug_length: int) -> str:
@@ -94,13 +88,12 @@ def build_branch(ticket: str, tag: str, title: str, max_slug_length: int) -> str
 
 def create_branch(
     branch: str,
-    base: str,
+    base: str | None,
     allow_dirty: bool,
     checkout_existing: bool,
 ) -> Result:
     git_output(["rev-parse", "--show-toplevel"])
     dirty = is_dirty()
-    base_ref = resolve_base(base)
 
     if dirty and not allow_dirty:
         raise ValueError(
@@ -111,10 +104,11 @@ def create_branch(
     if branch_exists(branch):
         if checkout_existing:
             run_git(["checkout", branch])
-            return Result(branch, created=False, checked_out=True, base_ref=base_ref, dirty=dirty)
+            return Result(branch, created=False, checked_out=True, base_ref=None, dirty=dirty)
         raise ValueError(f"Branch already exists: {branch}")
 
-    run_git(["checkout", "-b", branch, base_ref])
+    base_ref = resolve_base(base)
+    run_git(["checkout", "--no-track", "-b", branch, base_ref])
     return Result(branch, created=True, checked_out=True, base_ref=base_ref, dirty=dirty)
 
 
@@ -129,7 +123,10 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Short branch title. Prefer English; Jira summaries may be shortened.",
     )
-    parser.add_argument("--base", default="dev", help="Base branch to create from. Default: dev.")
+    parser.add_argument(
+        "--base",
+        help="Use this existing Git ref without fetching. Default: fetch and use origin/dev.",
+    )
     parser.add_argument(
         "--max-slug-length",
         type=int,
