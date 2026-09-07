@@ -20,13 +20,13 @@
 
 | 항목      | 값                                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v1.5                                                                                                                                                                |
+| 버전      | v1.6                                                                                                                                                                |
 | 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-08-22                                                                                                                                                          |
+| 수정일    | 2026-09-07                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
 | 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
-| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `760b4d3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다. 개발 환경(ECS Fargate)은 `../manyak-terraform`의 `terraform/envs/dev`·`modules/compute-ecs` 기준입니다([PR #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17), KNK-825·826·827). 2026-08-14 기준 코드 작성과 `plan`까지 완료했고 **`apply`는 하지 않았습니다** |
+| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `ad2871b3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다. 개발 환경(ECS Fargate)은 `../manyak-terraform`의 `terraform/envs/dev`·`modules/compute-ecs` 기준입니다([PR #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17), KNK-825·826·827). 2026-08-14 기준 코드 작성과 `plan`까지 완료했고 **`apply`는 하지 않았습니다** |
 
 ## 7-1. 목적과 범위
 
@@ -85,7 +85,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | `manyak-server`    | 백엔드 이미지 빌드, 운영 server 배포, API 헬스 스모크 | `.github/workflows/docker-image.yml`, `Dockerfile`, `application-prod.yml`          |
 | `manyak-ai`        | AI 이미지 빌드, 운영 AI 배포, AI 헬스 게이트          | `.github/workflows/docker-image.yml`, `Dockerfile`, `src/api/v1/health.py`          |
 | `manyak-web`       | Next.js 이미지 빌드, GHCR dev/release 이미지 발행     | `.github/workflows/docker-image.yml`, `.github/workflows/release.yml`, `Dockerfile` |
-| `manyak-android`   | Android 앱 소스·Gradle 빌드 소유, PR·push CI(`./gradlew check`·`./gradlew assembleDebug`) | `.github/workflows/android-ci.yml`, `app/build.gradle.kts`                          |
+| `manyak-android`   | Android 앱 소스·Gradle 빌드 소유, PR·push CI(`./gradlew check`·`./gradlew assembleDebug`), 로컬 release 번들 빌드와 Play 트랙 업로드 | `.github/workflows/android-ci.yml`, `app/build.gradle.kts`                          |
 
 ### 책임 경계
 
@@ -95,7 +95,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - 로컬 통합 실행은 `manyak-infra`가 GHCR `dev` 이미지를 pull해 실행합니다. 서비스 소스코드는 이 레포에서 빌드하지 않습니다.
 - 개발 AWS 환경도 `manyak-terraform`이 소유합니다(`Phase 2 · 구현`). 운영과 같은 레포·같은 모듈을 쓰고 state만 분리합니다(S3 backend key `dev/terraform.tfstate`, 버킷은 운영과 공유). 별도 인프라 레포를 만들지 않습니다 — 모듈 하나를 고칠 때 PR이 둘로 갈라지는 비용을 피하기 위해서입니다.
 - `manyak-infra`는 개발 AWS 환경이 생겨도 유지합니다. 둘은 대체 관계가 아니며 경계는 [§7-8](#7-8-로컬통합-실행)에 있습니다.
-- `manyak-android`는 현재 CI(정적 검사·단위 테스트·debug APK 조립)까지만 코드로 정의합니다. Play Store 배포, 앱 서명, release 빌드·AAB, 내부 테스트 트랙, 운영 배포·롤백 방식은 코드에 근거가 없어 미정입니다([§7-11](#7-11-미정주의-항목)).
+- `manyak-android`는 **CI(정적 검사·단위 테스트·debug APK 조립)까지만 코드로 정의합니다.** release 번들 빌드와 Play 트랙 업로드는 workflow가 아니라 사람이 밟는 절차이며, 빌드·서명 기준은 [§7-5](#7-5-이미지-빌드와-cicd), 릴리스 절차는 [§7-7](#7-7-배포-절차), 검수·중단 기준은 [§7-9](#7-9-검수-관측-롤백)가 소유합니다.
 
 ## 7-3. 환경 구분과 배포 단위
 
@@ -105,6 +105,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 | 개발 `dev`(AWS)   | 클라이언트가 붙는 공용 개발 API, 배포 파이프라인 리허설 | `manyak-server`, `manyak-ai` | **GHCR `dev`**(재현이 필요하면 `<short-sha>`) | AWS ECS Fargate (`Phase 2 · 구현`)    |
 | 개발 이미지 `dev` | 통합 실행과 개발 검증   | `manyak-server`, `manyak-ai`, `manyak-web` | GHCR `dev`, `<short-sha>`                     | `manyak-infra` Compose 또는 개별 실행 |
 | 웹 릴리스 이미지  | 프론트엔드 버전 릴리스  | `manyak-web`                               | GHCR `{version}`, `{major}.{minor}`, `latest` | 현재 운영 호스팅 리소스는 미정        |
+| Android 앱 릴리스 | 스토어 배포             | `manyak-android` AAB 1개                   | Play 트랙 내부 테스트 → 비공개 테스트 → 프로덕션, 단위는 `versionCode` | Google Play와 사용자 기기 |
 | 로컬·통합         | 전체 스택 수동 검증     | server, web, ai, postgres, redis           | GHCR `dev`, Docker Hub DB·Redis               | 개발자 Docker Compose                 |
 
 개발 `dev`(AWS)는 개발 이미지 `dev`를 **그대로 소비합니다.** 앞은 AWS에서 상시 도는 환경이고 뒤는 GHCR에 올라가는 이미지 태그이며, 개발 환경은 별도 레지스트리를 두지 않고 기존 CI가 만드는 GHCR `dev` 태그를 당겨 씁니다. 따라서 `manyak-server`·`manyak-ai` 레포에는 개발 환경을 위한 변경이 없습니다.
@@ -113,6 +114,7 @@ Jira 원문은 사내 Jira가 소유합니다. 이 문서는 GitHub PR 제목·�
 - GHCR 패키지가 비공개라 태스크 정의에 `repositoryCredentials`가 필요합니다. `read:packages` PAT를 담는 전용 시크릿(`manyak/dev/ghcr-pull`)을 앱 시크릿과 분리해 둡니다.
 - `dev` 태그는 가변이라 태스크 정의만으로는 어느 커밋이 도는지 알 수 없습니다. 특정 커밋을 고정해 재현할 때는 `<short-sha>` 태그를 씁니다(GHCR이 둘 다 발행).
 - 배포 트리거는 **`dev` 병합 시 GitHub Actions 자동 배포**입니다(KNK-829). 각 레포 워크플로가 `:dev` 승격 후 개발 ECS 서비스에 새 배포를 걸고 배포 완료·컨테이너 health·엔드포인트까지 확인합니다([§7-7](#7-7-배포-절차)).
+- Android는 **빌드 타입이 환경 축이고 스토어 트랙은 배포 축입니다.** `debug`는 개발 `dev`(`https://dev-api.manyak.app`), `release`는 운영을 봅니다. 세 트랙은 모두 같은 release 빌드를 쓰므로 **내부 테스트도 운영 서버를 때립니다** — 트랙을 늘려도 서버 환경은 갈라지지 않습니다.
 
 ### 공개 엔드포인트
 
@@ -382,7 +384,7 @@ EFS를 붙일 때 함께 필요한 것은 세 가지입니다.
 
 Web Sentry는 Vercel 호스팅 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성화되어 운영 이벤트를 수집하고 있습니다(GHCR release workflow·Dockerfile에는 여전히 이 build arg가 없어 컨테이너 경로는 비활성).
 
-### `manyak-android` CI
+### `manyak-android` CI와 릴리스 빌드
 
 컨테이너 이미지가 없는 앱 레포입니다. GitHub Actions(`.github/workflows/android-ci.yml`)가 `dev`·`main` 대상 PR·push와 수동 실행(workflow_dispatch)에서 다음을 수행합니다.
 
@@ -390,7 +392,13 @@ Web Sentry는 Vercel 호스팅 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활�
 | ------------------------ | ------------------------------------------------------------------------------------------------ |
 | PR·push -> `dev`, `main` | Temurin Java 25 설정(Gradle daemon toolchain `gradle-daemon-jvm.properties`와 일치) → `./gradlew check`(ktlint·detekt·Android lint·단위 테스트) → `./gradlew assembleDebug`(debug APK 조립), 리포트 아티팩트 업로드 |
 
-배포 파이프라인(Play Store, 서명, release 빌드·AAB, 내부 테스트 트랙)은 정의되어 있지 않으며 미정입니다([§7-11](#7-11-미정주의-항목)).
+release 번들(AAB)은 **CI가 만들지 않습니다.** 릴리스 담당자의 로컬에서 `./gradlew bundleRelease`로 만들어 Play Console에 직접 업로드합니다. 절차는 [§7-7](#7-7-배포-절차)에 있습니다.
+
+- **CI에 서명키를 두지 않습니다.** 릴리스가 2주에 한 번이고 올리는 사람이 한 명인 동안에는 Play Publisher API 서비스 계정과 GitHub Secrets 키스토어를 세팅·유지하는 비용이 수동 업로드보다 큽니다. 키를 CI에 올리면 유출면도 늘어납니다. 자동화는 릴리스가 주 1회를 넘거나 업로드 담당이 둘 이상이 될 때 다시 판단합니다.
+- **서명키 보관.** 앱은 Play 앱 서명을 쓰므로 배포 인증서는 Google이 보관하고 팀이 가진 것은 업로드 키뿐입니다. 업로드 키스토어는 레포 밖에 두고 `local.properties`의 `RELEASE_STORE_FILE`·`RELEASE_STORE_PASSWORD`·`RELEASE_KEY_ALIAS`·`RELEASE_KEY_PASSWORD`로 주입합니다. **키 파일과 비밀번호는 암호화 백업 2곳에 둡니다** — 잃으면 Google 지원을 통한 업로드 키 재설정을 거쳐야 하고 그동안 업데이트를 올릴 수 없습니다. 키 값과 실제 경로는 이 문서에도 레포에도 적지 않습니다.
+- **release BuildConfig 주입값**도 `local.properties`에서 읽습니다(`GOOGLE_SERVER_CLIENT_ID_RELEASE`·`KAKAO_NATIVE_APP_KEY_RELEASE`·`AMPLITUDE_API_KEY_RELEASE`). 비어 있어도 **빌드는 성공하고 해당 제공자만 런타임에 실패**하므로 번들을 만들기 전에 세 값이 모두 채워졌는지 확인합니다. 운영 `BASE_URL`은 `app/build.gradle.kts`에 고정값으로 들어 있습니다.
+- **`google-services.json`은 레포에 커밋합니다**(KNK-1179). CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌리므로 파일이 없으면 모든 PR이 섭니다. 값은 어차피 APK에 실려 나가고 보호는 Firebase 보안 규칙과 API 키 제한이 맡습니다. Firebase 프로젝트는 **서버 FCM과 같은 하나**를 쓰고 환경별로 나누지 않습니다 — `applicationId`가 빌드 타입 간 같고 debug는 `app/src/debug/AndroidManifest.xml`의 `firebase_crashlytics_collection_enabled=false`로 애초에 수집하지 않습니다.
+- **release는 현재 R8 미적용**(`optimization.enable = false`)이라 Crashlytics 매핑 파일이 없습니다. 켜는 시점과 조건은 [§7-11](#7-11-미정주의-항목)에 있습니다.
 
 Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 때만** 이벤트를 전송합니다(KNK-714). `NODE_ENV`만 보면 로컬 프로덕션 빌드(`pnpm build && pnpm start`)의 이벤트까지 `production` 환경으로 유입되기 때문입니다. 배포 여부는 `NEXT_PUBLIC_VERCEL_ENV`의 존재로 판별하며, 이 값은 대시보드의 시스템 환경 변수 노출 설정에 의존하지 않도록 `next.config.ts`가 `VERCEL_ENV`를 빌드 시점에 직접 인라인합니다. 로컬에서 연동을 확인할 때는 `NEXT_PUBLIC_SENTRY_FORCE_ENABLE=true`로 강제 활성화합니다.
 
@@ -582,6 +590,24 @@ AI 모델 세 값은 공용 `.env`가 아니라 `/opt/manyak/.env.ai`에 기록�
 2. release tag `v*`를 push하면 `release.yml`이 GHCR release 이미지를 빌드합니다.
 3. 현재 이 문서 기준으로 운영 웹 호스팅 반영 절차는 코드화되어 있지 않습니다. 별도 호스팅 플랫폼 또는 인프라 문서가 정해지면 이 절차를 갱신합니다.
 
+### Android 앱 릴리스
+
+**스토어에 올라가는 번들은 `main`에서만 만듭니다.** v1.0.2까지는 이 규칙이 없어 `versionCode 3`을 `dev`에서 바로 빌드해 올렸고, 그 결과 스토어에 있는 코드가 `main`에 없었습니다(그래서 `main`은 2 → 4로 건너뜁니다). 어느 코드가 사용자 손에 있는지 `main`으로 답할 수 없게 되므로 반복하지 않습니다.
+
+1. `release/v{버전}` 브랜치를 `origin/dev`에서 만들고 `app/build.gradle.kts`의 `versionName`·`versionCode` 두 줄만 커밋합니다.
+2. 같은 브랜치로 PR 둘을 냅니다 — `main`(`Release` 태그)과 `dev`(버전 동기화). 릴리스 커밋이 `dev`에도 돌아가야 다음 릴리스의 분기 기준이 어긋나지 않습니다.
+3. `main` 병합 후 **그 커밋에서** `./gradlew bundleRelease`를 실행합니다.
+4. `jarsigner -verify`가 `jar verified.`를 내는지, 번들 매니페스트의 `versionCode`·`versionName`이 의도한 값인지 확인합니다([§7-9](#7-9-검수-관측-롤백)).
+5. 같은 AAB를 **내부 테스트 트랙**에 올리고 실기기에서 로그인과 핵심 흐름을 완주합니다.
+6. 통과하면 **같은 AAB를 비공개 테스트 → 프로덕션으로 승격합니다.** 트랙마다 다시 빌드하지 않습니다 — 다시 빌드하면 검증한 번들과 출시하는 번들이 달라집니다.
+7. 프로덕션은 단계적 출시로 시작하고 [§7-9](#7-9-검수-관측-롤백)의 중단 기준을 관찰합니다.
+
+버전 규칙:
+
+- `versionCode`는 업로드할 때마다 +1이고 재사용할 수 없습니다. 심사 반려로 같은 내용을 다시 올릴 때도 올립니다.
+- `versionName`은 사용자용입니다. 버그 수정은 patch, 기능 추가는 minor로 올립니다.
+- 프로덕션 트랙은 Play 개인 개발자 계정 정책상 **비공개 테스트 12명이 14일 연속 옵트인**한 뒤에야 열립니다. 그 전까지 릴리스는 내부·비공개 테스트에서 끝납니다.
+
 ### 개발 환경 최초 구축 — `Phase 2 · 구현`(KNK-827, 2026-08-14 완료)
 
 시크릿이 빈 상태로 태스크가 뜨면 조용한 재시도 루프에 빠지므로 **2단계로 나눠 올립니다.** `desired_count` 기본값이 `0`인 이유입니다.
@@ -725,6 +751,7 @@ docker compose ps
 | server        | `./gradlew test`, Docker build workflow, 운영 health smoke                                                       |
 | AI            | `pytest`, Docker build workflow, 새 이미지·모델 설정 기동 검사, AI healthcheck, 모델 변경 시 해당 기능 실제 API 1건 |
 | web           | `pnpm typecheck`, `pnpm lint`, `pnpm test`, Playwright E2E·비주얼 회귀, Docker build workflow, tag release build |
+| android       | `./gradlew check`·`assembleDebug`(PR CI), `./gradlew bundleRelease` 성공, `jarsigner -verify`, 번들 매니페스트 `versionCode`·`versionName` 대조, 내부 테스트 트랙 실기기 스모크(로그인·핵심 흐름) |
 | infra Compose | `docker compose config`, 필요 시 `docker compose up -d`와 health 확인                                            |
 
 ### 운영 헬스체크
@@ -752,6 +779,7 @@ docker compose ps
 - Terraform 변경은 `terraform plan` 리뷰 후 적용해야 하며, 적용 후 대상 리소스, SSM 문서, ALB target group health 중 변경 영향이 있는 항목을 확인해야 합니다.
 - 시크릿 변경은 해당 값을 소비하는 서비스 재기동까지 완료해야 반영된 것으로 봅니다.
 - `web` release는 GHCR release 이미지 태그가 발행되어야 합니다. 운영 호스팅 반영은 현재 스펙상 별도 외부 절차로 확인합니다.
+- Android 릴리스는 `main` 커밋에서 만든 AAB가 내부 테스트 트랙 실기기 스모크를 통과하고, 승격한 트랙에 **같은 번들**이 올라가야 합니다. 프로덕션은 단계적 출시를 시작한 시점이 아니라 100% 도달과 중단 기준 미발동까지를 완료로 봅니다.
 - 롤백 기준 이미지 태그 또는 DB 복구 계획을 배포 전 확인해야 합니다. Flyway 마이그레이션은 전진 전용으로 취급합니다.
 
 ### 관측
@@ -761,6 +789,7 @@ docker compose ps
 - AI는 Sentry와 request correlation middleware를 사용합니다.
 - AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-ai-server.md §5-6`](./5-ai-server.md)) 미충족 시 no-op입니다. 프로덕션은 2026-07-23 활성화했습니다.
 - web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 운영 Sentry 수집은 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성 상태입니다(§7-5). GHCR release 이미지에는 여전히 주입 경로가 없어 컨테이너 배포 경로는 비활성입니다.
+- Android는 Crashlytics(release 빌드의 크래시와 API 30+ ANR)와 Amplitude를 사용합니다. 크래시 리포트에는 직전 화면·행동 이벤트와 로그인 사용자 식별자가 붙고 debug 빌드는 수집하지 않습니다([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)). **앱 버전으로 끊어 보는 대시보드는 아직 없습니다**([§7-11](#7-11-미정주의-항목)).
 - `X-Manyak-Request-Id`, `X-Manyak-Session-Id`, `X-Manyak-Device-Id-Hash` 계열은 server와 AI 관측 연결에 사용합니다.
 - 운영 Swagger UI와 OpenAPI 문서는 비공개입니다. 해당 경로는 운영에서 404여야 합니다.
 
@@ -783,6 +812,20 @@ docker compose ps
 - **Langfuse 웹에 트레이스가 유입되는지**(실호출 1건 — 과금 발생, 실행 전 승인).
 - **server 컨테이너에는 `AI_LANGFUSE_*`가 없는지** — 배선이 공용 `.env`가 아니라 export로만 넘기는지 확인하는 점검입니다.
 
+### Android 단계적 출시와 중단 기준
+
+프로덕션은 단계적 출시로 시작합니다. 비율은 20% → 100%이고 각 단계를 최소 하루 둡니다. 초기 설치 수에서는 5%처럼 잘게 쪼갠 비율이 표본을 만들지 못하므로, 실제 안전장치는 비율을 늘리는 게 아니라 **중단 레버가 열린 상태로 며칠 두는 것**입니다.
+
+다음 중 하나라도 걸리면 출시를 중단하고 수정판을 준비합니다. 기준은 올리기 **전에** 확정합니다 — 정해두지 않으면 애매한 상태로 100%까지 갑니다.
+
+| 신호                                            | 중단 기준                         |
+| ----------------------------------------------- | --------------------------------- |
+| Crashlytics 크래시 없는 사용자 비율             | 직전 버전 대비 1%p 이상 하락      |
+| Crashlytics 신규 이슈                           | 세션의 0.5% 이상에서 발생         |
+| Amplitude 로그인 성공률·스토리 생성 완주율      | 직전 버전 대비 하락이 관찰될 때   |
+
+세 기준 모두 **앱 버전별 비교**가 전제입니다. 지금은 그 대시보드가 없으므로 첫 프로덕션 출시 전에 만들어야 기준이 성립합니다([§7-11](#7-11-미정주의-항목)).
+
 ### 롤백
 
 | 상황                     | 기준 롤백                                                                                                                                                                      |
@@ -791,6 +834,7 @@ docker compose ps
 | AI 이미지 문제           | ECR의 직전 정상 `<short-sha>` 이미지를 `AI_IMAGE_OVERRIDE`로 지정해 `bash /opt/manyak/deploy.sh`를 실행합니다. 배포 스크립트가 OpenAI·Langfuse 키를 다시 읽어 AI에 전달하고 `--wait`로 health를 확인합니다. `/opt/manyak/.env` 수정 뒤 Compose를 직접 실행하면 export-only 키가 비므로 금지합니다. |
 | AI 모델 설정 문제        | 변경 전에 보관한 직전 모델명을 해당 Parameter Store 값에 다시 쓰고 `manyak-prod-ai-model-reload`를 재실행합니다. 값을 잃었으면 Parameter 이력에서 이전 버전을 확인합니다. 기동 검사 실패 시 기존 `.env.ai`와 AI 컨테이너는 유지됩니다. |
 | main release 문제        | revert PR 또는 이전 정상 커밋을 release합니다. 단, 이미 실행된 Flyway 마이그레이션은 전진 전용으로 취급합니다.                                                                 |
+| Android 앱 릴리스 문제   | **롤백이 없습니다.** 단계적 출시 중이면 Play Console에서 출시를 중단(halt)해 아직 받지 않은 사용자만 막습니다. 이미 설치된 사용자에게는 효과가 없으므로 되돌리는 유일한 수단은 **더 높은 `versionCode`의 수정판**입니다. 코드를 revert하더라도 `versionCode`는 내리지 않고 올립니다. 이미 배포된 클라이언트를 강제로 업데이트시킬 수단은 현재 없습니다([§7-11](#7-11-미정주의-항목)). |
 | DB 마이그레이션 문제     | 보상 마이그레이션 또는 RDS snapshot 복구가 필요합니다. 파괴적 스키마 변경은 배포 직전 snapshot을 남깁니다.                                                                     |
 | Terraform user-data 문제 | Terraform revert apply가 EC2 교체를 유발할 수 있습니다. 다운타임 창을 잡고 plan을 먼저 확인합니다.                                                                             |
 
@@ -877,7 +921,7 @@ ECR은 태그가 붙은 이미지를 레포지토리별 최신 10개만 보존�
 | 항목                      | 상태      | 처리 기준                                                                                                                                                                           |
 | ------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web 운영 호스팅           | 미정      | 현재 Terraform에는 web hosting, CDN, web container 배포가 정의되어 있지 않습니다. 호스팅 플랫폼이 정해지면 배포 절차와 도메인 소유를 추가합니다.                                    |
-| Android 배포 파이프라인   | 미정      | `manyak-android`는 PR·push CI(`./gradlew check`·`assembleDebug`)만 코드로 정의합니다. Play Store 배포, 앱 서명, release 빌드·AAB, 내부 테스트 트랙, 운영 배포·롤백 방식은 결정·구현 후 §7-2·§7-5와 함께 갱신합니다. Crashlytics 쪽 선행 항목 둘은 KNK-1179에서 해소했습니다 — `google-services.json`은 **레포에 커밋**하고(CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌려 파일이 없으면 모든 PR이 서고, 값은 어차피 APK에 실려 나갑니다) **Firebase 프로젝트는 서버 FCM과 같은 하나를 써 환경별로 나누지 않으며**(`applicationId`가 빌드 타입 간 같고 debug는 애초에 수집하지 않습니다), debug 수집 차단은 `app/src/debug/AndroidManifest.xml`의 `firebase_crashlytics_collection_enabled=false`가 맡습니다. 남은 결정에는 release R8 매핑 업로드와 내부 release test crash·non-fatal 검수를 반드시 포함합니다([`3-3-android-app.md §3-3-6·§3-3-7`](./3-3-android-app.md), [`6-analytics.md §6-6-4`](./6-analytics.md)). |
+| Android 배포 파이프라인   | 결정      | 절차를 [§7-5](#7-5-이미지-빌드와-cicd)(빌드·서명·키 보관)·[§7-7](#7-7-배포-절차)(릴리스 절차와 버전 규칙)·[§7-9](#7-9-검수-관측-롤백)(검수·단계적 출시·중단 기준·롤백)에 정의했습니다(KNK-1217). CI 자동 업로드는 **의도적으로 도입하지 않습니다** — 근거와 재검토 조건은 §7-5에 있습니다. 남은 항목 셋입니다. ① **release R8 미적용** — `optimization.enable = false`라 Crashlytics 매핑 파일이 없습니다. 켜는 릴리스는 그 변경만 담고 내부 테스트에서 전체 흐름 완주와 매핑 업로드를 함께 확인합니다. **프로덕션 승격과 같은 릴리스에서 켜지 않습니다** — R8은 Kotlin serialization·Retrofit·Room의 리플렉션 경로를 조용히 깨고 결과를 크래시로만 알게 됩니다([`3-3-android-app.md §3-3-6·§3-3-7`](./3-3-android-app.md), [`6-analytics.md §6-6-4`](./6-analytics.md)). ② **앱 버전 헤더 부재** — API 요청에 앱 버전이 실리지 않아 서버가 요청의 클라이언트 버전을 모르고, 이미 배포된 클라이언트에는 강제 업데이트를 걸 수단이 없습니다. 강제 업데이트는 필요해진 뒤에 심을 수 없으므로 프로덕션 승격 전 릴리스에 `X-App-Version` 헤더만 먼저 넣고, 차단 화면과 최소 지원 버전 판정은 실제로 계약을 깰 때 만듭니다. ③ **앱 버전별 관측 대시보드 부재** — §7-9의 중단 기준을 볼 수단이 아직 없습니다. 첫 프로덕션 출시 전에 Crashlytics 크래시 없는 사용자 비율과 Amplitude 로그인 성공률을 버전별로 비교하는 차트를 만듭니다. |
 | Terraform apply 자동화    | 미정      | 현재 `manyak-terraform`에는 GitHub Actions apply workflow가 없습니다. 운영 apply는 수동 절차와 plan 리뷰를 기준으로 합니다.                                                         |
 | Web Sentry DSN 주입       | 부분 해결 | Vercel 호스팅 경로는 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성입니다(§7-5, KNK-714). 다만 GHCR release 이미지 빌드에는 여전히 build arg가 없어, 컨테이너 배포를 쓰게 되면 주입 방식을 정해야 합니다. |
 | 단일 EC2·단일 AZ compute  | 전환 예정 | EC2와 RDS는 MVP 단일 AZ 중심입니다. ECS Fargate 전환 방향은 KNK-825에서 정했고, 개발 환경을 먼저 Fargate로 구축해 검증한 뒤 운영을 전환합니다. 전환 전까지 운영은 단일 EC2·단일 AZ로 유지합니다. multi-AZ HA는 여전히 별도 결정입니다. |
