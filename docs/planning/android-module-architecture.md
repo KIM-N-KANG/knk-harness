@@ -13,13 +13,13 @@
 
 사용자와 합의한 방향은 다음과 같습니다.
 
-- 최상위: `app`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `common`, `chat`, `create`, `home`, `studio`, `my`, `story`, `login`, `legal`, `report`.
+- 최상위: `app`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `common`, `chat`, `create`, `home`, `studio`, `my`, `story`, `login`, `legal`, `report`. KNK-1133(2026-09-08)에서 화면 기능 `notification`을 추가합니다.
 - `build-logic`은 공통 빌드 플러그인을 제공하는 included build입니다. `gradle/`은 Wrapper·버전 카탈로그 디렉터리입니다.
 - `entity`, `domain`, `data`, `presentation` 및 `chat/list` 같은 하위 기능은 **패키지**입니다. 각각을 Gradle 모듈로 만들지 않습니다.
 - 실제 코드가 없는 계층, 단순 Repository 위임 UseCase, 각 기능의 일괄 `api`/`impl` 모듈 분리는 만들지 않습니다.
 - 이번 계획의 구현은 구조 변경입니다. API·사용자 흐름·UI·분석 이벤트·저장 형식·인증 정책 변경을 섞지 않습니다.
 
-코드 검토에서 확인한 네 신고 화면의 공유 업무는 `report`가 소유합니다(§6). 런타임 모듈은 16개이며, `build-logic`은 별도 included build입니다.
+코드 검토에서 확인한 네 신고 화면의 공유 업무는 `report`가 소유합니다(§6). 런타임 모듈은 16개에 `notification`을 더해 17개이며, `build-logic`은 별도 included build입니다.
 
 ## 2. 기준과 현행 스펙의 관계
 
@@ -51,6 +51,7 @@ manyak-android/
 ├── story/                      # 상세·시작 설정·이미지 뷰어
 ├── login/                      # 로그인 화면
 ├── legal/                      # 공용 웹 문서 화면
+├── notification/               # 푸시 토큰 등록·알림 수신·수신 동의 설정(KNK-1133~1135)
 └── report/                     # 공유 신고 업무
 ```
 
@@ -106,7 +107,7 @@ manyak-android/
 | analytics | common |
 | auth | common, network |
 | report | common, network, designsystem, analytics |
-| 화면 기능 8개 | 필요한 common·designsystem·analytics·navigation·auth; data에서 network; 신고 소비 화면만 report |
+| 화면 기능 9개 | 필요한 common·designsystem·analytics·navigation·auth; data에서 network; 신고 소비 화면만 report. `notification`도 같은 상한이며 report는 쓰지 않음 |
 | app | 실제 조립하는 모든 모듈 |
 
 ```mermaid
@@ -157,6 +158,7 @@ graph TD
 | 계정 연동·탈퇴 인증 처리 | auth | my/profile·withdrawal의 UI는 공개 auth/domain 계약 사용 |
 | 피드백 | my/feedback | 기능 내부 계약·구현 |
 | 신고 | report | 공용 시트·상태·신고 계약, 다른 스토리 조회 동작은 노출하지 않음 |
+| 푸시 토큰 등록·알림 수신·수신 동의 | notification | app의 세션 종료 조정자에는 notification/domain의 등록기 닫기·토큰 삭제 계약만, 루트에는 권한 요청 컴포저블만 공개. `FirebaseMessagingService`는 이 모듈 매니페스트에 선언하고 google-services 플러그인은 app에 남김(§8). 다른 화면 기능은 알림을 직접 알지 않음([`3-3-android-app.md §3-3-4`](../product-specs/3-3-android-app.md) 푸시 토큰 등록) |
 
 `CreationProgressAccess`에는 읽기뿐 아니라 **폐기**도 필요합니다. StudioViewModel이 현재 record를 관찰하고 clear()를 호출하므로, 요약에는 기존 단계 구분·완성 중 여부·재개 위치가 들어가고 관찰·폐기 결과가 계약에 남아야 합니다. 전체 생성 명령·캐릭터·추가 정보·영속 페이로드는 create가 소유합니다. 요약 단계에서 분석 이벤트의 기존 stage 구분도 보존합니다.
 
@@ -245,3 +247,4 @@ Android의 모듈 이전은 한 모듈의 소유 코드·소비자 연결·관�
 - StorySummary와 기존 StorySummaryDto·StoryAuthorDto는 home/studio 및 상세의 실제 공유 타입이므로 common에 남깁니다. common에는 업무 API·Repository 구현을 두지 않습니다.
 - CreationProgressAccess는 진행 요약 관찰·폐기를 공개하고, CreationProgressSummary는 단계·재개 지점과 계산된 완성 중 여부만 담습니다. 전체 제작 입력·명령·Room 행은 create가 소유합니다.
 - common/domain의 SignupOnboardingWriter를 auth가 호출하고 my가 구현합니다. 전체 초대 안내 Repository는 my/invite가 소유합니다.
+- KNK-1133(2026-09-08): 푸시 알림을 app의 패키지가 아니라 화면 기능 모듈 `notification`으로 둡니다. 토큰 등록·수신 표시·수신 동의 화면이 세 티켓에 걸친 한 기능이고, composition root에 업무 코드를 두면 다음 기능도 같은 자리에 쌓이기 때문입니다. `checkModuleArchitecture`의 화면 기능 목록에 추가합니다.

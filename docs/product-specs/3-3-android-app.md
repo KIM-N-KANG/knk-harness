@@ -178,7 +178,7 @@ Repository 계약과 구현은 분리합니다. ViewModel은 기능 또는 commo
 
 **KNK-1197(2026-09-05)**에서 기능·기반을 최상위 Gradle 모듈로 이전했습니다. 상세 정본은 [Android 모듈 아키텍처](../planning/android-module-architecture.md), 이동 순서·커밋·실행 검증은 [Android 실행 기록](../../../manyak-android/docs/plans/module-reorganization.md)입니다. 하네스 `docs/KNK-1197-improve-folder-structure`와 Android `refactor/KNK-1197-improve-folder-structure`의 대응 변경이며 병합·배포 완료를 뜻하지 않습니다.
 
-런타임 모듈은 `app`, `common`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `report`, `home`, `chat`, `studio`, `story`, `create`, `my`, `login`, `legal`입니다. 공통 빌드 설정은 included build `build-logic`으로 관리합니다. 이전 core/feature 모듈과 화면 루트 패키지 강제 규칙은 적용하지 않습니다.
+런타임 모듈은 `app`, `common`, `auth`, `network`, `analytics`, `navigation`, `designsystem`, `report`, `home`, `chat`, `studio`, `story`, `create`, `my`, `login`, `legal`이고, KNK-1133부터 화면 기능 `notification`(푸시 토큰·알림 수신·수신 동의, §3-3-4 푸시 토큰 등록)이 더해집니다. 공통 빌드 설정은 included build `build-logic`으로 관리합니다. 이전 core/feature 모듈과 화면 루트 패키지 강제 규칙은 적용하지 않습니다.
 
 chat은 목록·채팅방, create는 키워드·스토리라인·추가 정보, my는 프로필·이프·초대·문의·탈퇴·라이선스 패키지로 구분합니다. 내부 계층을 추가 Gradle 모듈로 나누지 않으며 app이 화면 이동·DI·세션 종료를 조립합니다.
 
@@ -1324,7 +1324,7 @@ API 사용 계약([`3-1-client.md §3-1-7`](./3-1-client.md#3-1-7-api-연동에�
 
 앱이 FCM 등록 토큰을 발급받아 서버에 맡기고, 로그아웃 때 이 기기의 토큰을 지우는 계약입니다. 서버 계약(`PUT`·`DELETE /users/me/push-tokens`, 멱등 upsert·회원당 기기 10대·같은 토큰 재등록 시 소유자 이전)은 [`4-backend.md §4-3-5`](./4-backend.md#4-3-api-계약) 디바이스 푸시 토큰이 소유합니다. 알림 표시·채널·탭 진입은 KNK-1134, 수신 동의 설정 화면(`push-settings`)은 KNK-1135가 소유합니다. KNK-1134가 반드시 만족해야 할 이전 계정 알림 차단 조건은 이 절에 둡니다. 엔드포인트·본문·상태 코드는 [dev Swagger](https://dev-api.manyak.app/v3/api-docs)(2026-09-08 확인)로 대조했습니다.
 
-**스택과 소유.** Firebase Cloud Messaging(`firebase-messaging`)을 Crashlytics와 같은 BOM·같은 Firebase 프로젝트로 씁니다 — `google-services.json`은 이미 레포에 있고 환경을 나누지 않습니다([`7-deployment.md §7-5`](./7-deployment.md)). Google Analytics for Firebase는 여전히 추가하지 않습니다(§3-3-2 결정 기록). 코드는 **`app`의 `push` 패키지**가 소유합니다 — `FirebaseMessagingService` 구현(매니페스트 선언), 앱 스코프 등록기, 토큰 API 셋입니다. 화면이 없고 등록기가 세션 상태(auth)·인증 클라이언트(network)·Firebase를 함께 알아야 하므로 composition root가 맞습니다([모듈 아키텍처 §8](../planning/android-module-architecture.md) — Firebase 배선은 app 중심). 수신 동의 API와 화면은 KNK-1135에서 `my`의 패키지로 둡니다.
+**스택과 소유.** Firebase Cloud Messaging(`firebase-messaging`)을 Crashlytics와 같은 BOM·같은 Firebase 프로젝트로 씁니다 — `google-services.json`은 이미 레포에 있고 환경을 나누지 않습니다([`7-deployment.md §7-5`](./7-deployment.md)). Google Analytics for Firebase는 여전히 추가하지 않습니다(§3-3-2 결정 기록). 코드는 **새 화면 기능 모듈 `notification`**이 소유합니다(2026-09-08 결정, [모듈 아키텍처 §3·§5](../planning/android-module-architecture.md)). 이번 티켓에서는 `FirebaseMessagingService` 구현(모듈 매니페스트 선언)·앱 스코프 등록기·토큰 API·권한 요청 컴포저블이 들어가고, 알림 표시·채널·탭 진입(KNK-1134)과 수신 동의 API·설정 화면(KNK-1135)도 같은 모듈의 패키지로 늘립니다. `app`에 두지 않는 이유는 알림이 세 티켓에 걸쳐 화면까지 갖는 한 기능이라서입니다 — composition root에 업무 코드를 두기 시작하면 다음 기능도 같은 자리에 쌓입니다. 허용 의존은 다른 화면 기능과 같습니다(common·designsystem·navigation·analytics·auth, data에서 network). `app`은 세션 종료 조정자에서 `notification/domain`의 등록기 닫기·토큰 삭제 계약을 호출하고 루트 컴포저블에서 권한 요청 컴포저블을 붙이며, google-services 플러그인은 `app`에 남습니다(모듈 아키텍처 §8). `checkModuleArchitecture`의 화면 기능 목록에 `notification`을 추가합니다.
 
 **등록 경로는 하나입니다**(`MUST`). 앱 스코프 등록기가 세션 상태를 관찰하다가 **`회원`으로 바뀔 때마다** `FirebaseMessaging.getToken()`으로 현재 토큰을 읽어 `PUT /users/me/push-tokens`(`platform: ANDROID`)를 보냅니다. 로그인 직후와 토큰이 있는 앱 시작이 모두 이 전이 하나로 덮입니다. `onNewToken`은 현재 상태가 `회원`일 때만 같은 등록을 부르고, 아니면 무시합니다 — 다음 `회원` 전이가 `getToken()`으로 새 토큰을 다시 읽습니다.
 
