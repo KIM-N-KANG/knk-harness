@@ -85,7 +85,7 @@
 | `Phase 1 · 구현`(2026-07 반영) | Phase 1 범위. 서버 dev 구현 완료 | 이관 1회 잠금(V36)·이관 시도 상한(B19 완화, V38)·재생성 버전 이력(V37)·체험 한도 5·1·5(B8)·삭제 소유권 검증·게스트-회원 교차 접근 차단·채팅 배치 열람 필터·보상 이프 만료 FIFO(V39)·세션 부트스트랩 응답 확장·프로필 썸네일 동봉·정지 계정 집행·스토리 읽기 가시성(KNK-401·464)·게스트 한도 회원 공유(V40)·프로필 프리셋 배정(KNK-388)·시작 설정 복수화·와이어 개편(V42·KNK-515)·엔딩·주요 사건·로어북 런타임 반영(V41·KNK-520~523)·초대 보상 진행 표시(KNK-513)·서버 분석 이벤트 발행(KNK-514)·402 사유 코드 구분(KNK-524)·썸네일 자동 연결·반응형 변형(V45~46·KNK-548, [§4-3-9](#4-3-api-계약))·초대 코드 입력 개편(V47·KNK-567, [§4-3-7](#4-3-api-계약))·피드백 User-Agent 저장(V43·KNK-528)·채팅 상세 턴 `reachedEnding` 노출(KNK-527) — [§4-8](#4-8-검수-체크리스트) |
 | `Phase 2 · 구현` | Phase 2 범위. 구현 완료 | 공개 스토리 목록·게스트 공개 제한(KNK-149, [§4-3-1](#4-3-api-계약)·[§4-3-8](#4-3-api-계약)), 스토리 좋아요·신고·공개 전환(KNK-1017·1020·1021), 회원 탈퇴(KNK-1019·1053, [§4-3-5](#4-3-api-계약)), 메트릭([§4-7](#4-7-운영과-관측)) — OTLP export 배선(KNK-779)·완성 타이머 거부 outcome 분리(KNK-784). 운영 배선(KNK-781·793)과 **v0.2.7 배포로 2026-08-06 활성화 완료**([`7-deployment.md §7-6`](./7-deployment.md)) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
-| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한))·스토리 이미지 업로드(KNK-1126, V76, [§4-3-8](#4-3-api-계약))·프로모션 푸시(KNK-1117, V77). 검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
+| `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한))·스토리 이미지 업로드(KNK-1126, V76, [§4-3-8](#4-3-api-계약))·프로모션 푸시(KNK-1117, V77)·스토리 검색(KNK-1141, OpenSearch, [§4-3-1](#4-3-api-계약)). 검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
 
 ---
 
@@ -185,6 +185,7 @@ graph LR
 | 도메인 | 메서드·경로 | 설명 | 성공 | 주요 실패 | 인증 | 상태 |
 | --- | --- | --- | --- | --- | --- | --- |
 | 스토리 | `GET /stories` | 공개 스토리 목록(커서 페이지네이션, `?sort`·`?limit`·`?cursor`) | 200 | 400 | 불필요 | Phase 2 · 구현 |
+| 스토리 | `GET /stories/search` | 공개 스토리 검색(질의 `q`, OpenSearch nori) | 200 | 400·503 | 불필요 | Phase 3 · 구현 |
 | 스토리 | `POST /stories/batch` | 공개 ID 목록으로 스토리 카드 조회 | 200 | 400 | 선택 | MVP |
 | 스토리 | `GET /stories/{storyId}` | 스토리 상세 조회 | 200 | 404 | 선택 | MVP |
 | 스토리 | `DELETE /stories/{storyId}` | 스토리 소프트 삭제 | 204 | 403·404 | 선택 | MVP |
@@ -325,6 +326,39 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **인물 목록의 범위 — `Phase 2 · 계획`(KNK-1058, 2026-08-31 결정).** 상세의 `characters[]`는 **이름과 이미지만** 싣습니다. `story_characters`에는 외형 7필드(성별·나이·체형·얼굴·머리·복장·visual identity)도 있지만 썸네일·인물 이미지 재생성 재료라 상세에 노출하지 않고, **인물별 설명 필드는 아예 없습니다** — 인물 소개에 해당하는 텍스트는 `story_settings.character_setting` 통글 한 덩어리여서 인물별로 쪼갤 근거가 없습니다. 인물 카드마다 소개를 붙이려면 컴파일 응답에 인물별 설명을 더해 저장하는 별도 작업이 필요하고, 그때도 기존 스토리는 재컴파일 없이는 채울 수 없습니다. 인물 공개 식별자(`public_id`)도 노출하지 않습니다 — 이름·이미지만 쓰는 화면에는 필요 없고, 인물 단위 API가 생기는 시점에 더합니다.
 
 **`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([`3-1-client.md §3-1-6`](./3-1-client.md)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다(`Phase 1 · 구현`). 404 판정(형식 오류·순차 정수·부재·이미 삭제 — 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69 — 채팅 삭제 동일).
+
+#### 스토리 검색 — `Phase 3 · 구현`(정책 KNK-1140 확정, 구현 KNK-1141)
+
+공개 스토리를 질의로 찾습니다. 2026-09-07 결정 기록입니다.
+
+**`GET /stories/search`** — 인증 불필요, 요청자 신원을 쓰지 않습니다(목록과 동일).
+
+| 쿼리 | 기본값 | 규칙 |
+| --- | --- | --- |
+| `q` | 필수 | 앞뒤 공백 제거 후 **2~100자**. 빈 값·1자·100자 초과는 400 |
+| `limit` | 20 | `[1, 50]` clamp(목록과 동일) |
+| `cursor` | — | 이전 응답의 `nextCursor`. 형식이 깨졌거나 **다른 `q`의 커서**면 400 |
+
+응답은 목록과 같은 `{items: StorySummaryResponse[], nextCursor: string | null}`이며 카드도 같은 `StorySummaryResponse`입니다. 빈 결과는 200 + 빈 배열. 검색 저장소가 설정되지 않은 환경(로컬 기본)은 **503**("검색이 설정되지 않았습니다.").
+
+- **저장소는 OpenSearch입니다.** 기존 로그 도메인(`manyak-logs`, [`7-deployment.md`](./7-deployment.md))에 인덱스 `stories-{env}`(`stories-dev` · `stories-prod`)를 얹습니다. 별도 도메인·`pg_trgm`은 쓰지 않습니다 — 형태소 검색과 관련도 정렬이 필요하고, 학습 목적도 있습니다. **인덱스는 파생 사본이고 정본은 PostgreSQL입니다.** 검색 결과와 DB가 잠깐 어긋나는 것을 수용하며, 어긋나면 재색인으로 복구합니다.
+- **인덱스 문서.** 검색과 카드에 필요한 필드만 넣습니다: `publicId`(문서 id) · `title` · `oneLineIntro` · `genres[]` · `characterNames[]` · `thumbnailUrlSm` · `author{id, nickname}` · `turnCount` · `likeCount` · `createdAt` · **`visible`**(PUBLISHED ∧ PUBLIC ∧ 미삭제 ∧ 회원 소유 — 노출 조건 넷을 색인 시점에 계산). 설정 본문·엔딩·채팅은 넣지 않습니다.
+- **분석기는 nori**(Amazon OpenSearch 내장, 플러그인 설치 없음). `title`·`oneLineIntro`·`characterNames`는 `text` + nori(품사 필터로 조사·어미 제거, lowercase), `genres`는 `keyword`. 동의어 사전은 두지 않습니다.
+- **질의.** `multi_match`(`title^3`, `oneLineIntro`, `genres`, `characterNames`) + `filter: visible = true`. 필터는 점수에 영향이 없고 캐시됩니다. 정렬은 **관련도(BM25) 우선, 동률은 `createdAt` 최신, 그다음 `publicId`**. 사용자 정렬 전환은 없습니다.
+- **커서.** OpenSearch `search_after`에 마지막 문서의 `[점수, createdAt, publicId]`를 실어 다음 페이지를 받습니다. 커서에는 `q`의 해시를 함께 넣어 다른 질의의 커서를 거부합니다(목록의 "정렬 종류가 다르면 400"과 같은 취지).
+- **색인 동기화.** 스토리 저장(간편·일반)·수정·공개 전환·삭제·좋아요 수 변경 시 **커밋 뒤** 그 스토리 한 건을 다시 색인합니다(`@TransactionalEventListener(AFTER_COMMIT)` + `@Async` — 피드백·푸시와 같은 관례). 문서 id가 publicId라 같은 스토리는 덮어씁니다. 비공개 전환·삭제도 삭제가 아니라 `visible=false`로 갱신합니다. **색인 실패는 로그만 남기고 스토리 저장을 막지 않습니다.** 큐·재시도는 두지 않습니다.
+- **재색인 러너.** 전체 스토리를 DB에서 읽어 `_bulk`로 밀어 넣는 진입점을 둡니다(초기 적재·복구용, 프로파일 또는 설정 토글로 1회 실행). 인덱스가 없으면 매핑을 만들고 시작합니다.
+- **서버 인증.** 태스크 역할 IAM 매핑(SigV4)입니다 — FireLens 로그 쓰기와 같은 방식([`7-deployment.md`](./7-deployment.md)). OpenSearch 세분 접근 제어에 역할 `manyak-search-{env}`(`stories-{env}*` crud·create_index, `cluster_composite_ops`)를 만들고 태스크 롤 ARN을 backend role로 매핑합니다. 시크릿이 없고, dev IAM 정책(`es:ESHttp*`)은 FireLens가 이미 부여했습니다. 클라이언트는 `opensearch-java` + `AwsSdk2Transport`.
+- **설정.** `MANYAK_OPENSEARCH_ENDPOINT`(비어 있으면 검색 503·색인 no-op — FCM과 같은 "미설정이면 비활성" 관례)와 인덱스 이름 `MANYAK_OPENSEARCH_STORY_INDEX`([§4-7](#4-7-운영과-관측)).
+- **테스트.** 통합 테스트는 클라이언트를 대체해 질의 JSON·필터·커서·400을 고정하고, 실제 nori 동작은 Testcontainers OpenSearch로 별도 클래스 한두 건만 둡니다(컨텍스트 예산).
+
+**결정 기록 — 저장소 선택(2026-09-07, KNK-1140)**
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| PostgreSQL `pg_trgm` 부분 일치 | 인프라 추가 없이 시작할 수 있지만 형태소 분석("이야기꾼의"에서 "이야기꾼")과 관련도 정렬이 안 됩니다. 검색 학습 목적과도 맞지 않습니다 |
+| 검색 전용 OpenSearch 도메인 | 월 약 $62 고정비가 하나 더 생깁니다. 현 규모에서 로그 도메인(단일 노드)에 인덱스를 얹는 것으로 충분하고, 부하가 보이면 그때 뗍니다 |
+| 마스터 계정 basic auth | 시크릿이 하나 늘고 서버가 로그 인덱스까지 지울 수 있는 권한을 갖습니다. IAM 매핑이 최소 권한입니다 |
 
 #### 스토리 좋아요 — `Phase 2 · 구현`(KNK-1017, V6x)
 
@@ -1377,6 +1411,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 사용자 | `users` | 계정. `public_id`(UUID) · `nickname` · `profile_image_url`(nullable) · `profile_thumbnail_base64`(nullable, 목록·미리보기·첫 페인트용 48×48 저해상도 인라인) · `status`. `Phase 1 · 구현` 컬럼 — `migrated_at`(timestamptz nullable, V36 — 이관 성공 시 잠금 기록) · `migration_attempts`(int not null default 0, V38 — 이관 시도 상한 5회 카운트) · `member_trial_seeded_at`(timestamptz nullable, V40 — 회원 체험 시드 1회성 마커, NULL이면 미시드 [§4-3-7](#4-3-api-계약))([§4-3-5](#4-3-api-계약) B19). `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `rejoined_at`(timestamptz nullable — 탈퇴 계정의 소셜 신원으로 재가입해 만들어진 계정 표시) · `reward_identity_user_id`(bigint nullable — 계정 단위 1회성 보상의 멱등 키 신원. **NULL이면 자기 자신**이라 기존 회원의 키 문자열이 불변. 자기참조 FK를 걸지 않습니다 — `inviter_user_id`(V27)의 `ON DELETE SET NULL`과 정반대로 **삭제 안정성**이 존재 이유이기 때문입니다, [§4-3-7](#4-3-api-계약)) · `withdrawn_from_status`(varchar(20) nullable — 탈퇴 직전 `status` 보존. 정지 승계 판정용). `Phase 3 · 구현`(V75, KNK-1147) — `nickname` 정규화 키(소문자·공백 제거 식)에 유니크 인덱스, 기존 중복은 `#<id>` 접미 백필([§4-5](#4-5-인증과-권한) 프로필 수정). `Phase 3 · 구현` 컬럼(V73, KNK-1132, 정책 KNK-1129) — `service_push_enabled`(boolean not null default true — 서비스 알림 옵트아웃) · `marketing_push_agreed_at` · `marketing_push_night_agreed_at`(timestamptz nullable — 광고·야간 광고 동의 시각, 철회는 NULL, 재동의는 최초 시각 유지. [§4-3-5](#4-3-api-계약) 푸시 수신 동의) |
 | 사용자 | `social_accounts` | 소셜 연동. 유니크 2개 — `(provider, provider_user_id)`(V16, 한 소셜 계정이 두 회원에게 붙는 것을 차단)와 `(user_id, provider)`(`Phase 1 · 구현` V52, KNK-739 — 한 회원에 같은 provider 연동은 하나. 동시 연동 요청 경합의 최종 방어선). `user_id`는 다대일이라 한 사용자가 여러 provider를 연동할 수 있습니다([§4-5](#4-5-인증과-권한) 계정 연동). provider 체크 제약(V16)이 GOOGLE·KAKAO·APPLE·NAVER를 허용. `Phase 2 · 구현` 컬럼(V62, KNK-1053) — `deleted_at`(timestamptz nullable — 탈퇴로 끊긴 연동의 tombstone. 로그인 조회는 `deleted_at IS NULL`만 매칭하고, 재가입·계정 연동은 이 행을 claim해 재사용합니다. 유니크 2개를 그대로 두는 것이 재사용 강제의 전제, [§4-3-5](#4-3-api-계약)) |
 | 사용자 | `device_push_tokens` | `Phase 3 · 구현`(V72, KNK-1131) 회원 기기의 FCM 등록 토큰. `user_id`(FK users, `ON DELETE CASCADE` — 탈퇴는 soft delete라 실제 정리는 서비스) · `token`(varchar 512, **UNIQUE** — 토큰은 설치본 주소라 전역 유일, 재등록=갱신·소유자 이전의 최종 방어선) · `platform`(CHECK `ANDROID`) · `created_at` · `updated_at`(마지막 등록 시각, 상한 축출 기준). `user_id` 인덱스. 게스트 기기는 저장하지 않습니다([§4-3-5](#4-3-api-계약)) |
+| 검색 | OpenSearch `stories-{env}` 인덱스 | `Phase 3 · 구현`(KNK-1141) 공개 스토리 검색용 **파생 사본**(정본은 `stories`·`story_characters`). 문서 id = `publicId`, nori 분석 필드(제목·소개·인물명)·`genres` keyword·카드 필드·`visible`. 커밋 뒤 동기 색인, 실패 시 재색인 러너로 복구. 테이블이 아니라 마이그레이션·dbdoc 대상이 아닙니다([§4-3-1](#4-3-api-계약) 스토리 검색) |
 | 사용자 | `push_campaigns` | `Phase 3 · 구현`(V77, KNK-1117) 프로모션 푸시 예약·이력. `public_id`(UUID) · `title`(varchar 100) · `body`(varchar 300) · `scheduled_at`(timestamptz not null) · `status`(varchar 20, CHECK `SCHEDULED`·`SENDING`·`SENT`·`CANCELED`·`FAILED`) · `target_count`·`sent_count`·`skipped_count`(int null — 회차 뒤 기록) · `started_at`·`finished_at`(null) · `created_at`. `(status, scheduled_at)` 인덱스. 운영자 SQL로 넣고 스케줄러가 `SCHEDULED → SENDING` 조건부 UPDATE로 선점([§4-3-5](#4-3-api-계약) 프로모션 푸시) |
 | 사용자 | `push_message_templates` | `Phase 3 · 구현`(V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스 — PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now()) · `effective_until`(timestamptz nullable — NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](#4-3-api-계약) 출석 리마인드) |
 | 스토리 | `stories` | 스토리 메타. `public_id`, 제목·소개·장르, `user_id`(소유자, nullable — NULL이면 게스트 생성분), `deleted_at`. `Phase 1 · 구현` 컬럼 — `thumbnail_image_key`(V45, nullable — 등록 시 자동 연결로 1회 확정, 응답 `thumbnailUrl`·`thumbnailUrlSm`은 백엔드가 URL 조합, [§4-3-9](#4-3-api-계약)). `Phase 2 · 구현` 컬럼 — `thumbnail_image_url`(V68, nullable — 컴파일이 생성한 표지의 절대 URL. 프리셋 키와 공존하며 이 값이 있으면 노출이 이 값을 우선, [§4-3-9](#4-3-api-계약)). `Phase 3 · 구현` 컬럼(V76, KNK-1126) — `thumbnail_moderation_status`(varchar 20 not null default `APPROVED` — 생성·업로드 표지의 노출 게이트, `APPROVED`가 아니면 프리셋 폴백, [§4-3-8](#4-3-api-계약)) |
@@ -1948,6 +1983,8 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 | `MANYAK_GOOGLE_CLIENT_IDS` | 예 | Google OAuth client ID 목록(콤마 구분). 미주입 시 빈 목록으로 모든 Google 로그인 거부(fail-closed) |
 | `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | **같은 카카오 디벨로퍼스 앱의** REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록(콤마 구분). 사용하는 플랫폼의 키가 빠지면 그 플랫폼 로그인만 401이고, 변수 전체가 비면 모든 Kakao 로그인을 거부합니다(fail-closed). Google에는 영향이 없습니다. 다른 카카오 앱의 키 혼입 금지와 앱 ID 대조 릴리스 게이트는 [§4-5](#4-5-인증과-권한)를 따릅니다(`Phase 1 · 계획`) |
 | `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 아니오(`Phase 3 · 구현`) | Firebase 서비스 계정 JSON **원문**(KNK-1130). 비어 있으면 FCM 빈을 만들지 않아 푸시 발송이 no-op으로 기동합니다([§4-3-5](#4-3-api-계약) 발송 모듈). 앱과 같은 Firebase 프로젝트에서 발급. Secrets Manager `manyak/<env>/app` JSON에 키로 넣고, **태스크 정의 `secrets`에 그 키를 노출하는 terraform apply가 함께 필요**합니다 — 값만 넣으면 컨테이너에 들어가지 않습니다(dev는 KNK-1181로 배선 완료, prod 미배선) |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 아니오(`Phase 3 · 구현`) | 검색 저장소 OpenSearch 엔드포인트(`https://` 없이 호스트, KNK-1141). 비어 있으면 검색 503·색인 no-op으로 기동합니다. 인증은 태스크 역할 SigV4라 시크릿이 없습니다([§4-3-1](#4-3-api-계약) 스토리 검색) |
+| `MANYAK_OPENSEARCH_STORY_INDEX` | 아니오 | 스토리 검색 인덱스 이름. 기본 `stories-dev`, 운영은 `stories-prod` |
 | `MANYAK_ANALYTICS_DEVICE_ID_PEPPER` | 아니오 | `device_id` 해시 pepper. 미설정 시 구 이름 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER`로 폴백(전환기), 둘 다 없으면 무염 해시 |
 | `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` · `MANYAK_AMPLITUDE_API_KEY` | 아니오 | 서버 분석 이벤트(`server_*`) Amplitude 발행(KNK-514). `ENABLED` 기본 `false`, 켜려면 `true` + API 키 필요(둘 중 하나 없으면 no-op) |
 | `MANYAK_AMPLITUDE_BASE_URL` | 아니오 | Amplitude HTTP V2 base URL. 기본 `https://api2.amplitude.com`(EU는 `https://api.eu.amplitude.com`). `application.yml` 전용(`.env.example` 미포함) |
