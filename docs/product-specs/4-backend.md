@@ -1051,7 +1051,7 @@ graph TD
 - **환불 대상.** 결제일 7일 이내이며 해당 구매 로트가 미사용(`remaining == originalAmount`)인 경우만 전액 환불합니다.
 - **운영 절차.** 판매자가 그로블 판매 관리에서 정산 전 취소합니다(수수료 없음). 정산은 월 2회이며 7일 환불은 정산 전 취소를 기준으로 운영합니다. 정산 후 예외는 운영자가 수동 처리합니다.
 - **회수 원장.** 원장에 음수 `PURCHASE_REVERSAL` 행(`ref_type=CREDIT_ORDER`)을 추가하고 해당 로트 잔여 전량을 회수합니다. enum·CHECK 제약을 함께 추가하며 V번호는 구현 시 확정합니다.
-- **잔액 보호.** 외부 환불 통지가 이미 사용한 구매에 도착해도 잔액을 마이너스로 만들지 않습니다. 남은 수량만 회수하고 부족분은 warn 로그와 주문에 기록합니다. 부족분 기록의 구체 컬럼은 구현 시 확정합니다. 회수·주문 `REFUNDED` 전환은 같은 트랜잭션에서 처리합니다.
+- **잔액 보호.** 외부 환불 통지가 이미 사용한 구매에 도착해도 잔액을 마이너스로 만들지 않습니다. 남은 수량만 회수하고 부족분은 warn 로그와 주문에 기록합니다. 부족분 기록의 구체 컬럼은 구현 시 확정합니다. 회수·주문 `REFUNDED` 전환·`refunded_at` 기록은 같은 트랜잭션에서 처리합니다.
 
 ##### Google Play 앱 결제
 
@@ -1521,7 +1521,7 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 이프 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) · 보상·환불 30일 만료·FIFO 차감의 잔여 추적. `Phase 3 · 계획` 구매 로트는 웹·앱 모두 적립 후 5년 만료이며 구매당 기본·보너스 총량을 한 로트에 저장. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
 | 이프 | `credit_policies` | `Phase 2 · 구현`(V66, KNK-1056) 적립·소모 수치 오버라이드. `policy_key`(PK) · `amount` · `effective_until`(nullable — NULL이면 상시) · `updated_at`, `CHECK (amount BETWEEN 0 AND 10000)`. 행이 없으면 `application.yml` 기본값 |
 | 이프 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id`. 이용내역 커서 조회용 `(user_id, created_at DESC, id DESC)` 인덱스는 V65(KNK-1044) |
-| 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`. 인덱스 `(user_id, created_at DESC)`. 환불 회수 부족분은 주문에 기록하며 구체 컬럼은 구현 시 확정 |
+| 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`(환불 회수 시각, NULL 허용). 인덱스 `(user_id, created_at DESC)`. 환불 회수 부족분은 주문에 기록하며 구체 컬럼은 구현 시 확정 |
 | 이프 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 이프 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
 | 이프 | Redis `member_trial:{users.id}:story_creation` · `member_trial:{users.id}:chat_turn` | `Phase 1 · 구현` 회원 공유 체험 **사용량** 카운터. 키 없음은 사용량 0이며 일일 리셋·TTL이 없습니다. 정상 시드와 운영 보정 계약은 [§4-3-7](#4-3-api-계약)을 따릅니다 |
