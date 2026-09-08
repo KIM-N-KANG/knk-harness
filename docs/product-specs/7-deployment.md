@@ -25,7 +25,7 @@
 | 수정일    | 2026-09-07                                                                                                                                                          |
 | 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
 | 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
-| 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-ai-server.md`](./5-ai-server.md), [`6-analytics.md`](./6-analytics.md)                                                        |
+| 기준 문서 | [`4-backend.md`](./4-backend.md), [`5-1-ai-server-spec.md`](./5-1-ai-server-spec.md), [`6-analytics.md`](./6-analytics.md)                                                        |
 | 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `ad2871b3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다. 개발 환경(ECS Fargate)은 `../manyak-terraform`의 `terraform/envs/dev`·`modules/compute-ecs` 기준입니다([PR #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17), KNK-825·826·827). 2026-08-14 기준 코드 작성과 `plan`까지 완료했고 **`apply`는 하지 않았습니다** |
 
 ## 7-1. 목적과 범위
@@ -56,7 +56,7 @@
 
 - 화면 요구사항과 UX 검수: [`3-1-client.md`](./3-1-client.md)
 - API, 데이터 모델, 인증, 오류 처리: [`4-backend.md`](./4-backend.md)
-- AI 프롬프트와 요청·응답 계약: [`5-ai-server.md`](./5-ai-server.md)
+- AI 프롬프트와 요청·응답 계약: [`5-1-ai-server-spec.md`](./5-1-ai-server-spec.md)
 - 이벤트·지표·관측 수집 정책: [`6-analytics.md`](./6-analytics.md)
 - 실제 secret 값, 로컬 `.env`, `terraform.tfvars`, `backend.hcl`, Terraform state
 - 운영 웹 호스팅의 외부 플랫폼 설정. 현재 확인한 Terraform에는 `manyak-web` 운영 호스팅 리소스가 없습니다.
@@ -455,7 +455,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 **OpenAI 키를 Terra 컴파일에 전달하는 방법(KNK-803·807·808).**
 
 - **무엇.** 컴파일 모델을 `gpt-5.6-terra`로 바꾸면서 로컬·통합 환경과 운영 AI 컨테이너에 `OPENAI_API_KEY`를 전달합니다. OpenAI 키 등록과 AI·Infra·Terraform 변경의 `dev` 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증은 2026-08-08 완료했습니다.
-- **왜.** AI 서버는 선택된 모델의 공급자 키를 기동할 때 검사합니다([`5-ai-server.md`](./5-ai-server.md) D13). Terra가 기본 컴파일 모델인데 OpenAI 키가 없으면 AI 컨테이너가 기동하지 않습니다. 반대로 OpenAI를 쓰지 않는 구성에서는 이 키 때문에 server 배포나 EC2 부팅까지 막을 이유가 없습니다.
+- **왜.** AI 서버는 선택된 모델의 공급자 키를 기동할 때 검사합니다([AI 의사결정 D13](./5-2-ai-server-adr.md#d13)). Terra가 기본 컴파일 모델인데 OpenAI 키가 없으면 AI 컨테이너가 기동하지 않습니다. 반대로 OpenAI를 쓰지 않는 구성에서는 이 키 때문에 server 배포나 EC2 부팅까지 막을 이유가 없습니다.
 - **어떻게.** `manyak-infra`는 OpenAI 키를 AI 컨테이너에만 전달하고 컴파일 기본값을 Terra로 맞춥니다. 운영에서는 Secrets Manager의 키를 `deploy.sh`가 읽어 셸 환경변수로 export하고, compose가 AI 컨테이너의 `OPENAI_API_KEY`로 옮깁니다. 공용 필수 키 검사에는 넣지 않아, 키가 없을 때 server 배포는 계속되고 GPT를 선택한 AI만 자체 기동 검사에서 실패합니다. 선택된 키에 개행·앞뒤 공백·비 ASCII·공백·제어문자가 있으면 AI가 기동에서 거부하며, 오류에는 키 원문을 남기지 않습니다. Terraform의 `ignore_changes = [secret_string]` 때문에 코드에 키 이름을 추가해도 기존 Secrets Manager 값은 자동으로 바뀌지 않습니다.
 - **왜 그 방법.** 공용 `.env`는 server 컨테이너도 통째로 읽으므로 OpenAI 키를 적으면 AI 전용 비밀이 server까지 전달됩니다. Langfuse 키와 같은 export-only 방식을 써서 소비 범위를 AI로 제한했습니다. 공용 필수 키 검사에서 제외한 것은 조건부 AI 키 하나가 server 배포와 EC2 부팅까지 막는 실패를 피하기 위해서입니다. 키 형식은 외부 요청 없이 기동에서 검사해 복사·붙여넣기 오류를 빨리 드러냅니다. 대가로 글자 형식은 맞지만 값 자체가 틀린 키는 잡지 못하므로 실제 컴파일 검수가 필요하고, `deploy.sh`를 거치지 않고 compose를 직접 실행하면 OpenAI 키가 비어 Terra를 선택한 AI가 기동하지 않으므로 배포와 롤백은 반드시 `deploy.sh`를 거칩니다.
 
@@ -484,7 +484,7 @@ Web Sentry SDK 게이팅은 `NODE_ENV=production`이면서 **Vercel 배포일 �
 
 **카카오 로그인 배선 — `Phase 1 · 계획`(KNK-721). 아래는 전부 미구현 목표 상태이며, 현재 상태는 아래 'EC2 `.env` 생성 결과' 표가 정본입니다(카카오 키 없음).** compute user-data(`user-data.sh.tftpl`)는 시크릿 JSON에서 키를 하나씩 명시적으로 추출해 `.env`에 기록하므로, 시크릿에 `MANYAK_KAKAO_CLIENT_IDS`를 넣는 것만으로는 서버에 전달되지 않습니다. 배선에는 세 가지가 필요합니다: ① `manyak-terraform` user-data에 추출·기록 라인 추가(적용 시 아래 표에도 반영), ② 로컬·통합용 `manyak-infra` compose에 환경변수 전달 추가, ③ 웹 런타임에 `AUTH_KAKAO_ID`(REST API 키)·`AUTH_KAKAO_SECRET`(클라이언트 시크릿) 주입 — 운영 웹이 호스팅되는 **Vercel 환경 변수**로 넣습니다(Web Sentry DSN과 같은 경로, §7-5. GHCR 컨테이너 배포를 쓰게 되면 주입 방식을 별도 결정). Android 런타임은 같은 카카오 앱의 네이티브 앱 키를 빌드 타입별로 주입합니다([`3-3-android-app.md §3-3-4`](./3-3-android-app.md)). 배포 순서는 **서버 허용 목록 반영이 먼저**입니다(미주입은 fail-closed로 해당 플랫폼의 Kakao 로그인만 401, Google 무영향). 웹 출시 전에는 REST API 키, Android 출시 전에는 같은 앱의 네이티브 앱 키까지 서버 목록에 있어야 하며 각 클라이언트에서 로그인 1회 완주를 운영 스모크로 확인합니다. 배포 전에 카카오 개발자 콘솔에서 두 키의 **앱 ID가 동일함**을 대조하고, 키 원문 없이 앱 ID와 확인 결과를 배포 기록에 남깁니다. 다른 카카오 앱의 키는 넣지 않습니다([`4-backend.md §4-5`](./4-backend.md) — pairwise `sub` 계정 오귀속 방지).
 
-**메트릭(Grafana Cloud OTLP) 배선 — `Phase 2 · 구현`(KNK-781·793, 2026-08-06 활성화 완료).** user-data가 시크릿에서 두 값을 뽑아 `.env`에 기록하며, 적용 결과는 위 'EC2 `.env` 생성 결과' 표에 반영돼 있습니다. 다만 **주입할 환경변수 이름은 표준 `OTEL_EXPORTER_OTLP_*`가 아니라 Spring 전용 이름(`MANAGEMENT_OTLP_METRICS_EXPORT_URL`·`MANAGEMENT_OTLP_METRICS_EXPORT_HEADERS_AUTHORIZATION`)을 씁니다.** 공용 `.env`는 server와 ai 컨테이너가 함께 읽는데, `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`는 **OpenTelemetry 표준 변수라 AI 컨테이너의 SDK도 그대로 집어 듭니다**(Langfuse Python SDK는 OTel 기반 — [`5-ai-server.md §5-6`](./5-ai-server.md)). 공용 `.env`에 표준 이름으로 넣으면 AI 트레이스가 서버용 Grafana Cloud 자격증명으로 새어 나갈 수 있습니다. Spring 전용 이름은 AI 컨테이너가 무시하므로 Langfuse 키처럼 export-only로 우회할 필요 없이 공용 `.env`에 그대로 둘 수 있습니다. 로컬(IntelliJ 단일 프로세스)은 컨테이너 공유가 없으므로 표준 `OTEL_*` 이름을 그대로 써도 됩니다. 켜는 순서는 **주입이 먼저, 토글(`MANYAK_OTLP_METRICS_ENABLED=true`)이 나중**입니다 — 토글만 켜면 레지스트리가 `localhost:4318`로 헛푸시합니다([`4-backend.md §4-7`](./4-backend.md)). 토글 자체는 **시크릿이 아닙니다** — 위 Secrets Manager 표가 아니라 user-data가 `.env`에 직접 쓰는 리터럴이며, 끄고 켜는 데 시크릿 갱신이 필요 없어야 합니다.
+**메트릭(Grafana Cloud OTLP) 배선 — `Phase 2 · 구현`(KNK-781·793, 2026-08-06 활성화 완료).** user-data가 시크릿에서 두 값을 뽑아 `.env`에 기록하며, 적용 결과는 위 'EC2 `.env` 생성 결과' 표에 반영돼 있습니다. 다만 **주입할 환경변수 이름은 표준 `OTEL_EXPORTER_OTLP_*`가 아니라 Spring 전용 이름(`MANAGEMENT_OTLP_METRICS_EXPORT_URL`·`MANAGEMENT_OTLP_METRICS_EXPORT_HEADERS_AUTHORIZATION`)을 씁니다.** 공용 `.env`는 server와 ai 컨테이너가 함께 읽는데, `OTEL_EXPORTER_OTLP_ENDPOINT`·`OTEL_EXPORTER_OTLP_HEADERS`는 **OpenTelemetry 표준 변수라 AI 컨테이너의 SDK도 그대로 집어 듭니다**(Langfuse Python SDK는 OTel 기반 — [`5-1-ai-server-spec.md §5-6`](./5-1-ai-server-spec.md)). 공용 `.env`에 표준 이름으로 넣으면 AI 트레이스가 서버용 Grafana Cloud 자격증명으로 새어 나갈 수 있습니다. Spring 전용 이름은 AI 컨테이너가 무시하므로 Langfuse 키처럼 export-only로 우회할 필요 없이 공용 `.env`에 그대로 둘 수 있습니다. 로컬(IntelliJ 단일 프로세스)은 컨테이너 공유가 없으므로 표준 `OTEL_*` 이름을 그대로 써도 됩니다. 켜는 순서는 **주입이 먼저, 토글(`MANYAK_OTLP_METRICS_ENABLED=true`)이 나중**입니다 — 토글만 켜면 레지스트리가 `localhost:4318`로 헛푸시합니다([`4-backend.md §4-7`](./4-backend.md)). 토글 자체는 **시크릿이 아닙니다** — 위 Secrets Manager 표가 아니라 user-data가 `.env`에 직접 쓰는 리터럴이며, 끄고 켜는 데 시크릿 갱신이 필요 없어야 합니다.
 
 시크릿 값을 바꾼 뒤에는 해당 값을 소비하는 서비스를 재기동해야 합니다. GitHub workflow 배포는 `SERVER_IMAGE_OVERRIDE` 또는 `AI_IMAGE_OVERRIDE`가 가리키는 서비스만 재기동합니다. `SERVER_SENTRY_DSN`, `MANYAK_AUTH_JWT_SECRET`, `MANYAK_GOOGLE_CLIENT_IDS`, Slack webhook, analytics pepper는 server 재배포로 반영합니다(`MANYAK_KAKAO_CLIENT_IDS`는 위 배선이 적용된 뒤에야 같은 경로를 탑니다). `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `AI_SENTRY_DSN`과 Langfuse 3키는 AI 재배포로 반영합니다. 두 서비스를 동시에 반영하려면 SSM에서 override 없이 `bash /opt/manyak/deploy.sh`를 실행합니다.
 
@@ -787,7 +787,7 @@ docker compose ps
 - server는 구조화 로그, Sentry, `ai_call_logs`, Actuator health를 사용합니다.
 - server 메트릭은 Micrometer로 계측해 **Grafana Cloud로 OTLP push**합니다(`Phase 2 · 구현` — 서버 계측 KNK-779·784, 운영 배선 KNK-781·793, **2026-08-06 v0.2.7 배포로 활성화 완료**. [`4-backend.md §4-7`](./4-backend.md)). Prometheus·Grafana를 별도 EC2에 자체 호스팅하지 않습니다. push 방식이라 운영은 `/actuator/prometheus`를 노출하지 않고 인바운드 경로도 열지 않습니다. 환경은 `service.name`으로 가릅니다(운영 `manyak-server` / 로컬 `manyak-server-local`). 전송 주기는 운영 60초입니다. 대시보드는 RED(요청률·5xx 오류율·p95)와 AI 호출 지연(`feature`별 p95), JVM·CPU·HikariCP를 봅니다. **알림 임계값은 운영 기준선이 쌓인 뒤 정하며**, 서버 정지 시 규칙이 No Data로 발화하므로 No Data 동작을 함께 설계합니다.
 - AI는 Sentry와 request correlation middleware를 사용합니다.
-- AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-ai-server.md §5-6`](./5-ai-server.md)) 미충족 시 no-op입니다. 프로덕션은 2026-07-23 활성화했습니다.
+- AI는 정상·실패 LLM 호출의 프롬프트·응답 원문을 Langfuse에 트레이스로 남깁니다(§6-7 원문 예외 — JP 리전·prod 전용). 키·JP host·prod 환경이 모두 충족될 때만 켜지고(활성화 가드, [`5-1-ai-server-spec.md §5-6`](./5-1-ai-server-spec.md)) 미충족 시 no-op입니다. 프로덕션은 2026-07-23 활성화했습니다.
 - web은 Amplitude, API 오류 캡처, Sentry 연동 코드를 사용합니다. 운영 Sentry 수집은 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성 상태입니다(§7-5). GHCR release 이미지에는 여전히 주입 경로가 없어 컨테이너 배포 경로는 비활성입니다.
 - Android는 Crashlytics(release 빌드의 크래시와 API 30+ ANR)와 Amplitude를 사용합니다. 크래시 리포트에는 직전 화면·행동 이벤트와 로그인 사용자 식별자가 붙고 debug 빌드는 수집하지 않습니다([`3-3-android-app.md §3-3-6`](./3-3-android-app.md)). 모든 API·SSE 요청에는 `X-Manyak-App-Version`이 실려 서버가 요청의 클라이언트 버전을 볼 수 있습니다(서버 소비는 후속). **앱 버전으로 끊어 보는 대시보드는 아직 없습니다**([§7-11](#7-11-미정주의-항목)).
 - `X-Manyak-Request-Id`, `X-Manyak-Session-Id`, `X-Manyak-Device-Id-Hash` 계열은 server와 AI 관측 연결에 사용합니다.
@@ -800,15 +800,15 @@ docker compose ps
 - **Langfuse 코드가 담긴 AI 릴리스가 배포됐는지** — **충족**: 관측 그릇(KNK-624·640)과 안전장치(KNK-652)가 `v0.2.1`(2026-07-22)로 운영에 배포됐습니다. 그 이전 릴리스에는 켜질 코드 자체가 없었습니다.
 - **배선이 apply됐는지** — **충족**: KNK-653(manyak-terraform) 배선을 2026-07-23 적용했습니다. user-data가 Secrets Manager의 `AI_LANGFUSE_PUBLIC_KEY`·`AI_LANGFUSE_SECRET_KEY`·`AI_LANGFUSE_HOST` 3키를 배포 스크립트의 **export로만** compose에 보간합니다. 공용 `.env`에는 기록하지 않습니다.
 - **apply의 파급을 확인했는지** — **충족**: user-data(+임베드된 compose) 변경으로 EC2가 교체됐고 외부 백엔드 health와 AI `v0.2.1` health를 확인했습니다.
-- **활성화 가드가 릴리스에 실렸는지** — **충족**: 키가 있어도 `LANGFUSE_HOST`가 JP가 아니거나 환경이 `prod`가 아니면 no-op + 오류 로그로 막는 가드가 `v0.2.1`에 포함됐습니다([`5-ai-server.md §5-6`](./5-ai-server.md)). 원칙: **키 주입은 가드가 담긴 릴리스 배포 뒤**여야 합니다 — 관측 그릇(KNK-624)만 실리고 가드가 없는 릴리스는 키만 있으면 켜지기 때문입니다.
+- **활성화 가드가 릴리스에 실렸는지** — **충족**: 키가 있어도 `LANGFUSE_HOST`가 JP가 아니거나 환경이 `prod`가 아니면 no-op + 오류 로그로 막는 가드가 `v0.2.1`에 포함됐습니다([`5-1-ai-server-spec.md §5-6`](./5-1-ai-server-spec.md)). 원칙: **키 주입은 가드가 담긴 릴리스 배포 뒤**여야 합니다 — 관측 그릇(KNK-624)만 실리고 가드가 없는 릴리스는 키만 있으면 켜지기 때문입니다.
 - **`LANGFUSE_HOST`가 JP(`https://jp.cloud.langfuse.com`)인지** — **충족**: 운영 AI 기동 로그의 host와 `env=prod`를 확인했습니다. 가드는 JP가 아니거나 값이 누락되면 Langfuse를 켜지 않습니다.
 - **직접 입력 장르 임시 관측 정책을 확인했는지** — KNK-669 결정에 따라 Langfuse 활성화는 KNK-621 배포를 기다리지 않습니다. 활성화 시점부터 사전 정의 장르와 직접 입력 장르가 모두 `genre:*` 필터용 라벨로 저장됩니다. 목적은 기본 장르 목록에서 빠진 사용자 수요를 확인하는 것이며, 직접 입력값이 검색 가능해지고 카디널리티가 커지는 점을 수용합니다. KNK-621이 장르 직접 입력을 차단하면 이 예외는 종료됩니다([`6-analytics.md §6-6-12·§6-7`](./6-analytics.md)).
-- **채팅 트레이스 장르 태그 제거가 릴리스에 실렸는지** — **충족**: `v0.2.1`에 포함됐습니다. 장르 태그는 스토리 제작 트레이스에만 싣습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+- **채팅 트레이스 장르 태그 제거가 릴리스에 실렸는지** — **충족**: `v0.2.1`에 포함됐습니다. 장르 태그는 스토리 제작 트레이스에만 싣습니다([`5-1-ai-server-spec.md §5-6`](./5-1-ai-server-spec.md)).
 - §6-7 원문 수집 예외 조건(JP 리전·1년 보존·AI 담당자 한정 접근·prod 전용)이 지켜지는지([`6-analytics.md §6-7`](./6-analytics.md)).
 
 켠 뒤에는 다음을 확인합니다.
 
-- **AI 컨테이너 기동 로그에 `Langfuse 활성 — host=… env=…`이 있는지** — 가드를 통과해 실제로 켜졌다는 유일한 신호입니다. 조건 미충족이면 같은 자리에 비활성 사유가 오류 로그로 남습니다. 실패 격리 때문에 관측이 비어도 요청은 성공하므로, 로그를 보지 않으면 꺼진 것을 알 수 없습니다([`5-ai-server.md §5-6`](./5-ai-server.md)).
+- **AI 컨테이너 기동 로그에 `Langfuse 활성 — host=… env=…`이 있는지** — 가드를 통과해 실제로 켜졌다는 유일한 신호입니다. 조건 미충족이면 같은 자리에 비활성 사유가 오류 로그로 남습니다. 실패 격리 때문에 관측이 비어도 요청은 성공하므로, 로그를 보지 않으면 꺼진 것을 알 수 없습니다([`5-1-ai-server-spec.md §5-6`](./5-1-ai-server-spec.md)).
 - **Langfuse 웹에 트레이스가 유입되는지**(실호출 1건 — 과금 발생, 실행 전 승인).
 - **server 컨테이너에는 `AI_LANGFUSE_*`가 없는지** — 배선이 공용 `.env`가 아니라 export로만 넘기는지 확인하는 점검입니다.
 

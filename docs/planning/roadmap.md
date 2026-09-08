@@ -166,7 +166,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 
 > 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 설계는 [`3-1-client.md §3-1-4`](../product-specs/3-1-client.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)가 정본입니다.
 
-> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-ai-server.md §5-3-2`](../product-specs/5-ai-server.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)·[`3-1-client.md §3-1-4`](../product-specs/3-1-client.md)가 정본입니다.
+> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-1-ai-server-spec.md §5-3-2`](../product-specs/5-1-ai-server-spec.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)·[`3-1-client.md §3-1-4`](../product-specs/3-1-client.md)가 정본입니다.
 
 > 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend.md §4-7`](../product-specs/4-backend.md)·[`7-deployment.md §7-6`](../product-specs/7-deployment.md)이 정본입니다.
 
