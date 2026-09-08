@@ -86,6 +86,7 @@
 | `Phase 2 · 구현` | Phase 2 범위. 구현 완료 | 공개 스토리 목록·게스트 공개 제한(KNK-149, [§4-3-1](#4-3-api-계약)·[§4-3-8](#4-3-api-계약)), 스토리 좋아요·신고·공개 전환(KNK-1017·1020·1021), 회원 탈퇴(KNK-1019·1053, [§4-3-5](#4-3-api-계약)), 메트릭([§4-7](#4-7-운영과-관측)) — OTLP export 배선(KNK-779)·완성 타이머 거부 outcome 분리(KNK-784). 운영 배선(KNK-781·793)과 **v0.2.7 배포로 2026-08-06 활성화 완료**([`7-deployment.md §7-6`](./7-deployment.md)) |
 | `계획` | Phase 미배정. 미구현, 방향만 합의됨 | AI 와이어 필드 정렬([§4-8](#4-8-검수-체크리스트) B2) |
 | `Phase 3 · 구현` | Phase 3 범위. 서버 dev 구현 완료 | 디바이스 푸시 토큰·FCM 발송 모듈(KNK-1131·1130)·푸시 수신 동의 API(KNK-1132, V73)·스토리 완성 푸시(KNK-1115)·출석 리마인드 푸시(KNK-1116, V74)([§4-3-5](#4-3-api-계약))·프로필 수정(KNK-1147, V75, [§4-5](#4-5-인증과-권한))·스토리 이미지 업로드(KNK-1126, V76, [§4-3-8](#4-3-api-계약))·프로모션 푸시(KNK-1117, V77)·스토리 검색(KNK-1141, OpenSearch, [§4-3-1](#4-3-api-계약)). 검수 완료(KNK-1118) 발송은 `Phase 3 · 계획` |
+| `Phase 3 · 계획` | Phase 3 범위. 결제 도입 예정 | 이프 충전 결제(KNK-1155): 웹 그로블·앱 Google Play, 상품 5종·주문·적립·환불 회수, 유료 로트 5년 만료([§4-3-7](#4-3-api-계약)) |
 
 ---
 
@@ -236,6 +237,11 @@ graph LR
 | 사용자 | `DELETE /users/me/push-tokens` | 디바이스 푸시 토큰 삭제(본문 `token`, 없거나 남의 토큰이어도 204) | 204 | 400·401·403 | 필수 | Phase 3 · 구현 |
 | 사용자 | `GET /users/me/push-settings` | 알림 수신 동의 조회(세 boolean) | 200 | 401·403 | 필수 | Phase 3 · 구현 |
 | 사용자 | `PUT /users/me/push-settings` | 알림 수신 동의 전체 교체(세 필드 필수, 야간 단독 400) | 200 | 400·401·403 | 필수 | Phase 3 · 구현 |
+| 이프 | `GET /credits/products` | 충전 상품 목록 | 200 | 없음 | 불필요 | Phase 3 · 계획 |
+| 이프 | `POST /users/me/credits/orders` | 웹 결제 주문 생성 | 201 | 400·401·503 | 필수 | Phase 3 · 계획 |
+| 이프 | `GET /users/me/credits/orders/{orderId}` | 본인 주문 상태 조회 | 200 | 401·404 | 필수(본인) | Phase 3 · 계획 |
+| 이프 | `POST /webhooks/groble` | 그로블 결제·환불 웹훅 | 200 | 401·503 | 불필요(서명) | Phase 3 · 계획 |
+| 이프 | `POST /users/me/credits/purchases/google` | Google Play 구매 검증·적립 | 200(멱등) | 400·401 | 필수 | Phase 3 · 계획 |
 | 이프 | `GET /users/me/credits` | 이프 잔액 조회 | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 이프 | `POST /users/me/credits/attendance` | 출석체크 적립(1일 1회 멱등) | 200 | 401 | 필수 | Phase 1 · 구현 |
 | 이프 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 | Phase 1 · 구현 |
@@ -863,7 +869,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **세션 부트스트랩 동봉 — `Phase 1 · 구현`** — 세션 복원 시점의 잔액·당일 출석 여부는 `GET /auth/me` 응답의 `creditBalance`·`attendedToday`로 제공합니다([§4-3-5](#4-3-api-계약)). `GET /users/me/credits`는 소모·적립 직후의 잔액 갱신 조회로 유지합니다.
 - **가입 보상** — 회원 가입 시 1000 이프를 자동 적립합니다. 별도 API가 없으며, 적립은 생성 시 1회 실행이 아니라 **매 로그인마다 멱등 키 `signup:{보상 신원 id}`로 재시도**해 일시 실패를 자가 복구합니다(실제 적립은 신원당 1회).
 - **보상 신원 — `Phase 2 · 구현`(KNK-1053)** — 계정 단위 1회성 보상(가입 보상·출석 보상)의 멱등 키는 `users.id`가 아니라 **보상 신원 id**(`coalesce(users.reward_identity_user_id, users.id)`)를 씁니다. `reward_identity_user_id`가 NULL이면 자기 자신을 뜻하므로 기존 회원·순수 신규 가입의 키 문자열은 종전과 **완전히 동일**하고(기존 원장과 호환되어 재지급이 없습니다), 재가입 계정만 최초 계정의 id를 가리킵니다([§4-3-5](#4-3-api-계약) 재가입 계약). 탈퇴가 소셜 연동을 하드 삭제하던 시절에는 재가입마다 `users.id`가 갈려 `signup:{userId}`·`attendance:{userId}:{KST날짜}`가 새 키가 됐고, 탈퇴·재가입을 반복하면 같은 소셜 계정으로 가입 보상과 출석 보상을 무한히 재수령할 수 있었습니다. 초대자 월 상한 집계와 초대 보상 멱등 키도 같은 신원에 묶습니다(KNK-1053) — 묶지 않으면 상한을 채운 초대자가 이프를 소진한 뒤 탈퇴·재가입해 새 코드로 상한을 다시 얻습니다(지갑이 비워지는 것은 파머에게 페널티가 아닙니다). 앞으로 추가되는 계정 단위 1회성 보상도 이 신원에 묶습니다 — 보상마다 개별 가드를 다는 방식은 새 보상이 생길 때마다 같은 구멍을 다시 엽니다.
-- **보상 이프 유효기간·차감 순서 — `Phase 1 · 구현`(V39·KNK-503)** — 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)과 **환불(`REFUND`) 재적립**은 적립 시점부터 30일 유효하며, 만료분은 잔액에서 제외합니다(무기한은 `PURCHASE`뿐 — Phase 3). 적립·환불마다 `credit_lots` 행(원금·잔여·`expires_at`)을 만들고, 차감은 만료 임박(`expires_at` 오름차순, 무기한 NULL은 마지막, 동률은 `id` 오름차순) 로트부터 잔여를 소진합니다(FIFO). 만료 회수는 원장에 `EXPIRE` 음수 행(`ref_type=CREDIT_LOT` · `ref_id=로트 ID`)을 남겨 `balance = SUM(amount)` 불변식을 유지합니다. 조회 잔액(`balance`)은 **미만료·잔여 > 0 로트의 합**이며, 부족 판정은 만료 정리(쓰기) 전에 활성 잔여 기준으로 수행해 실패한 차감이 만료 정리를 롤백시키지 않게 합니다.
+- **보상 이프 유효기간·차감 순서 · `Phase 1 · 구현`(V39·KNK-503)** · 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)과 **환불(`REFUND`) 재적립**은 적립 시점부터 30일 유효하며, 만료분은 잔액에서 제외합니다(`Phase 3 · 계획` 유료 `PURCHASE` 로트는 웹·앱 모두 적립 시점부터 5년 유효). 적립·환불마다 `credit_lots` 행(원금·잔여·`expires_at`)을 만들고, 차감은 만료 임박(`expires_at` 오름차순, 레거시 NULL은 마지막, 동률은 `id` 오름차순) 로트부터 잔여를 소진합니다(FIFO). 만료 회수는 원장에 `EXPIRE` 음수 행(`ref_type=CREDIT_LOT` · `ref_id=로트 ID`)을 남겨 `balance = SUM(amount)` 불변식을 유지합니다. 조회 잔액(`balance`)은 **미만료·잔여 > 0 로트의 합**이며, 부족 판정은 만료 정리(쓰기) 전에 활성 잔여 기준으로 수행해 실패한 차감이 만료 정리를 롤백시키지 않게 합니다.
 - **초대 보상 — `Phase 1 · 구현`(KNK-567 개편)** — 초대자가 초대 코드를 공유하고, 다른 회원이 그 코드를 `POST /users/me/invite/redeem`에 제출하면 **초대자와 제출자(피초대자) 양쪽에 각각 2000 이프**을 적립합니다. 제출 자격은 회원 계정당 **평생 1회**입니다 — 가입 시점과 무관하게 기존 회원도 제출할 수 있고, 한 번 성공하면 다시 제출할 수 없습니다. 자기 자신의 코드는 제출할 수 없습니다. 월 10회 상한은 **초대자 몫에만** 적용합니다(KNK-581) — 제출자 몫은 평생 1회 자격이 유일한 제한이라 월 상한 판정·집계 대상이 아닙니다. 제출자 몫까지 수령 계정의 월 상한으로 묶으면, 그 달 초대자로 상한을 채운 계정이 코드를 입력할 때 평생 1회 자격만 소진하고 보상을 영영 받지 못하는 손실이 생깁니다. 초대자가 상한에 도달했으면 초대자 적립만 건너뛰고 제출자는 적립하며, 응답은 성공입니다(상한 사실은 응답에 싣지 않음 — 초대자 쪽 진행 표시로 충분). 월 귀속은 **적립 시점의 KST 월**입니다(가입 월 고정·월 넘김 영구 스킵 특례 폐기). 초대 관계(`users.inviter_user_id`) 저장과 양측 적립은 redeem 트랜잭션에서 원자적으로 처리합니다 — 동기 API라 로그인 self-heal 재적립(KNK-393)이 필요 없어 함께 폐기했습니다. 구 링크 방식(`inviteUrl` 공유 → 가입 시 로그인 요청의 `inviteCode` 제출)과 24시간 어트리뷰션 윈도우도 폐기했습니다(아래 결정 기록). 두 계정이 서로의 코드를 동시에 제출할 때의 지갑 락 경합은 락 획득 순서 고정으로 데드락을 방지합니다(KNK-587).
 - **초대 코드 입력 규칙 — `Phase 1 · 구현`(KNK-567)** — 제출된 `code`는 trim·대문자 정규화 후 비교합니다. 링크 방식의 "오류 없이 무시" 규칙은 폐기합니다 — 사용자가 직접 타이핑하는 값이므로 실패 사유를 구분해 응답해야 프론트엔드가 안내할 수 있습니다. 빈 값·형식 위반은 400, 매칭되는 코드 없음은 404, 자기 코드 제출은 409 `INVITE_SELF_CODE`, 이미 입력을 마친 계정의 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다(같은 상태를 바디 `code`로 구분 — 402 전례(KNK-524)와 같은 방식, [§4-6](#4-6-오류와-예외-처리)). 제출자 본인이 정지 상태면 공통 게이트가 403으로 차단합니다([§4-5](#4-5-인증과-권한)). **초대자 상태 게이트 — `Phase 2 · 구현`(KNK-1053)**: 초대자가 탈퇴한 회원이면 409 `INVITE_INVITER_WITHDRAWN`, 정지 상태면 409 `INVITE_INVITER_UNAVAILABLE`입니다. 탈퇴해도 `users.invite_code`는 지우지 않으므로(재발급 충돌 방지) 코드 자체는 매칭되며, 404가 아니라 사유를 구분한 409로 답해 프론트엔드가 안내할 수 있게 합니다. 평생 1회 소진 표식은 재가입 계정으로 승계되므로 탈퇴·재가입으로 제출 자격을 되살릴 수 없습니다([§4-3-5](#4-3-api-계약)).
 - **초대 코드 발급** — 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. `Phase 1 · 구현`(KNK-567·V47) — 문자 집합은 **혼동 문자(`O`·`0`·`I`·`1`·`L`)를 제외한 대문자+숫자 집합**입니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이므로 시각 혼동이 곧 입력 실패율입니다. 기존 발급분(영대소문자+숫자 62종)은 V47 마이그레이션으로 전량 리셋해 새 집합으로 재발급합니다 — 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다. `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기했습니다.
@@ -875,7 +881,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
   - 변경 수단은 운영 SQL입니다(관리자 API는 Phase 1 범위 밖 — 정지 처리·로어북 시드와 같은 관례). 관리자 화면이 생기면 이 테이블을 CRUD하게 됩니다.
 - **수치 조회 — `Phase 2 · 구현`(KNK-1090)** — `GET /credits/policies`가 현재 유효한 적립·소모 수치 6종을 반환합니다. 수치가 위 정책 오버라이드로 릴리스 없이 바뀌므로, 클라이언트는 보상·소모 안내를 하드코딩하지 않고 이 값을 표시합니다(초대 상한을 응답에 동봉하는 것과 같은 원칙). **인증 불필요** — 로그인 전 안내 화면도 같은 값을 쓰고, 지급·차감 응답에 이미 실리는 전역 수치라 비밀이 아닙니다. 단 탈퇴 계정의 잔여 유효 토큰은 전면 401 계약을 그대로 따르고(만료·위조 토큰은 익명으로 통과 — [§4-3-5](#4-3-api-계약)), 응답은 단일 정책 스냅샷에서 계산해 한 응답 안에 갱신 전후 값이 섞이지 않으며, 반영 지연은 서버의 스냅샷 갱신 주기(기본 약 1분)를 따릅니다. 필드 의미 주의: `inviteMonthlyCap`은 이프가 아니라 **초대자 역할 보상의 월 횟수 상한**이고(제출자 몫은 해당 없음), `storyCreationCost`(간편 제작 한정 — 일반 제작은 무료)·`chatTurnCost`(재생성 동일)는 **회원의 무료 체험 소진 후** 적용되는 단가입니다(게스트는 이프 대신 디바이스 한도).
 - **이용내역 조회 — `Phase 1 · 구현`(KNK-1044)** — `GET /users/me/credits/transactions`로 원장을 사용자에게 공개합니다. 잔액만으로는 그 값이 나온 이유(적립·소모·환불·만료)를 설명할 수 없어, 원장(`credit_transactions`)을 화면용으로 가공해 내려줍니다. 원장을 운영·정산 전용으로 두던 이전 방침을 대체합니다.
-  - **분류(`type`)** — 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`) · `EXPIRE`(`EXPIRE`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** — 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. **`PURCHASE`는 이용내역에서 제외합니다**(`ALL`에서도) — 결제 도입 시 구매내역이 따로 가져갈 몫이라 미리 섞지 않습니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
+  - **분류(`type`)** · 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`·`PURCHASE`) · `EXPIRE`(`EXPIRE`·`PURCHASE_REVERSAL`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** · 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. **`Phase 3 · 계획`(KNK-1155)** 결제 도입 시 `PURCHASE`를 `EARN`과 `ALL`에 포함하고, 결제 환불 회수 `PURCHASE_REVERSAL`은 회수 계열인 `EXPIRE`에 묶습니다. 새 분류는 추가하지 않으며 두 사유의 `title`은 `null`입니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
   - **응답 항목** — `{type, reason, amount, title, expiresAt, createdAt}`. `reason`은 원장 enum 원문이고 **한국어 라벨은 클라이언트가 붙입니다** — 문구 변경에 서버 배포와 3레포 동반 배포가 걸리지 않게 하기 위해서이며, 402의 `code` 계약과 같은 원칙입니다. `ref_type`·`ref_id`는 순차 PK라 노출하지 않습니다.
   - **`title`(대상 스토리 제목)** — 소모 행은 어느 스토리에 썼는지가 정보의 전부라 원장의 참조를 역으로 풀어 채웁니다. 채팅 소모·환불은 `story_chats`를 거쳐, 제작 소모·환불은 **`story_creation_sessions`를 한 단계 거쳐** 스토리에 닿습니다(원장의 `ref_type`이 `"STORY"`여도 `ref_id`는 스토리 PK가 아니라 제작 세션 PK입니다 — 곧장 조인하면 다른 스토리가 붙습니다). 보상·소멸 행과 삭제된 스토리는 `null`이며 클라이언트가 폴백 문구를 씁니다. 조회는 페이지 단위 배치라 항목 수와 무관하게 쿼리 횟수가 고정입니다.
   - **`expiresAt`** — 획득 행은 그 적립이 만든 로트의 만료 예정일, 소멸 행은 **회수된 로트의 실제 만료일**, 소모 행은 `null`입니다. 소멸 행의 `createdAt`을 만료일로 읽으면 안 됩니다 — 만료 회수가 배치가 아니라 다음 지갑 락에서 처리되는 지연 정리라 실제 만료보다 며칠 늦게 기록됩니다. 화면의 날짜 표시는 `expiresAt`을 씁니다.
@@ -901,9 +907,9 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
 | 무기한·단일 잔액 — 현행 구현(V24 지갑 캐시) | 구현은 단순하지만 재방문 유인이 없고 부채 통제가 안 됩니다 |
-| 유료 이프(`PURCHASE`)까지 만료 | 결제 재화의 신뢰를 해칩니다 |
+| 유료 이프(`PURCHASE`)도 보상과 같이 30일 만료 | 결제 재화의 사용 기한으로 짧습니다. 2026-09-08 결정으로 무기한 방침을 갱신해 웹·앱 모두 적립 시점부터 5년을 적용합니다(`Phase 3 · 계획`, KNK-1155) |
 
-- **영향.** 적립 로트별 잔여 추적(`credit_lots` — V39, KNK-503)으로 구현됐습니다. 환불 재적립도 30일 로트를 만들며, 만료 회수는 `EXPIRE` 원장 행으로 실현합니다.
+- **영향.** 적립 로트별 잔여 추적(`credit_lots` · V39, KNK-503)으로 구현됐습니다. 환불 재적립도 30일 로트를 만들며, 만료 회수는 `EXPIRE` 원장 행으로 실현합니다. 유료 로트는 크랙·로벨·제타 앱의 5년 만료, 크랙이 1년에서 5년으로 되돌린 전례, 환금성·회계상 기한 있는 채무 관리를 고려해 5년으로 정했습니다(2026-09-08, KNK-1155). 만료 임박순 차감을 유지해 무료 30일 로트가 먼저 소진됩니다.
 
 #### 소모 규칙
 
@@ -989,12 +995,89 @@ graph TD
 - 차감·적립은 지갑 행 비관적 락(`PESSIMISTIC_WRITE` — 서버 기존 관례)으로 직렬화하고, 같은 트랜잭션에서 원장·로트 행을 함께 씁니다. 지갑은 가입 시점이 아니라 **최초 적립 시 지연 생성**하며, 생성은 `REQUIRES_NEW` 독립 트랜잭션으로 분리해 동시 첫 적립의 유니크 위반을 내부에서 흡수합니다.
 - 보상 적립은 결정적 멱등 키로 중복을 차단합니다: `signup:{userId}` · `attendance:{userId}:{KST날짜}` · `invite:{초대자userId}:{피초대자userId}:{rewardedUserId}`. 멱등은 3중 방어입니다 — 락 없는 사전 키 확인(빠른 경로) → 지갑 락 후 재확인 → 원장 `idempotency_key` 유니크 제약(최종). 초대 보상 월 한도는 **초대자 몫에만** 적용합니다(KNK-581) — 수령 계정이 초대자 역할로 받은 `INVITE_REWARD` 원장 행만 월(KST) 단위로 집계해 10회 미만일 때만 적립하고, 제출자 몫 적립은 월 한도 판정 없이 수행합니다. 역할 구분은 멱등 키 `invite:{초대자}:{피초대자}:{수령자}`의 수령자==초대자 여부로 식별합니다(월 귀속: 적립 월 — [§4-3-7](#4-3-api-계약)). 집계·판정·insert가 모두 지갑 락 구간 안이라 동시 적립이 상한을 넘지 못합니다.
 - in-flight 환불의 멱등 키는 채팅이 `refund:chatturn:{요청당 UUID}`(요청 단위 게이트 병행), 간편 제작이 `refund:story:{차감 시도별 UUID}`입니다(재시도 시 환불 유실 방지).
-- `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN`(소모 — 재생성 포함), `REFUND`(환불), `EXPIRE`(로트 만료 회수 — 음수), `PURCHASE`(Phase 3 예약).
+- `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN`(소모 · 재생성 포함), `REFUND`(환불), `EXPIRE`(로트 만료 회수 · 음수), `PURCHASE`(구매 적립, `Phase 3 · 계획`), `PURCHASE_REVERSAL`(결제 환불 회수, 음수, `Phase 3 · 계획`). 결제 도입 시 enum·DB CHECK 제약에 `PURCHASE_REVERSAL`을 추가하며 참조는 `ref_type=CREDIT_ORDER`입니다.
 - 소모 행의 참조는 `ref_type="CHAT"`(채팅 내부 PK) · `ref_type="STORY"`(간편 제작 진행 ID)입니다. 간편 제작 소모의 `ref_id`가 스토리가 아니라 진행(세션) ID인 이유: 스토리 행은 성공 후에야 생기므로, 선차감 시점에 참조할 수 있는 안정 식별자가 진행 ID뿐입니다(KNK-398).
 - **선차감 대사 배치** — "먼저 차감하고 실패하면 환불"하는 구조에서, 환불 코드가 도는 도중 서버가 중단되면 돈만 차감되고 환불 행이 영영 안 남는 엣지가 생깁니다. 이를 막기 위해 주기적으로 원장과 실제 처리 결과를 대조(대사, reconciliation)해 "차감됐는데 완료되지 않은 거래"를 찾아 누락된 환불 행을 추가하는 배치입니다. `fixedDelay`로 실행이 겹치지 않게 직렬화합니다(주기 기본 15분 `interval-ms`, 기동 직후 부하 회피용 초기 지연 60초 `initial-delay-ms`, `enabled`로 온오프 — 테스트 프로파일은 끔). 배치는 예외를 밖으로 던지지 않고(fixedDelay 태스크가 예외 1회로 영구 중단되는 것 방어) 그룹별 실패를 격리해 다음 회차에 재시도하며, 보정이 실제 발생한 회차만 `credit_reconciliation_refunded` 로그를 남깁니다. 채팅 소모 거래의 완료 수는 `current_turn + regenerated_count`로 판정해 재생성 소모를 미완료로 오인해 이중 환불하지 않습니다([§4-3-9](#4-3-api-계약)).
   - 역할 분담(KNK-448): in-flight 환불 경로가 흔한 실패(AI `error`·스트림 실패)와 워커 미시작 취소를 처리합니다 — SSE 워커는 전용 스레드풀(core 4·max 16·큐 100, MDC 전파)에서 돌며, 익스큐터 포화로 스케줄이 거부되면 즉시 환불 후 스트림을 오류로 닫고(`chat_turn_schedule_rejected` 로그), 큐 대기 중 취소로 워커 본문이 실행되지 못한 경우도 완료 콜백 안전망이 환불·복원합니다. 배치는 in-flight가 원리적으로 못 잡는 드문 레이스(선차감 직후 프로세스 중단 등)만 backstop합니다.
   - **혼합 단가 주의 — `Phase 2 · 구현`(KNK-1056·KNK-1057)**: 아래 개수 대조는 "그룹의 모든 차감이 같은 단가"를 전제로 환불 단위액을 `MIN(ABS(amount))`로 잡습니다. 수치를 런타임에 조정할 수 있게 되면서(정책 오버라이드) 그 전제가 깨졌습니다 — 정책 변경 전후의 차감이 한 그룹에 섞이면 차액만큼 **회원이 미보상**됩니다. 편향은 서버가 초과 환불하지 않는 쪽이며, `MIN != MAX`인 그룹은 대사 시 경고 로그로 남겨 탐지할 수 있게 했습니다. 행 단위 정확 대사(차감 행 태깅)는 [KNK-1057](https://kimandkang.atlassian.net/browse/KNK-1057)로 분리했습니다.
   - 대조 방식(KNK-448): 행별 1:1 매칭이 아니라 `(userId, ref_type, ref_id)` 그룹의 **개수 대조**(차감 수 − 완료 수 = 환불 대상)입니다 — 참조가 채팅·진행 단위(1:N)라 행 매칭이 불가능하기 때문입니다. 후보는 그룹의 마지막 차감 기준 `MAX(created_at) < cutoff`(기본 15분 전, `charge-age-threshold`)로 골라 진행 중 스트림과의 경합을 피하고, 완료 수가 차감 수보다 많으면(게스트·회원 혼합 이력) 보수적으로 환불하지 않으며(fail-safe), 완료 수 판정이 불가한 그룹(리소스 삭제·미지원 참조)도 환불하지 않습니다. 환불 단가는 그룹 소모 행의 `MIN(ABS(amount))`로 취해 혼합 단가에서도 초과 환불하지 않게 보수 편향하고, 사후 환불은 멱등 키 없이 지갑 락 안에서 현재 `REFUND` 수를 재확인해 부족분만 발행합니다(다중 인스턴스 동시 실행 포함 멱등).
+
+#### 이프 충전(결제)
+
+`Phase 3 · 계획`(KNK-1155). 회원이 웹에서는 그로블, 앱에서는 Google Play로 이프를 구매합니다. 상품은 서버 설정으로 정의하며 별도 상품 DB 테이블은 두지 않습니다. 구독·첫 구매 혜택·광고 보상은 없으며, 필요하면 설정으로 추가합니다.
+
+| 상품 ID | 기본 이프 | 보너스 이프 | 총량 | 웹(그로블) | 앱(Google Play) |
+| --- | --- | --- | --- | --- | --- |
+| `if_2000` | 2,000 | 0 | 2,000 | 2,000원 | 2,800원 |
+| `if_5000` | 5,000 | 200 | 5,200 | 5,000원 | 7,000원 |
+| `if_10000` | 10,000 | 700 | 10,700 | 10,000원 | 14,000원 |
+| `if_30000` | 30,000 | 3,000 | 33,000 | 30,000원 | 42,000원 |
+| `if_50000` | 50,000 | 6,000 | 56,000 | 50,000원 | 70,000원 |
+
+앱은 같은 총량에 웹 가격의 1.4배를 적용해 Play 수수료 30%를 흡수합니다. 기본·보너스는 총량에 합쳐 **구매당 `PURCHASE` 로트 1개**로 적립하며 원금·보너스를 구분하지 않습니다. **유료 로트는 웹·앱 모두 적립 시점부터 5년 후 만료**합니다. 차감은 현행 만료 임박순을 유지하며 무료 30일 로트가 먼저 소진됩니다.
+
+##### 결제 API
+
+경로 prefix는 `/api/v1`입니다. `orderId`는 `credit_orders.public_id`(UUID)이며 순차 PK를 노출하지 않습니다.
+
+| API | 요청 | 인증 | 응답·오류 | Phase |
+| --- | --- | --- | --- | --- |
+| `GET /credits/products` | 없음 | 불필요 | 200 `{items:[{productId, baseCredits, bonusCredits, totalCredits, webPriceKrw, appPriceKrw}]}` | Phase 3 · 계획 |
+| `POST /users/me/credits/orders` | `{productId}` | 필수 | 201 `{orderId, paymentUrl}`; 400 미지원 상품; 503 결제 미설정 | Phase 3 · 계획 |
+| `GET /users/me/credits/orders/{orderId}` | 없음 | 필수(본인) | 200 `{orderId, productId, status, totalCredits, createdAt, completedAt}`; 404 없는 주문·본인 주문 아님 | Phase 3 · 계획 |
+| `POST /webhooks/groble` | 서명된 raw body | 불필요(서명) | 200 처리·무시; 401 서명·타임스탬프 실패; 503 시크릿 미설정 | Phase 3 · 계획 |
+| `POST /users/me/credits/purchases/google` | `{productId, purchaseToken}` | 필수 | 200 `{orderId, balance}`; 400 검증 실패·상품 불일치. 같은 구매 토큰 재요청은 200으로 같은 적립 결과 반환(멱등, 중복 적립 없음) | Phase 3 · 계획 |
+
+웹 주문은 `PENDING`으로 생성합니다. `paymentUrl`은 상품별 그로블 결제창 링크에 `?ref=<orderId>`를 붙인 값입니다. 웹 결제 복귀 후에는 주문 조회를 폴링해 "확인 중"에서 `COMPLETED`를 확인합니다. 복귀 자체를 적립 성공으로 간주하지 않습니다.
+
+##### 그로블 웹 결제
+
+- **플랜·설정.** Pro 기본형(구독료 0, 그로블 수수료 5% + 외부 결제망 2.9%, VAT 별도)을 사용합니다. 결제창은 단일 금액이므로 상품별 결제창 5개를 `manyak.payment.groble.products[]`의 `id`·`base`·`bonus`·`webPriceKrw`·`appPriceKrw`·`paymentUrl`로 매핑합니다. 상품·링크는 민감정보가 아니므로 yml에 둡니다.
+- **판매자 회신(2026-09-08).** 이프는 환금성 포인트가 아니며 비사업자 개인 판매가 가능하고 사전 승인은 불필요합니다. 샌드박스는 없으므로 소액 실결제 후 정산 전 취소로 검증하며 비용은 없습니다.
+- **웹훅 검증.** raw body를 확보하고 `HEX(HMAC-SHA256(secret, "{X-Groble-Timestamp}.{raw_body}"))`를 `X-Groble-Signature`와 상수시간 비교합니다. 시크릿 교체 24시간 구간에는 `X-Groble-Signature-Previous`도 허용합니다. 타임스탬프는 현재 시각 ±5분만 허용하며 **검증 전 JSON 파싱을 금지**합니다. 정상·무시 응답은 10초 내 2xx로 반환하고 3xx는 쓰지 않습니다.
+
+| 이벤트 | 조회·처리 | 응답 |
+| --- | --- | --- |
+| `payment.completed` | `sellerReference`로 주문 조회. merchantUid 표식 행을 먼저 잠근 뒤 `PENDING` 주문을 잠그고, 표식의 환불 금액이 주문가와 같으면 적립 없이 `REFUNDED` 전이(`completed_at`·`refunded_at` 기록, `credit_transaction_id=NULL`, `provider_ref=merchantUid`) 후 표식 삭제. 표식 환불 금액이 NULL이면, 또는 주문가와 달라 warn 후 무시하면 `reward(PURCHASE, amount=총량, idempotencyKey="groble:{이벤트 id}", ref=주문)`·주문 `COMPLETED` 전환·`provider_ref=merchantUid` 저장을 한 트랜잭션으로 실행 | 200 |
+| `payment.refunded` | 환불 이벤트에는 `sellerReference`가 없으므로 `merchantUid`로 조회. 표식 행(merchantUid)을 먼저 잠근 뒤 주문 조회. 미매칭 전체 환불은 `groble_refund_marks.refund_amount`에 첫 환불 금액을 보관. `COMPLETED`이면 아래 정책으로 로트 회수 후 `REFUNDED` 전환 | 200 |
+| `payment.cancel_requested`·`subscription*` | 무시 | 200 |
+| completed 미매칭·ref 없음 또는 이미 처리한 주문 | 적립·회수 없이 무시. completed 미매칭·ref 없음은 warn 로그 | 200 |
+| 부분환불(`refund.partialRefund=true`) | 정책상 지원하지 않으므로 회수하지 않고 warn 로그로 운영 확인 | 200 |
+
+멱등 키 `idempotencyKey="groble:{이벤트 id}"`는 헤더 `X-Groble-Idempotency-Key`가 아니라 서명된 본문의 `id`를 쓰는데, 헤더는 HMAC 대상이 아니라 위조 가능하고 같은 주문의 중복 적립은 주문 상태 가드(PENDING 락)가 최종 방어합니다. 원장 `idempotency_key` 유니크 제약도 함께 적용합니다.
+
+그로블은 이벤트 도착 순서를 보장하지 않습니다. 미매칭 전체 환불은 환불 표식 `groble_refund_marks`(`merchant_uid` PK, `created_at`, `refund_amount` BIGINT NULL)에 기록하고 200을 반환합니다. 두 이벤트는 표식 행 락(merchantUid) → 주문 → 지갑 → 로트 순서로 직렬화합니다. 표식 행을 먼저 멱등 생성하고 잠그며, 환불 금액이 NULL인 행은 잠금용입니다. 뒤늦은 완료는 표식 금액과 주문가가 같으면 적립 없이 환불 상태로 전이하고, 다르면 warn 후 정상 적립합니다. 완료 처리 끝에는 표식을 삭제하며 환불 선도착분만 완료까지 보관합니다.
+
+##### 결제 환불·회수
+
+- **환불 대상.** 결제일 7일 이내이며 해당 구매 로트가 미사용(`remaining == originalAmount`)인 경우만 전액 환불합니다.
+- **운영 절차.** 판매자가 그로블 판매 관리에서 정산 전 취소합니다(수수료 없음). 정산은 월 2회이며 7일 환불은 정산 전 취소를 기준으로 운영합니다. 정산 후 예외는 운영자가 수동 처리합니다.
+- **회수 원장.** 원장에 음수 `PURCHASE_REVERSAL` 행(`ref_type=CREDIT_ORDER`)을 추가하고 해당 로트 잔여 전량을 회수합니다. enum·CHECK 제약을 함께 추가하며 V번호는 구현 시 확정합니다.
+- **환불 금액 정합.** `refund.partialRefund=true`는 회수하지 않습니다. `refund.partialRefund=false`여도 `refund.amount`가 주문 `price_krw`와 다르면 부분환불로 간주해 회수하지 않고 warn 로그로 운영 확인합니다.
+- **역순 도착.** 두 핸들러는 표식 행 락(merchantUid) → 주문 → 지갑 → 로트 순서를 따릅니다. 주문과 미매칭인 전체 환불은 금액을 표식에 저장하고, 완료 시 주문가와 대조해 같으면 적립 없이 `REFUNDED`, 불일치하면 warn 후 정상 적립합니다. 매칭된 환불 처리 후에도 표식을 삭제합니다.
+- **잔액 보호.** 외부 환불 통지가 이미 사용한 구매에 도착해도 잔액을 마이너스로 만들지 않습니다. 남은 수량만 회수하고 부족분은 warn 로그와 `credit_orders.reversal_shortfall`(BIGINT NULL, 회수 시 소진돼 못 돌려받은 수량, 0이면 전량 회수)에 기록합니다. 회수·주문 `REFUNDED` 전환·`refunded_at`·부족분 기록은 같은 트랜잭션에서 처리합니다.
+
+##### Google Play 앱 결제
+
+`Phase 3 · 계획`. 앱이 구매 후 `purchaseToken`을 구매 검증 API로 보냅니다. 서버는 서비스 계정으로 androidpublisher `purchases.products.get`을 호출해 `purchaseState=0`·`productId` 일치를 확인합니다. 인증은 `firebase-admin`이 가져온 `google-auth-library`를 재사용하며 새 의존성을 추가하지 않습니다.
+
+검증 성공 시 주문 생성·`COMPLETED` 전환·적립을 한 트랜잭션으로 처리합니다. `provider_ref`는 구매 토큰의 SHA-256이고 멱등 키는 `google:{sha256(token)}`입니다. 서버 성공 응답 후 앱이 consume합니다. 순서를 뒤집으면 결제하고 적립받지 못할 수 있습니다. 3분 내 ack가 없으면 Google이 자동 환불합니다. `purchaseType=0`인 테스트 구매는 dev에서 허용하고 prod에서는 거부합니다.
+
+환불은 RTDN 대신 **Voided Purchases API 주기 대사**로 확인해 회수합니다. 기존 선차감 대사 스케줄러의 실행 겹침 방지·실패 격리 관례와 위 회수·잔액 보호 규칙을 따릅니다. Play 수수료는 30%(15% 프로그램은 신청제)이며 VAT 제외 순가를 기준으로 계산합니다.
+
+**결정 기록 · 이프 충전 결제 도입(2026-09-08, KNK-1155)**
+
+- **배경.** 결제 없이 보상만으로 이프를 얻던 상태에서, 회원이 필요할 때 충전할 수 있도록 웹·앱 결제를 도입합니다. 시장 근거는 6곳 실측이며 크랙·제타는 웹 1원·앱 40% 가산을 적용합니다.
+
+| 대안 | 채택 안 한 이유 |
+| --- | --- |
+| PG 직계약(나이스페이 + 포트원) | 사업자 등록·카드사 심사가 도입의 병목입니다 |
+| 앱 IAP만 도입 | 웹 이용자를 배제합니다 |
+| 보너스 없음 | 상위 상품 결제를 유도하기 어렵습니다 |
+| 무기한 유료 이프 | 환금성·회계상 부채 관리에 기한이 필요합니다. 크랙·로벨·제타 앱의 5년 만료와 크랙의 1년 → 5년 복귀 전례를 반영합니다 |
+| 웹·앱 동일 가격 | Play 수수료 30%로 인한 손실을 흡수하지 못합니다 |
+
+- **영향.** 유료 로트 무기한 방침을 적립 후 5년으로 바꾸고 이용내역 `EARN`에 `PURCHASE`를 포함합니다. API 5개·`credit_orders` 테이블 1개·`PURCHASE_REVERSAL` 사유 1개를 추가합니다. 회수는 기존 분류 `EXPIRE`에 포함하며 웹·앱 충전 화면이 이 계약을 함께 사용합니다.
 
 ### 4-3-8. 일반 제작과 스토리 수정 — `Phase 1 · 구현`
 
@@ -1439,9 +1522,11 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 스토리 | `story_likes` | `Phase 2 · 계획`(KNK-1024) 스토리 좋아요. `user_id` · `story_id` · `created_at`, `(user_id, story_id)` UNIQUE — 등록·취소 멱등과 `likeCount` 실 집계·`isLiked` 판정의 앵커([§4-3-1](#4-3-api-계약)) |
 | 스토리 | `story_reports` | `Phase 2 · 계획`(KNK-1024) 스토리 신고. `user_id` · `story_id` · `created_at` 골격 — 사유 분류·중복 정책 컬럼은 구현 시 확정([§4-3-1](#4-3-api-계약)) |
 | 이프 | `credit_wallets` | `Phase 1 · 구현` 사용자별 지갑(V24). `user_id`(unique FK) · `balance`. 최초 적립 시 지연 생성. 조회 잔액의 정본은 로트 합([§4-3-7](#4-3-api-계약))이며 지갑 행은 차감·적립 직렬화 락의 앵커 |
-| 이프 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) — 30일 만료·FIFO 차감의 잔여 추적. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
+| 이프 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) · 보상·환불 30일 만료·FIFO 차감의 잔여 추적. `Phase 3 · 계획` 구매 로트는 웹·앱 모두 적립 후 5년 만료이며 구매당 기본·보너스 총량을 한 로트에 저장. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
 | 이프 | `credit_policies` | `Phase 2 · 구현`(V66, KNK-1056) 적립·소모 수치 오버라이드. `policy_key`(PK) · `amount` · `effective_until`(nullable — NULL이면 상시) · `updated_at`, `CHECK (amount BETWEEN 0 AND 10000)`. 행이 없으면 `application.yml` 기본값 |
 | 이프 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id`. 이용내역 커서 조회용 `(user_id, created_at DESC, id DESC)` 인덱스는 V65(KNK-1044) |
+| 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`(환불 회수 시각, NULL 허용) · `reversal_shortfall`(BIGINT NULL, 회수 시 소진돼 못 돌려받은 수량, 0이면 전량 회수). 인덱스 `(user_id, created_at DESC)` |
+| 이프 | `groble_refund_marks` | `merchant_uid`(VARCHAR(255), PK) · `created_at`(TIMESTAMPTZ, NOT NULL, 기본 now()). `refund_amount`(BIGINT NULL, 선도착 환불 금액, NULL은 잠금용). merchantUid 단위 직렬화 표식. 완료 시 금액 대조 후 삭제 |
 | 이프 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 이프 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
 | 이프 | Redis `member_trial:{users.id}:story_creation` · `member_trial:{users.id}:chat_turn` | `Phase 1 · 구현` 회원 공유 체험 **사용량** 카운터. 키 없음은 사용량 0이며 일일 리셋·TTL이 없습니다. 정상 시드와 운영 보정 계약은 [§4-3-7](#4-3-api-계약)을 따릅니다 |
@@ -1985,6 +2070,9 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 | `MANYAK_GOOGLE_CLIENT_IDS` | 예 | Google OAuth client ID 목록(콤마 구분). 미주입 시 빈 목록으로 모든 Google 로그인 거부(fail-closed) |
 | `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | **같은 카카오 디벨로퍼스 앱의** REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록(콤마 구분). 사용하는 플랫폼의 키가 빠지면 그 플랫폼 로그인만 401이고, 변수 전체가 비면 모든 Kakao 로그인을 거부합니다(fail-closed). Google에는 영향이 없습니다. 다른 카카오 앱의 키 혼입 금지와 앱 ID 대조 릴리스 게이트는 [§4-5](#4-5-인증과-권한)를 따릅니다(`Phase 1 · 계획`) |
 | `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 아니오(`Phase 3 · 구현`) | Firebase 서비스 계정 JSON **원문**(KNK-1130). 비어 있으면 FCM 빈을 만들지 않아 푸시 발송이 no-op으로 기동합니다([§4-3-5](#4-3-api-계약) 발송 모듈). 앱과 같은 Firebase 프로젝트에서 발급. Secrets Manager `manyak/<env>/app` JSON에 키로 넣고, **태스크 정의 `secrets`에 그 키를 노출하는 terraform apply가 함께 필요**합니다 — 값만 넣으면 컨테이너에 들어가지 않습니다(dev는 KNK-1181로 배선 완료, prod 미배선) |
+| `MANYAK_GROBLE_WEBHOOK_SECRET` | 결제 사용 시 예(`Phase 3 · 계획`) | 그로블 웹훅 HMAC 시크릿. FCM의 미설정 관례에 따라 빈 값으로 기동할 수 있지만, 비어 있으면 웹훅·주문 생성은 503입니다. 상품 5종·결제창 링크는 `manyak.payment.groble.products[]` yml 설정으로 관리합니다([§4-3-7](#4-3-api-계약)) |
+| `MANYAK_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | androidpublisher 구매 검증·Voided Purchases API 대사용 서비스 계정 JSON |
+| `MANYAK_GOOGLE_PLAY_PACKAGE_NAME` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | Google Play 구매 검증 대상 앱 패키지 이름 |
 | `MANYAK_OPENSEARCH_ENDPOINT` | 아니오(`Phase 3 · 구현`) | 검색 저장소 OpenSearch 엔드포인트(`https://` 없이 호스트, KNK-1141). 비어 있으면 검색 503·색인 no-op으로 기동합니다. 인증은 태스크 역할 SigV4라 시크릿이 없습니다([§4-3-1](#4-3-api-계약) 스토리 검색) |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | 아니오 | 스토리 검색 인덱스 이름. 기본 `stories-dev`, 운영은 `stories-prod` |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | 아니오 | `true`면 기동 시 전체 재색인 1회. 초기 적재·복구용이며 끝나면 되돌립니다(켜 두면 배포마다 재색인) |
