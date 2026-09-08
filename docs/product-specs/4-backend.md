@@ -1038,20 +1038,24 @@ graph TD
 
 | 이벤트 | 조회·처리 | 응답 |
 | --- | --- | --- |
-| `payment.completed` | `sellerReference`로 주문 조회. `PENDING`이면 `reward(PURCHASE, amount=총량, idempotencyKey="groble:{이벤트 id}", ref=주문)`·주문 `COMPLETED` 전환·`provider_ref=merchantUid` 저장을 한 트랜잭션으로 실행 | 200 |
-| `payment.refunded` | 환불 이벤트에는 `sellerReference`가 없으므로 `merchantUid`로 조회. `COMPLETED`이면 아래 정책으로 로트 회수 후 `REFUNDED` 전환 | 200 |
+| `payment.completed` | `sellerReference`로 주문 조회. `PENDING` 주문을 잠근 뒤 merchantUid 환불 표식이 있으면 적립 없이 `REFUNDED` 전이(`completed_at`·`refunded_at` 기록, `credit_transaction_id=NULL`, `provider_ref=merchantUid`) 후 표식 삭제. 표식이 없으면 `reward(PURCHASE, amount=총량, idempotencyKey="groble:{이벤트 id}", ref=주문)`·주문 `COMPLETED` 전환·`provider_ref=merchantUid` 저장을 한 트랜잭션으로 실행 | 200 |
+| `payment.refunded` | 환불 이벤트에는 `sellerReference`가 없으므로 `merchantUid`로 조회. 미매칭 전체 환불은 `groble_refund_marks`에 멱등 저장. `COMPLETED`이면 아래 정책으로 로트 회수 후 `REFUNDED` 전환 | 200 |
 | `payment.cancel_requested`·`subscription*` | 무시 | 200 |
-| 미매칭·중복·ref 없음 | 재시도가 무의미하므로 적립·회수 없이 warn 로그 | 200 |
+| completed 미매칭·ref 없음 또는 이미 처리한 주문 | 적립·회수 없이 무시. completed 미매칭·ref 없음은 warn 로그 | 200 |
 | 부분환불(`refund.partialRefund=true`) | 정책상 지원하지 않으므로 회수하지 않고 warn 로그로 운영 확인 | 200 |
 
-멱등은 원장 `idempotency_key` 유니크 제약과 주문 상태 가드로 보장합니다. 별도 이벤트 테이블은 두지 않습니다.
+멱등 키 `idempotencyKey="groble:{이벤트 id}"`는 헤더 `X-Groble-Idempotency-Key`가 아니라 서명된 본문의 `id`를 쓰는데, 헤더는 HMAC 대상이 아니라 위조 가능하고 같은 주문의 중복 적립은 주문 상태 가드(PENDING 락)가 최종 방어합니다. 원장 `idempotency_key` 유니크 제약도 함께 적용합니다.
+
+그로블은 이벤트 도착 순서를 보장하지 않습니다. 미매칭 전체 환불은 환불 표식 `groble_refund_marks`(`merchant_uid` PK, `created_at`)에 기록하고 200을 반환합니다. 뒤늦은 완료가 표식을 확인해 적립 없이 환불 상태로 전이하며, 표식 조회·삭제는 주문 락 안에서 처리합니다.
 
 ##### 결제 환불·회수
 
 - **환불 대상.** 결제일 7일 이내이며 해당 구매 로트가 미사용(`remaining == originalAmount`)인 경우만 전액 환불합니다.
 - **운영 절차.** 판매자가 그로블 판매 관리에서 정산 전 취소합니다(수수료 없음). 정산은 월 2회이며 7일 환불은 정산 전 취소를 기준으로 운영합니다. 정산 후 예외는 운영자가 수동 처리합니다.
 - **회수 원장.** 원장에 음수 `PURCHASE_REVERSAL` 행(`ref_type=CREDIT_ORDER`)을 추가하고 해당 로트 잔여 전량을 회수합니다. enum·CHECK 제약을 함께 추가하며 V번호는 구현 시 확정합니다.
-- **잔액 보호.** 외부 환불 통지가 이미 사용한 구매에 도착해도 잔액을 마이너스로 만들지 않습니다. 남은 수량만 회수하고 부족분은 warn 로그와 주문에 기록합니다. 부족분 기록의 구체 컬럼은 구현 시 확정합니다. 회수·주문 `REFUNDED` 전환·`refunded_at` 기록은 같은 트랜잭션에서 처리합니다.
+- **환불 금액 정합.** `refund.partialRefund=true`는 회수하지 않습니다. `refund.partialRefund=false`여도 `refund.amount`가 주문 `price_krw`와 다르면 부분환불로 간주해 회수하지 않고 warn 로그로 운영 확인합니다.
+- **역순 도착.** 주문과 미매칭인 전체 환불은 표식을 저장하고, 완료 도착 시 위 표식 정책으로 적립 없이 `REFUNDED` 전이합니다.
+- **잔액 보호.** 외부 환불 통지가 이미 사용한 구매에 도착해도 잔액을 마이너스로 만들지 않습니다. 남은 수량만 회수하고 부족분은 warn 로그와 `credit_orders.reversal_shortfall`(BIGINT NULL, 회수 시 소진돼 못 돌려받은 수량, 0이면 전량 회수)에 기록합니다. 회수·주문 `REFUNDED` 전환·`refunded_at`·부족분 기록은 같은 트랜잭션에서 처리합니다.
 
 ##### Google Play 앱 결제
 
@@ -1521,7 +1525,8 @@ RDB 스키마의 정본은 Flyway 마이그레이션(`src/main/resources/db/migr
 | 이프 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) · 보상·환불 30일 만료·FIFO 차감의 잔여 추적. `Phase 3 · 계획` 구매 로트는 웹·앱 모두 적립 후 5년 만료이며 구매당 기본·보너스 총량을 한 로트에 저장. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
 | 이프 | `credit_policies` | `Phase 2 · 구현`(V66, KNK-1056) 적립·소모 수치 오버라이드. `policy_key`(PK) · `amount` · `effective_until`(nullable — NULL이면 상시) · `updated_at`, `CHECK (amount BETWEEN 0 AND 10000)`. 행이 없으면 `application.yml` 기본값 |
 | 이프 | `credit_transactions` | `Phase 1 · 구현` 불변 원장(V24·V28). `wallet_id` · `amount`(적립 양수/소모 음수) · `reason`(enum) · `idempotency_key`(unique, nullable) · `ref_type`/`ref_id`. 이용내역 커서 조회용 `(user_id, created_at DESC, id DESC)` 인덱스는 V65(KNK-1044) |
-| 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`(환불 회수 시각, NULL 허용). 인덱스 `(user_id, created_at DESC)`. 환불 회수 부족분은 주문에 기록하며 구체 컬럼은 구현 시 확정 |
+| 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`(환불 회수 시각, NULL 허용) · `reversal_shortfall`(BIGINT NULL, 회수 시 소진돼 못 돌려받은 수량, 0이면 전량 회수). 인덱스 `(user_id, created_at DESC)` |
+| 이프 | `groble_refund_marks` | `merchant_uid`(VARCHAR(255), PK) · `created_at`(TIMESTAMPTZ, NOT NULL, 기본 now()). 미매칭 전체 환불 표식. 완료 시 적립 없이 환불 전이 후 삭제 |
 | 이프 | `users.invite_code` · `users.inviter_user_id` | `Phase 1 · 구현` 사용자당 고유 초대 코드(unique, V25)와 초대자 FK(V26·V27 — 초대 보상 판정용). `Phase 1 · 구현`(KNK-567·V47) — 초대자 FK 저장 시점이 가입 트랜잭션에서 코드 입력(redeem) 트랜잭션으로 이동했고, 초대 코드는 혼동 문자 제외 집합으로 전량 재발급(V47 리셋, [§4-3-7](#4-3-api-계약)) |
 | 이프 | Redis `guest_trial:{deviceIdHash}:*` | `Phase 1 · 구현` 게스트 체험 한도 카운터. `storyline_generation` · `story_creation` · `chat_turn` 3종을 디바이스 ID 해시별로 저장 |
 | 이프 | Redis `member_trial:{users.id}:story_creation` · `member_trial:{users.id}:chat_turn` | `Phase 1 · 구현` 회원 공유 체험 **사용량** 카운터. 키 없음은 사용량 0이며 일일 리셋·TTL이 없습니다. 정상 시드와 운영 보정 계약은 [§4-3-7](#4-3-api-계약)을 따릅니다 |
