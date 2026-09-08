@@ -27,7 +27,8 @@
 | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 확인 | `docs/product-specs/3-3-android-app.md` |
 | 안드로이드 모듈 소유권·내부 계층·의존 규칙 확인 | `docs/planning/android-module-architecture.md` (3-3에서 위임) |
 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 확인 | `docs/product-specs/4-backend.md` |
-| AI 기능, 요청·응답 계약, 프롬프트, 실패 처리 기준 확인 | `docs/product-specs/5-ai-server.md` |
+| AI 기능·입출력·실패 계약·평가 시스템 확인 | `docs/product-specs/5-1-ai-server-spec.md` |
+| AI 설계의 배경·대안·선택 근거 확인 | `docs/product-specs/5-2-ai-server-ard.md` |
 | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 확인 | `docs/product-specs/6-analytics.md` |
 | 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 확인 | `docs/product-specs/7-deployment.md` |
 | Phase별 개발 로드맵, 마일스톤, 스프린트 일정, 백로그 확인 | `docs/planning/roadmap.md` |
