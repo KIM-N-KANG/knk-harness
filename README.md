@@ -53,7 +53,7 @@ git clone <manyak-infra-repository-url>
 | 3-3 | `docs/product-specs/3-3-android-app.md` | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 |
 | 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
 | 5-1 | `docs/product-specs/5-1-ai-server-spec.md` | AI 기능·입출력·실패 계약·평가 시스템 |
-| 5-2 | `docs/product-specs/5-2-ai-server-ard.md` | AI 설계의 배경·대안·선택 근거 |
+| 5-2 | `docs/product-specs/5-2-ai-server-adr.md` | AI 설계의 배경·대안·선택 근거 |
 | 6 | `docs/product-specs/6-analytics.md` | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 |
 | 7 | `docs/product-specs/7-deployment.md` | 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 |
 
