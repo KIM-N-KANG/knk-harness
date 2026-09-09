@@ -3,7 +3,7 @@
 | 항목      | 값                                                                                                                                                                                |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 화면      | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]`                                                                          |
-| 관련 스펙 | [웹 사용자 모델](../product-specs/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../product-specs/2-user-stories.md)                                             |
+| 관련 스펙 | [웹 사용자 모델](../product-specs/3-3-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../product-specs/2-user-stories.md)                                             |
 | 관련 E2E  | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
 | 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성)                |
 
@@ -24,7 +24,7 @@
 | CHAT-LIST-04 | P1  | 게스트, 로컬 채팅 ID·스토리 ID 모두 없음(온보딩은 열람 처리) | `/chats` 진입                        | "아직 진행중인 채팅이 없어요" + "스토리 만들기" CTA(`/studio/story/simple`)                                               | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3                  |
 | CHAT-LIST-05 | P1  | 게스트, 채팅 ID 없음 + 스토리 ID 있음                        | `/chats` 진입                        | 같은 빈 안내 + "스토리 목록으로 가기" CTA(`/studio`)                                                                 | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3                  |
 | CHAT-LIST-06 | P1  | 게스트, 채팅 ID 있음                                         | 배치 조회가 5xx로 실패               | "채팅을 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                               | 수동                         | US-2-6 유형, §3-1-3             |
-| CHAT-LIST-07 | P2  | 게스트, 채팅 ID 있음                                         | 진입 직후(하이드레이션·조회 중) 관찰 | 빈 상태 깜빡임 없이 실제 카드와 같은 가로 16px·세로 8px 패딩, 48px·12px 곡률 썸네일, 제목·미리보기·메타 행의 지연 스켈레톤 → 목록 전환 | ✅ e2e `chats/chat-list`      | §3-1-3·[웹 저장소 3-state](../product-specs/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
+| CHAT-LIST-07 | P2  | 게스트, 채팅 ID 있음                                         | 진입 직후(하이드레이션·조회 중) 관찰 | 빈 상태 깜빡임 없이 실제 카드와 같은 가로 16px·세로 8px 패딩, 48px·12px 곡률 썸네일, 제목·미리보기·메타 행의 지연 스켈레톤 → 목록 전환 | ✅ e2e `chats/chat-list`      | §3-1-3·[웹 저장소 3-state](../product-specs/3-3-web-spec.md#웹-사용자-모델), KNK-1043 |
 | CHAT-LIST-08 | P2  | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨                    | `/chats` 진입                        | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                      | 수동                         | §3-1-6 배치 재조회              |
 | CHAT-LIST-09 | P2  | `lastStoryPreview`가 빈 문자열인 채팅                        | `/chats` 진입                        | 미리보기 자리에 "채팅을 시작하고 이야기를 이어가 보세요" fallback 표시                                              | ✅ e2e `visual/chats-visual` | §3-1-3                          |
 | CHAT-LIST-10 | P2  | `lastStoryPreview`가 `null`인 채팅                           | `/chats` 진입                        | 해당 채팅은 목록 변환 단계에서 제외되어 카드가 나타나지 않음                                                        | 수동                         | §3-1-3                          |
@@ -51,7 +51,7 @@
 | CHAT-ENTRY-08 | P1  | 회원이 이관되지 않은 게스트 채팅에 진입(상세 조회 403 — 이관 1회 제한 도달 계정 등) | 진입                        | "지금 계정에서는 볼 수 없어요" + "스토리와 채팅을 이미 한 번 옮긴 계정이라 옮기지 못했어요" + "채팅 목록으로 가기" 버튼. 성공할 수 없는 "다시 시도하기"는 제공하지 않음 | ✅ e2e `auth/migration`                       | 백엔드 §4-5 교차 접근 차단, AUTH-MIGRATE-03 |
 | CHAT-ENTRY-09 | P1  | 임의 채팅                          | 헤더 우측 구성 확인         | 공유 버튼(share 아이콘)과 옵션 메뉴(⋮) 두 개만 있음. 홈 버튼은 없음(KNK-715에서 공유 버튼으로 대체 — 하단 네비의 홈 탭과 중복이었음). 공유 버튼 동작은 CHAT-SHARE-01 | ✅ e2e `chats/chat-share`                     | §3-1-5, KNK-715          |
 | CHAT-ENTRY-11 | P1  | 참조 스토리가 삭제된 채팅(`storyTitle`이 빈 문자열) | 진입 → 옵션 메뉴 탭       | 헤더 제목(h1) 자리에 보조색 "삭제된 스토리". 옵션 메뉴에는 회원이라도 "삭제하기"만(신고 대상 스토리가 없음) | ✅ e2e `chats/chat-room`                      | §3-1-3 FE-SCREEN-005, KNK-1186 |
-| CHAT-ENTRY-10 | P2  | 임의 채팅                          | 브라우저 탭 제목 확인       | 데이터 도착 후 `스토리 제목 - 마냑`. 화면을 벗어나면 기본 문서 제목([§3-2-4](../product-specs/3-2-web-spec.md))으로 복귀 | ✅ e2e `chats/chat-room`                      | 구현(`chat-room`)      |
+| CHAT-ENTRY-10 | P2  | 임의 채팅                          | 브라우저 탭 제목 확인       | 데이터 도착 후 `스토리 제목 - 마냑`. 화면을 벗어나면 기본 문서 제목([§3-2-4](../product-specs/3-3-web-spec.md))으로 복귀 | ✅ e2e `chats/chat-room`                      | 구현(`chat-room`)      |
 
 ## CHAT-TOUR — 채팅 화면 안내 투어
 

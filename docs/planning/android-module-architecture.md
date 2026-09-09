@@ -1,6 +1,6 @@
 # Android 모듈 아키텍처
 
-[Android 현재 설계](../product-specs/3-3-1-android-design.md)가 위임하는 모듈 소유권·계층·의존 규칙의 정본입니다. 경로는 기존 참조를 유지하기 위해 planning 아래에 두지만 문서 책임은 현재 설계입니다. 선택 이유는 [Android ADR](../product-specs/3-3-2-android-adr.md), 실행·검증 기록은 [모듈 재구성 계획](../../../manyak-android/docs/plans/module-reorganization.md), 적용 상태는 [추적](./client-tracking.md)이 소유합니다.
+[Android 현재 설계](../product-specs/3-7-android-design.md)가 위임하는 모듈 소유권·계층·의존 규칙의 정본입니다. 경로는 기존 참조를 유지하기 위해 planning 아래에 두지만 문서 책임은 현재 설계입니다. 선택 이유는 [Android ADR](../product-specs/3-8-android-adr.md), 실행·검증 기록은 [모듈 재구성 계획](../../../manyak-android/docs/plans/module-reorganization.md), 적용 상태는 [추적](./client-tracking.md)이 소유합니다.
 
 ## 1. 구조와 경계
 
@@ -17,7 +17,7 @@
 
 ## 2. 관련 계약
 
-제품 동작은 [공통 스펙](../product-specs/3-1-client-spec.md)·[Android 스펙](../product-specs/3-3-android-spec.md), 인증·저장·복구 구조는 [Android 설계](../product-specs/3-3-1-android-design.md), 이벤트 의미는 [분석](../product-specs/6-analytics.md)이 소유합니다. 실제 모듈 등록은 Android `settings.gradle.kts`를 확인합니다.
+제품 동작은 [공통 스펙](../product-specs/3-1-client-spec.md)·[Android 스펙](../product-specs/3-6-android-spec.md), 인증·저장·복구 구조는 [Android 설계](../product-specs/3-7-android-design.md), 이벤트 의미는 [분석](../product-specs/6-analytics.md)이 소유합니다. 실제 모듈 등록은 Android `settings.gradle.kts`를 확인합니다.
 
 ## 3. 모듈 구조와 책임
 
@@ -148,7 +148,7 @@ graph TD
 | 계정 연동·탈퇴 인증 처리 | auth | my/profile·withdrawal의 UI는 공개 auth/domain 계약 사용 |
 | 피드백 | my/feedback | 기능 내부 계약·구현 |
 | 신고 | report | 공용 시트·상태·신고 계약, 다른 스토리 조회 동작은 노출하지 않음 |
-| 푸시 토큰 등록·알림 수신·수신 동의 | notification | app의 세션 종료 조정자에는 notification/domain의 등록기 닫기·토큰 삭제 계약만, 루트에는 권한 요청 컴포저블만 공개. `FirebaseMessagingService`는 이 모듈 매니페스트에 선언하고 google-services 플러그인은 app에 남김(§8). 다른 화면 기능은 알림을 직접 알지 않음([`3-3-1-android-design.md §3-3-4`](../product-specs/3-3-1-android-design.md) 푸시 토큰 등록) |
+| 푸시 토큰 등록·알림 수신·수신 동의 | notification | app의 세션 종료 조정자에는 notification/domain의 등록기 닫기·토큰 삭제 계약만, 루트에는 권한 요청 컴포저블만 공개. `FirebaseMessagingService`는 이 모듈 매니페스트에 선언하고 google-services 플러그인은 app에 남김(§8). 다른 화면 기능은 알림을 직접 알지 않음([`3-7-android-design.md §3-3-4`](../product-specs/3-7-android-design.md) 푸시 토큰 등록) |
 
 `CreationProgressAccess`에는 읽기뿐 아니라 **폐기**도 필요합니다. StudioViewModel이 현재 record를 관찰하고 clear()를 호출하므로, 요약에는 기존 단계 구분·완성 중 여부·재개 위치가 들어가고 관찰·폐기 결과가 계약에 남아야 합니다. 전체 생성 명령·캐릭터·추가 정보·영속 페이로드는 create가 소유합니다. 요약 단계에서 분석 이벤트의 기존 stage 구분도 보존합니다.
 

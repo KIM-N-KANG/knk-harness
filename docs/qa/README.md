@@ -1,6 +1,6 @@
 # QA Sheet
 
-이 디렉터리는 **수동 QA와 E2E 테스트 설계의 기준이 되는 화면·기능별 QA 케이스**를 담습니다. 유저 스토리([`2-user-stories.md`](../product-specs/2-user-stories.md))와 화면 스펙의 검수 기준([`3-1-client-spec.md`](../product-specs/3-1-client-spec.md))을 씨앗으로 삼아, 플랫폼별 [웹 계약](../product-specs/3-2-web-spec.md)을 함께 적용해 케이스를 작성합니다. 실제 코드와 기대 계약의 차이는 [추적 문서](../planning/client-tracking.md)에 남기며 관측된 코드만으로 기대 결과를 바꾸지 않습니다. 별도 유스케이스 문서는 만들지 않으며, 각 케이스가 US-x-y ID를 직접 참조합니다.
+이 디렉터리는 **수동 QA와 E2E 테스트 설계의 기준이 되는 화면·기능별 QA 케이스**를 담습니다. 유저 스토리([`2-user-stories.md`](../product-specs/2-user-stories.md))와 화면 스펙의 검수 기준([`3-1-client-spec.md`](../product-specs/3-1-client-spec.md))을 씨앗으로 삼아, 플랫폼별 [웹 계약](../product-specs/3-3-web-spec.md)을 함께 적용해 케이스를 작성합니다. 실제 코드와 기대 계약의 차이는 [추적 문서](../planning/client-tracking.md)에 남기며 관측된 코드만으로 기대 결과를 바꾸지 않습니다. 별도 유스케이스 문서는 만들지 않으며, 각 케이스가 US-x-y ID를 직접 참조합니다.
 
 | 항목      | 값                                                                    |
 | --------- | --------------------------------------------------------------------- |

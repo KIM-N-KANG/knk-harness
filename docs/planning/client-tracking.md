@@ -22,9 +22,9 @@
 
 | 영역 | 승인·적용 | 기준과 후속 작업 |
 | --- | --- | --- |
-| 공통 | 초안 1개·완성 요청 N개 분리 승인 | [공통 계약](../product-specs/3-1-client-spec.md#제작-카드와-다중-완성-진행), [C-004](../product-specs/3-1-1-client-adr.md#c-004). 실패 카드 UX·완료 분석은 아래 별도 확인 |
-| Android | 현행 코드에 적용 | [KNK-1222](https://kimandkang.atlassian.net/browse/KNK-1222), [실행 계획·결과](../../../manyak-android/docs/plans/studio-creation-cards.md), [현재 설계](../product-specs/3-3-1-android-design.md#제작-카드와-다중-완성-진행). 이 조사에서 기기 검증·배포 여부를 판정하지 않음 |
-| 웹 | 변경 목표 승인, 적용 유예 | 현행 [웹 계약](../product-specs/3-2-web-spec.md#웹-제작-흐름)은 자동 채팅 생성. 이전 문서의 웹 전환 순서를 [웹 계획](../../../manyak-web/docs/superpowers/plans/2026-09-09-studio-creation-cards.md)으로 이동. 후속 구현 티켓은 배정 필요; KNK-1236은 문서 이관 작업만 담당 |
+| 공통 | 초안 1개·완성 요청 N개 분리 승인 | [공통 계약](../product-specs/3-1-client-spec.md#제작-카드와-다중-완성-진행), [C-004](../product-specs/3-2-client-adr.md#c-004). 실패 카드 UX·완료 분석은 아래 별도 확인 |
+| Android | 현행 코드에 적용 | [KNK-1222](https://kimandkang.atlassian.net/browse/KNK-1222), [실행 계획·결과](../../../manyak-android/docs/plans/studio-creation-cards.md), [현재 설계](../product-specs/3-7-android-design.md#제작-카드와-다중-완성-진행). 이 조사에서 기기 검증·배포 여부를 판정하지 않음 |
+| 웹 | 변경 목표 승인, 적용 유예 | 현행 [웹 계약](../product-specs/3-3-web-spec.md#웹-제작-흐름)은 자동 채팅 생성. 이전 문서의 웹 전환 순서를 [웹 계획](../../../manyak-web/docs/superpowers/plans/2026-09-09-studio-creation-cards.md)으로 이동. 후속 구현 티켓은 배정 필요; KNK-1236은 문서 이관 작업만 담당 |
 
 ## 계약 확인 항목
 
@@ -32,7 +32,7 @@
 | --- | --- | --- |
 | 완성 실패 카드 | Android는 같은 requestId 재시도·해당 요청 삭제, 편집 복귀 없음. 402도 같은 실패 카드. 기존 본문이 잠정임을 명시 | UX 확정 전 현재 렌더를 제품 승인으로 승격하지 않음. 재시도·삭제·편집 복귀와 이프 부족 안내를 함께 확정 |
 | 완성 분석 | 자동 채팅 생성 제거 시 `client_storyCreate_completed`의 필수 `chat_id`를 채울 수 없음 | [분석 계약](../product-specs/6-analytics.md)의 변경 승인 전 가짜 ID·임의 프로퍼티를 보내지 않음. 기존 웹 흐름의 수집 여부와 전환 후 중단 범위 구분 |
-| 웹 게스트 본 엔딩 합산 | 승인된 계약, 이전 상태표에는 웹 미구현 | [웹 계약](../product-specs/3-2-web-spec.md#웹-사용자-모델) 유지. 코드·E2E 증거 확인 후 상태 갱신 |
+| 웹 게스트 본 엔딩 합산 | 승인된 계약, 이전 상태표에는 웹 미구현 | [웹 계약](../product-specs/3-3-web-spec.md#웹-사용자-모델) 유지. 코드·E2E 증거 확인 후 상태 갱신 |
 | 채팅 배경 이미지 | 기존 상태표: 계약 승인, 웹·서버·AI 미구현 | 마커·images 계약은 공통 스펙 유지. 인물 이미지와 별개로 서버·AI 준비와 플랫폼 검증 연결 |
 | 일반 제작·수정 | 기존 상태표: 계약 승인, 웹 미구현, Android 범위 미정 | 공통 FE-SCREEN-009 계약 유지. Android 출시 범위·웹 착수 티켓 확정 후 구현 계획 작성 |
 | 세계관 탭 | KNK-621: 방향 합의. 장르·배경 각 1~2개·각 최소 1개, 배경 태그 서버 제공 전제 | 현재 키워드 계약을 바꾸지 않음. 서버 BACKGROUND 제공과 인물 단위 입력 결합을 승인한 뒤 계약 갱신 |

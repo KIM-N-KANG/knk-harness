@@ -1,6 +1,6 @@
-# 3-3-1-ANDROID-DESIGN
+# 3-7-ANDROID-DESIGN
 
-[공통 스펙](./3-1-client-spec.md)과 [Android 스펙](./3-3-android-spec.md)을 충족하는 현재 구조입니다. 선택 이유는 [Android ADR](./3-3-2-android-adr.md), 일회성 변경 단계는 구현 저장소의 기능 계획, 반영·검증·배포 증거는 [추적](../planning/client-tracking.md)이 소유합니다.
+[공통 스펙](./3-1-client-spec.md)과 [Android 스펙](./3-6-android-spec.md)을 충족하는 현재 구조입니다. 선택 이유는 [Android ADR](./3-8-android-adr.md), 일회성 변경 단계는 구현 저장소의 기능 계획, 반영·검증·배포 증거는 [추적](../planning/client-tracking.md)이 소유합니다.
 
 기준 코드: `manyak-android` `6bccf25adc531dfc8254a0dad3076bef0a72958a`. 모듈 소유권·의존 규칙은 [기존 모듈 설계](../planning/android-module-architecture.md)를 참조합니다. 라이브러리·SDK 버전은 빌드 설정이 정본이며 이 문서의 이관은 전체 동작·운영 배포 검증을 뜻하지 않습니다.
 
@@ -41,7 +41,7 @@
 | 푸시 | **Firebase Cloud Messaging** |
 | 컬렉션 불변성(선택) | **필요한 `UiState`에 `kotlinx.collections.immutable`** |
 
-**백엔드는 직접 호출합니다.** 웹의 BFF 프록시에 대응하는 중간 계층을 두지 않습니다 — 웹이 프록시를 둔 이유는 브라우저 JS에 토큰을 노출하지 않기 위해서인데([`3-2-1-web-design.md §3-2-4`](3-2-1-web-design.md#3-2-4-bff-프록시토큰-세션)), 앱은 토큰을 데이터 계층 안에 가둘 수 있어 같은 목적을 프록시 없이 달성합니다(§3-3-4).
+**백엔드는 직접 호출합니다.** 웹의 BFF 프록시에 대응하는 중간 계층을 두지 않습니다 — 웹이 프록시를 둔 이유는 브라우저 JS에 토큰을 노출하지 않기 위해서인데([`3-4-web-design.md §3-2-4`](3-4-web-design.md#3-2-4-bff-프록시토큰-세션)), 앱은 토큰을 데이터 계층 안에 가둘 수 있어 같은 목적을 프록시 없이 달성합니다(§3-3-4).
 
 **도입하지 않는 것** — MVI 프레임워크(직접 구현 — 아래 UI 상태 모델), BFF 대응 계층(위).
 
@@ -181,7 +181,7 @@ Kotlin 2.3은 strong skipping이 기본인 범위에 있고, strong skipping에�
 
 ### 메인 탭 셸
 
-메인 그래프의 탭 목적지 넷을 두르는 chrome입니다. 웹 `(main)` 레이아웃([`3-2-web-spec.md §3-2-4`](3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) 상단 헤더·하단 네비게이션)에 대응하며, 아래 표의 항목만 다릅니다.
+메인 그래프의 탭 목적지 넷을 두르는 chrome입니다. 웹 `(main)` 레이아웃([`3-3-web-spec.md §3-2-4`](3-3-web-spec.md#3-2-4-라우팅레이아웃공통-셸) 상단 헤더·하단 네비게이션)에 대응하며, 아래 표의 항목만 다릅니다.
 
 | 항목 | 앱 |
 | --- | --- |
@@ -591,7 +591,7 @@ AI 출력에 섞이는 인물 이미지는 **스트리밍 중에는 이벤트로
 - 재생성 중에는 자동 따라가기를 끄고 대상 턴을 상단에 맞춥니다.
 - 메시지 영역 아래쪽 페이드는 앱이 다른 스크롤 영역에서 쓰는 것과 같은 규칙을 씁니다.
 
-**채팅 헤더는 고정합니다.** 이는 [Android 플랫폼 계약](./3-3-android-spec.md#채팅-목록과-채팅방)의 예외입니다. 공통 원문의 show/hide 적용 차이는 추적 문서에서 확인합니다.
+**채팅 헤더는 고정합니다.** 이는 [Android 플랫폼 계약](./3-6-android-spec.md#채팅-목록과-채팅방)의 예외입니다. 공통 원문의 show/hide 적용 차이는 추적 문서에서 확인합니다.
 
 #### 헤더와 삭제
 
@@ -989,7 +989,7 @@ API 사용 계약([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-�
 - 진입점과 확인 다이얼로그는 §3-3-3 마이의 프로필 헤더가 소유합니다. 확인 다이얼로그는 진행 중 바깥 탭·뒤로가기로 닫히지 않고, 제공자 창을 두 번 여는 긴 작업이라 화면의 다른 입력을 막지 않는 별도 작업으로 실행합니다.
 
 ### 이프 정책 수치 패칭
-수치 출처와 표시 규칙은 [`3-1-client-spec.md §3-1-7` 이프 정책 수치 표시](3-1-client-spec.md#이프-정책-수치-표시)가 소유하고, 웹 구현은 [`3-2-1-web-design.md`](3-2-1-web-design.md) §3-2-2 이프 정책 수치 패칭입니다. 이 절은 앱이 그 계약을 어떻게 충족하는지만 적습니다.
+수치 출처와 표시 규칙은 [`3-1-client-spec.md §3-1-7` 이프 정책 수치 표시](3-1-client-spec.md#이프-정책-수치-표시)가 소유하고, 웹 구현은 [`3-4-web-design.md`](3-4-web-design.md) §3-2-2 이프 정책 수치 패칭입니다. 이 절은 앱이 그 계약을 어떻게 충족하는지만 적습니다.
 
 - **화면에 이프 수치를 박아 두지 않습니다**(`MUST NOT`). 출처는 `GET /credits/policies` 하나이고 인증이 필요 없습니다. 응답은 평평한 여섯 필드입니다 — `signupReward` · `inviteReward` · `inviteMonthlyCap` · `attendanceReward` · `storyCreationCost` · `chatTurnCost`. 초대 화면이 월 상한(`inviteMonthlyCap`)을 응답이 싣는 값으로 쓰던 원칙을 나머지 수치로 넓힌 것입니다(§3-3-3 마이 — 친구 초대).
 - **수치를 쓰는 자리는 여섯입니다** — 추가 정보 단계의 완성 비용 행(`storyCreationCost`), 채팅 컴포저의 턴 비용(`chatTurnCost`), 이프 충전 무료 충전 탭의 출석 제목(`attendanceReward`), 마이·이프 충전의 친구 초대 진입 줄·초대 코드 안내 시트 제목·공유 시트 문구(`inviteReward`). 가입 보상은 앱이 문구로 노출하지 않아 쓰지 않습니다(§3-3-3 마이 — 가입 보상에는 전용 안내를 두지 않습니다).
@@ -1041,7 +1041,7 @@ API 사용 계약([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-�
 
 ### 제작 카드와 다중 완성 진행
 
-사용자 동작은 [제작 계약](./3-3-android-spec.md#제작과-데이터-보존)이 소유합니다. `:create`는 편집 슬롯과 requestId별 완성 요청을 관리하며 `:studio`에는 `CreationProgressAccess`의 요약·관찰·폐기·새로고침 계약만 공개합니다.
+사용자 동작은 [제작 계약](./3-6-android-spec.md#제작과-데이터-보존)이 소유합니다. `:create`는 편집 슬롯과 requestId별 완성 요청을 관리하며 `:studio`에는 `CreationProgressAccess`의 요약·관찰·폐기·새로고침 계약만 공개합니다.
 
 - DB v3는 `pending_story_creation` 단일 편집 행과 `story_completion_request`의 requestId 기본 키를 사용합니다. 각 행에는 `ownerId`를 두고 현재 회원의 행만 읽고 씁니다. 회원을 모르면 읽기는 비어 있고 쓰기는 실패합니다.
 - 두 저장소는 로그아웃의 `UserScopedStore` 삭제 목록에서 제외합니다. 늦은 응답과 쓰기는 `SessionGate`로 거절합니다. 편집 슬롯은 기기당 한 행이며 다른 회원의 새 초안이 덮을 수 있고 탈퇴 회원의 행은 보이지 않는 채 남습니다.
@@ -1055,7 +1055,7 @@ API 사용 계약([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-�
 
 ### 간편 제작 라이프사이클 — 저장·이탈·복구
 
-사용자 경고·버튼·보존 범위는 [제작 스펙](./3-3-android-spec.md#제작과-데이터-보존)이 소유합니다. 저장 구조와 요청 실행은 위 다중 완성 진행 절을 따릅니다.
+사용자 경고·버튼·보존 범위는 [제작 스펙](./3-6-android-spec.md#제작과-데이터-보존)이 소유합니다. 저장 구조와 요청 실행은 위 다중 완성 진행 절을 따릅니다.
 
 - `@ActivityRetainedScoped` 생성 스토어는 키워드·스토리라인·추가 정보의 편집 스냅숏을 메모리에 둡니다. 저장 버튼과 Activity `onStop`에서 디스크에 쓰며 `isChangingConfigurations`인 경우는 제외합니다. 목적지의 STOP을 자동 저장 신호로 사용하지 않습니다.
 - 사용자 저장과 요청 단계 쓰기는 mutex로 직렬화합니다. 진행 중인 저장에 합류한 뒤 요청을 시작하고, 오래된 스냅숏이 요청 상태를 덮지 못하게 합니다. API 전송 전 요청 식별자·명령과 생성 성공 결과는 즉시 영속화합니다.
@@ -1080,7 +1080,7 @@ API 사용 계약([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-�
 2. 로그인 성공 시 Amplitude와 Crashlytics에 사용자 `public_id`를 설정합니다. 로그아웃 클릭 이벤트를 옛 사용자에게 enqueue한 뒤 중앙 종료 흐름이 Amplitude user ID 해제 → 앱 `device_id` 재발급 → Amplitude `setDeviceId(새 값)` → Crashlytics `setUserId("")` 순서로 실행합니다. 새 식별자 주입 완료 전에는 새 로그인과 이벤트 발행을 열지 않습니다(§3-3-4 로그아웃 장벽).
 3. Crashlytics는 debug 수집을 끄고 release에서만 켭니다. 화면 이름·P0 행동 이름은 `FirebaseCrashlytics.log`로 수동 기록하며 Google Analytics for Firebase는 설치하지 않습니다. 릴리스마다 R8 매핑 파일을 업로드합니다.
 4. 예상하지 못한 API 5xx·네트워크·파싱 오류의 non-fatal에는 해당 응답의 `request_id`를 event-local custom key로 붙입니다. 전역 request key, 사용자 입력, 토큰, 비밀 링크/코드는 금지합니다. 예상 가능한 4xx와 취소는 수집하지 않습니다.
-5. Crashlytics ANR은 API 30+만, NDK 수집은 미도입입니다. API 24~29 ANR은 Android vitals를 별도 확인하되 완전한 대체로 간주하지 않습니다([Android ADR](./3-3-2-android-adr.md)).
+5. Crashlytics ANR은 API 30+만, NDK 수집은 미도입입니다. API 24~29 ANR은 Android vitals를 별도 확인하되 완전한 대체로 간주하지 않습니다([Android ADR](./3-8-android-adr.md)).
 
 ### 화면별 이벤트 발화 지점
 이벤트 정의는 [`6-analytics.md §6-4-2`](./6-analytics.md)가, 앱 보강 이벤트와 웹 전용 목록은 [`§6-4-2-15`·`§6-4-2-16`](./6-analytics.md)이 소유합니다. 이 표는 **앱 화면이 카탈로그의 어느 `screen_name`에 대응하고 어느 Intent·Effect에서 발화하는지**만 고정합니다.
@@ -1246,7 +1246,7 @@ API non-fatal의 적용·검증 범위는 [추적 문서](../planning/client-tra
 최대 글자 크기·가로 레이아웃의 적용 범위와 검증 상태는 [추적 문서](../planning/client-tracking.md#계약-확인-항목)를 확인합니다.
 
 ### Definition of Done
-검수 대상은 [Android 스펙](./3-3-android-spec.md)과 [적용·출시 범위](../planning/client-tracking.md)로 정합니다. 아래는 관련 구조 변경 시 확인할 게이트이며 검증 수행 여부를 뜻하지 않습니다.
+검수 대상은 [Android 스펙](./3-6-android-spec.md)과 [적용·출시 범위](../planning/client-tracking.md)로 정합니다. 아래는 관련 구조 변경 시 확인할 게이트이며 검증 수행 여부를 뜻하지 않습니다.
 
 - `./gradlew check`(ktlint·detekt·lint·단위 테스트)와 `./gradlew assembleDebug`가 통과해야 합니다(CI 게이트와 동일).
 - `MviViewModel` 계약 테스트에서 동시 ReducerEvent가 한 소비자에서 순서대로 줄어들고, 채널 포화 시 사건을 버리지 않으며, 화면 재수집이 이미 소비한 `UiEffect`를 replay하지 않는지 확인합니다.

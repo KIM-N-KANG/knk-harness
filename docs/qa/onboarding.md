@@ -3,7 +3,7 @@
 | 항목      | 값                                                                                                                                                       |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 화면      | 온보딩 페이지(FE-SCREEN-007, `/onboarding`. 게이트는 `(main)` 레이아웃 마운트) · 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) |
-| 관련 스펙 | [웹 사용자 모델](../product-specs/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-2-5·US-8-3  |
+| 관련 스펙 | [웹 사용자 모델](../product-specs/3-3-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-2-5·US-8-3  |
 | 관련 E2E  | `manyak-web/e2e/smoke/onboarding.spec.ts`, `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(크롤러 게이트 우회)   |
 | 기준 코드 | `manyak-web` dev HEAD                                                                                                                                    |
 
