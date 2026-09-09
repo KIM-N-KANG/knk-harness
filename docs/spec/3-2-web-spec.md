@@ -1,4 +1,4 @@
-# 3-2-WEB-SPEC
+# 3-2-web-spec
 
 현재 웹 사용자 계약입니다. 공통 기능은 [공통 스펙](3-1-client-spec.md), 내부 구조는 [웹 설계](../design/1-1-web-design.md), 이유는 [웹 ADR](../adr/1-2-web-adr.md), 적용·작업 상태는 [추적](../planning/client-tracking.md)이 소유합니다.
 

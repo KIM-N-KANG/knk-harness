@@ -1,4 +1,4 @@
-# 3-3-ANDROID-SPEC
+# 3-3-android-spec
 
 Android에서 추가되거나 달라지는 사용자 계약입니다. 기능 공통 본문은 [공통 스펙](3-1-client-spec.md), 기술 구조는 [Android 설계](../design/1-2-android-design.md), 결정 이유는 [Android ADR](../adr/1-3-android-adr.md), 작업·검증·배포는 [추적](../planning/client-tracking.md)이 소유합니다.
 

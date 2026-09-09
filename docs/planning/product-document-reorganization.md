@@ -1,4 +1,4 @@
-# 제품 문서 재구성 계획
+# product-document-reorganization
 
 | 항목 | 내용 |
 | --- | --- |

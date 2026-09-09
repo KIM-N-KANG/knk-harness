@@ -1,4 +1,4 @@
-# 3-1-CLIENT-SPEC
+# 3-1-client-spec
 
 웹과 Android가 만족해야 하는 현재 제품 계약입니다. 기술 구조는 플랫폼 설계, 결정 이유는 [공통 ADR](../adr/1-1-client-adr.md), 승인·적용·작업 추적은 [클라이언트 추적](../planning/client-tracking.md)이 소유합니다.
 

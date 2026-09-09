@@ -1,4 +1,4 @@
-# 1-1. 웹 설계
+# 1-1-web-design
 
 [공통 스펙](../spec/3-1-client-spec.md)과 [웹 스펙](../spec/3-2-web-spec.md)을 충족하는 현재 구조입니다. 역사적 선택은 [웹 ADR](../adr/1-2-web-adr.md), 구현·검증·배포와 목표 변경은 [추적](../planning/client-tracking.md)이 소유합니다.
 

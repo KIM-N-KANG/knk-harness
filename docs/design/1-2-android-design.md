@@ -1,4 +1,4 @@
-# 1-2. Android 설계
+# 1-2-android-design
 
 [공통 스펙](../spec/3-1-client-spec.md)과 [Android 스펙](../spec/3-3-android-spec.md)을 구현하는 구조입니다. 모듈 설계를 이 문서에 통합했습니다. 선택 이유는 [Android ADR](../adr/1-3-android-adr.md), 적용 범위·코드와의 차이·검증 근거는 [클라이언트 추적](../planning/client-tracking.md)이 소유합니다.
 

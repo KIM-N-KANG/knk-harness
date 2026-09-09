@@ -1,4 +1,4 @@
-# 1-BACKGROUND
+# 1-background
 
 이 문서는 **마냑 서비스의 배경, 타겟 사용자, 주요 기능, 사용자 흐름, 단계별 개발 범위**를 정리합니다. 기능 스펙과 분석 스펙을 작성할 때 서비스가 어떤 문제를 풀고 어떤 흐름을 우선하는지 확인하는 기준 문서입니다. 기능별 Phase 배정·일정의 정본은 [`roadmap.md`](../planning/roadmap.md), 현재 제품 계약은 [공통 스펙](3-1-client-spec.md), 승인·적용·구현 근거는 [클라이언트 진행·추적](../planning/client-tracking.md)입니다.
 

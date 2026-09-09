@@ -1,4 +1,4 @@
-# 4. 배포 설계
+# 4-deployment
 
 이 문서는 마냑 서비스의 배포 단위, 운영·개발 인프라, CI/CD, 런타임 설정, 검수와 롤백 기준을 정의합니다. 운영·개발 배포 기준은 `manyak-terraform`, 로컬 통합 실행 기준은 `manyak-infra`, 서비스별 빌드와 배포 트리거는 `manyak-server`, `manyak-ai`, `manyak-web`, `manyak-android` 레포지토리의 현재 구현을 따릅니다.
 
