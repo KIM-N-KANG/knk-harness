@@ -140,7 +140,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
     - 채팅 메모리 구현
     - 채팅 메모리 편집
 - **모바일 앱 확장**
-    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발 시작 (스펙: `3-3-android-app.md`, 문서 분리 KNK-765 선행 완료)
+    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발 시작 (스펙: `3-3-android-spec.md`, 문서 분리 KNK-765 선행 완료)
 - **스토리 피드**
     - 다른 사용자가 만든 스토리 조회
         - 누적 채팅 수 조회
@@ -164,13 +164,13 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 - **스토리 생성 인물 단위 입력** (KNK-834)
     - 주인공·주변 인물을 인물 단위(이름·성별·특징, 주변 인물 최대 5명)로 입력받아 스토리 생성에 반영
 
-> 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 설계는 [`3-1-client.md §3-1-4`](../product-specs/3-1-client.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)가 정본입니다.
+> 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 현재 입력 계약은 [공통 스펙](../product-specs/3-1-client-spec.md#키워드-선택-규칙), 세계관 탭의 미확정 변경은 [추적 문서](./client-tracking.md#계약-확인-항목)가 연결합니다.
 
-> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-1-ai-server-spec.md §5-3-2`](../product-specs/5-1-ai-server-spec.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)·[`3-1-client.md §3-1-4`](../product-specs/3-1-client.md)가 정본입니다.
+> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-1-ai-server-spec.md §5-3-2`](../product-specs/5-1-ai-server-spec.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)·[`3-1-client-spec.md §3-1-4`](../product-specs/3-1-client-spec.md)가 정본입니다.
 
 > 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend.md §4-7`](../product-specs/4-backend.md)·[`7-deployment.md §7-6`](../product-specs/7-deployment.md)이 정본입니다.
 
-> 스토리 좋아요·싫어요는 모두 수집하지만 화면에는 좋아요 수만 표시합니다. 싫어요는 스토리 추천 신호로 쓰며, 스토리라인 평가(GOOD/BAD)와는 별개입니다. 스토리 소셜(좋아요·찜·댓글)과 채팅 소셜은 대상이 달라 서로 별도로 둡니다.
+> 스토리 좋아요와 스토리라인 평가(GOOD/BAD)는 별개입니다. 스토리 싫어요는 용어집의 미도입 계약과 이 로드맵의 과거 계획이 충돌하므로 [클라이언트 추적](./client-tracking.md#계약-확인-항목)에서 도입 여부를 확인합니다. 이 문구로 신규 도입을 확정하지 않습니다.
 
 ## R-5. Phase 3
 

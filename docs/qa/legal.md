@@ -3,7 +3,7 @@
 | 항목      | 값                                                                                                                                                          |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 화면      | 서비스 이용약관 `/terms` · 개인정보 처리방침 `/privacy`(FE-SCREEN-010, `(legal)` 그룹 — 로고 홈 링크 헤더, 탭 없음)                                         |
-| 관련 스펙 | [`3-1-client.md §3-1-3(FE-SCREEN-010·011)`](../product-specs/3-1-client.md), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-9(로그인·회원 전환) |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-010·011)`](../product-specs/3-1-client-spec.md), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-9(로그인·회원 전환) |
 | 관련 E2E  | `manyak-web/e2e/legal/legal.spec.ts`, `manyak-web/e2e/my/service-info.spec.ts`(서비스 안내 진입), `manyak-web/e2e/visual/legal-visual.spec.ts`              |
 | 기준 코드 | `manyak-web` dev 작업 트리(2026-08-29). `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(서비스 안내 페이지, #72)                                              |
 
@@ -36,7 +36,7 @@
 | LEGAL-DOC-04 | P2  | 두 페이지 각각  | 헤더 구성 확인        | 홈과 같은 크기의 마냑 로고 홈 링크만 표시. 뒤로가기·헤더 문서 제목·하단 탭 없음                                                                                                   | ✅ e2e `legal/legal`·`visual/legal-visual`        | FE-SCREEN-010, §3-2-3          |
 | LEGAL-DOC-05 | P1  | `/privacy` 진입 | 행태정보 고지 확인    | "12. 행태정보의 수집 및 맞춤형 광고" 섹션에 광고 사업자(Meta Platforms, Inc.)·수집 항목(입력 원문 제외)·수집 방법(Meta 픽셀)·목적·보유 기간·이용자 통제 수단 고지. 국외 이전(7)·쿠키(11) 조항에도 Meta 반영 | ✅ e2e `legal/legal`(섹션 렌더) · unit `tests/features/legal/content.test.ts`(문구 계약) | KNK-616 Meta 픽셀 사전 고지  |
 | LEGAL-DOC-06 | P1  | `/privacy` 진입 | AI 처리·평가 고지 확인 | "13. AI 처리와 평가 데이터 활용" 섹션에 생성 처리(OpenAI·DeepSeek), Langfuse 일본 리전 원문 저장, 품질 점검·평가 데이터·평가 지표 활용, 1년 보유, 자체 AI 모델 비학습, 제공자별 훈련 조건(OpenAI 기본 비학습·DeepSeek 정책상 가능), 평가 제외·삭제 요청 수단 고지 | ✅ e2e `legal/legal`(섹션 렌더) · unit `tests/features/legal/content.test.ts`(문구 계약) | 방침 v1.3, `6-analytics.md` §6-7 |
-| LEGAL-DOC-07 | P2  | 두 페이지 각각  | 브라우저 탭 제목 확인 | `서비스 이용약관 - 마냑`·`개인정보 처리방침 - 마냑`(읽기 쉬운 띄어쓰기를 적용한 탭 제목 + 서비스명, 정본 `src/features/legal/constants.ts`, [§3-2-3](../product-specs/3-2-web-app.md))                    | ✅ e2e `legal/legal`                              | 구현(`terms`·`privacy` page), KNK-713·KNK-1037 |
+| LEGAL-DOC-07 | P2  | 두 페이지 각각  | 브라우저 탭 제목 확인 | `서비스 이용약관 - 마냑`·`개인정보 처리방침 - 마냑`(읽기 쉬운 띄어쓰기를 적용한 탭 제목 + 서비스명, 정본 `src/features/legal/constants.ts`, [§3-2-4](../product-specs/3-2-web-spec.md))                    | ✅ e2e `legal/legal`                              | 구현(`terms`·`privacy` page), KNK-713·KNK-1037 |
 | LEGAL-DOC-08 | P1  | 두 페이지 각각  | 이용 연령 조항 확인 | 약관 제3조와 처리방침 제14항이 서비스를 만 14세 이상으로 제한하고, 만 14세 미만 이용 사실을 알게 된 경우 이용 중지·삭제 절차를 안내 | ✅ unit `tests/features/legal/content.test.ts` | 2026-08-29 사용자 정책 결정 |
 | LEGAL-DOC-09 | P1  | `/privacy` 진입 | 보유·위탁·국외 이전 확인 | 삭제된 회원·스토리·채팅, 피드백, Langfuse 원문의 1년 보유와 OpenSearch 14일·CloudWatch 30일·백업 최대 7일을 구분하고 AWS·Vercel·Cloudflare·AI·분석·오류·피드백 수탁자 및 국외 이전 항목을 표시 | ✅ unit `tests/features/legal/content.test.ts` | 방침 v1.3, 각 레포 구현 |
 
@@ -48,6 +48,6 @@
 2. **시행 전 공지 기간 부족.** v1.2/v1.3 시행일은 사용자 결정에 따라 2026-09-01이지만 작성일 2026-08-29과 3일 차이입니다. 새 약관 제4조와 처리방침 제18항은 원칙적으로 7일, 불리하거나 중대한 변경은 30일 전 공지를 정하므로 즉시 공지하고 시행일 유지 가능 여부를 법률 검토해야 합니다.
 3. **1년 파기 자동화 미구현.** manyak-server는 회원 탈퇴 API로 계정을 소프트 삭제하고 소셜 연결·프로필을 정리하지만, 1년 후 하위 데이터까지 물리 파기하는 스케줄러는 없습니다. Slack·Google Forms·Sheets 피드백 사본, Langfuse 트레이스, Amplitude·Sentry 등 외부 서비스 데이터의 1년 파기도 서비스별 설정·운영 절차가 필요합니다. 방침을 시행하기 전에 코드 또는 운영 절차로 보장해야 합니다.
 4. **연령 확인 UI 미구현.** 문서는 만 14세 이상 이용을 계약 조건으로 두지만 웹·Android 가입·게스트 진입에서 연령을 직접 확인하거나 차단하는 화면은 없습니다. 현행 법률상 이 방식이 충분한지 확인하고, 필요하면 별도 연령 확인·동의 흐름을 설계해야 합니다.
-5. **Android 소유 문서 일부가 현재 구현보다 낡음.** `3-3-android-app.md`의 상태·포팅 표 일부는 법적 콘텐츠 공급 방식을 아직 미정으로 적지만, 같은 문서의 범위 표와 실제 앱은 WebView로 웹 정본을 여는 방식까지 구현되어 있습니다. Android 팀 소유 문서이므로 이번 웹 작업에서는 수정하지 않았으며 해당 팀이 정리해야 합니다.
+5. **Android 소유 문서 일부가 현재 구현보다 낡음.** `3-3-android-design.md`의 상태·포팅 표 일부는 법적 콘텐츠 공급 방식을 아직 미정으로 적지만, 같은 문서의 범위 표와 실제 앱은 WebView로 웹 정본을 여는 방식까지 구현되어 있습니다. Android 팀 소유 문서이므로 이번 웹 작업에서는 수정하지 않았으며 해당 팀이 정리해야 합니다.
 
 해소된 항목: FE-SCREEN-011 라벨 드리프트, 콘텐츠 소스 이중화(KNK-616에서 TS 모듈로 정본 일원화), 공통·웹 스펙의 Android 콘텐츠 동기화 방식(Android WebView가 웹 `/terms`·`/privacy` 정본을 직접 표시).

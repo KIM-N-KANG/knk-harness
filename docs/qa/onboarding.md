@@ -3,7 +3,7 @@
 | 항목      | 값                                                                                                                                                       |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 화면      | 온보딩 페이지(FE-SCREEN-007, `/onboarding`. 게이트는 `(main)` 레이아웃 마운트) · 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) |
-| 관련 스펙 | [`3-1-client.md §3-1-3(FE-SCREEN-007·008)·§3-1-6`](../product-specs/3-1-client.md), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-2-5·US-8-3  |
+| 관련 스펙 | [웹 사용자 모델](../product-specs/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-2-5·US-8-3  |
 | 관련 E2E  | `manyak-web/e2e/smoke/onboarding.spec.ts`, `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(크롤러 게이트 우회)   |
 | 기준 코드 | `manyak-web` dev HEAD                                                                                                                                    |
 
@@ -57,5 +57,5 @@
 
 작성 중 스펙과 구현이 어긋나거나 판단이 필요한 항목입니다. 팀 확인 후 스펙 갱신 또는 수정 이슈로 전환합니다.
 
-1. **단계별·채팅 온보딩 미구현.** 스토리 생성 단계별 가이드(US-3-14)와 채팅 사용법 온보딩(US-6-9)은 코드에 구현 흔적이 없으며, 스펙도 §3-1-9 G4로 "미구현 — 필요성 재확인 후 검토"를 기록하고 있어 이 문서의 QA 범위에서 제외했습니다.
+1. **단계별·채팅 온보딩 미구현.** 스토리 생성 단계별 가이드(US-3-14)와 채팅 사용법 온보딩(US-6-9)은 코드에 구현 흔적이 없으며, 스펙도 [클라이언트 추적 G4](../planning/client-tracking.md#기존-간극의-처리)로 "미구현 — 필요성 재확인 후 검토"를 기록하고 있어 이 문서의 QA 범위에서 제외했습니다.
 2. **localStorage 차단 환경의 반복 노출.** 프라이빗 모드 등에서 열람 저장이 실패하면 매 진입마다 온보딩이 다시 뜹니다(ONBD-GUEST-10). 코드 주석상 의도된 무시(저장 건너뜀)이지만 반복 노출 UX가 허용 범위인지 확인이 필요합니다.
