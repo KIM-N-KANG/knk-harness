@@ -1061,7 +1061,10 @@ graph TD
 
 `Phase 3 · 계획`. 앱이 구매 후 `purchaseToken`을 구매 검증 API로 보냅니다. 서버는 서비스 계정으로 androidpublisher `purchases.products.get`을 호출해 `purchaseState=0`·`productId` 일치를 확인합니다. 인증은 `firebase-admin`이 가져온 `google-auth-library`를 재사용하며 새 의존성을 추가하지 않습니다.
 
-검증 성공 시 주문 생성·`COMPLETED` 전환·적립을 한 트랜잭션으로 처리합니다. `provider_ref`는 구매 토큰의 SHA-256이고 멱등 키는 `google:{sha256(token)}`입니다. 서버 성공 응답 후 앱이 consume합니다. 순서를 뒤집으면 결제하고 적립받지 못할 수 있습니다. 3분 내 ack가 없으면 Google이 자동 환불합니다. `purchaseType=0`인 테스트 구매는 dev에서 허용하고 prod에서는 거부합니다.
+검증 성공 시 주문 생성·`COMPLETED` 전환·적립을 한 트랜잭션으로 처리합니다. `provider_ref`는 구매 토큰의 SHA-256이고 멱등 키는 `google:{sha256(token)}`입니다. 서버 성공 응답 후 앱이 consume합니다. 순서를 뒤집으면 결제하고 적립받지 못할 수 있습니다. acknowledge 또는 consume이 **3일 내** 없으면 Google이 환불하며, **라이선스 테스터 구매는 3분**입니다([일반 구매 처리](https://developer.android.com/google/play/billing/integrate), [라이선스 테스터 검증](https://developer.android.com/google/play/billing/test)).
+
+- **구매 유형.** `purchaseType` 필드가 없는 일반 구매만 적립합니다. 예외로 `0`(라이선스 테스터)은 dev에서만 허용하고 prod에서는 거부합니다. `1`(프로모션)·`2`(리워드) 및 그 외 유형은 항상 400으로 거부하고 적립하지 않습니다. 구독·첫 구매 혜택·광고 보상이 없는 상품 정책에 따릅니다.
+- **설정 불변식.** 테스트 구매 허용은 환경변수 placeholder로 열지 않고 프로파일 리터럴로 고정합니다(`dev`: `true`, 그 외: `false`). 서비스 계정 JSON이 비어 있으면 기동을 허용하고 구매 검증은 503·환불 대사는 no-op입니다. 비공백 JSON은 기동 시 파싱하며 잘못된 값이면 기동에 실패합니다(FCM 관례).
 
 환불은 RTDN 대신 **Voided Purchases API 주기 대사**로 확인해 회수합니다. 기존 선차감 대사 스케줄러의 실행 겹침 방지·실패 격리 관례와 위 회수·잔액 보호 규칙을 따릅니다. Play 수수료는 30%(15% 프로그램은 신청제)이며 VAT 제외 순가를 기준으로 계산합니다.
 
