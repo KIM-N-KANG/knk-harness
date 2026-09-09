@@ -34,7 +34,7 @@ updated: 2026-09-09
 | 참고 문서 | 소유 내용 |
 | --- | --- |
 | [용어집](./0-glossary.md), [배경](./1-background.md), [사용자 요구](./2-user-stories.md) | 이름·제품 범위·요구사항 |
-| [클라이언트](./3-1-client.md), [백엔드](./4-backend.md) | 화면·호출 시점·저장·SSE 중계 |
+| [클라이언트](3-1-client-spec.md), [백엔드](./4-backend.md) | 화면·호출 시점·저장·SSE 중계 |
 | [관측](./6-analytics.md), [배포](./7-deployment.md) | 이벤트·데이터 취급·환경 설정·운영 검수 |
 | [스토리라인 상세](../../../manyak-ai/spec/story/1-STORYLINES.md), [컴파일 상세](../../../manyak-ai/spec/story/2-COMPILE.md), [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md) | 내부 스키마·변환·프롬프트 조립 상세 |
 | [연구 레포 안내](../../../manyak-autoresearch/README.md) | 평가 도구·데이터·실험의 실행법과 저장 위치 |

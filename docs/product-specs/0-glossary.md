@@ -49,7 +49,7 @@
 | 공식 용어 | 영문 식별자 | 정의 | 지양 표기 |
 | --- | --- | --- | --- |
 | 스토리 | `story`, `story_id` | 사용자가 제작·플레이하는 세계관·설정 콘텐츠 단위. 외부 노출 식별자는 UUID `story_id` | "이야기"(API 문서·식별자·오류 메시지), "세계관"(스토리 전체를 가리킬 때) |
-| 오리지널 스토리 | original story | 마냑 공식 계정이 소유한 공개(`PUBLISHED`·`PUBLIC`) 스토리. 피드·검색이 나오기 전까지 홈(`/`)에 노출해 제작 없이도 플레이할 거리를 준다(Phase 1 — KNK-932·975·983). 홈은 오리지널만 표시하고 내가 만든 스토리는 제작 탭(`/studio`)이 담당한다(KNK-988 화면 분리·KNK-994 URL 변경 — [`3-1-client.md §3-1-3`](./3-1-client.md#3-1-3-화면별-스펙)). 조회는 `GET /stories/originals`이며 인증이 필요 없다 | "공식 스토리", "추천 스토리"(추천 로직이 없음), "마냑 스토리" |
+| 오리지널 스토리 | original story | 마냑 공식 계정이 소유한 공개(`PUBLISHED`·`PUBLIC`) 스토리. 피드·검색이 나오기 전까지 홈(`/`)에 노출해 제작 없이도 플레이할 거리를 준다(Phase 1 — KNK-932·975·983). 홈은 오리지널만 표시하고 내가 만든 스토리는 제작 탭(`/studio`)이 담당한다(KNK-988 화면 분리·KNK-994 URL 변경 — [`3-1-client-spec.md §3-1-3`](3-1-client-spec.md#3-1-3-화면별-스펙)). 조회는 `GET /stories/originals`이며 인증이 필요 없다 | "공식 스토리", "추천 스토리"(추천 로직이 없음), "마냑 스토리" |
 | 스토리라인 | `storyline`, `storyline_id` | 간편 제작에서 AI가 생성하는 이야기 전개 방향 후보(3개 중 택1). 스토리가 되기 전 단계의 산출물 | `example`(레거시 표기), 스토리라인 본문을 담는 `story` 필드 |
 | 스토리 설정 | `story_settings` | 통글 4필드 묶음: `world_setting`(세계관) · `character_setting`(등장인물) · `user_role_setting`(주인공) · `rule_setting`(규칙) | `prompt_settings`(컴파일 내부 세분 스키마 전용, §0-6) |
 | 통글 | (한국어 고유 조어) | 섹션 헤더로 구분한 단일 마크다운 필드. 스토리 설정의 저장·전달 단위 | — |
@@ -57,7 +57,7 @@
 | 프롤로그 | `prologue` | 채팅 시작 시 먼저 보여주는 도입 서사 텍스트 | "채팅 첫 메시지", "도입부 내레이션", first message, greeting |
 | 추천 입력 | `suggested_inputs` | 채팅 시작 화면에서 제안하는 첫 입력 후보 문구(3개). 선택지(§0-3-3)와 다른 개념 | `recommendedInputs`, 선택지를 "추천 입력"으로 부르는 것 |
 | 태그 | `tag`, `tag_id` | 간편 제작에서 선택하거나 직접 추가하는 스토리 속성. `PREDEFINED`(제공)와 `CUSTOM`(직접 추가)으로 나뉨. Phase 1 구현(KNK-717) — 직접 추가 태그의 동일성은 정규화 키(trim → 내부 공백 제거 → lowercase)로 판정하고 표시명은 최초 입력의 trim본 유지([`4-backend.md §4-3-2`](./4-backend.md)) | "키워드"(코드·데이터·이벤트·문서. UI 카피 전환은 별도 논의) |
-| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 구현(KNK-834·858) — 주인공·주변 인물은 특징 태그 묶음이 아니라 인물 단위(이름·성별·특징)로 입력받는다. 직접 추가 태그는 카테고리별 배열이 아니라 장르의 `customGenreTags`와 인물별 `customTags`로 나뉘어 전송된다([`3-1-client.md §3-1-4`](./3-1-client.md)). Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고 장르·배경을 UI에서 "세계관" 탭으로 묶는 것은 미구현([`4-backend.md §4-3-2`](./4-backend.md)) | `tag_type` |
+| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 구현(KNK-834·858) — 주인공·주변 인물은 특징 태그 묶음이 아니라 인물 단위(이름·성별·특징)로 입력받는다. 직접 추가 태그는 카테고리별 배열이 아니라 장르의 `customGenreTags`와 인물별 `customTags`로 나뉘어 전송된다([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)). Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고 장르·배경을 UI에서 "세계관" 탭으로 묶는 것은 미구현([`4-backend.md §4-3-2`](./4-backend.md)) | `tag_type` |
 | 추가 정보 | `additional_infos` | 사용자가 스토리라인에 첨부하는 보강 정보(추천 채택분 포함, 총 13개 상한) | `extra_info` |
 | 추천 추가 정보 | `recommended_infos` | 스토리라인마다 AI가 제안하는 추가 정보 후보 3개 | "추천 질문"(`questions`, 레거시) |
 | 로어북 | `lorebook` | 장르 공용 용어 사전. 트리거 키워드 없는 카탈로그 | world info |
@@ -135,8 +135,8 @@ Phase 1 보상·소모와 Phase 3 결제 범위 용어입니다. 이프는 회�
 | 이프 | credit | AI 기능(스토리 제작·채팅) 사용에 소모하는 서비스 내 재화 | "포인트" · "코인" |
 | 이프 지갑 | `credit_wallets` | 사용자별 이프 잔액 보관 단위. `balance`는 원장 합계의 캐시 | — |
 | 원장 | `credit_transactions` | 이프 증감의 불변(append-only) 기록. 환불은 행 수정이 아니라 `REFUND` 행 추가 | "거래 내역"(사용자 노출 화면 명칭으로만 허용) |
-| 적립 | earn / `reason` 적립 계열: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD` · `PURCHASE` | 보상·구매로 이프가 늘어나는 것. 보상 수치의 정본은 서버 정책(`GET /credits/policies`)이며 화면은 그 값을 렌더한다(KNK-1089, 2026-09-01 · [`3-1-client.md §3-1-7` 이프 정책 수치 표시](./3-1-client.md#이프-정책-수치-표시)). 보상 사유는 가입 보상·초대 보상·출석체크 보상이며, `Phase 3 · 계획` 구매 적립은 `PURCHASE`로 기록한다. 구매 상품·총량은 `GET /credits/products`가 정본이다. 초대자 보상은 다른 회원이 내 코드를 입력한 건에 대해 서버가 정한 월 한도(`inviteMonthlyCap`)까지만 KST 기준으로 적립한다. 보상 이벤트(사유) 관점의 "이프 보상" 표기는 허용 | "충전"(Phase 3 유료 결제 `PURCHASE` 전용) |
-| 소모 | spend / `reason` 소모 계열: `STORY_CREATION` · `CHAT_TURN` | 기능 사용으로 이프가 줄어드는 것. 수치의 정본은 서버 정책(`GET /credits/policies`)이며 화면은 그 값을 렌더한다(KNK-1089, 2026-09-01 — [`3-1-client.md §3-1-7` 이프 정책 수치 표시](./3-1-client.md#이프-정책-수치-표시)). 간편 제작(컴파일)과 채팅 턴·AI 응답 재생성이 소모 대상이고 스토리라인 생성·재생성은 무료다. 처리 전에 미리 소모하는 것은 "선차감(pre-charge)"으로 표기(허용) | "차감" 단독 표기(회수·정산과 혼동 — "선차감"은 예외), "사용" 단독 표기 |
+| 적립 | earn / `reason` 적립 계열: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD` · `PURCHASE` | 보상·구매로 이프가 늘어나는 것. 보상 수치의 정본은 서버 정책(`GET /credits/policies`)이며 화면은 그 값을 렌더한다(KNK-1089, 2026-09-01 · [`3-1-client-spec.md §3-1-7` 이프 정책 수치 표시](3-1-client-spec.md#이프-정책-수치-표시)). 보상 사유는 가입 보상·초대 보상·출석체크 보상이며, `Phase 3 · 계획` 구매 적립은 `PURCHASE`로 기록한다. 구매 상품·총량은 `GET /credits/products`가 정본이다. 초대자 보상은 다른 회원이 내 코드를 입력한 건에 대해 서버가 정한 월 한도(`inviteMonthlyCap`)까지만 KST 기준으로 적립한다. 보상 이벤트(사유) 관점의 "이프 보상" 표기는 허용 | "충전"(Phase 3 유료 결제 `PURCHASE` 전용) |
+| 소모 | spend / `reason` 소모 계열: `STORY_CREATION` · `CHAT_TURN` | 기능 사용으로 이프가 줄어드는 것. 수치의 정본은 서버 정책(`GET /credits/policies`)이며 화면은 그 값을 렌더한다(KNK-1089, 2026-09-01 — [`3-1-client-spec.md §3-1-7` 이프 정책 수치 표시](3-1-client-spec.md#이프-정책-수치-표시)). 간편 제작(컴파일)과 채팅 턴·AI 응답 재생성이 소모 대상이고 스토리라인 생성·재생성은 무료다. 처리 전에 미리 소모하는 것은 "선차감(pre-charge)"으로 표기(허용) | "차감" 단독 표기(회수·정산과 혼동 — "선차감"은 예외), "사용" 단독 표기 |
 | 환불 | refund / `REFUND` | 선차감 후 AI 실패 시 자동으로 이프를 되돌리는 것 | "취소" |
 | 구매 | `PURCHASE` | `Phase 3 · 계획` 웹 그로블·앱 Google Play 결제로 이프를 적립하는 것. 기본·보너스 총량을 구매당 로트 1개에 저장하고 적립 시점부터 5년 후 만료 | 보상과 혼용 금지 |
 | 주문 | `credit_orders` | `Phase 3 · 계획` 결제 상품·금액·상태·적립 원장을 연결하는 단위. 외부 식별자는 UUID `public_id` | 순차 PK 외부 노출 금지 |

@@ -48,9 +48,15 @@ git clone <manyak-infra-repository-url>
 | --- | --- | --- |
 | 1 | `docs/product-specs/1-background.md` | 서비스 배경, 타겟 사용자, MVP 범위 |
 | 2 | `docs/product-specs/2-user-stories.md` | 화면·기능별 사용자 요구 |
-| 3-1 | `docs/product-specs/3-1-client.md` | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 |
-| 3-2 | `docs/product-specs/3-2-web-app.md` | 웹 라우팅, BFF 프록시·토큰 세션, 브라우저 지원, 웹 검수 기준 |
-| 3-3 | `docs/product-specs/3-3-android-app.md` | 안드로이드 앱(Jetpack Compose) 플랫폼 구현 기준 |
+| 3-1 | `docs/product-specs/3-1-client-spec.md` | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 |
+| 3-2 | `docs/product-specs/3-2-client-adr.md` | 공통 결정 당시 맥락·선택·이유 |
+| 3-3 | `docs/product-specs/3-3-web-spec.md` | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
+| 3-4 | `docs/product-specs/3-4-web-design.md` | 웹의 현재 기술 구조 |
+| 3-5 | `docs/product-specs/3-5-web-adr.md` | 웹 결정 당시 맥락·선택·이유 |
+| 3-6 | `docs/product-specs/3-6-android-spec.md` | Android 사용자 계약·플랫폼 예외·수용 기준 |
+| 3-7 | `docs/product-specs/3-7-android-design.md` | Android의 현재 기술 구조 |
+| 3-8 | `docs/product-specs/3-8-android-adr.md` | Android 결정 당시 맥락·선택·이유 |
+| 클라이언트 진행·추적 | [계약 적용·구현·검증·티켓 연결](docs/planning/client-tracking.md) | 진행·근거 인덱스 |
 | 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
 | 5-1 | `docs/product-specs/5-1-ai-server-spec.md` | AI 기능·입출력·실패 계약·평가 시스템 |
 | 5-2 | `docs/product-specs/5-2-ai-server-adr.md` | AI 설계의 배경·대안·선택 근거 |
