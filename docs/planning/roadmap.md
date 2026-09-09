@@ -21,7 +21,7 @@
 | 대상 | 마냑 서비스 |
 | 작성 목적 | 마냑의 Phase 0~3 개발 목표·기간·작업 범위와 백로그를 정의한다. |
 
-> 용어는 [`0-glossary.md`](../product-specs/0-glossary.md)를 기준으로 표기합니다. glossary에 없는 신규 개념은 원문 표기를 유지하며, 확정 시 glossary에 편입합니다.
+> 용어는 [`0-glossary.md`](../spec/0-glossary.md)를 기준으로 표기합니다. glossary에 없는 신규 개념은 원문 표기를 유지하며, 확정 시 glossary에 편입합니다.
 
 ## R-1. Phase 요약
 
@@ -45,7 +45,7 @@
 - 개발: 6월 10일 ~ 6월 23일 (스프린트 4)
 - 검증: 6월 24일 ~ 7월 7일 (스프린트 5)
 
-Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.md`](../product-specs/1-background.md) §1-6 "MVP 개발 기능"을 따릅니다.
+Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.md`](../spec/1-background.md) §1-6 "MVP 개발 기능"을 따릅니다.
 
 ### 작업 리스트
 
@@ -140,7 +140,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
     - 채팅 메모리 구현
     - 채팅 메모리 편집
 - **모바일 앱 확장**
-    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발 시작 (스펙: `3-6-android-spec.md`, 문서 분리 KNK-765 선행 완료)
+    - 안드로이드 네이티브(Jetpack Compose) 클라이언트 개발 시작 (스펙: `3-3-android-spec.md`, 문서 분리 KNK-765 선행 완료)
 - **스토리 피드**
     - 다른 사용자가 만든 스토리 조회
         - 누적 채팅 수 조회
@@ -164,13 +164,13 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 - **스토리 생성 인물 단위 입력** (KNK-834)
     - 주인공·주변 인물을 인물 단위(이름·성별·특징, 주변 인물 최대 5명)로 입력받아 스토리 생성에 반영
 
-> 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 현재 입력 계약은 [공통 스펙](../product-specs/3-1-client-spec.md#키워드-선택-규칙), 세계관 탭의 미확정 변경은 [추적 문서](./client-tracking.md#계약-확인-항목)가 연결합니다.
+> 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 현재 입력 계약은 [공통 스펙](../spec/3-1-client-spec.md#키워드-선택-규칙), 세계관 탭의 미확정 변경은 [추적 문서](client-tracking.md#계약-확인-항목)가 연결합니다.
 
-> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-1-ai-server-spec.md §5-3-2`](../product-specs/5-1-ai-server-spec.md)·[`4-backend.md §4-3-2`](../product-specs/4-backend.md)·[`3-1-client-spec.md §3-1-4`](../product-specs/3-1-client-spec.md)가 정본입니다.
+> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-ai-server-spec.md §5-3-2`](../spec/5-ai-server-spec.md)·[`4-backend-server-spec.md §4-3-2`](../spec/4-backend-server-spec.md)·[`3-1-client-spec.md §3-1-4`](../spec/3-1-client-spec.md)가 정본입니다.
 
-> 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend.md §4-7`](../product-specs/4-backend.md)·[`7-deployment.md §7-6`](../product-specs/7-deployment.md)이 정본입니다.
+> 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend-server-spec.md §4-7`](../spec/4-backend-server-spec.md)·[`4-deployment.md §4-6`](../design/4-deployment.md)이 정본입니다.
 
-> 스토리 좋아요와 스토리라인 평가(GOOD/BAD)는 별개입니다. 스토리 싫어요는 용어집의 미도입 계약과 이 로드맵의 과거 계획이 충돌하므로 [클라이언트 추적](./client-tracking.md#계약-확인-항목)에서 도입 여부를 확인합니다. 이 문구로 신규 도입을 확정하지 않습니다.
+> 스토리 좋아요와 스토리라인 평가(GOOD/BAD)는 별개입니다. 스토리 싫어요는 용어집의 미도입 계약과 이 로드맵의 과거 계획이 충돌하므로 [클라이언트 추적](client-tracking.md#계약-확인-항목)에서 도입 여부를 확인합니다. 이 문구로 신규 도입을 확정하지 않습니다.
 
 ## R-5. Phase 3
 
@@ -224,11 +224,11 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
         - 찜
         - 댓글
 
-> **키워드북 vs 로어북.** 키워드북(`keyword_notes`)은 특정 키워드가 입력되면 반응·사건을 트리거하는 키워드-반응 저장소이고, 로어북(`lorebook`)은 진행 중 참고하는 비트리거 설정집입니다([`0-glossary.md`](../product-specs/0-glossary.md) §0-3-1). 서로 다른 기능입니다.
+> **키워드북 vs 로어북.** 키워드북(`keyword_notes`)은 특정 키워드가 입력되면 반응·사건을 트리거하는 키워드-반응 저장소이고, 로어북(`lorebook`)은 진행 중 참고하는 비트리거 설정집입니다([`0-glossary.md`](../spec/0-glossary.md) §0-3-1). 서로 다른 기능입니다.
 >
-> **전연령 콘텐츠·안전.** 마냑은 전연령 콘텐츠만 제공하며, 전연령 보장을 위한 콘텐츠 필터링은 SAFETY 레이어([`0-glossary.md`](../product-specs/0-glossary.md) §0-6)에 내장되어 별도 로드맵 항목으로 두지 않습니다. 성인 인증은 이 정책에 따라 보류합니다.
+> **전연령 콘텐츠·안전.** 마냑은 전연령 콘텐츠만 제공하며, 전연령 보장을 위한 콘텐츠 필터링은 SAFETY 레이어([`0-glossary.md`](../spec/0-glossary.md) §0-6)에 내장되어 별도 로드맵 항목으로 두지 않습니다. 성인 인증은 이 정책에 따라 보류합니다.
 
 ## R-7. 참고 문서
 
-- [`1-background.md`](../product-specs/1-background.md) — 서비스 배경과 MVP 개발 범위(§1-6). Phase 0(MVP)의 상세 기능 범위를 정의합니다.
-- [`0-glossary.md`](../product-specs/0-glossary.md) — 이 문서의 용어 표기 기준입니다.
+- [`1-background.md`](../spec/1-background.md) — 서비스 배경과 MVP 개발 범위(§1-6). Phase 0(MVP)의 상세 기능 범위를 정의합니다.
+- [`0-glossary.md`](../spec/0-glossary.md) — 이 문서의 용어 표기 기준입니다.
