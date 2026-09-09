@@ -22,8 +22,8 @@
 
 | 영역 | 승인·적용 | 기준과 후속 작업 |
 | --- | --- | --- |
-| 공통 | 초안 1개·완성 요청 N개 분리 승인 | [공통 계약](../product-specs/3-1-client-spec.md#제작-카드와-다중-완성-진행), [C-004](../product-specs/3-1-client-adr.md#c-004). 실패 카드 UX·완료 분석은 아래 별도 확인 |
-| Android | 현행 코드에 적용 | [KNK-1222](https://kimandkang.atlassian.net/browse/KNK-1222), [실행 계획·결과](../../../manyak-android/docs/plans/studio-creation-cards.md), [현재 설계](../product-specs/3-3-android-design.md#제작-카드와-다중-완성-진행). 이 조사에서 기기 검증·배포 여부를 판정하지 않음 |
+| 공통 | 초안 1개·완성 요청 N개 분리 승인 | [공통 계약](../product-specs/3-1-client-spec.md#제작-카드와-다중-완성-진행), [C-004](../product-specs/3-1-1-client-adr.md#c-004). 실패 카드 UX·완료 분석은 아래 별도 확인 |
+| Android | 현행 코드에 적용 | [KNK-1222](https://kimandkang.atlassian.net/browse/KNK-1222), [실행 계획·결과](../../../manyak-android/docs/plans/studio-creation-cards.md), [현재 설계](../product-specs/3-3-1-android-design.md#제작-카드와-다중-완성-진행). 이 조사에서 기기 검증·배포 여부를 판정하지 않음 |
 | 웹 | 변경 목표 승인, 적용 유예 | 현행 [웹 계약](../product-specs/3-2-web-spec.md#웹-제작-흐름)은 자동 채팅 생성. 이전 문서의 웹 전환 순서를 [웹 계획](../../../manyak-web/docs/superpowers/plans/2026-09-09-studio-creation-cards.md)으로 이동. 후속 구현 티켓은 배정 필요; KNK-1236은 문서 이관 작업만 담당 |
 
 ## 계약 확인 항목

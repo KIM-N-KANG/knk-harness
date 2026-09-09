@@ -51,8 +51,8 @@ git clone <manyak-infra-repository-url>
 | 3-1 | `docs/product-specs/3-1-client-spec.md` | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 |
 | 3-2 | `docs/product-specs/3-2-web-spec.md` | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
 | 3-3 | `docs/product-specs/3-3-android-spec.md` | Android 사용자 계약·플랫폼 예외·수용 기준 |
-| 클라이언트 설계 | [웹](docs/product-specs/3-2-web-design.md) · [Android](docs/product-specs/3-3-android-design.md) | 현재 기술 구조 |
-| 클라이언트 결정 기록 | [공통](docs/product-specs/3-1-client-adr.md) · [웹](docs/product-specs/3-2-web-adr.md) · [Android](docs/product-specs/3-3-android-adr.md) | 결정 당시 맥락·선택·이유 |
+| 클라이언트 설계 | [웹](docs/product-specs/3-2-1-web-design.md) · [Android](docs/product-specs/3-3-1-android-design.md) | 현재 기술 구조 |
+| 클라이언트 결정 기록 | [공통](docs/product-specs/3-1-1-client-adr.md) · [웹](docs/product-specs/3-2-2-web-adr.md) · [Android](docs/product-specs/3-3-2-android-adr.md) | 결정 당시 맥락·선택·이유 |
 | 클라이언트 진행·추적 | [계약 적용·구현·검증·티켓 연결](docs/planning/client-tracking.md) | 진행·근거 인덱스 |
 | 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
 | 5-1 | `docs/product-specs/5-1-ai-server-spec.md` | AI 기능·입출력·실패 계약·평가 시스템 |

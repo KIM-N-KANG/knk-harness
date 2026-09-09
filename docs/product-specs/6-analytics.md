@@ -60,7 +60,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 현재 MVP는 로그인 기능이 없는 전원 게스트 서비스입니다. 사용자 단위는 익명 `device_id`로 식별합니다.
 
-**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유합니다**(로그아웃 시 재발급 — [`3-3-android-design.md §3-3-4`](3-3-android-design.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 앱에 게스트가 없어 비적용입니다([`3-3-android-design.md §3-3-1`](3-3-android-design.md)).
+**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유합니다**(로그아웃 시 재발급 — [`3-3-1-android-design.md §3-3-4`](3-3-1-android-design.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 앱에 게스트가 없어 비적용입니다([`3-3-1-android-design.md §3-3-1`](3-3-1-android-design.md)).
 
 | 식별자           | 분석 이벤트 타입 | 생성·관리                                      | 사용처                            |
 | ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
@@ -93,7 +93,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 - 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지합니다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않습니다. Android Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않습니다.
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급합니다.
-- **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`3-3-android-design.md §3-3-4·§3-3-6`](3-3-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
+- **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`3-3-1-android-design.md §3-3-4·§3-3-6`](3-3-1-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
 - 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend.md §4-7`](./4-backend.md)이 소유합니다.
 
@@ -641,7 +641,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
 
-카탈로그 이벤트 92개 중 앱이 그대로 쓰는 것은 58개, 이름을 바꿔 쓰는 것은 1개(`client_account_attendanceButton_clicked` → `client_creditCharge_attendanceButton_clicked`), 앱에 해당 없는 것은 24개입니다. 화면별 대응은 [`3-3-android-design.md §3-3-6`](3-3-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+카탈로그 이벤트 92개 중 앱이 그대로 쓰는 것은 58개, 이름을 바꿔 쓰는 것은 1개(`client_account_attendanceButton_clicked` → `client_creditCharge_attendanceButton_clicked`), 앱에 해당 없는 것은 24개입니다. 화면별 대응은 [`3-3-1-android-design.md §3-3-6`](3-3-1-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
 **앱 비적용(웹 전용) 24개** — 앱에 해당 화면·상태가 없습니다.
 
@@ -832,7 +832,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | Amplitude        | 사용자 행동 분석     | 퍼널, 전환율, 이탈율, 선택지 사용률                        |
 | Meta 픽셀        | 광고 전환 신호       | `PageView`·`StorylinesGenerated`·`StoryCompiled`·`StartTrial` — Meta 캠페인 학습·성과 측정(KNK-616) |
 | 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
-| Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal·non-fatal, API 30+ ANR, 수동 화면·P0 행동 로그. API 24~29 ANR·NDK는 초기 범위 밖([`3-3-android-design.md §3-3-6`](3-3-android-design.md)) |
+| Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal·non-fatal, API 30+ ANR, 수동 화면·P0 행동 로그. API 24~29 ANR·NDK는 초기 범위 밖([`3-3-1-android-design.md §3-3-6`](3-3-1-android-design.md)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
 | CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
@@ -846,7 +846,7 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 
 ### 6-6-2. 프론트엔드 API 헤더
 
-모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`3-3-android-design.md §3-3-4`](3-3-android-design.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend.md §4-3` 요청·응답 헤더](./4-backend.md)·[`§4-3-7`](./4-backend.md))입니다.
+모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`3-3-1-android-design.md §3-3-4`](3-3-1-android-design.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend.md §4-3` 요청·응답 헤더](./4-backend.md)·[`§4-3-7`](./4-backend.md))입니다.
 
 | 헤더                  | 전송 계약 | 값           | 설명                                                                                     |
 | --------------------- | --------- | ------------ | ----------------------------------------------------------------------------------------- |
@@ -854,7 +854,7 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않습니다. 백엔드가 `unknown`으로 채웁니다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성·주입하지 않습니다. 백엔드가 생성해 응답 헤더로 echo합니다(§6-6-3). |
 
-**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend.md §4-3-7`](./4-backend.md)). ② 로그인 핸드오프 생성(`POST /auth/handoffs`): 원본 디바이스 ID를 서버에 보관하는 요청 자체의 목적값. ③ 핸드오프 없는 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend.md §4-3-5`](./4-backend.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-연동에러-처리-계약), [`3-3-android-design.md §3-3-4`](3-3-android-design.md)).
+**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend.md §4-3-7`](./4-backend.md)). ② 로그인 핸드오프 생성(`POST /auth/handoffs`): 원본 디바이스 ID를 서버에 보관하는 요청 자체의 목적값. ③ 핸드오프 없는 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend.md §4-3-5`](./4-backend.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-연동에러-처리-계약), [`3-3-1-android-design.md §3-3-4`](3-3-1-android-design.md)).
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣습니다. 백엔드는 저장 전 `device_id_hash`로 변환합니다. 프론트엔드는 별도 해시를 만들지 않습니다.
 

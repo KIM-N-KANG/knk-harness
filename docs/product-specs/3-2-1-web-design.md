@@ -1,6 +1,6 @@
-# 웹 클라이언트 설계
+# 3-2-1-WEB-DESIGN
 
-[공통 스펙](./3-1-client-spec.md)과 [웹 스펙](./3-2-web-spec.md)을 충족하는 현재 구조입니다. 역사적 선택은 [웹 ADR](./3-2-web-adr.md), 구현·검증·배포와 목표 변경은 [추적](../planning/client-tracking.md)이 소유합니다.
+[공통 스펙](./3-1-client-spec.md)과 [웹 스펙](./3-2-web-spec.md)을 충족하는 현재 구조입니다. 역사적 선택은 [웹 ADR](./3-2-2-web-adr.md), 구현·검증·배포와 목표 변경은 [추적](../planning/client-tracking.md)이 소유합니다.
 
 기준 코드: `manyak-web` `a11538dc3d22a6a543875986abffeb6959a533d3`. 구조·키·라이브러리 버전의 실제 값은 해당 코드와 빌드 설정을 확인합니다. 이 문서의 이관으로 전체 코드·운영 배포를 재검증한 것은 아닙니다.
 
