@@ -1,36 +1,40 @@
 # 4-deployment
 
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | v1.6 |
+| 작성일 | 2026-07-03 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 운영·개발·통합 배포 |
+| 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다. |
+| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `ad2871b3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다. 개발 환경(ECS Fargate)은 `../manyak-terraform`의 `terraform/envs/dev`·`modules/compute-ecs` 기준입니다([PR #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17), KNK-825·826·827). 2026-08-14 기준 코드 작성과 `plan`까지 완료했고 **`apply`는 하지 않았습니다** |
+| 기준 문서 | [`4-backend-server-spec.md`](../spec/4-backend-server-spec.md), [`5-ai-server-spec.md`](../spec/5-ai-server-spec.md), [`6-analytics.md`](../spec/6-analytics.md) |
+
+## 읽는 순서
+
+- 책임 경계·환경(§4-2~4-3) → 대상 환경의 구조·CI/CD(§4-4~4-6) → 배포·복구(§4-7~4-9) 순서로 읽습니다. 과거 실행 기록·미결 항목은 §4-10~4-11로 구분합니다.
+
+## 목차
+
+- [4-1. 목적과 범위](#4-1-목적과-범위)
+- [4-2. 기준 레포지토리와 책임 경계](#4-2-기준-레포지토리와-책임-경계)
+- [4-3. 환경 구분과 배포 단위](#4-3-환경-구분과-배포-단위)
+- [4-4. 인프라 아키텍처](#4-4-인프라-아키텍처)
+- [4-5. 이미지 빌드와 CI/CD](#4-5-이미지-빌드와-cicd)
+- [4-6. 런타임 설정과 시크릿](#4-6-런타임-설정과-시크릿)
+- [4-7. 배포 절차](#4-7-배포-절차)
+- [4-8. 로컬·통합 실행](#4-8-로컬통합-실행)
+- [4-9. 검수, 관측, 롤백](#4-9-검수-관측-롤백)
+- [4-10. Jira·PR 추적 근거](#4-10-jirapr-추적-근거)
+- [4-11. 미정·주의 항목](#4-11-미정주의-항목)
+
+---
+
 이 문서는 마냑 서비스의 배포 단위, 운영·개발 인프라, CI/CD, 런타임 설정, 검수와 롤백 기준을 정의합니다. 운영·개발 배포 기준은 `manyak-terraform`, 로컬 통합 실행 기준은 `manyak-infra`, 서비스별 빌드와 배포 트리거는 `manyak-server`, `manyak-ai`, `manyak-web`, `manyak-android` 레포지토리의 현재 구현을 따릅니다.
 
 개발 환경(AWS)은 **2026-08-14 `apply`를 완료해 `https://dev-api.manyak.app`이 실제로 동작합니다**(KNK-827, [manyak-terraform #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17)). 검수 결과와 최초 구축에서 밟은 함정은 [§4-7](#4-7-배포-절차)에 있습니다.
-
-```text
-§4-1  목적과 범위
-§4-2  기준 레포지토리와 책임 경계
-§4-3  환경 구분과 배포 단위
-§4-4  인프라 아키텍처
-§4-5  이미지 빌드와 CI/CD
-§4-6  런타임 설정과 시크릿
-§4-7  배포 절차
-§4-8  로컬·통합 실행
-§4-9  검수, 관측, 롤백
-§4-10 Jira·PR 추적 근거
-§4-11 미정·주의 항목
-```
-
-### 읽는 순서
-
-책임 경계·환경(§4-2~4-3) → 대상 환경의 구조·CI/CD(§4-4~4-6) → 배포·복구(§4-7~4-9) 순서로 읽습니다. 과거 실행 기록·미결 항목은 §4-10~4-11로 구분합니다.
-
-| 항목      | 값                                                                                                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 버전      | v1.6                                                                                                                                                                |
-| 작성일    | 2026-07-03                                                                                                                                                          |
-| 수정일    | 2026-09-09 |
-| 대상      | 마냑 운영·개발·통합 배포                                                                                                                                            |
-| 작성 목적 | 배포 책임 경계, 인프라 구성, 배포 절차, 검수·롤백 기준을 정의합니다.                                                                                                |
-| 기준 문서 | [`4-backend-server-spec.md`](../spec/4-backend-server-spec.md), [`5-ai-server-spec.md`](../spec/5-ai-server-spec.md), [`6-analytics.md`](../spec/6-analytics.md)                                                        |
-| 기준 코드 | OpenAI·Terra 전환은 `../manyak-ai` dev `7abfdd5cd6f2`·운영 `v0.2.4`(main `34e1346`), `../manyak-infra` dev `22090d2`(PR #14), `../manyak-terraform` dev `c167073`(PR #15) 기준입니다. OpenAI 키 등록과 세 레포 병합은 2026-08-07, Terraform apply와 운영 키 전달 검증, AI `v0.2.4` 배포와 실컴파일 검증은 2026-08-08 완료했습니다. 그 밖의 기준은 `../manyak-server` dev `f106b8e`, `../manyak-web` dev `0fac4bd`, `../manyak-android` dev `ad2871b3`입니다. Langfuse 배선 적용과 키 주입은 2026-07-23 완료했습니다. 개발 환경(ECS Fargate)은 `../manyak-terraform`의 `terraform/envs/dev`·`modules/compute-ecs` 기준입니다([PR #17](https://github.com/KIM-N-KANG/manyak-terraform/pull/17), KNK-825·826·827). 2026-08-14 기준 코드 작성과 `plan`까지 완료했고 **`apply`는 하지 않았습니다** |
 
 ## 4-1. 목적과 범위
 

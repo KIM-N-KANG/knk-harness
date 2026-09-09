@@ -1,11 +1,36 @@
 # auth
 
-| 항목      | 값                                                                                                                                                                                                                                              |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 화면      | 로그인 `/login`(FE-SCREEN-008) + 계정 연동(마이 페이지 Chip 행·`/my/link/continue` 중계) + 전역 세션·이관 동작(루트 레이아웃 상주 컴포넌트)                                                                                                     |
-| 관련 스펙 | [`3-1-client-spec.md FE-SCREEN-008(§3-1-3)·§3-1-7`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5`](../spec/3-2-web-spec.md), [`4-backend-server-spec.md §4-3-5`](../spec/4-backend-server-spec.md)(로그인 핸드오프), [`2-user-stories.md §2-8·§2-9`](../spec/2-user-stories.md)                       |
-| 관련 E2E  | `manyak-web/e2e/my/login-page.spec.ts`, `e2e/my/session-expiry.spec.ts`, `e2e/auth/in-app-handoff.spec.ts`(인앱 게스트·로그인 핸드오프), `e2e/my/invite.spec.ts`(신규 가입 다이얼로그), `e2e/my/my-page.spec.ts`, `e2e/legal/legal.spec.ts`(로그인 고지), `manyak-web/e2e/visual/auth-visual.spec.ts`           |
-| 기준 코드 | `manyak-web` dev HEAD. v0.2.2 릴리스 이후 auth 동작 변경 없음(비동작 리팩터링만) — `미배포` 표기 없음                                                                                                                                           |
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 로그인·세션·계정 연동의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 로그인 `/login`(FE-SCREEN-008) + 계정 연동(마이 페이지 Chip 행·`/my/link/continue` 중계) + 전역 세션·이관 동작(루트 레이아웃 상주 컴포넌트) |
+| 기준 코드 | `manyak-web` dev HEAD. v0.2.2 릴리스 이후 auth 동작 변경 없음(비동작 리팩터링만) — `미배포` 표기 없음 |
+| 관련 스펙 | [`3-1-client-spec.md FE-SCREEN-008(§3-1-3)·§3-1-7`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5`](../spec/3-2-web-spec.md), [`4-backend-server-spec.md §4-3-5`](../spec/4-backend-server-spec.md)(로그인 핸드오프), [`2-user-stories.md §2-8·§2-9`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/my/login-page.spec.ts`, `e2e/my/session-expiry.spec.ts`, `e2e/auth/in-app-handoff.spec.ts`(인앱 게스트·로그인 핸드오프), `e2e/my/invite.spec.ts`(신규 가입 다이얼로그), `e2e/my/my-page.spec.ts`, `e2e/legal/legal.spec.ts`(로그인 고지), `manyak-web/e2e/visual/auth-visual.spec.ts` |
+
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [AUTH-LOGIN — 로그인 페이지 `/login`](#auth-login--로그인-페이지-login)
+- [AUTH-LINK — 계정 연동 (마이 페이지, KNK-740)](#auth-link--계정-연동-마이-페이지-knk-740)
+- [AUTH-SESSION — BFF 토큰 세션·세션 만료](#auth-session--bff-토큰-세션세션-만료)
+- [AUTH-MIGRATE — 게스트 데이터 자동 이관](#auth-migrate--게스트-데이터-자동-이관)
+- [AUTH-HANDOFF — 인앱 게스트 허용·로그인 핸드오프](#auth-handoff--인앱-게스트-허용로그인-핸드오프)
+- [AUTH-LOGOUT — 로그아웃](#auth-logout--로그아웃)
+- [AUTH-ONBOARD — 신규 가입 온보딩(초대 코드 다이얼로그)](#auth-onboard--신규-가입-온보딩초대-코드-다이얼로그)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
 
 컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 

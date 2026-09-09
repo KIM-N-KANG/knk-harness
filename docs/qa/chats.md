@@ -1,11 +1,41 @@
 # chats
 
-| 항목      | 값                                                                                                                                                                                |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 화면      | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]`                                                                          |
-| 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../spec/2-user-stories.md)                                             |
-| 관련 E2E  | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
-| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성)                |
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 채팅 목록·채팅 화면의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]` |
+| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(응답 재생성) |
+| 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
+
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [CHAT-LIST — 채팅 목록 `/chats`](#chat-list--채팅-목록-chats)
+- [CHAT-ENTRY — 채팅 화면 진입·렌더](#chat-entry--채팅-화면-진입렌더)
+- [CHAT-TOUR — 채팅 화면 안내 투어](#chat-tour--채팅-화면-안내-투어)
+- [CHAT-SEND — 전송·SSE 스트리밍](#chat-send--전송sse-스트리밍)
+- [CHAT-IMAGE — 스트리밍 인물 이미지 `Phase 2 · 구현`](#chat-image--스트리밍-인물-이미지-phase-2--구현)
+- [CHAT-INPUT — 입력창·추천 입력·선택지](#chat-input--입력창추천-입력선택지)
+- [CHAT-BLOCK — 블럭 입력 모드 (기본)](#chat-block--블럭-입력-모드-기본)
+- [CHAT-SET — 옵션 메뉴·채팅 삭제](#chat-set--옵션-메뉴채팅-삭제)
+- [CHAT-SHARE — 채팅 공유 발급](#chat-share--채팅-공유-발급)
+- [SHARE-VIEW — 공유된 채팅 열람 `/share/[shareId]`](#share-view--공유된-채팅-열람-shareshareid)
+- [CHAT-REGEN — 응답 재생성 `미배포`](#chat-regen--응답-재생성-미배포)
+- [CHAT-LIMIT — 게스트 체험 한도·이프](#chat-limit--게스트-체험-한도이프)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
 
 컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 

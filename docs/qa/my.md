@@ -1,11 +1,37 @@
 # my
 
-| 항목      | 값                                                                                                                                                                                                                                               |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 화면      | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md))                                                                                       |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md)                                                                         |
-| 관련 E2E  | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | KNK-1052는 `manyak-web` `feat/KNK-1052-integrate-account-deletion-api`의 `418453b`, 그 외 케이스는 dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(서비스 안내 페이지·메뉴 #72, 구 리다이렉트 shim 제거 #73). 화면 이름과 경로를 "더보기" `/more*`에서 "마이" `/my*`로 바꾼 KNK-687도 v0.2.2에는 미포함이라, 경로·라벨에 의존하는 케이스는 릴리스 기준으로 읽을 때 구 이름으로 치환해야 합니다. MY-CREDITS와 MY-MENU-21·22는 `manyak-web` `feat/KNK-1092-add-if-management-page` 기준(`미배포`) — 이프 내역을 이프 충전으로 넓히고 출석 체크를 마이에서 옮긴 KNK-1092가 반영된 상태입니다 |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
+- [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
+- [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092) `미배포`](#my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포)
+- [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
+- [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
+- [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
+- [MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011) `미배포`](#my-info--서비스-안내-about-fe-screen-011-미배포)
+- [MY-NAV — 하단 탭 네비게이션·상단 헤더 (§3-2-3)](#my-nav--하단-탭-네비게이션상단-헤더-3-2-3)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
 
 컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 

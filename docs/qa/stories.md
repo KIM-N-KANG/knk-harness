@@ -1,11 +1,39 @@
 # stories
 
-| 항목      | 값                                                                                                                                                                                                                                                                                                 |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 화면      | 홈 오리지널 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003)                                                                                                                     |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md)                                                                                                                                                         |
-| 관련 E2E  | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인) |
-| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(게스트 스토리라인 선차단 한도 10→5 정정)                                                                                                                                                                                      |
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 스토리 목록·제작·상세의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 홈 오리지널 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003) |
+| 기준 코드 | `manyak-web` dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(게스트 스토리라인 선차단 한도 10→5 정정) |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인) |
+
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [STORY-LIST — 홈 오리지널 · 제작 내 스토리 목록](#story-list--홈-오리지널--제작-내-스토리-목록)
+- [STORY-DETAIL — 스토리 상세 `/stories/[id]`](#story-detail--스토리-상세-storiesid)
+- [STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택](#story-keyword--생성-퍼널-1단계-키워드-선택)
+- [STORY-LINE — 생성 퍼널 2단계: 스토리라인 생성·선택·평가](#story-line--생성-퍼널-2단계-스토리라인-생성선택평가)
+- [STORY-INFO — 생성 퍼널 3단계: 추가 정보](#story-info--생성-퍼널-3단계-추가-정보)
+- [STORY-FINAL — 생성 퍼널 4단계: 완성·완료](#story-final--생성-퍼널-4단계-완성완료)
+- [STORY-RECOVER — 생성 퍼널 백그라운드 복귀](#story-recover--생성-퍼널-백그라운드-복귀)
+- [STORY-GUARD — 생성 퍼널 이탈 가드](#story-guard--생성-퍼널-이탈-가드)
+- [STORY-DRAFT — 제작 자동 저장·재개 `/studio/story/simple` (KNK-648·994)](#story-draft--제작-자동-저장재개-studiostorysimple-knk-648994)
+- [STORY-LIMIT — 게스트 한도·이프 게이팅](#story-limit--게스트-한도이프-게이팅)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
 
 컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 
