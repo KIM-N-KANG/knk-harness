@@ -1,6 +1,6 @@
 ---
-version: 2.23
-updated: 2026-09-08
+version: 2.24
+updated: 2026-09-09
 ---
 
 # 5-1. AI 서버 제품 스펙
@@ -21,8 +21,8 @@ updated: 2026-09-08
 
 | 항목 | 기준 |
 | --- | --- |
-| 버전 | v2.23 |
-| 기준 코드 | manyak-ai `dev` 브랜치 `dcce0c7d9507`(2026-09-02). 기존 v2.22의 기준을 유지하며, 이번 문서 분리로 코드 대조 범위를 확장하지 않습니다. |
+| 버전 | v2.24 |
+| 기준 코드 | manyak-ai `dev` 브랜치 `73d5615a7110`(2026-09-09, KNK-1219 PR #109까지). |
 | 연구 기준 | manyak-autoresearch `7a6e7d5` 및 2026-09-07 작업본. 이미지 평가 실행기·관련 문서는 미커밋 로컬 구현입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
 | 문서 경계 | API·품질 기준은 이 문서, 구현 상세는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
@@ -401,6 +401,7 @@ sequenceDiagram
     alt 본문 성공
         L-->>A: 본문 조각
         A-->>B: token 및 기존 인물 이미지 이벤트
+        Note over A,B: 이미지는 인물별 첫 대사 앞에만 전송
         opt 판정 재료와 남은 시간 있음
             A->>L: 본문을 보고 사건·엔딩 판정
             Note over A,B: 대기 중 10초마다 ping
@@ -416,7 +417,7 @@ sequenceDiagram
     end
 ```
 
-`started` 발행과 `chatId`·`turnId` 부착은 백엔드 책임입니다. 완료 본문에는 이미지가 표시된 대사 줄 위에 `[[URL]]`과 빈 줄을 넣고, `characterImages[]`에 이벤트와 같은 순서·반복으로 `{name, imageName, imageUrl}`을 담습니다. `imageName`은 요청값을 그대로 전달합니다.
+`started` 발행과 `chatId`·`turnId` 부착은 백엔드 책임입니다. 이미지 매핑에 있는 인물의 첫 대사 바로 앞에 턴당 한 번만 이미지 이벤트를 보냅니다. 정식 이름과 별칭은 같은 인물로 처리하며, 표시 기록은 요청마다 초기화합니다. 완료 본문에는 해당 첫 대사 줄 위에 `[[URL]]`과 빈 줄을 넣고, `characterImages[]`에 이벤트와 같은 순서로 인물별 한 항목씩 `{name, imageName, imageUrl}`을 담습니다. `imageName`은 요청값을 그대로 전달합니다.
 
 화자 감지는 정식 이름과 충돌하지 않는 줄임 이름을 허용하고, 볼드 라벨을 평문으로 정리합니다. 매핑의 빈 이름·URL을 추가 검증하지 않으며 중복 이름은 마지막 항목을 씁니다. 다음 LLM 입력은 복사본에서만 마커·뒤 줄바꿈 최대 2개를 제거합니다(채팅은 History, 선택지는 History·본문, 판정은 본문). 옛 `[character:이름]` 태그와 `summary`는 제거 대상이 아닙니다. 세부 감지 규칙·경계 사례는 [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md)와 [기존 이미지 결정](./5-2-ai-server-adr.md#기존-인물-이미지-계약)을 참조합니다.
 
@@ -1186,14 +1187,14 @@ flowchart LR
 | SSE 이벤트 | 발생 조건 |
 | --- | --- |
 | `token` | 본문 조각. 선택지·이미지 저장 마커 제외 |
-| `character_image` | 매핑에 있는 화자의 각 대사 라벨보다 먼저 전송. 반복 발화도 반복 전송 |
+| `character_image` | 매핑에 있는 인물별 첫 대사 라벨보다 먼저 턴당 한 번 전송. 본명·별칭은 정식 이름 기준으로 중복 제거 |
 | `ping` | 판정 대기 중 10초 간격. 빈 객체여도 `data:` 줄 포함 |
 | `completed` | 본문과 판정 처리 완료. 선택지는 빈 배열 |
 | `error` | 본문 실패. 완료·판정 없이 종료 |
 
 **Response body · 200 text/event-stream**
 
-응답은 단일 JSON이 아니라 아래 SSE 프레임을 순차 전송합니다. `token`·`character_image`는 반복 가능하며 `error`는 본문 실패 시의 별도 종료 경로입니다.
+응답은 단일 JSON이 아니라 아래 SSE 프레임을 순차 전송합니다. `token`은 본문 조각마다, `character_image`는 인물별 첫 대사 앞에 전송하며 `error`는 본문 실패 시의 별도 종료 경로입니다.
 
 ```text
 event: token
@@ -1261,7 +1262,7 @@ data: {}
 | --- | --- | --- |
 | `aiOutput` | `string` | 이미지 저장 마커를 포함한 완료 본문 |
 | `choices` | `string[]` | 빈 배열 고정; 선택지는 별도 API |
-| `characterImages` | `object[]` | 본문에 표시한 순서의 이미지 목록 |
+| `characterImages` | `object[]` | 본문에 처음 표시한 순서의 이미지 목록; 정식 인물 이름 기준으로 턴당 한 항목 |
 | `characterImages[].name` | `string` | 인물 이름 |
 | `characterImages[].imageName` | `string` | 요청의 이미지 이름 |
 | `characterImages[].imageUrl` | `string` | 저장된 이미지 URL |
