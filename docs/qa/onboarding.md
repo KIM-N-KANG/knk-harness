@@ -1,13 +1,33 @@
-# QA — 온보딩 (온보딩 페이지)
+# onboarding
 
-| 항목      | 값                                                                                                                                                       |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 화면      | 온보딩 페이지(FE-SCREEN-007, `/onboarding`. 게이트는 `(main)` 레이아웃 마운트) · 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) |
-| 관련 스펙 | [웹 사용자 모델](../product-specs/3-3-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../product-specs/2-user-stories.md) US-2-5·US-8-3  |
-| 관련 E2E  | `manyak-web/e2e/smoke/onboarding.spec.ts`, `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(크롤러 게이트 우회)   |
-| 기준 코드 | `manyak-web` dev HEAD                                                                                                                                    |
+## 문서 정보
 
-컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 게스트·신규 가입 온보딩의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 온보딩 페이지(FE-SCREEN-007, `/onboarding`. 게이트는 `(main)` 레이아웃 마운트) · 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) |
+| 기준 코드 | `manyak-web` dev HEAD |
+| 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../spec/2-user-stories.md) US-2-5·US-8-3 |
+| 관련 E2E | `manyak-web/e2e/smoke/onboarding.spec.ts`, `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(크롤러 게이트 우회) |
+
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [ONBD-GUEST — 게스트 환영 온보딩 페이지](#onbd-guest--게스트-환영-온보딩-페이지)
+- [ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩](#onbd-invite--신규-가입회원-초대-코드-온보딩)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
+
+컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 
 ## ONBD-GUEST — 게스트 환영 온보딩 페이지
 

@@ -1,13 +1,39 @@
-# QA — 마이 (메뉴 · 회원 탈퇴 · 피드백 · 친구 초대 · 이프 충전 · 서비스 안내 · 하단 탭)
+# my
 
-| 항목      | 값                                                                                                                                                                                                                                               |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 화면      | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../product-specs/3-3-web-spec.md))                                                                                       |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../product-specs/3-1-client-spec.md), [`3-3-web-spec.md §3-2-4`](../product-specs/3-3-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../product-specs/2-user-stories.md)                                                                         |
-| 관련 E2E  | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+## 문서 정보
+
+| 항목 | 값 |
+| --- | --- |
+| 버전 | 미기재 |
+| 작성일 | 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | 마냑 웹 프론트엔드 |
+| 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | KNK-1052는 `manyak-web` `feat/KNK-1052-integrate-account-deletion-api`의 `418453b`, 그 외 케이스는 dev HEAD. `미배포` 표기 케이스는 v0.2.2 릴리스에 미포함(서비스 안내 페이지·메뉴 #72, 구 리다이렉트 shim 제거 #73). 화면 이름과 경로를 "더보기" `/more*`에서 "마이" `/my*`로 바꾼 KNK-687도 v0.2.2에는 미포함이라, 경로·라벨에 의존하는 케이스는 릴리스 기준으로 읽을 때 구 이름으로 치환해야 합니다. MY-CREDITS와 MY-MENU-21·22는 `manyak-web` `feat/KNK-1092-add-if-management-page` 기준(`미배포`) — 이프 내역을 이프 충전으로 넓히고 출석 체크를 마이에서 옮긴 KNK-1092가 반영된 상태입니다 |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
-컬럼 정의와 우선순위 기준은 [`README.md`](./README.md)를 따릅니다.
+## 읽는 순서
+
+- [QA 공통 규칙](README.md)과 문서 정보의 관련 Spec·E2E를 먼저 확인합니다.
+- 담당 화면의 케이스에서 사전 조건 → 절차 → 기대 결과를 확인하고 검수합니다.
+
+## 목차
+
+- [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
+- [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
+- [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092) `미배포`](#my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포)
+- [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
+- [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
+- [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
+- [MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011) `미배포`](#my-info--서비스-안내-about-fe-screen-011-미배포)
+- [MY-NAV — 하단 탭 네비게이션·상단 헤더 (§3-2-3)](#my-nav--하단-탭-네비게이션상단-헤더-3-2-3)
+- [⚠️ 확인 필요](#️-확인-필요)
+
+---
+
+컬럼 정의와 우선순위 기준은 [`README.md`](README.md)를 따릅니다.
 
 이 문서는 로그인 페이지 자체와 세션 만료(`auth.md` 담당)를 다루지 않고, 마이에서 로그인 페이지로의 진입점과 회원 탈퇴 뒤 세션 정리 결과까지만 다룹니다. 다크 모드·카카오 인앱 브라우저·레이아웃 러버밴드·일반 접근성 같은 크로스커팅 항목도 제외합니다.
 
@@ -126,7 +152,7 @@
 
 ## MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)
 
-신규 가입 첫 로그인 직후의 초대 코드 바텀 시트 케이스는 [`onboarding.md`](./onboarding.md)의 ONBD-INVITE 섹션이 소유합니다. 코드 입력의 사유별 오류 규칙은 이 문서의 MY-INVITE 섹션과 공유합니다.
+신규 가입 첫 로그인 직후의 초대 코드 바텀 시트 케이스는 [`onboarding.md`](onboarding.md)의 ONBD-INVITE 섹션이 소유합니다. 코드 입력의 사유별 오류 규칙은 이 문서의 MY-INVITE 섹션과 공유합니다.
 
 ## MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011) `미배포`
 
@@ -167,4 +193,4 @@ v0.2.2 이후 머지(#72)로 dev에만 존재하며, 이 섹션 전체가 `미�
 1. **소모량 사전 고지(US-10-3) 잔여 미구현.** 스토리 완성 CTA 위 비용과 회원 채팅 전송 버튼 왼쪽 비용 표시는 구현됐고, KNK-1095로 서버 값을 렌더합니다. 스토리라인 남은 횟수와 응답 재생성 버튼 주변 고지는 아직 미구현(`계획`)입니다.
 2. **출석 보상 값이 운영과 dev에서 다름.** KNK-1095로 출석 제목은 `GET /credits/policies`의 `attendanceReward`를 렌더하는데, 운영은 출시 이벤트 값 700, dev는 350입니다(2026-09-01 확인). 의도된 환경 차이지만, dev·로컬에서 QA하면 화면에 350이 보이므로 700을 기대하고 회귀로 보고하지 않도록 주의합니다.
 3. **정책 조회가 실패하면 토스트·공유 제목의 수치 자리가 비정상 문구가 됨.** 초대 등록 성공 토스트와 카카오 공유 제목은 쉬머를 얹을 수 없어 사건 시점의 캐시를 한 번만 읽는데(§3-1-7 이프 정책 수치 표시), 조회가 실패해 캐시가 비어 있으면 수치 자리에 `undefined`가 그대로 들어갑니다(MY-INVITE-05·11). 화면 진입 뒤 동작하는 흐름이라 실제로 걸릴 확률은 낮지만, 대체 문구를 둘지 정해야 합니다.
-4. **백엔드·Android 소유 스펙의 회원 탈퇴 상태가 낡음.** `4-backend.md`는 `DELETE /users/me`를 아직 `Phase 2 · 계획`과 열린 결정으로, `3-7-android-design.md`는 웹 계정 섹션의 이전 색상과 Android 회원 탈퇴 자리 화면을 적고 있습니다. KNK-1052에서 웹과 API 계약이 확정됐으므로 각 소유 팀이 구현 상태·탈퇴 후 공개 콘텐츠·개인정보 정리 계약을 동기화해야 합니다.
+4. **백엔드·Android 소유 스펙의 회원 탈퇴 상태가 낡음.** `4-backend-server-spec.md`는 `DELETE /users/me`를 아직 `Phase 2 · 계획`과 열린 결정으로, `1-2-android-design.md`는 웹 계정 섹션의 이전 색상과 Android 회원 탈퇴 자리 화면을 적고 있습니다. KNK-1052에서 웹과 API 계약이 확정됐으므로 각 소유 팀이 구현 상태·탈퇴 후 공개 콘텐츠·개인정보 정리 계약을 동기화해야 합니다.

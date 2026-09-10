@@ -1,31 +1,38 @@
----
-version: 2.24
-updated: 2026-09-09
----
+# 5-ai-server-spec
 
-# 5-1. AI 서버 제품 스펙
+## 문서 정보
 
-마냑의 스토리 제작·채팅 생성과 이를 평가하는 연구 시스템의 현재 기준입니다. 선택 배경·대안·변경 이력은 [의사결정 기록](./5-2-ai-server-adr.md)에 둡니다.
-
-```text
-§5-1  목적과 범위
-§5-2  AI 호출 구조
-§5-3  API 기능과 처리 흐름
-§5-4  프롬프트와 모델 설정
-§5-5  오류와 실패 코드
-§5-6  운영과 관측
-§5-7  검수와 남은 제약
-§5-8  평가 시스템
-§5-9  API 요청·응답 명세
-```
-
-| 항목 | 기준 |
+| 항목 | 값 |
 | --- | --- |
-| 버전 | v2.24 |
+| 버전 | v2.25 |
+| 작성일 | 원문 미기재 |
+| 수정일 | 2026-09-09 |
+| 대상 | manyak-ai 및 평가 연구 시스템 |
+| 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
 | 기준 코드 | manyak-ai `dev` 브랜치 `73d5615a7110`(2026-09-09, KNK-1219 PR #109까지). |
 | 연구 기준 | manyak-autoresearch `7a6e7d5` 및 2026-09-07 작업본. 이미지 평가 실행기·관련 문서는 미커밋 로컬 구현입니다. |
+| 문서 경계 | API·품질 기준은 이 문서, 현재 호출·설정 구조는 [AI Design](../design/3-ai-server-design.md), 구현 코드는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
-| 문서 경계 | API·품질 기준은 이 문서, 구현 상세는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
+
+## 읽는 순서
+
+- 처음에는 §5-1의 범위를 확인합니다. API 구현자는 §5-9의 필드 → §5-3의 동작 → §5-5의 실패를, 평가 작업자는 §5-8을 읽습니다. 호출 구조와 설정은 [AI Design](../design/3-ai-server-design.md), 선택 이유는 [AI ADR](../adr/3-ai-server-adr.md)을 따릅니다.
+
+## 목차
+
+- [5-1. 목적과 범위](#5-1-목적과-범위)
+- [5-2. AI 호출 구조](#5-2-ai-호출-구조)
+- [5-3. API 기능과 처리 흐름](#5-3-api-기능과-처리-흐름)
+- [5-4. 프롬프트와 모델 설정](#5-4-프롬프트와-모델-설정)
+- [5-5. 오류와 실패 코드](#5-5-오류와-실패-코드)
+- [5-6. 운영과 관측](#5-6-운영과-관측)
+- [5-7. 검수와 남은 제약](#5-7-검수와-남은-제약)
+- [5-8. 평가 시스템](#5-8-평가-시스템)
+- [5-9. API 요청·응답 명세](#5-9-api-요청응답-명세)
+
+---
+
+마냑의 스토리 제작·채팅 생성과 이를 평가하는 연구 시스템의 현재 기준입니다. 선택 배경·대안·변경 이력은 [의사결정 기록](../adr/3-ai-server-adr.md)에 둡니다.
 
 ## 5-1. 목적과 범위
 
@@ -33,9 +40,9 @@ updated: 2026-09-09
 
 | 참고 문서 | 소유 내용 |
 | --- | --- |
-| [용어집](./0-glossary.md), [배경](./1-background.md), [사용자 요구](./2-user-stories.md) | 이름·제품 범위·요구사항 |
-| [클라이언트](3-1-client-spec.md), [백엔드](./4-backend.md) | 화면·호출 시점·저장·SSE 중계 |
-| [관측](./6-analytics.md), [배포](./7-deployment.md) | 이벤트·데이터 취급·환경 설정·운영 검수 |
+| [용어집](0-glossary.md), [배경](1-background.md), [사용자 요구](2-user-stories.md) | 이름·제품 범위·요구사항 |
+| [클라이언트](3-1-client-spec.md), [백엔드](4-backend-server-spec.md) | 화면·호출 시점·저장·SSE 중계 |
+| [관측](6-analytics.md), [배포](../design/4-deployment.md) | 이벤트·데이터 취급·환경 설정·운영 검수 |
 | [스토리라인 상세](../../../manyak-ai/spec/story/1-STORYLINES.md), [컴파일 상세](../../../manyak-ai/spec/story/2-COMPILE.md), [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md) | 내부 스키마·변환·프롬프트 조립 상세 |
 | [연구 레포 안내](../../../manyak-autoresearch/README.md) | 평가 도구·데이터·실험의 실행법과 저장 위치 |
 
@@ -56,34 +63,7 @@ flowchart LR
 
 ## 5-2. AI 호출 구조
 
-Python 3.11·FastAPI·Pydantic v2 기반입니다.
-
-텍스트 LLM 호출은 호출부·모델 특성·SDK 어댑터의 세 층으로 나뉩니다.
-
-| 층 | 책임 | 구현 |
-| --- | --- | --- |
-| 호출부 | 프롬프트·모델·출력 길이·시간 제한을 요청하고, 결과 검증·보완 호출·실패 시 대체 처리를 담당 | `story_llm.py`, `chat_llm.py` 등 기능별 서비스 |
-| 모델 특성 | 모델별 공급자·어댑터·추론 설정·지원 인자·한도를 정의 | [registry.py](../../../manyak-ai/src/services/llm/registry.py) |
-| SDK 어댑터 | 공통 요청을 공급자별 SDK 인자로 바꾸고, 응답·토큰 사용량·오류를 공통 형식으로 반환 | [llm/](../../../manyak-ai/src/services/llm/)의 `openai_sdk.py`, `anthropic_sdk.py`, `google_sdk.py` |
-
-호출부가 요청을 넘기면 [공통 통로](../../../manyak-ai/src/services/llm/__init__.py)가 모델 등록부에서 설정을 조회하고, 해당 SDK 어댑터를 선택해 공급자 API를 호출합니다. 아래 그림의 1~4는 AI 서버 내부 처리입니다. 4번 SDK 어댑터가 서버 밖으로 요청을 전송하면, 5번 외부 공급자 서버에서 모델을 실행합니다.
-
-```mermaid
-flowchart LR
-    C["<div style='width:200px;text-align:center;'>1. 호출부<br/>프롬프트·모델 이름·호출 조건 전달</div>"]
-    G["<div style='width:200px;text-align:center;'>2. 공통 통로 · complete / stream<br/>registry.py에서 모델 설정 조회</div>"]
-    S["<div style='width:200px;text-align:center;'>3. 공통 통로<br/>설정에 맞는 SDK 어댑터 선택</div>"]
-    A["<div style='width:200px;text-align:center;'>4. SDK 어댑터<br/>공급자별 인자로 변환해 요청 전송</div>"]
-    P["<div style='width:200px;text-align:center;'>5. 외부 공급자 AI API<br/>모델 실행</div>"]
-    C --> G --> S --> A
-    A -->|서버 외부로 API 요청 전송| P
-```
-
-응답은 SDK 어댑터가 공통 형식으로 바꿔 공통 통로를 통해 호출부에 돌려줍니다. `complete()`는 완성된 결과를, `stream()`은 생성 중인 본문 조각과 완료 정보를 전달합니다. 공급자 오류도 공통 오류 형식으로 변환합니다.
-
-DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google은 각각의 SDK 어댑터를 사용합니다.
-
-이미지는 [별도 이미지 통로](../../../manyak-ai/src/services/image/)의 `generate_image()`를 사용합니다. 인물·썸네일 생성 호출부가 프롬프트를 넘기면, 이미지 모델 매핑과 설정을 적용해 `openai_api.py`의 Images API 어댑터로 전달합니다. 이미지 결과·오류도 텍스트와 별도의 공통 형식으로 반환합니다.
+호출 계층·공급자 어댑터·이미지 통로는 [AI Design §3-1](../design/3-ai-server-design.md#3-1-호출-경계와-요청-흐름)이 소유합니다. 기능별 입출력·실패 계약은 다음 절을 따릅니다.
 
 ## 5-3. API 기능과 처리 흐름
 
@@ -379,7 +359,7 @@ flowchart LR
     JV --> JO
 ```
 
-프롬프트: [본문의 6개 레이어](../../../manyak-ai/prompt/chat/), [판정](../../../manyak-ai/prompt/chat/JUDGEMENT-TEMPLATE.md), [선택지](../../../manyak-ai/prompt/chat/CHOICES-TEMPLATE.md). 기존 인물 이미지 URL은 코드가 대사에 연결하며 위 모델의 입력에 넣지 않습니다.
+프롬프트: [본문의 6개 레이어](../../../manyak-ai/prompt/chat), [판정](../../../manyak-ai/prompt/chat/JUDGEMENT-TEMPLATE.md), [선택지](../../../manyak-ai/prompt/chat/CHOICES-TEMPLATE.md). 기존 인물 이미지 URL은 코드가 대사에 연결하며 위 모델의 입력에 넣지 않습니다.
 
 요청·응답 예시와 필드 설명: [채팅 턴 API 명세](#5-9-3-채팅-턴).
 
@@ -419,7 +399,7 @@ sequenceDiagram
 
 `started` 발행과 `chatId`·`turnId` 부착은 백엔드 책임입니다. 이미지 매핑에 있는 인물의 첫 대사 바로 앞에 턴당 한 번만 이미지 이벤트를 보냅니다. 정식 이름과 별칭은 같은 인물로 처리하며, 표시 기록은 요청마다 초기화합니다. 완료 본문에는 해당 첫 대사 줄 위에 `[[URL]]`과 빈 줄을 넣고, `characterImages[]`에 이벤트와 같은 순서로 인물별 한 항목씩 `{name, imageName, imageUrl}`을 담습니다. `imageName`은 요청값을 그대로 전달합니다.
 
-화자 감지는 정식 이름과 충돌하지 않는 줄임 이름을 허용하고, 볼드 라벨을 평문으로 정리합니다. 매핑의 빈 이름·URL을 추가 검증하지 않으며 중복 이름은 마지막 항목을 씁니다. 다음 LLM 입력은 복사본에서만 마커·뒤 줄바꿈 최대 2개를 제거합니다(채팅은 History, 선택지는 History·본문, 판정은 본문). 옛 `[character:이름]` 태그와 `summary`는 제거 대상이 아닙니다. 세부 감지 규칙·경계 사례는 [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md)와 [기존 이미지 결정](./5-2-ai-server-adr.md#기존-인물-이미지-계약)을 참조합니다.
+화자 감지는 정식 이름과 충돌하지 않는 줄임 이름을 허용하고, 볼드 라벨을 평문으로 정리합니다. 매핑의 빈 이름·URL을 추가 검증하지 않으며 중복 이름은 마지막 항목을 씁니다. 다음 LLM 입력은 복사본에서만 마커·뒤 줄바꿈 최대 2개를 제거합니다(채팅은 History, 선택지는 History·본문, 판정은 본문). 옛 `[character:이름]` 태그와 `summary`는 제거 대상이 아닙니다. 세부 감지 규칙·경계 사례는 [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md)와 [기존 이미지 결정](../adr/3-ai-server-adr.md#기존-인물-이미지-계약)을 참조합니다.
 
 목표가 없거나 완결된 직후에는 `targetMainEvent`가 null입니다. 진행 규칙은 다음과 같습니다.
 
@@ -491,22 +471,7 @@ LLM을 호출하지 않고 서비스 상태와 앱 버전을 반환합니다. [�
 
 ## 5-4. 프롬프트와 모델 설정
 
-본문은 SAFETY·CORE·STORY·CHARACTER·USER를 앞쪽 시스템 메시지로 조립하고, History·사용자 입력 뒤에 MEMORY 요약과 핵심 지시 재주입(PHI)을 둡니다. 충돌 우선순위는 SAFETY > CORE > MEMORY > STORY > CHARACTER > USER입니다. 선택지·판정은 별도 프롬프트입니다. [레이어 책임](../../../manyak-ai/spec/chat/1-PROMPT-LAYER.md)과 [배치](../../../manyak-ai/spec/chat/2-LAYER-PLACEMENT.md)가 상세 정본입니다.
-
-| 용도 | 기준 모델·설정 | 시간 제한의 의미 |
-| --- | --- | --- |
-| 스토리라인 | `STORYLINES_MODEL`: deepseek-v4-flash, temperature 0.75, 출력 한도 6144 | SDK 90초. invalid 응답 재호출 경로는 전체 60초 예산 |
-| 컴파일 | `STORY_COMPILE_MODEL`: 기본 gpt-5.6-terra, 추론 medium, 출력 한도 16384. Gemini 공급자 선택 시 전용 템플릿 | SDK 90초(이미지 시간 별도) |
-| 본문 | `CHAT_MODEL`: deepseek-v4-flash, 출력 토큰 상한 미지정 | 첫 토큰 제한 90초 |
-| 선택지 | `CHAT_MODEL`, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
-| 판정 | `CHAT_MODEL`, 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
-| 이미지 | `IMAGE_MODEL`: gpt-image-2-2026-04-21, `IMAGE_QUALITY=low` | `IMAGE_TIMEOUT=60`은 시도당 제한, 한 장의 전체 제한 아님 |
-
-위 값은 기준 코드의 설정이며 현재 운영 설정을 다시 조회한 결과가 아닙니다. 판정 예산은 `120초 - AI에서 잰 경과 시간 - 안전 여유 15초`로 계산하므로 백엔드 대기열 시간을 정확히 반영하지 못합니다. SDK 자동 재시도로 실제 대기가 길어질 수 있으며, 품질·속도·비용 비교에서 재시도까지 포함해야 합니다.
-
-등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. `CHAT_MODEL`의 Anthropic 선택은 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
-
-프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다.
+프롬프트 조립·모델별 설정·기동 검사는 [AI Design §3-2](../design/3-ai-server-design.md#3-2-프롬프트와-모델-설정)이 소유합니다. API의 입력 의미·실패·관측 필드는 이 Spec을 따릅니다.
 
 ## 5-5. 오류와 실패 코드
 
@@ -519,7 +484,7 @@ LLM을 호출하지 않고 서비스 상태와 앱 버전을 반환합니다. [�
 | 선택지 | 재호출·고정 폴백으로 3개 반환 |
 | 설정 오류 | 기동 또는 호출 전 실패. 공급자 장애로 분류하지 않음 |
 
-Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_bad_request`, `provider_unavailable`, `invalid_ai_response`, `schema_validation_failed`, `unexpected_error`입니다. `content_filter_blocked`는 예약값입니다. 분류 의미는 [관측 카탈로그](./6-analytics.md#6-6-9-ai_call_logs-기록-기준)를 따르며, 백엔드 로그의 자체 오류 코드나 SSE 코드와 구분합니다. story 오류에는 정제된 한국어 메시지만 반환합니다(시간 초과·일시 제한·요청 거부·연동 오류·잘못된 응답 형식·컴파일 형식 불일치). 공급자 원문은 반환하지 않습니다. 정확한 문구는 [스토리 생성 서비스](../../../manyak-ai/src/services/story_llm.py)가 관리합니다. 형식 보정은 코드펜스 제거·화자 볼드 정리·입력값 보존·빈 필드 검증입니다. 품질 충족 여부까지 코드로 보장하지 않습니다.
+Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_bad_request`, `provider_unavailable`, `invalid_ai_response`, `schema_validation_failed`, `unexpected_error`입니다. `content_filter_blocked`는 예약값입니다. 분류 의미는 [관측 카탈로그](6-analytics.md#6-6-9-ai_call_logs-기록-기준)를 따르며, 백엔드 로그의 자체 오류 코드나 SSE 코드와 구분합니다. story 오류에는 정제된 한국어 메시지만 반환합니다(시간 초과·일시 제한·요청 거부·연동 오류·잘못된 응답 형식·컴파일 형식 불일치). 공급자 원문은 반환하지 않습니다. 정확한 문구는 [스토리 생성 서비스](../../../manyak-ai/src/services/story_llm.py)가 관리합니다. 형식 보정은 코드펜스 제거·화자 볼드 정리·입력값 보존·빈 필드 검증입니다. 품질 충족 여부까지 코드로 보장하지 않습니다.
 
 ## 5-6. 운영과 관측
 
@@ -530,7 +495,7 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 | 기록 | 현재 계약·상세 정본 |
 | --- | --- |
 | 요청 연결 | `X-Manyak-Request-Id` → `request_id`, `X-Manyak-Session-Id`·`X-Manyak-Device-Id-Hash` → 요청 컨텍스트. 누락·unknown은 생략 |
-| 제품 연결 | 제작·이야기·채팅·턴 연결 헤더 9종을 정규화하고 호출별 허용 metadata에만 기록. 정확한 이름·타입·적용 호출은 [백엔드 관측](./4-backend.md#4-7-운영과-관측) |
+| 제품 연결 | 제작·이야기·채팅·턴 연결 헤더 9종을 정규화하고 호출별 허용 metadata에만 기록. 정확한 이름·타입·적용 호출은 [백엔드 관측](4-backend-server-spec.md#4-7-운영과-관측) |
 | 연결 키 의미 | `creation_id`는 스토리라인 요청 UUID인 `trace_creation_id`. 분석 세션 `analytics_creation_id`와 다릅니다. `request_id`로 백엔드와 trace를 연결하며 AI는 trace ID를 응답하지 않습니다. |
 | Sentry | feature·provider·model·error_code 태그와 prompt_versions·retry_count·latency_ms 컨텍스트. 원문·인물 이름·키는 보내지 않으며 SSE 실패는 직접 캡처 |
 | 선택지 보완 기록 | 시간 초과·파싱 실패 등 예외는 `choice_generation`으로 Sentry에 기록. 정상 응답의 개수 부족을 고정 선택지로 채운 경우에는 서버 경고 로그만 기록 |
@@ -546,15 +511,13 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 
 Langfuse의 `session_id`는 클라이언트 접속 세션으로 여러 채팅을 포함할 수 있으며 `chat_id`와 다릅니다. `user_id`에는 원본 기기 식별자 대신 기기 식별자의 해시를 기록합니다.
 
-Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 호출(DeepSeek·GPT)만 하위 호출 관측을 제공하고 Anthropic·Google은 이 관측이 미완입니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](./6-analytics.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
-
-환경 변수의 이름·기본값은 [설정 코드](../../../manyak-ai/src/core/config.py), 배포 적용은 [배포 명세](./7-deployment.md)를 따릅니다. [`.env.example`](../../../manyak-ai/.env.example)은 일부 설정이 빠진 참고용입니다. 이미지 설정은 `IMAGE_MODEL`·`IMAGE_QUALITY`·`IMAGE_SIZE`(기본 `1024x768`)·`IMAGE_TIMEOUT`이며, 텍스트 모델 선택과 관계없이 `OPENAI_API_KEY`가 필요합니다. Google 텍스트 모델을 선택하면 `GEMINI_API_KEY`도 필요합니다.
+관측 SDK 활성화·격리·종료 flush와 환경 변수 적용은 [AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)을 따릅니다.
 
 ## 5-7. 검수와 남은 제약
 
 API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포의 도커 테스트(`scripts/test.sh`·`scripts/test.ps1`)로 검수합니다. 프롬프트·판정 품질은 라이브 실측이 별도로 필요하며 유닛 테스트로 대신하지 않습니다. 호출 전 규모를 보고하고 승인받습니다. 조립 미리보기는 무과금 로컬 스크립트입니다.
 
-현재 제약은 전체 History·오프닝 시드 차이(A3·A4), 출력 한도 미정(A8), 엔딩 판정 강화 미실측(A10), 전체 시간 예산·취소 전파 부족(A1·A11·A12·A15·A18), 공급자 배치·계측 부족(A13), 모델 별칭(A14), 시간 초과 외 판정 실패의 상태 초기화 위험(A16), 요약 마커 미정(A20)입니다. 인물 이미지 매핑·극단 라벨 입력은 수용한 제약(A19·A22)입니다. 종전 추적 항목 전체와 판단 근거는 [ADR 추적 이력](./5-2-ai-server-adr.md#기존-제약과-후속-판단-이력)에 남깁니다.
+현재 제약은 전체 History·오프닝 시드 차이(A3·A4), 출력 한도 미정(A8), 엔딩 판정 강화 미실측(A10), 전체 시간 예산·취소 전파 부족(A1·A11·A12·A15·A18), 공급자 배치·계측 부족(A13), 모델 별칭(A14), 시간 초과 외 판정 실패의 상태 초기화 위험(A16), 요약 마커 미정(A20)입니다. 인물 이미지 매핑·극단 라벨 입력은 수용한 제약(A19·A22)입니다. 종전 추적 항목 전체와 판단 근거는 [ADR 추적 이력](../adr/3-ai-server-adr.md#기존-제약과-후속-판단-이력)에 남깁니다.
 
 다른 서비스의 배포 여부는 해당 서비스 명세가 정본입니다. 구현 동기화 때는 기준 코드 SHA를 갱신하고 현재 계약만 이 문서에 반영하며, 결정이 바뀌면 ADR에 근거를 남깁니다.
 

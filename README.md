@@ -42,26 +42,31 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-제품 스펙 문서는 `docs/product-specs/` 아래에 번호 순서로 둡니다. 제품 정책, 기능 요구, API 계약, 이벤트 이름, 로그 필드처럼 구현에 영향을 주는 기준은 먼저 이 문서를 확인합니다.
+제품 문서는 `docs/spec/`(배경·요구·계약), `docs/design/`(현재 내부 구조), `docs/adr/`(누적 결정 기록)로 나눕니다. 세 폴더는 `docs/` 바로 아래에 둡니다. 숫자 접두어는 각 폴더에서 독립적으로 관리합니다. 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
 
-| 순서 | 문서 | 역할 |
+현재 파일명에 맞춰 제목·절 번호·참조를 정리하고 백엔드 Design·ADR과 AI Design을 원문에서 분리했습니다. Android 모듈 설계는 Android Design에 통합했습니다. 남은 본문 정리와 검증 범위는 [개정 계획](docs/planning/product-document-reorganization.md)을 따릅니다.
+
+| 분류·번호 | 문서 | 역할 |
 | --- | --- | --- |
-| 1 | `docs/product-specs/1-background.md` | 서비스 배경, 타겟 사용자, MVP 범위 |
-| 2 | `docs/product-specs/2-user-stories.md` | 화면·기능별 사용자 요구 |
-| 3-1 | `docs/product-specs/3-1-client-spec.md` | 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 |
-| 3-2 | `docs/product-specs/3-2-client-adr.md` | 공통 결정 당시 맥락·선택·이유 |
-| 3-3 | `docs/product-specs/3-3-web-spec.md` | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
-| 3-4 | `docs/product-specs/3-4-web-design.md` | 웹의 현재 기술 구조 |
-| 3-5 | `docs/product-specs/3-5-web-adr.md` | 웹 결정 당시 맥락·선택·이유 |
-| 3-6 | `docs/product-specs/3-6-android-spec.md` | Android 사용자 계약·플랫폼 예외·수용 기준 |
-| 3-7 | `docs/product-specs/3-7-android-design.md` | Android의 현재 기술 구조 |
-| 3-8 | `docs/product-specs/3-8-android-adr.md` | Android 결정 당시 맥락·선택·이유 |
-| 클라이언트 진행·추적 | [계약 적용·구현·검증·티켓 연결](docs/planning/client-tracking.md) | 진행·근거 인덱스 |
-| 4 | `docs/product-specs/4-backend.md` | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 |
-| 5-1 | `docs/product-specs/5-1-ai-server-spec.md` | AI 기능·입출력·실패 계약·평가 시스템 |
-| 5-2 | `docs/product-specs/5-2-ai-server-adr.md` | AI 설계의 배경·대안·선택 근거 |
-| 6 | `docs/product-specs/6-analytics.md` | 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 |
-| 7 | `docs/product-specs/7-deployment.md` | 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 |
+| spec · 0 | [용어집](docs/spec/0-glossary.md) | 공식 용어·한영 표기·네이밍 규칙 |
+| spec · 1 | [서비스 배경](docs/spec/1-background.md) | 서비스 배경, 타겟 사용자, MVP 범위 |
+| spec · 2 | [유저 스토리](docs/spec/2-user-stories.md) | 화면·기능별 사용자 요구 |
+| spec · 3-1 | [클라이언트 공통](docs/spec/3-1-client-spec.md) | 공통 화면·상태·사용자 흐름·API 사용 계약 |
+| spec · 3-2 | [웹](docs/spec/3-2-web-spec.md) | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
+| spec · 3-3 | [Android](docs/spec/3-3-android-spec.md) | Android 사용자 계약·플랫폼 예외·수용 기준 |
+| spec · 4 | [백엔드](docs/spec/4-backend-server-spec.md) | API·데이터 모델·오류·운영 기준 |
+| spec · 5 | [AI 서버](docs/spec/5-ai-server-spec.md) | AI 기능·입출력·실패 계약·평가 시스템 |
+| spec · 6 | [분석](docs/spec/6-analytics.md) | 이벤트·지표·관측·검수 기준 |
+| design · 1-1 | [웹 설계](docs/design/1-1-web-design.md) | 웹의 현재 기술 구조 |
+| design · 1-2 | [Android 설계](docs/design/1-2-android-design.md) | Android의 현재 기술 구조 |
+| design · 2 | [백엔드 설계](docs/design/2-backend-server-design.md) | 요청 경계·저장소·동시성·운영 배선 |
+| design · 3 | [AI 설계](docs/design/3-ai-server-design.md) | 호출 계층·모델·프롬프트·관측 설정 |
+| design · 4 | [배포 설계](docs/design/4-deployment.md) | 운영·개발·통합 배포와 복구 구조 |
+| adr · 1-1 | [공통 ADR](docs/adr/1-1-client-adr.md) | 공통 결정 당시 맥락·선택·이유 |
+| adr · 1-2 | [웹 ADR](docs/adr/1-2-web-adr.md) | 웹 결정 당시 맥락·선택·이유 |
+| adr · 1-3 | [Android ADR](docs/adr/1-3-android-adr.md) | Android 결정 당시 맥락·선택·이유 |
+| adr · 2 | [백엔드 ADR](docs/adr/2-backend-server-adr.md) | 백엔드 결정의 맥락·선택·근거 |
+| adr · 3 | [AI ADR](docs/adr/3-ai-server-adr.md) | AI 설계의 배경·대안·선택 근거 |
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
@@ -76,11 +81,13 @@ git clone <manyak-infra-repository-url>
 
 ## 계획 문서
 
-계획 문서는 `docs/planning/` 아래에 둡니다. 스펙(무엇을 어떻게 만들지)과 달리 개발 순서·기간·우선순위를 다룹니다.
+Phase와 로드맵은 `docs/planning/roadmap.md`, 계약 적용·코드·검증·배포 근거는 추적 문서가 소유합니다. 작업 담당·일정·진행의 정본은 Jira입니다. 기능별 미래 상세 설계와 작업 순서·검증·복구 계획은 구현 저장소에 둡니다.
 
 | 문서 | 역할 |
 | --- | --- |
 | `docs/planning/roadmap.md` | Phase별 개발 목표, 스프린트 일정, 작업 범위, 백로그 |
+| [클라이언트 진행·추적](docs/planning/client-tracking.md) | 계약 적용·구현·검증·Jira·계획 연결 |
+| [제품 문서 재구성 계획](docs/planning/product-document-reorganization.md) | 이번 경로·번호 변경 결과와 남은 본문 분리 계획 |
 
 ## 개발 레포지토리에 하네스 연결
 
