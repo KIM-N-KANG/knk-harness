@@ -4,12 +4,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.26 |
+| 버전 | v2.27 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-10 |
+| 수정일 | 2026-09-11 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `dev` 브랜치 `437768f959be`(2026-09-10, KNK-1237 PR #110까지). 이미지 관측(KNK-1240 PR #111)은 머지 전 내용을 먼저 반영했습니다. |
+| 기준 코드 | manyak-ai `dev` 브랜치 `b7217e2762c9`(2026-09-11, KNK-1195 PR #115까지) |
 | 연구 기준 | manyak-autoresearch `7a6e7d5` 및 2026-09-07 작업본. 이미지 평가 실행기·관련 문서는 미커밋 로컬 구현입니다. |
 | 문서 경계 | API·품질 기준은 이 문서, 현재 호출·설정 구조는 [AI Design](../design/3-ai-server-design.md), 구현 코드는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
@@ -101,7 +101,7 @@ flowchart LR
         C_item2["<div style='width:240px;text-align:center;'><span>주변 인물 각각의 이름·성별·특징 태그</span></div>"]
     end
     P["스토리라인 프롬프트<br/>STORYLINES-TEMPLATE.md"]
-    M["모델<br/>deepseek-v4-flash"]
+    M["모델<br/>deepseek-flash"]
     subgraph O["스토리라인 출력 · 3편"]
         direction LR
         O_item1["<div style='width:240px;text-align:center;'><span>각 편의 줄거리</span></div>"]
@@ -137,7 +137,7 @@ flowchart LR
         S_item2["<div style='width:240px;text-align:center;'><span>인물이 빠진 이야기 번호</span></div>"]
     end
     SP["보완 프롬프트<br/>기존 스토리라인 프롬프트<br/>+ 이름 보완 지시"]
-    SM["모델·추가 호출 한도<br/>deepseek-v4-flash<br/>최대 2회"]
+    SM["모델·추가 호출 한도<br/>deepseek-flash<br/>최대 2회"]
     subgraph SO["스토리라인 보완 출력"]
         direction LR
         SO_item1["<div style='width:240px;text-align:center;'><span>수정한 이야기만 반환<br/>검증 후 기존 3편에 병합</span></div>"]
@@ -309,7 +309,7 @@ flowchart LR
 
 ### 5-3-4. 채팅 턴
 
-채팅 본문·사건 및 엔딩 판정·선택지는 서로 다른 프롬프트로 호출합니다. 세 호출의 기본 모델은 모두 `deepseek-v4-flash`(`CHAT_MODEL`)입니다.
+채팅 본문·사건 및 엔딩 판정·선택지는 서로 다른 프롬프트로 호출합니다. 세 호출의 기본 모델은 모두 `deepseek-flash`(`CHAT_MODEL`)입니다.
 
 **채팅 본문 생성**
 
@@ -323,7 +323,7 @@ flowchart LR
         I_item3["<div style='width:240px;text-align:center;'><span>주요 사건·진행 상태·엔딩 후보</span></div>"]
     end
     P["본문 프롬프트<br/>SAFETY·CORE·STORY<br/>CHARACTER·USER·MEMORY"]
-    M["모델<br/>deepseek-v4-flash"]
+    M["모델<br/>deepseek-flash"]
     subgraph O["채팅 본문 출력"]
         direction LR
         O_item1["<div style='width:240px;text-align:center;'><span>다음 장면·인물 대사<br/>SSE로 실시간 전송</span></div>"]
@@ -347,7 +347,7 @@ flowchart LR
         J_item3["<div style='width:240px;text-align:center;'><span>엔딩 후보</span></div>"]
     end
     JP["판정 프롬프트<br/>JUDGEMENT-TEMPLATE.md"]
-    JM["모델<br/>deepseek-v4-flash"]
+    JM["모델<br/>deepseek-flash"]
     subgraph JO["사건·엔딩 판정 출력"]
         direction LR
         JO_item1["<div style='width:240px;text-align:center;'><span>목표 사건·진행 턴 수</span></div>"]
@@ -422,7 +422,7 @@ flowchart LR
         C_item4["<div style='width:240px;text-align:center;'><span>방금 생성된 채팅 본문<br/>ai_output</span></div>"]
     end
     CP["선택지 프롬프트<br/>CHOICES-TEMPLATE.md"]
-    CM["모델<br/>deepseek-v4-flash · CHAT_MODEL"]
+    CM["모델<br/>deepseek-flash · CHAT_MODEL"]
     subgraph CO["선택지 출력"]
         direction LR
         CO_item1["<div style='width:240px;text-align:center;'><span>다음 행동 선택지 3개</span></div>"]
@@ -453,7 +453,7 @@ flowchart LR
         Q_item2["<div style='width:240px;text-align:center;'><span>부족한 개수</span></div>"]
     end
     QP["보완 프롬프트<br/>기존 선택지 프롬프트<br/>+ 중복 없이 추가 생성 지시"]
-    QM["모델·추가 호출 한도<br/>deepseek-v4-flash<br/>최대 2회"]
+    QM["모델·추가 호출 한도<br/>deepseek-flash<br/>최대 2회"]
     subgraph QO["선택지 보완 출력"]
         direction LR
         QO_item1["<div style='width:240px;text-align:center;'><span>추가 선택지 검증·누적<br/>그래도 부족하면 고정 문구로 채움</span></div>"]
@@ -502,6 +502,7 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 | stdout 로그 | 앱·접근 로그는 한 줄 JSON, 요청 식별자 공유. 성공한 health 접근 로그만 제외하며 다른 접근·실패 health는 보존 |
 | Langfuse | 요청별 trace에 구조화 입력과 연결 metadata. 채팅 턴에만 `user_source` 기록하고 선택지 입력·metadata에서는 제외. 호출별 허용 키는 아래 표를 따름 |
 | Langfuse 이미지 관측 | 컴파일 trace 안에 인물 이미지·썸네일 호출마다 generation 관측을 남깁니다(이름 `이미지 생성:인물`·`이미지 생성:썸네일`). 입력은 이미지 프롬프트, 출력은 형식과 바이트 수(이미지 바이너리는 싣지 않음), 모델·크기·화질·출력 형식을 함께 기록합니다. usage는 표준 키 `input`·`output`·`total`과 세부 키 `input_text`·`input_image`·`output_text`·`output_image`이며, 응답에 없는 값은 생략합니다. 실패는 ERROR와 예외 타입 이름만 남기고 오류 원문은 싣지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
+| DeepSeek 단가 구간 | DeepSeek 텍스트 호출(스토리라인·채팅 본문·판정·선택지)의 generation 관측에 metadata `pricing_window`를 기록합니다. 값은 `peak`(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 또는 `off_peak`이며, Langfuse가 이 값으로 단가 구간을 고릅니다. Langfuse가 꺼져 있으면 기록하지 않습니다 |
 
 | 루트 trace | 구조화 입력 | 제품 연결 metadata |
 | --- | --- | --- |
@@ -778,7 +779,7 @@ flowchart LR
     }
   ],
   "meta": {
-    "model": "deepseek-v4-flash",
+    "model": "deepseek-flash",
     "provider": "deepseek",
     "prompt_versions": {
       "STORYLINES": 1
@@ -1202,7 +1203,7 @@ data: {}
   "occurredMainEventName": "기록의 잔향 발견",
   "endingName": null,
   "meta": {
-    "model": "deepseek-v4-flash",
+    "model": "deepseek-flash",
     "provider": "deepseek",
     "promptVersions": {
       "SAFETY": 1,
@@ -1383,7 +1384,7 @@ data: {"code":"LLM_ERROR","message":"LLM 응답 시간이 초과되었습니다.
     "도현에게 이 표식을 본 적이 있는지 묻는다."
   ],
   "meta": {
-    "model": "deepseek-v4-flash",
+    "model": "deepseek-flash",
     "provider": "deepseek",
     "prompt_versions": {
       "NEXT_ACTIONS": 1
