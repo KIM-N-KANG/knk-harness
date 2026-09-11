@@ -84,7 +84,7 @@
 | 환경 변수 | 필수·당시 상태 | 원문 |
 | --- | --- | --- |
 | `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | **같은 카카오 디벨로퍼스 앱의** REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록(콤마 구분). 사용하는 플랫폼의 키가 빠지면 그 플랫폼 로그인만 401이고, 변수 전체가 비면 모든 Kakao 로그인을 거부합니다(fail-closed). Google에는 영향이 없습니다. 다른 카카오 앱의 키 혼입 금지와 앱 ID 대조 릴리스 게이트는 [§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한)를 따릅니다(`Phase 1 · 계획`) |
-| `MANYAK_GROBLE_WEBHOOK_SECRET` | 결제 사용 시 예(`Phase 3 · 계획`) | 그로블 웹훅 HMAC 시크릿. FCM의 미설정 관례에 따라 빈 값으로 기동할 수 있지만, 비어 있으면 웹훅·주문 생성은 503입니다. 상품 5종·결제창 링크는 `manyak.payment.groble.products[]` yml 설정으로 관리합니다([§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| `MANYAK_GROBLE_WEBHOOK_SECRET` | 결제 사용 시 예(`Phase 3 · 계획`) | 그로블 웹훅 HMAC 시크릿. FCM의 미설정 관례에 따라 빈 값으로 기동할 수 있지만, 비어 있으면 웹훅·주문 생성은 503입니다. 상품 6종·결제창 링크는 `manyak.payment.groble.products[]` yml 설정으로 관리합니다([§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약)). KNK-1270 가격 갱신에 따라 가격이 링크에 고정된 5개 상품은 새 결제창 링크 발급 전까지 서버 설정의 링크가 빈 값이며 해당 상품의 주문 생성은 기존 가드에 따라 503을 반환합니다 |
 | `MANYAK_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | androidpublisher 구매 검증·Voided Purchases API 대사용 서비스 계정 JSON |
 | `MANYAK_GOOGLE_PLAY_PACKAGE_NAME` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | Google Play 구매 검증 대상 앱 패키지 이름 |
 
