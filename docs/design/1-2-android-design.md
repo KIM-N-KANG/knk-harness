@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-09 |
+| 수정일 | 2026-09-11 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | `6bccf25adc531dfc8254a0dad3076bef0a72958a` — 기존 설계의 기준이며 이번 편집에서 코드·배포를 다시 검증하지 않았습니다. |
@@ -201,6 +201,12 @@ payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프
 `onCreate`·`onNewIntent`에서 루트 ViewModel의 pending 값을 SavedStateHandle로 전달합니다. 프로세스 복원 때 최초 Intent를 다시 해석하지 않습니다. 로그인 대기 진입은 회원·프로필 확인 뒤 recipient가 일치할 때만 소비하고 불일치하면 홈으로 보냅니다.
 
 Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합니다. 로그아웃 시 플래그를 지우지 않으며 권한 거부는 세션·토큰 등록을 막지 않고 반복 요청하지 않습니다.
+
+### 광고 알림 수신 동의
+
+`notification/consent`가 동의 시트·처리 결과 다이얼로그·"물었음" 저장소를 소유합니다. 루트가 순서를 정합니다 — `NotificationPermissionRequest(onSettled)`가 권한 응답 완료를 알리고, 루트 ViewModel이 초대 코드 안내의 `pending`(초기값 참)을 읽어 둘 다 끝났을 때만 `MarketingConsentSheet(enabled = true)`입니다. 시트는 `areNotificationsEnabled`가 참이고 `GET /users/me/push-settings`의 `marketingPush`가 거짓일 때만 뜹니다.
+
+"물었음"은 사용자 귀속 DataStore(`marketing-consent`)에 두고 `UserScopedStore`로 로그아웃 정리 대상입니다. 기록은 사용자가 답한 뒤에 남기며 저장 실패는 시트를 유지합니다. 허용은 조회한 서비스 값을 유지한 채 광고만 켜서 `PUT`으로 전체 교체하며 야간은 설정 화면에서만 켭니다. 처리 결과 통지(`ConsentNotice`)의 일시는 서버 응답이 아니라 의사 표시 시점의 기기 시각이며, 시트 허용과 설정 화면의 광고·야간 토글이 같은 `ConsentNoticeDialog`를 씁니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/marketing-consent.md)과 [A-040](../adr/1-3-android-adr.md#a-040)을 참조합니다.
 
 ## 1-2-7. 제작과 상태 복원
 
