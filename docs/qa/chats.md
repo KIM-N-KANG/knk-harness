@@ -142,6 +142,7 @@ AI·백엔드는 이미지가 있는 인물의 대사 앞에서 `character_image
 | CHAT-IMAGE-10 | P0  | 외부 호스트·잘못된 경로의 URL이 이벤트 또는 저장 마커에 포함됨 | 스트리밍·상세·공유 화면 관찰 | 이미지 최적화 요청을 만들지 않음. 스트림 이벤트는 무시하고, 저장 마커 모양 문자열은 제거하지 않고 일반 본문으로 유지                                           | ✅ unit `chat-message-segments` + e2e `share/shared-chat` | §3-1-5 저장 마커·§3-2-5 원격 이미지 |
 | CHAT-IMAGE-11 | P1  | 허용 CDN URL이지만 마커가 독립 줄이 아니거나 뒤에 인물명 대사 라벨이 없음 | 상세·공유 화면 관찰 | 이미지로 해석하지 않고 마커 모양 문자열과 나머지 내용을 일반 본문으로 유지                                                                        | ✅ unit `chat-message-segments` | §3-1-5 저장 마커             |
 | CHAT-IMAGE-12 | P0  | 오리지널 스토리 인물 이미지가 `/characters/originals/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch | 스트리밍 중 이미지가 즉시 표시되고 확정 뒤에도 같은 위치에 유지되며, 저장 마커 글자와 URL은 노출되지 않음                                         | ✅ e2e `chats/chat-room` + unit `chat-message-segments` | §3-1-5 인물 이미지 렌더, KNK-1055 |
+| CHAT-IMAGE-13 | P1  | 확정 턴 또는 공유 화면에 인물 이미지 존재      | 이미지 탭 → X·화면 탭·뒤로가기로 각각 닫기      | 스토리 상세 썸네일과 같은 풀스크린 이미지 뷰어 열림. 어느 방법으로든 페이지 이동 없이 뷰어만 닫히고 채팅방·공유 화면에 머묾                          | ◐ e2e `chats/chat-room`·`share/shared-chat`(X 닫기만) | §3-1-5 인물 이미지 렌더, KNK-1276 |
 
 ## CHAT-INPUT — 입력창·추천 입력·선택지
 
