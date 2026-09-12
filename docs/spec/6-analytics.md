@@ -296,6 +296,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2                  | client | `client_chat_tourSkipButton_clicked`                     |
 | P2                  | client | `client_storyCreate_creditInfoButton_clicked`            |
 | P2                  | client | `client_storyDetail_thumbnail_clicked`                   |
+| P2                  | client | `client_storyDetail_characterImage_clicked`              |
+| P2                  | client | `client_chat_characterImage_clicked`                     |
+| P2                  | client | `client_chatShare_characterImage_clicked`                |
 | P2                  | client | `client_terms_viewed`                                    |
 | P2                  | client | `client_privacy_viewed`                                  |
 | P2 `계획`           | client | `client_serviceInfo_viewed`                              |
@@ -392,6 +395,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
 | `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
+| `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
 
 스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
 
@@ -426,6 +430,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_chat_choiceFillButton_clicked`                  | P1       | 선택지를 입력창에 넣어 수정 버튼 클릭             | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택)                                                                                                           |
 | `client_chat_streamError_shown`                         | P1       | AI 응답 스트리밍 실패 에러 표시                   | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
 | `client_chat_loadError_shown`                           | P1       | 채팅 화면 로드 실패 에러 표시                     | `chat_id` (string, 필수)                                                                                                                                                                    |
+| `client_chat_characterImage_clicked`                    | P2       | AI 메시지의 인물 이미지 클릭(이미지 뷰어 열기)    | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_retryButton_clicked`                       | P1       | 로드 실패 후 다시 시도 버튼 클릭                  | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_tour_shown`                                | P2       | 첫 진입 안내 투어 노출                            | `chat_id` (string, 필수)                                                                                                                                                                    |
 | `client_chat_tourStep_viewed`                           | P2       | 안내 투어의 각 스텝 도달                          | `chat_id` (string, 필수), `step_number` (number, 필수: 0부터), `step_id` (string, 필수: `add-blocks`·`add-emphasis`·`settings`·`random-send`)                                                |
@@ -594,6 +599,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | ------------------------------------ | -------- | -------------------------------- | ------------------------- |
 | `client_chatShare_viewed`            | P1       | 채팅 공유 열람 화면 진입         | `story_id` (string, 필수) |
 | `client_chatShare_ctaButton_clicked` | P1       | 열람 화면 하단 CTA 버튼 클릭     | `story_id` (string, 필수) |
+| `client_chatShare_characterImage_clicked` | P2 | 열람 화면 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
 
 - **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend-server-spec.md §4-3-11`](4-backend-server-spec.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
