@@ -4,12 +4,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.27 |
+| 버전 | v2.30 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-11 |
+| 수정일 | 2026-09-12 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `dev` 브랜치 `b7217e2762c9`(2026-09-11, KNK-1195 PR #115까지) |
+| 기준 코드 | manyak-ai `dev` 브랜치 `69dea367a1bb`. 자식 이미지 구현을 포함하며 운영 배포 여부와 구분합니다. |
 | 연구 기준 | manyak-autoresearch `7a6e7d5` 및 2026-09-07 작업본. 이미지 평가 실행기·관련 문서는 미커밋 로컬 구현입니다. |
 | 문서 경계 | API·품질 기준은 이 문서, 현재 호출·설정 구조는 [AI Design](../design/3-ai-server-design.md), 구현 코드는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
@@ -74,6 +74,7 @@ flowchart LR
 | 스토리라인 | `POST /story/storylines` | 장르·인물 → 이야기 3편·추천정보 | `storyline_generation` |
 | 컴파일 | `POST /story/compile` | 선택 이야기·추가정보·인물·로어북 → 플레이 설정·이미지 | `story_completion` |
 | 채팅 본문 | `POST /chat/turns` | 설정·이력·사용자 입력 → 다음 장면·대사(SSE) | `chat_response` |
+| 자식 이미지 | 채팅 턴 내부 호출 | 부모 이미지·최근 대화 → 자식 이미지(base64), 실패 시 부모 대체 | Langfuse `이미지 생성:자식` 및 채팅 결과 기록 |
 | 사건·엔딩 판정 | 채팅 턴 내부 호출 | 진행 재료·생성된 본문 → 목표·완결 사건·엔딩 | `chat_response`에 합산 |
 | 선택지 | `POST /chat/choices` | 턴 재료·생성된 본문 → 다음 행동 3개 | `choice_generation` |
 | 인물 이미지·표지 | 컴파일 내부 호출 | 장르·인물 외형 → 이미지 바이너리(base64) | AI Sentry 전용 `character_image_generation`·`thumbnail_image_generation` |
@@ -248,7 +249,7 @@ flowchart LR
 
 #### 이미지 생성 공통 사항
 
-인물 이미지와 썸네일은 컴파일 내부에서 `IMAGE_MODEL`(기본 `gpt-image-2-2026-04-21`)로 생성하며 별도의 외부 요청 API는 없습니다. 최대 6건을 동시에 호출하고 모두 끝난 뒤 컴파일 응답에 담습니다. 컴파일이 없는 일반 제작에는 이 생성이 없습니다.
+인물 이미지와 썸네일은 컴파일 내부에서 `IMAGE_MODEL`(기본 `gpt-image-2.5-flare`)로 생성하며 별도의 외부 요청 API는 없습니다. 최대 6건을 동시에 호출하고 모두 끝난 뒤 컴파일 응답에 담습니다. 컴파일이 없는 일반 제작에는 이 생성이 없습니다.
 
 WebP를 base64로 반환하고 백엔드가 저장합니다. 성공은 `image_base64`가 문자열인지로 판단합니다. 실패해도 `content_type`은 `image/webp`이며 스토리 본체와 이미지 응답 필드는 유지합니다. 공급자 실패 사유는 `timeout`·`rate_limited`·`rejected`·`generation_failed`로 나누며, 정확한 원인 대신 큰 분류를 나타냅니다. 아래 그림은 성공 경로입니다.
 
@@ -266,7 +267,7 @@ flowchart LR
         I_item3["<div style='width:240px;text-align:center;'><span>머리·의상·시각적 특징</span></div>"]
     end
     P["인물 이미지 프롬프트<br/>CHARACTER-IMAGE-TEMPLATE.md"]
-    M["모델<br/>gpt-image-2-2026-04-21"]
+    M["모델<br/>gpt-image-2.5-flare"]
     subgraph O["인물 이미지 출력"]
         direction LR
         O_item1["<div style='width:240px;text-align:center;'><span>인물별 기본 이미지</span></div>"]
@@ -294,7 +295,7 @@ flowchart LR
         T_item2["<div style='width:240px;text-align:center;'><span>선택된 인물의 성별·외형</span></div>"]
     end
     Q["표지 프롬프트<br/>THUMBNAIL-IMAGE-TEMPLATE.md"]
-    N["모델<br/>gpt-image-2-2026-04-21"]
+    N["모델<br/>gpt-image-2.5-flare"]
     subgraph R["썸네일 출력"]
         direction LR
         R_item1["<div style='width:240px;text-align:center;'><span>표지 1장</span></div>"]
@@ -363,13 +364,13 @@ flowchart LR
 
 요청·응답 예시와 필드 설명: [채팅 턴 API 명세](#5-9-3-채팅-턴).
 
-`history`·`main_events`·`occurred_main_event_names`·`endings`·`character_images`는 생략 시 빈 배열, `target_main_event`·`user_source`는 null입니다. 주요 사건은 최대 10개입니다. 엔딩의 최소 턴 충족 여부와 이미 도달했는지는 백엔드가 걸러 전달합니다. `user_source`는 `choice`·`edited_choice`·`typed` 중 알려진 값만 관측하며 잘못된 값으로 턴을 거부하지 않습니다. 이미지 이름은 생략·빈 문자열·null을 허용하고, 이미지 매핑은 프롬프트에 넣지 않습니다.
+`history`·`main_events`·`occurred_main_event_names`·`endings`·`character_images`는 생략 시 빈 배열, `target_main_event`·`user_source`는 null입니다. 주요 사건은 최대 10개입니다. 엔딩의 최소 턴 충족 여부와 이미 도달했는지는 백엔드가 걸러 전달합니다. `user_source`는 `choice`·`edited_choice`·`typed` 중 알려진 값만 관측하며 잘못된 값으로 턴을 거부하지 않습니다. 이미지 이름은 생략·빈 문자열·null을 허용하고, 이미지 매핑은 채팅 본문 프롬프트에 넣지 않습니다. `generate_child_image`는 생략 시 false입니다.
 
 현재 기준에서는 백엔드가 전체 History를 보내고 오프닝은 `start_settings`로 전달합니다. 최근 10턴 제한·History 오프닝 시드는 AI 내부 설계와의 미해소 차이입니다. 현재 백엔드가 보내는 `summary`는 빈 문자열입니다. AI는 전달된 이력을 자르거나 요약하지 않습니다.
 
 본문은 `*지문*`과 `인물명: 대사`로 구성하고 최소 한 인물의 대사를 요구합니다. 턴당 700~1000자는 프롬프트 목표이며 코드 상한이나 실측 보장값이 아닙니다. AI는 첫 턴·재생성을 구분하지 않습니다. 재생성 시 이번 턴을 제외한 이력과 같은 사용자 입력을 보내는 것은 백엔드 책임입니다.
 
-이 그림은 본문·판정·선택지 호출의 순서입니다. AI의 완료 이벤트는 판정을 기다리지만 선택지는 기다리지 않습니다.
+다음 그림은 자식 이미지 생성을 끈 요청의 본문·판정·선택지 호출 순서입니다. AI의 완료 이벤트는 판정을 기다리지만 선택지는 기다리지 않습니다.
 
 ```mermaid
 sequenceDiagram
@@ -399,7 +400,186 @@ sequenceDiagram
 
 `started` 발행과 `chatId`·`turnId` 부착은 백엔드 책임입니다. 이미지 매핑에 있는 인물의 첫 대사 바로 앞에 턴당 한 번만 이미지 이벤트를 보냅니다. 정식 이름과 별칭은 같은 인물로 처리하며, 표시 기록은 요청마다 초기화합니다. 완료 본문에는 해당 첫 대사 줄 위에 `[[URL]]`과 빈 줄을 넣고, `characterImages[]`에 이벤트와 같은 순서로 인물별 한 항목씩 `{name, imageName, imageUrl}`을 담습니다. `imageName`은 요청값을 그대로 전달합니다.
 
-화자 감지는 정식 이름과 충돌하지 않는 줄임 이름을 허용하고, 볼드 라벨을 평문으로 정리합니다. 매핑의 빈 이름·URL을 추가 검증하지 않으며 중복 이름은 마지막 항목을 씁니다. 다음 LLM 입력은 복사본에서만 마커·뒤 줄바꿈 최대 2개를 제거합니다(채팅은 History, 선택지는 History·본문, 판정은 본문). 옛 `[character:이름]` 태그와 `summary`는 제거 대상이 아닙니다. 세부 감지 규칙·경계 사례는 [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md)와 [기존 이미지 결정](../adr/3-ai-server-adr.md#기존-인물-이미지-계약)을 참조합니다.
+화자 감지는 정식 이름과 충돌하지 않는 줄임 이름을 허용하고, 볼드 라벨을 평문으로 정리합니다. 자식 이미지 생성을 끈 요청에서는 매핑의 빈 이름·URL을 추가 검증하지 않으며 중복 이름은 마지막 항목을 씁니다. 다음 LLM 입력은 복사본에서만 마커·뒤 줄바꿈 최대 2개를 제거합니다(채팅은 History, 선택지는 History·본문, 판정은 본문). 옛 `[character:이름]` 태그와 `summary`는 제거 대상이 아닙니다. 세부 감지 규칙·경계 사례는 [채팅 상세](../../../manyak-ai/spec/chat/4-SERVICE-IMPLEMENTATION.md)와 [기존 이미지 결정](../adr/3-ai-server-adr.md#기존-인물-이미지-계약)을 참조합니다.
+
+#### 부모 이미지와 자식 이미지
+
+**부모 이미지**는 컴파일에서 만든 기본 인물 이미지입니다. 요청 매핑의 `image_name`이 정확히
+`{인물이름}_기본`이고 `image_url`이 비어 있지 않은 항목을 사용합니다. **자식 이미지**는 부모
+이미지를 바탕으로 현재 대화 상황에 맞춰 실시간 생성하는 이미지입니다. 이전 자식 이미지는
+다음 생성의 부모로 사용하지 않습니다.
+
+**1. 전체 흐름 · 컴파일에서 채팅까지**
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph I["컴파일 입력"]
+        direction LR
+        I_item1["<div style='width:240px;text-align:center;'><span>장르·인물 외형</span></div>"]
+    end
+    P["부모 이미지 생성"]
+    SAVE["백엔드: 부모 저장<br/>기본 이미지 이름·URL 보관"]
+    subgraph C["채팅 입력"]
+        direction LR
+        C_item1["<div style='width:240px;text-align:center;'><span>부모 이미지 매핑</span></div>"]
+        C_item2["<div style='width:240px;text-align:center;'><span>최근 대화</span></div>"]
+        C_item3["<div style='width:240px;text-align:center;'><span>현재 본문</span></div>"]
+    end
+    SELECT["부모가 있는 첫 화자 선택"]
+    CHILD["부모 파일 + 대화로<br/>자식 이미지 생성"]
+    RESULT["백엔드: 생성·저장 성공이면 자식 선택<br/>실패·시간 초과이면 부모 선택"]
+    subgraph O["채팅 출력"]
+        direction LR
+        O_item1["<div style='width:240px;text-align:center;'><span>최종 이미지 → 대사 순서로 표시</span></div>"]
+        O_item2["<div style='width:240px;text-align:center;'><span>완료 본문·이미지 참조를 턴에 저장</span></div>"]
+    end
+    I --> P
+    P --> SAVE
+    SAVE --> C
+    C --> SELECT
+    SELECT --> CHILD
+    CHILD --> RESULT
+    RESULT --> O
+```
+
+그림은 부모가 준비되어 있고 자식 생성이 켜진 채팅 흐름입니다. 자식 생성이 꺼져 있거나
+부모가 있는 화자가 없으면 자식 생성은 생략하고 기존 이미지 표시를 유지합니다. 본문 생성
+실패는 오류로 종료합니다. 판정과 이미지의 병렬 실행은
+[Design의 호출 순서](../design/3-ai-server-design.md#자식-이미지가-있는-채팅-흐름)를 따릅니다.
+
+**2. 부모 이미지 생성 · 컴파일 시점**
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph I["부모 이미지 입력"]
+        direction LR
+        I_item1["<div style='width:240px;text-align:center;'><span>장르 태그</span></div>"]
+        I_item2["<div style='width:240px;text-align:center;'><span>인물 1명의 성별·나이·체형·얼굴</span></div>"]
+        I_item3["<div style='width:240px;text-align:center;'><span>머리·의상·시각적 특징</span></div>"]
+    end
+    P["인물 이미지 프롬프트<br/>CHARACTER-IMAGE-TEMPLATE.md"]
+    M["모델<br/>gpt-image-2.5-flare"]
+    subgraph O["부모 이미지 출력"]
+        direction LR
+        O_item1["<div style='width:240px;text-align:center;'><span>인물별 부모 이미지 1장</span></div>"]
+        O_item2["<div style='width:240px;text-align:center;'><span>1024×768 WebP → base64</span></div>"]
+    end
+    I --> P
+    P --> M
+    M --> O
+```
+
+입력은 장르와 인물 외형이며 참조 이미지 파일은 없습니다. 외형이 모두 채워진 인물별로
+기본 이미지 한 장을 생성합니다. AI는 `{인물이름}_기본` 이름과 base64를 반환하고 백엔드가
+파일을 저장해 URL을 보관합니다. 이 저장 이미지가 채팅의 부모가 됩니다.
+외형 누락·생성 실패 처리는 [인물 이미지 생성](#인물-이미지-생성)을 따릅니다.
+
+프롬프트: [인물 이미지](../../../manyak-ai/prompt/image/CHARACTER-IMAGE-TEMPLATE.md).
+아래 자식 그림과 함께 모델은 선택한 `gpt-image-2.5-flare`를 표시하며, 코드 전환 여부는
+[Design §3-2](../design/3-ai-server-design.md#3-2-프롬프트와-모델-설정)를 따릅니다.
+
+**3. 자식 이미지 생성 · 채팅 시점**
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph I["자식 이미지 입력 · 대화"]
+        direction LR
+        I_item1["<div style='width:240px;text-align:center;'><span>선택한 인물의 이름</span></div>"]
+        I_item2["<div style='width:240px;text-align:center;'><span>이전 최대 2턴의 사용자 메시지·AI 응답</span></div>"]
+        I_item3["<div style='width:240px;text-align:center;'><span>이번 사용자 메시지·완성된 AI 응답 전체</span></div>"]
+    end
+    subgraph R["자식 이미지 입력 · 부모"]
+        direction LR
+        R_item1["<div style='width:240px;text-align:center;'><span>선택한 인물의 기본 이미지 파일 1장</span></div>"]
+    end
+    P["자식 이미지 프롬프트<br/>CHILD-IMAGE-TEMPLATE.md"]
+    M["모델<br/>gpt-image-2.5-flare"]
+    subgraph O["자식 이미지 출력"]
+        direction LR
+        O_item1["<div style='width:240px;text-align:center;'><span>대화 상황에 맞춘 자식 이미지 1장</span></div>"]
+        O_item2["<div style='width:240px;text-align:center;'><span>1024×768 WebP → base64</span></div>"]
+    end
+    I --> P
+    P --> M
+    R -->|참조 파일 첨부| M
+    M --> O
+```
+
+프롬프트: [자식 이미지](../../../manyak-ai/prompt/image/CHILD-IMAGE-TEMPLATE.md).
+모델은 선택한 `gpt-image-2.5-flare`를 표시합니다. 실제 코드 설정은
+[Design §3-2](../design/3-ai-server-design.md#3-2-프롬프트와-모델-설정)에서 구분합니다.
+
+
+| 모델에 전달하는 입력 | 실제 내용 |
+| --- | --- |
+| 부모 이미지 | 선택한 인물의 기본 이미지 **파일 1장**. AI 서버가 URL에서 내려받아 첨부하며 URL 문자열을 참조 이미지 대신 보내지 않습니다. |
+| 편집 지시 | 자식 이미지용 고정 프롬프트. 부모 이미지를 바탕으로 대화 상황에 맞게 편집하도록 지시합니다. |
+| 대상 인물 | 선택한 인물의 정식 이름. 다른 인물의 이미지 파일은 첨부하지 않습니다. |
+| 이전 대화 | 최근 최대 2턴의 **사용자 메시지 + AI 응답**. 오래된 턴부터 순서대로 넣으며, 이력이 부족하면 있는 턴만 보냅니다. |
+| 현재 대화 | **이번 사용자 메시지 + 방금 완성된 AI 응답 전체**. 선택한 인물의 대사만 잘라서 보내지 않습니다. |
+| 생성 옵션 | 이미지 1장, 설정된 크기·화질, WebP 출력. 모델·옵션의 실제 설정은 [Design §3-2](../design/3-ai-server-design.md#3-2-프롬프트와-모델-설정)를 따릅니다. |
+
+편집 지시·인물 이름·대화는 하나의 텍스트 프롬프트로 전달하고, 부모 파일은 별도 이미지 입력으로
+첨부합니다. 이미지 모델용으로 별도의 대화 요약을 만들지 않습니다. 세계관·인물 설정 전체,
+사건·엔딩 판정 결과, 전체 대화 이력은 별도 입력으로 보내지 않습니다. 저장 마커는 이전 대화와
+현재 AI 응답의 복사본에서 제거합니다. 자식 이미지는 부모 인물의 실제 연령대를 유지하며,
+부모 인물을 성인으로 단정하지 않습니다.
+
+| 모델에서 받는 출력 | AI 서버의 처리 |
+| --- | --- |
+| 자식 이미지 데이터 | WebP 이미지의 base64 데이터를 받아 `generatedImage.imageBase64`로 전달합니다. |
+| 토큰 사용량 | 응답에 있으면 Langfuse에 기록합니다. 사용량이 없으면 0으로 추정하지 않습니다. |
+| 오류 또는 시간 초과 | 자식 이미지를 사용하지 않고 실패 코드와 부모 대체 정보를 전달합니다. |
+
+**이미지 이름·실패 코드·부모 대체 정보는 AI 서버가 붙입니다. 저장 URL은 백엔드가 저장 후
+결정합니다.** 이미지 모델이 `generatedImage` 이벤트나 최종 저장 URL을 만들어 주는 것은 아닙니다.
+
+다운로드와 생성을 합쳐 최대 30초이며, 남은 턴 시간이 짧으면 그만큼 줄입니다.
+생성에 성공해도 백엔드 저장에 실패하면 부모를 선택합니다. 백엔드는 선택한 이미지를 먼저
+전달하고 뒤 대사를 중계하며, AI의 완료 이벤트를 받으면 해당 본문 마커와 이미지 목록을
+최종 선택값으로 맞춰 저장합니다.
+
+연결이 끊기면 진행 중인 호출을 취소합니다. 위 흐름의 부모 대체는 생성 실패·시간 초과·저장
+실패에 적용하며, 연결 종료 후 이미지를 계속 만들거나 뒤늦게 표시하는 흐름은 아닙니다.
+
+`generate_child_image=true`이면 다음 순서로 처리합니다.
+
+1. 본문 전체가 완성되면 **부모 이미지가 있는 인물 중 처음 말한 인물** 한 명을 선택합니다.
+   앞서 말한 인물에게 부모 이미지가 없으면 건너뜁니다. 대상이 없으면 이미지 생성은 생략합니다.
+2. 선택한 부모 이미지와 현재 턴을 포함한 최근 최대 3턴으로 자식 이미지를 한 장 생성합니다.
+   이전 이력은 인접한 USER·ASSISTANT 한 쌍을 한 턴으로 세어 최근 2쌍을 사용합니다.
+   짝 없는 오프닝·메시지는 세지 않습니다. 현재 턴에는 사용자 입력과 완성된 본문 전체를 넣습니다.
+3. 본문 완성 후 사건·엔딩 판정과 이미지 생성을 동시에 시작합니다. 앞 지문을 보내고, 선택된
+   인물의 첫 대사 앞에서 이미지 결과를 기다립니다. 이미지가 먼저 준비되면 이미지·대사를
+   보내며, `completed`는 판정까지 끝난 뒤 보냅니다. 다른 인물은 요청의 기본 이미지를 우선
+   사용하고 기본 이미지가 없으면 기존 매핑을 사용합니다. 별칭 충돌은 전체 매핑으로 판단합니다.
+4. 생성 성공이면 해당 `character_image`에 `generatedImage`를 한 번만 첨부합니다. 실패·시간
+   초과이면 자식 데이터는 null이고 부모 이미지로 대체합니다. 본문 실패는 `error`로 종료하며
+   이미지·판정을 호출하지 않습니다. 본문 수집·이미지·판정 대기 중에는 10초마다 `ping`을 보냅니다.
+   예상하지 못한 이미지 내부 오류도 `generatedImage.error=generation_failed`로 전달하고
+   부모 이미지로 대체합니다. 이 오류 때문에 뒤 대사나 채팅 완료를 중단하지 않습니다.
+
+이미지는 부모 다운로드를 포함해 최대 30초, 판정은 최대 60초 기다립니다. 두 호출은 각각
+턴 전체 120초에서 경과 시간과 저장·완료 처리 여유 15초를 뺀 시간까지만 사용합니다. 본문
+수집도 같은 마감 시각을 적용합니다. 이미지의 시간 초과는 전달 시각이 아닌 생성 완료 시각으로
+판단합니다. 연결이 끊기면 진행 중인 호출을 취소하고 정리하며, 채팅을 나간 뒤 계속 생성하지
+않습니다. 15초 여유는 백엔드 저장 완료 시간을 보장하지 않습니다.
+
+**저장과 최종 표시 주소는 백엔드가 결정합니다.** AI의 바깥 이미지 필드와 `completed`의
+`aiOutput`·`characterImages`에는 부모 주소가 들어 있습니다. 백엔드는 자식 base64를 저장한 뒤
+성공하면 자식 이름·URL을, 생성 또는 저장 실패이면 부모 이름·URL을 선택해 프론트에 보냅니다.
+base64 이벤트를 그대로 중계하지 않으며, 저장하는 동안 뒤 대사 중계를 기다립니다. 부모를 먼저
+보여 줬다가 자식으로 교체하지 않습니다.
+
+백엔드는 최종 선택한 값으로 완료 목록의 해당 인물 항목과 그 순서에 대응하는 본문 마커를 함께
+교체하고 해당 턴·응답 버전에 저장합니다. 같은 URL을 쓰는 다른 인물이 있을 수 있으므로 URL
+전체 치환은 하지 않습니다. 취소·교체된 응답에 늦은 저장 결과를 연결하지 않습니다. 백엔드가
+이 저장·교체 처리를 지원할 때만 `generate_child_image=true`를 보냅니다.
+
+#### 사건·엔딩 진행 상태
 
 목표가 없거나 완결된 직후에는 `targetMainEvent`가 null입니다. 진행 규칙은 다음과 같습니다.
 
@@ -501,7 +681,8 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 | 선택지 보완 기록 | 시간 초과·파싱 실패 등 예외는 `choice_generation`으로 Sentry에 기록. 정상 응답의 개수 부족을 고정 선택지로 채운 경우에는 서버 경고 로그만 기록 |
 | stdout 로그 | 앱·접근 로그는 한 줄 JSON, 요청 식별자 공유. 성공한 health 접근 로그만 제외하며 다른 접근·실패 health는 보존 |
 | Langfuse | 요청별 trace에 구조화 입력과 연결 metadata. 채팅 턴에만 `user_source` 기록하고 선택지 입력·metadata에서는 제외. 호출별 허용 키는 아래 표를 따름 |
-| Langfuse 이미지 관측 | 컴파일 trace 안에 인물 이미지·썸네일 호출마다 generation 관측을 남깁니다(이름 `이미지 생성:인물`·`이미지 생성:썸네일`). 입력은 이미지 프롬프트, 출력은 형식과 바이트 수(이미지 바이너리는 싣지 않음), 모델·크기·화질·출력 형식을 함께 기록합니다. usage는 표준 키 `input`·`output`·`total`과 세부 키 `input_text`·`input_image`·`output_text`·`output_image`이며, 응답에 없는 값은 생략합니다. 실패는 ERROR와 예외 타입 이름만 남기고 오류 원문은 싣지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
+| Langfuse 이미지 관측 | 컴파일 trace 안에 인물 이미지·썸네일 호출마다, 채팅 trace 안에 자식 이미지 호출마다 generation 관측을 남깁니다(이름 `이미지 생성:인물`·`이미지 생성:썸네일`·`이미지 생성:자식`). 입력은 이미지 프롬프트, 출력은 형식과 바이트 수(이미지 바이너리는 싣지 않음), 모델·크기·화질·출력 형식을 함께 기록합니다. usage는 표준 키 `input`·`output`·`total`과 세부 키 `input_text`·`input_image`·`output_text`·`output_image`이며, 응답에 없는 값은 생략합니다. 실패는 ERROR와 예외 타입 이름만 남기고 오류 원문은 싣지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
+| 자식 이미지 결과 | 생성 기능을 켠 채팅의 루트 관측에 `child_image`를 기록합니다. 전체 생성 시간·결과·실패 및 생략 이유·부모 대체 여부·프롬프트 버전을 담습니다. 인물 이름·이미지 이름·URL·base64는 넣지 않으며, 사용량·비용은 이미지 generation에만 기록합니다. 정확한 필드는 [AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)을 따릅니다. |
 | DeepSeek 단가 구간 | DeepSeek 텍스트 호출(스토리라인·채팅 본문·판정·선택지)의 generation 관측에 metadata `pricing_window`를 기록합니다. 값은 `peak`(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 또는 `off_peak`이며, Langfuse가 이 값으로 단가 구간을 고릅니다. Langfuse가 꺼져 있으면 기록하지 않습니다 |
 
 | 루트 trace | 구조화 입력 | 제품 연결 metadata |
@@ -1144,6 +1325,7 @@ flowchart LR
 | `endings[].name` | `string` | 엔딩 이름 |
 | `endings[].achievement_condition` | `string` | 엔딩 달성 조건 |
 | `endings[].epilogue` | `string` | 에필로그 연출 방향 |
+| `generate_child_image` | `boolean` | 자식 이미지 생성 여부; 생략 시 false. 백엔드 저장·본문 교체 지원 시에만 true |
 | `character_images` | `object[]` | 인물별 저장 이미지; 기본 빈 배열 |
 | `character_images[].name` | `string` | 인물 이름 |
 | `character_images[].image_name` | `string / null` | 이미지 이름; 생략·null 시 빈 문자열 |
@@ -1153,7 +1335,7 @@ flowchart LR
 | --- | --- |
 | `token` | 본문 조각. 선택지·이미지 저장 마커 제외 |
 | `character_image` | 매핑에 있는 인물별 첫 대사 라벨보다 먼저 턴당 한 번 전송. 본명·별칭은 정식 이름 기준으로 중복 제거 |
-| `ping` | 판정 대기 중 10초 간격. 빈 객체여도 `data:` 줄 포함 |
+| `ping` | 판정 또는 자식 이미지용 본문·이미지 대기 중 10초 간격. 빈 객체여도 `data:` 줄 포함 |
 | `completed` | 본문과 판정 처리 완료. 선택지는 빈 배열 |
 | `error` | 본문 실패. 완료·판정 없이 종료 |
 
@@ -1182,9 +1364,26 @@ data: {}
 | `token.text` | `string` | 본문 조각 |
 | `character_image.name` | `string` | 인물 이름 |
 | `character_image.imageName` | `string` | 요청의 이미지 이름 |
-| `character_image.imageUrl` | `string` | 저장된 이미지 URL |
+| `character_image.imageUrl` | `string` | 저장된 이미지 URL; 자식 생성 시 부모 대체용 URL |
+| `character_image.generatedImage` | `object` | 자식 생성 대상 이벤트에만 포함; 그 외에는 필드 생략 |
+| `character_image.generatedImage.name` | `string` | 바깥 name과 같은 인물 이름 |
+| `character_image.generatedImage.imageName` | `string` | `{인물이름}_실시간_{UUID}`; 요청마다 새 이름 |
+| `character_image.generatedImage.imageBase64` | `string / null` | 성공 시 자식 이미지, 실패 시 null |
+| `character_image.generatedImage.contentType` | `string` | `image/webp` |
+| `character_image.generatedImage.error` | `string / null` | 성공 시 null; 실패 시 `timeout`, `rate_limited`, `rejected`, `generation_failed` |
 | `error.code` | `string` | 오류 코드(LLM_ERROR) |
 | `error.message` | `string` | 오류 설명 |
+
+자식 이미지 생성 대상의 성공 이벤트는 다음 형태입니다. 바깥 필드는 부모이며, 백엔드가
+`generatedImage`를 저장·변환합니다. 실패 시 `imageBase64`는 null, `error`는 실패 코드입니다.
+
+```text
+event: character_image
+data: {"name":"도현","imageName":"도현_기본","imageUrl":"https://example.com/images/dohyeon-default.webp","generatedImage":{"name":"도현","imageName":"도현_실시간_00000000-0000-4000-8000-000000000001","imageBase64":"BASE64_DATA","contentType":"image/webp","error":null}}
+```
+
+자식 base64는 `completed`에 중복 포함하지 않습니다. 다음 완료 예시는 AI가 보내는 부모 주소
+기준이며, 자식 저장 성공 시 백엔드가 목록과 본문 마커를 함께 교체합니다.
 
 `completed` 프레임의 `data` body는 다음과 같습니다(읽기 위해 들여썼으며 실제 프레임에서는 한 줄 JSON).
 
@@ -1368,6 +1567,7 @@ data: {"code":"LLM_ERROR","message":"LLM 응답 시간이 초과되었습니다.
 | `endings[].name` | `string` | 엔딩 이름 |
 | `endings[].achievement_condition` | `string` | 엔딩 달성 조건 |
 | `endings[].epilogue` | `string` | 에필로그 연출 방향 |
+| `generate_child_image` | `boolean` | 턴 요청과 같은 형식으로 받지만 선택지 API에서는 이미지 생성에 사용하지 않음; 기본 false |
 | `character_images` | `object[]` | 인물별 저장 이미지; 기본 빈 배열 |
 | `character_images[].name` | `string` | 인물 이름 |
 | `character_images[].image_name` | `string / null` | 이미지 이름; 생략·null 시 빈 문자열 |
