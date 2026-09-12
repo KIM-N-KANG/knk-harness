@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-09 |
+| 수정일 | 2026-09-13 |
 | 대상 | knk-harness 제품 문서와 저장소 내 참조 |
 | 작성 목적 | 파일명 변경·본문 이관·Android 통합 결과와 남은 정리·검증·복구를 연결합니다. |
 | 이전 기준 | `f075a236ce7eb0c36ccb547471927e57954bd92f` |
@@ -26,6 +26,8 @@
 - [5. 진행 순서와 작성 규칙](#5-진행-순서와-작성-규칙)
 - [6. 검증과 복구](#6-검증과-복구)
 
+> 2026-09-12 후속: 백엔드·배포 문서를 재구성했습니다. 남은 구현 차이와 검증은 [백엔드·배포 추적](backend-deployment-tracking.md)을 따릅니다. 아래 내용은 당시 계획입니다.
+
 ---
 
 ## 1. 목표와 적용 범위
@@ -38,14 +40,14 @@
 
 | 영역 | Spec | Design | ADR |
 | --- | --- | --- | --- |
-| 용어·배경·요구 | `0-glossary.md`, `1-background.md`, `2-user-stories.md` | — | — |
+| 용어·배경·요구 | `0-glossary.md`, `1-background.md`, `2-user-stories.md` | 없음 | 없음 |
 | 공통 클라이언트 | `3-1-client-spec.md` | 플랫폼 설계에서 구체화 | `1-1-client-adr.md` |
 | 웹 | `3-2-web-spec.md` | `1-1-web-design.md` | `1-2-web-adr.md` |
-| Android | `3-3-android-spec.md` | `1-2-android-design.md` — 모듈 포함 | `1-3-android-adr.md` |
+| Android | `3-3-android-spec.md` | `1-2-android-design.md`: 모듈 포함 | `1-3-android-adr.md` |
 | 백엔드 | `4-backend-server-spec.md` | `2-backend-server-design.md` | `2-backend-server-adr.md` |
 | AI | `5-ai-server-spec.md` | `3-ai-server-design.md` | `3-ai-server-adr.md` |
-| 분석 | `6-analytics.md` | 각 서비스의 관측 구현 | — |
-| 배포 | 현재 배포 Design의 계약 절 참조 | `4-deployment.md` | — |
+| 분석 | `6-analytics.md` | 각 서비스의 관측 구현 | 없음 |
+| 배포 | 현재 배포 Design의 계약 절 참조 | `4-deployment.md` | 없음 |
 
 각 열의 파일은 해당 폴더 바로 아래에 있습니다. 제품 문서는 총 19개이며 빈 문서와 별도 Android 모듈 문서는 없습니다. 새 역할이 생길 때만 파일을 추가하며 다른 폴더의 번호에 맞춰 빈 파일을 만들지 않습니다.
 
@@ -57,7 +59,7 @@
 | 백엔드 Spec §4-4 저장소 표 | [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명) | 현재 저장 구조 이동. 계획·혼재 원문은 아래 별도 보존 |
 | 백엔드 Spec §4-3-7 원장·동시성 | [백엔드 Design §2-3](../design/2-backend-server-design.md#2-3-원장과-동시성) | 잠금·멱등·대사 구현 이동. reason enum은 Spec 유지 |
 | 백엔드 Spec §4-7 메트릭·환경 변수 | [백엔드 Design §2-4~2-5](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동) | 배선·설정 이동. 공개 관측·수집 계약은 Spec 유지 |
-| 백엔드의 명시적 결정 기록 27개 | [백엔드 ADR BE-001~027](../adr/2-backend-server-adr.md#결정-목록) | 당시 원문 보존, 출처는 결정 링크로 교체 |
+| 백엔드의 명시적 결정 기록 27개 | [백엔드 ADR BE-001~027](../adr/2-backend-server-adr.md#be-001) | 당시 원문 보존, 출처는 결정 링크로 교체 |
 | AI Spec §5-2·5-4 | [AI Design §3-1~3-2](../design/3-ai-server-design.md#3-1-호출-경계와-요청-흐름) | 호출·어댑터·모델·프롬프트 설정 이동 |
 | AI Spec §5-6 관측 SDK·환경 설정 | [AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정) | 활성화·실패 격리·flush·설정 이동. 응답 meta·trace 허용 키는 Spec 유지 |
 | 이전 별도 Android 모듈 파일과 Android Design | [Android Design](../design/1-2-android-design.md) | 단일 문서로 통합. 책임·의존·상태 수명·실패/복구를 남기고 화면별 반복 계약과 상세 QA는 기존 정본으로 연결 |
@@ -68,14 +70,14 @@
 
 | 그룹 | 테이블 | 이관한 원문·당시 상태 |
 | --- | --- | --- |
-| 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM`. `Phase 1 · 계획` 컬럼 — 본문 확정 시각(최초 생성 시 `created_at`과 동값, 재생성 성공 시 갱신 — 이미지 `images[]` 재구성 컷오프 앵커, [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 현행은 `created_at`뿐이고 재생성이 타임스탬프를 갱신하지 않아 이미지 마이그레이션과 함께 추가 |
-| 스토리 | `story_likes` | `Phase 2 · 계획`(KNK-1024) 스토리 좋아요. `user_id` · `story_id` · `created_at`, `(user_id, story_id)` UNIQUE — 등록·취소 멱등과 `likeCount` 실 집계·`isLiked` 판정의 앵커([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)) |
-| 스토리 | `story_reports` | `Phase 2 · 계획`(KNK-1024) 스토리 신고. `user_id` · `story_id` · `created_at` 골격 — 사유 분류·중복 정책 컬럼은 구현 시 확정([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| 채팅 | `story_messages` | 메시지 행. `role`: `USER` · `ASSISTANT` · `SYSTEM`. `Phase 1 · 계획` 컬럼: 본문 확정 시각(최초 생성 시 `created_at`과 동값, 재생성 성공 시 갱신: 이미지 `images[]` 재구성 컷오프 앵커, [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 현행은 `created_at`뿐이고 재생성이 타임스탬프를 갱신하지 않아 이미지 마이그레이션과 함께 추가 |
+| 스토리 | `story_likes` | `Phase 2 · 계획`(KNK-1024) 스토리 좋아요. `user_id` · `story_id` · `created_at`, `(user_id, story_id)` UNIQUE: 등록·취소 멱등과 `likeCount` 실 집계·`isLiked` 판정의 앵커([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| 스토리 | `story_reports` | `Phase 2 · 계획`(KNK-1024) 스토리 신고. `user_id` · `story_id` · `created_at` 골격: 사유 분류·중복 정책 컬럼은 구현 시 확정([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 이프 | `credit_lots` | `Phase 1 · 구현` 적립 로트(V39). `user_id` · `transaction_id`(적립·환불 원장 행, 레거시 승계는 NULL) · `original_amount`(> 0) · `remaining`(0~원금) · `expires_at`(NULL=무기한) · 보상·환불 30일 만료·FIFO 차감의 잔여 추적. `Phase 3 · 계획` 구매 로트는 웹·앱 모두 적립 후 5년 만료이며 구매당 기본·보너스 총량을 한 로트에 저장. 이용내역 만료일 배치 해석용 `transaction_id` 인덱스는 V64(KNK-1044) |
 | 이프 | `credit_orders` | `Phase 3 · 계획`(KNK-1155, V번호 구현 시 확정). `id` · `public_id`(UUID, 외부 노출) · `user_id` · `product_id`(varchar) · `provider`(`GROBLE`·`GOOGLE_PLAY`) · `status`(`PENDING`·`COMPLETED`·`REFUNDED`) · `price_krw` · `credit_amount`(기본+보너스 총량) · `provider_ref`(그로블 `merchantUid` 또는 Google 구매 토큰 SHA-256, UNIQUE·NULL 허용) · `credit_transaction_id`(적립 원장 행) · `created_at` · `completed_at` · `refunded_at`(환불 회수 시각, NULL 허용) · `reversal_shortfall`(BIGINT NULL, 회수 시 소진돼 못 돌려받은 수량, 0이면 전량 회수). 인덱스 `(user_id, created_at DESC)` |
 | 이프 | `groble_refund_marks` | `merchant_uid`(VARCHAR(255), PK) · `created_at`(TIMESTAMPTZ, NOT NULL, 기본 now()). `refund_amount`(BIGINT NULL, 선도착 환불 금액, NULL은 잠금용). merchantUid 단위 직렬화 표식. 완료 시 금액 대조 후 삭제 |
 | 이미지 | `story_images` | `Phase 1 · 계획` 스토리↔배경 후보 연결. 등록 시 장르 매칭으로 5~8장 확정하고 매 턴 AI 요청에 동일 목록 전달([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 썸네일 확정값은 별도로 `stories` 썸네일 컬럼에 저장 |
-| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable — 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 이미지 이름 컬럼은 이 표에 만들지 않았고 `story_character_images.image_name`이 대신합니다(KNK-1126, AI 컴파일 응답은 KNK-1027로 `image_name`을 보냄 — [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 스토리 상세 `characters[]`(이름·이미지)의 소스이기도 합니다(KNK-1058, [§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)). `Phase 3 · 구현`(KNK-1126, V76) — 이미지 정본이 `story_character_images`로 옮겨가며 `image_url`·`image_name`은 읽지 않는 릴리스 다음에 제거 예정 |
+| 이미지 | `story_characters` | `Phase 2 · 구현`(KNK-414·KNK-966) 인물↔이미지 저장(컴파일 산출물). `story_id` · `name`(인물 이름) · `image_url`(nullable: 생성 실패 시 NULL). 컴파일 응답의 `character_images[]`에서 base64를 디코딩해 S3에 올린 뒤 URL을 저장. 이미지 이름 컬럼은 이 표에 만들지 않았고 `story_character_images.image_name`이 대신합니다(KNK-1126, AI 컴파일 응답은 KNK-1027로 `image_name`을 보냄: [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 같은 인물=같은 이미지를 DB 고정으로 보장([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). 스토리 상세 `characters[]`(이름·이미지)의 소스이기도 합니다(KNK-1058, [§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)). `Phase 3 · 구현`(KNK-1126, V76): 이미지 정본이 `story_character_images`로 옮겨가며 `image_url`·`image_name`은 읽지 않는 릴리스 다음에 제거 예정 |
 
 ### 미결 설정
 
@@ -83,7 +85,7 @@
 
 | 환경 변수 | 필수·당시 상태 | 원문 |
 | --- | --- | --- |
-| `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | **같은 카카오 디벨로퍼스 앱의** REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록(콤마 구분). 사용하는 플랫폼의 키가 빠지면 그 플랫폼 로그인만 401이고, 변수 전체가 비면 모든 Kakao 로그인을 거부합니다(fail-closed). Google에는 영향이 없습니다. 다른 카카오 앱의 키 혼입 금지와 앱 ID 대조 릴리스 게이트는 [§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한)를 따릅니다(`Phase 1 · 계획`) |
+| `MANYAK_KAKAO_CLIENT_IDS` | 카카오 로그인 사용 시 예 | 같은 카카오 디벨로퍼스 앱의 REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록. 플랫폼 키가 빠지면 해당 플랫폼 로그인만 401이고, 값이 없으면 모든 Kakao 로그인을 거부합니다. 다른 앱의 키를 섞지 않으며 앱 ID 검수는 [§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한)를 따릅니다(`Phase 1 · 계획`) |
 | `MANYAK_GROBLE_WEBHOOK_SECRET` | 결제 사용 시 예(`Phase 3 · 계획`) | 그로블 웹훅 HMAC 시크릿. FCM의 미설정 관례에 따라 빈 값으로 기동할 수 있지만, 비어 있으면 웹훅·주문 생성은 503입니다. 상품 6종·결제창 링크는 `manyak.payment.groble.products[]` yml 설정으로 관리합니다([§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약)). KNK-1270 가격 갱신에 따라 가격이 링크에 고정된 5개 상품은 새 결제창 링크 발급 전까지 서버 설정의 링크가 빈 값이며 해당 상품의 주문 생성은 기존 가드에 따라 503을 반환합니다 |
 | `MANYAK_GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | androidpublisher 구매 검증·Voided Purchases API 대사용 서비스 계정 JSON |
 | `MANYAK_GOOGLE_PLAY_PACKAGE_NAME` | 앱 결제 사용 시 예(`Phase 3 · 계획`) | Google Play 구매 검증 대상 앱 패키지 이름 |
