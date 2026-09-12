@@ -55,6 +55,7 @@
 | DPL-03 | 운영 AI 모델 Parameter는 ignore_changes | Terraform 기본값 변경으로 기존 운영값이 변경됐다고 쓰지 않음. 모델 설정과 AI 이미지 호환성을 같은 배포에서 확인 |
 | DPL-04 | 로컬 Compose 모델 기본값과 AWS 모델 선언이 다름 | 사용 이미지의 모델 등록부와 실행값 대조. manyak-infra 코드는 이번 문서 작업에서 변경하지 않음 |
 | DPL-05 | server·ai workflow의 concurrency는 레포별 | 공유 ECS 태스크의 레포 간 동시 배포는 전역 직렬화로 표현하지 않음 |
+| DPL-06 | Android 단계적 출시 중단 기준은 앱 버전별 비교가 전제인데 해당 대시보드가 없음 | Crashlytics·Amplitude의 버전별 비교 대시보드를 첫 프로덕션 출시 전에 준비. 기준은 [배포 Design §4-9](../design/4-deployment.md#android-단계적-출시와-중단-기준) |
 
 ## 복원과 검증 근거
 

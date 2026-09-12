@@ -94,11 +94,38 @@ PostgreSQL이 업무 데이터 정본이며 OpenSearch 인덱스는 파생 데�
 
 ## 4-5. 이미지 빌드와 CI/CD
 
+### server·ai 이미지
+
 서비스 워크플로는 SHA 이미지를 빌드하고 환경 태그를 갱신한 뒤 ECS `force-new-deployment`를 실행합니다. ECS는 기존 태스크 정의로 새 태스크를 띄워 갱신된 환경 태그를 다시 받습니다. Terraform은 태스크 정의와 서비스 설정을 관리합니다. 개발 역할은 각 서비스 저장소의 dev 브랜치, 운영 역할은 운영 워크플로만 맡습니다. AWS 인증은 GitHub OIDC를 사용합니다.
 
 배포 작업은 최신 브랜치 SHA를 확인하고 같은 저장소·환경의 배포를 직렬화합니다. GitHub concurrency는 저장소마다 동작하므로 server와 ai가 공유 태스크를 동시에 배포할 수 있습니다. 성공 여부는 deployment ID의 완료 상태, 실행 태스크의 이미지 digest, 각 컨테이너와 외부 API의 상태를 함께 확인합니다. 가변 태그 이름만 같다고 같은 이미지로 판단하지 않습니다.
 
 Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리합니다. 비밀이 아닌 운영값은 `dev.auto.tfvars`와 `prod.auto.tfvars`에 보관합니다. `desired_count`의 기본값 0만 보고 현재 서비스의 목표 수를 판단하지 않습니다. 커밋된 값은 환경별 1이며 일시 변경은 실행 기록에 남깁니다.
+
+### manyak-web CI/CD
+
+| 트리거 | 동작 |
+| --- | --- |
+| PR → `dev` | pnpm install, lint, typecheck, Docker build 검증 |
+| PR·push → `dev`·`main` | Playwright: Pixel 5 전체 E2E·비주얼 회귀, Desktop Chrome·iPhone 13 스모크. CI가 Chromium·WebKit을 설치하고 Linux 기준 이미지와 비교 |
+| push → `dev` | GHCR `dev`·`<short-sha>` push |
+| push tag `v*` | GHCR release 이미지 push. build arg는 `NEXT_PUBLIC_AMPLITUDE_API_KEY`·`NEXT_PUBLIC_APP_VERSION`·`NEXT_PUBLIC_META_PIXEL_ID` |
+
+비주얼 기준 이미지는 Linux 렌더링만 정본입니다. UI를 의도적으로 바꾸면 `manyak-web`에서 `pnpm test:e2e:visual:update`로 Playwright Docker 이미지 기준을 갱신하고 diff를 검토합니다. macOS 로컬 실행은 폰트·안티앨리어싱 차이 때문에 스냅샷 비교를 건너뜁니다.
+
+운영 Terraform에는 `manyak-web` 컨테이너를 호스팅에 배포하는 리소스가 없습니다. 웹은 Vercel에서 서빙하며 release PR은 GHCR release 이미지 발행과 외부 호스팅 반영을 전제로 합니다. Web Sentry는 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성이고, SDK는 `NODE_ENV=production`이면서 Vercel 배포일 때만 전송합니다. 배포 판별에 쓰는 `VERCEL_ENV`는 `next.config.ts`가 빌드 시점에 인라인합니다. GHCR release workflow와 Dockerfile에는 이 build arg가 없어 컨테이너 경로는 비활성입니다.
+
+### manyak-android CI
+
+컨테이너 이미지가 없는 앱 저장소입니다. `.github/workflows/android-ci.yml`이 `dev`·`main` 대상 PR·push와 수동 실행에서 Temurin Java 25를 설정하고(`gradle-daemon-jvm.properties`와 일치) `./gradlew check`(ktlint·detekt·Android lint·단위 테스트)와 `./gradlew assembleDebug`를 실행한 뒤 리포트를 아티팩트로 올립니다.
+
+release 번들(AAB)은 CI가 만들지 않습니다. 릴리스 담당자가 로컬에서 `./gradlew bundleRelease`로 만들어 Play Console에 직접 올립니다.
+
+- **CI에 서명키를 두지 않습니다.** 릴리스가 2주에 한 번이고 올리는 사람이 한 명인 동안에는 Play Publisher API 서비스 계정과 GitHub Secrets 키스토어를 유지하는 비용이 수동 업로드보다 큽니다. 키를 CI에 올리면 유출면도 넓어집니다. 자동화는 릴리스가 주 1회를 넘거나 담당이 둘 이상이 될 때 다시 판단합니다.
+- **서명키 보관.** Play 앱 서명을 쓰므로 배포 인증서는 Google이 보관하고 팀은 업로드 키만 가집니다. 업로드 키스토어는 저장소 밖에 두고 `local.properties`의 `RELEASE_STORE_FILE`·`RELEASE_STORE_PASSWORD`·`RELEASE_KEY_ALIAS`·`RELEASE_KEY_PASSWORD`로 주입합니다. 키 파일과 비밀번호는 암호화 백업 두 곳에 둡니다. 잃으면 Google 지원으로 업로드 키를 재설정할 때까지 업데이트를 올릴 수 없습니다. 키 값과 실제 경로는 문서에도 저장소에도 적지 않습니다.
+- **release BuildConfig 주입값**도 `local.properties`에서 읽습니다(`GOOGLE_SERVER_CLIENT_ID_RELEASE`·`KAKAO_NATIVE_APP_KEY_RELEASE`·`AMPLITUDE_API_KEY_RELEASE`). 비어 있어도 빌드는 성공하고 해당 공급자만 런타임에 실패하므로 번들을 만들기 전에 세 값을 확인합니다. 운영 `BASE_URL`은 `app/build.gradle.kts`에 고정돼 있습니다.
+- **`google-services.json`은 저장소에 커밋합니다.** CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌리므로 파일이 없으면 모든 PR이 실패합니다. 값은 APK에 실려 나가고 보호는 Firebase 보안 규칙과 API 키 제한이 맡습니다. Firebase 프로젝트는 서버 FCM과 같은 하나를 쓰며 환경별로 나누지 않습니다. `applicationId`가 빌드 타입 간 같고 debug는 `firebase_crashlytics_collection_enabled=false`로 수집하지 않습니다.
+- release는 현재 R8 미적용(`optimization.enable = false`)이라 Crashlytics 매핑 파일이 없습니다.
 
 ## 4-6. 런타임 설정과 시크릿
 
@@ -128,6 +155,30 @@ Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리합니다
 
 DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼저 추가하고 구버전 태스크가 더 이상 해당 컬럼을 읽지 않는 릴리스 이후에 제거합니다. 새 태스크의 Flyway 실행 중에도 이전 태스크가 요청을 받을 수 있습니다. 이미지 롤백은 파괴적 DB 변경을 자동 복구하지 않습니다.
 
+### Web release 이미지 배포
+
+1. `manyak-web` 변경을 `dev`에 병합해 GHCR `dev` 이미지를 검증합니다.
+2. release tag `v*`를 push하면 `release.yml`이 GHCR release 이미지를 빌드합니다.
+3. 운영 웹 호스팅 반영은 Terraform이 관리하지 않는 Vercel 절차입니다. 코드화되면 이 절을 갱신합니다.
+
+### Android 앱 릴리스
+
+스토어에 올라가는 번들은 `main`에서만 만듭니다. v1.0.2까지는 이 규칙이 없어 `versionCode 3`을 `dev`에서 바로 빌드해 올렸고, 그 결과 스토어에 있는 코드가 `main`에 없었습니다(그래서 `main`은 2에서 4로 건너뜁니다). 어느 코드가 사용자 손에 있는지 `main`으로 답할 수 없게 되므로 반복하지 않습니다.
+
+1. `release/v{버전}` 브랜치를 `origin/dev`에서 만들고 `app/build.gradle.kts`의 `versionName`·`versionCode` 두 줄만 커밋합니다.
+2. 같은 브랜치로 PR 둘을 냅니다. `main`(`Release` 태그)과 `dev`(버전 동기화)입니다. 릴리스 커밋이 `dev`에도 돌아가야 다음 릴리스의 분기 기준이 어긋나지 않습니다.
+3. `main` 병합 후 그 커밋에서 `./gradlew bundleRelease`를 실행합니다.
+4. `jarsigner -verify`가 `jar verified.`를 내는지, 번들 매니페스트의 `versionCode`·`versionName`이 의도한 값인지 확인합니다.
+5. 같은 AAB를 내부 테스트 트랙에 올리고 실기기에서 로그인과 핵심 흐름을 완주합니다.
+6. 통과하면 같은 AAB를 비공개 테스트에서 프로덕션으로 승격합니다. 트랙마다 다시 빌드하지 않습니다. 다시 빌드하면 검증한 번들과 출시하는 번들이 달라집니다.
+7. 프로덕션은 단계적 출시로 시작하고 [§4-9](#4-9-검수-관측-롤백)의 중단 기준을 관찰합니다.
+
+버전 규칙입니다.
+
+- `versionCode`는 업로드할 때마다 1씩 올리며 재사용할 수 없습니다. 심사 반려로 같은 내용을 다시 올릴 때도 올립니다.
+- `versionName`은 사용자용입니다. 버그 수정은 patch, 기능 추가는 minor로 올립니다.
+- 프로덕션 트랙은 Play 개인 개발자 계정 정책상 비공개 테스트 12명이 14일 연속 옵트인한 뒤에야 열립니다. 그 전까지 릴리스는 내부·비공개 테스트에서 끝납니다.
+
 ## 4-8. 로컬·통합 실행
 
 `manyak-infra`의 Compose가 로컬 실행 정본입니다. 서버·AI·웹·PostgreSQL·Redis와 Prometheus 설정을 함께 확인합니다. 서비스명 DNS는 Compose 네트워크 안에서 사용합니다. AI stub과 실제 AI 호출 여부는 명시적인 실행 설정으로 확인합니다.
@@ -136,9 +187,41 @@ DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼
 
 ## 4-9. 검수, 관측, 롤백
 
+### 서버·AI 검수와 복구
+
 - 서버와 AI 컨테이너의 상태, 실제 AI 기능을 각각 확인합니다.
 - FireLens 로그의 환경 인덱스와 OTLP 수집을 각각 확인합니다. 로그 수집 성공으로 메트릭 export를 판정하지 않습니다.
 - DB 회전은 EventBridge 5분 주기 Lambda가 시크릿 `LastChangedDate`와 태스크 `createdAt`을 비교합니다. 필요할 때만 운영 서비스를 재배포하며 시크릿 원문 읽기 권한은 갖지 않습니다. 이 감지 간격은 무중단 보장이 아니므로 실제 재배포와 DB 연결 결과를 확인합니다.
 - 이미지 장애는 이전 정상 digest로 환경 태그를 복원한 뒤 새 ECS 배포를 실행하고 같은 검수를 반복합니다. 같은 태스크 정의·가변 태그를 쓰므로 circuit breaker만으로 이전 이미지 복귀가 보장되지 않습니다.
 - 모델 설정 장애는 이전 모델 설정과 호환 이미지의 조합으로 복원합니다. Terraform 기본값을 되돌리는 것만으로 기존 운영 Parameter가 바뀌지 않습니다.
 - EC2는 현재 복구 대상이 아닙니다. 과거 EC2 가중치 전환·SSM 재실행은 [배포 ADR DEP-023·030](../adr/4-deployment-adr.md#전환-단계-기록)의 역사 기록입니다.
+
+### Definition of Done
+
+배포는 다음을 모두 만족할 때 완료입니다.
+
+- 변경 대상 저장소의 필수 테스트와 Docker build 검증이 통과합니다.
+- 웹은 Pixel 5 전체 E2E·비주얼 회귀와 Desktop Chrome·iPhone 13 스모크가 통과합니다. UI 변경이면 Linux 기준 이미지 diff를 함께 검토합니다.
+- server·ai 배포는 레지스트리에 환경 태그와 `<short-sha>` 태그가 모두 있고, 그 배포가 만든 deployment ID가 완료 상태이며, 실행 태스크의 이미지 digest가 의도한 SHA와 일치합니다.
+- server는 외부 `https://api.manyak.app/actuator/health`가 200과 `status=UP`을 반환합니다.
+- ai는 컨테이너 health가 정상이고 실제 생성·채팅 1건이 성공합니다. 서버 헬스 성공만으로 판정하지 않습니다.
+- 운영 AI 모델 변경은 직전 Parameter 값을 보관하고, 새 값을 읽은 태스크가 떴으며, 바꾼 기능의 운영 API 1건이 성공합니다. 모델명과 provider는 확인하되 키 값은 출력하지 않습니다.
+- Terraform 변경은 plan 리뷰 후 적용하고, 대상 리소스와 ALB target group health 중 영향 범위를 확인합니다.
+- 시크릿 변경은 값을 소비하는 서비스의 재배포까지 끝나야 반영으로 봅니다.
+- 웹 release는 GHCR release 이미지 태그가 발행됩니다. 호스팅 반영은 Vercel 쪽 별도 절차로 확인합니다.
+- Android 릴리스는 `main` 커밋에서 만든 AAB가 내부 테스트 실기기 스모크를 통과하고 승격한 트랙에 같은 번들이 올라갑니다. 프로덕션은 단계적 출시를 시작한 시점이 아니라 100% 도달과 중단 기준 미발동까지가 완료입니다.
+- 롤백 기준 이미지 태그 또는 DB 복구 계획을 배포 전에 확인합니다. Flyway 마이그레이션은 전진 전용으로 취급합니다.
+
+### Android 단계적 출시와 중단 기준
+
+프로덕션은 단계적 출시로 시작합니다. 비율은 20%에서 100%이고 각 단계를 최소 하루 둡니다. 초기 설치 수에서는 5%처럼 잘게 쪼갠 비율이 표본을 만들지 못하므로, 실제 안전장치는 비율을 늘리는 것이 아니라 중단 레버가 열린 상태로 며칠 두는 것입니다.
+
+다음 중 하나라도 걸리면 출시를 중단하고 수정판을 준비합니다. 기준은 올리기 전에 확정합니다. 정해두지 않으면 애매한 상태로 100%까지 갑니다.
+
+| 신호 | 중단 기준 |
+| --- | --- |
+| Crashlytics 크래시 없는 사용자 비율 | 직전 버전 대비 1%p 이상 하락 |
+| Crashlytics 신규 이슈 | 세션의 0.5% 이상에서 발생 |
+| Amplitude 로그인 성공률·스토리 생성 완주율 | 직전 버전 대비 하락이 관찰될 때 |
+
+세 기준 모두 앱 버전별 비교가 전제입니다. 해당 대시보드 준비 여부는 [추적 문서](../planning/backend-deployment-tracking.md#배포-구현-차이)에서 확인합니다.
