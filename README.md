@@ -44,7 +44,7 @@ git clone <manyak-infra-repository-url>
 
 제품 문서는 `docs/spec/`(배경·요구·계약), `docs/design/`(현재 내부 구조), `docs/adr/`(누적 결정 기록)로 나눕니다. 세 폴더는 `docs/` 바로 아래에 둡니다. 숫자 접두어는 각 폴더에서 독립적으로 관리합니다. 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
 
-현재 파일명에 맞춰 제목·절 번호·참조를 정리하고 백엔드 Design·ADR과 AI Design을 원문에서 분리했습니다. Android 모듈 설계는 Android Design에 통합했습니다. 남은 본문 정리와 검증 범위는 [개정 계획](docs/planning/product-document-reorganization.md)을 따릅니다.
+문서 재구성의 범위와 남은 검증은 [개정 계획](docs/planning/product-document-reorganization.md)을 따릅니다.
 
 | 분류·번호 | 문서 | 역할 |
 | --- | --- | --- |
@@ -67,6 +67,7 @@ git clone <manyak-infra-repository-url>
 | adr · 1-3 | [Android ADR](docs/adr/1-3-android-adr.md) | Android 결정 당시 맥락·선택·이유 |
 | adr · 2 | [백엔드 ADR](docs/adr/2-backend-server-adr.md) | 백엔드 결정의 맥락·선택·근거 |
 | adr · 3 | [AI ADR](docs/adr/3-ai-server-adr.md) | AI 설계의 배경·대안·선택 근거 |
+| adr · 4 | [배포 ADR](docs/adr/4-deployment-adr.md) | Terraform 결정의 과거 상태·변경 이유·날짜 |
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
@@ -87,6 +88,7 @@ Phase와 로드맵은 `docs/planning/roadmap.md`, 계약 적용·코드·검증�
 | --- | --- |
 | `docs/planning/roadmap.md` | Phase별 개발 목표, 스프린트 일정, 작업 범위, 백로그 |
 | [클라이언트 진행·추적](docs/planning/client-tracking.md) | 계약 적용·구현·검증·Jira·계획 연결 |
+| [백엔드·배포 진행·추적](docs/planning/backend-deployment-tracking.md) | 백엔드·배포 계약과 구현 차이, 수용한 한계, 복원 근거 |
 | [제품 문서 재구성 계획](docs/planning/product-document-reorganization.md) | 이번 경로·번호 변경 결과와 남은 본문 분리 계획 |
 
 ## 개발 레포지토리에 하네스 연결
