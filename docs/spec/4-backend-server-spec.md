@@ -445,11 +445,11 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | --- | --- | --- |
 | `started` | `{chatId}` | 스트리밍 시작 |
 | `token` | `{text}` | AI 토큰 청크. AI 서버 스트림을 1:1 중계 |
-| `character_image` | `{name, imageName, imageUrl}` | AI 서버가 이미지 보유 인물의 줄 머리 `인물명:` 라벨을 감지해 만든 이벤트(KNK-1002, `imageName`은 KNK-1026). 같은 인물이 다시 말해도 매번 오며, 백엔드는 프론트에 그대로 중계 |
-| `completed` | `{chatId, turnId, aiOutput, characterImages[], choices[], reachedEnding}` | 턴 저장 완료. `aiOutput`에는 대사 줄 위 별도 줄의 `[[URL]]` 저장 마커가 포함되고(KNK-1002·KNK-1025) `characterImages[]`에는 표시 순서와 횟수가 `{name, imageName, imageUrl}`로 담깁니다. `reachedEnding`(string·null)은 이번 턴이 엔딩 도달이면 도달 엔딩 **이름**, 아니면 null([§4-3-10](#4-3-api-계약)) |
+| `character_image` | `{name, imageUrl}` | AI 서버가 이미지 보유 인물의 줄 머리 `인물명:` 라벨을 감지해 만든 이벤트(KNK-1002). 같은 인물이 다시 말해도 매번 오며 백엔드가 최종 URL을 골라 중계 |
+| `completed` | `{chatId, turnId, aiOutput, choices[], reachedEnding}` | 턴 저장 완료. `aiOutput`에는 대사 줄 위 별도 줄의 `[[URL]]` 저장 마커가 포함됩니다(KNK-1002·KNK-1025). 이미지 목록은 따로 싣지 않습니다. `reachedEnding`(string·null)은 이번 턴이 엔딩 도달이면 도달 엔딩 **이름**, 아니면 null([§4-3-10](#4-3-api-계약)) |
 | `error` | `{code, message}` | 실패. `completed`를 대체. 백엔드 자체 실패의 `message`는 "AI 응답 생성 중 오류가 발생했습니다." 고정 문구 |
 
-- 이벤트는 위 5종이며 heartbeat(주기 ping)는 없습니다. `imageName`과 완료 이미지 목록의 합의·구현 차이는 [추적 IMG-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)을 확인합니다. 상세·공유 응답에는 별도 이미지 목록을 만들지 않습니다.
+- 이벤트는 위 5종이며 heartbeat(주기 ping)는 없습니다. 상세·공유 응답에도 별도 이미지 목록을 만들지 않습니다. 클라이언트가 이미지를 그리는 근거는 실시간 이벤트의 `imageUrl`과 본문의 `[[URL]]` 마커 둘뿐입니다([BE-044](../adr/2-backend-server-adr.md#be-044)).
 
 - 서버는 `completed` 전에 사용자 입력과 AI 출력을 한 턴으로 저장합니다. 저장은 채팅 행 비관적 락 → 마지막 `message_order` 조회 → USER(n+1) → ASSISTANT(n+2) insert → 선택지 insert → `current_turn` +1 순서의 단일 트랜잭션이며, 메시지 순서는 `(chat_id, message_order)` 유니크 제약으로 보강합니다. 턴 ID는 ASSISTANT 메시지 행의 ID입니다. 저장이 확정한 턴 번호를 `ai_call_logs`에도 반영합니다([§4-7](#4-7-운영과-관측)).
 - 선택지는 AI가 준 개수만큼 `story_choices` 행(`choice_order` 1부터, `(message_id, choice_order)` 유니크)으로 저장하고 빈 배열이면 저장하지 않습니다: "3개"는 AI 계약이며 서버가 개수를 보정하지 않습니다. 카드의 최근 활동 시각(`updatedAt`)은 채팅 행 UPDATE 시(턴 저장 포함) 자동 갱신됩니다.
@@ -1157,8 +1157,8 @@ graph TD
 1. 컴파일 응답 `character_images[]`의 성공 이미지는 디코딩해 S3에 업로드하고 `story_character_images`에 연결합니다. `name`은 인물 이름, `image_name`은 이미지 한 장의 이름입니다. `story_characters.image_name` 컬럼은 만들지 않습니다.
 2. 이미지 생성 실패·빈 목록은 스토리 생성을 실패시키지 않습니다. 생성 표지는 `stories.thumbnail_image_url`로 저장하며 노출은 검수 상태와 폴백 규칙을 따릅니다.
 3. 채팅 요청은 `APPROVED` 인물 이미지들을 `{name, image_name, image_url}`로 전달합니다. 인물 하나에 여러 이미지가 있을 수 있습니다. 어떤 이미지를 고를지는 AI 계약을 따릅니다.
-4. 실시간 `character_image`의 합의된 페이로드는 `{name, imageName, imageUrl}`이며 `completed`에는 `characterImages[]`가 포함됩니다. 같은 인물이 다시 말하면 표시 횟수와 순서를 유지합니다. 서버 DTO에 남은 차이는 [IMG-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)로 추적합니다.
-5. 저장 정본은 마커를 포함한 `aiOutput`입니다. 상세·공유 응답은 본문을 그대로 반환하고 `characterImages[]`를 재구성하거나 저장하지 않습니다. 상세의 이미지 렌더링과 공유 화면의 마커 숨김은 클라이언트 계약입니다.
+4. 클라이언트로 나가는 실시간 `character_image`는 `{name, imageUrl}`입니다. 같은 인물이 다시 말하면 그때마다 다시 보냅니다. 이미지 이름은 저장·업로드와 AI 요청에서만 쓰고 클라이언트로 내보내지 않습니다([BE-044](../adr/2-backend-server-adr.md#be-044)).
+5. 저장 정본은 마커를 포함한 `aiOutput`입니다. 상세·공유 응답은 본문을 그대로 반환하고 이미지 목록을 재구성하거나 저장하지 않습니다. 상세의 이미지 렌더링과 공유 화면의 마커 숨김은 클라이언트 계약입니다.
 6. 재생성 성공 시 새 본문이 활성 결과가 되고 실패 시 이전 본문을 유지합니다. 현재 인물 테이블을 다시 조회해 과거 턴의 이미지 URL을 바꾸지 않습니다. 스트리밍 중 이미지가 표시된 뒤 실패했을 때 화면 처리는 클라이언트 Spec을 따릅니다.
 
 **배경 이미지 계약.** 배경은 인물과 별도 기능입니다. 등록 시 장르로 후보를 연결하고 AI가 매 턴 후보 중 최대 한 장을 선택합니다. 저장 마커는 `[[image:<imageKey>]]`, 완료 응답의 매핑은 `images[]`입니다. 현재 구현되지 않은 후보 저장·전달·완료 매핑은 [IMG-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에 남깁니다. 인물 이미지 구현을 배경 기능의 구현 완료로 간주하지 않습니다.
@@ -1816,7 +1816,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 이미지 시드: 매니페스트의 `imageKey`가 `[a-z0-9_]{1,64}` 형식·유니크여야 하고, `genres[]` 값이 GENRE 마스터 태그명과 하나라도 불일치하면 시드가 실패해야 합니다(조용한 매칭 0건 금지). 등재된 키의 서빙 URL(`{base}/{prefix}/{imageKey}.png`)이 실제 S3 객체와 일치해야 합니다.
 - 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 상세 응답에 원본 `thumbnailUrl`, 목록·채팅 카드 응답에 축소 변형 `thumbnailUrlSm`(`_sm` 접미사 파생)이 실려야 합니다. 규칙 도입 전 스토리는 두 필드 모두 null이어야 합니다.
 - 생성 표지: 간편 제작으로 만든 스토리는 컴파일이 준 표지가 `stories.thumbnail_image_url`에 저장되고 상세·목록·채팅 카드가 그 URL을 써야 합니다. 표지 생성이 실패하거나 구버전 AI라 필드가 없으면 스토리는 그대로 생성되고 프리셋 표지로 떨어져야 하며, 두 경우 모두 `thumbnail_image_key`는 계속 채워져 있어야 합니다.
-- 채팅 인물 이미지: 이미지 보유 인물의 모든 `인물명:` 대사 바로 앞에서 `character_image`가 나와야 합니다. 여러 인물과 같은 인물의 재발화를 모두 반복해야 하며, 유효 태그는 `token`에 보이지 않아야 합니다. `completed.aiOutput`에는 같은 위치의 `[[URL]]` 마커가, `completed.characterImages[]`에는 같은 순서와 횟수가 있어야 합니다. 상세 조회는 별도 목록을 복원하지 않고 저장 본문을 그대로 반환해야 합니다. 마커는 대사 줄 위 별도 줄(뒤에 빈 줄)에 있어야 합니다. 실시간 완료 응답의 `characterImages[]`에 `imageName`이 있어야 하며, 상세 조회는 저장된 `aiOutput`을 마커째 그대로 반환해야 합니다(목록 복원 없음). 재생성 실패는 기존 본문과 이미지를 유지해야 하며, 공유 응답에는 `characterImages`가 없어야 합니다.
+- 채팅 인물 이미지: 이미지 보유 인물의 모든 `인물명:` 대사 바로 앞에서 `character_image`가 `{name, imageUrl}`로 나와야 합니다. 여러 인물과 같은 인물의 재발화를 모두 반복해야 하며 유효 태그는 `token`에 보이지 않아야 합니다. `completed.aiOutput`에는 같은 위치에 `[[URL]]` 마커가 대사 줄 위 별도 줄(뒤에 빈 줄)로 있어야 하고, 완료 이벤트에 이미지 목록이 실리지 않아야 합니다. 상세·공유 조회는 저장된 `aiOutput`을 마커째 그대로 반환해야 합니다. 재생성 실패는 기존 본문과 이미지를 유지해야 합니다.
 - 채팅 배경 이미지: `completed`·상세 조회의 `images[]`에는 카탈로그에 있는 키가 타입별 최대 1장씩만 실려야 합니다(백엔드 이중 강제: 본문 마커는 무변경). `images[]`에 없는 마커는 프론트엔드가 마커 텍스트째 숨겨야 하며 사용자에게 `[[image:…]]` 원문이 보이면 안 됩니다. 상세 조회의 `images[]` 재구성 결과가 `completed` 시점과 동일해야 합니다: 특히 턴 확정 이후 등록된 프리셋 키의 마커는 재구성에서도 무효로 남아야 합니다(삭제 금지 + 등록 시각 컷오프). 비활성(`deactivated_at` 기록)으로 내린 이미지는 다음 턴부터 후보 전달·`images[]`에서 빠져야 하고, 비활성 **이전에** 확정된 지난 턴 재구성에는 계속 남아야 하며, 비활성 **중에** 확정된 턴의 마커는 재구성에서도 무효여야 합니다(`completed` 대칭: 비활성 적용 범위). 후보가 없는 스토리의 턴에는 이미지가 없어야 합니다.
 - 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`의 `reachedEnding`(엔딩 이름·null)이 일치해야 하고, 채팅 상세 턴 항목의 `reachedEnding`에도 같은 이름이 노출돼야 하며, 도달 후에도 턴 진행이 계속 가능해야 합니다.
 - 채팅 공유: 발급 응답의 `turnCount`가 발급 시점 `current_turn`과 일치해야 하고, 같은 커트라인의 재발급은 같은 `shareId`를 반환해야 합니다(멱등). 발급 후 턴이 진행돼도 공유 조회 `turns[]`는 커트라인 이하만 반환해야 합니다. 공유 조회는 인증 없이 200이어야 하고, 원본 채팅 삭제 후에는 404여야 합니다. 발급의 소유권 위반(회원의 NULL 채팅, 타인 소유 채팅)은 403이어야 합니다.

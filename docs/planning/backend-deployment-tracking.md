@@ -25,7 +25,6 @@
 
 | ID | 합의·관측 차이 | 근거·처리 |
 | --- | --- | --- |
-| IMG-01 | 합의된 SSE `imageName`·`completed.characterImages[]`가 현재 서버 출력 DTO에 없음. `character_image` 중계 자체는 구현됨 | `ChatDtos.kt`의 `ChatStreamCharacterImageEvent`·`ChatStreamCompletedEvent`, `ChatService` 중계. 합의는 BE-028·Spec에 유지하고 누락 구현으로 추적. 상세·공유 배열 복원은 2026-08-28 결정에 따라 제외 |
 | IMG-02 | 배경 후보 연결·AI 전달·`completed.images[]` 트랙은 인물 이미지와 별도 미구현 | 인물 이미지 완성을 근거로 배경 완성을 표시하지 않음. 현재 합의된 후보·마커 계약은 Spec에 유지 |
 | CREDIT-01 | 런타임 정책 변경 전후 혼합 단가에 그룹 대사 금액 부족 가능 | BE-033. 기존 개수 기반 대사와 경고를 현재 한계로 기록. 정확한 차감 행 단위 대사는 새 설계 필요 |
 | CREDIT-02 | 재가입 전후 다른 지갑이 같은 보상 신원의 초대 월 한도를 동시에 판정하면 1회 초과 가능 | BE-029. 지갑 락을 전역 신원 잠금으로 오해하지 않음 |
