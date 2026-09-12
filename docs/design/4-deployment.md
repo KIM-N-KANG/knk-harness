@@ -224,4 +224,4 @@ DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼
 | Crashlytics 신규 이슈 | 세션의 0.5% 이상에서 발생 |
 | Amplitude 로그인 성공률·스토리 생성 완주율 | 직전 버전 대비 하락이 관찰될 때 |
 
-세 기준 모두 앱 버전별 비교가 전제입니다. 해당 대시보드 준비 여부는 [추적 문서](../planning/backend-deployment-tracking.md#배포-구현-차이)에서 확인합니다.
+세 기준 모두 앱 버전별 비교가 전제입니다. 해당 대시보드 준비 여부는 [추적 문서](../planning/backend-deployment-tracking.md#미결-결정)에서 확인합니다.

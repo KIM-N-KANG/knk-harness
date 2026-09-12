@@ -207,7 +207,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - 2차 키는 내부 PK가 아니라 `public_id`입니다: 커서에 순차 PK를 실으면 외부 노출 식별자 정책([§4-4](#4-4-데이터-모델))을 어깁니다. 랜덤 UUID지만 값이 안정적이라 동률 구간(같은 시각, 같은 좋아요 수)의 순서를 결정적으로 만듭니다.
 - **커서 형식**: `"<정렬 접두>:<정렬값>:<public_id>"`를 Base64URL(패딩 없음)로 감쌉니다. 정렬 접두는 `latest`가 `l`, `popular`가 `p`이며 **디코드 시 검증**합니다: 정렬이 다른 커서를 넘기면 400입니다(인기순 커서의 정렬값은 좋아요 수라 최신순에 넣으면 엉뚱한 시각으로 해석됩니다). 정렬값은 `latest`가 `created_at`의 **epoch nanos**, `popular`가 좋아요 수입니다. millis가 아닌 이유는 PostgreSQL `timestamptz`가 마이크로초까지 담기 때문입니다: 밀리초로 자르면 같은 밀리초 안의 뒤쪽 행이 `created_at < 커서`에도 `= 커서`에도 걸리지 않아 페이지 경계에서 사라집니다.
 - offset이 아니라 keyset이라 페이지 사이에 새 스토리가 끼어들어도 중복·누락이 없습니다. `limit + 1`건을 읽어 다음 페이지 유무를 판정합니다.
-- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `popular`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다([추적 PLAN-05](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `popular`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다([추적 PLAN-05](../planning/backend-deployment-tracking.md#미결-결정)).
 
 **인증 배선.** `SecurityConfig`에서 **정확 경로** permitAll이며 `OPTIONAL_AUTH_MATCHERS`에도 등록합니다([§4-5](#4-5-인증과-권한) 선택적 인증). 요청자 신원을 쓰지 않지만, 클라이언트가 자동 첨부한 만료·위조 access 헤더가 리소스 서버 필터에 걸려 401이 나면 로그아웃 상태 화면이 통째로 깨지기 때문입니다(`GET /shares/{shareId}`와 같은 이유).
 
@@ -292,7 +292,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 #### 스토리 신고
 
 - **`POST /stories/{storyId}/reports`**: 신고 등록, 201. 인증 필수(미인증 401)이며, 대상 스토리에는 좋아요와 동일하게 읽기 가시성을 적용합니다(읽을 수 없는 스토리는 404).
-- 사유 분류(enum) 체계, 같은 회원의 같은 스토리 중복 신고 정책, 신고 접수 후 처리(운영 알림·노출 제재)는 이 절이 정하지 않습니다: 엔드포인트 골격만 고정하며 나머지 계약은 [추적 PLAN-04](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 확정합니다.
+- 사유 분류(enum) 체계, 같은 회원의 같은 스토리 중복 신고 정책, 신고 접수 후 처리(운영 알림·노출 제재)는 이 절이 정하지 않습니다: 엔드포인트 골격만 고정하며 나머지 계약은 [추적 PLAN-04](../planning/backend-deployment-tracking.md#미결-결정)에서 확정합니다.
 
 ### 4-3-2. 간편 제작
 
@@ -385,7 +385,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **요청 ID**: `POST /stories/simple/storylines` · `POST /stories/simple` 요청 본문의 클라이언트 생성 `requestId`(UUID, 필수: 위 요청 필드 표). 서버는 요청 수신 시 저장 트랜잭션과 별도 트랜잭션으로 생성 요청 행 `{request_id(유니크), stage, status=PENDING}`을 기록하고, 성공 시 `COMPLETED`로 갱신하며 결과를 연결, 실패 시 `FAILED`로 갱신합니다.
 - **복구 조회**: `GET /stories/simple/creation-requests/{requestId}` → `{stage: "STORYLINE_GENERATION" | "STORY_COMPLETION", status: "PENDING" | "COMPLETED" | "FAILED", result}`. `result`는 `COMPLETED`일 때 원 POST 응답 본문과 동일 스키마, 그 외 null입니다. 소유 주체(회원 또는 게스트 디바이스 ID)만 조회할 수 있고 미존재·타인은 404입니다.
 - **멱등 처리**: 상태 판정은 요청 행 락 안에서 직렬화합니다. `COMPLETED`면 저장된 결과를 반환하고, `FAILED`면 `PENDING`으로 바꿔 다시 실행합니다. `PENDING`은 409이지만 기본 300초(`manyak.story.pending-reclaim-after-seconds`)를 넘기면 회수해 다시 실행합니다. 다른 소유자나 단계에서 같은 `requestId`를 쓰면 409입니다.
-- 요청 행 보존 기간·정리 정책은 [추적 PLAN-03](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 결정합니다.
+- 요청 행 보존 기간·정리 정책은 [추적 PLAN-03](../planning/backend-deployment-tracking.md#미결-결정)에서 결정합니다.
 
 ### 4-3-3. 채팅과 SSE 스트리밍
 
@@ -456,7 +456,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **선택 기록**: `sourceTurnId`와 `choiceOrder`가 있으면 같은 트랜잭션과 채팅 락 안에서 직전 턴의 선택지를 찾아 `is_selected`와 `selected_at`을 기록합니다.
   - `choice_text`와 최종 `userInput`을 NFC 정규화, 앞뒤 공백 제거, 내부 공백 축약 후 비교해 `is_edited`를 정합니다. 구두점은 보존합니다.
   - 마지막 턴은 `message_order`가 가장 큰 ASSISTANT 메시지입니다. 새 메시지를 저장하기 전에 판정합니다.
-  - 요청 시작 뒤 생성된 선택지는 사용자가 본 세대가 아니므로 기록하지 않습니다. 더 오래된 클라이언트 상태는 구분할 수 없어 [RISK-05](../planning/backend-deployment-tracking.md#백엔드-구현-차이)로 추적합니다.
+  - 요청 시작 뒤 생성된 선택지는 사용자가 본 세대가 아니므로 기록하지 않습니다. 더 오래된 클라이언트 상태는 구분할 수 없어 [RISK-05](../planning/backend-deployment-tracking.md#수용한-한계)로 추적합니다.
   - 기록 조건이 맞지 않으면 턴 처리는 계속하고, `sourceTurnId`가 있을 때만 실패 사유를 WARN으로 남깁니다.
   - `userSource`는 클라이언트가 보낸 값이고 `is_edited`는 서버 판정입니다. 재생성은 선택 기록을 만들지 않습니다.
 
@@ -494,7 +494,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - 본문 상한은 서버 2,000자로 프론트엔드(500자)보다 크게 둡니다. 의도된 여유이며, 표시 상한은 프론트엔드가 유동적으로 조정합니다.
 - (KNK-528·V43): `platform`은 클라이언트 제보값이라 세분화에 한계가 있으므로, 서버가 요청 `User-Agent` 헤더 원문을 `feedbacks.user_agent`에 함께 저장해 클라이언트 수정 없이 OS·브라우저 수준으로 세분 수집합니다(512자 절단, 공백은 null: 비인증 공개 쓰기 경로의 임의 길이 값으로 인한 저장 실패 방지).
 - Slack과 같은 커밋 후 비동기 패턴으로 구글 폼(formResponse)에도 적재합니다(연결된 스프레드시트에서 집계·보관). form ID 미설정이면 건너뛰고, 발송 실패는 저장 성공(201)을 뒤집지 않습니다.
-- 요청량 제한(rate limit)은 두지 않습니다. 인증·이프·한도 장치가 없는 쓰기 엔드포인트라 대량 등록으로 저장소·Slack 알림을 남용할 수 있는 표면이며, 현재는 이를 수용하고 등록량 급증을 관측으로 추적합니다([추적 RISK-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+- 요청량 제한(rate limit)은 두지 않습니다. 인증·이프·한도 장치가 없는 쓰기 엔드포인트라 대량 등록으로 저장소·Slack 알림을 남용할 수 있는 표면이며, 현재는 이를 수용하고 등록량 급증을 관측으로 추적합니다([추적 RISK-02](../planning/backend-deployment-tracking.md#수용한-한계)).
 
 <a id="4-3-5-인증-api--phase-1--구현"></a>
 
@@ -543,7 +543,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **동시 호출 직렬화.** 같은 계정의 이관 호출은 `users` 행 비관적 락(`findByIdForUpdate`)으로 직렬화합니다. 두 요청이 경합해도(중복 탭·재시도) 잠금·이관 결과는 순차 실행과 같으며, 잠금 이후 진입한 호출은 닫힌 응답을 받습니다: 직렬화가 없으면 동시 호출 2건이 모두 "잠기지 않은 계정"으로 판정되어 1회 제한이 뚫립니다.
 - **닫힌 계정의 재호출.** 잠긴 계정의 호출은 오류가 아니라 정상 흐름입니다(프론트엔드가 매 로그인마다 자동 호출). 서버는 제출 항목을 평가하지 않고 `migrationClosed: true`와 빈 결과로 200을 반환하며, 프론트엔드는 오류 없이 무시합니다.
 - **이관 시도 상한.** 계정당 이관 호출 자체를 **5회**로 제한합니다(`users.migration_attempts`: V38, 성공 0건 호출도 카운트). 초과 호출은 닫힌 계정과 동일하게 `migrationClosed: true`·빈 결과의 200입니다.
-- **소유 증명 불가·열거 오라클 한계.** 서버는 요청자가 그 UUID의 원래 게스트였는지 증명할 수 없어, NULL 리소스는 UUID를 아는 회원 누구나 이관 창이 열려 있는 동안 클레임할 수 있습니다. `status`의 소유 상태 4종 구분은 열거 오라클이 될 수 있으나, 시도 상한 5회가 열거 규모를 최대 1,000개(5회 × 100+100)로 제한합니다. 잔여 한계는 [추적 RISK-03](../planning/backend-deployment-tracking.md#백엔드-구현-차이)가 소유합니다.
+- **소유 증명 불가·열거 오라클 한계.** 서버는 요청자가 그 UUID의 원래 게스트였는지 증명할 수 없어, NULL 리소스는 UUID를 아는 회원 누구나 이관 창이 열려 있는 동안 클레임할 수 있습니다. `status`의 소유 상태 4종 구분은 열거 오라클이 될 수 있으나, 시도 상한 5회가 열거 규모를 최대 1,000개(5회 × 100+100)로 제한합니다. 잔여 한계는 [추적 RISK-03](../planning/backend-deployment-tracking.md#수용한-한계)가 소유합니다.
 
 응답 200: `{migrationClosed: boolean, stories: MigrationResult[], chats: MigrationResult[]}`: `migrationClosed`가 true면 이미 잠긴 계정의 호출이라 이번 요청이 평가되지 않았고 `stories`·`chats`는 빈 배열입니다. `MigrationResult`는 `{id, status}`이며 `status`는 다음 4종입니다.
 
@@ -898,7 +898,7 @@ graph TD
 - 기준: `X-Manyak-Device-Id`별 누적 카운터 3종입니다. `storyline_generation`은 스토리라인 생성·재생성 합산 5회, `story_creation`은 스토리 간편 제작(컴파일) 1회, `chat_turn`은 모든 채팅방의 채팅 턴·AI 응답 재생성 합산 5회입니다. 일반 제작 등록은 제외합니다. 수치는 `application.yml` 기본값 5·1·5이며 환경 변수로 조정할 수 있습니다. 축소는 카운터 리셋 없이 적용됐으므로, 이전 한도(10·3·15)에서 이미 새 한도 이상을 쓴 기기는 즉시 한도 소진 상태입니다.
 - 판정: 게스트 요청은 Redis 카운터로 한도를 확인하고, 한도 소진 시 `402`(`code=GUEST_TRIAL_LIMIT_EXCEEDED`, "게스트 체험 한도를 모두 사용했습니다.": KNK-524)를 반환합니다. 게스트의 체험 한도 대상 요청은 device 헤더가 필수이며, 헤더가 없으면 400("게스트의 체험 한도 대상 요청은 X-Manyak-Device-Id 헤더가 필요합니다.")을 반환합니다(`GuestTrialLimitService.requireDeviceId`).
 - 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
-- 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다. 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([추적 RISK-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+- 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다. 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([추적 RISK-01](../planning/backend-deployment-tracking.md#수용한-한계)).
 - 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. 현재는 이 수준을 수용하고 남용 징후는 관측으로 추적합니다. 인앱 게스트 허용 개편 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다: 수용 여부는 미결이며 [클라이언트 추적](../planning/client-tracking.md#웹-핸드오프-잔여)이 확인 항목을 소유합니다.
 
 [결정 근거 BE-011](../adr/2-backend-server-adr.md#be-011)
@@ -1161,7 +1161,7 @@ graph TD
 5. 저장 정본은 마커를 포함한 `aiOutput`입니다. 상세·공유 응답은 본문을 그대로 반환하고 이미지 목록을 재구성하거나 저장하지 않습니다. 상세의 이미지 렌더링과 공유 화면의 마커 숨김은 클라이언트 계약입니다.
 6. 재생성 성공 시 새 본문이 활성 결과가 되고 실패 시 이전 본문을 유지합니다. 현재 인물 테이블을 다시 조회해 과거 턴의 이미지 URL을 바꾸지 않습니다. 스트리밍 중 이미지가 표시된 뒤 실패했을 때 화면 처리는 클라이언트 Spec을 따릅니다.
 
-**배경 이미지 계약.** 배경은 인물과 별도 기능입니다. 등록 시 장르로 후보를 연결하고 AI가 매 턴 후보 중 최대 한 장을 선택합니다. 저장 마커는 `[[image:<imageKey>]]`, 완료 응답의 매핑은 `images[]`입니다. 현재 구현되지 않은 후보 저장·전달·완료 매핑은 [IMG-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에 남깁니다. 인물 이미지 구현을 배경 기능의 구현 완료로 간주하지 않습니다.
+**배경 이미지 계약.** 배경은 인물과 별도 기능입니다. 등록 시 장르로 후보를 연결하고 AI가 매 턴 후보 중 최대 한 장을 선택합니다. 저장 마커는 `[[image:<imageKey>]]`, 완료 응답의 매핑은 `images[]`입니다. 현재 구현되지 않은 후보 저장·전달·완료 매핑은 [IMG-02](../planning/backend-deployment-tracking.md#승인-계약과-구현-차이)에 남깁니다. 인물 이미지 구현을 배경 기능의 구현 완료로 간주하지 않습니다.
 
 
 #### 검증·저장·스트리밍
@@ -1176,7 +1176,7 @@ graph TD
   - 포함 조건은 `created_at <= 턴 확정 시각`이고 `deactivated_at`이 없거나 확정 시각보다 뒤인 자산입니다.
   - 카탈로그 행은 삭제하지 않습니다. 비활성화 전에 확정된 턴은 이미지를 유지하고, 확정 뒤 등록됐거나 당시 비활성이던 자산은 제외합니다.
   - 재활성화는 `deactivated_at`을 지우므로 비활성 기간의 잘못된 마커가 다시 유효해질 수 있습니다. 현재는 이 위험을 허용합니다.
-  - 재생성 시점으로 다시 판정하려면 턴 확정 시각 컬럼이 필요합니다. 현재 스키마에는 없어 [IMG-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)로 추적합니다.
+  - 재생성 시점으로 다시 판정하려면 턴 확정 시각 컬럼이 필요합니다. 현재 스키마에는 없어 [IMG-02](../planning/backend-deployment-tracking.md#승인-계약과-구현-차이)로 추적합니다.
 - 후보가 비었거나(매칭 0건) AI가 삽입하지 않은 턴은 이미지 없는 턴입니다. 무관한 이미지를 임의로 삽입하지 않습니다: 장면과 무관한 이미지는 몰입을 해칩니다.
 - 이미 저장된 턴의 본문(마커 포함)은 이후 자산 구성이 바뀌어도 유지합니다(지난 턴 불변: [§4-3-8](#4-3-api-계약)의 수정 규칙과 동일). `imageKey` 불변·교체 시 새 키 발급이 이 불변을 보강합니다.
 
@@ -1217,7 +1217,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 - 엔딩 이름을 해당 시작 설정의 엔딩으로 해석해 `reached_ending_id`에 저장합니다.
 - 이미 도달했거나 `min_turns`를 채우지 못했으면 무시합니다.
-- 재생성은 판정 메타를 반영하지 않습니다. 직전 상태로 요청하되 사건 완료·목표·엔딩을 다시 쓰지 않습니다([추적 OBS-03](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+- 재생성은 판정 메타를 반영하지 않습니다. 직전 상태로 요청하되 사건 완료·목표·엔딩을 다시 쓰지 않습니다([추적 OBS-03](../planning/backend-deployment-tracking.md#미결-결정)).
 - 엔딩 도달 뒤에는 채팅 상태가 `ENDED`이므로 재생성을 409로 차단합니다.
 
 #### 엔딩 도달 기록: 이원화
@@ -1232,7 +1232,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 #### 스키마 확정과 마이그레이션
 
-저장 스키마·저작 API(단발 등록·수정 왕복: [§4-3-8](#4-3-api-계약))와 이 절의 **런타임 반영(턴 전달·AI 판정 연동·도달 기록 이원화)**이 현재 계약입니다. 재생성의 판정 메타 재기록은 제외합니다([§4-3-9](#4-3-api-계약)·[추적 OBS-03](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+저장 스키마·저작 API(단발 등록·수정 왕복: [§4-3-8](#4-3-api-계약))와 이 절의 **런타임 반영(턴 전달·AI 판정 연동·도달 기록 이원화)**이 현재 계약입니다. 재생성의 판정 메타 재기록은 제외합니다([§4-3-9](#4-3-api-계약)·[추적 OBS-03](../planning/backend-deployment-tracking.md#미결-결정)).
 
 - **`story_main_events` 확정: `(스키마·저장)`**: 구조(`name` · `description` · `key_sentence` · `sort_order`, 스토리당 최대 10)를 런타임 계약으로 확정합니다(V29). 간편 제작도 컴파일 산출물의 주요 사건·엔딩을 같은 테이블에 저장해, 제작 방식과 무관하게 동일한 런타임이 동작합니다.
 - **`story_endings` 재정의**: V33에서 `name`·`min_turns`·`achievement_condition`·`epilogue`를 추가했습니다. 엔딩은 `start_setting_id`에 속하며(V30) 시작 설정당 최대 10개입니다. 유형 없이 이름으로 식별하고, 달성 조건에 목적과 주요 사건을 함께 적으므로 별도 연결 테이블은 두지 않습니다.
@@ -1276,7 +1276,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 테이블·저장소 구성
 
-물리 테이블·Redis·검색 인덱스의 책임과 컬럼 상세는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)를 따릅니다. 잔존 컬럼·개명 예정 항목은 [추적 SCHEMA-01·02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에 있습니다.
+물리 테이블·Redis·검색 인덱스의 책임과 컬럼 상세는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)를 따릅니다. 잔존 컬럼·개명 예정 항목은 [추적 SCHEMA-01·02](../planning/backend-deployment-tracking.md#미결-결정)에 있습니다.
 
 ### 공개 스냅샷과 과거 기록 복원
 
@@ -1298,7 +1298,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 | --- | --- | --- |
 | `creation_session_id` | 간편 제작 FK 컬럼 | `creation_id` 계열 |
 
-`creation_session_id`는 V20~V22와 같은 Flyway 마이그레이션으로 이름을 바꿀 수 있습니다(2026-07-07 결정). 적용 여부는 [추적 SCHEMA-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 확인합니다.
+`creation_session_id`는 V20~V22와 같은 Flyway 마이그레이션으로 이름을 바꿀 수 있습니다(2026-07-07 결정). 적용 여부는 [추적 SCHEMA-01](../planning/backend-deployment-tracking.md#미결-결정)에서 확인합니다.
 
 ---
 
@@ -1390,7 +1390,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 프로필 이미지 | 닉네임의 **명사에 1:1 매핑된 팀 제작 프리셋 이미지**(명사별 1개, 총 40종)를 가입 시 `ProfileImagePresetService`가 자동 배정. `profile_image_url`에 원본 자산 URL(`imageUrlFor(noun)`), `profile_thumbnail_base64`에 48×48 저해상도 인라인 썸네일(`thumbnailBase64For(noun)`)을 저장(후자는 `GET /auth/me` 첫 페인트용으로도 반환: [§4-3-5](#4-3-api-계약)). 명사에 매핑된 이미지가 없으면 null(클라이언트 기본 아바타: [§4-3-1](#4-3-api-계약)) |
 | 소셜 클레임 | `name`·`picture`를 프로필에 사용하지 않습니다. `email`은 `social_accounts`에만 저장하고 어디서도 읽지 않습니다. Kakao는 동의항목을 요청하지 않아 세 클레임이 애초에 오지 않으며(scope `openid` 단독), 세 값 모두 nullable이라 계약 변경이 없습니다 |
 
-프리셋 배정 도입 전 가입해 Google `name`·`picture`가 저장된 기존 회원의 백필(재발급) 여부는 [추적 PLAN-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 결정합니다(신규 가입분은 프리셋 배정 적용).
+프리셋 배정 도입 전 가입해 Google `name`·`picture`가 저장된 기존 회원의 백필(재발급) 여부는 [추적 PLAN-02](../planning/backend-deployment-tracking.md#미결-결정)에서 결정합니다(신규 가입분은 프리셋 배정 적용).
 
 닉네임·프로필 이미지 변경은 아래 **프로필 수정** 절(, KNK-1147)입니다.
 
@@ -1604,7 +1604,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 **배경과 문제.** AI가 남기는 LLM 트레이스(Langfuse: [`5-ai-server-spec.md §5-6`](5-ai-server-spec.md))로 "무엇이 인기 있는가"를 분석하려면 트레이스에 ① 어느 대화·스토리인지 ② 사용자가 좋아했는지 ③ 어떤 장르인지가 붙어야 합니다. 그런데 AI는 무상태라 이 셋을 스스로 알 수 없습니다. 게다가 턴·스토리 ID는 **AI 호출이 끝난 뒤 저장 시점에야 생기고**(`ChatTurnPersister`·`SimpleStoryCreationService`), 장르는 사용자 커스텀 입력이 섞여 옵니다.
 
-**결정.** 백엔드가 아래 세 가지를 제공합니다. 사용자 반응 저장·전송의 구현 상태는 [추적 OBS-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 확인합니다. AI는 받은 연결 식별자를 자체 DB에 저장하지 않지만 Langfuse metadata에는 기록합니다([`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)).
+**결정.** 백엔드가 아래 세 가지를 제공합니다. 사용자 반응 저장·전송의 구현 상태는 [추적 OBS-02](../planning/backend-deployment-tracking.md#승인-계약과-구현-차이)에서 확인합니다. AI는 받은 연결 식별자를 자체 DB에 저장하지 않지만 Langfuse metadata에는 기록합니다([`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)).
 
 **① 트레이스 연결용 식별자를 호출 전에 만들어 전달: 구현 완료(KNK-707·KNK-751).** 턴·스토리 ID는 호출이 끝난 뒤 저장 시점에야 생기므로(그때는 전달 불가), 백엔드가 호출 **전에** 연결용 식별자를 만들어 전달합니다. 헤더 이름·값·전달 방식은 아래로 확정합니다(표는 위 상관관계 식별자 절).
 
@@ -1621,7 +1621,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
   **부모 검증**
   - 두 요청이 모두 회원 요청이면 `user_id`가 같아야 합니다. 이때 `device_id_hash`는 보조 기준으로 쓰지 않습니다.
   - 하나라도 게스트 요청이면 `device_id_hash`로 연속성을 확인합니다. 회원 요청에도 이 값을 저장하므로 제작 중 로그인한 경우를 연결할 수 있습니다.
-  - 부모는 `stage=STORYLINE_GENERATION`이어야 합니다. 다른 단계면 `INVALID_STAGE`를 남깁니다([추적 OBS-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+  - 부모는 `stage=STORYLINE_GENERATION`이어야 합니다. 다른 단계면 `INVALID_STAGE`를 남깁니다([추적 OBS-02](../planning/backend-deployment-tracking.md#승인-계약과-구현-차이)).
   - 부모는 이미 커밋된 과거 행이어야 하며 `parent != self`를 확인합니다.
 
   **검증 실패**
@@ -1705,7 +1705,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
   7. `request_id`와 저장된 생성 연결로 score 대상 Langfuse trace ID를 확정합니다. KNK-752 합의대로 AI는 같은 `request_id`를 Langfuse trace metadata에 기록하고 백엔드는 `ai_call_logs`와 생성 버전에 보존합니다. 백엔드는 이 값을 Langfuse에서 조회해 정확한 trace ID를 얻습니다. 조회 API·캐시·저장 방식은 manyak-server 구현 티켓이 결정하며, 비슷한 시각이나 원문 비교로 대상을 추정하지 않습니다. 사용자 행동과 score outbox 행은 같은 DB 트랜잭션에 저장하고, 커밋 뒤 별도 작업자가 전송합니다. 결정적 `score_id`로 재시도 중복을 막고, 제한 재시도 소진·대기 건수·실패 사유는 원문 없는 운영 로그로 관측합니다. Langfuse 클라이언트는 prod·JP 가드를 적용하며 AI 서버와 같은 프로젝트의 별도 키를 우선합니다.
   8. 자동 테스트는 다른 채팅·폐기 선택지 거절, 중복 노출·선택, 평가 변경·취소 순서, 재생성 이전 결과와 엔딩 마지막 턴 연결, 선택·반영·확정 실패의 시점 분리, outbox 롤백·재시도·중복 방지, Langfuse 장애 격리를 검증합니다.
 
-  아직 정하지 않은 세부 계약(상호작용 API 경로·와이어 형식·`selectionAttemptId` 규약 등)은 [추적 OBS-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에 둡니다. 확정한 내용은 이 절에 기록하며, 위에서 정한 도메인 검증·멱등성·장애 격리 원칙은 바꾸지 않습니다.
+  아직 정하지 않은 세부 계약(상호작용 API 경로·와이어 형식·`selectionAttemptId` 규약 등)은 [추적 OBS-02](../planning/backend-deployment-tracking.md#승인-계약과-구현-차이)에 둡니다. 확정한 내용은 이 절에 기록하며, 위에서 정한 도메인 검증·멱등성·장애 격리 원칙은 바꾸지 않습니다.
 
 - **왜 이 방법.** 프론트는 화면 노출과 클릭처럼 자신만 아는 사실을 보내고, 백엔드는 소유 관계·현재 버전·저장 결과처럼 DB만 아는 사실을 확정하는 책임 분리가 가장 정확합니다. 생성 결과와 사용자 반응을 같은 버전으로 보존해야 재생성된 이전 결과에 score를 붙일 수 있습니다. 트랜잭션 outbox는 사용자 기능과 외부 관측 전송을 분리하면서도 DB 커밋된 행동을 누락하지 않으며, 결정적 ID는 재시도와 순서 역전이 최종 score를 오염시키는 것을 막습니다. score payload에는 사용자 입력·선택지 문장·프롬프트·AI 출력 원문을 추가로 싣지 않습니다.
 
@@ -1735,7 +1735,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
 - Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([백엔드 Design §2-4](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
 - OpenAPI: `GET /v3/api-docs`, Swagger UI `GET /swagger-ui.html`. 운영 환경에서는 비공개입니다: 경로 차단이 아니라 springdoc 기능 비활성(`api-docs`·`swagger-ui` enabled=false)으로 구현해 해당 경로는 404로 응답합니다.
-- readiness의 Redis 검사는 운영 프로파일에서 비활성입니다(`management.health.redis.enabled=false`). 재활성 여부는 [추적 OBS-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 확인합니다. 스케줄러에는 이프 대사 외에도 정책 갱신·푸시·구매 후처리·대사 작업이 있습니다. 각 작업의 활성 조건과 재시도·중복 방지는 담당 서비스가 적용합니다.
+- readiness의 Redis 검사는 운영 프로파일에서 비활성입니다(`management.health.redis.enabled=false`). 재활성 여부는 [추적 OBS-01](../planning/backend-deployment-tracking.md#미결-결정)에서 확인합니다. 스케줄러에는 이프 대사 외에도 정책 갱신·푸시·구매 후처리·대사 작업이 있습니다. 각 작업의 활성 조건과 재시도·중복 방지는 담당 서비스가 적용합니다.
 - 배포: Docker 이미지 빌드 후 `dev`는 GHCR, `main`은 AWS ECR(OIDC)로 푸시합니다. DB 마이그레이션은 앱 기동 시 Flyway가 자동 실행합니다.
 - 스키마 문서: 마이그레이션 변경 시 CI가 `dbdoc/`(tbls) 드리프트를 검사합니다.
 

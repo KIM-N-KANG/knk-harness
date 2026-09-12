@@ -87,7 +87,7 @@ graph LR
 | 회원 재화 보호 | 선차감 후 실패의 과금·이중 환불 | charge-once/refund-once + 선차감 대사 배치 + 보상 멱등 키: [§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약) |
 | 관측 보완 | 우회 시도 사후 탐지 | 상관관계 관측 + 호출량·카운터 키 증가 추이: [§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측) |
 
-디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 [추적 RISK-01~04](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 관리합니다.
+디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 [추적 RISK-01~04](../planning/backend-deployment-tracking.md#수용한-한계)에서 관리합니다.
 
 ## 2-2. 저장소와 데이터 수명
 
@@ -135,7 +135,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 | 스토리 | `user_story_ending_reaches` | 사용자·스토리별 도달 엔딩 집계. `ending_name_snapshot` NOT NULL과 `(user_id, story_id, ending_name_snapshot)` 유니크(V71). `ending_id`는 nullable 보조 참조이며 FK 삭제 시 SET NULL(V70)로 도달 행을 보존합니다. |
 | 채팅 | `story_messages.reached_ending_id` | (V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
 | 이미지 | `image_presets` | Flyway로 등록하는 이미지 카탈로그입니다. 불변 `image_key`, 유형, 의미 태그, 등록·비활성 시각을 저장합니다. 행은 삭제하지 않으며 확정 시각과 비활성 시각으로 과거 턴의 이미지 목록을 재구성합니다([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
-| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 레거시 컬럼 제거 시점은 [추적 SCHEMA-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)에서 확인합니다. |
+| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 레거시 컬럼 제거 시점은 [추적 SCHEMA-02](../planning/backend-deployment-tracking.md#미결-결정)에서 확인합니다. |
 | 이미지 | `story_character_images` | 인물별 이미지 여러 장을 이름·URL·검수 상태·순서와 함께 저장합니다. `(character_id, image_name)`은 유일하며 V76에서 기존 이미지를 `{이름}_기본`으로 옮겼습니다. 채팅 요청과 상세 응답이 이 테이블을 사용합니다([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 채팅 | `story_message_versions` | 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측)) |
@@ -155,7 +155,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 
 - 모든 차감·적립은 지갑 행 비관적 락 안에서 원장·로트를 함께 쓰고, 최초 지갑 생성만 `REQUIRES_NEW` 독립 트랜잭션으로 분리해 동시 첫 적립의 유니크 위반을 흡수합니다.
 - 채팅 SSE 워커는 전용 스레드풀(core 4·max 16·큐 100, MDC 전파)에서 돌고, 스케줄 거부·큐 대기 취소는 완료 콜백 안전망이 환불·복원합니다. 선차감 대사 배치는 `fixedDelay`(기본 15분, 초기 지연 60초)로 직렬화하고 그룹별 실패를 격리합니다.
-- 초대 월 상한의 집계 범위는 보상 신원 전체지만 직렬화는 지갑 단위라 재가입 전후 다른 지갑의 경합에서 1회 초과할 수 있습니다([추적 CREDIT-02](../planning/backend-deployment-tracking.md#백엔드-구현-차이)). 혼합 단가의 개수 대사는 회원 미보상 가능성이 남습니다([추적 CREDIT-01](../planning/backend-deployment-tracking.md#백엔드-구현-차이)).
+- 초대 월 상한의 집계 범위는 보상 신원 전체지만 직렬화는 지갑 단위라 재가입 전후 다른 지갑의 경합에서 1회 초과할 수 있습니다([추적 CREDIT-02](../planning/backend-deployment-tracking.md#수용한-한계)). 혼합 단가의 개수 대사는 회원 미보상 가능성이 남습니다([추적 CREDIT-01](../planning/backend-deployment-tracking.md#수용한-한계)).
 
 ## 2-4. 메트릭과 운영 연동
 
