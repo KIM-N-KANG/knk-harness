@@ -88,7 +88,6 @@ Phase와 로드맵은 `docs/planning/roadmap.md`, 계약 적용·코드·검증�
 | --- | --- |
 | `docs/planning/roadmap.md` | Phase별 개발 목표, 스프린트 일정, 작업 범위, 백로그 |
 | [클라이언트 진행·추적](docs/planning/client-tracking.md) | 계약 적용·구현·검증·Jira·계획 연결 |
-| [백엔드·배포 진행·추적](docs/planning/backend-deployment-tracking.md) | 백엔드·배포 계약과 구현 차이, 수용한 한계, 복원 근거 |
 | [제품 문서 재구성 계획](docs/planning/product-document-reorganization.md) | 이번 경로·번호 변경 결과와 남은 본문 분리 계획 |
 
 ## 개발 레포지토리에 하네스 연결

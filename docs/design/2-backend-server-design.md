@@ -6,14 +6,14 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-13 |
+| 수정일 | 2026-09-14 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드의 현재 기술 환경·요청 경계·저장 구조·동시성·운영 연결을 설명합니다. |
-| 기준 코드 | `manyak-server` dev `d4fe174`, Flyway V81. 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md), 코드와의 차이는 [추적 문서](../planning/backend-deployment-tracking.md)가 소유합니다. |
+| 기준 코드 | `manyak-server` dev `d4fe174`, Flyway V81. 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md)이 소유합니다. |
 
 ## 읽는 순서
 
-- Spec에서 계약을 확인한 뒤 이 문서에서 현재 내부 구조를 읽습니다. 선택 이유는 [백엔드 ADR](../adr/2-backend-server-adr.md), 남은 구현 차이·검증은 [백엔드·배포 추적](../planning/backend-deployment-tracking.md)을 따릅니다. 코드가 바뀌면 이 문서를 함께 갱신합니다.
+- Spec에서 계약을 확인한 뒤 이 문서에서 현재 내부 구조를 읽습니다. 선택 이유는 [백엔드 ADR](../adr/2-backend-server-adr.md)을 따릅니다. 코드가 바뀌면 이 문서를 함께 갱신합니다. 승인된 계약 중 아직 만들지 않은 범위는 각 절의 마지막에 적습니다.
 
 ## 목차
 
@@ -87,7 +87,7 @@ graph LR
 | 회원 재화 보호 | 선차감 후 실패의 과금·이중 환불 | charge-once/refund-once + 선차감 대사 배치 + 보상 멱등 키: [§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약) |
 | 관측 보완 | 우회 시도 사후 탐지 | 상관관계 관측 + 호출량·카운터 키 증가 추이: [§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측) |
 
-디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 [추적 RISK-01~04](../planning/backend-deployment-tracking.md#수용한-한계)에서 관리합니다.
+디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 막지 않고 수용합니다. 판단 근거는 [BE-045](../adr/2-backend-server-adr.md#be-045)에 있습니다.
 
 ## 2-2. 저장소와 데이터 수명
 
@@ -135,7 +135,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 | 스토리 | `user_story_ending_reaches` | 사용자·스토리별 도달 엔딩 집계. `ending_name_snapshot` NOT NULL과 `(user_id, story_id, ending_name_snapshot)` 유니크(V71). `ending_id`는 nullable 보조 참조이며 FK 삭제 시 SET NULL(V70)로 도달 행을 보존합니다. |
 | 채팅 | `story_messages.reached_ending_id` | (V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
 | 이미지 | `image_presets` | Flyway로 등록하는 이미지 카탈로그입니다. 불변 `image_key`, 유형, 의미 태그, 등록·비활성 시각을 저장합니다. 행은 삭제하지 않으며 확정 시각과 비활성 시각으로 과거 턴의 이미지 목록을 재구성합니다([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
-| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 레거시 컬럼 제거 시점은 [추적 SCHEMA-02](../planning/backend-deployment-tracking.md#미결-결정)에서 확인합니다. |
+| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 읽는 코드가 사라진 다음 릴리스에서 레거시 컬럼을 지웁니다. |
 | 이미지 | `story_character_images` | 인물별 이미지 여러 장을 이름·URL·검수 상태·순서와 함께 저장합니다. `(character_id, image_name)`은 유일하며 V76에서 기존 이미지를 `{이름}_기본`으로 옮겼습니다. 채팅 요청과 상세 응답이 이 테이블을 사용합니다([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 채팅 | `story_message_versions` | 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측)) |
@@ -147,6 +147,14 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 
 재가입 계정의 `reward_identity_user_id`는 1회성 혜택 신원이며 지갑 소유 계정과 구분합니다. 인물 이미지의 현재 읽기·쓰기는 `story_character_images`가 소유합니다. `story_characters.image_url`은 이전 코드와 롤링 호환을 위한 잔존 컬럼으로, 현재 이미지 정본이 아닙니다. 현재 Flyway는 V81까지 존재합니다.
 
+**현재 구현하지 않은 범위.** 채팅 이미지의 구현 경로는 인물 이미지뿐입니다. `image_presets`에 `BACKGROUND` 자산 80행이 시드돼 있지만 이를 읽어 후보를 연결하고 턴 요청에 싣고 완료 응답에 매핑하는 코드가 없습니다. 지난 턴 재구성에 필요한 `story_messages`의 본문 확정 시각 컬럼도 아직 없습니다. 배경 계약은 [Spec §4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)에 그대로 있습니다.
+
+**정리 예정인 이름과 컬럼.** `story_creation_session_tags.creation_session_id`는 용어집의 `creation_id` 계열과 이름이 다릅니다. `story_characters.image_url`은 V76이 정본을 `story_character_images`로 옮긴 뒤 남은 잔존 컬럼이며, 읽는 코드가 사라진 다음 릴리스에서 지웁니다.
+
+**현재 구현하지 않은 범위.** 채팅 이미지의 구현 경로는 인물 이미지뿐입니다. `image_presets`에 `BACKGROUND` 자산 80행이 시드돼 있지만 이를 읽어 후보를 연결하고 턴 요청에 싣고 완료 응답에 매핑하는 코드가 없습니다. 지난 턴 재구성에 필요한 `story_messages`의 본문 확정 시각 컬럼도 아직 없습니다. 배경 계약은 [Spec §4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)에 그대로 있습니다.
+
+**정리 예정인 이름과 컬럼.** `story_creation_session_tags.creation_session_id`는 용어집의 `creation_id` 계열과 이름이 다릅니다. `story_characters.image_url`은 V76이 정본을 `story_character_images`로 옮긴 뒤 남은 잔존 컬럼이며, 읽는 코드가 사라진 다음 릴리스에서 지웁니다.
+
 공개 스냅샷의 보존 대상과 복원 규칙은 계약이므로 [Spec §4-4 공개 스냅샷과 과거 기록 복원](../spec/4-backend-server-spec.md#공개-스냅샷과-과거-기록-복원)이 소유합니다.
 
 ## 2-3. 원장과 동시성
@@ -155,7 +163,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 
 - 모든 차감·적립은 지갑 행 비관적 락 안에서 원장·로트를 함께 쓰고, 최초 지갑 생성만 `REQUIRES_NEW` 독립 트랜잭션으로 분리해 동시 첫 적립의 유니크 위반을 흡수합니다.
 - 채팅 SSE 워커는 전용 스레드풀(core 4·max 16·큐 100, MDC 전파)에서 돌고, 스케줄 거부·큐 대기 취소는 완료 콜백 안전망이 환불·복원합니다. 선차감 대사 배치는 `fixedDelay`(기본 15분, 초기 지연 60초)로 직렬화하고 그룹별 실패를 격리합니다.
-- 초대 월 상한의 집계 범위는 보상 신원 전체지만 직렬화는 지갑 단위라 재가입 전후 다른 지갑의 경합에서 1회 초과할 수 있습니다([추적 CREDIT-02](../planning/backend-deployment-tracking.md#수용한-한계)). 혼합 단가의 개수 대사는 회원 미보상 가능성이 남습니다([추적 CREDIT-01](../planning/backend-deployment-tracking.md#수용한-한계)).
+- 초대 월 상한의 집계 범위는 보상 신원 전체지만 직렬화는 지갑 단위라 재가입 전후 다른 지갑의 경합에서 1회 초과할 수 있습니다([BE-029](../adr/2-backend-server-adr.md#be-029)). 혼합 단가의 개수 대사는 회원 미보상 가능성이 남습니다([BE-033](../adr/2-backend-server-adr.md#be-033)).
 
 ## 2-4. 메트릭과 운영 연동
 
@@ -238,6 +246,14 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 **알림**: 임계값은 운영 데이터가 쌓인 뒤 정합니다. 서버가 중단되면 지표가 No Data 상태가 되므로, 알림 규칙에서 이 상태를 무시할지 별도 심각도로 다룰지도 함께 정합니다. AI 호출 지연·실패율 알림도 운영 기준선을 확인한 뒤 추가합니다([배포 Design §4-9](4-deployment.md#4-9-검수-관측-롤백)).
 
+**현재 구현하지 않은 범위.** Langfuse는 트레이스 연결 식별자를 헤더로 전달하는 데까지 구현돼 있습니다. 사용자 반응을 도메인 데이터로 검증해 저장하고 score로 발행하는 경로(선택지 상호작용 API, 생성 버전 연결, outbox, Langfuse 클라이언트)는 코드에 없습니다. 계약은 [Spec §4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측)에 있습니다.
+
+운영 readiness는 Redis를 검사하지 않습니다(`management.health.redis.enabled=false`). 재활성 시점은 정하지 않았습니다.
+
+**현재 구현하지 않은 범위.** Langfuse는 트레이스 연결 식별자를 헤더로 전달하는 데까지 구현돼 있습니다. 사용자 반응을 도메인 데이터로 검증해 저장하고 score로 발행하는 경로(선택지 상호작용 API, 생성 버전 연결, outbox, Langfuse 클라이언트)는 코드에 없습니다. 계약은 [Spec §4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측)에 있습니다.
+
+운영 readiness는 Redis를 검사하지 않습니다(`management.health.redis.enabled=false`). 재활성 시점은 정하지 않았습니다.
+
 ## 2-5. 런타임 설정
 
 값은 배포 파이프라인이 주입하며 문서·레포에 싣지 않습니다.
@@ -284,4 +300,4 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 - 외부 HTTP·SSE 실패 의미는 [Spec §4-6](../spec/4-backend-server-spec.md#4-6-오류와-예외-처리)을 따릅니다. 원장 복구는 §2-3의 대사, 검색 파생 사본 복구는 §2-2의 재색인 경로가 담당합니다.
 - API·권한 검수는 [Spec §4-8](../spec/4-backend-server-spec.md#4-8-검수-체크리스트)의 검수 수단을 사용하고 기동·설정·롤백은 [배포 Design](4-deployment.md)을 확인합니다.
-- 이 문서와 코드의 차이, 수용한 한계, 미결 항목은 [추적 문서](../planning/backend-deployment-tracking.md)가 관리합니다. 이전 종합 문서 원문은 [Git 스냅샷](https://github.com/KIM-N-KANG/knk-harness/blob/56333a3/docs/design/2-backend-server-design.md)으로 보존합니다.
+- 수용한 한계의 판단 근거는 [BE-045](../adr/2-backend-server-adr.md#be-045)에 있습니다. 이전 종합 문서 원문은 [Git 스냅샷](https://github.com/KIM-N-KANG/knk-harness/blob/56333a3/docs/design/2-backend-server-design.md)으로 보존합니다.
