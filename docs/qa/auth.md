@@ -10,7 +10,7 @@
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 로그인·세션·계정 연동의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 로그인 `/login`(FE-SCREEN-008) + 계정 연동(마이 페이지 Chip 행·`/my/link/continue` 중계) + 전역 세션·이관 동작(루트 레이아웃 상주 컴포넌트) |
-| 기준 코드 | [비교 커밋·확인 범위](../planning/client-tracking.md#문서-간소화와-검증). 실행 결과·릴리스 포함 여부는 별도 기록 |
+| 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md FE-SCREEN-008(§3-1-3)·§3-1-7`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5`](../spec/3-2-web-spec.md), [`4-backend-server-spec.md §4-3-5`](../spec/4-backend-server-spec.md)(로그인 핸드오프), [`2-user-stories.md §2-8·§2-9`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/my/login-page.spec.ts`, `e2e/my/session-expiry.spec.ts`, `e2e/auth/in-app-handoff.spec.ts`(인앱 게스트·로그인 핸드오프), `e2e/my/invite.spec.ts`(신규 가입 다이얼로그), `e2e/my/my-page.spec.ts`, `e2e/legal/legal.spec.ts`(로그인 고지), `manyak-web/e2e/visual/auth-visual.spec.ts` |
 
@@ -141,7 +141,7 @@
 
 ## ⚠️ 확인 필요
 
-미결·구현 차이와 과거 상태의 근거는 [클라이언트 추적](../planning/client-tracking.md#qa-확인-항목)에서 관리합니다. 이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
+이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
 
 통합한 ID(번호 재사용 금지):
 

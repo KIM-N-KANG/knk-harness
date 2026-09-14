@@ -10,7 +10,7 @@
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 게스트·신규 가입 온보딩의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 온보딩 페이지(FE-SCREEN-007, `/onboarding`. 게이트는 서버 프록시·페이지 가드) · 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) |
-| 기준 코드 | [비교 커밋·확인 범위](../planning/client-tracking.md#문서-간소화와-검증). 실행 결과·릴리스 포함 여부는 별도 기록 |
+| 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md`](../spec/2-user-stories.md) US-2-5·US-8-3 |
 | 관련 E2E | `manyak-web/e2e/smoke/onboarding.spec.ts`, `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(크롤러 게이트 우회) |
 
@@ -73,7 +73,7 @@
 
 ## ⚠️ 확인 필요
 
-미결·구현 차이와 과거 상태의 근거는 [클라이언트 추적](../planning/client-tracking.md#qa-확인-항목)에서 관리합니다. 이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
+이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
 
 통합한 ID(번호 재사용 금지):
 

@@ -261,7 +261,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `isLiked` | boolean | `Phase 2 · 구현`(KNK-1017) 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
 | `characters` | object[] | `Phase 2 · 계획`(KNK-1058) 등장인물 `{name, imageUrl}` — `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지 — [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·일반 제작)는 빈 배열입니다 |
 
-- `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다([클라이언트 추적](../planning/client-tracking.md#기존-간극의-처리) G3).
+- `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
 - **인물 목록의 범위 — `Phase 2 · 계획`(KNK-1058, 2026-08-31 결정).** 상세의 `characters[]`는 **이름과 이미지만** 싣습니다. `story_characters`에는 외형 7필드(성별·나이·체형·얼굴·머리·복장·visual identity)도 있지만 썸네일·인물 이미지 재생성 재료라 상세에 노출하지 않고, **인물별 설명 필드는 아예 없습니다** — 인물 소개에 해당하는 텍스트는 `story_settings.character_setting` 통글 한 덩어리여서 인물별로 쪼갤 근거가 없습니다. 인물 카드마다 소개를 붙이려면 컴파일 응답에 인물별 설명을 더해 저장하는 별도 작업이 필요하고, 그때도 기존 스토리는 재컴파일 없이는 채울 수 없습니다. 인물 공개 식별자(`public_id`)도 노출하지 않습니다 — 이름·이미지만 쓰는 화면에는 필요 없고, 인물 단위 API가 생기는 시점에 더합니다.
 
 **`DELETE /stories/{storyId}`** — 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다(`Phase 1 · 구현`). 404 판정(형식 오류·순차 정수·부재·이미 삭제 — 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69 — 채팅 삭제 동일).
@@ -476,7 +476,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **이프·한도** — 선택지 생성은 무료이며(턴 10이프에 포함된 경험 유지) 게스트 채팅 한도도 소모하지 않습니다.
 - **타임아웃** — 동기 REST **90초**(`manyak.ai.chat.choices-timeout`). AI가 재호출·폴백을 마치고 200을 주기도 전에 백엔드가 먼저 끊는 타임아웃 역전을 피하기 위한 값입니다(재호출 1회 여유 기준 — AI 누적 재호출 최악 케이스는 초과할 수 있음).
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
-- **타임아웃**: 두 층의 타임아웃이 있습니다(홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 120초**(`SseEmitter` 타임아웃) — 선택지 분리(B23 해소) 후 stopgap용 160초에서 낮춘 값이며, AI 스트림 idle 60초의 2배 여유를 둡니다(idle은 토큰 간격 상한이라 토큰이 계속 오면 총 스트리밍이 60초를 넘을 수 있어, 전체 상한을 idle과 같게 두면 정상적인 긴 턴이 `completed` 전에 잘려 클라이언트가 turnId를 잃고 과금됨). 정상 턴은 완료 즉시 조기 종료하므로 지연·행 상황의 비상 상한입니다. 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리·클라이언트 상한 추적은 [클라이언트 추적](../planning/client-tracking.md#기존-간극의-처리) G5에 기록되어 있습니다.
+- **타임아웃**: 두 층의 타임아웃이 있습니다(홉·동작이 다름). ① 클라이언트향 SSE **전체 상한 120초**(`SseEmitter` 타임아웃) — 선택지 분리(B23 해소) 후 stopgap용 160초에서 낮춘 값이며, AI 스트림 idle 60초의 2배 여유를 둡니다(idle은 토큰 간격 상한이라 토큰이 계속 오면 총 스트리밍이 60초를 넘을 수 있어, 전체 상한을 idle과 같게 두면 정상적인 긴 턴이 `completed` 전에 잘려 클라이언트가 turnId를 잃고 과금됨). 정상 턴은 완료 즉시 조기 종료하므로 지연·행 상황의 비상 상한입니다. 초과하면 진행 중인 AI 호출을 취소하고 `error` 이벤트 **없이** 스트림을 종료합니다(`onTimeout` → `complete`). ② 백엔드→AI 호출의 **이벤트 간 60초**(연결 5초 — [§4-7](#4-7-운영과-관측)) — AI 스트림이 이 사이 무진행이면 실패로 보고 `AI_STREAM_FAILED` `error` 이벤트로 전달합니다([§4-6](#4-6-오류와-예외-처리)). 즉 "전체 상한 도달"은 무이벤트 종료, "AI idle 실패"는 error 이벤트로 갈립니다. 프론트엔드의 EOF 처리는 [공통 SSE 계약](3-1-client-spec.md#3-1-5-채팅-플레이와-sse-스트리밍), 연결·읽기 제한은 플랫폼 Design을 따릅니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
 
 ### 4-3-4. 피드백
@@ -849,7 +849,7 @@ graph TD
 - 판정: 게스트 요청은 Redis 카운터로 한도를 확인하고, 한도 소진 시 `402`(`code=GUEST_TRIAL_LIMIT_EXCEEDED`, "게스트 체험 한도를 모두 사용했습니다." — KNK-524)를 반환합니다. 게스트의 체험 한도 대상 요청은 device 헤더가 필수이며, 헤더가 없으면 400("게스트의 체험 한도 대상 요청은 X-Manyak-Device-Id 헤더가 필요합니다.")을 반환합니다(`GuestTrialLimitService.requireDeviceId` — `Phase 1 · 구현`, [§4-8](#4-8-검수-체크리스트) B8).
 - 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
 - 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다(Phase 1). 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([§4-8](#4-8-검수-체크리스트) B8).
-- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. Phase 1은 이 수준을 수용하고 남용 징후는 관측으로 추적합니다(B8). 인앱 게스트 허용 개편(KNK-681) 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다 — 수용 여부는 미결이며 [클라이언트 추적](../planning/client-tracking.md#웹-핸드오프-잔여)이 확인 항목을 소유합니다.
+- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. Phase 1은 이 수준을 수용하고 남용 징후는 관측으로 추적합니다(B8). 인앱 게스트 허용 개편(KNK-681) 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다 — 수용 여부는 미결입니다.
 
 [결정 근거 BE-011](../adr/2-backend-server-adr.md#be-011)
 
@@ -1251,7 +1251,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEven
 
 ### 테이블·저장소 구성
 
-물리 테이블·Redis·검색 인덱스의 책임은 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)을 따릅니다. 계획으로 적힌 구조는 [미결 저장 구조](../planning/product-document-reorganization.md#미결-저장-구조)에 분리했습니다.
+물리 테이블·Redis·검색 인덱스의 책임은 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)을 따릅니다.
 
 ### 잔존 표기
 
@@ -1267,7 +1267,7 @@ AI가 `completed`에 실어 보낸 판정 메타(`endingName` · `targetMainEven
 
 ## 4-5. 인증과 권한
 
-**상태: `Phase 1 · 구현`.** 인증 스택(소셜 로그인, JWT, refresh 저장소)은 서버에 구현되어 있습니다. 클라이언트의 인증·적용 상태는 [추적 문서](../planning/client-tracking.md)에서 확인합니다. 현재 클라이언트 인증 계약은 공통·플랫폼 스펙에서 확인합니다. Kakao 로그인(KNK-727)과 계정 연동(KNK-739)도 서버 구현이 완료됐습니다.
+**상태: `Phase 1 · 구현`.** 인증 스택(소셜 로그인, JWT, refresh 저장소)은 서버에 구현되어 있습니다. 현재 클라이언트 인증 계약은 공통·플랫폼 스펙에서 확인합니다. Kakao 로그인(KNK-727)과 계정 연동(KNK-739)도 서버 구현이 완료됐습니다.
 
 ### 소셜 로그인 흐름
 
@@ -1647,7 +1647,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 
 ### 환경 변수
 
-현재 런타임 설정은 [백엔드 Design §2-5](../design/2-backend-server-design.md#2-5-런타임-설정), 환경별 주입은 [배포 Design](../design/4-deployment.md)을 따릅니다. 계획 설정은 [미결 설정](../planning/product-document-reorganization.md#미결-설정)에 분리했습니다.
+현재 런타임 설정은 [백엔드 Design §2-5](../design/2-backend-server-design.md#2-5-런타임-설정), 환경별 주입은 [배포 Design](../design/4-deployment.md)을 따릅니다.
 
 ### 헬스체크·API 문서·배포
 
@@ -1685,7 +1685,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | US-6-1 ~ 6-8 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
 | US-6-10 | AI 응답 재생성 `Phase 1 · 구현` | `POST /chats/{chatId}/turns/regenerate/stream` |
 | US-6-12 | 주요 사건 기반 선택지 `Phase 1 · 구현` | `POST /chats/{chatId}/turns/stream`(AI 전달 계약 — [§4-3-10](#4-3-api-계약)) |
-| US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속 `Phase 1 · 구현` | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527 — [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](3-1-client-spec.md#엔딩-도달-표시), 적용·검증 상태는 [추적 문서](../planning/client-tracking.md)에서 확인합니다 |
+| US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속 `Phase 1 · 구현` | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527 — [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](3-1-client-spec.md#엔딩-도달-표시)에서 확인합니다 |
 | US-6-11 | 채팅 이미지 표시 `Phase 1 · 계획` | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
 | US-6-17 · 6-18 | 채팅 공유 발급·열람 `Phase 1 · 구현` | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
 | US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |
@@ -1744,7 +1744,7 @@ AI 서버 호출 시 다음 헤더를 forward합니다. 값이 `unknown`이면 �
 | # | 항목 | 현황 | 방향 |
 | --- | --- | --- | --- |
 | B2 | AI 와이어 필드 정렬 | **정렬 완료** — 서버(`StoryAiClient.kt`)·AI 서버(`schemas/story.py`)·클라이언트 와이어 모두 용어집 기준 `storyline`·`additional_info`·`recommended_infos`로 반영(구 `story`·`extra_info` 소멸, 2026-07-21 코드 대조 확인). 남은 것은 세 레포 prod 동반 릴리스뿐 | prod 동반 릴리스로 종결 — [`5-ai-server-spec.md §5-7`](5-ai-server-spec.md) A2의 짝 |
-| B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자([클라이언트 추적](../planning/client-tracking.md#기존-간극의-처리) G6) | **의도된 차이로 확정(2026-07-07)** — 서버는 여유 상한을 유지하고 표시 상한은 프론트엔드가 유동 조정. 추가 정렬 불필요 |
+| B4 | 피드백 본문 상한 | 서버 2,000자 vs 프론트엔드 500자 | **의도된 차이로 확정(2026-07-07)** — 서버는 여유 상한을 유지하고 표시 상한은 프론트엔드가 유동 조정. 추가 정렬 불필요 |
 | B8 | 게스트 한도 우회·수치 축소 | 체험 한도가 디바이스 ID 헤더 기준이라 헤더 변조·기기 변경으로 우회 가능. 디바이스 ID 회전은 Redis 카운터 키를 만료 없이 무한히 늘림 | 한도 구조·수치 5·1·5(`application.yml`) 모두 `Phase 1 · 구현`(KNK-436 축소, 카운터 리셋 없음). 우회는 수용하고 관측(호출량 급증 알림·카운터 키 증가 추이)으로 추적, 강화(rate limit·키 TTL 등)는 후속 결정 |
 | B10 | 이미지 표시 구현 | **썸네일 트랙은 서버 구현 완료**(V45·46, 2026-07-21 코드 대조 확인)이고 **AI 생성 표지 전환도 서버 구현 완료**(KNK-1069 — 컴파일 `thumbnail_image` 수신·S3 업로드·`thumbnail_image_url` 저장·2단 폴백 노출, 프리셋 매칭과 공존). **컴파일 인물 이미지 생성은 AI 서버 구현 완료**(KNK-414)이고, 백엔드의 base64 수신·S3 업로드·`story_characters` URL 저장은 KNK-966으로 남아 있습니다. **채팅 인물 이미지 변환은 AI 서버 브랜치에서 구현 완료**(KNK-982) — 대사 위치별 `character_image`, URL 저장 마커, `characterImages[]`, 다음 LLM 입력의 마커 제거를 포함합니다. 백엔드는 인물-URL 매핑 전달, 이벤트 중계, 마커 본문 저장, 상세 조회 목록 복원, 재생성 교체, 공유 응답 제외가 남아 있고 프론트엔드는 스트리밍·완료·상세 화면 렌더가 남아 있습니다. 배경 후보·`completed.images[]` 트랙은 별도 미구현입니다. **썸네일을 AI 생성으로 바꾸는 전환은 `Phase 2 · 계획`** — AI 서버 KNK-1047에서 컴파일 응답 `thumbnail_image` 구현 완료(manyak-ai dev 병합), 백엔드 수신·저장·표시는 미착수([§4-3-9](#4-3-api-계약) "AI 썸네일 전환") | `Phase 2 · 구현`(AI 컴파일·채팅 변환) + `Phase 2 · 계획`(인물 이미지 백엔드·프론트 연결, AI 썸네일 전환) + `Phase 1 · 계획`(배경 트랙). 인물 이미지 백엔드 잔여: KNK-966과 KNK-982 서버 작업. 공통 후속: [`6-analytics.md`](6-analytics.md) `image_key` 재정렬, 프론트엔드 이미지 렌더·CDN 허용 호스트 |
 | B18 | 비인증 쓰기 남용·rate limit 부재 | 이프·한도(402)의 통제를 받지 않는 쓰기 경로가 요청량 제한 없이 열려 있음: `POST /feedbacks`(Slack 알림 도배 — [§4-3-4](#4-3-api-계약)), `POST /stories/general`(다중 테이블 파생 행 무한 적재 — [§4-3-8](#4-3-api-계약)), `POST /chats`(임의 스토리에 채팅 행 생성), 스토리라인 평가(`PUT/DELETE …/rating` — 열거 가능 Long ID·무소유). 멱등 키가 없어 중복 제출도 그대로 적재되고, `description`·`storySettings` 등 본문 길이·요청 크기 상한도 미정의. SSE 턴 스트림도 동시 연결 상한이 없어 커넥션·스레드 고갈 표면 | Phase 1 수용 — 등록·호출량 급증을 관측으로 추적. rate limit(IP·디바이스 기준)·멱등 키·페이로드 상한·동시 스트림 상한은 후속 강화로 일괄 결정 |

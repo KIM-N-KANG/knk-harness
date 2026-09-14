@@ -9,7 +9,7 @@
 | 수정일 | 2026-09-14 |
 | 대상 | manyak-web |
 | 작성 목적 | 웹의 현재 요청·라우팅·인증·관측 구조를 설명합니다. |
-| 기준 코드 | [manyak-web](../../../manyak-web). 이번 비교 커밋·검증은 [추적 문서](../planning/client-tracking.md#문서-간소화와-검증) |
+| 기준 코드 | [manyak-web](../../../manyak-web) |
 
 ## 읽는 순서
 
@@ -25,7 +25,7 @@
 
 ---
 
-[공통 스펙](../spec/3-1-client-spec.md)과 [웹 스펙](../spec/3-2-web-spec.md)을 충족하는 현재 구조입니다. 역사적 선택은 [웹 ADR](../adr/1-2-web-adr.md), 구현·검증·배포와 목표 변경은 [추적](../planning/client-tracking.md)이 소유합니다.
+[공통 스펙](../spec/3-1-client-spec.md)과 [웹 스펙](../spec/3-2-web-spec.md)을 충족하는 현재 구조입니다. 역사적 선택은 [웹 ADR](../adr/1-2-web-adr.md)을 따릅니다.
 
 ## 1-1-1. 검증된 기술 환경과 요청 흐름
 
@@ -107,7 +107,7 @@ graph LR
 
 ### 라우트 등록과 호환
 
-URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라우팅-테이블), 실제 등록은 [src/app](../../../manyak-web/src/app)입니다. 일반 제작·수정의 승인 계약과 라우트 미제공은 [추적](../planning/client-tracking.md#계약-확인-항목)에서 구분합니다.
+URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라우팅-테이블), 실제 등록은 [src/app](../../../manyak-web/src/app)입니다. 일반 제작·수정 경로는 계약에 포함되어 있지만 현재 등록되어 있지 않습니다.
 
 `/create`는 `/studio`로, `/create/story`·`/studio/story`·`/stories/new`는 `/studio/story/simple`로 영구 리다이렉트합니다. 다이얼로그·신고 시트·이미지 뷰어는 별도 화면 라우트를 만들지 않습니다.
 
@@ -161,7 +161,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 ### 스토리 좋아요 버튼·집계 배지 (웹)
 
-렌더 호출은 비활성화되어 있고 `use-story-like.ts`·`story-like-count.tsx`·상수·아이콘·생성 API 훅은 남아 있습니다. 재노출 계약·중단한 테스트는 [추적 문서](../planning/client-tracking.md#스토리-좋아요-재노출-계약)를 따릅니다.
+렌더 호출은 비활성화되어 있고 `use-story-like.ts`·`story-like-count.tsx`·상수·아이콘·생성 API 훅은 남아 있습니다. 중단한 테스트는 [스토리 QA](../qa/stories.md#좋아요-재노출-검증)에서 확인합니다.
 
 ### 스토리 상세 CTA 배경 연결 (웹)
 
@@ -310,4 +310,4 @@ provider별 적용은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우�
 
 ### Definition of Done
 
-변경 범위에 따른 필수 명령은 [웹 AGENTS](../../../manyak-web/AGENTS.md), 수동·실기기 검수는 QA, 실행 환경·결과·릴리스 근거는 [추적 문서](../planning/client-tracking.md)가 소유합니다. 문서 편집과 제품 실행 검증을 구분합니다.
+변경 범위에 따른 필수 명령은 [웹 AGENTS](../../../manyak-web/AGENTS.md), 수동·실기기 검수는 QA, 실행 환경·결과·릴리스 근거는 해당 계획·PR에 남깁니다. 문서 편집과 제품 실행 검증을 구분합니다.

@@ -10,7 +10,7 @@
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 스토리 목록·제작·상세의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 홈 오리지널 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003) |
-| 기준 코드 | [비교 커밋·확인 범위](../planning/client-tracking.md#문서-간소화와-검증). 실행 결과·릴리스 포함 여부는 별도 기록 |
+| 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인) |
 
@@ -111,14 +111,14 @@
 
 ### 좋아요 재노출 검증
 
-**현재 skip**: STORY-DETAIL-34~39. [재노출 계약](../planning/client-tracking.md#스토리-좋아요-재노출-계약)이 적용될 때 다시 실행합니다. 현재는 버튼·수 배지의 비노출을 확인합니다.
+**현재 skip**: STORY-DETAIL-34~39. 좋아요 UI를 다시 제공할 때 아래 케이스를 검토하고 실행합니다. 현재는 버튼·수 배지의 비노출을 확인합니다.
 
 | ID | 우선 | 사전 조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| STORY-DETAIL-34 | P0 | 회원, 다른 제작자 스토리 | 좋아요 등록 → 목록 복귀 → 상세 재진입 → 취소 | POST·DELETE 각 1회, 204 후 하트 상태·수 갱신, 목록 수 동기화 | skip e2e `stories/story-like` | 추적 문서 재노출 계약 |
+| STORY-DETAIL-34 | P0 | 회원, 다른 제작자 스토리 | 좋아요 등록 → 목록 복귀 → 상세 재진입 → 취소 | POST·DELETE 각 1회, 204 후 하트 상태·수 갱신, 목록 수 동기화 | skip e2e `stories/story-like` | KNK-1260 · 좋아요 UI 재노출 시 검증 |
 | STORY-DETAIL-35 | P0 | 회원, 등록·취소 요청 지연 후 500 | 좋아요 탭·재탭 시도 | 진행 중 비활성, 중복 요청 없음, 실패 토스트·기존 상태와 수 유지 | skip e2e `stories/story-like` | 동상 |
 | STORY-DETAIL-36 | P0 | 내가 만든 스토리(회원 isOwner / 게스트 로컬 ID) | 상세 진입 | 좋아요 버튼 비노출, 좋아요 수 배지는 표시 | skip e2e `stories/story-like` | 동상 |
-| STORY-DETAIL-37 | P0 | 게스트, 내가 만들지 않은 스토리 | 좋아요 탭 | API 미호출, 재노출 계약의 문구로 로그인 바텀 시트 표시. 카카오·Google 버튼 제공, 닫기·재열기 후 상세 유지. 로그인 요청의 상세 복귀 경로 보존, 진행 중 버튼·시트 해제 잠금, 실패 후 재시도 가능 | skip e2e `stories/story-like`·`visual/stories-visual` | 동상 |
+| STORY-DETAIL-37 | P0 | 게스트, 내가 만들지 않은 스토리 | 좋아요 탭 | API 미호출, 재노출 시 승인된 문구로 로그인 바텀 시트 표시. 카카오·Google 버튼 제공, 닫기·재열기 후 상세 유지. 로그인 요청의 상세 복귀 경로 보존, 진행 중 버튼·시트 해제 잠금, 실패 후 재시도 가능 | skip e2e `stories/story-like`·`visual/stories-visual` | 동상 |
 | STORY-DETAIL-38 | P1 | 좋아요 수 0·누락 또는 1,000 이상 | 목록·상세 확인 | 누락은 0, 천 단위 콤마, 턴 수 왼쪽에 같은 크기·질감으로 배치 | skip e2e `stories/story-like` | 동상 |
 | STORY-DETAIL-39 | P1 | 미선택·선택 상태, 라이트·다크 테마 | 하단 CTA 확인 | 정본의 아이콘·색상·48px 크기·16px 간격과 배지 아웃라인 하트 유지 | skip e2e `stories/story-like`(크기·간격), `visual/stories-visual`(정적 상태) | 동상 |
 ### 상세 푸터 검증(실행 대상)
@@ -261,7 +261,7 @@
 | -------------- | --- | --------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- |
 | STORY-LIMIT-01 | P0  | 게스트, 스토리 생성 한도(1) 도달              | 제작 탭 FAB 탭                                       | 이동 없이 모달 바텀 시트 표시. 제목 "게스트 체험 한도를 모두 사용했어요" 한 줄 + 기존 설명. 설명 아래 32px에 "카카오로 시작하기"·"Google로 시작하기" 버튼을 8px 간격으로 배치하고 Google 버튼 아래 16px에 로그인 약관 고지. 닫기(X) 없이 바깥 탭·Escape로 닫힘 | ✅ e2e `stories/story-guest-limit` · visual `chats-visual` | US-10-5, §3-1-4 402, 구현(`create-story-fab`), KNK-1045 |
 | STORY-LIMIT-02 | P1  | 같은 상태의 게스트                            | 빈 상태 CTA·딥링크로 `/studio/story/simple` 직접 진입 | 진입 직후 백스톱으로 같은 로그인 바텀 시트 표시. 닫으면 재노출 없이 퍼널 조작 가능(최종 차단은 서버 402)                                                                 | ✅ e2e `stories/story-create-limit`                                    | 구현(`use-story-create-funnel` 백스톱)            |
-| STORY-LIMIT-03 | P0 | 게스트, 스토리라인 생성 카운터 5 도달 | "스토리라인 만들기"/"다시 만들기" 탭 | 요청 없이 로그인 바텀 시트. 키워드 단계에 머문다. 인라인 한도 문구는 이 경로에 표시되지 않는다(생성 요청이 없어 에러 상태가 아님) — 서버 402 경로(STORY-LIMIT-04) 전용 | ✅ e2e `stories/story-create-limit` | §3-1-4 402, [한도 피드백 확인](../planning/client-tracking.md#qa-확인-항목) |
+| STORY-LIMIT-03 | P0 | 게스트, 스토리라인 생성 카운터 5 도달 | "스토리라인 만들기"/"다시 만들기" 탭 | 요청 없이 로그인 바텀 시트. 키워드 단계에 머문다. 인라인 한도 문구는 이 경로에 표시되지 않는다(생성 요청이 없어 에러 상태가 아님) — 서버 402 경로(STORY-LIMIT-04) 전용 | ✅ e2e `stories/story-create-limit` | §3-1-4 402 |
 | STORY-LIMIT-04 | P0  | 게스트, 서버 판정 한도 초과(로컬 카운터 미달) | 생성·재생성 요청(서버 402 `GUEST_TRIAL_LIMIT_EXCEEDED`) | 로그인 바텀 시트 + 같은 인라인 한도 문구. 키워드 선택 상태 유지                                                                                                    | ✅ e2e `stories/story-create-limit`                                    | US-10-5, §3-1-4 402                                 |
 | STORY-LIMIT-05 | P0  | 게스트, 완성 요청이 402                       | "스토리 완성하기" 탭                               | 제작 탭에 "게스트 체험 한도를 모두 사용했어요" 토스트(바텀 시트 없음), 완성 중 카드가 초안 카드로 전환. "이어서 만들기" 탭 시 추가 정보 단계 복귀, 입력·선택 유지| ✅ e2e `stories/story-create-limit`                                    | US-10-5, §3-1-4 완성 402                            |
 | STORY-LIMIT-06 | P0  | 회원, 완성 API의 이프 부족 402 응답을 준비                          | "스토리 완성하기" 탭(서버 402 `INSUFFICIENT_CREDIT`) | 제작 탭에 "이프가 부족해요" 오류 토스트만 표시(다이얼로그 없음), 완성 중 카드가 초안 카드로 전환. "이어서 만들기" 탭 시 추가 정보 단계 복귀·입력 유지| ✅ e2e `stories/story-create-limit`                                    | US-10-4, §3-1-4 완성 402, KNK-1045                  |
@@ -271,7 +271,7 @@
 
 ## ⚠️ 확인 필요
 
-미결·구현 차이와 과거 상태의 근거는 [클라이언트 추적](../planning/client-tracking.md#qa-확인-항목)에서 관리합니다. 이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
+이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
 
 통합한 ID(번호 재사용 금지):
 

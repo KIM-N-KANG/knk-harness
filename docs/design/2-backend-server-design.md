@@ -13,7 +13,7 @@
 
 ## 읽는 순서
 
-- Spec에서 계약을 확인한 뒤 책임 경계와 담당 기능을 읽습니다. 당시 선택 이유는 ADR, 남은 분리·검증은 [재구성 계획](../planning/product-document-reorganization.md)을 따릅니다.
+- Spec에서 계약을 확인한 뒤 책임 경계와 담당 기능을 읽습니다. 당시 선택 이유는 ADR을 따릅니다.
 
 ## 목차
 
@@ -97,7 +97,7 @@ graph LR
 
 ## 2-2. 저장소와 데이터 수명
 
-RDB 스키마는 서버의 [Flyway](../../../manyak-server/src/main/resources/db/migration), 컬럼 상세·ER 다이어그램은 [dbdoc](../../../manyak-server/dbdoc)이 정본입니다. 다음은 기존 문서에서 현재 구조로 기록한 항목입니다. 계획·혼재 항목의 원문은 [미결 저장 구조](../planning/product-document-reorganization.md#미결-저장-구조)에 보존했습니다.
+RDB 스키마는 서버의 [Flyway](../../../manyak-server/src/main/resources/db/migration), 컬럼 상세·ER 다이어그램은 [dbdoc](../../../manyak-server/dbdoc)이 정본입니다. 다음은 기존 문서에서 현재 구조로 기록한 항목입니다.
 
 | 그룹 | 테이블 | 역할 |
 | --- | --- | --- |
@@ -140,7 +140,7 @@ RDB 스키마는 서버의 [Flyway](../../../manyak-server/src/main/resources/db
 | 스토리 | `user_story_ending_reaches` | (V41) 사용자+스토리 엔딩 도달 집계. `user_id` · `story_id` · `ending_id` · `created_at`, 3필드 유니크 — 회원 도달 기록·이관 백필([§4-3-10](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 채팅 | `story_messages.reached_ending_id` | (V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
 | 이미지 | `image_presets` | (V45 스키마·V46 시드) 팀 이미지 카탈로그(시드 매니페스트를 Flyway 마이그레이션으로 등재 — 런타임 매칭 정본, 원본 파일명은 매니페스트 생성 도구의 입력일 뿐, [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)). `image_key`(unique·불변·`[a-z0-9_]{1,64}` — 서빙 URL 구성은 백엔드) · `type`(`THUMBNAIL`·`BACKGROUND`·`CHARACTER`) · 의미 태그(장르[복수 가능 — **값은 GENRE 마스터 태그명과 정확 일치**]·분위기/성격·장소/성별·소품 — 타입별 축 상이) · `deactivated_at`(nullable timestamptz — 비활성 시각, NULL이면 활성. 재활성화는 NULL 복귀. 활성 여부는 이 컬럼의 파생) · 등록 시각(재구성 컷오프용). **행 삭제 금지**(운영 제외는 비활성 시각 기록으로만 — 신규 매칭·새 턴 전달·`images[]` 구성에서 제외, 지난 턴 재구성은 확정 시각과의 비교로 판정, [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약) 비활성 적용 범위). 삭제 금지(사라짐 방지)와 등록·비활성 시각 컷오프(나타남 방지·`completed` 대칭)가 지난 턴 `images[]` 재구성의 불변 전제 |
-| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 레거시 컬럼 제거 시점은 미결 저장 구조에서 확인합니다. |
+| 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. |
 | 이미지 | `story_character_images` | (V76, KNK-1126) 인물별 이미지 여러 장. `public_id`(UUID) · `character_id`(FK story_characters, `ON DELETE CASCADE`) · `image_name`(varchar 120, `{인물이름}_{접미}`) · `image_url`(TEXT, 서빙 절대 URL) · `moderation_status`(varchar 20 not null default `APPROVED`, CHECK 3종 — 노출 게이트) · `sort_order` · `created_at`. `(character_id, image_name)` UNIQUE. V76이 기존 `story_characters.image_url`을 `{이름}_기본` 행으로 백필. 채팅 요청 `character_images[]`와 상세 `characters[].imageUrl`의 소스([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약) 스토리 이미지 업로드) |
 | 채팅 | `story_message_versions` | 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 관측 | `ai_call_logs`(+`_prompt_versions`) | AI 호출 이력([§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측)) |
@@ -275,4 +275,4 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 - 외부 HTTP·SSE 실패 의미는 [Spec §4-6](../spec/4-backend-server-spec.md#4-6-오류와-예외-처리)을 따릅니다. 원장 복구는 §2-3의 대사, 검색 파생 사본 복구는 §2-2의 재색인 경로가 담당합니다.
 - API·권한 검수는 [Spec §4-8](../spec/4-backend-server-spec.md#4-8-검수-체크리스트)의 기존 검수 수단을 사용하고 기동·설정·롤백은 [배포 Design](4-deployment.md)을 확인합니다.
-- 혼합 단가의 개수 대사는 미보상 가능성이 남아 있습니다. 행 단위 정확 대사를 구현된 것으로 취급하지 않습니다. 저장소 표의 계획·구현 충돌도 재구성 계획에서 별도로 확인합니다.
+- 혼합 단가의 개수 대사는 미보상 가능성이 남아 있습니다. 행 단위 정확 대사를 구현된 것으로 취급하지 않습니다.

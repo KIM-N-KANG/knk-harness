@@ -10,7 +10,7 @@
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
-| 기준 코드 | [비교 커밋·확인 범위](../planning/client-tracking.md#문서-간소화와-검증). 실행 결과·릴리스 포함 여부는 별도 기록 |
+| 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
@@ -96,7 +96,7 @@
 | MY-CREDITS-09 | P0 | 첫 조회가 5xx·네트워크 오류 | 내역 탭 진입 | 목록 자리에 "이프 내역을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시하고, 조회 중에는 버튼이 "다시 시도 중..." 비활성 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 상태 |
 | MY-CREDITS-10 | P0 | `nextCursor`가 있는 목록 | 목록 끝까지 스크롤 | 받은 `nextCursor`를 그대로 실어 다음 페이지를 요청하고 아래에 이어 붙임. "더 보기" 버튼 없음 | ✅ e2e `my/credits` | FE-SCREEN-008 페이징, [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹) |
 | MY-CREDITS-11 | P1 | 다음 페이지 조회가 실패 | 목록 끝까지 스크롤 | 이미 그린 목록을 지우지 않고 목록 아래 재시도 버튼만 표시하며 자동 재요청을 멈춤. 탭하면 다음 페이지를 이어 붙임 | ✅ e2e `my/credits`(실제 마지막 내역 로딩 후 스크롤) | FE-SCREEN-008 화면 상태, [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹), KNK-1207 |
-| MY-CREDITS-12 | P2 | 서버가 라벨 없는 `reason`을 내려줌(구매 사유의 미매핑은 추적 문서에서 별도 확인) | 항목 확인 | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시 | 수동 | FE-SCREEN-008 항목 구성(라벨은 클라이언트 소유) |
+| MY-CREDITS-12 | P2 | 서버가 라벨 없는 `reason`을 내려줌 | 항목 확인 | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시 | 수동 | FE-SCREEN-008 항목 구성(라벨은 클라이언트 소유) |
 | MY-CREDITS-13 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 | MY-CREDITS-14 | P1 | 내역 탭을 한 번 보고 `/my`로 돌아온 상태 | "충전" → 내역 탭으로 다시 진입 | 남겨 둔 목록을 그대로 쓰지 않고 첫 페이지부터 다시 조회(스크롤 위치도 목록 맨 위). 그사이 발생한 내역이 바로 보임. 탭을 무료 충전으로 옮겼다 돌아와도 같음(비활성 탭은 언마운트) | ✅ e2e `my/credits` | [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹), KNK-1083 |
 | MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "무료 충전"·"내역" 두 탭을 밑줄 탭으로 표시하고 진입 시 무료 충전이 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 골격, KNK-1092 |
@@ -190,7 +190,7 @@
 
 ## ⚠️ 확인 필요
 
-미결·구현 차이와 과거 상태의 근거는 [클라이언트 추적](../planning/client-tracking.md#qa-확인-항목)에서 관리합니다. 이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
+이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
 
 통합한 ID(번호 재사용 금지):
 

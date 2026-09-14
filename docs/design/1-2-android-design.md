@@ -9,8 +9,7 @@
 | 수정일 | 2026-09-14 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
-| 기준 코드 | [manyak-android](../../../manyak-android). 비교 커밋·확인 범위는 [추적 문서](../planning/client-tracking.md#문서-간소화와-검증) |
-| 이관 기록 | [제품 문서 재구성 계획](../planning/product-document-reorganization.md) |
+| 기준 코드 | [manyak-android](../../../manyak-android) |
 
 ## 읽는 순서
 
@@ -30,7 +29,7 @@
 
 ---
 
-[공통 스펙](../spec/3-1-client-spec.md)과 [Android 스펙](../spec/3-3-android-spec.md)을 구현하는 구조입니다. 선택 이유는 [Android ADR](../adr/1-3-android-adr.md), 적용 범위·코드와의 차이·검증 근거는 [클라이언트 추적](../planning/client-tracking.md)이 소유합니다.
+[공통 스펙](../spec/3-1-client-spec.md)과 [Android 스펙](../spec/3-3-android-spec.md)을 구현하는 구조입니다. 선택 이유는 [Android ADR](../adr/1-3-android-adr.md)을 따릅니다.
 
 ## 1-2-1. 기술 환경과 요청 흐름
 
@@ -212,7 +211,7 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ### 제작 카드와 다중 완성 진행
 
-Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 다른 계정의 새 편집은 단일 편집 슬롯을 덮어쓸 수 있고, 탈퇴 뒤 남은 행의 처리는 [추적](../planning/client-tracking.md)에서 구분합니다.
+Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 다른 계정의 새 편집은 단일 편집 슬롯을 덮어쓸 수 있고, 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
 
 완성 요청 삽입과 해당 편집 초안 삭제는 한 DAO 트랜잭션입니다. 저장 실패 시 전송하지 않습니다. `StoryCompletionExecutor`는 앱 수명, requestId별 single-flight, `SessionGate.withAuthWork/commit`으로 실행하며 서로 다른 요청을 전역 직렬화하지 않습니다.
 
@@ -242,13 +241,13 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 - Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 현재 `optimization.enable = false`라 R8 mapping 파일을 생성하지 않습니다. 활성화·매핑 검증 조건은 [배포 Design](4-deployment.md#4-11-미정주의-항목)을 따릅니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
 - 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계 조건은 분석 Spec을 따릅니다. reducer에 관측 호출을 넣지 않습니다.
 - breadcrumb는 Amplitude 어댑터에서 연결해 화면에서 중복 발화하지 않습니다. 지속 Crashlytics 키는 `screen_name`을 사용하고 개별 식별자는 breadcrumb로 연결합니다.
-- non-fatal 적용 범위와 제작 분석 전환의 차이는 추적에서 확인합니다. ANR은 API 30+ Crashlytics와 그 이전 Android vitals의 관측 범위를 구분합니다.
+- ANR은 API 30+ Crashlytics와 그 이전 Android vitals의 관측 범위를 구분합니다.
 
 화면별 `screen_name`과 필수 프로퍼티는 [분석 Spec](../spec/6-analytics.md)과 [AnalyticsEvent](../../../manyak-android/analytics/src/main/java/app/manyak/analytics/entity/AnalyticsEvent.kt)에서 확인합니다.
 
 ## 1-2-9. 검증 방법
 
-변경 영역에 맞춰 구현 저장소의 `checkModuleArchitecture`, 루트 `check`, 기존 단위·기기·CI 검증을 사용합니다. 사용자 수용 기준은 [Android Spec](../spec/3-3-android-spec.md), 앱 검증 절차는 [Android AGENTS](../../../manyak-android/AGENTS.md), 실행 결과는 [클라이언트 추적](../planning/client-tracking.md)에 남깁니다.
+변경 영역에 맞춰 구현 저장소의 `checkModuleArchitecture`, 루트 `check`, 기존 단위·기기·CI 검증을 사용합니다. 사용자 수용 기준은 [Android Spec](../spec/3-3-android-spec.md), 앱 검증 절차는 [Android AGENTS](../../../manyak-android/AGENTS.md), 실행 결과는 해당 기능 계획·PR에 남깁니다.
 
 | 경계 | 필수 확인 |
 | --- | --- |

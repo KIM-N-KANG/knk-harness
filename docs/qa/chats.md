@@ -10,7 +10,7 @@
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 채팅 목록·채팅 화면의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]` |
-| 기준 코드 | [비교 커밋·확인 범위](../planning/client-tracking.md#문서-간소화와-검증). 실행 결과·릴리스 포함 여부는 별도 기록 |
+| 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
 
@@ -270,4 +270,4 @@
 
 ## ⚠️ 확인 필요
 
-미결·구현 차이와 과거 상태의 근거는 [클라이언트 추적](../planning/client-tracking.md#qa-확인-항목)에서 관리합니다. 이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
+이 문서의 자동화 표시는 이번 실행·배포 완료를 뜻하지 않습니다.
