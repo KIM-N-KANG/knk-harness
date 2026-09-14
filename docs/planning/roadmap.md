@@ -178,7 +178,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 
 > 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-ai-server-spec.md §5-3-2`](../spec/5-ai-server-spec.md)·[`4-backend-server-spec.md §4-3-2`](../spec/4-backend-server-spec.md)·[`3-1-client-spec.md §3-1-4`](../spec/3-1-client-spec.md)가 정본입니다.
 
-> 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend-server-spec.md §4-7`](../spec/4-backend-server-spec.md)·[`4-deployment.md §4-6`](../design/4-deployment.md)이 정본입니다.
+> 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend-server-spec.md §4-7`](../spec/4-backend-server-spec.md)·[`4-deployment.md §4-6`](../design/4-deployment.md#4-6-런타임-설정과-시크릿)이 정본입니다.
 
 > 스토리 좋아요와 스토리라인 평가(GOOD/BAD)는 별개입니다. 스토리 싫어요는 용어집의 미도입 계약과 이 로드맵의 과거 계획이 충돌하므로 [클라이언트 추적](client-tracking.md#계약-확인-항목)에서 도입 여부를 확인합니다. 이 문구로 신규 도입을 확정하지 않습니다.
 
