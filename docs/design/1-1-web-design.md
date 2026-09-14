@@ -306,7 +306,7 @@ provider별 적용은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우�
 
 ### e2e ↔ US 매핑
 
-[QA 인덱스](../qa/README.md)의 도메인별 케이스·자동화 열과 [e2e](../../../manyak-web/e2e)의 실제 테스트를 함께 확인합니다. 실행되지 않는 skip과 미작성 계약은 통과로 처리하지 않습니다.
+[QA 인덱스](../qa/AGENTS.md)의 도메인별 케이스·자동화 열과 [e2e](../../../manyak-web/e2e)의 실제 테스트를 함께 확인합니다. 실행되지 않는 skip과 미작성 계약은 통과로 처리하지 않습니다.
 
 ### Definition of Done
 
