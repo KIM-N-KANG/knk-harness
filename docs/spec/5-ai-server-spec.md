@@ -4,13 +4,13 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.30 |
+| 버전 | v2.31 |
 | 작성일 | 원문 미기재 |
 | 수정일 | 2026-09-12 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
 | 기준 코드 | manyak-ai `dev` 브랜치 `69dea367a1bb`. 자식 이미지 구현을 포함하며 운영 배포 여부와 구분합니다. |
-| 연구 기준 | manyak-autoresearch `7a6e7d5` 및 2026-09-07 작업본. 이미지 평가 실행기·관련 문서는 미커밋 로컬 구현입니다. |
+| 연구 기준 | 채팅 평가는 manyak-autoresearch `fe36a94` 및 2026-09-12 확인한 chat-product 로컬 작업본. 이미지 평가의 기존 근거는 `7a6e7d5` 및 2026-09-07 작업본입니다. |
 | 문서 경계 | API·품질 기준은 이 문서, 현재 호출·설정 구조는 [AI Design](../design/3-ai-server-design.md), 구현 코드는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
 
@@ -706,7 +706,7 @@ API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포
 
 ## 5-8. 평가 시스템
 
-[manyak-autoresearch](../../../manyak-autoresearch/README.md)는 평가 프롬프트를 검증·개선하는 연구 레포입니다. 평가 호출은 사용자 요청 경로 밖에서 실행합니다. 평가기는 평가 프롬프트·평가 모델·점수 집계 규칙을 합친 것입니다.
+[manyak-autoresearch](../../../manyak-autoresearch/README.md)는 평가 프롬프트를 검증·개선하고, 고정 평가기로 제품 프롬프트를 개선하는 연구 레포입니다. 평가 호출은 사용자 요청 경로 밖에서 실행합니다. 평가기는 평가 프롬프트·평가 모델·점수 집계 규칙을 합친 것입니다.
 
 ### 평가 대상 구분
 
@@ -718,22 +718,24 @@ API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포
 
 | 항목 | 내용 |
 | --- | --- |
-| 입력 | 프롤로그·대화 전체·제공된 태그와 인물 정보 |
+| 입력 | sample_id·프롤로그·대화 전체. 태그·인물 메타데이터는 원천에 있어도 제외 |
 | 출력 | 대화별 0~100점과 판단 근거 |
 | 모델·실행 | Codex CLI로 `gpt-5.6-sol` 호출, 추론 `medium`, 기본 3회 반복 |
 | 비교 방식 | 각 대화를 따로 채점한 뒤, 쌍별 점수 순서를 사람의 선택과 비교 |
 | 현재 상태 | 실행기 연결·개발셋 실측 있음. 독립 시험셋 검증은 미실시 |
 
-사람 선택은 모델에 주지 않고 점수가 나온 뒤 코드로 비교합니다.
+사람 선택은 모델에 주지 않고 점수가 나온 뒤 코드로 비교합니다. 태그·인물 정보를 포함했던 과거 입력의 점수와 직접 비교하지 않고, 현재 입력 계약으로 기준 점수를 확보합니다.
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
 flowchart LR
     subgraph I["채팅 채점 입력"]
         direction LR
-        I_item1["<div style='width:240px;text-align:center;'><span>프롤로그·대화 전체</span></div>"]
-        I_item2["<div style='width:240px;text-align:center;'><span>제공된 태그·인물 정보</span></div>"]
+        I_item1["<div style='width:240px;text-align:center;'><span>sample_id · 샘플 식별자</span></div>"]
+        I_item2["<div style='width:240px;text-align:center;'><span>prologue · 프롤로그</span></div>"]
+        I_item3["<div style='width:240px;text-align:center;'><span>turns · 대화 전체</span></div>"]
     end
+    style I fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
     P["채팅 채점 프롬프트<br/>chat-judge/prompt.md"]
     M["모델·반복 조건<br/>gpt-5.6-sol · medium<br/>기본 3회 반복"]
     subgraph O["채팅 채점 출력"]
@@ -754,7 +756,197 @@ flowchart LR
 
 상세: [채점 프롬프트](../../../manyak-autoresearch/chat-judge/prompt.md), [실행기](../../../manyak-autoresearch/chat-judge/eval.py), [사람 평가 규칙](../../../manyak-autoresearch/chat-judge/human-evaluation-guide.md), [개선·반복·예외 규칙](../../../manyak-autoresearch/chat-judge/program.md).
 
-### 이미지 평가 프롬프트의 평가
+### 제품 채팅 프롬프트의 평가
+
+`chat-product`는 사용자가 채팅을 더 이어가고 싶도록 제품 프롬프트를 개선하는 후보를 찾습니다. 고정된 실제 대화에서 마지막 AI 답변만 새로 생성하고, 고정 평가기가 완성된 전체 대화에 매긴 평균 점수를 높이는 것이 오프라인 실험의 목표입니다. 점수 상승을 실제 채팅 턴 수 증가나 제품 전체의 성능 향상으로 해석하지 않습니다.
+
+**실험 목적과 고정 조건**
+
+| 항목 | 규칙 |
+| --- | --- |
+| 변경 대상 | `train.py`의 `PRODUCT_PROMPTS`에 담긴 제품 프롬프트. SAFETY 규칙은 고정 |
+| 고정 대상 | 선정 입력, 평가 프롬프트·모델·입력 계약·점수 계산, 생성 모델·공급자·생성 설정·실행 코드 |
+| 평가기 | chat-judge v0.2의 고정 복사본, `gpt-5.6-sol`, 추론 강도 `medium` |
+| 지휘 AI | 실험을 시작한 Codex 또는 Claude Code 세션. 제품 문서·실제 대화·평가 결과를 읽고 가설과 수정안을 만듦 |
+| 실행 시작 | 사용자가 목표·대상 데이터·표본 구성을 정하고 실험 시작을 지시. 호출 규모·재시도·시간·비용 조건을 실행 전에 확정 |
+| 제품 반영 | 최선 후보를 고르는 것까지가 범위. 자동 배포하거나 서비스 A/B 테스트를 시작하지 않음 |
+
+생성 모델과 공급자별 설정은 실험마다 정하고 `baseline/manifest.json`과 실험별 `experiment.json`에 기록합니다. 프롬프트 비교 중에는 모델을 바꾸지 않습니다. 평가 프롬프트를 개선하는 실험의 사람 선택 일치율과 제품 대화의 품질 점수는 서로 다른 지표입니다.
+
+**데이터 선정과 전처리**
+
+공통 원천은 연구 레포의 `dataset/chat-dataset/collected/`에 보존합니다. 수집은 원천 저장까지, 제품 실험에 맞는 전처리는 `chat-product/dataset/pre-processing-code/`가 담당합니다. 1턴은 사용자 메시지와 AI 답변 한 쌍입니다.
+
+현재 기준 구성은 `20260910-2to5-40-v1`이며, 수집 시점에 정확히 2·3·4·5턴인 비레거시 채팅방을 각각 10개씩 선정한 40개입니다. 대화와 응답 직전 생성 입력이 완전한 후보를 턴 수별로 나누고, 각 그룹의 채팅방 ID를 정렬한 뒤 그룹마다 새 `random.Random(42)`로 중복 없이 추출합니다. 시드는 데이터 추출용이며 생성 모델의 시드가 아닙니다. 긴 대화를 잘라 짧은 그룹에 넣지 않습니다.
+
+선정 목록·제외 사유·수집 기준 시각·원천과 입력 해시·전처리 버전을 보존하고, 실험 도중 다시 추출하거나 신규 데이터를 섞지 않습니다. 2~5턴에 같은 비중을 주는 구성이며 서비스 전체 분포를 재현하지 않습니다. 수집 시점의 마지막 완성 턴을 사용하므로 실제 이탈이나 5일간 미사용을 뜻하지 않습니다.
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph S["공통 원천 · collected/"]
+        direction LR
+        S1["<div style='width:240px;text-align:center;'><span>전체 대화</span></div>"]
+        S2["<div style='width:240px;text-align:center;'><span>응답 직전 생성 입력</span></div>"]
+        S3["<div style='width:240px;text-align:center;'><span>채팅방 식별자·수집 정보</span></div>"]
+    end
+    style S fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
+    S --> P["누락·불일치 제외<br/>마지막 AI 답변 제거"]
+    P --> R["raw/ · 전처리 후보"]
+    R --> G["2·3·4·5턴별 무작위 10개<br/>그룹별 추출 seed=42"]
+    subgraph F["선정 출력 · test/데이터셋 이름/"]
+        direction LR
+        F1["<div style='width:240px;text-align:center;'><span>고정 생성 입력 40개</span></div>"]
+        F2["<div style='width:240px;text-align:center;'><span>선정 목록·시드·해시·전처리 버전</span></div>"]
+    end
+    G --> F
+```
+
+`raw/`는 마지막 AI 답변을 제거한 전처리 후보이고, `test/<데이터셋 이름>/`는 선정된 고정 입력의 독립 복사본입니다. 이 폴더 구분은 학습용·최종 검증용 분할이 아닙니다. 같은 40개로 문제를 찾고 수정 결과를 평가합니다. 다른 표본 구성은 실행기 지원 범위를 확인한 뒤 별도 실행 조건으로 정합니다.
+
+**답변 생성과 평가 입력·출력**
+
+대조군과 실험군은 비교하는 두 실험 조건입니다. 프롬프트나 답변 자체를 뜻하지 않습니다.
+
+| 구분 | 정의 |
+| --- | --- |
+| 대조군 | 실험 시작 시 고정한 기존 제품 프롬프트를 사용하는 조건입니다. 수정 효과를 비교하는 기준입니다. |
+| 실험군 | 지휘 AI가 가설에 따라 수정한 제품 프롬프트를 사용하는 조건입니다. 사이클마다 수정안을 비교합니다. |
+
+| 대상 | 대조군 | 실험군 |
+| --- | --- | --- |
+| 생성에 쓰는 프롬프트 | 대조군 프롬프트 · 고정한 기존 제품 프롬프트 | 실험군 프롬프트 · 가설에 따라 수정한 제품 프롬프트 |
+| 새로 생성한 마지막 답변 | 대조군 답변 | 실험군 답변 |
+| 평가하는 전체 대화 | 공통 대화에 대조군 답변을 붙인 전체 N턴 | 공통 대화에 실험군 답변을 붙인 전체 N턴 |
+
+바꾸는 것은 제품 프롬프트이고, 평가하는 것은 생성 답변이 포함된 전체 대화입니다.
+
+두 군은 같은 대화 맥락·마지막 사용자 메시지·생성 모델·설정을 사용하며, 제품 프롬프트만 다릅니다. 대조군·실험군 구분은 실험 기록에만 남기고 평가 모델에는 전달하지 않습니다.
+
+대조군과 실험군 모두 원천의 마지막 답변을 대신할 답변을 새로 생성합니다. 대조군 답변도 원천의 마지막 답변을 그대로 쓰지 않습니다. 1~N−1턴 대화와 N번째 사용자 메시지, 응답 직전 설정은 동일합니다. 전체 history를 사용하고 summary는 빈 문자열이며, 실험용 요약·최근 턴 제한을 추가하지 않습니다. 생성기는 기준 제품 코드의 프롬프트 조립·모델 호출·출력 처리를 사용합니다. 이미지 생성, 선택지 생성, 사건 판정용 별도 호출은 이 실험에 포함하지 않습니다.
+
+현재 기준 구성은 입력별 생성 1회, 완성된 대화별 독립 채점 3회입니다. 대조군 답변 40개와 채점 120회는 처음 한 번 확보해 모든 사이클에서 재사용합니다. 실험군 답변은 사이클마다 40개를 만들고 120회 채점합니다.
+
+| 구분 | 내용 |
+| --- | --- |
+| 평가 입력 | `samples`에 대화 하나. `sample_id`, `prologue`, `turns`만 전달 |
+| 대화 필드 | `turns`의 각 항목은 `turn_number`, `user`, `assistant`. 마지막 생성 답변을 붙인 전체 N턴 |
+| 평가에서 제외 | 태그·인물 메타데이터, 대조군·실험군 구분, 생성 모델·프롬프트·가설, 다른 답변·점수. 원천에 있어도 전달하지 않음 |
+| 평가 세션 | 대화 하나·채점 한 번마다 새 세션. 지휘 AI의 세션과 분리 |
+| 평가 출력 | `results`에 결과 하나. `sample_id`, `score`(0~100 정수), `reason`, `evidence`(근거 턴 번호 객체 목록) |
+
+생성 단계에서는 같은 입력으로 대조군 답변과 실험군 답변을 각각 만들고, 기존 대화에 붙여 저장합니다.
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "rankSpacing": 36, "curve": "linear", "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph I["공통 생성 입력"]
+        direction LR
+        I1["<div style='width:240px;text-align:center;'><span>1~N−1턴 전체 대화</span></div>"]
+        I2["<div style='width:240px;text-align:center;'><span>N번째 사용자 메시지</span></div>"]
+        I3["<div style='width:240px;text-align:center;'><span>설정·사건 상태</span></div>"]
+        I4["<div style='width:240px;text-align:center;'><span>summary · 빈 문자열</span></div>"]
+    end
+    style I fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
+    subgraph P["제품 프롬프트 입력"]
+        direction LR
+        P1["<div style='width:240px;text-align:center;'><span>대조군 프롬프트</span></div>"]
+        P2["<div style='width:240px;text-align:center;'><span>실험군 프롬프트</span></div>"]
+    end
+    style P fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
+    G["train.py · 같은 채팅 모델<br/>각 조건의 프롬프트로 별도 호출"]
+    I --> G
+    P --> G
+    subgraph O["생성 출력"]
+        direction LR
+        O1["<div style='width:240px;text-align:center;'><span>대조군 답변 · N번째 AI 응답</span></div>"]
+        O2["<div style='width:240px;text-align:center;'><span>실험군 답변 · N번째 AI 응답</span></div>"]
+    end
+    style O fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
+    G --> O
+    O --> C["코드: 각 답변을 공통 대화에 결합<br/>조건별 전체 N턴 대화를 따로 저장"]
+```
+
+평가 단계에서는 어느 군의 답변인지 알리지 않고 전체 대화 하나를 전달합니다. 아래 호출을 대화마다 독립 세션에서 3회 반복하며, 결과 저장과 대조군·실험군 점수 비교는 모델 호출이 끝난 뒤 코드가 수행합니다.
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
+flowchart LR
+    subgraph I["평가 입력 · samples의 대화 하나"]
+        direction LR
+        I1["<div style='width:240px;text-align:center;'><span>sample_id · 익명 식별자</span></div>"]
+        I2["<div style='width:240px;text-align:center;'><span>prologue · 프롤로그</span></div>"]
+        I3["<div style='width:240px;text-align:center;'><span>turns · 전체 N턴<br/>turn_number · user · assistant</span></div>"]
+    end
+    style I fill:#eeeeee,stroke:none,stroke-width:0px,color:#222222
+    P["고정 평가 프롬프트<br/>chat-judge v0.2 복사본"]
+    M["평가 모델 · gpt-5.6-sol<br/>medium · 매 호출 새 세션"]
+    subgraph O["평가 출력 · results의 결과 하나"]
+        direction LR
+        O1["<div style='width:240px;text-align:center;'><span>sample_id · 입력 식별자</span></div>"]
+        O2["<div style='width:240px;text-align:center;'><span>score · 0~100 정수</span></div>"]
+        O3["<div style='width:240px;text-align:center;'><span>reason · 판단 이유</span></div>"]
+        O4["<div style='width:240px;text-align:center;'><span>evidence · 근거 턴 번호 객체 목록</span></div>"]
+    end
+    I --> P
+    P --> M
+    M --> O
+    O --> S["코드: 대화별 3회 결과 저장<br/>각 대화의 평균 점수 계산"]
+    S --> C["코드: 조건별 평가 결과 연결<br/>40개 평균·직전 최선과 차이 비교"]
+```
+
+**가설·수정·판단·종료**
+
+`train.py`는 현재 넣어 둔 프롬프트로 생성·저장만 합니다. `eval.py`와 비교 코드는 채점·집계·판단 기록을 담당합니다. 지휘 AI가 실제 대화와 현재 최선의 평가 결과에서 문제를 찾고, 반대 사례까지 확인해 가설을 세웁니다. 마지막 답변에서 바꿀 수 있는 행동을 대상으로 한 번에 작은 변경 하나를 선택하고, 프롬프트 수정·실행 지시·Git 유지와 복원을 맡습니다. 평가 이유는 가설의 단서이며 실제 사용자 행동의 원인으로 단정하지 않습니다.
+
+```mermaid
+flowchart LR
+    A["대조군 답변 생성·전체 대화 평가<br/>저장 결과 고정"] --> H["실제 대화·현재 최선 결과 분석<br/>관찰·가설·수정·예상 효과·위험 기록"]
+    H --> P["제품 프롬프트 수정"]
+    P --> E["고정 입력 전체 생성·평가"]
+    E --> V{"필수 결과 완료?"}
+    V -->|아니오| F["실패 기록·직전 최선 복원"]
+    V -->|예| C{"직전 최선보다<br/>전체 평균 상승?"}
+    C -->|예| K["후보 유지"]
+    C -->|아니오| D["후보 폐기·직전 최선 복원"]
+    F --> S{"3사이클 완료<br/>또는 실행 한도 도달?"}
+    K --> S
+    D --> S
+    S -->|아니오| H
+    S -->|예| R["최선 후보 또는 개선 후보 없음<br/>종료 보고 · 자동 제품 반영 없음"]
+```
+
+채팅마다 채점 3회의 평균을 낸 뒤 40개 평균을 비교합니다. 직전 최선보다 높으면 유지하고, 같거나 낮으면 복원합니다. 최초 대조군 대비 차이도 별도로 남깁니다. 신뢰구간이나 ‘3회 모두 상승’을 추가 통과 조건으로 사용하지 않습니다.
+
+한 사이클은 후보 하나의 생성·평가·비교·기록과 유지 또는 복원까지입니다. 대조군 준비는 제외하고 후보 3사이클 후 종료하며, 실패 후보도 한 사이클로 셉니다. 승인된 재시도 안에서 필수 결과를 확보하지 못하면 실패로 남기고 성공 샘플만 골라 평균을 내지 않습니다. 시간·호출 한도, 사용자 중단, 고정 조건의 결함으로도 종료합니다. 대조군 준비 실패 시 후보 탐색을 시작하지 않습니다. 구체적인 실행·복구 명령과 제한값은 [실행 지침](../../../manyak-autoresearch/chat-product/program.md)을 따릅니다.
+
+**저장과 보고**
+
+모든 경로는 연구 레포의 `chat-product/` 아래에 둡니다. 실험마다 새 ID를 사용하며 이전 결과를 덮어쓰지 않습니다.
+
+| 경로 | 내용 |
+| --- | --- |
+| `runs/<실험 ID>/experiment.json` | 고정 설정·입력 해시·실행 한도·호출 기록 |
+| `runs/<실험 ID>/baseline/` | 기준 프롬프트, 생성 답변 40개, 대화별 채점 3회와 평균 |
+| `runs/<실험 ID>/cycle-NNN/` | 해당 후보의 프롬프트·생성 답변 40개·평가 결과, 기준과 직전 최선 대비 비교 |
+| `runs/<실험 ID>/results.tsv` | 모든 사이클의 가설 요약·점수·유지/폐기/실패 |
+| `reports/<실험 ID>/` | 결과를 설명하는 Markdown·HTML 보고서와 그림. 실행 상세와 분리 |
+
+기준과 후보의 프롬프트는 `prompts.json`, 답변은 `generation.json`, 평가는 `evaluation.json`에 저장합니다. 후보의 `comparison.json`은 기준·직전 최선의 저장 결과를 참조하며 대조군 평가를 복제하지 않습니다. 데이터셋·전처리 코드·실행 결과·보고서는 Git에서 제외합니다.
+
+보고서는 목적·고정 조건, 원천과 선정 데이터의 턴 수·장르·회원/비회원 분포, 사이클별 가설과 점수 그래프, 답변이 달라진 사례, 유지·폐기 이유, 종료 이유, 호출량·API 비용·미측정 항목, 한계를 설명합니다. 점수 변화의 원인에 대한 추정은 관찰 사실과 구분하며, 개별 실험의 점수와 결과는 하네스에 복제하지 않습니다.
+
+**해석의 한계와 수용 기준**
+
+- 마지막 답변만 바꾸므로 새 프롬프트로 처음부터 이어가는 대화나 다음 사용자 반응은 측정하지 않습니다.
+- 생성 1회·동일 대화 채점 3회는 채점의 흔들림만 관찰합니다. 반복 생성의 편차는 측정하지 않으며 작은 점수 차이를 프롬프트 효과로 단정하지 않습니다.
+- 같은 40개를 보며 반복 개선하므로 새로운 대화에서의 성능은 별도 검증되지 않습니다. 전체 대화 점수에는 고정된 이전 대화의 품질도 반영됩니다.
+- 같은 입력끼리의 점수 차이·턴별 결과·불확실성을 보고합니다. 관련 스토리·사용자와 반복 탐색의 영향을 보정하지 않았다면 그 한계를 밝힙니다. 채점 120회를 서로 다른 대화 120개로 세지 않습니다.
+- 입력·프롬프트·모델·평가 조건과 결과의 대응을 확인한 완성 결과만 비교합니다. 조건을 바꾸면 새 실험으로 구분하고 대조군을 다시 확보합니다.
+
+상세: [실행 지침](../../../manyak-autoresearch/chat-product/program.md), [환경·저장 형식](../../../manyak-autoresearch/chat-product/README.md), [생성기](../../../manyak-autoresearch/chat-product/train.py), [평가·비교 실행기](../../../manyak-autoresearch/chat-product/eval.py), [고정 평가 설정](../../../manyak-autoresearch/chat-product/frozen-judge/manifest.json).
+
+### 이미지 평가 프롬프트의 평가 (수정 예정)
 
 목적은 `image-judge`의 평가 프롬프트가 인물 이미지의 외형 일치와 오류를 사람처럼 판단하는지 확인하는 것입니다. 같은 이미지 샘플과 사람 레이블을 고정해 평가 프롬프트를 검증합니다.
 
@@ -826,11 +1018,7 @@ flowchart LR
 
 상세: [질문·판독 프롬프트](../../../manyak-autoresearch/image-judge/prompt.md), [실행기](../../../manyak-autoresearch/image-judge/eval.py), [판정 규칙](../../../manyak-autoresearch/image-judge/program.md).
 
-### 제품 채팅 프롬프트의 평가
-
-평가 대상은 제품 채팅 프롬프트로 생성한 답변의 품질입니다. 현재 연구 레포에는 이 평가 실행기가 구현되어 있지 않습니다. 위 `chat-judge`의 사람 일치율은 채점기의 판단 정확도이며, 제품 답변의 품질 점수가 아닙니다.
-
-### 제품 이미지 생성 프롬프트의 평가
+### 제품 이미지 생성 프롬프트의 평가 (수정 예정)
 
 평가 대상은 제품 이미지 생성 프롬프트로 만든 이미지의 품질입니다. 현재 연구 레포에는 이 평가 실행기가 구현되어 있지 않습니다. 위 `image-judge`의 사람 레이블 대조는 이미지 채점기의 판단 정확도를 확인하는 절차입니다.
 
