@@ -6,10 +6,10 @@
 | --- | --- |
 | 버전 | v0.41 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-15 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
-| 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81. 합의된 계약과 관측된 구현의 차이는 추적 문서에 기록합니다. |
+| 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
 
 ## 읽는 순서
 
@@ -240,7 +240,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
 | `characters` | object[] | 등장인물 `{name, imageUrl}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·일반 제작)는 빈 배열입니다 |
 
-- `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다([클라이언트 추적](../planning/client-tracking.md#기존-간극의-처리) G3).
+- `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
 - **인물 목록**: 상세의 `characters[]`에는 이름과 이미지만 싣고 공개 식별자와 외형 필드는 제외합니다. 인물별 설명은 저장하지 않습니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환합니다.
 
 **`DELETE /stories/{storyId}`**: 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다. 404 판정(형식 오류·순차 정수·부재·이미 삭제: 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69: 채팅 삭제 동일).
@@ -469,7 +469,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
 - **SSE 전체 상한**: 120초입니다. 초과하면 AI 호출을 취소하고 `error` 이벤트 없이 스트림을 닫습니다.
 - **AI 스트림 제한**: 연결 5초, 이벤트 간 60초입니다. 이벤트가 60초 동안 없으면 `AI_STREAM_FAILED`를 보냅니다([§4-6](#4-6-오류와-예외-처리)).
-- **클라이언트 처리**: EOF와 자체 제한은 [클라이언트 추적](../planning/client-tracking.md#기존-간극의-처리) G5를 따릅니다.
+- **클라이언트 처리**: EOF는 [공통 SSE 계약](3-1-client-spec.md#3-1-5-채팅-플레이와-sse-스트리밍), 자체 제한은 플랫폼 Design을 따릅니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
 
 ### 4-3-4. 피드백
@@ -667,14 +667,14 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 푸시 발송 모듈
 
-서버가 FCM HTTP v1로 푸시를 보내는 공통 모듈입니다. 시나리오별 발송은 전부 이 모듈의 `sendToUser(userId, data)` 하나를 부릅니다; 시나리오별 구현 차이는 추적 문서에서 확인합니다([아래 시나리오 절](#4-3-api-계약)).
+서버가 FCM HTTP v1로 푸시를 보내는 공통 모듈입니다. 시나리오별 발송은 전부 이 모듈의 `sendToUser(userId, data)` 하나를 부릅니다.
 
 | 플랫폼 | 메시지 구성 | 표시 주체 |
 | --- | --- | --- |
 | `ANDROID` | data-only. 안드로이드 우선순위 `HIGH`. `notification`은 싣지 않음 | 앱이 알림 문구와 딥링크를 조립해 표시 |
 | `WEB` | data + webpush notification. 제목·본문·아이콘과 클릭 링크 포함 | 브라우저가 자동 표시 |
 
-웹 앱은 안드로이드 및 서버 FCM과 같은 Firebase 프로젝트에 등록해야 합니다. VAPID 키와 서비스 워커 구성은 웹이 담당합니다. 광고성 알림의 동의 API와 `(광고)` 접두 및 data의 `recipientId`는 두 플랫폼에 공통으로 적용합니다. 웹의 계정별 수신 필터링 계획은 [웹 PWA 푸시](3-2-web-spec.md#pwa-푸시)를 따릅니다.
+웹 앱은 안드로이드 및 서버 FCM과 같은 Firebase 프로젝트에 등록해야 합니다. VAPID 키와 서비스 워커 구성은 웹이 담당합니다. 광고성 알림의 동의 API와 `(광고)` 접두 및 data의 `recipientId`는 두 플랫폼에 공통으로 적용합니다. 웹의 제공 범위는 [웹 PWA 푸시](3-2-web-spec.md#pwa-푸시)를 따릅니다.
 
 - 페이로드 키는 camelCase이며 시나리오별 data 키는 각 시나리오 계약이 정합니다. 안드로이드의 `HIGH` 우선순위는 Doze에서 data-only 메시지가 지연되는 것을 줄이기 위한 기존 설정입니다.
 - **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
@@ -895,7 +895,7 @@ graph TD
 - 판정: 게스트 요청은 Redis 카운터로 한도를 확인하고, 한도 소진 시 `402`(`code=GUEST_TRIAL_LIMIT_EXCEEDED`, "게스트 체험 한도를 모두 사용했습니다.": KNK-524)를 반환합니다. 게스트의 체험 한도 대상 요청은 device 헤더가 필수이며, 헤더가 없으면 400("게스트의 체험 한도 대상 요청은 X-Manyak-Device-Id 헤더가 필요합니다.")을 반환합니다(`GuestTrialLimitService.requireDeviceId`).
 - 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
 - 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다. 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([BE-045](../adr/2-backend-server-adr.md#be-045)).
-- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. 현재는 이 수준을 수용하고 남용 징후는 관측으로 추적합니다. 인앱 게스트 허용 개편 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다: 수용 여부는 미결이며 [클라이언트 추적](../planning/client-tracking.md#웹-핸드오프-잔여)이 확인 항목을 소유합니다.
+- 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. 현재는 이 수준을 수용하고 남용 징후는 관측으로 추적합니다. 인앱 게스트 허용 개편 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다: 수용 여부는 미결입니다.
 
 [결정 근거 BE-011](../adr/2-backend-server-adr.md#be-011)
 
@@ -1300,7 +1300,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ## 4-5. 인증과 권한
 
-인증 스택(소셜 로그인, JWT, refresh 저장소)은 서버에 구현되어 있습니다. 클라이언트의 인증·적용 상태는 [추적 문서](../planning/client-tracking.md)에서 확인합니다. 현재 클라이언트 인증 계약은 공통·플랫폼 스펙에서 확인합니다. Kakao 로그인과 계정 연동도 서버 구현이 완료됐습니다.
+인증 스택(소셜 로그인, JWT, refresh 저장소)은 서버에 구현되어 있습니다. 현재 클라이언트 인증 계약은 공통·플랫폼 스펙에서 확인합니다. Kakao 로그인과 계정 연동도 서버 구현이 완료됐습니다.
 
 ### 소셜 로그인 흐름
 
@@ -1762,7 +1762,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | US-6-1 ~ 6-8 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
 | US-6-10 | AI 응답 재생성  | `POST /chats/{chatId}/turns/regenerate/stream` |
 | US-6-12 | 주요 사건 기반 선택지  | `POST /chats/{chatId}/turns/stream`(AI 전달 계약: [§4-3-10](#4-3-api-계약)) |
-| US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속  | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527: [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](3-1-client-spec.md#엔딩-도달-표시), 적용·검증 상태는 [추적 문서](../planning/client-tracking.md)에서 확인합니다 |
+| US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속  | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527: [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](3-1-client-spec.md#엔딩-도달-표시)에서 확인합니다 |
 | US-6-11 | 채팅 이미지 표시  | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
 | US-6-17 · 6-18 | 채팅 공유 발급·열람  | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
 | US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |

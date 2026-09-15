@@ -44,8 +44,6 @@ git clone <manyak-infra-repository-url>
 
 제품 문서는 `docs/spec/`(배경·요구·계약), `docs/design/`(현재 내부 구조), `docs/adr/`(누적 결정 기록)로 나눕니다. 세 폴더는 `docs/` 바로 아래에 둡니다. 숫자 접두어는 각 폴더에서 독립적으로 관리합니다. 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
 
-문서 재구성의 범위와 남은 검증은 [개정 계획](docs/planning/product-document-reorganization.md)을 따릅니다.
-
 | 분류·번호 | 문서 | 역할 |
 | --- | --- | --- |
 | spec · 0 | [용어집](docs/spec/0-glossary.md) | 공식 용어·한영 표기·네이밍 규칙 |
@@ -82,13 +80,7 @@ git clone <manyak-infra-repository-url>
 
 ## 계획 문서
 
-Phase와 로드맵은 `docs/planning/roadmap.md`, 계약 적용·코드·검증·배포 근거는 추적 문서가 소유합니다. 작업 담당·일정·진행의 정본은 Jira입니다. 기능별 미래 상세 설계와 작업 순서·검증·복구 계획은 구현 저장소에 둡니다.
-
-| 문서 | 역할 |
-| --- | --- |
-| `docs/planning/roadmap.md` | Phase별 개발 목표, 스프린트 일정, 작업 범위, 백로그 |
-| [클라이언트 진행·추적](docs/planning/client-tracking.md) | 계약 적용·구현·검증·Jira·계획 연결 |
-| [제품 문서 재구성 계획](docs/planning/product-document-reorganization.md) | 이번 경로·번호 변경 결과와 남은 본문 분리 계획 |
+Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업 담당·일정·진행은 Jira에서 관리합니다. 기능별 변경 순서·검증·복구와 실행 결과는 구현 저장소의 기존 계획·PR에 남깁니다.
 
 ## 개발 레포지토리에 하네스 연결
 

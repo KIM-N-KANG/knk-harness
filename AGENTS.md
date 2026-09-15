@@ -4,6 +4,7 @@
 
 - 이 파일의 상대경로는 이 파일이 위치한 하네스 루트(`knk-harness/`)를 기준으로 해석합니다. 연결된 문서와 스킬 안의 상대경로는 별도 기준이 명시되지 않았다면 해당 파일이 위치한 디렉터리를 기준으로 해석합니다.
 - 제품·스펙 문서는 하네스의 `docs/`에서 작업과 관련된 항목만 확인합니다.
+
 - 구현 맥락이 필요하면 다음 서비스 레포지토리 중 관련된 곳을 함께 참조합니다.
 
 | 영역 | 참조 경로 |
@@ -17,41 +18,34 @@
 
 ## Knowledge Base
 
-- 제품 문서는 `docs/spec/`, `docs/design/`, `docs/adr/`에 둡니다. 배경 문서도 `docs/spec/`에 포함합니다. 숫자 접두어는 폴더별로 독립적으로 관리하며, 다른 폴더의 마지막 번호를 이어받지 않습니다.
-- 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
+작업과 관련된 문서만 선택합니다. 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
 
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |
-| 도메인 용어 정의, 한↔영 표기, 계층별 네이밍 컨벤션 확인 | `docs/spec/0-glossary.md` |
-| 서비스 배경, 타겟 사용자, MVP 범위 확인 | `docs/spec/1-background.md` |
-| 화면·기능별 사용자 요구(유저 스토리) 확인 | `docs/spec/2-user-stories.md` |
-| 클라이언트 공통 화면, 상태, 사용자 흐름, API 사용 계약 확인 | `docs/spec/3-1-client-spec.md` |
-| 공통 클라이언트 결정의 맥락·선택·이유 확인 | `docs/adr/1-1-client-adr.md` |
-| 웹 전용 사용자 계약·라우팅·브라우저 지원 확인 | `docs/spec/3-2-web-spec.md` |
-| 웹 BFF·토큰 세션·저장·렌더 구조 확인 | `docs/design/1-1-web-design.md` |
-| 웹 기술 결정의 맥락·선택·이유 확인 | `docs/adr/1-2-web-adr.md` |
-| Android 사용자 계약·플랫폼 차이 확인 | `docs/spec/3-3-android-spec.md` |
-| Android 기술 스택·상태·인증·내비게이션 구조 확인 | `docs/design/1-2-android-design.md` |
-| Android 기술 결정의 맥락·선택·이유 확인 | `docs/adr/1-3-android-adr.md` |
-| Android 모듈 소유권·내부 계층·의존 규칙 확인 | [Android Design §1-2-2](docs/design/1-2-android-design.md#1-2-2-모듈과-소유권) |
-| 백엔드 API, 데이터 모델, 오류 처리, 운영 기준 확인 | `docs/spec/4-backend-server-spec.md` |
-| 백엔드 모듈·저장소·동시성·운영 배선 확인 | `docs/design/2-backend-server-design.md` |
-| 백엔드 결정의 맥락·선택·근거 확인 | `docs/adr/2-backend-server-adr.md` |
-| AI 호출 계층·모델·프롬프트·관측 설정 확인 | `docs/design/3-ai-server-design.md` |
-| AI 기능·입출력·실패 계약·평가 시스템 확인 | `docs/spec/5-ai-server-spec.md` |
-| AI 설계의 배경·대안·선택 근거 확인 | `docs/adr/3-ai-server-adr.md` |
-| 분석 이벤트, 핵심 지표, 관측 구현, 릴리스 검수 기준 확인 | `docs/spec/6-analytics.md` |
-| 운영·개발·통합 배포, 인프라, CI/CD, 검수·롤백 기준 확인 | `docs/design/4-deployment.md` |
-| 배포의 과거 결정·전환 이유 확인 | `docs/adr/4-deployment-adr.md` |
-| Phase별 개발 로드맵, 마일스톤, 스프린트 일정, 백로그 확인 | `docs/planning/roadmap.md` |
-| 클라이언트 계약 승인·적용, 플랫폼별 구현·검증 근거·Jira·계획 연결 확인 | `docs/planning/client-tracking.md` |
-| 제품 문서 재구성의 적용 범위·남은 분리·검증/복구 확인 | `docs/planning/product-document-reorganization.md` |
-| Pull Request 생성 시 영역별 PR 템플릿 확인 | `docs/templates/pull-request/` |
-| 에러 제보·기능 요청을 슬랙으로 보낼 때 메시지 구조 확인 | `docs/templates/slack-report.md` |
+| 용어·한영 표기·네이밍 규칙 | [용어집](docs/spec/0-glossary.md) |
+| 서비스 배경·타겟 사용자·MVP 범위 | [서비스 배경](docs/spec/1-background.md) |
+| 화면·기능별 사용자 요구 | [유저 스토리](docs/spec/2-user-stories.md) |
+
+| 영역 | Spec — 계약 | Design — 현재 구조 | ADR — 결정 근거 |
+| --- | --- | --- | --- |
+| 공통 클라이언트 | [공통](docs/spec/3-1-client-spec.md) | 플랫폼별 Design 참조 | [공통](docs/adr/1-1-client-adr.md) |
+| 웹 | [웹](docs/spec/3-2-web-spec.md) | [웹](docs/design/1-1-web-design.md) | [웹](docs/adr/1-2-web-adr.md) |
+| Android | [Android](docs/spec/3-3-android-spec.md) | [Android](docs/design/1-2-android-design.md) · [모듈·의존 규칙](docs/design/1-2-android-design.md#1-2-2-모듈과-소유권) | [Android](docs/adr/1-3-android-adr.md) |
+| 백엔드 | [백엔드](docs/spec/4-backend-server-spec.md) | [백엔드](docs/design/2-backend-server-design.md) | [백엔드](docs/adr/2-backend-server-adr.md) |
+| AI | [AI](docs/spec/5-ai-server-spec.md) | [AI](docs/design/3-ai-server-design.md) | [AI](docs/adr/3-ai-server-adr.md) |
+
+| 작업 상황 | 확인할 곳 |
+| --- | --- |
+| 분석 이벤트·지표·관측·릴리스 검수 | [분석](docs/spec/6-analytics.md) |
+| 배포·인프라·CI/CD·검수·롤백 | [배포 Design](docs/design/4-deployment.md) · [배포 ADR](docs/adr/4-deployment-adr.md) |
+| QA 작업 전 지침·검증 방법 | [웹 QA 지침](docs/qa/AGENTS.md) · [Android 검증 방법](docs/design/1-2-android-design.md#1-2-9-검증-방법) |
+| Phase·목표·범위·백로그 | [로드맵](docs/planning/roadmap.md) |
+| 작업 담당·상세 일정·진행 | Jira |
 
 ## Agent Skills
 
 - 브랜치 생성, 커밋, PR 생성 등 팀 워크플로 스킬은 `.agents/skills/`에 있습니다. 스킬을 자동 로드하지 않는 에이전트는 해당 작업 전에 관련 `SKILL.md`를 직접 확인합니다.
+- PR 생성·템플릿 선택은 [create-pr](.agents/skills/create-pr/SKILL.md), Slack 제보·양식은 [send-slack-report](.agents/skills/send-slack-report/SKILL.md)를 따릅니다.
 
 ## Working Principle
 
@@ -59,27 +53,13 @@
 - 기존 코드와 문서로 판단할 수 있는 구현 세부사항은 합리적으로 결정하고 진행합니다. 제품 정책·API 계약·변경 범위에 영향을 주는 불확실성만 질문하며, 답변과 무관하게 진행 가능한 작업은 계속합니다.
 - 지침 때문에 확인을 요청하거나 작업을 중단할 때는 해당 파일의 경로 또는 링크와 정확한 문구, 적용 이유를 알립니다. 명시적인 요구사항과 에이전트의 해석을 구분하고, 이미 승인된 작업은 같은 이유로 다시 확인하지 않습니다.
 - 레포지토리에 없는 제품 정책, 이벤트 이름, 로그 필드, API 계약은 추측하지 않습니다.
-- 제품 동작이나 분석 기준을 바꾸는 작업은 관련 `docs/spec/` 문서를 함께 확인합니다.
 - 실제 secret, 로컬 전용 파일, 사용자 입력 원문, 프롬프트 전문, 채팅 원문은 문서나 예시에 넣지 않습니다.
 
-## 클라이언트 문서 갱신
+## Documentation Guidelines
 
-- 관련 절을 전체로 읽고 검색은 보조로 사용합니다. 공통 사용자 계약은 공통 spec, 플랫폼 고유 계약·예외는 해당 spec, 현재 내부 구조는 design, 중요한 선택 이유는 영역별 adr 한 파일에 씁니다. 동일 본문을 복사하지 않고 링크합니다.
-- spec에는 Phase·구현/미구현 표시·Jira·작업 순서·역사적 결정 이유를 넣지 않습니다. 승인된 계약은 규범으로 쓰고 코드와의 차이는 `docs/planning/client-tracking.md`에 남깁니다. 관측된 코드만으로 제품 정책을 승인하거나 과거 이유를 추정하지 않습니다.
-- 새 기능은 목표·미결 사항 확인 → 계약·적용 범위 승인 → 필요 시 ADR → 구현 저장소의 기능 계획 → 구현과 현재 spec/design 동기화 → QA·검증·배포 근거 연결 순서로 진행합니다. 미래 구조를 현재 design에 먼저 덮어쓰지 않습니다.
-- 계획은 웹의 `docs/superpowers/plans/`, Android의 `docs/plans/`를 재사용합니다. 목표·승인된 변경 범위·변경 순서·검증/복구·결과 링크만 두며 완료 후 당시 실행 기록으로 보관합니다. 일정·작업 진행은 Jira, Phase는 roadmap, 문서·증거 연결은 client-tracking이 소유합니다.
-- Spec에는 범위, 입력·동작·상태, 예외, 수용 기준을 둡니다. Design에는 책임 경계, 데이터·요청 흐름, 상태 수명, 실패·복구를 둡니다.
-- `docs/`의 독립 문서는 `H1(확장자를 뺀 파일명) → 문서 정보 → 읽는 순서 → 목차 → 본문` 순서를 따릅니다. 문서 정보·읽는 순서·목차는 H2로 작성합니다.
-- 문서 정보는 `항목 | 값` 표에 `버전 → 작성일 → 수정일 → 대상 → 작성 목적` 순서로 적습니다. 필요한 경우 대상 저장소·화면, 코드·연구 기준, 관련 문서·검증, 문서 경계·상태, 원본·분리·결정·이력을 덧붙입니다. 확인할 수 없는 값은 `미기재`로 둡니다.
-- 읽는 순서는 글머리표로, 목차는 본문 H2를 순서대로 연결한 링크 목록으로 작성합니다. 같은 정보를 frontmatter에 반복하지 않습니다. 제출용 양식은 자체 구조를 유지합니다.
-- 플랫폼 Spec에는 기준 코드를, 플랫폼 ADR에는 대상 저장소를 연결합니다. ADR의 문서 작성일·수정일과 개별 결정일을 구분하고 기존 결정 ID·본문을 보존합니다. 이력은 추적 문서로 연결합니다.
-- ADR은 [공통 기록 규칙](docs/adr/1-1-client-adr.md#기록-규칙), 추적 문서는 해당 문서의 최소 행을 따릅니다. 실제 책임이 생길 때만 새 문서 유형을 만듭니다.
-- 문서를 이동하면 README·AGENTS/CLAUDE·계획·QA·제품 문서의 링크와 절 참조를 같은 작업에서 갱신합니다. ADR의 확정 본문과 과거 근거 링크는 보존하고 변경 결정에서 대체 ID·범위를 연결합니다.
-
-## 백엔드·배포 문서 갱신
-
-- 문서 역할은 클라이언트·AI와 같습니다. Spec은 현재 합의된 계약(API·데이터 정책·인증·오류·검수 기준)의 정본이고, Design은 현재 내부 구조(기술 환경·모듈·저장소·동시성·메트릭·런타임 설정·인프라)이며, ADR은 누적 결정 기록입니다.
-- 기능 개발 시작 시 Spec을 먼저 수정하고 구현 중 필요한 정정을 같은 작업에서 반영합니다. 코드 관측만으로 승인된 계약을 폐기하지 않습니다. 승인했지만 아직 만들지 않은 범위는 Design의 각 절 끝에 현재 사실로 적고, 작업 진행은 Jira가 소유합니다. 백엔드·배포에는 별도 추적 문서를 두지 않습니다.
-- Design은 코드와 함께 갱신합니다. 미래 구조를 현재 Design에 먼저 덮어쓰지 않습니다.
-- ADR에는 이전 선택·새 선택·이유·근거 날짜를 기록합니다. 완료한 본문은 보존하고 새 ID에서 대체 범위를 연결합니다. 이전 Spec 전체를 ADR로 복사하지 않습니다.
-- Requirements 폴더를 만들지 않습니다. 목표·완료 조건·미결 사항은 기존 planning을 사용합니다. 배포 결정의 우선 근거는 manyak-terraform Git 이력입니다. 병합일·결정일·apply 완료일을 구분합니다.
+- 관련 문서의 해당 절을 전체로 읽습니다. 요구사항·동작 계약은 Spec, 현재 구현 구조는 Design, 중요한 결정의 이유는 ADR에 기록합니다. 중복 본문 대신 링크를 사용합니다.
+- 제품 동작·분석 기준을 바꿀 때 관련 Spec을 확인하고, 계약 변경을 먼저 반영합니다. 구현 변경 시 영향받는 문서와 검증 항목을 같은 작업에서 갱신하며, 미래 구조를 현재 Design에 먼저 반영하지 않습니다. 계약·예외·보안·실패·복구 조건을 보존하며, 코드만으로 제품 정책의 승인 여부나 과거 결정 이유를 추정하지 않습니다.
+- 일정·진행 상태·미결 사항은 Jira, Phase는 roadmap, 구현 계획과 검증 결과는 기존 계획 문서·PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.
+- 기존 문서 유형의 형식과 명명 규칙을 따릅니다. 코드에서 확인할 수 있는 목록은 원본 링크를 우선하며, 중복된 문서나 목록을 만들지 않습니다. `AGENTS.md`·`CLAUDE.md`는 간결한 작업 지침으로 작성합니다.
+- 확정된 ADR의 ID·본문과 과거 근거를 보존합니다. 결정 변경은 해당 ADR의 기록 규칙에 따라 후속 기록에 대체하는 결정 ID와 적용 범위를 명시합니다.
+- 파일이나 절을 이동·삭제·통합하거나 제목을 바꾸면 하네스와 관련 구현 저장소의 참조도 갱신합니다. 변경 후 링크·앵커·목차·ID 중복과 ADR 보존 여부를 확인하고 `git diff --check`를 실행합니다.

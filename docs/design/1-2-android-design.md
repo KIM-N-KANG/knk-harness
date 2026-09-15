@@ -6,11 +6,10 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-11 |
+| 수정일 | 2026-09-15 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
-| 기준 코드 | `6bccf25adc531dfc8254a0dad3076bef0a72958a` — 기존 설계의 기준이며 이번 편집에서 코드·배포를 다시 검증하지 않았습니다. |
-| 이관 기록 | [제품 문서 재구성 계획](../planning/product-document-reorganization.md) |
+| 기준 코드 | [manyak-android](../../../manyak-android) |
 
 ## 읽는 순서
 
@@ -30,15 +29,15 @@
 
 ---
 
-[공통 스펙](../spec/3-1-client-spec.md)과 [Android 스펙](../spec/3-3-android-spec.md)을 구현하는 구조입니다. 모듈 설계를 이 문서에 통합했습니다. 선택 이유는 [Android ADR](../adr/1-3-android-adr.md), 적용 범위·코드와의 차이·검증 근거는 [클라이언트 추적](../planning/client-tracking.md)이 소유합니다.
+[공통 스펙](../spec/3-1-client-spec.md)과 [Android 스펙](../spec/3-3-android-spec.md)을 구현하는 구조입니다. 선택 이유는 [Android ADR](../adr/1-3-android-adr.md)을 따릅니다.
 
 ## 1-2-1. 기술 환경과 요청 흐름
 
 | 구분 | 기준 |
 | --- | --- |
-| 언어·UI | Kotlin 2.3.21, Jetpack Compose, Compose BOM 2026.02.01, Material 3 |
+| 언어·UI | Kotlin, Jetpack Compose, Material 3. 정확한 버전은 [버전 카탈로그](../../../manyak-android/gradle/libs.versions.toml) 참조 |
 | Android | minSdk 24, compileSdk·targetSdk 37 |
-| 빌드 | AGP 9.3.1, Gradle 9.5.0, 빌드 JDK 25, JVM bytecode 11 |
+| 빌드 | 빌드 JDK 25, JVM bytecode 11. AGP·Gradle은 [앱 빌드 설정](../../../manyak-android/app/build.gradle.kts)·[Wrapper](../../../manyak-android/gradle/wrapper/gradle-wrapper.properties) 참조 |
 | 구조 | 직접 구현 MVI, Hilt, Navigation 3 |
 | 통신·이미지 | Retrofit, OkHttp, kotlinx.serialization, okhttp-sse, Coil |
 | 푸시 | Firebase Cloud Messaging — Crashlytics와 같은 Firebase 프로젝트·BOM |
@@ -212,7 +211,7 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ### 제작 카드와 다중 완성 진행
 
-Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 다른 계정의 새 편집은 단일 편집 슬롯을 덮어쓸 수 있고, 탈퇴 뒤 남은 행의 처리는 [추적](../planning/client-tracking.md)에서 구분합니다.
+Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 다른 계정의 새 편집은 단일 편집 슬롯을 덮어쓸 수 있고, 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
 
 완성 요청 삽입과 해당 편집 초안 삭제는 한 DAO 트랜잭션입니다. 저장 실패 시 전송하지 않습니다. `StoryCompletionExecutor`는 앱 수명, requestId별 single-flight, `SessionGate.withAuthWork/commit`으로 실행하며 서로 다른 요청을 전역 직렬화하지 않습니다.
 
@@ -239,34 +238,16 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 분석 이벤트·식별자·수집 제한은 [분석 Spec](../spec/6-analytics.md)이 정본입니다. Android는 Amplitude와 Firebase Crashlytics를 사용하고 Firebase Analytics는 사용하지 않습니다.
 
 - 첫 이벤트 이전에 공용 device ID를 주입합니다. 로그인은 공개 사용자 ID, 로그아웃은 세션 정리 순서에 맞춰 사용자 해제와 device ID 교체를 수행합니다.
-- Crashlytics는 release에서 활성화하고 debug에서는 끕니다. R8 mapping을 업로드합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
-- 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계는 50%·1초·30초 중복 제한을 적용합니다. reducer에 관측 호출을 넣지 않습니다.
+- Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 현재 `optimization.enable = false`라 R8 mapping 파일을 생성하지 않습니다. 빌드·매핑 상태는 [배포 Design](4-deployment.md#manyak-android-ci)에서 확인합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
+- 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계 조건은 분석 Spec을 따릅니다. reducer에 관측 호출을 넣지 않습니다.
 - breadcrumb는 Amplitude 어댑터에서 연결해 화면에서 중복 발화하지 않습니다. 지속 Crashlytics 키는 `screen_name`을 사용하고 개별 식별자는 breadcrumb로 연결합니다.
-- non-fatal 적용 범위와 제작 분석 전환의 차이는 추적에서 확인합니다. ANR은 API 30+ Crashlytics와 그 이전 Android vitals의 관측 범위를 구분합니다.
+- ANR은 API 30+ Crashlytics와 그 이전 Android vitals의 관측 범위를 구분합니다.
 
-화면과 분석 카탈로그의 대응은 다음과 같습니다. 세부 이벤트 이름·필수 필드는 분석 Spec을 따릅니다.
-
-| 앱 화면 | `screen_name` |
-| --- | --- |
-| LoginScreen | `login` |
-| HomeScreen(홈 탭) | `storyList` (`section=original`) |
-| StudioScreen(스튜디오 탭) | `storyList` (`section=created`) |
-| Create*Screen 3단계 | `storyCreate` |
-| StoryDetailScreen | `storyDetail` |
-| ChatListScreen(채팅 탭) | `chatList` |
-| ChatRoomScreen | `chat` |
-| CreateAdditionalInfoScreen 완성 402 | `creditShortageDialog` |
-| 신고 시트(`StoryReportController`) | `report` |
-| MyScreen(마이 탭) | `account` |
-| CreditChargeScreen | `creditCharge` |
-| InviteScreen · InviteOnboarding | `invite` · `inviteOnboarding` |
-| FeedbackScreen | `feedback` |
-| WithdrawalScreen | `withdrawal` |
-| LegalDocumentScreen | `terms` / `privacy` / `serviceInfo` |
+화면별 `screen_name`과 필수 프로퍼티는 [분석 Spec](../spec/6-analytics.md)과 [AnalyticsEvent](../../../manyak-android/analytics/src/main/java/app/manyak/analytics/entity/AnalyticsEvent.kt)에서 확인합니다.
 
 ## 1-2-9. 검증 방법
 
-변경 영역에 맞춰 구현 저장소의 `checkModuleArchitecture`, 루트 `check`, 기존 단위·기기·CI 검증을 사용합니다. 사용자 수용 기준은 [Android Spec](../spec/3-3-android-spec.md), 공통 절차는 [QA](../qa/README.md), 실행 결과는 [클라이언트 추적](../planning/client-tracking.md)에 남깁니다.
+변경 영역에 맞춰 구현 저장소의 `checkModuleArchitecture`, 루트 `check`, 기존 단위·기기·CI 검증을 사용합니다. 사용자 수용 기준은 [Android Spec](../spec/3-3-android-spec.md), 앱 검증 절차는 [Android AGENTS](../../../manyak-android/AGENTS.md), 실행 결과는 해당 기능 계획·PR에 남깁니다.
 
 | 경계 | 필수 확인 |
 | --- | --- |
@@ -276,5 +257,3 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 | 푸시 | 회원 전환·늦은 PUT·403·recipient 불일치·Pending 5초 제한·로그아웃 알림 제거 |
 | 제작 | 저장 실패 시 미전송, 복수 요청 독립 실행, 409·404 복구, 계정 격리, DB 마이그레이션 |
 | 화면·복원 | 회전·프로세스 재생성·back stack·SSE 중단·이미지 순서·키보드·접근성 |
-
-이 문서 편집 자체는 앱 테스트·배포의 완료 근거가 아닙니다.
