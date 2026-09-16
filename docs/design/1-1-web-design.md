@@ -210,8 +210,8 @@ vaul `DrawerContent`에는 `overflow-y-auto`를 두지 않습니다. vaul이 러
 | 목록 행 | 가로 16px·세로 8px 패딩, 열 간격 16px, 하단 8px. 제작 표지 128px·3:4, 채팅 표지 48px·3:4·모서리 12px. 옵션 아이콘 위로 1px 보정; 스켈레톤 동일 |
 | 홈·상세 | 표지 3:4. 상세 헤더 56px, 로딩 지연 300ms·펄스 1.4초, Select 모서리 10px, 메타 패딩·행 간격 16px |
 | 제작 FAB·진행 카드 | FAB hover 3% 확대·primary 불투명도 유지. 진행→완성 카드는 같은 자리에서 opacity 200ms ease-out으로 교체. 빠지는 행은 popLayout으로 새 행과 겹쳐 페이드하고 기존 행은 layout="position"으로 필요한 위치 변화만 200ms 보간. 완성 중 제목은 공용 `TextShimmer`에 4초 주기를 지정. 점 격자는 `ImageGeneration`의 `interactive` 옵션을 활성화해 hover·fine pointer 환경에서 포인터를 추적하며, 영역 밖에서는 자동 이동. 동작 줄이기에서 행 교체는 즉시, 위치·확대·장식 모션 중지 |
-| 제작 퍼널 로딩 | 스토리라인 생성·스토리 완성은 `StoryGeneratingLoading`을 공유하며 `ReasoningText`의 문구 전환 간격과 쉬머 주기를 각각 4초로 지정 |
-| 채팅 스트림 로딩 | 첫 이벤트 전 로딩 블록은 500ms EASE_OUT 페이드로 등장, 150ms 페이드로 퇴장. 실시간 이미지 켬이면 4:3 `ImageGeneration`(generating, 제작 진행 카드와 동일)이 opacity 0→1·y 16px→0·scale 0.97→1을 600ms로 떠오르고, 20px 아래 `ReasoningText`(문구 전환·쉬머 각 4초, 제작 퍼널과 동일)가 150ms 늦게 y 8px→0·500ms로 따라온다(reduced motion은 페이드만) |
+| 제작 퍼널 로딩 | 스토리라인 생성·스토리 완성은 `StoryGeneratingLoading`을 공유하며 `ReasoningText`의 문구 전환 간격과 쉬머 주기를 각각 4초로 지정. 문구 왼쪽 로더는 `ReasoningText` 기본값(`Loader` dots 14px) |
+| 채팅 스트림 로딩 | 첫 이벤트 전 로딩 블록은 500ms EASE_OUT 페이드로 등장, 150ms 페이드로 퇴장. 블록 패딩은 좌우 16px에 실시간 이미지 켬이면 위·아래 20px, 끔이면 16px. 실시간 이미지 켬이면 `ReasoningText`(문구 전환·쉬머 각 4초, 제작 퍼널과 동일)가 y 8px→0·500ms로 먼저 올라오고, 20px 아래 4:3 `ImageGeneration`(generating, 제작 진행 카드와 동일)이 150ms 늦게 opacity 0→1·y 16px→0·scale 0.97→1을 600ms로 떠오른다(reduced motion은 페이드만) |
 | 메인 헤더·탭 | 헤더 20px semibold, 탭 아이콘 24px outline/filled와 같은 전경색 라벨. ORIGINAL 태그 72×26px·좌상단 11px/우하단 6px 클리핑 |
 | 제작 탭·푸터 | 전체 폭 3등분 라인 탭, 위아래 탭 패딩 없음·선택선이 기준선 덮음. 본문 위 16px·아래 32px, 선택 키워드·비용 행 높이 40px와 CTA 간격 8px. 키워드 그룹 간격 24px |
 | 인물·추가 정보 | 이름/성별 3:2. 주변 인물 폼 좌우 16px, 헤더 이름·삭제 14px·순번 12px. 추가 정보 목록/자유 입력 사이와 패널 아래 32px |
