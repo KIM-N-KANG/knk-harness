@@ -197,7 +197,7 @@ US-9-8(인앱 체험)·US-9-9(핸드오프)의 웹 계약입니다.
 
 ## 3-2-6. 유료 충전
 
-상품은 `GET /credits/products`의 웹 가격으로 표시합니다. 상품 선택 후 `POST /users/me/credits/orders`로 주문을 만들고 반환된 paymentUrl로 이동합니다. 복귀 후 `GET /users/me/credits/orders/{orderId}`를 조회하며 공통 결제 결과 계약을 따릅니다.
+상품은 `GET /credits/products`의 웹 가격(`webPriceKrw`)으로 표시하며 앱 가격은 노출하지 않습니다. 상품 선택 후 `POST /users/me/credits/orders`로 주문을 만들고 반환된 paymentUrl로 전체 이동(외부 결제창)합니다. 주문 생성이 201이 아니거나 paymentUrl이 없으면 이동하지 않고 실패 토스트를 띄웁니다. 복귀 후 `GET /users/me/credits/orders/{orderId}`를 조회하며 공통 결제 결과 계약을 따릅니다.
 
 <a id="검수"></a>
 
