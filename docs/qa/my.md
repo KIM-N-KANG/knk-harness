@@ -6,12 +6,12 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-16 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
 ## 읽는 순서
@@ -23,7 +23,7 @@
 
 - [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
 - [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
-- [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092)
+- [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
@@ -78,14 +78,14 @@
 
 <a id="my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포"></a>
 
-## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092)
+## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)
 
 기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지).
 
 | ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
 | -------------- | --- | ------------------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------- |
 | MY-CREDITS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/credits` | [웹 접근 조건](../spec/3-2-web-spec.md#라우팅-테이블) |
-| MY-CREDITS-02 | P0 | 회원 | 마이 이프 카드 "충전" 탭 | `/my/credits`로 이동. 뒤로가기 헤더 "이프 충전" 표시, 하단 탭 없음. 진입 기본 탭은 무료 충전 | ✅ e2e `my/credits` | FE-SCREEN-008 이프 충전, [웹 경로](../spec/3-2-web-spec.md#라우팅-테이블) |
+| MY-CREDITS-02 | P0 | 회원 | 마이 이프 카드 "충전" 탭 | `/my/credits`로 이동. 뒤로가기 헤더 "이프 충전" 표시, 하단 탭 없음. 진입 기본 탭은 구매 | ✅ e2e `my/credits` | FE-SCREEN-008 이프 충전, [웹 경로](../spec/3-2-web-spec.md#라우팅-테이블) |
 | MY-CREDITS-03 | P1 | 회원 | 최상단 잔액 상자 확인 | 중립 배경 상자에 "내 이프" 라벨이 위, 잔액이 그 아래 오른쪽에 한 단계 큰 글자·천 단위 콤마로 표시. 값은 진입마다 다시 읽은 `creditBalance`이며 내역 합산이 아님 | ✅ e2e `my/credits` | FE-SCREEN-008 잔액 박스 |
 | MY-CREDITS-04 | P0 | 회원, 내역 여러 건 | 내역 탭에서 목록 확인 | 최신순 목록. 한 줄은 사유 라벨·대상 스토리·날짜와 오른쪽 금액이고, 획득은 `+`·소모/소멸은 `-`에 절대값·천 단위 콤마. 줄 위아래 여백은 8px | ✅ e2e `my/credits` | FE-SCREEN-008 내역 목록·항목 구성·금액 표기 |
 | MY-CREDITS-05  | P1  | 소모·사용 취소 행의 `title`이 null         | 항목 확인                  | 제목 줄에 "삭제된 스토리" 표시. 보상·소멸 행은 제목 줄 자체를 그리지 않음                                                                        | ✅ e2e `my/credits`           | FE-SCREEN-008 제목·날짜                     |
@@ -99,7 +99,7 @@
 | MY-CREDITS-12 | P2 | 서버가 라벨 없는 `reason`을 내려줌 | 항목 확인 | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시 | 수동 | FE-SCREEN-008 항목 구성(라벨은 클라이언트 소유) |
 | MY-CREDITS-13 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 | MY-CREDITS-14 | P1 | 내역 탭을 한 번 보고 `/my`로 돌아온 상태 | "충전" → 내역 탭으로 다시 진입 | 남겨 둔 목록을 그대로 쓰지 않고 첫 페이지부터 다시 조회(스크롤 위치도 목록 맨 위). 그사이 발생한 내역이 바로 보임. 탭을 무료 충전으로 옮겼다 돌아와도 같음(비활성 탭은 언마운트) | ✅ e2e `my/credits` | [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹), KNK-1083 |
-| MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "무료 충전"·"내역" 두 탭을 밑줄 탭으로 표시하고 진입 시 무료 충전이 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 골격, KNK-1092 |
+| MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "구매"·"무료 충전"·"내역" 세 탭을 밑줄 탭으로 표시하고 진입 시 구매가 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 골격, KNK-1092·1297 |
 | MY-CREDITS-16 | P1 | 회원, 내역이 한 화면을 넘김 | 내역 탭에서 아래로 스크롤 | 잔액 상자와 탭 줄은 제자리에 남고 탭 패널만 스크롤됨 | ◐ e2e `visual/my-visual`(정적 상태만) | FE-SCREEN-008 화면 골격, KNK-1092 |
 | MY-CREDITS-17 | P1 | 회원 | 무료 충전 탭 확인 | 중립 배경 상자에 "매일 출석하고 / 매일 N 이프 받으세요" 두 줄 제목(N은 `GET /credits/policies`의 `attendanceReward`), 그 아래 가로 전폭 강조색 "출석 하기" 버튼, 버튼 아래 오른쪽 정렬 보조 문구 2줄("매일 오전 00시에 초기화돼요" → "보상으로 받은 이프는 적립일로부터 30일 동안 사용할 수 있어요") 순으로 표시 | ✅ e2e `my/credits`·`visual/my-visual` | FE-SCREEN-008 무료 충전 탭, §3-1-7 이프 정책 수치 표시, KNK-1092·1095 |
 | MY-CREDITS-18 | P1 | 회원, 오늘 미출석(`attendedToday: false`) | "출석 하기" 버튼 탭 | "출석 체크 보상으로 {amount} 이프를 받았어요" 토스트 + 잔액 상자 자동 갱신(me 재조회) + 버튼이 "출석 완료" 비활성으로 전환 | ✅ e2e `my/credits` | US-10-2 (구 MY-MENU-11) |
@@ -108,6 +108,15 @@
 | MY-CREDITS-21 | P2 | 출석 API가 5xx·네트워크 오류로 실패 | "출석 하기" 탭 | "출석 체크에 실패했어요" 토스트. 버튼은 다시 활성화되어 재시도 가능. 요청 중에는 문구 자리에 "출석 체크 중" 스피너 + 비활성 | 수동 | §3-1-7 이프·초대 (구 MY-MENU-14) |
 | MY-CREDITS-22 | P1 | 회원 | 무료 충전 탭의 친구 초대 줄 탭 | 출석 상자 32px 아래에 마이와 같은 친구 초대 줄(라벨 + 강조색 "하고 N 이프 받기") 표시. 탭하면 `/my/invite`로 이동 | ✅ e2e `my/credits` | FE-SCREEN-008 무료 충전 탭, KNK-1092·1095 |
 | MY-CREDITS-23 | P1 | 회원, 서버 `GET /credits/policies`의 `attendanceReward`가 평소와 다른 값(예: 운영 700이 아닌 dev의 350) | 무료 충전 탭 진입 | 출석 제목이 서버 값을 그대로 표시(배포 없이 따라감). 조회 실패·응답 전에는 수치 자리에 `000`을 쉬머와 함께 그리고 문구 골격은 유지 | ✅ e2e `my/credits` | §3-1-7 이프 정책 수치 표시, KNK-1095 |
+| MY-CREDITS-25 | P0 | 회원 | 구매 탭 확인 | `GET /credits/products` 순서대로 한 줄씩 표시. 왼쪽 "N 이프"(기본), 오른쪽 강조색 "N원"(웹 가격) 버튼. 보너스가 있는 상품만 기본 아래 강조색·굵은 "+N 이프". 줄 사이 구분선 없이 16px 간격. 앱 가격은 노출하지 않음. 목록 아래 "구매한 이프는 적립일로부터 5년 동안 사용할 수 있어요" | ✅ e2e `my/credits`·`visual/my-visual` | §3-1-7 유료 충전, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
+| MY-CREDITS-26 | P0 | 회원 | 가격 버튼 탭 | `POST /users/me/credits/orders`에 그 상품의 `productId`를 실어 보내고 201의 `paymentUrl`로 전체 이동. 요청 중에는 누른 버튼에 스피너, 모든 가격 버튼 비활성 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
+| MY-CREDITS-27 | P1 | 주문 생성이 4xx·5xx·네트워크 오류 | 가격 버튼 탭 | 이동하지 않고 "결제를 시작하지 못했어요" 토스트. 버튼은 다시 활성화되어 재시도 가능 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
+| MY-CREDITS-28 | P1 | 상품 조회가 5xx·네트워크 오류 | 구매 탭 진입 | 목록 자리에 "충전 상품을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시. 조회 중에는 줄 골격 표시 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
+| MY-CREDITS-29 | P0 | 결제창 이동 전 남긴 대기 주문이 있고 주문이 `PENDING`→`COMPLETED` | 결제창에서 `/my/credits`로 복귀 | 잔액 아래 "결제 확인" 카드에 스피너 + "결제를 확인하고 있어요"(2초 간격 조회). `COMPLETED`가 되면 "N 이프가 충전됐어요"(N은 `totalCredits`)로 바뀌고 잔액 상자가 `GET /auth/me` 재조회 값으로 갱신. 닫기(X)로 카드가 사라지고 대기 주문 기록 삭제 | ✅ e2e `my/credits` | §3-1-7 결제 결과, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
+| MY-CREDITS-30 | P1 | 대기 주문 조회가 404 | 복귀 | "확인할 수 없는 주문이에요" + 닫기. 다시 확인 버튼 없음 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
+| MY-CREDITS-31 | P1 | 대기 주문 조회가 5xx·네트워크 오류 | 복귀 | "결제 확인에 실패했어요"와 "다시 확인". 자동 재조회는 멈추고, 탭하면 처음부터 다시 폴링 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
+| MY-CREDITS-32 | P2 | 주문이 30회(약 60초) 조회 후에도 `PENDING` | 복귀 후 대기 | "아직 결제 확인이 안 됐어요"와 "다시 확인" 표시, 자동 조회 중단 | ✅ 단위 — 웹 `my/credits/utils/credit-order-confirmation` | §3-1-7 결제 결과, KNK-1297 |
+| MY-CREDITS-33 | P2 | 대기 주문 없음 또는 24시간 지난 기록 | `/my/credits` 진입 | 확인 카드를 그리지 않음 | ✅ e2e `my/credits`(없음)·단위 `pending-credit-order-storage`(만료) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 
