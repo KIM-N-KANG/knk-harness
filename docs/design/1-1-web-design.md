@@ -35,7 +35,7 @@
 | --- | --- |
 | 렌더·타입 | Next.js App Router, React·React Compiler, TypeScript |
 | 요청·검증 | TanStack Query, Orval, Zod |
-| UI | Base UI·shadcn/ui, CVA, Tailwind CSS, motion, vaul, sonner, next-themes |
+| UI | Base UI·shadcn/ui, CVA, Tailwind CSS, motion, sonner, next-themes |
 | 관측·테스트 | Amplitude·Sentry, Vitest·Playwright |
 | 버전·실행 환경 | [package.json](../../../manyak-web/package.json)·[pnpm-lock.yaml](../../../manyak-web/pnpm-lock.yaml). 코드 작성·실행 규칙은 [웹 AGENTS](../../../manyak-web/AGENTS.md) |
 
@@ -178,9 +178,11 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변경을 반영하고 언마운트 때 모두 해제합니다.
 
-### 바텀 시트 스크롤 (웹)
+### 바텀 시트 (웹)
 
-vaul `DrawerContent`에는 `overflow-y-auto`를 두지 않습니다. vaul이 러버밴드 틈을 메우려고 시트 아래에 깔아 두는 `::after`(높이 200%)까지 스크롤 영역에 잡혀 시트 높이의 2배만큼 빈 스크롤이 생깁니다. 스크롤은 시트 본문 래퍼(`min-h-0 overflow-y-auto overscroll-contain`)가 맡습니다. 입력 필드가 없는 시트(채팅 설정)는 `repositionInputs={false}`로 vaul의 키보드 대응(높이 재계산)을 끕니다.
+`src/components/ui/drawer.tsx`는 shadcn Base UI Drawer(`@base-ui/react/drawer`) 기반입니다. 시트는 `DrawerContent`의 `container`로 앱 프레임(`#app-frame`)에 포탈하며, 이때 Backdrop·Viewport·Popup을 `absolute`로 프레임 안에 가둡니다. 닫기 잠금은 `disablePointerDismissal`로 처리합니다.
+
+`DrawerContent`에는 `overflow-y-auto`를 두지 않습니다. 팝업 아래 틈을 메우는 bleed(`::after`)까지 스크롤 영역에 잡힙니다. 스크롤은 시트 본문 래퍼(`min-h-0 overflow-y-auto overscroll-contain`)가 맡습니다.
 
 ### 바텀 시트 닫기 버튼 (웹)
 
@@ -200,7 +202,7 @@ vaul `DrawerContent`에는 `overflow-y-auto`를 두지 않습니다. vaul이 러
 
 ### 스토리 신고 진입점 (웹)
 
-상세 `story-options-menu`, 채팅 `chat-options-menu`, 목록 `card-options-dialog`가 공용 `story-report-sheet`를 엽니다. 상세 메뉴는 `canReport`·`canDelete`가 모두 거짓이면 트리거도 숨깁니다. 채팅의 삭제된 참조 스토리는 `useChatDetail`이 신고 ID를 `null`로 정리합니다. 카드 축소판은 각 카드의 `compact` 변형을 재사용하고 삭제는 공용 훅을 공유합니다.
+상세 `story-options-menu`, 채팅 `chat-menu-drawer`(우측 드로어, 드로어를 닫은 뒤 시트를 엶), 목록 `card-options-dialog`가 공용 `story-report-sheet`를 엽니다. 채팅 시작 훅 `use-start-chat`은 스토리 상세 CTA와 채팅 메뉴 드로어가 함께 쓰므로 `stories/_shared/hooks`에 둡니다. 상세 메뉴는 `canReport`·`canDelete`가 모두 거짓이면 트리거도 숨깁니다. 채팅의 삭제된 참조 스토리는 `useChatDetail`이 신고 ID를 `null`로 정리합니다. 카드 축소판은 각 카드의 `compact` 변형을 재사용하고 삭제는 공용 훅을 공유합니다.
 
 <a id="1-1-6-웹-컴포넌트-표현"></a>
 
