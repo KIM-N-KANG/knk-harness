@@ -154,7 +154,8 @@
 | 사용자 | `DELETE /users/me/push-tokens` | 디바이스 푸시 토큰 삭제(본문 `token`, 없거나 남의 토큰이어도 204) | 204 | 400·401·403 | 필수 |
 | 사용자 | `GET /users/me/push-settings` | 알림 수신 동의 조회(세 boolean) | 200 | 401·403 | 필수 |
 | 사용자 | `PUT /users/me/push-settings` | 알림 수신 동의 전체 교체(세 필드 필수, 야간 단독 400) | 200 | 400·401·403 | 필수 |
-| 이프 | `GET /credits/policies` | 현재 유효한 적립·소모 수치 6종 조회(정책 오버라이드 반영) | 200 | 없음 | 불필요 |
+| 사용자 | `GET /users/me/trials` | 체험 사용량·한도 조회([§4-3-9](#채팅-실시간-이미지-생성)) | 200 | 400 | 선택 |
+| 이프 | `GET /credits/policies` | 현재 유효한 적립·소모 수치 7종 조회(정책 오버라이드 반영) | 200 | 없음 | 불필요 |
 | 이프 | `GET /credits/products` | 충전 상품 목록 | 200 | 없음 | 불필요 |
 | 이프 | `POST /users/me/credits/orders` | 웹 결제 주문 생성 | 201 | 400·401·503 | 필수 |
 | 이프 | `GET /users/me/credits/orders/{orderId}` | 본인 주문 상태 조회 | 200 | 401·404 | 필수(본인) |
@@ -428,7 +429,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 **`POST /chats/{chatId}/turns/stream`**: 사용자 입력으로 턴을 진행하고 AI 응답을 SSE로 중계합니다. 회원은 20 이프, 게스트는 모든 채팅방 합산 채팅 턴 5회 한도를 사용합니다([§4-3-7](#4-3-api-계약)).
 
-- 요청: `{userInput: string, userSource?: "choice" | "edited_choice" | "typed", sourceTurnId?: number, choiceOrder?: number}`
+- 요청: `{userInput: string, realtimeImage?: boolean, userSource?: "choice" | "edited_choice" | "typed", sourceTurnId?: number, choiceOrder?: number}`
+  - `realtimeImage?: boolean`은 이미지 생성 여부이며 기본값은 `true`입니다. 슬롯 발급·체험·과금은 [§4-3-9](#채팅-실시간-이미지-생성)를 따릅니다.
   - `userInput`은 공백이 아니어야 하며 최대 3000자입니다. 위반하면 400입니다.
   - `userSource`는 선택지를 그대로 쓴 `choice`, 수정한 `edited_choice`, 직접 입력한 `typed` 중 하나입니다. 서버가 문장만으로 구분할 수 없으므로 프론트엔드가 명시하며, 잘못된 값은 400입니다.
   - 서버는 이 값을 AI 요청의 `user_source`로 전달하고, AI는 Langfuse metadata에 기록합니다([AI Spec §5-6](5-ai-server-spec.md)). 값이 없으면 필드를 생략합니다.
@@ -782,7 +784,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `GET /users/me/credits/transactions` | `type`·`limit`·`cursor`(쿼리) | `{items, nextCursor}` | 인증 필수. 원장을 최신순 커서 페이지로 반환합니다. 계약은 아래 이용내역 조회 |
 | `GET /users/me/invite` | 없음 | `{inviteCode, monthlyRewardCount, monthlyRewardLimit}` | 인증 필수. 내 초대 코드·이번 달 초대 보상 진행 조회. 진행 필드 2종을 반환하며 `inviteUrl`은 반환하지 않습니다 |
 | `POST /users/me/invite/redeem` | `{code}` | `{amount, balance}` | 인증 필수. 초대 코드 입력으로 양측 2000 이프 적립. 계정당 평생 1회. 오류 계약은 아래 초대 코드 입력 규칙 |
-| `GET /credits/policies` | 없음 | `{signupReward, inviteReward, inviteMonthlyCap, attendanceReward, storyCreationCost, chatTurnCost}` | 인증 불필요. 현재 유효한 적립·소모 수치 조회(정책 오버라이드 반영). 계약은 아래 수치 조회 |
+| `GET /credits/policies` | 없음 | `{signupReward, inviteReward, inviteMonthlyCap, attendanceReward, storyCreationCost, chatTurnCost, chatImageCost}` | 인증 불필요. 현재 유효한 적립·소모 수치 조회(정책 오버라이드 반영). 계약은 아래 수치 조회 |
 
 - **세션 부트스트랩**: `GET /auth/me`에 세션 복원 시점의 `creditBalance`와 `attendedToday`를 포함합니다([§4-3-5](#4-3-api-계약)). `GET /users/me/credits`는 소모·적립 직후 잔액을 갱신할 때 사용합니다.
 - **가입 보상**: 회원 가입 시 1000 이프를 자동 적립합니다. 별도 API가 없으며, 적립은 생성 시 1회 실행이 아니라 **매 로그인마다 멱등 키 `signup:{보상 신원 id}`로 재시도**해 일시 실패를 자가 복구합니다(실제 적립은 신원당 1회).
@@ -813,17 +815,17 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **정책 오버라이드**: 위 적립·소모 수치는 `credit_policies` 테이블(`policy_key` · `amount` · `effective_until`)로 **릴리스 없이 조정**할 수 있습니다. 유효한 오버라이드(`effective_until IS NULL OR effective_until > now`)가 있으면 그 값을, 없으면 `application.yml` 기본값을 씁니다. 한시 적용은 `effective_until`로 자동 만료하므로 출시 이벤트 종료에 사람의 기억이나 재배포가 필요하지 않습니다. 값은 60초 캐시로 읽고, 만료 판정은 캐시가 아니라 조회 시점에 합니다. DB 조회가 실패해도 요청을 막지 않고 직전 스냅샷(없으면 기본값)을 씁니다.
   - **회계 안전의 근거**: 원장이 append-only이고 각 행이 자기 `amount`를 기록하므로, 수치를 바꿔도 과거 거래는 재계산되지 않고 멱등 키도 금액과 무관합니다. 이미 받은 사람에게 소급되지도 않습니다(가입·초대는 1회성, 출석은 날짜별).
   - **차감·환불 짝**: 소모 경로는 요청 진입 시 정책값을 한 번만 읽어 차감과 환불에 같은 값을 씁니다. 환불이 그 시점 정책을 다시 읽으면 차감액과 어긋납니다.
-  - **범위 제약**: 보상·소모 키는 1 이상, 월 상한 키는 0 이상만 유효합니다(0이 지갑 API의 `amount > 0` 계약과 충돌해 요청이 실패하기 때문). 위반 값은 무시하고 기본값을 쓰며, DB `CHECK (amount BETWEEN 0 AND 10000)`은 자릿수 오타를 막는 거친 방어선입니다. 원장이 append-only라 잘못 지급한 이프는 회수할 수 없으므로, 변경은 여전히 사람이 검토합니다.
+  - **범위 제약**: 보상·`story_creation_cost`·`chat_turn_cost`는 1 이상이고 `invite_monthly_cap`·`chat_image_cost`는 0 이상만 유효합니다(0은 지갑 API의 `amount > 0` 계약과 충돌해 소모 키에서는 금지하되 `chat_image_cost=0`은 [§4-3-9](#4-3-api-계약)의 no-op 계약을 따릅니다). 위반 값은 무시하고 기본값을 쓰며, DB `CHECK (amount BETWEEN 0 AND 10000)`은 자릿수 오타를 막는 거친 방어선입니다. 원장이 append-only라 잘못 지급한 이프는 회수할 수 없으므로, 변경은 여전히 사람이 검토합니다.
   - 변경 수단은 운영 SQL입니다(관리자 API는 현재 범위 밖: 정지 처리·로어북 시드와 같은 관례). 관리자 화면이 생기면 이 테이블을 CRUD하게 됩니다.
 - **수치 조회**
-  - `GET /credits/policies`는 현재 유효한 적립·소모 수치 6종을 반환합니다. 클라이언트는 이 값을 사용하며 수치를 하드코딩하지 않습니다.
+  - `GET /credits/policies`는 `chatImageCost`를 포함한 현재 유효한 적립·소모 수치 7종을 반환합니다. 클라이언트는 이 값을 사용하며 수치를 하드코딩하지 않습니다.
   - 로그인 전 안내에도 쓰는 공개 정보이므로 인증이 필요 없습니다. 다만 탈퇴 계정의 유효 토큰은 401이며 만료·위조 토큰은 익명으로 처리합니다([§4-3-5](#4-3-api-계약)).
   - 한 응답은 같은 정책 스냅샷에서 계산합니다. 변경 반영은 기본 약 1분인 갱신 주기를 따릅니다.
   - `inviteMonthlyCap`은 초대자 보상의 월 횟수 상한입니다. `storyCreationCost`와 `chatTurnCost`는 회원 무료 체험을 모두 쓴 뒤 적용합니다. 일반 제작은 무료이며 게스트는 디바이스 한도를 사용합니다.
 - **이용내역 조회**: `GET /users/me/credits/transactions`로 원장을 사용자에게 공개합니다. 잔액만으로는 그 값이 나온 이유(적립·소모·환불·만료)를 설명할 수 없어, 원장(`credit_transactions`)을 화면용으로 가공해 내려줍니다. 원장을 운영·정산 전용으로 두던 이전 방침을 대체합니다.
-  - **분류(`type`)** · 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`·`PURCHASE`) · `EXPIRE`(`EXPIRE`·`PURCHASE_REVERSAL`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** · 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. 구매 원장의 `PURCHASE`를 `EARN`과 `ALL`에 포함하고, 결제 환불 회수 `PURCHASE_REVERSAL`은 회수 계열인 `EXPIRE`에 묶습니다. 새 분류는 추가하지 않으며 두 사유의 `title`은 `null`입니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
+  - **분류(`type`)** · 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`·`CHAT_IMAGE`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`·`PURCHASE`) · `EXPIRE`(`EXPIRE`·`PURCHASE_REVERSAL`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** · 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. 구매 원장의 `PURCHASE`를 `EARN`과 `ALL`에 포함하고, 결제 환불 회수 `PURCHASE_REVERSAL`은 회수 계열인 `EXPIRE`에 묶습니다. 새 분류는 추가하지 않으며 두 사유의 `title`은 `null`입니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
   - **응답 항목**: `{type, reason, amount, title, expiresAt, createdAt}`. `reason`은 원장 enum 원문이고 **한국어 라벨은 클라이언트가 붙입니다**: 문구 변경에 서버 배포와 3레포 동반 배포가 걸리지 않게 하기 위해서이며, 402의 `code` 계약과 같은 원칙입니다. `ref_type`·`ref_id`는 순차 PK라 노출하지 않습니다.
-  - **`title`(대상 스토리 제목)**: 소모 행은 어느 스토리에 썼는지가 정보의 전부라 원장의 참조를 역으로 풀어 채웁니다. 채팅 소모·환불은 `story_chats`를 거쳐, 제작 소모·환불은 **`story_creation_sessions`를 한 단계 거쳐** 스토리에 닿습니다(원장의 `ref_type`이 `"STORY"`여도 `ref_id`는 스토리 PK가 아니라 제작 세션 PK입니다: 곧장 조인하면 다른 스토리가 붙습니다). 보상·소멸 행과 삭제된 스토리는 `null`이며 클라이언트가 폴백 문구를 씁니다. 조회는 페이지 단위 배치라 항목 수와 무관하게 쿼리 횟수가 고정입니다.
+  - **`title`(대상 스토리 제목)**: 소모 행은 어느 스토리에 썼는지가 정보의 전부라 원장의 참조를 역으로 풀어 채웁니다. 채팅 소모·환불은 `story_chats`를 거쳐, 제작 소모·환불은 **`story_creation_sessions`를 한 단계 거쳐** 스토리에 닿습니다(원장의 `ref_type`이 `"STORY"`여도 `ref_id`는 스토리 PK가 아니라 제작 세션 PK입니다: 곧장 조인하면 다른 스토리가 붙습니다). 보상·소멸 행과 삭제된 스토리는 `null`이며 클라이언트가 폴백 문구를 씁니다. 조회는 페이지 단위 배치라 항목 수와 무관하게 쿼리 횟수가 고정입니다. `CHAT_IMAGE` ref는 채팅 소모와 같이 `story_chats`를 거쳐 제목을 풉니다.
   - **`expiresAt`**: 획득 행은 그 적립이 만든 로트의 만료 예정일, 소멸 행은 **회수된 로트의 실제 만료일**, 소모 행은 `null`입니다. 소멸 행의 `createdAt`을 만료일로 읽으면 안 됩니다: 만료 회수가 배치가 아니라 다음 지갑 락에서 처리되는 지연 정리라 실제 만료보다 며칠 늦게 기록됩니다. 화면의 날짜 표시는 `expiresAt`을 씁니다.
   - **페이징**: 정렬은 `created_at DESC, id DESC`이고 커서는 `(createdAt, id)` 복합입니다. 시각만으로는 같은 시각의 행이 갈리지 않고, 순차 PK 단독으로는 커밋 순서가 시각 순서와 어긋날 수 있어 둘 다 필요합니다. 시각은 **초와 나노초로 보존**합니다: 밀리초로 절삭하면 마이크로초 정밀도인 `created_at`과 어긋나 페이지 경계의 행이 누락됩니다. 커서는 **AES-GCM으로 봉인한 불투명 문자열**입니다(순차 PK가 그대로 드러나면 전역 시퀀스 특성상 커서 두 개의 차이로 서비스 전체 거래량이 추정됩니다). 키는 JWT 대칭키에서 용도 분리 파생이라 주입할 시크릿이 늘지 않습니다. 클라이언트는 받은 값을 그대로 되돌려줄 뿐 파싱하거나 조립하지 않습니다(같은 위치라도 매번 다른 문자열입니다). `limit`은 기본 50·최대 100이며, `nextCursor`는 `limit + 1`건을 조회해 판정하므로 총 건수가 `limit`의 배수여도 빈 페이지를 한 번 더 요청하지 않습니다. 잘못된 커서·지원하지 않는 `type`은 400입니다.
   - **인덱스**: 이용내역이 새로 만드는 두 접근 경로를 덮습니다: `credit_transactions (user_id, created_at DESC, id DESC)`(V65) · `credit_lots (transaction_id)`(V64, 만료일 배치 해석).
@@ -861,12 +863,14 @@ graph TD
 | 스토리 간편 제작(컴파일) | 250 이프 | `story_creation` 1회(최대 1회) | `POST /stories/simple` 시작 시 | 컴파일이 성공(`stories` 반환)으로 끝나지 않으면 전액 환불·카운터 복원(502, 부분 재호출 소진 실패 포함) |
 | 채팅 턴 | 20 이프 | `chat_turn` 1회(최대 5회, 모든 채팅방 합산) | `POST /chats/{chatId}/turns/stream` 시작 시 | `completed` 이벤트 없이 종료되면 전액 환불·카운터 복원(`error` 이벤트·연결 끊김·불완전 종료 모두 포함) |
 | AI 응답 재생성 | 20 이프 | `chat_turn` 1회(채팅 턴 한도 공유) | `POST /chats/{chatId}/turns/regenerate/stream`([§4-3-9](#4-3-api-계약)) 시작 시 | 채팅 턴과 동일 |
+| 채팅 이미지 | `chat_image_cost`(운영값은 0보다 큼·dev는 0)·원장 reason `CHAT_IMAGE`·`ref_type = CHAT_IMAGE` | `chat_image` 1회(최대 5회·채팅 턴과 별개·회원도 동일) | 턴 시작 시 | [§4-3-9](#채팅-실시간-이미지-생성)의 무료 체험·환불 규칙 |
 
 - 소모는 사용자 관점 "만들기·이어가기 1회" 단위입니다. **컴파일당 250 이프, 완성된 턴당 20 이프**이며, 컴파일 내부 부분 재호출(refill, [`5-ai-server-spec.md`](5-ai-server-spec.md))은 추가 소모하지 않습니다(1회 컴파일에 포함).
 - 스토리라인 생성·재생성(`POST /stories/simple/storylines`)은 회원 이프를 소모하지 않고 원장에도 쓰지 않습니다. 단, 게스트는 리롤을 포함해 디바이스 ID별 최대 5회까지만 생성할 수 있습니다.
 - 환불은 요청당 정확히 1회를 보장합니다(charge-once/refund-once): 스트림 타임아웃·연결 끊김이 겹쳐 환불 경로가 중복 실행돼도 요청 단위 가드와 턴별 멱등 키의 이중 방어로 이중 환불을 차단합니다.
 - **회원도 게스트 체험 횟수를 공유합니다**
   - 회원 체험이 남으면 `reserveMember`로 먼저 소진하고, 없으면 이프를 선차감합니다. 무료 요청이 실패하면 `restoreMember`로 체험 횟수를 복원합니다.
+  - 회원 공유 체험은 `story_creation`·`chat_turn`·`chat_image` 세 카운터이며 첫 로그인 시드도 이 셋을 명시적으로 옮깁니다. `storyline_generation`은 회원에게 무료라 제외합니다. 카운터 종을 추가할 때는 한도 분기와 공유 목록을 함께 갱신합니다(공유 목록 누락은 컴파일이 잡지 못함).
   - 첫 로그인 때 게스트 디바이스 사용량을 회원 카운터로 한 번 옮기고 `member_trial_seeded_at`을 기록합니다. 게스트 체험 초기화를 막기 위한 정책입니다.
   - 디바이스 헤더가 없으면 무료 체험을 모두 쓴 상태로 기록합니다. 웹 BFF는 Amplitude 디바이스 ID, Android는 앱 UUID를 로그인 요청에 전달해야 합니다(KNK-683).
   - 인앱 브라우저 로그인은 핸드오프에 저장한 원본 디바이스 ID를 우선합니다([로그인 핸드오프](#4-3-api-계약)).
@@ -891,9 +895,9 @@ graph TD
 
 #### 게스트 체험 한도
 
-- 기준: `X-Manyak-Device-Id`별 누적 카운터 3종입니다. `storyline_generation`은 스토리라인 생성·재생성 합산 5회, `story_creation`은 스토리 간편 제작(컴파일) 1회, `chat_turn`은 모든 채팅방의 채팅 턴·AI 응답 재생성 합산 5회입니다. 일반 제작 등록은 제외합니다. 수치는 `application.yml` 기본값 5·1·5이며 환경 변수로 조정할 수 있습니다. 축소는 카운터 리셋 없이 적용됐으므로, 이전 한도(10·3·15)에서 이미 새 한도 이상을 쓴 기기는 즉시 한도 소진 상태입니다.
+- 기준: `X-Manyak-Device-Id`별 누적 카운터 4종입니다. `storyline_generation`은 스토리라인 생성·재생성 합산 5회, `story_creation`은 스토리 간편 제작(컴파일) 1회, `chat_turn`은 모든 채팅방의 채팅 턴·AI 응답 재생성 합산 5회입니다. `chat_image`는 채팅 턴과 별개인 이미지 생성 5회입니다. 일반 제작 등록은 제외합니다. 수치는 `application.yml` 기본값 5·1·5·5이며 환경 변수로 조정할 수 있습니다. 축소는 카운터 리셋 없이 적용됐으므로, 이전 한도(10·3·15)에서 이미 새 한도 이상을 쓴 기기는 즉시 한도 소진 상태입니다.
 - 판정: 게스트 요청은 Redis 카운터로 한도를 확인하고, 한도 소진 시 `402`(`code=GUEST_TRIAL_LIMIT_EXCEEDED`, "게스트 체험 한도를 모두 사용했습니다.": KNK-524)를 반환합니다. 게스트의 체험 한도 대상 요청은 device 헤더가 필수이며, 헤더가 없으면 400("게스트의 체험 한도 대상 요청은 X-Manyak-Device-Id 헤더가 필요합니다.")을 반환합니다(`GuestTrialLimitService.requireDeviceId`).
-- 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
+- 카운터 키는 `guest_trial:{device_id_hash}:{storyline_generation|story_creation|chat_turn|chat_image}`이며 원본 디바이스 ID가 아니라 SHA-256 해시를 씁니다([§4-7](#4-7-운영과-관측)). 예약은 Lua 스크립트로 "GET → 한도 미만이면 INCR"을 원자 실행하고(이상이면 증가 없이 거절), 복원은 0 아래로 내려가지 않는 조건부 DECR입니다.
 - 카운터는 AI 호출·스트림 시작 전에 예약하고, 위 표의 실패 조건을 만나면 복원합니다. 카운터에는 일일 리셋이나 만료를 두지 않습니다. 이 무만료 특성은 디바이스 ID 회전 시 Redis 키를 단조 증가시키므로, 키 TTL·총량 상한 도입은 후속 강화로 둡니다([BE-045](../adr/2-backend-server-adr.md#be-045)).
 - 한도는 기기 기준이므로 헤더 변조·기기 변경으로 우회할 수 있습니다. 현재는 이 수준을 수용하고 남용 징후는 관측으로 추적합니다. 인앱 게스트 허용 개편 후에는 로그인 없이 브라우저만 옮겨 한도를 한 벌 더 받는 경로가 새로 열립니다: 수용 여부는 미결입니다.
 
@@ -907,11 +911,12 @@ graph TD
 - in-flight 환불의 멱등 키는 채팅이 `refund:chatturn:{요청당 UUID}`(요청 단위 게이트 병행), 간편 제작이 `refund:story:{차감 시도별 UUID}`입니다(재시도 시 환불 유실 방지).
 - 소모 행의 참조는 `ref_type="CHAT"`(채팅 내부 PK) · `ref_type="STORY"`(간편 제작 진행 ID)입니다. 간편 제작 소모의 `ref_id`가 스토리가 아니라 진행(세션) ID인 이유: 스토리 행은 성공 후에야 생기므로, 선차감 시점에 참조할 수 있는 안정 식별자가 진행 ID뿐입니다.
 - **선차감 대사 배치**: "먼저 차감하고 실패하면 환불"하는 구조에서, 환불 코드가 도는 도중 서버가 중단되면 돈만 차감되고 환불 행이 영영 안 남는 엣지가 생깁니다. 이를 막기 위해 주기적으로 원장과 실제 처리 결과를 대조(대사, reconciliation)해 "차감됐는데 완료되지 않은 거래"를 찾아 누락된 환불 행을 추가하는 배치입니다. `fixedDelay`로 실행이 겹치지 않게 직렬화합니다(주기 기본 15분 `interval-ms`, 기동 직후 부하 회피용 초기 지연 60초 `initial-delay-ms`, `enabled`로 온오프: 테스트 프로파일은 끔). 배치는 예외를 밖으로 던지지 않고(fixedDelay 태스크가 예외 1회로 영구 중단되는 것 방어) 그룹별 실패를 격리해 다음 회차에 재시도하며, 보정이 실제 발생한 회차만 `credit_reconciliation_refunded` 로그를 남깁니다. 채팅 소모 거래의 완료 수는 `current_turn + regenerated_count`로 판정해 재생성 소모를 미완료로 오인해 이중 환불하지 않습니다([§4-3-9](#4-3-api-계약)).
+  - 대사 대상 소모 reason은 `STORY_CREATION`·`CHAT_TURN`이며 `CHAT_IMAGE`는 제외합니다(환불은 턴 저장 트랜잭션이 처리).
   - 역할 분담: in-flight 환불 경로가 흔한 실패(AI `error`·스트림 실패)와 워커 미시작 취소를 처리합니다: SSE 워커는 전용 스레드풀(core 4·max 16·큐 100, MDC 전파)에서 돌며, 익스큐터 포화로 스케줄이 거부되면 즉시 환불 후 스트림을 오류로 닫고(`chat_turn_schedule_rejected` 로그), 큐 대기 중 취소로 워커 본문이 실행되지 못한 경우도 완료 콜백 안전망이 환불·복원합니다. 배치는 in-flight가 원리적으로 못 잡는 드문 레이스(선차감 직후 프로세스 중단 등)만 보완합니다.
   - **혼합 단가 주의: (KNK-1056·KNK-1057)**: 아래 개수 대조는 "그룹의 모든 차감이 같은 단가"를 전제로 환불 단위액을 `MIN(ABS(amount))`로 잡습니다. 수치를 런타임에 조정할 수 있게 되면서(정책 오버라이드) 그 전제가 깨졌습니다: 정책 변경 전후의 차감이 한 그룹에 섞이면 차액만큼 **회원이 미보상**됩니다. 편향은 서버가 초과 환불하지 않는 쪽이며, `MIN != MAX`인 그룹은 대사 시 경고 로그로 남겨 탐지할 수 있게 했습니다. 행 단위 정확 대사(차감 행 태깅)는 [KNK-1057](https://kimandkang.atlassian.net/browse/KNK-1057)로 분리했습니다.
   - 대조 방식: 행별 1:1 매칭이 아니라 `(userId, ref_type, ref_id)` 그룹의 **개수 대조**(차감 수 − 완료 수 = 환불 대상)입니다: 참조가 채팅·진행 단위(1:N)라 행 매칭이 불가능하기 때문입니다. 후보는 그룹의 마지막 차감 기준 `MAX(created_at) < cutoff`(기본 15분 전, `charge-age-threshold`)로 골라 진행 중 스트림과의 경합을 피하고, 완료 수가 차감 수보다 많으면(게스트·회원 혼합 이력) 보수적으로 환불하지 않으며(보수적 실패 처리), 완료 수 판정이 불가한 그룹(리소스 삭제·미지원 참조)도 환불하지 않습니다. 환불 단가는 그룹 소모 행의 `MIN(ABS(amount))`로 취해 혼합 단가에서도 초과 환불하지 않게 보수 편향하고, 사후 환불은 멱등 키 없이 지갑 락 안에서 현재 `REFUND` 수를 재확인해 부족분만 발행합니다(다중 인스턴스 동시 실행 포함 멱등).
 
-- `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN`(소모 · 재생성 포함), `REFUND`(환불), `EXPIRE`(로트 만료 회수 · 음수), `PURCHASE`(구매 적립), `PURCHASE_REVERSAL`(결제 환불 회수, 음수). V79의 enum·DB CHECK 제약은 `PURCHASE_REVERSAL`을 허용하며 참조는 `ref_type=CREDIT_ORDER`입니다.
+- `reason` enum: `SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`(적립), `STORY_CREATION` · `CHAT_TURN` · `CHAT_IMAGE`(소모 · 재생성 포함), `REFUND`(환불), `EXPIRE`(로트 만료 회수 · 음수), `PURCHASE`(구매 적립), `PURCHASE_REVERSAL`(결제 환불 회수, 음수). V79의 enum·DB CHECK 제약은 `PURCHASE_REVERSAL`을 허용하며 참조는 `ref_type=CREDIT_ORDER`입니다.
 
 #### 이프 충전(결제)
 
@@ -1098,7 +1103,8 @@ graph TD
 
 마지막 턴의 AI 출력(본문)을 같은 사용자 입력으로 다시 생성합니다. 재생성은 마지막 턴만 대상입니다: 중간 턴을 다시 쓰면 이후 대화의 전제가 무너지기 때문입니다. SSE 이벤트 계약(`started` → `token` → `completed` 또는 `error`)과 Content-Type은 턴 진행([§4-3-3](#4-3-api-계약))과 동일합니다.
 
-- 요청: `{turnId: number}`: 클라이언트가 마지막으로 보고 있는 턴 ID(채팅 상세 턴 항목의 `id`와 동일한 숫자 ID). `@Positive` 검증으로 0·음수는 스트림 전 400입니다. 서버의 마지막 턴과 다르면 스트림 시작 전 동기 409를 반환합니다(다른 탭에서 턴이 추가된 낡은 화면의 재생성 방지). 채팅이 없거나 턴이 0개, 마지막 턴의 짝 USER 메시지를 찾을 수 없으면 404입니다. 엔딩에 도달한 채팅은 동기 409("엔딩에 도달한 채팅은 재생성할 수 없습니다.")를 반환합니다. 판정 기준은 도달 기록이 굳힌 채팅 상태(`story_chats.status = ENDED`)입니다([§4-3-10](#4-3-api-계약)). 동기 검증 순서는 정지 계정 403 → 채팅 404 → 소유권 403 → ENDED 409 → 턴 0개 404 → `turnId` 불일치 409 → (모두 통과 후) 선차감 402입니다.
+- 요청: `{turnId: number, realtimeImage?: boolean}`: 클라이언트가 마지막으로 보고 있는 턴 ID(채팅 상세 턴 항목의 `id`와 동일한 숫자 ID). `@Positive` 검증으로 0·음수는 스트림 전 400입니다. 서버의 마지막 턴과 다르면 스트림 시작 전 동기 409를 반환합니다(다른 탭에서 턴이 추가된 낡은 화면의 재생성 방지). 채팅이 없거나 턴이 0개, 마지막 턴의 짝 USER 메시지를 찾을 수 없으면 404입니다. 엔딩에 도달한 채팅은 동기 409("엔딩에 도달한 채팅은 재생성할 수 없습니다.")를 반환합니다. 판정 기준은 도달 기록이 굳힌 채팅 상태(`story_chats.status = ENDED`)입니다([§4-3-10](#4-3-api-계약)). 동기 검증 순서는 정지 계정 403 → 채팅 404 → 소유권 403 → ENDED 409 → 턴 0개 404 → `turnId` 불일치 409 → (모두 통과 후) 선차감 402입니다.
+- 요청의 `turnId`에 선택 필드 `realtimeImage?: boolean`을 추가합니다. 기본값은 `true`이며 일반 턴과 같은 [슬롯 발급·체험·과금 규칙](#채팅-실시간-이미지-생성)을 적용합니다.
 - 이프·체험 한도: 채팅 턴과 동일합니다([§4-3-7](#4-3-api-계약)): 회원은 20 이프 선차감, 게스트는 `chat_turn` 카운터 1턴 집계, 잔액 부족·한도 소진은 동기 402. 재생성 횟수 제한은 따로 두지 않습니다(소모와 게스트 전체 채팅 턴 한도 5회가 반복을 제어). 404·403·409 검증은 선차감보다 앞서 수행합니다: 실패가 확정된 요청에 차감·환불 왕복을 만들지 않기 위해서입니다.
 - 구현 구조: 이어쓰기와 재생성은 스트리밍·이프·환불 워커를 공유합니다(단일 내부 워커): 과금·환불·SSE 규칙이 두 경로에서 갈라지지 않게 하는 선택입니다.
 - AI 호출: AI 서버 `POST /chat/turns`를 일반 턴과 같은 계약으로 재호출합니다. History는 **마지막 턴의 USER·ASSISTANT 메시지 쌍을 모두 제외**하고(1..N-1턴) 구성하고, `user_input`은 마지막 턴의 사용자 입력을 그대로 다시 보냅니다: 일반 턴에서 이번 턴 입력이 History가 아니라 `user_input`으로만 가는 것과 동일한 형태입니다. AI 서버는 재생성 여부를 구분하지 않습니다(무상태: [`5-ai-server-spec.md §5-3-4`](5-ai-server-spec.md)).
@@ -1156,6 +1162,41 @@ graph TD
 4. 클라이언트로 나가는 실시간 `character_image`는 `{name, imageUrl}`입니다. 같은 인물이 다시 말하면 그때마다 다시 보냅니다. 이미지 이름은 저장·업로드와 AI 요청에서만 쓰고 클라이언트로 내보내지 않습니다([BE-044](../adr/2-backend-server-adr.md#be-044)).
 5. 저장 정본은 마커를 포함한 `aiOutput`입니다. 상세·공유 응답은 본문을 그대로 반환하고 이미지 목록을 재구성하거나 저장하지 않습니다. 상세의 이미지 렌더링과 공유 화면의 마커 숨김은 클라이언트 계약입니다.
 6. 재생성 성공 시 새 본문이 활성 결과가 되고 실패 시 이전 본문을 유지합니다. 현재 인물 테이블을 다시 조회해 과거 턴의 이미지 URL을 바꾸지 않습니다. 스트리밍 중 이미지가 표시된 뒤 실패했을 때 화면 처리는 클라이언트 Spec을 따릅니다.
+
+#### 채팅 실시간 이미지 생성
+
+턴 진행 중 AI가 장면 이미지(자식 이미지)를 새로 생성해 해당 턴에 표시하고 기록합니다. 생성 이미지도 기존 인물 이미지와 같은 방식으로 다루며 저장 위치(URL)는 백엔드가 먼저 발급합니다. 이미지는 채팅에 귀속됩니다. 대상 인물 선택·입력·시간 제한·실패 처리는 [AI Spec의 부모 이미지와 자식 이미지](5-ai-server-spec.md#부모-이미지와-자식-이미지) 절이 소유하며 이 절은 백엔드 책임을 정의합니다.
+
+**기존 이벤트·마커 재사용**: AI는 이미 라벨 인식 → `character_image` 이벤트 → `[[URL]]` 마커 흐름을 사용합니다. 생성 이미지용 계약을 따로 두면 마커의 URL을 확정하는 책임이 두 곳으로 갈라집니다. 백엔드는 턴 요청에 업로드 슬롯을 전달하고 AI는 생성물을 해당 슬롯에 직접 업로드한 뒤 기존 이벤트와 마커를 사용합니다.
+
+1. **슬롯 발급**: 일반 턴 `POST /chats/{chatId}/turns/stream` 요청 본문에 `realtimeImage?: boolean`을 받으며 **기본값은 `true`**입니다. 재생성 `POST /chats/{chatId}/turns/regenerate/stream` 요청도 `turnId`와 선택 필드 `realtimeImage`에 같은 규칙을 적용합니다. 사용자가 `false`로 끄면 슬롯을 발급하지 않습니다. `true`이고 아래 무료 체험·잔액 판정을 통과하면 백엔드 → AI 요청의 `image_slots: [{key, upload_url, public_url}]`에 슬롯 **1개**를 전달하며 그 외에는 발급하지 않습니다. 슬롯이 없으면 AI는 생성하지 않습니다. `realtimeImage`는 백엔드 공개 요청 필드입니다. AI의 호환 필드 `generate_child_image`는 보내지 않습니다. `upload_url`은 만료 10분의 S3 presigned PUT 주소이고 `public_url`은 CDN 주소입니다. 객체 키는 `chat-images/{chatId}/{turnNumber}-{uuid}.webp`입니다. UUID는 재생성 턴이 같은 `turnNumber`의 이전 파일을 덮어쓰지 않도록 경로를 구분합니다(AI 스펙의 저장 경로 구분 계약).
+2. **AI 생성·업로드**: 부모 이미지가 있는 첫 화자 한 명을 골라 자식 이미지 한 장을 만들고 `upload_url`로 PUT합니다. 성공하면 `character_image`의 `imageUrl`과 `completed` 본문의 `[[URL]]` 마커에 `public_url`을 넣습니다. 생성·업로드 실패나 시간 초과이면 **부모 이미지 이름·URL을 그대로** 넣습니다. AI는 업로드 후 HEAD나 공개 주소 조회로 검증하지 않습니다.
+3. **검증·저장**: 백엔드는 `completed`의 `aiOutput` 마커와 `characterImages`에서 `chat-images/` URL을 찾아 **해당 턴에 발급한 `public_url`과 정확히 일치하는 것만** 통과시킵니다. S3 HEAD로 객체 존재를 확인한 뒤 그대로 저장합니다. 발급하지 않은 `chat-images/` URL이나 객체가 존재하지 않는 URL의 마커는 본문에서 제거하고 저장합니다. 부모 URL은 기존 인물 이미지 규칙대로 통과합니다. 발급 URL 대조는 AI 스펙이 백엔드 책임으로 정한 저장 검증·과금·삭제의 경계이며 AI가 임의 URL을 본문에 삽입하는 것을 막습니다.
+4. **저장·조회·클라이언트**: 기존 계약을 유지합니다. 기록은 `aiOutput`의 `[[URL]]` 마커가 전부이며 백엔드 테이블을 새로 두지 않습니다. S3 키에 채팅 식별자를 포함해 소속을 구분합니다. 채팅은 소프트 삭제(`deleted_at`)이므로 본문·버전 이력과 마찬가지로 이미지 객체도 보존합니다. 하드 삭제 정책이 생기면 텍스트와 함께 처리합니다.
+
+**범위 밖**: 다음 턴에 넘기는 인물 이미지는 현재와 같이 스토리 기본 이미지(부모) 1장을 유지합니다. 생성본을 다음 턴의 부모로 사용하거나 인물 이미지를 교체하는 기능은 인물당 여러 이미지를 선택할 수 있을 때 함께 진행합니다.
+
+**장수**: 턴당 1장이며 채팅당 상한은 두지 않습니다. 턴당 1장 제한과 아래 무료 체험·과금 규칙으로 생성량을 제어합니다. 채팅별 생성 장수는 따로 저장·조회하지 않습니다.
+
+**재생성**: 재생성 턴에도 같은 이미지 생성 설정과 무료 체험·과금 규칙을 적용합니다. 슬롯 발급 대상이면 새 슬롯을 발급하고 체험 1회를 예약하거나 이미지 소모분을 다시 선차감합니다. 이전 이미지는 본문 교체와 함께 화면에서 사라지므로 별도 화면 정리가 필요하지 않습니다. 이전 본문은 마커와 함께 `story_message_versions`에 보존합니다. 버전 이력이 참조하는 이전 객체는 삭제하지 않습니다.
+
+**`completed` 타이밍**: 이미지가 본문보다 늦게 끝나면 이미지까지 기다렸다가 `completed`를 발행합니다. 본문은 `token`으로 전달하고 이미지 결과를 포함한 완료는 `completed` 한 번으로 확정합니다. 첫 대사 앞에서 이미지 결과를 기다리는 시점은 AI 계약을 따릅니다. 이미지를 후속 이벤트로 분리하면 세 저장소의 SSE 계약이 모두 바뀌고 저장 시점이 둘로 갈라집니다.
+
+**무료 체험과 과금.** 이미지 생성은 채팅 턴과 **별개의 무료 체험 카운터** `chat_image`를 사용하며 한도는 5회입니다. 게스트는 디바이스 카운터를 사용하고 회원은 회원 카운터를 사용합니다. 예약·복원·로그인 시드는 [§4-3-7](#4-3-api-계약)의 기존 체험 메커니즘을 따릅니다. 회원 키가 없으면 사용량을 0으로 판정하므로 규칙 도입 전 회원도 자동으로 5회를 받으며 백필은 하지 않습니다. 채팅 5회와 이미지 5회는 서로의 소진에 영향을 주지 않습니다.
+
+- **판정 순서**: 동기 판정 순서는 기존 채팅 권한·상태 검증 → 채팅 턴 체험 예약 또는 턴 비용 판정 → 이미지 체험 예약 또는 이미지 비용 판정입니다. 뒤 단계가 실패해 요청을 종료하면 앞에서 예약한 체험을 즉시 복원합니다. 이미지 판정은 `realtimeImage`가 `true`인 턴에 적용하며 이미지 체험 잔여가 있으면 `chat_image` 1회를 먼저 예약합니다. 회원은 **체험으로 면제되지 않고 비용이 양수인 항목만** 각각 별도 원장 행으로 차감합니다(`CHAT_TURN`·`CHAT_IMAGE`·최대 2행). `CHAT_IMAGE`의 `ref_type`은 `CHAT_IMAGE`이며 `ref_id`는 채팅 PK입니다. 차감은 같은 트랜잭션에서 지갑을 한 번 잠그고 유료 항목의 합계로 잔액을 한 번 판정한 뒤 원장 행을 항목별로 저장합니다. 부족하면 턴 전체를 402로 거부하고 예약한 체험 카운터를 복원합니다(클라이언트는 잔액·`chatImageCost`·잔여 체험을 알고 있으므로 "이미지 끄기 또는 충전"을 안내). 게스트의 이미지 체험 소진은 슬롯만 생략하고 턴을 진행합니다(402 아님). `chat_image_cost=0`이면 이미지 체험 소진 후에도 슬롯을 발급하고 이미지 원장 행은 만들지 않습니다.
+- **성공·환불**: 자식 이미지 업로드 검증을 통과하면 성공입니다. 이미지 실패(생성 생략·업로드 실패·부모 대체·검증 탈락)는 `CHAT_IMAGE` 차감 행이 있으면 그 행 전액을 `REFUND`(`ref_type = CHAT_IMAGE`) 한 건으로 환불하고 체험이었으면 `chat_image` 카운터를 복원합니다. 이미지 환불은 턴 활성본 저장과 같은 DB 트랜잭션에서 기록합니다. 본문 실패(턴 저장 전)는 **존재하는 차감 행마다** `REFUND` 한 건씩 전액 환불하고 체험으로 처리한 항목은 각 카운터를 복원합니다. 환불은 차감 행별로 멱등합니다. 요청 단위 게이트 하나를 여러 차감 행이 공유하면 후속 환불이 막히므로 행별 키를 사용합니다. 이미지 환불의 `ref_type`이 `CHAT`과 다르므로 선차감 대사([§4-3-7](#4-3-api-계약))의 `(user, CHAT, chatPk)` 건수 판정에 섞이지 않습니다.
+- **수용한 한계**: 선차감 대사 배치는 `CHAT_TURN`·`STORY_CREATION`만 대상이므로 프로세스 중단으로 배치가 처리하는 턴의 `CHAT_IMAGE` 행은 자동 환불되지 않을 수 있습니다. 빈도가 낮아 수용하며 [KNK-1292](https://kimandkang.atlassian.net/browse/KNK-1292)에서 추적합니다.
+- **회원 체험 턴**: 채팅 턴이 무료 체험으로 처리되어도 이미지는 자체 카운터로 따로 판정합니다. 채팅 체험은 이미지 비용을 면제하지 않으며 이미지 체험도 채팅 턴 비용을 면제하지 않습니다.
+- **소모량**: 정책 키는 `credit_policies.policy_key = chat_image_cost`이며 기본값은 `MANYAK_CREDIT_CHAT_IMAGE_COST`입니다. **dev는 0**으로 두고 로컬 실측 후 운영값을 정합니다. **운영은 출시 시점부터 0보다 큰 값**을 사용합니다. `GET /credits/policies`는 `chatImageCost`를 함께 반환합니다. `chat_image_cost`는 보상·기존 소모 키와 달리 **0 이상**을 허용합니다. 0은 이미지 생성이 무료라는 뜻이며 이미지 비용에 대한 차감·환불 원장 행과 로트를 만들지 않습니다(지갑 API와 DB CHECK가 0원 행을 거부하므로 호출 자체를 생략). 채팅 턴 비용이 유료이면 기존 `CHAT_TURN` 금액만 차감합니다.
+- 원가는 로컬에서 실제 프롬프트로 표본을 뽑아 산정합니다. 이미지 모델 단가는 텍스트 입력·이미지 입력·이미지 출력 토큰별로 다르므로 장당 고정가는 없습니다.
+
+**잔여 조회.** `GET /users/me/trials`는 인증 선택 API입니다. 회원은 토큰으로 인증하고 게스트는 `X-Manyak-Device-Id` 헤더를 전달합니다. 게스트가 헤더 없이 호출하면 400입니다. 응답은 `{chatTurn, chatImage, storyCreation, storylineGeneration}`이며 각 항목은 `used`와 `limit`을 가진 객체입니다. 회원 값은 회원 카운터에서 읽고 게스트 값은 디바이스 카운터에서 읽습니다. 회원 응답의 `storylineGeneration`은 `{used: 0, limit: null}`이며 `limit: null`은 회원에게 횟수 제한이 없음을 뜻합니다. 회원용 `storyline_generation` 키는 만들거나 시드하지 않습니다. `remaining`은 초대 상한과 같은 관례로 클라이언트가 계산합니다.
+
+- 체험 잔여를 서버가 제공하는 첫 API입니다. 클라이언트가 로컬에서 세던 채팅 잔여도 이 응답으로 대체합니다. 회원은 다른 브라우저·기기에서도 같은 회원 카운터 값을 사용합니다. 게스트는 전달한 디바이스 ID의 카운터 값을 사용합니다.
+- 첫 턴 전에 필요한 값이므로 `completed` 이벤트에는 포함하지 않습니다. 기존 SSE 계약을 유지합니다.
+
+**운영 연결**: 백엔드 태스크 역할에 `chat-images/*` 쓰기 권한이 필요합니다(`manyak-terraform`의 KNK-1293. 선례는 `thumbnails/generated/*`의 KNK-1072). AI는 `upload_url` 호스트가 자신의 허용 목록에 있을 때만 생성·업로드하므로 백엔드가 발급하는 S3 호스트를 AI 설정에 등록해야 합니다(KNK-1294). 쓰기 권한이 없으면 업로드가 실패하고 호스트가 허용되지 않으면 생성·업로드를 생략합니다. 두 경우 모두 부모 이미지로 대체합니다.
 
 **배경 이미지 계약.** 배경은 인물과 별도 기능입니다. 등록 시 장르로 후보를 연결하고 AI가 매 턴 후보 중 최대 한 장을 선택합니다. 저장 마커는 `[[image:<imageKey>]]`, 완료 응답의 매핑은 `images[]`입니다. 인물 이미지 구현을 배경 기능의 구현 완료로 간주하지 않습니다. 현재 구현 범위는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)를 따릅니다.
 
