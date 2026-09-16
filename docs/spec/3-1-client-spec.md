@@ -283,7 +283,7 @@
 | `REFUND` | 사용 취소 |
 | `STORY_CREATION` | 스토리 완성 |
 | `CHAT_TURN` | 채팅 전송 |
-| `CHAT_IMAGE` | 채팅 이미지 생성 |
+| `CHAT_IMAGE` | 채팅 실시간 이미지 생성 |
 | `EXPIRE` | 기간 만료 |
 | `PURCHASE` | 이프 구매 |
 | `PURCHASE_REVERSAL` | 구매 환불 |
