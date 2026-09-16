@@ -1172,7 +1172,7 @@ graph TD
 1. **슬롯 발급**: 일반 턴 `POST /chats/{chatId}/turns/stream` 요청 본문에 `realtimeImage?: boolean`을 받으며 **기본값은 `true`**입니다. 재생성 `POST /chats/{chatId}/turns/regenerate/stream` 요청도 `turnId`와 선택 필드 `realtimeImage`에 같은 규칙을 적용합니다. 사용자가 `false`로 끄면 슬롯을 발급하지 않습니다. `true`이고 아래 무료 체험·잔액 판정을 통과하면 백엔드 → AI 요청의 `image_slots: [{key, upload_url, public_url}]`에 슬롯 **1개**를 전달하며 그 외에는 발급하지 않습니다. 슬롯이 없으면 AI는 생성하지 않습니다. `realtimeImage`는 백엔드 공개 요청 필드입니다. AI의 호환 필드 `generate_child_image`는 보내지 않습니다. `upload_url`은 만료 10분의 S3 presigned PUT 주소이고 `public_url`은 CDN 주소입니다. 객체 키는 `chat-images/{chatId}/{turnNumber}-{uuid}.webp`입니다. UUID는 재생성 턴이 같은 `turnNumber`의 이전 파일을 덮어쓰지 않도록 경로를 구분합니다(AI 스펙의 저장 경로 구분 계약).
 2. **AI 생성·업로드**: 부모 이미지가 있는 첫 화자 한 명을 골라 자식 이미지 한 장을 만들고 `upload_url`로 PUT합니다. 성공하면 `character_image`의 `imageUrl`과 `completed` 본문의 `[[URL]]` 마커에 `public_url`을 넣습니다. 생성·업로드 실패나 시간 초과이면 **부모 이미지 이름·URL을 그대로** 넣습니다. AI는 업로드 후 HEAD나 공개 주소 조회로 검증하지 않습니다.
 3. **검증·저장**: 백엔드는 `completed`의 `aiOutput` 마커와 `characterImages`에서 `chat-images/` URL을 찾아 **해당 턴에 발급한 `public_url`과 정확히 일치하는 것만** 통과시킵니다. S3 HEAD로 객체 존재를 확인한 뒤 그대로 저장합니다. 발급하지 않은 `chat-images/` URL이나 객체가 존재하지 않는 URL의 마커는 본문에서 제거하고 저장합니다. 부모 URL은 기존 인물 이미지 규칙대로 통과합니다. 발급 URL 대조는 AI 스펙이 백엔드 책임으로 정한 저장 검증·과금·삭제의 경계이며 AI가 임의 URL을 본문에 삽입하는 것을 막습니다.
-4. **저장·조회·클라이언트**: 기존 계약을 유지합니다. 기록은 `aiOutput`의 `[[URL]]` 마커가 전부이며 백엔드 테이블을 새로 두지 않습니다. S3 키에 채팅 식별자를 포함해 소속을 구분하고 채팅 삭제 시 해당 prefix의 객체를 삭제합니다.
+4. **저장·조회·클라이언트**: 기존 계약을 유지합니다. 기록은 `aiOutput`의 `[[URL]]` 마커가 전부이며 백엔드 테이블을 새로 두지 않습니다. S3 키에 채팅 식별자를 포함해 소속을 구분합니다. 채팅은 소프트 삭제(`deleted_at`)이므로 본문·버전 이력과 마찬가지로 이미지 객체도 보존합니다. 하드 삭제 정책이 생기면 텍스트와 함께 처리합니다.
 
 **범위 밖**: 다음 턴에 넘기는 인물 이미지는 현재와 같이 스토리 기본 이미지(부모) 1장을 유지합니다. 생성본을 다음 턴의 부모로 사용하거나 인물 이미지를 교체하는 기능은 인물당 여러 이미지를 선택할 수 있을 때 함께 진행합니다.
 
