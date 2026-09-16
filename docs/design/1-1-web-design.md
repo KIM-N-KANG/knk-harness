@@ -192,6 +192,10 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 [terms-content.ts](../../../manyak-web/src/features/legal/content/terms-content.ts)·[privacy-content.ts](../../../manyak-web/src/features/legal/content/privacy-content.ts)가 시행일·버전·본문의 정본입니다. Android `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`/privacy`를 만들고 `LegalDocumentScreen` WebView가 같은 본문을 표시합니다. 미래 시행일을 현재 시행본으로 부르지 않습니다.
 
+### 온보딩 소개 이미지 (웹)
+
+[온보딩 상수](../../../manyak-web/src/features/onboarding/constants.ts)의 `ONBOARDING_SECTIONS`가 문구·순서·이미지 경로를 관리하고, 문구 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다. `public/onboarding/*-light.webp`·`*-dark.webp`는 1082×2402 원본을 무손실 변환한 WebP입니다. `onboarding-landing.tsx`의 `SceneCard`는 `next/image` 두 장 중 `next-themes`가 적용한 `.dark` 클래스에 맞는 한 장만 CSS로 표시합니다. 별도 테마 상태나 마운트 대기 없이 첫 표시·테마 전환을 처리하며, 숨긴 이미지는 접근성 트리에서도 제외됩니다.
+
 ### 온보딩 진입 게이트 (웹)
 
 노출 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다.
