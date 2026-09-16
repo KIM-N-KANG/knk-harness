@@ -79,6 +79,7 @@ graph LR
 | localStorage 체험·안내 | `manyak:guest-usage`의 `{storylineCreate, storyCreate, chat}`, `manyak:onboarding-seen`의 `'1'`, `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen` |
 | localStorage 제작 | `manyak:pending-creation-request`의 JSON 판별 유니언. [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts) |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 제작 화면에서 이동 전에 기록해 퍼널 재개 확인을 생략 |
+| localStorage 결제 대기 주문 | `manyak:pending-credit-order`의 `{orderId, savedAt}`. 그로블 결제창 이동 직전에 기록하고 복귀 폴링에 쓴다(24시간 TTL). [주문 저장소](../../../manyak-web/src/features/my/credits/utils/pending-credit-order-storage.ts) |
 
 제작 슬롯은 `KEYWORD_DRAFT`·`STORY_DRAFT`·`STORYLINE_GENERATION`·`STORY_COMPLETION` 중 한 건입니다. 읽기·쓰기·삭제 예외를 처리하며 실패를 저장 성공으로 표시하지 않습니다.
 
