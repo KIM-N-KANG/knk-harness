@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.3 |
+| 버전 | v0.4 |
 | 작성일 | 2026-09-09 |
 | 수정일 | 2026-09-17 |
 | 대상 | manyak-android |
@@ -123,6 +123,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 홈 카드·상세 히어로의 `StoryThumbnail`은 누적 턴 수 배지만 그립니다. 상세 `StartChatCta`는 채팅 시작 버튼만, 제작 `MyStoryCard`와 옵션 미리보기의 메타에는 턴 수·제작일만 표시합니다. 좋아요 API·엔티티·`StoryDetailViewModel`의 토글 로직은 유지하고 UI에서 연결하지 않습니다.
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
+- `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다.
 - 추가 정보의 편집 버튼도 `keepKeyboardOnTap`을 사용하고, `AdditionalInfoRows`는 채팅과 같은 삭제 전 포커스 이동 순서를 적용합니다. 퇴장 중인 입력과 삭제 버튼은 비활성화합니다.
 - 채팅 작성 버튼은 공통 `keepKeyboardOnTap`으로 루트의 바깥 탭 포커스 해제에서 제외합니다. `BlockInputList`는 현재 포커스와 블럭별 `FocusRequester`를 컴포지션 수명에 두고, 삭제할 입력을 비활성화하기 전에 남은 입력으로 포커스를 옮깁니다.
