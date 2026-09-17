@@ -322,7 +322,7 @@ provider별 적용은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우�
 | --- | --- |
 | Vitest | SSE·저장·상태 전환 등 순수 로직 |
 | Playwright Pixel 5 | 전체 기능·요청 계약 |
-| Desktop Chrome·iPhone 13 | `e2e/smoke/` 핵심 진입·이동 |
+| iPhone 13 | `e2e/smoke/` 핵심 진입·이동 |
 | 비주얼 회귀 | Linux 기준 `e2e/visual/`; UI 변경 시 diff 검토. macOS는 스냅샷 비교 제외 |
 
 ### e2e ↔ US 매핑
