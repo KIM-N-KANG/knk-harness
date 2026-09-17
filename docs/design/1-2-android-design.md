@@ -183,6 +183,10 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 `CreditPolicy`는 앱 Singleton StateFlow로 한 번 조회하고 CompositionLocal로 전달합니다. 고정 수치를 폴백으로 쓰지 않으며 최초 실패는 placeholder, 기존 값이 있으면 그 값을 유지합니다. 화면마다 재요청하지 않습니다.
 
+### 체험 잔여 조회
+
+`GET /users/me/trials`는 `common`의 `TrialsRepository` 계약과 `my`의 Singleton 구현이 소유하며 결과는 메모리 StateFlow에만 둡니다. 루트가 세션이 회원이 될 때마다 조회하고 `LocalTrials`로 전달합니다. 소모 시점인 채팅 턴 `completed`와 스토리 완성 확정 뒤에 다시 조회하며 화면 진입마다 재요청하지 않습니다. 잔여 계산(`limit - used`, `limit` null은 무제한)은 엔티티가 맡고, 채팅 정가·적용가는 `chat`의 순수 함수가 정책·잔여·실시간 이미지 여부로 계산합니다. 회원 귀속 값이라 `UserScopedStore`로 종료 정리에 참여해 다음 회원에게 이전 잔여를 보이지 않습니다. 실패는 기존 값을 유지하고 응답 전에는 적용가를 확정하지 않습니다.
+
 ## 1-2-6. 푸시와 알림
 
 ### 푸시 토큰 등록
