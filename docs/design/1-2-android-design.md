@@ -121,6 +121,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
 - 홈 카드·상세 히어로의 `StoryThumbnail`은 누적 턴 수 배지만 그립니다. 상세 `StartChatCta`는 채팅 시작 버튼만, 제작 `MyStoryCard`와 옵션 미리보기의 메타에는 턴 수·제작일만 표시합니다. 좋아요 API·엔티티·`StoryDetailViewModel`의 토글 로직은 유지하고 UI에서 연결하지 않습니다.
+- 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다.
 - 구성 변경은 Activity 재생성으로 처리합니다. `configChanges`나 화면 방향 고정으로 우회하지 않습니다. 화면 폭을 제한한 스크롤 레이아웃과 상태 복원으로 대응합니다.
