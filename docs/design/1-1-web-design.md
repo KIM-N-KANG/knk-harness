@@ -78,18 +78,18 @@ graph LR
 | localStorage 스토리·채팅 ID | `manyak:created-story-ids`·`manyak:created-chat-ids`, 최신순 JSON 배열. [스토리 저장소](../../../manyak-web/src/features/stories/_shared/utils/story-id-storage.ts)·[채팅 저장소](../../../manyak-web/src/features/chats/_shared/utils/chat-id-storage.ts) |
 | localStorage 안내 | `manyak:onboarding-seen`의 `'1'`, `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`. 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
 | localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(기본 on). [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
-| localStorage 제작 | `manyak:pending-creation-request`의 JSON 판별 유니언. [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts) |
+| localStorage 제작 | 편집 슬롯 `manyak:pending-creation-request`의 JSON 판별 유니언과 완성 요청 목록 `manyak:story-completion-requests`의 JSON 배열. [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts) |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 제작 화면에서 이동 전에 기록해 퍼널 재개 확인을 생략 |
 | localStorage 결제 대기 주문 | `manyak:pending-credit-order`의 `{orderId, savedAt}`. 그로블 결제창 이동 직전에 기록하고 복귀 폴링에 쓴다(24시간 TTL). 결과 확정·닫기·로그아웃·세션 만료·탈퇴에서 지우며, 확정 뒤 카드 유지는 컴포넌트 상태가 맡는다. [주문 저장소](../../../manyak-web/src/features/my/credits/utils/pending-credit-order-storage.ts) |
 
-제작 슬롯은 `KEYWORD_DRAFT`·`STORY_DRAFT`·`STORYLINE_GENERATION`·`STORY_COMPLETION` 중 한 건입니다. 읽기·쓰기·삭제 예외를 처리하며 실패를 저장 성공으로 표시하지 않습니다.
+편집 슬롯은 `KEYWORD_DRAFT`·`STORY_DRAFT`·`STORYLINE_GENERATION` 중 한 건이고, 완성 요청은 `STORY_COMPLETION` 레코드를 `requestId`별로 목록에 둡니다(Android Room의 `pending_story_creation`·`story_completion_request` 분리와 같은 모델). 두 키는 같은 변경 이벤트를 공유합니다. 읽기·쓰기·삭제 예외를 처리하며 실패를 저장 성공으로 표시하지 않습니다.
 
 - 편집은 300ms 디바운스, `visibilitychange(hidden)`·`pagehide`에서 flush합니다. 복원 직후 삭제하지 않습니다. 저장 중·성공 배지는 실제 쓰기 결과를 따릅니다.
-- 진행 요청은 draft보다, `STORY_DRAFT`는 늦은 `KEYWORD_DRAFT`보다 우선합니다. 서버 결과는 같은 `requestId`의 레코드만 교체·제거합니다.
-- 완성 제출 레코드 저장 성공 뒤 POST하고 제작 탭으로 replace합니다. 언마운트 후 응답은 `resolveSuccessSettlement`·`resolveErrorSettlement`가 판정합니다. 성공·네트워크 오류·409는 복구에 맡기고, 그 외 확정 `FetchError`는 `demotePendingCompletionToDraft` 후 토스트로 처리합니다.
+- 슬롯 안에서 `STORYLINE_GENERATION`은 draft보다, `STORY_DRAFT`는 늦은 `KEYWORD_DRAFT`보다 우선합니다. 서버 결과는 같은 `requestId`의 레코드만 교체·제거합니다.
+- `addStoryCompletionRequest`가 완성 레코드를 목록에 넣고 편집 슬롯을 비운 뒤 POST하고 제작 탭으로 replace합니다. 언마운트 후 응답은 `resolveSuccessSettlement`·`resolveErrorSettlement`가 판정합니다. 성공·네트워크 오류·409는 카드 폴링에 맡기고, 그 외 확정 `FetchError`는 `demotePendingCompletionToDraft` 후 토스트로 처리합니다. 강등은 목록에서 요청을 빼고 슬롯이 비어 있을 때만 `STORY_DRAFT`를 씁니다. 퍼널의 `use-creation-request-recovery`는 슬롯의 스토리라인 생성만 복구하며 완성 요청을 복원하지 않습니다.
 - [use-creation-progress-polling](../../../manyak-web/src/features/studio/menu/hooks/use-creation-progress-polling.ts)은 제작 카드가 보일 때 5초마다 조회합니다. 퍼널 복구는 보이는 동안 3초입니다. 두 경로는 [use-is-creation-request-pending](../../../manyak-web/src/features/stories/_shared/hooks/use-is-creation-request-pending.ts)으로 QueryClient의 MutationCache에서 생성 단계의 mutationKey와 requestId가 같은 진행 중 POST를 구독합니다. 원 POST가 끝날 때까지 쿼리와 캐시 결과 판정을 보류해 요청 등록 전 404와 재시도 전 FAILED를 소비하지 않습니다. 별도 저장소나 고정 지연은 두지 않으며, 새로고침 후에는 메모리의 원 POST가 없으므로 저장 레코드로 즉시 복구합니다. 사용자 결과는 [웹 제작 상태 표](../spec/3-2-web-spec.md#웹-제작-흐름)를 따릅니다.
-- 완성 폴링은 `createdStoryId`를 확정하고 부수효과를 적용하되 레코드를 즉시 제거하지 않습니다. [created-story-list](../../../manyak-web/src/features/studio/menu/components/created-story-list.tsx)가 새 ID를 목록에서 확인하면 같은 렌더에서 진행 카드와 완성 카드를 교체한 뒤 슬롯을 정리합니다. 진행·완성 행은 같은 `ul`의 `AnimatePresence(mode="popLayout")`에서 전환하며, 기존 스토리 행의 ID key와 DOM을 유지합니다.
-- `resolveCreationRecovery`로 결과를 판정하고 `replacePendingCreationRequest`·`markPendingStoryCreated` 선점에 성공한 경로만 게스트 카운터·ID·픽셀·회원 목록 무효화를 적용합니다. 직접 복구에서 완성 `storyId`는 채팅 성공 전까지 보존해 채팅만 재시도합니다.
+- 완성 폴링은 카드마다 돌며 `createdStoryId`를 확정하고 부수효과를 적용하되 레코드를 즉시 제거하지 않습니다. [created-story-list](../../../manyak-web/src/features/studio/menu/components/created-story-list.tsx)가 새 ID를 목록에서 확인하면 같은 렌더에서 해당 카드와 완성 카드를 교체한 뒤 그 요청만 목록에서 뺍니다. 진행·완성 행은 같은 `ul`의 `AnimatePresence(mode="popLayout")`에서 전환하며, 기존 스토리 행의 ID key와 DOM을 유지합니다.
+- `resolveCreationRecovery`로 결과를 판정하고 `replacePendingCreationRequest`·`markPendingStoryCreated` 선점에 성공한 경로만 게스트 카운터·ID·픽셀·회원 목록 무효화를 적용합니다. 레코드 저장에 실패해 퍼널에 남은 경우에만 완성 성공 뒤 채팅을 만들어 이동합니다.
 - 진행 카드·새 제작의 재개 동작은 `sessionStorage` 의도로 연결합니다. 새로 만들기·삭제는 다이얼로그 대상과 현재 `requestId`가 같을 때만 슬롯을 제거합니다.
 
 ### 데이터 패칭 기본 옵션 (웹)
