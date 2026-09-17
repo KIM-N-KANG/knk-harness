@@ -200,7 +200,7 @@ US-9-8(인앱 체험)·US-9-9(핸드오프)의 웹 계약입니다.
 
 ## 3-2-6. 유료 충전
 
-상품은 `GET /credits/products`의 웹 가격(`webPriceKrw`)으로 표시하며 앱 가격은 노출하지 않습니다. 상품 선택 후 `POST /users/me/credits/orders`로 주문을 만들고 반환된 paymentUrl로 전체 이동(외부 결제창)합니다. 주문 생성이 201이 아니거나 paymentUrl이 없으면 이동하지 않고 실패 토스트를 띄웁니다. 결제창의 구매 완료 후 이동 페이지는 `/my/credits`이며 주문 ID를 실어 오지 않으므로, 이동 직전 `orderId`를 기기(localStorage)에 남기고 복귀 시 그 주문을 `GET /users/me/credits/orders/{orderId}`로 2초 간격 최대 30회 조회합니다. 화면 상태·문구는 [공통 결제 결과](3-1-client-spec.md#fe-screen-008-로그인마이-페이지)를 따르며 잔액 상자 아래 확인 카드로 표시합니다. 대기 주문 기록은 24시간이 지나면 무시하고, 결과가 난 주문은 카드를 닫거나 화면을 떠날 때 지웁니다.
+상품은 `GET /credits/products`의 웹 가격(`webPriceKrw`)으로 표시하며 앱 가격은 노출하지 않습니다. 상품 선택 후 `POST /users/me/credits/orders`로 주문을 만들고 반환된 paymentUrl로 전체 이동(외부 결제창)합니다. 주문 생성이 201이 아니거나 paymentUrl이 없으면 이동하지 않고 실패 토스트를 띄웁니다. 결제창의 구매 완료 후 이동 페이지는 `/my/credits`이며 주문 ID를 실어 오지 않으므로, 이동 직전 `orderId`를 기기(localStorage)에 남기고 복귀 시 그 주문을 `GET /users/me/credits/orders/{orderId}`로 2초 간격 최대 30회 조회합니다. 화면 상태·문구는 [공통 결제 결과](3-1-client-spec.md#fe-screen-008-로그인마이-페이지)를 따르며 잔액 상자 아래 확인 카드로 표시합니다. 대기 주문 기록은 24시간이 지나면 무시합니다. 결과가 확정(`COMPLETED`·`REFUNDED`·404)되면 기록을 즉시 지우고 카드는 닫거나 화면을 떠날 때까지만 표시하므로 새로고침·재진입에서 다시 묻지 않습니다. 결과 없이 떠난 주문(확인 중·60초 초과·조회 오류)은 기록을 남겨 재진입 시 다시 확인합니다. 결제창에서 뒤로가기로 문서가 복원(bfcache)되면 가격 버튼 잠금을 풉니다. 로그아웃·세션 만료·탈퇴 시 기록을 지웁니다.
 
 <a id="검수"></a>
 
