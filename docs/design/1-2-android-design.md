@@ -124,6 +124,8 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다.
+- 추가 정보의 편집 버튼도 `keepKeyboardOnTap`을 사용하고, `AdditionalInfoRows`는 채팅과 같은 삭제 전 포커스 이동 순서를 적용합니다. 퇴장 중인 입력과 삭제 버튼은 비활성화합니다.
+- 채팅 작성 버튼은 공통 `keepKeyboardOnTap`으로 루트의 바깥 탭 포커스 해제에서 제외합니다. `BlockInputList`는 현재 포커스와 블럭별 `FocusRequester`를 컴포지션 수명에 두고, 삭제할 입력을 비활성화하기 전에 남은 입력으로 포커스를 옮깁니다.
 - 구성 변경은 Activity 재생성으로 처리합니다. `configChanges`나 화면 방향 고정으로 우회하지 않습니다. 화면 폭을 제한한 스크롤 레이아웃과 상태 복원으로 대응합니다.
 - 제작 편집 저장소는 ActivityRetained 수명을 가지며, 화면 destination의 STOP을 앱 이탈로 해석하지 않습니다.
 
@@ -228,6 +230,12 @@ Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
 v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. destructive migration을 사용하지 않습니다.
+
+### 제작 로딩 표현
+
+`designsystem`의 `ImageGenerationLoading`은 비율·접근성 라벨을 받아 테마 배경·테두리와 위치·크기·밝기가 함께 변하는 점 패턴을 그립니다. `studio`의 Completing 표지는 3:4로 사용합니다. 4:3도 같은 컴포넌트로 표현하며 API·폴링 상태를 직접 소유하지 않습니다.
+
+`rememberTextShimmerBrush`는 채팅의 기존 브러시를 공용화한 것으로, `create`의 순환 문구와 `studio`의 완성 제목은 4초 주기, 채팅 대기 문구는 기존 2초·색을 사용합니다. 스토리라인 문구는 4초마다 글자 단위로 교차합니다. 애니메이션은 Compose 수명에 종속되며, 지연 힌트의 시작 시각과 노출 상태는 `rememberSaveable`로 구성 변경을 견딥니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#퍼널)을 따릅니다.
 
 ### 편집 저장과 복원
 
