@@ -107,7 +107,7 @@ Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리합니다
 | 트리거 | 동작 |
 | --- | --- |
 | PR → `dev` | pnpm install, lint, typecheck, Docker build 검증 |
-| PR·push → `dev`·`main` | Playwright: Pixel 5 전체 E2E·비주얼 회귀, Desktop Chrome·iPhone 13 스모크. CI가 Chromium·WebKit을 설치하고 Linux 기준 이미지와 비교 |
+| PR·push → `dev`·`main` | Playwright(4 워커 병렬): Pixel 5 전체 E2E·비주얼 회귀, iPhone 13 스모크. CI가 Chromium·WebKit을 설치하고 Linux 기준 이미지와 비교 |
 | push → `dev` | GHCR `dev`·`<short-sha>` push |
 | push tag `v*` | GHCR release 이미지 push. build arg는 `NEXT_PUBLIC_AMPLITUDE_API_KEY`·`NEXT_PUBLIC_APP_VERSION`·`NEXT_PUBLIC_META_PIXEL_ID` |
 
@@ -201,7 +201,7 @@ DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼
 배포는 다음을 모두 만족할 때 완료입니다.
 
 - 변경 대상 저장소의 필수 테스트와 Docker build 검증이 통과합니다.
-- 웹은 Pixel 5 전체 E2E·비주얼 회귀와 Desktop Chrome·iPhone 13 스모크가 통과합니다. UI 변경이면 Linux 기준 이미지 diff를 함께 검토합니다.
+- 웹은 Pixel 5 전체 E2E·비주얼 회귀와 iPhone 13 스모크가 통과합니다. UI 변경이면 Linux 기준 이미지 diff를 함께 검토합니다.
 - server·ai 배포는 레지스트리에 환경 태그와 `<short-sha>` 태그가 모두 있고, 그 배포가 만든 deployment ID가 완료 상태이며, 실행 태스크의 이미지 digest가 의도한 SHA와 일치합니다.
 - server는 외부 `https://api.manyak.app/actuator/health`가 200과 `status=UP`을 반환합니다.
 - ai는 컨테이너 health가 정상이고 실제 생성·채팅 1건이 성공합니다. 서버 헬스 성공만으로 판정하지 않습니다.
