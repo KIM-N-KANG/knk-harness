@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.18 |
+| 버전 | v0.19 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-18 |
+| 수정일 | 2026-09-19 |
 | 대상 | manyak-ai |
 | 작성 목적 | AI 호출 계층, 모델·프롬프트 설정과 관측 실패의 격리 구조를 설명합니다. |
 | 기준 | [Spec](../spec/5-ai-server-spec.md)의 기준 코드·브랜치를 따릅니다. dev 머지·운영 배포 검증과 구분합니다. |
@@ -56,6 +56,26 @@ flowchart LR
 DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google은 각각의 SDK 어댑터를 사용합니다.
 
 이미지는 [별도 이미지 통로](../../../manyak-ai/src/services/image)의 `generate_image()`를 사용합니다. 인물·썸네일·자식 이미지 생성 호출부가 프롬프트를 넘기면, 이미지 모델 매핑과 설정을 적용해 `openai_api.py`의 Images API 어댑터로 전달합니다. 이미지 결과·오류도 텍스트와 별도의 공통 형식으로 반환합니다.
+
+### 스토리라인 라우터와 서비스
+
+이 절은 Spec의 「스토리라인 서비스 구조 기준」에 표시한 dev 구현입니다.
+
+| 담당 | 역할 |
+| --- | --- |
+| [라우터](../../../manyak-ai/src/api/v1/story.py) | `POST /api/v1/story/storylines` 요청의 관측을 시작하고 서비스를 한 번 호출합니다. 성공 응답 메타 또는 실패 HTTP 예외에서 재호출 횟수를 읽어 기록하고 결과를 반환합니다. |
+| [서비스](../../../manyak-ai/src/services/story_llm.py) | `generate_storylines(request: StorylinesRequest) -> StorylinesResponse`에서 프롬프트 준비·인물 이름 추출·모델 호출·검증·보완·최종 응답 조립을 수행합니다. |
+
+서비스는 기존 `build_storylines_prompt()`를 사용하고, 이름이 있는 주변 인물을 누락 검사
+대상으로 추출합니다. 응답에는 이야기 후보와 실제 모델·공급자·프롬프트 버전·토큰·재호출
+횟수를 담은 `StoryResponseMeta`를 넣습니다. LLM이 반환한 최상위 `meta`는 사용하지 않습니다.
+형식 오류 재호출과 인물 보완의 조건·한도는 기존 정책을 유지합니다.
+
+개발 도구는 같은 요청 모델로 서비스를 직접 호출해 완성 응답을 받습니다. HTTP 라우터의
+요청 단위 관측은 직접 호출에 포함되지 않습니다. 컴파일은 기존부터
+`compile_story(request) -> StoryCompileResponse` 방식으로 생성과 응답 조립을 담당합니다.
+외부 계약은 [Spec](../spec/5-ai-server-spec.md#5-9-1-스토리라인-생성), 선택 이유는
+[ADR](../adr/3-ai-server-adr.md#스토리라인-생성-준비와-응답-조립을-서비스에서-수행)을 따릅니다.
 
 ### 스토리 인물 구성과 컴파일 검증
 
