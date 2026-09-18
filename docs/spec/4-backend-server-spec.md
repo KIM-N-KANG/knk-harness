@@ -154,6 +154,8 @@
 | 사용자 | `DELETE /users/me/push-tokens` | 디바이스 푸시 토큰 삭제(본문 `token`, 없거나 남의 토큰이어도 204) | 204 | 400·401·403 | 필수 |
 | 사용자 | `GET /users/me/push-settings` | 알림 수신 동의 조회(세 boolean) | 200 | 401·403 | 필수 |
 | 사용자 | `PUT /users/me/push-settings` | 알림 수신 동의 전체 교체(세 필드 필수, 야간 단독 400) | 200 | 400·401·403 | 필수 |
+| 사용자 | `GET /users/me/consents` | 약관·개인정보 처리방침·만 14세 동의 상태(요구 버전, 재동의 필요 여부) | 200 | 401·403 | 필수 |
+| 사용자 | `POST /users/me/consents` | 동의 기록(보낸 항목만, 버전 불일치 400) | 200 | 400·401·403 | 필수 |
 | 사용자 | `GET /users/me/trials` | 체험 사용량·한도 조회([§4-3-9](#채팅-실시간-이미지-생성)) | 200 | 400 | 선택 |
 | 이프 | `GET /credits/policies` | 현재 유효한 적립·소모 수치 7종 조회(정책 오버라이드 반영) | 200 | 없음 | 불필요 |
 | 이프 | `GET /credits/products` | 충전 상품 목록 | 200 | 없음 | 불필요 |
@@ -718,6 +720,32 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **저장 규칙.** `marketingPush=true`이고 미동의면 지금을 기록하고, **이미 동의 상태면 최초 시각을 유지**합니다(증빙은 최초 동의 시점: 재동의마다 밀리면 안 됩니다). `marketingPush=false`면 광고·야간 둘 다 NULL(철회). `marketingNightPush=true`인데 `marketingPush=false`면 400이고 바디 `code`는 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-6](#4-6-오류와-예외-처리)): 오류 없이 무시하면 사용자가 켰다고 믿는 토글이 실제로는 꺼져 있게 됩니다. 이 판정은 사용자 행을 잠그기 전에 합니다(요청 자체가 모순이라 DB를 건드릴 이유가 없음).
 - **계정 상태.** 조회·변경 모두 사용자 행을 잠근 뒤 상태를 재검사합니다(푸시 토큰 API와 같은 관례). `SUSPENDED`는 **조회도 403**(정지 계정은 설정 화면 자체를 쓸 수 없음), `DELETED`·사용자 없음은 401. 조회 트랜잭션에 `readOnly`를 쓰지 않습니다: PostgreSQL은 read-only 트랜잭션의 `SELECT … FOR UPDATE`를 거부하는데 H2 테스트는 통과하므로, 실 DB에서만 터지는 부류입니다.
 - **판정 헬퍼.** `User.canReceiveMarketingPush(at)`: 광고 동의가 있고, `at`이 야간(21:00~08:00 KST)이면 야간 동의까지 있을 때 true. 광고성 시나리오는 발송 시각을 이 헬퍼에 넣어 야간 규칙을 자동으로 따릅니다. 서비스 알림은 `service_push_enabled` 필드를 그대로 봅니다.
+
+<a id="약관개인정보-처리방침-동의"></a>
+
+#### 약관·개인정보 처리방침 동의
+
+이용약관·개인정보 처리방침·만 14세 이상 확인에 대한 회원의 **명시 동의**를 버전 단위로 기록합니다(2026-09-18 결정). 클라이언트 동작은 [FE-SCREEN-010](3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침)이 소유합니다.
+
+- **버전별 이력.** 개정 후 재동의의 증빙은 회원이 어느 버전에 언제 동의했는지입니다. 광고성 정보 수신 동의([푸시 수신 동의](#푸시-수신-동의))처럼 현재 상태 하나만 저장하지 않고, 문서·버전별 행을 **추가 전용(append-only)**으로 쌓습니다. 재동의는 새 행으로 기록하고 과거 행은 지우지 않습니다.
+- **저장.** `user_consents`는 `user_id`(FK `users`) · `doc_type`(`TERMS` · `PRIVACY` · `AGE14`) · `version` · `agreed_at`을 저장하며, PK는 `(user_id, doc_type, version)`입니다. 같은 버전을 다시 보내도 새 행을 만들거나 **기존 `agreed_at`을 갱신하지 않습니다**. 최초 동의 시각을 증빙으로 보존하기 위해 PK 충돌을 무시하는 조건부 삽입을 사용하고, 예외를 잡아 넘기는 방식에 의존하지 않습니다.
+- **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.2`, 2026-09-01 시행) · `manyak.legal.privacy-version`(현재 `v1.4`, 2026-09-18 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
+- **탈퇴 후 보존.** 회원 탈퇴는 soft delete이며 동의 행을 지우지 않습니다. 계약 종료 뒤에도 동의 증빙을 보존하기 위해 FK에 `ON DELETE` 연쇄를 두지 않습니다. 재가입하면 새 `user_id`에 동의를 다시 받으며, 이전 계정의 동의를 승계하지 않습니다.
+- **서버 게이트 없음.** 미동의 회원의 다른 API를 막지 않고, 클라이언트가 `needsConsent`에 따라 이용을 제한합니다. 서버 게이트가 필요해지면 유예기간과 대상 API를 정해 별도로 추가합니다.
+- **로그인 요청과 분리.** 로그인 요청에는 동의를 싣지 않습니다. 로그인 뒤 동의 상태 조회와 기록이라는 한 경로를 사용합니다.
+- **광고성 정보 수신 동의와 분리.** `users`의 푸시 동의 컬럼과 통합하지 않습니다. 철회 가능한 현재 상태와 철회 없는 버전별 수락 이력은 수명주기가 다릅니다. `PRIVACY` 동의는 개인정보 처리방침 문서의 수락 기록일 뿐, 광고 수신·평가 활용 등 개별 처리 목적의 동의·철회 상태를 대표하지 않습니다.
+
+**동의 API.** 인증이 필요하며 게스트는 호출할 수 없습니다. 로그인 직후와 서비스 진입 시 조회하고, 세션 부트스트랩 응답(`GET /auth/me`)에는 싣지 않습니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `GET /users/me/consents` | 없음 | 200 `{ "terms": { "requiredVersion": "v1.2", "needsConsent": boolean }, "privacy": { "requiredVersion": "v1.4", "needsConsent": boolean }, "age14": { "requiredVersion": "1", "needsConsent": boolean } }` |
+| `POST /users/me/consents` | `{ "terms": "v1.2", "privacy": "v1.4", "age14": "1" }` 각 필드 선택 | 200 갱신 후 상태(GET과 같은 스키마) |
+
+- **`needsConsent`는 서버가 계산합니다.** 해당 `doc_type`과 현행 `requiredVersion`에 해당하는 행이 없으면 `true`입니다. 클라이언트는 버전을 비교하지 않습니다. 설정을 롤백하거나 과거 버전을 다시 수용하면 "최신 동의 버전"과 "현행 버전 동의 여부"가 달라질 수 있습니다.
+- **보낸 항목만 기록합니다.** 필드 누락은 미제출이며 철회가 아닙니다. 세 필드가 모두 없으면 400을 반환합니다. 값이 현행 `requiredVersion`과 다르면 400과 `CONSENT_VERSION_MISMATCH`를 반환합니다([§4-6](#4-6-오류와-예외-처리)). 서버 값으로 덮어쓰면 사용자가 보지 않은 개정본에 동의한 기록이 생기고, 임의 문자열을 허용하면 존재하지 않는 문서에 동의한 행이 생깁니다. 클라이언트는 이 오류를 받으면 해당 문서를 다시 표시하며, 값을 바꿔 자동으로 재전송하지 않습니다. 여러 항목을 함께 보내면 모든 값을 검증한 뒤 한 트랜잭션에 저장합니다.
+- **철회 API는 없습니다.** 필수 동의라 철회는 탈퇴입니다(`DELETE /users/me`).
+- **계정 상태.** 조회·기록 모두 사용자 행을 잠근 뒤 상태를 재검사합니다(푸시 수신 동의와 같은 관례). `SUSPENDED` 403, `DELETED`·사용자 없음 401. 잠금 없이는 탈퇴 처리와 경합해 탈퇴 뒤 동의 행이 들어갈 수 있습니다.
 
 <a id="스토리-완성-푸시--phase-3--구현knk-1115"></a>
 
@@ -1494,6 +1522,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | 위 두 규칙을 동일 적용: 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403 |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
+| 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 막지 않음(클라이언트 게이트)([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
 | 스토리 이미지 업로드(`POST /stories/{storyId}/images/presign` · `PATCH` `thumbnailObjectKey` · `DELETE …/thumbnail` · `POST·DELETE …/characters/{characterId}/images`) | **회원 소유 스토리만**(게스트 소유는 400). 소유자만, 타인·익명 403. 정지 계정 403([§4-3-8](#4-3-api-계약)) |
 | 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
@@ -1555,7 +1584,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
-| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` | 본문 형식 오류, 필드 검증 실패. 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)) |
+| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` | 본문 형식 오류, 필드 검증 실패. 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다."): 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
