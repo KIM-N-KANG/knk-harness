@@ -4,13 +4,14 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.33 |
+| 버전 | v2.34 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-16 |
+| 수정일 | 2026-09-18 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `feat/KNK-1284-chat-image-s3-upload` 브랜치 `fe2286297d1a`. 작업 브랜치 기준이며 dev 머지·운영 배포 여부와 구분합니다. |
-| 채팅 전송 기준 | KNK-1300의 `fix/KNK-1300-chat-image-streaming` 로컬 구현을 반영합니다. 이미지 대기·본문 순차 전송은 dev 머지·운영 배포 전이며, 나머지는 위 기준 코드를 따릅니다. |
+| 기준 코드 | manyak-ai `feat/KNK-1284-chat-image-s3-upload` 브랜치 `fe2286297d1a`. 아래 기능별 기준 외의 구현을 가리키며 운영 배포 여부와 구분합니다. |
+| 채팅 전송 기준 | KNK-1300의 이미지 대기·본문 순차 전송은 manyak-ai `dev`의 `6741368ed3e8` 기준입니다. |
+| 스토리 인물 구성 기준 | KNK-1329의 입력 인원수·카드 검증·이야기 인물 유지 지시는 manyak-ai `dev`의 `81801d910514` 기준입니다. 다른 기능 전체를 이 커밋까지 동기화했다는 뜻은 아닙니다. |
 | 연구 기준 | 채팅 평가는 manyak-autoresearch `fe36a94` 및 2026-09-12 확인한 chat-product 로컬 작업본. 이미지 평가의 기존 근거는 `7a6e7d5` 및 2026-09-07 작업본입니다. |
 | 문서 경계 | API·품질 기준은 이 문서, 현재 호출·설정 구조는 [AI Design](../design/3-ai-server-design.md), 구현 코드는 AI 레포, 평가 실행법·개별 결과는 연구 레포가 정본입니다. |
 | 상태 구분 | 별도 표시가 없으면 위 기준의 구현입니다. 로컬 구현·실측 미실시는 각각 명시합니다. |
@@ -122,6 +123,8 @@ flowchart LR
 
 인물의 미정 값은 LLM이 채웁니다. 주변 인물 0~5명·특징 최대 3개 제한은 백엔드가 담당합니다. 이름을 채운 인물 간 중복은 정규화 후 422로 거부합니다.
 
+주변 인물을 1~5명 입력하면 각 이야기에서 입력 인물 구성을 유지하도록 지시합니다. 이름이 없거나 빈 객체인 항목도 한 명입니다. 입력이 0명(생략·null·빈 배열)이면 이야기마다 주변 인물 1~5명을 자유롭게 구성합니다. 주인공과 본문에만 등장하는 단역은 설정 인원수에 포함하지 않습니다. 추천 정보는 해당 이야기의 인물·관계를 구체화합니다. 본문 속 정확한 인원수와 역할 유지는 프롬프트 품질 기준이며 코드가 보장하지 않습니다.
+
 응답은 비어 있지 않은 줄거리 3편과 편당 평서문 추천 정보 3개입니다. id는 코드가 1·2·3으로 덮어씁니다.
 
 이야기 3편은 서술 초점·핵심 갈등·지배 정서·무대·구조가 서로 달라야 합니다. 장르와 인물 특징의 귀속을 지키는 것은 품질 기준이며, 코드가 내용의 충족을 보장하지는 않습니다.
@@ -191,7 +194,9 @@ flowchart LR
 
 상세 구조는 [컴파일 스키마](../../../manyak-ai/src/schemas/story_compile.py), 검증은 [컴파일 서비스](../../../manyak-ai/src/services/story_llm.py)를 따릅니다.
 
-컴파일은 세부 설정 JSON을 검증·보완한 뒤 통글로 변환합니다. 입력한 장르·주인공 이름·성별·주변 인물 이름은 코드가 보존합니다. 인물 카드 1~5명 중 입력 인물을 우선 포함합니다. 이름 비교는 NFC 정규화·앞뒤 공백 제거·대소문자 무시 기준이며 NFKC 전각 정규화는 하지 않습니다. 통글 헤더 매핑은 [컴파일 상세](../../../manyak-ai/spec/story/2-COMPILE.md)에 둡니다.
+컴파일은 세부 설정 JSON을 검증·보완한 뒤 통글로 변환합니다. 입력한 장르·주인공 이름·성별·주변 인물 이름은 코드가 보존합니다. 주변 인물을 1~5명 입력하면 이름 미정 항목까지 포함해 카드 수가 입력 수와 정확히 같아야 합니다. 0명 입력이면 1~5명을 자유롭게 생성합니다. 주인공과 본문에만 나오는 단역은 카드 수에 포함하지 않습니다. 이름 비교는 NFC 정규화·앞뒤 공백 제거·대소문자 무시 기준이며 NFKC 전각 정규화는 하지 않습니다. 통글 헤더 매핑은 [컴파일 상세](../../../manyak-ai/spec/story/2-COMPILE.md)에 둡니다.
+
+컴파일은 선택한 이야기의 인물·관계·핵심 사건을 구체화하도록 지시합니다. 이름 미정 입력도 이야기 속 인물에 연결하고, 사용자 지정 값을 우선 적용하면서 관계·역할·행적을 유지하도록 합니다. 코드가 검사하는 것은 카드 수와 입력 인물의 ID 대응이며 의미상 같은 인물인지까지 판정하지는 않습니다. 선택 근거는 [인원수와 인물 유지 결정](../adr/3-ai-server-adr.md#사용자-설정-인원수와-선택한-이야기의-인물-유지)에 둡니다.
 
 그림의 실패 분기는 스토리 전체를 실패시키는 조건과 부가 결과만 비우는 조건을 구분합니다.
 
@@ -227,13 +232,15 @@ flowchart LR
 
 기존 설정과 수정 대상을 프롬프트에 더해 필요한 부분만 다시 받습니다.
 
+입력 인물이 있을 때 카드 수가 다르거나 내부 입력 ID가 누락·중복·미등록 값·잘못된 형식이면 카드 블록을 통째로 보완합니다. 다른 필드 보완과 합쳐 최대 2회이며, 매번 입력 이름을 다시 적용하고 재검사합니다. 끝내 맞지 않으면 인물 이미지·표지 생성 전에 502를 반환합니다. 내부 ID는 검증 뒤 제거하므로 요청·응답 API에 새 필드는 없습니다.
+
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
 flowchart LR
     subgraph C["컴파일 보완 입력"]
         direction LR
         C_item1["<div style='width:240px;text-align:center;'><span>원래 입력·직전 설정 JSON</span></div>"]
-        C_item2["<div style='width:240px;text-align:center;'><span>누락 블록·수정할 인물 필드</span></div>"]
+        C_item2["<div style='width:240px;text-align:center;'><span>누락·규칙 불일치 블록<br/>수정할 인물 필드</span></div>"]
     end
     CP["보완 프롬프트<br/>기존 컴파일 프롬프트<br/>+ 지정 부분 보완 지시"]
     CM["모델·추가 호출 한도<br/>gpt-5.6-terra · medium<br/>최대 2회"]
@@ -710,6 +717,8 @@ Langfuse의 `session_id`는 클라이언트 접속 세션으로 여러 채팅을
 
 API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포의 도커 테스트(`scripts/test.sh`·`scripts/test.ps1`)로 검수합니다. 프롬프트·판정 품질은 라이브 실측이 별도로 필요하며 유닛 테스트로 대신하지 않습니다. 호출 전 규모를 보고하고 승인받습니다. 조립 미리보기는 무과금 로컬 스크립트입니다.
 
+주변 인물 검수는 0명 자유 생성, 1~5명 고정, 이름 미정·혼합 입력, 카드 순서 변경, 카드 수·ID 불일치의 보완 성공·실패를 포함합니다. 이야기 속 역할·관계 유지 여부는 실제 LLM 출력으로 별도 확인합니다. 이 의미 검증은 코드에 없으며 본문의 단역 언급을 설정 인원수 초과로 판정하지 않습니다. 특정 모델·소수 사례의 성공이 모든 입력의 품질을 보장하지는 않습니다.
+
 현재 제약은 전체 History·오프닝 시드 차이(A3·A4), 출력 한도 미정(A8), 엔딩 판정 강화 미실측(A10), 전체 시간 예산·취소 전파 부족(A1·A11·A12·A15·A18), 공급자 배치·계측 부족(A13), 모델 별칭(A14), 시간 초과 외 판정 실패의 상태 초기화 위험(A16), 요약 마커 미정(A20)입니다. 인물 이미지 매핑·극단 라벨 입력은 수용한 제약(A19·A22)입니다. 종전 추적 항목 전체와 판단 근거는 [ADR 추적 이력](../adr/3-ai-server-adr.md#기존-제약과-후속-판단-이력)에 남깁니다.
 
 다른 서비스의 배포 여부는 해당 서비스 명세가 정본입니다. 구현 동기화 때는 기준 코드 SHA를 갱신하고 현재 계약만 이 문서에 반영하며, 결정이 바뀌면 ADR에 근거를 남깁니다.
@@ -1119,7 +1128,7 @@ flowchart LR
 | `protagonist.name` | `string / null` | 주인공 이름; 기본 null |
 | `protagonist.gender` | `string / null` | 성별(MALE·FEMALE); 기본 null |
 | `protagonist.features` | `string[] / null` | 특징 태그; 생략·null 시 빈 배열 |
-| `supporting_characters` | `object[] / null` | 주변 인물; 생략·null 시 빈 배열 |
+| `supporting_characters` | `object[] / null` | 주변 인물; 이름 미정도 한 명. 1~5명 입력은 구성 유지, 생략·null·빈 배열은 1~5명 자유 생성 |
 | `supporting_characters[].name` | `string / null` | 인물 이름; 기본 null |
 | `supporting_characters[].gender` | `string / null` | 성별(MALE·FEMALE); 기본 null |
 | `supporting_characters[].features` | `string[] / null` | 특징 태그; 생략·null 시 빈 배열 |
@@ -1240,7 +1249,7 @@ flowchart LR
 | `protagonist.name` | `string / null` | 주인공 이름; 기본 null | X |
 | `protagonist.gender` | `string / null` | 성별(MALE·FEMALE); 기본 null | X |
 | `protagonist.features` | `string[] / null` | 특징 태그; 생략·null 시 빈 배열 | X |
-| `supporting_characters` | `object[] / null` | 주변 인물; 생략·null 시 빈 배열 | X |
+| `supporting_characters` | `object[] / null` | 주변 인물; 이름 미정도 한 명. 1~5명 입력은 카드 수 일치, 생략·null·빈 배열은 1~5명 자유 생성 | X |
 | `supporting_characters[].name` | `string / null` | 인물 이름; 기본 null | X |
 | `supporting_characters[].gender` | `string / null` | 성별(MALE·FEMALE); 기본 null | X |
 | `supporting_characters[].features` | `string[] / null` | 특징 태그; 생략·null 시 빈 배열 | X |
@@ -1379,7 +1388,7 @@ flowchart LR
 | `story_endings[].min_turns` | `integer` | 최소 턴 수; 1 이상 |
 | `story_endings[].achievement_condition` | `string` | 엔딩 달성 조건 |
 | `story_endings[].epilogue` | `string` | 에필로그 연출 방향 |
-| `character_appearances` | `object[]` | 주변 인물 외형; 최대 5명 |
+| `character_appearances` | `object[]` | 주변 인물 외형; 입력이 있으면 입력 인원수와 같고, 0명 입력이면 1~5명 |
 | `character_appearances[].name` | `string` | 인물 이름 |
 | `character_appearances[].gender` | `string` | 성별 |
 | `character_appearances[].age` | `string` | 나이 묘사 |
