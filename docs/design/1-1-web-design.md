@@ -257,7 +257,7 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 | 상태 | BFF 처리 |
 | --- | --- |
 | 유효 access 또는 재발급 성공 | Authorization에 access 주입 |
-| refresh 4xx, 또는 유효 access·refresh를 확보하지 못하고 NextAuth 세션만 존재 | 쿠키·청크 쿠키 정리, 401·`x-manyak-session-expired: 1`. 익명 요청으로 전환하지 않음 |
+| refresh 4xx, 또는 유효 access·refresh를 확보하지 못하고 NextAuth 세션만 존재 | 쿠키·청크 쿠키 정리, 401·`x-manyak-session-expired: 1`. 익명 요청으로 전환하지 않음. 값이 빈 NextAuth 세션 쿠키는 없는 것으로 본다 — Auth.js signOut의 `Max-Age=0` 삭제가 같은 요청의 `cookies().set()` 병합에서 유실되면 빈 값 쿠키가 남는데, 이를 회원으로 판정하면 로그아웃 직후 첫 요청이 401이 된다 |
 | 재발급 5xx·네트워크 오류 | 쿠키 유지. 기존 access가 있으면 best-effort 전달, 없으면 503 |
 | 토큰·세션 모두 없음 | 게스트 요청 |
 | access 없이 refresh만 남음 | 재발급 시도 |
