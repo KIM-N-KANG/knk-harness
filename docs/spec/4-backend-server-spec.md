@@ -673,14 +673,14 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | 플랫폼 | 메시지 구성 | 표시 주체 |
 | --- | --- | --- |
-| `ANDROID` | data-only. 안드로이드 우선순위는 서비스 알림 `HIGH`, 광고 알림 `NORMAL`. `notification`은 싣지 않음 | 앱이 알림 문구를 조립하고 data의 `deepLink`로 이동 |
+| `ANDROID` | data-only. 서비스 알림은 우선순위 `HIGH`, 광고 알림은 `NORMAL`. `notification`은 싣지 않음 | 앱이 알림 문구를 조립하고, `deepLink`가 있으면 검증한 뒤 이동 |
 | `WEB` | data + webpush notification. 제목·본문·아이콘과 클릭 링크 포함 | 브라우저가 자동 표시 |
 
 웹 앱은 안드로이드 및 서버 FCM과 같은 Firebase 프로젝트에 등록해야 합니다. VAPID 키와 서비스 워커 구성은 웹이 담당합니다. 광고성 알림의 동의 API와 `(광고)` 접두 및 data의 `recipientId`는 두 플랫폼에 공통으로 적용합니다. 웹의 제공 범위는 [웹 PWA 푸시](3-2-web-spec.md#pwa-푸시)를 따릅니다.
 
-- 페이로드 키는 camelCase이며 시나리오별 data 키는 각 시나리오 계약이 정합니다.
-- **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 안드로이드 우선순위(기본 `HIGH`)와 TTL(기본 없음 = FCM 기본값)을 호출자에게서 받습니다. 서비스 알림(스토리 완성)은 `HIGH`: Doze에서 data-only 메시지가 지연되는 것을 줄입니다. 광고 알림(출석 리마인드·프로모션)은 `NORMAL`: 기기가 절전 상태면 늦게 도착해도 됩니다. TTL은 출석 리마인드만 둡니다(아래). 웹 push 구성은 우선순위·TTL을 바꾸지 않습니다.
-- **공통 키 `deepLink`**: 알림을 탭했을 때 열 주소이며 웹 도메인(`manyak.push.web-base-url`, 기본 `https://manyak.app`. dev 웹은 SSO 뒤라 공개 origin이 없으므로([A-043](../adr/1-3-android-adr.md#a-043-채팅-공유를-앱에-적용하고-android-공유-시트로-전달)) 필요할 때만 `MANYAK_PUSH_WEB_BASE_URL`로 재정의)에 경로를 붙인 절대 URL입니다. 웹은 webpush 클릭 링크로 그대로 쓰고, 안드로이드는 앱이 호스트·경로 허용 목록으로 검증한 뒤 이동합니다(서버 페이로드를 그대로 라우트로 쓰지 않는 앱 원칙은 유지: 모르는 URL은 홈). 목적지가 정해진 시나리오만 싣고, 없는 시나리오는 키를 생략합니다. 2026-09-04의 "안드로이드 딥링크 키 보류"는 2026-09-18에 폐기했습니다: 앱이 URL 파싱으로 전환하며, `type`·식별자 키는 구버전 호환으로 유지합니다.
+- data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
+- **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.
+- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드만 이 키를 싣고 프로모션은 생략합니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
 - **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다: 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
 - **무효 토큰 정리.** FCM이 `UNREGISTERED`를 돌려주면 그 토큰 행만 지우고 다음 기기로 계속합니다. `INVALID_ARGUMENT`는 지우지 않습니다: 토큰 형식 오류뿐 아니라 **서버가 만든 페이로드 오류**에도 오는 코드라, 삭제 신호로 쓰면 서버 버그 하나가 회원 전체의 토큰을 지웁니다. 정리 자체가 실패해도(DB 오류) 다음 기기 발송은 이어집니다.
@@ -729,7 +729,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 - **발행 지점.** 스토리 생성 요청 기록기(`StoryCreationRequestRecorder`)가 요청 행을 `COMPLETED`로 마킹하는 **그 트랜잭션 안**에서 이벤트를 발행하고, 리스너가 `AFTER_COMMIT`에서 받습니다. 스토리 저장 트랜잭션이 아니라 마킹 트랜잭션인 이유: 둘은 별개(`REQUIRES_NEW`)라 "저장은 됐지만 마킹이 실패해 `PENDING`으로 남은" 창에서 완료 알림이 먼저 나가면 안 됩니다. 발행 값(스토리 `publicId`·제목)은 방금 만든 응답 객체에서 꺼내며 저장된 `result_json`을 다시 읽지 않습니다.
 - **대상.** `STORY_COMPLETION` 단계만(스토리라인 생성은 보내지 않음). 요청 소유 회원이 있어야 하고(게스트는 발행 자체를 하지 않음), `service_push_enabled`가 true여야 합니다. 서비스 알림이라 광고 판정은 쓰지 않습니다. 토큰 없음·정지·탈퇴는 발송 모듈이 걸러 냅니다.
-- **페이로드**(공통 data 필드이며 값은 전부 문자열): `type` = `STORY_COMPLETED`, `storyId` = 스토리 `publicId`, `title` = 스토리 제목, `deepLink` = `{web-base-url}/stories/{storyId}`. 안드로이드 알림 문구는 앱이 조립합니다. 우선순위 `HIGH`, TTL 기본값.
+- **페이로드**(공통 data 필드이며 값은 전부 문자열): `type` = `STORY_COMPLETED`, `storyId` = 스토리 `publicId`, `title` = 스토리 제목, `deepLink` = `manyak.push.web-base-url` + `/stories/{storyId}`. Android 앱이 알림 문구를 조립합니다. Android 우선순위는 `HIGH`이며 TTL은 지정하지 않습니다.
 - **중복 없음.** 같은 `requestId` 재요청(멱등 replay)은 기록기 앞단에서 저장 결과를 돌려주고 끝나므로 마킹 줄에 도달하지 않습니다. 저장 JSON이 현재 DTO와 호환되지 않아 다시 만드는 폴백 경로는 `COMPLETED`를 다시 마킹하지만 **콜백을 건너뜁니다**(최초 완성 때 이미 보냈음). 발송 이력 테이블은 두지 않습니다.
 - **비동기·격리.** 리스너는 `@Async`입니다([§4-3-4](#4-3-api-계약) 피드백 알림과 동일). `AFTER_COMMIT` 콜백은 원 트랜잭션의 커넥션이 반납되기 **전에** 돌아, 거기서 DB를 읽으면 요청 하나가 커넥션 두 개를 동시에 쥡니다: 풀이 포화되면 두 번째 획득이 타임아웃으로 실패하고 그 실패는 `try` 바깥이라 **이미 커밋된 생성의 응답이 500이 됩니다**. 스레드를 분리해 원 커넥션이 먼저 반납되게 합니다. 발송 실패는 로그만 남기고 생성 응답에 영향을 주지 않습니다.
 - **검증 한계.** 통합 테스트(7건)는 발송 모듈 호출까지를 고정합니다. 실기기 도달은 Firebase에 Android 앱이 등록되고 기기가 토큰을 등록한 뒤 dev에서 확인합니다.
@@ -745,9 +745,9 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **같은 날 1회.** 운영 태스크가 1대(`ecs_desired_count = 1`)라 정상 경로에서는 cron이 하루 한 번만 실행됩니다. 배포 교체로 태스크 두 개가 cron 시각에 걸치는 창은 Redis `SET NX`(`push:attendance-reminder:{KST 날짜}`, TTL 24h)를 잡은 인스턴스만 발송해 막습니다. Redis 장애면 그날 발송을 **건너뜁니다**: 광고성이라 중복보다 누락이 낫습니다. 회원별 발송 기록 테이블은 두지 않습니다: 한 회차가 중간에 죽으면 그날 나머지는 놓칩니다(`ponytail:` 한도로 남기고, 놓친 리마인드는 다음 날 회차가 덮습니다).
 - **문구는 DB 템플릿.** 이벤트 때마다 바뀌는 문구를 앱 배포 없이 갈아끼우기 위해 이프 수치(`credit_policies`, [§4-3-7](#4-3-api-계약))와 같은 패턴의 테이블 `push_message_templates`(V74)를 둡니다: `template_key`(`attendance_reminder`) · `title` · `body` · `effective_from` · `effective_until`(NULL이면 영구). 읽기 규칙도 같습니다: 유효한 오버라이드 행이 있으면 그 값, 없으면 yml 기본 문구. 부팅 1회 적재 + 주기 갱신이고 만료는 읽을 때 판정해 이벤트 종료가 즉시 반영됩니다. 관리자 API 없이 SQL로 운영합니다. `credit_policies`를 재사용하지 않는 이유: 그 표는 0~10000 정수 전용입니다.
 - **`(광고)` 접두는 서버가 발송 시점에 항상 붙입니다**(정보통신망법 제50조). DB 값에 맡기면 이벤트 문구를 넣다가 법정 표기를 빠뜨리는 사고가 구조적으로 가능해집니다. 이미 `(광고)`로 시작하는 값에 중복으로 붙이지는 않습니다.
-- **페이로드**(공통 data 필드): `type` = `ATTENDANCE_REMINDER`, `date` = KST 날짜(`YYYY-MM-DD`), `title` = `(광고) ` + 템플릿 제목, `body` = 템플릿 본문, `deepLink` = `{web-base-url}/my/credits?tab=free`(이프 충전 화면의 무료 탭). 앱은 그대로 표시합니다. 무료 탭 선택과 출석 카드 표시는 클라이언트 몫이며 링크가 출석을 자동 처리하지는 않습니다.
+- **페이로드**(공통 data 필드): `type` = `ATTENDANCE_REMINDER`, `date` = KST 날짜(`YYYY-MM-DD`), `title` = `(광고) ` + 템플릿 제목, `body` = 템플릿 본문, `deepLink` = `manyak.push.web-base-url` + `/my/credits?tab=free`(이프 충전 화면의 무료 탭). 앱은 문구를 그대로 표시합니다. 클라이언트가 무료 탭을 선택하고 출석 카드를 표시하며, 링크만으로 출석을 처리하지는 않습니다.
 - **처리.** 대상 id를 한 쿼리로 뽑고, 회원마다 **발송 직전에 다시 읽어** `ACTIVE`와 동의를 재확인한 뒤 `sendToUser`를 순차 호출합니다: 조회 스냅샷을 믿으면 회차 도중의 철회가 반영되지 않습니다(회차 길이만 한 창을 밀리초로 좁힘). 건너뛴 수는 로그 `skipped`로 남깁니다. 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 이벤트(`attendance_reminder_sent{targets, sent}`)로 남깁니다. 회원 수가 수천을 넘기면 발송 모듈의 멀티캐스트로 전환합니다.
-- **우선순위 `NORMAL`, TTL은 그날 자정까지.** 광고성이라 절전 기기에 늦게 도착해도 되고, 출석 날짜(KST)가 지난 뒤 도착한 리마인드는 무의미하므로 TTL을 발송 시점부터 그날 KST 자정까지 남은 시간으로 둡니다.
+- **Android 우선순위는 `NORMAL`, TTL은 그날 자정까지입니다.** 광고성 알림은 절전 기기에 늦게 도착해도 되고, 출석 날짜(KST)가 지나면 리마인드가 무의미하므로 TTL은 발송 시점부터 그날 KST 자정까지 남은 시간입니다.
 
 <a id="프로모션-푸시--phase-3--구현knk-1117-v77"></a>
 
@@ -758,7 +758,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **트리거는 운영자 SQL 예약.** 관리자 API·화면은 두지 않습니다: 팀이 전원 개발자이고 서버에 관리자 역할 체계가 없습니다. `push_campaigns`([§4-4](#4-4-데이터-모델))에 `status = 'SCHEDULED'`, `scheduled_at`을 넣으면 예약이고, 집기 전 `status = 'CANCELED'`로 바꾸면 취소입니다. 문구는 캠페인 행의 `title`·`body`에 직접 둡니다(`push_message_templates`는 반복 알림용이라 쓰지 않음).
 - **선점은 DB 행이 합니다.** 스케줄러가 1분마다 `scheduled_at <= now`인 `SCHEDULED` 행을 `UPDATE … SET status = 'SENDING' WHERE id = ? AND status = 'SCHEDULED'`로 집습니다(갱신 1건이면 내 것). 배포 교체로 태스크가 둘이어도 한쪽만 집으므로 Redis 선점(출석 리마인드)이 필요 없습니다. 한 회차에 도래한 캠페인이 여럿이면 `scheduled_at` 순으로 차례로 보냅니다.
 - **대상.** `ACTIVE` ∩ `marketing_push_agreed_at IS NOT NULL` ∩ 등록 토큰 보유. 회원마다 **발송 직전에 다시 읽어** `canReceiveMarketingPush(그 시점의 현재 시각)`을 재확인합니다(출석 리마인드와 같은 이유: 회차 도중 철회 반영). 시각도 회차 시작 때 잡은 값이 아니라 **회원별 발송 시점**입니다: 대상이 많거나 FCM이 느려 루프가 21:00 경계를 넘으면 20:59에 시작한 캠페인이 야간 미동의자에게 나갈 수 있기 때문입니다(Codex 리뷰 P1). 출석 리마인드도 같은 규칙입니다. **야간(21:00~08:00 KST)에 예약된 캠페인은 거부·연기하지 않고 야간 동의자에게만** 나갑니다: 정책이 "야간은 별도 동의"이지 "야간 금지"가 아니고, 야간 동의자 대상 캠페인이 있을 수 있습니다. 건너뛴 수는 `skipped_count`로 남습니다.
-- **페이로드**(공통 data 필드): `type` = `PROMOTION`, `campaignId` = 캠페인 `public_id`, `title` = `(광고) ` + 제목(서버가 접두 부착, 중복 방지), `body`. `deepLink`는 싣지 않습니다(캠페인별 목적지 필드가 없음: 앱은 홈, 웹 클릭 링크는 도메인 루트). 우선순위 `NORMAL`, TTL 기본값(캠페인 만료 필드가 없어 정할 근거가 없음).
+- **페이로드**(공통 data 필드): `type` = `PROMOTION`, `campaignId` = 캠페인 `public_id`, `title` = `(광고) ` + 제목(서버가 접두 부착, 중복 방지), `body`. 캠페인별 목적지 필드가 없으므로 `deepLink`는 싣지 않습니다. Android 앱은 홈으로 이동하고 웹 클릭 링크는 도메인 루트를 사용합니다. Android 우선순위는 `NORMAL`이며, 캠페인 만료 필드가 없어 TTL은 지정하지 않습니다.
 - **이력은 캠페인 행이 전부입니다.** 회차가 끝나면 `status = 'SENT'`, `target_count`·`sent_count`·`skipped_count`·`started_at`·`finished_at`을 기록합니다. 회원별 발송 기록 테이블은 두지 않습니다. 발송 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 `promotion_push_sent{campaignId, targets, sent, skipped}`입니다.
 - **한도(`ponytail:`).** 회차 중간에 태스크가 죽으면 행이 `SENDING`으로 남고 재개 로직은 없습니다: 운영자가 새 행을 넣습니다(남은 회원만 골라 보낼 수 없어 일부 중복 가능, 캠페인 빈도가 낮아 수용). 회원별 빈도 캡도 두지 않습니다: 캠페인 수가 운영자 손에 있습니다. 예외로 회차가 끝나지 못한 경우는 `FAILED`로 기록합니다(예: 대상 조회 실패).
 - **결정 필요 없음.** 프로덕션 릴리스는 검수 트랙과 무관하며, 실기기 도달 확인은 Android 앱 Firebase 등록 뒤입니다.
