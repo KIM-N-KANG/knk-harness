@@ -271,7 +271,7 @@
 | STORY-GATE-01 | P0 | 게스트, 제작 목록에 예전 스토리 있음 | 제작 탭 FAB 탭 | 이동 없이 모달 바텀 시트. 로그인 화면과 같은 제목 "로그인하고 나만의 스토리를 / 어디서든 이어서 즐겨보세요"(두 줄), "카카오로 시작하기"(위)·"Google로 시작하기"(아래), 버튼 아래 계정 연동 안내(AUTH-LOGIN-10과 동일 문구). 약관 고지 없음. 닫기(X) 없이 바깥 탭·Escape로 닫히고 `/studio`에 남음 | ✅ e2e `stories/story-login-gate` · visual `chats-visual`(채팅 문구 대표) | US-9-13, 웹 사용자 모델 |
 | STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | STORY-GATE-01과 같은 시트, `/studio` 유지 | ✅ e2e `stories/story-login-gate` | US-9-13 |
 | STORY-GATE-03 | P0 | 게스트 | `/studio/story/simple` 직접 진입(딥링크·뒤로가기) | 퍼널 대신 "스토리 만들기" 뒤로가기 헤더 + 같은 안내 + "로그인하기" 버튼의 게이트 화면과 시트. 시트를 닫아도 퍼널 1단계가 그려지지 않고 태그 조회도 없음. "로그인하기"로 시트 재노출 | ✅ e2e `stories/story-login-gate` | 웹 라우팅 테이블 |
-| STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | `POST /chats` 없이 STORY-GATE-01과 같은 로그인 필요 시트, 상세 유지 | ✅ e2e `stories/story-login-gate` | US-9-13, 구현(`use-start-chat`) |
+| STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 채팅 목록 서재(localStorage)에 남지 않고 탭 저장소에만 기록되어 채팅 목록에 보이지 않는다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
 | STORY-GATE-05 | P0 | 게스트, 채팅 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | STORY-GATE-01과 같은 시트, `/chats` 유지 | ✅ e2e `stories/story-login-gate` | US-9-13 |
 | STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 이동 없이 STORY-GATE-01과 같은 시트. 초안은 그대로 남음 | ✅ e2e `stories/story-login-gate` | US-9-13 |
 | STORY-GATE-07 | P1 | 게스트, 온보딩 "바로 시작하기" / 공유 열람 CTA | 각각 탭 | 온보딩은 `/studio/story/simple` 게이트 화면으로 이동해 시트 표시. 공유 열람 CTA는 이동 없이 시트 표시(온보딩 열람 처리 없음) | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |

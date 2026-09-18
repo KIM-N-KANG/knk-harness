@@ -266,9 +266,10 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| CHAT-GATE-01 | P0 | 게스트, 예전 채팅방 | 입력 후 전송(직접 입력·추천 랜덤 전송·선택지 바로 전송 공통) | 스트림 요청 없이 로그인 필요 모달 시트(로그인 화면과 같은 두 줄 제목·카카오·Google 버튼·버튼 아래 계정 연동 안내 — STORY-GATE-01과 동일). 시트를 닫으면 입력 내용 유지 | ✅ e2e `chats/chat-login-gate` · visual `chats-visual` | US-9-13, 웹 사용자 모델 |
+| CHAT-GATE-01 | P0 | 게스트, 채팅방(상세에서 시작한 채팅 포함) | 입력 후 전송(직접 입력·추천 랜덤 전송·선택지 바로 전송 공통) | 스트림 요청 없이 로그인 필요 모달 시트(로그인 화면과 같은 두 줄 제목·카카오·Google 버튼·버튼 아래 계정 연동 안내 — STORY-GATE-01과 동일). 시트를 닫으면 입력 내용 유지. 같은 탭으로 로그인을 다녀온 뒤 채팅방에 입력 본문이 그대로 복원(블럭 모드는 블럭으로 파싱) | ✅ e2e `chats/chat-login-gate`(복원은 새로고침으로 대체) · visual `chats-visual` | US-9-13, 웹 사용자 모델 |
 | CHAT-GATE-02 | P0 | 게스트, 마지막 턴 있음 | "다시 생성" 탭 | 재생성 요청 없이 같은 시트, 기존 본문 유지 | ✅ e2e `chats/chat-login-gate` | US-9-13 |
-| CHAT-GATE-03 | P0 | 게스트, 채팅 메뉴 시트 열림 | "새 채팅 시작하기" 탭 | 메뉴 시트가 닫히고 `POST /chats` 없이 같은 시트. 채팅방 유지 | ✅ e2e `chats/chat-login-gate` | US-9-13, 구현(`use-start-chat`) |
+| CHAT-GATE-03 | P0 | 게스트, 채팅 메뉴 시트 열림 | "새 채팅 시작하기" 탭 | 게스트도 참조 스토리로 새 채팅방을 만들어 이동(STORY-GATE-04와 같은 탭 저장 규칙) | ✅ e2e `chats/chat-login-gate` | 구현(`use-start-chat`) |
+| CHAT-GATE-05 | P0 | 이 탭에서 게스트로 시작한 채팅 ID 있음 | 로그인 → 동의 완료 | `/auth/migrate` `chatIds`에 탭의 게스트 채팅 ID가 서재 ID와 함께 실리고, 평가 완료 뒤 탭 저장소에서 제거. 이관 닫힌 계정은 옮기지 못해 그 채팅방이 403(CHAT-ENTRY-08) | ✅ e2e `chats/chat-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), AUTH-MIGRATE-03 |
 | CHAT-GATE-04 | P1 | 세션 판정·동의 조회 중(회원) | 전송·재생성 | 시트 없이 조용히 막힘(동의 시트가 화면을 덮음). 판정 뒤 정상 전송 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
 
 ## CHAT-LIMIT — 회원 이프·체험 표시
