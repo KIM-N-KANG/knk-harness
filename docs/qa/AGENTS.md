@@ -49,12 +49,12 @@
 
 | 항목 | 검수 수단·기준 |
 | --- | --- |
-| 브라우저 핵심 진입 | Pixel 5 전체 E2E, iPhone 13은 `e2e/smoke/`. Safari 에뮬레이션 통과를 iOS 실기기 통과로 읽지 않음 |
+| 브라우저 핵심 진입 | Pixel 5 전체 E2E, iPhone 13은 `e2e/smoke/`와 `e2e/auth/in-app-login.spec.ts`. Safari 에뮬레이션 통과를 iOS 실기기 통과로 읽지 않음 |
 | iOS Safari·키보드 | 최신 실기기에서 주소창·툴바 변화, 안전 영역, CTA·컴포저·마지막 메시지 가림, 이중 스크롤·러버밴드·위치 튐 확인 |
 | 입력·스트리밍 | IME Enter 오전송, 전송 후 포커스, 잠금, 토큰·이미지 누적의 깜빡임·잔상·앵커 확인 |
 | 모션·접근성 | 동작 줄이기에서 장식 모션 정지, 전환 중 입력 차단 없음. 키보드·포커스·오류 연결·상태 읽기 확인 |
 | 다크 모드 | 비주얼 회귀의 대표 화면(채팅방·목록·상세·마이 회원), 나머지는 수동 검수 |
-| 인앱 로그인 | 카카오톡·Instagram·Threads × iOS·Android 실기기. provider별 전환·자동 실패 시 수동 대체 경로는 AUTH-HANDOFF |
+| 인앱 로그인 | 카카오톡·Instagram·Threads × iOS·Android 실기기. 신규 로그인은 AUTH-POPUP, 기존 핸드오프 복구는 AUTH-HANDOFF |
 
 ## 검증과 결과 기록
 
