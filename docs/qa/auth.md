@@ -83,7 +83,7 @@
 | AUTH-SESSION-06 | P2  | 회원, BFF 토큰 쿠키(`manyak_session_*`)만 수동 삭제(NextAuth 세션 쿠키 유지) | API 호출                                       | "화면은 회원, 서버엔 열쇠 없음" 불일치로 판정 → 세션 폐기 + AUTH-SESSION-04와 동일한 만료 처리                                                                      | 수동                                                             | 구현(`backend-session`)          |
 | AUTH-SESSION-08 | P1  | 같은 계정, 다른 브라우저·기기                                                | 로그인                                         | 같은 서재(서버 정본 스토리·채팅 목록)가 보임                                                                                                                        | 수동                                                             | US-9-4, FE-SCREEN-008 검수 기준  |
 | AUTH-SESSION-09 | P2  | 게스트                                                                       | API 호출을 백엔드 로그로 관찰                  | `Authorization` 없이 익명으로 통과하고 게스트 기능이 정상 동작                                                                                                      | 수동                                                             | §3-1-7 BFF 프록시                  |
-| AUTH-SESSION-10 | P1 | HTTPS 개발 환경, BFF 토큰 없이 `__Secure-authjs.session-token` 또는 청크만 잔존 | 공개 스토리 상세 조회 → 만료 응답 → 재조회 | 첫 401의 삭제 응답에 Secure가 포함되어 잔여 세션 쿠키가 제거됨. 이후 게스트 조회는 정상이며 401이 반복되지 않음. HTTP 로컬의 일반 세션 쿠키도 정상 삭제 | ◐ 단위 `token-cookies.test.ts`(삭제 속성), 실제 쿠키 삭제는 수동 | [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff), AUTH-SESSION-06 |
+| AUTH-SESSION-10 | P1 | HTTPS 개발 환경, BFF 토큰 없이 값이 있는 `__Secure-authjs.session-token` 또는 청크만 잔존 | 공개 스토리 상세 조회 → 만료 응답 → 재조회 | 첫 401의 삭제 응답에 Secure가 포함되어 잔여 세션 쿠키가 제거됨. 이후 게스트 조회는 정상이며 401이 반복되지 않음. HTTP 로컬의 일반 세션 쿠키도 정상 삭제 | ◐ 단위 `token-cookies.test.ts`(삭제 속성), 실제 쿠키 삭제는 수동 | [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff), AUTH-SESSION-06 |
 
 ## AUTH-MIGRATE — 게스트 데이터 자동 이관
 
@@ -151,6 +151,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 | AUTH-LOGOUT-03 | P1  | 로그아웃 후                              | 같은 계정으로 재로그인             | 서재가 그대로 유지됨(서버 정본)                                                                             | 수동   | US-9-5, FE-SCREEN-008 검수 기준                                       |
 | AUTH-LOGOUT-04 | P2  | 백엔드 로그아웃 API 실패(서버 모킹 필요) | 로그아웃                           | 실패와 무관하게 로컬 세션은 폐기되어 게스트 복귀                                                            | 수동   | §3-1-7 화면별 API 사용                                                  |
 | AUTH-LOGOUT-05 | P2  | 분석 디버그 확인 가능 환경               | 로그아웃 / 세션 만료 자동 로그아웃 | 분석 사용자 식별자 재설정(공용 기기 보호)                                                                   | 수동   | FE-SCREEN-008 로그아웃, 구현(`my-screen`, `session-expiry-watcher`)   |
+| AUTH-LOGOUT-06 | P1 | 로그아웃 후 BFF 토큰 없이 빈 Auth.js 세션 쿠키 또는 빈 청크만 잔존 | 스토리 제작 진입과 공개 스토리 상세 조회 | 빈 쿠키를 만료된 회원 세션으로 오인하지 않음. 태그와 체험 횟수, 공개 상세 조회가 첫 요청부터 게스트로 정상 처리됨. 값이 있는 청크가 남으면 AUTH-SESSION-06 처리 유지 | ◐ 단위 `token-cookies.test.ts`(빈 값과 잔여 청크 판정), 실제 로그아웃 후 화면 진입은 수동 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff) |
 
 ## AUTH-ONBOARD — 신규 가입 온보딩(초대 코드 다이얼로그)
 
