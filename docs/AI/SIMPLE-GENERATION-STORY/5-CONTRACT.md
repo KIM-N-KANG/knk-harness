@@ -55,7 +55,7 @@ AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
 | `stories[].id` | `integer` | 후보 번호 1, 2, 3 |
 | `stories[].storyline` | `string` | 줄거리 |
 | `stories[].recommended_infos` | `string[]` | 추천 추가 정보 3개 |
-| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 식별과 전달](#5-5-식별과-전달)) |
+| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 [5-5 식별과 전달](#5-5-식별과-전달) |
 
 200 응답은 후보 3편, 비어 있지 않은 줄거리와 후보별 추천 정보 3개를 보장한다. 추천 정보의 문장이 비었는지는 검사하지 않는다. 이름을 입력한 인물이 빠진 후보가 있어도 200으로 반환하며 응답에는 따로 표시하지 않는다.
 
@@ -140,8 +140,8 @@ AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
 | `selected_storyline` | `string` | 필수 | 사용자가 고른 줄거리 |
 | `additional_info` | `string` | 선택 | 추가 정보<br>기본값은 빈 문자열 |
 | `genre_tags` | `string[]` | 필수 | 스토리라인 요청과 같은 장르 태그 |
-| `protagonist` | `object` | 필수 | 스토리라인 요청과 같은 주인공 구조 ([5-2 스토리라인 요청과 결과](#5-2-스토리라인-요청과-결과)) |
-| `supporting_characters` | `object[] / null` | 선택 | 스토리라인 요청과 같은 주변 인물 구조 ([5-2 스토리라인 요청과 결과](#5-2-스토리라인-요청과-결과)) |
+| `protagonist` | `object` | 필수 | 스토리라인 요청과 같은 주인공 구조 [5-2 스토리라인 요청과 결과](#5-2-스토리라인-요청과-결과) |
+| `supporting_characters` | `object[] / null` | 선택 | 스토리라인 요청과 같은 주변 인물 구조 [5-2 스토리라인 요청과 결과](#5-2-스토리라인-요청과-결과) |
 | `lorebooks` | `object[] / null` | 선택 | 세계관 참고 자료<br>생략, 빈 배열과 `null` 허용 |
 | `lorebooks[].name` | `string` | 필수 | 자료 이름 |
 | `lorebooks[].content` | `string` | 필수 | 내용 |
@@ -187,7 +187,7 @@ AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는�
 | `thumbnail_image.image_base64` | `string / null` | WebP 데이터<br>실패하면 `null` |
 | `thumbnail_image.content_type` | `string` | 항상 `image/webp` |
 | `thumbnail_image.error` | `string / null` | 실패 사유<br>성공하면 `null` |
-| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 식별과 전달](#5-5-식별과-전달)) |
+| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 [5-5 식별과 전달](#5-5-식별과-전달) |
 
 200 응답에서 보장하는 값은 다음과 같다.
 
@@ -498,7 +498,7 @@ AI 서버는 스토리라인 생성 전체 90초와 컴파일 전체 180초를 �
 |---|---|
 | 인증과 권한 | 백엔드가 확인<br>AI 서버는 사용자 권한을 확인하지 않음 |
 | 응답과 로그 | 공급자 오류 원문, API 키와 사용자 입력 원문을 넣지 않음 |
-| 관측 도구 | 구조화한 입력만 허용<br>수집 범위는 관측 규칙에서 정의 ([7-3 관측](7-3-OBSERVABILITY.md)) |
+| 관측 도구 | 구조화한 입력만 허용<br>수집 범위는 관측 규칙에서 정의 [7-3 관측](7-3-OBSERVABILITY.md) |
 | 호환 변경 | 필드 추가<br>백엔드는 모르는 필드를 무시 |
 | 비호환 변경 | 필드 삭제, 이름과 타입 및 상태 코드 변경<br>백엔드 대응 후 배포 |
 | 프롬프트 버전 변경 | 응답 형식을 유지<br>`meta.prompt_versions`에 버전 기록 |

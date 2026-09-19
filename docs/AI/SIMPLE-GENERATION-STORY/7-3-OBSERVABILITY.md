@@ -141,9 +141,9 @@ AI 서버는 상태를 저장하지 않으며 자체 저장소에도 기록을 �
 
 | 오류 분류 | 먼저 볼 곳 | 대응 |
 |---|---|---|
-| `provider_timeout`, `provider_unavailable`, `provider_rate_limited`가 늘어남 | 공급자의 장애 공지, 호출량 한도 | 공급자 문제면 복구를 기다림. 장애가 계속되면 허용 수단에 따라 모델 변경을 검토 ([6-3-5 허용 수단](6-3-AI-ALIGNMENT.md#6-3-5-허용-수단)) |
+| `provider_timeout`, `provider_unavailable`, `provider_rate_limited`가 늘어남 | 공급자의 장애 공지, 호출량 한도 | 공급자 문제면 복구를 기다림. 장애가 계속되면 허용 수단에 따라 모델 변경을 검토 [6-3-5 허용 수단](6-3-AI-ALIGNMENT.md#6-3-5-허용-수단) |
 | `provider_bad_request` | Sentry의 공급자 오류 원문 | 요청 인자나 모델 설정을 고침 |
-| `invalid_ai_response`가 갑자기 늘어남 | Langfuse의 모델 응답 원문과 검증 코드 | 원인 구분에 따라 구현 결함인지 먼저 확인 ([6-3-3 원인 구분](6-3-AI-ALIGNMENT.md#6-3-3-원인-구분)) |
+| `invalid_ai_response`가 갑자기 늘어남 | Langfuse의 모델 응답 원문과 검증 코드 | 원인 구분에 따라 구현 결함인지 먼저 확인 [6-3-3 원인 구분](6-3-AI-ALIGNMENT.md#6-3-3-원인-구분) |
 | `schema_validation_failed`, `unexpected_error` | Sentry의 스택 | 코드 결함으로 보고 고침 |
 
 요약에 쓰는 조회식과 메시지 형식은 `manyak-ai`의 `.agents/skills/daily-sentry-report/`를 따른다.
