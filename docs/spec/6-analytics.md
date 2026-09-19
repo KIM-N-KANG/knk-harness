@@ -557,7 +557,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567·KNK-681)
 
-인앱 브라우저 감지·탈출([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md))의 관측 이벤트입니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
+인앱 브라우저 감지·탈출([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md))의 관측 이벤트입니다. 신규 로그인은 일반 로그인 화면과 Google 팝업을 사용하므로 `loginHandoffCreated`를 발생시키지 않습니다. `escapeAttempted`, `bannerShown`과 `loginContinue_*`는 기존 발급 링크의 복구에서만 발생합니다. 아래 핸드오프 퍼널은 기존 경로의 데이터 해석을 위한 기록이며, 신규 인앱 로그인 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
 
 | 이벤트                                | 우선순위 | 발생 시점                                    | 고유 프로퍼티                                               |
 | ------------------------------------- | -------- | -------------------------------------------- | ----------------------------------------------------------- |
@@ -576,7 +576,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 | 이벤트                                     | 우선순위 | 발생 시점                               | 고유 프로퍼티                                    |
 | ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
-| `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
+| `client_inappBrowser_loginHandoffCreated`   | P1       | 기존 핸드오프 생성 성공, 신규 경로 발생 없음 | `app` (동일 enum), `handoff_id` (string, 필수)   |
 | `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | 없음 (아래 `handoff_id` 갭 참조)                 |
 | `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `provider` (string, 필수 — `google` · `kakao`, KNK-728) |
 

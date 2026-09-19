@@ -26,6 +26,7 @@
 - [AUTH-SESSION — BFF 토큰 세션·세션 만료](#auth-session--bff-토큰-세션세션-만료)
 - [AUTH-MIGRATE — 게스트 데이터 자동 이관](#auth-migrate--게스트-데이터-자동-이관)
 - [AUTH-HANDOFF — 인앱 게스트 허용·로그인 핸드오프](#auth-handoff--인앱-게스트-허용로그인-핸드오프)
+- [AUTH-POPUP — Google 인증 팝업](#auth-popup--google-인증-팝업)
 - [AUTH-LOGOUT — 로그아웃](#auth-logout--로그아웃)
 - [AUTH-ONBOARD — 신규 가입 온보딩(초대 코드 다이얼로그)](#auth-onboard--신규-가입-온보딩초대-코드-다이얼로그)
 - [⚠️ 확인 필요](#️-확인-필요)
@@ -51,7 +52,7 @@
 | AUTH-LOGIN-09 | P1  | 백엔드 로그인 실패(서버 모킹 필요) 또는 OAuth 중단·거절                   | 소셜 로그인 시도                               | `/login?error=...`로 복귀 + "로그인에 실패했어요" 토스트 + `login_oauthError_shown`(error_code, provider=null) 계측(§6-4-3). URL의 error 파라미터 제거 후 화면 유지. 회원 상태로 전환되지 않음(NextAuth 로그인 자체가 실패 — 반쪽 세션 없음) | 수동                                          | FE-SCREEN-008 예외 처리, 구현(`login-screen`, `auth.ts`) |
 | AUTH-LOGIN-10 | P1  | 게스트                                                                    | 계정 연동 안내 확인                            | 버튼 아래에 "소셜 계정 하나로 먼저 로그인한 뒤 다른 계정을 연동하면, / 어느 계정으로 로그인해도 똑같이 이용할 수 있어요"가 14px(`text-sm`)로 상시 노출. 하나의 계정으로 먼저 로그인한 뒤 다른 provider를 연동하는 순서를 안내하며, 가입 여부 조회로 안내를 분기하지 않음(열거 오라클 방지) | ◐ e2e `visual/auth-visual`(스크린샷)          | §3-1-3 계정 연동 정적 안내, KNK-728·KNK-740·KNK-1037      |
 | AUTH-LOGIN-11 | P0  | 게스트, Kakao 계정 보유                                                   | "카카오로 시작하기" 탭 → Kakao OAuth 완료      | 카카오 로그인으로 리다이렉트(내부는 범위 외). 완료 후 앱 복귀, 회원 상태로 전환(이관·온보딩 등 후처리는 Google과 동일). Google 계정과는 별개 계정                          | 수동                                          | US-9-1, §3-1-3 카카오 로그인 버튼, KNK-728                 |
-| AUTH-LOGIN-12 | P1  | 게스트                                                                    | 소셜 로그인 버튼 하나 탭 직후 관찰(로그인 화면·외부 핸드오프 랜딩·게스트 한도 다이얼로그 공통) | 탭한 버튼은 문구 공간을 유지한 중앙 스피너로 바뀌고 두 provider 버튼 모두 비활성화(중복·교차 클릭 방지). 페이지 이탈 없이 실패하면(핸드오프 생성 실패 등) 실패 토스트와 함께 버튼이 다시 활성화. OAuth 화면에서 뒤로가기로 복귀(bfcache 포함)하면 버튼이 활성 상태로 돌아옴 | 수동                                          | FE-SCREEN-008 로그인 진행 중 상태, KNK-760               |
+| AUTH-LOGIN-12 | P1  | 게스트                                                                    | 소셜 로그인 버튼 하나 탭 직후 관찰(로그인 화면·외부 핸드오프 랜딩·게스트 한도 다이얼로그 공통) | 탭한 버튼은 문구 공간을 유지한 중앙 스피너로 바뀌고 두 provider 버튼 모두 비활성화(중복·교차 클릭 방지). 페이지 이탈 없이 실패하면(팝업 차단 등) 실패 토스트와 함께 버튼이 다시 활성화. OAuth 화면에서 뒤로가기로 복귀(bfcache 포함)하면 버튼이 활성 상태로 돌아옴 | 수동                                          | FE-SCREEN-008 로그인 진행 중 상태, KNK-760               |
 
 ## AUTH-LINK — 계정 연동 (마이 페이지, KNK-740)
 
@@ -100,12 +101,11 @@
 
 ## AUTH-HANDOFF — 인앱 게스트 허용·로그인 핸드오프
 
-기준: [계약·구조](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프).
+기준: [계약·구조](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프). 핸드오프 관련 케이스는 기존 발급 링크와 pending 복구를 검증합니다. 신규 생성에 해당하던 AUTH-HANDOFF-02, AUTH-HANDOFF-17, AUTH-HANDOFF-18은 폐기하고 번호를 재사용하지 않습니다. 신규 로그인 진입은 AUTH-POPUP-08로 검증합니다.
 
 | ID             | P   | 사전조건                                 | 절차                               | 기대 결과                                                                                                   | 자동화 | 근거                                                                  |
 | --------------- | --- | ------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------ |
 | AUTH-HANDOFF-01 | P0  | 인앱 브라우저(인스타 등) UA + 게스트                                                 | 홈·제작 스토리 목록 진입                      | 전면 차단 오버레이 없이 게스트 기능(목록·생성·채팅) 그대로 이용. 감지 계측(`detected`)만 발생                                                                        | ✅ e2e `auth/in-app-handoff`  | §3-2-5 인앱 게스트 허용                           |
-| AUTH-HANDOFF-02 | P0 | 인앱 UA + 게스트(스토리·채팅 로컬 ID 보유) | 로그인 CTA(인스타그램·쓰레드는 홈 헤더·마이에서 `/login` 미경유 직행, 카카오톡은 `/login` 경유 / 로그인 화면·게스트 한도 다이얼로그의 Google 버튼) | 핸드오프 생성 후 주소가 `/login/continue?handoff=`로 바뀌고 "외부 브라우저에서 로그인해주세요" 전환 안내 표시. `loginHandoffCreated`(handoff_id) 계측 | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프), §6-4-2-12 |
 | AUTH-HANDOFF-03 | P0 | 외부 브라우저 UA + `/login/continue?handoff=<유효코드>` 진입 | 랜딩 관찰 | 코드를 HttpOnly 쿠키로 이전하고 주소에서 `handoff` 쿼리**만** 제거(유입 출처 UTM 파라미터는 유지 — KNK-964). "만든 스토리와 채팅은 로그인하면 계정으로 옮겨져요 / 이 과정은 계정당 한 번만 진행돼요" 안내 + "카카오로 시작하기"(위)·"Google로 시작하기"(아래) CTA + 약관 동의 고지(로그인 페이지와 동일 셸). `loginContinue_viewed` 계측 | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프), §4-3-5 |
 | AUTH-HANDOFF-04 | P1 | 외부 브라우저 + 만료·무효 코드(확인 API **404**) | `/login/continue?handoff=<만료코드>` 진입 | "링크가 만료됐어요 / 다시 로그인해주세요" 만료 안내 + "로그인하러 가기" 버튼. 쿠키 미설정. 만료 판정은 404에서만 — 그 외 실패는 AUTH-HANDOFF-12 | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프) 예외 |
 | AUTH-HANDOFF-05 | P0 | AUTH-HANDOFF-03 이후 외부 브라우저(실제 로그인 필요) | "카카오로 시작하기"/"Google로 시작하기" 중 하나로 로그인 완료 | `handoffCode`를 실은 로그인으로 회원 체험 시드(원본 디바이스 ID 우선) + 게스트 데이터 이관을 함께 수행. `callbackPath`로 원래 화면 복귀. `loginContinue_loginButton_clicked`(provider) 계측 | 수동(실기기) | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프), §4-3-5 |
@@ -114,14 +114,28 @@
 | AUTH-HANDOFF-08 | P1 | 외부 브라우저에서 핸드오프 수령 성공(AUTH-HANDOFF-03) 후 로그인 없이 | 홈(`/`) 직접 진입 | 온보딩으로 리다이렉트되지 않음(수령 시 온보딩 완료 마킹 — 로그인 취소·로그아웃 후 재방문에서 온보딩 재노출 방지) | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프) 온보딩 노출 제외 |
 | AUTH-HANDOFF-09 | P2  | 카카오톡 인앱, `/login/continue?handoff=` 랜딩                                       | 진입 관찰 / 수동 버튼                         | 진입 0.3초 뒤 `kakaotalk://web/openExternal`로 자동 전환 시도(escapeAttempted 계측). 실패 시 "외부 브라우저에서 열기" 수동 버튼 + 하단 메뉴(⋮) 안내 문구. 미탈출 시 1.6초 뒤 bannerShown 계측 | 수동(실기기)                  | §3-2-5, §6-4-2-12                                 |
 | AUTH-HANDOFF-10 | P2  | 인스타그램·쓰레드 인앱, `/login/continue?handoff=` 랜딩                              | 진입 관찰 / 수동 조작                         | 자동 전환 없이 안내 화면 즉시 노출(bannerShown). "외부 브라우저에서 열기" 수동 버튼 + 상단 메뉴(⋮) 안내 문구 제공. handoff 쿼리 유지            | 수동(실기기)                  | §3-2-5, §6-4-2-12                                 |
-| AUTH-HANDOFF-11 | P0  | 실기기 매트릭스: 카카오톡·인스타그램·쓰레드 × iOS·Android                            | 게스트 생성 → 로그인 → 외부 전환 → 로그인 완료 → 복귀 → 잔여 인계 확인 | 각 조합에서 전체 흐름 성공. 자동 전환 실패 시 수동 경로로 완주. 로그인 후 원래 화면 복귀, 인앱 복귀 시 이관 ID 정리                                                  | 수동(실기기 검수)             | §3-2-5 검수 기준                                  |
+| AUTH-HANDOFF-11 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android, 기존 발급 핸드오프 링크와 pending 보유 | 기존 링크 → 외부 로그인 완료 → 인앱 복귀 | 기존 핸드오프의 이관 완료와 이관 ID 정리. 새 로그인은 AUTH-POPUP-01과 AUTH-POPUP-08 적용 | 수동(실기기) | US-9-9, 웹 §3-2-5 |
 | AUTH-HANDOFF-12 | P1  | 외부 브라우저 + 수령 API 일시 실패(5xx·오프라인 등, 모킹)                            | `/login/continue?handoff=<유효코드>` 진입 → "다시 시도" 탭 | "잠시 문제가 생겼어요 / 잠시 후 다시 시도해주세요" + "다시 시도" 버튼. 만료 안내로 오인하지 않으며 로딩에 머물지 않음. 재시도용으로 `handoff` 쿼리 유지, 다시 시도해 성공하면 정상 랜딩(쿼리 제거) | ✅ e2e `auth/in-app-handoff`  | 구현(`login-continue-screen`)                    |
-| AUTH-HANDOFF-13 | P0  | 카카오톡 인앱 UA + 게스트(스토리·채팅 로컬 ID 보유)                                  | "카카오로 시작하기" 탭 → Kakao 로그인 완료    | 핸드오프·외부 전환 없이 인앱 그 자리에서 로그인 완료. 같은 저장소의 게스트 데이터가 기존 자동 마이그레이션으로 이관. 같은 화면의 Google 버튼은 종전대로 외부 전환(AUTH-HANDOFF-02) | 수동(실기기)                  | §3-2-5 분기 표, KNK-728                           |
+| AUTH-HANDOFF-13 | P0  | 카카오톡 인앱 UA + 게스트(스토리·채팅 로컬 ID 보유)                                  | "카카오로 시작하기" 탭 → Kakao 로그인 완료    | 핸드오프·외부 전환 없이 인앱 그 자리에서 로그인 완료. 같은 저장소의 게스트 데이터가 기존 자동 마이그레이션으로 이관. 같은 화면의 Google 버튼은 Auth.js 팝업 시도(AUTH-POPUP-01) | 수동(실기기)                  | §3-2-5 분기 표, KNK-728                           |
 | AUTH-HANDOFF-14 | P1  | 인앱 UA + 진행 중 핸드오프 + 상태 조회 일시 실패(5xx·타임아웃, 모킹)                 | 인앱에서 아무 화면 진입                       | pending과 로컬 ID를 **유지**(코드를 버리면 이관 결과를 영구 회수 불가). 종료 상태(404·410)에서만 pending 제거                                                        | ✅ e2e `auth/in-app-handoff`  | 구현(`use-handoff-cleanup`)                      |
 | AUTH-HANDOFF-15 | P1  | 인앱 UA + 진행 중 핸드오프, 첫 조회는 `PENDING`(모킹) — 인앱 문서가 살아 있는 상태    | 외부 브라우저에서 로그인·이관 완료 후 인앱 문서로 복귀(리마운트 없이 다시 보이기) | 복귀 시점에 상태를 재조회해 AUTH-HANDOFF-06과 동일하게 정리. 웹뷰가 리로드될 때까지 미정리 상태로 남지 않음                                                          | ✅ e2e `auth/in-app-handoff`  | 구현(`use-handoff-cleanup`)                      |
 | AUTH-HANDOFF-16 | P2  | 분석 디버그 확인 가능 환경 / 프로덕션 빌드                                           | 인앱·외부 랜딩(`/login/continue?handoff=`) 진입 → 이벤트·응답 헤더 확인 | 페이지뷰 이벤트의 `Page Location` 등 URL 프로퍼티에서 코드가 `[redacted]`로 치환. 랜딩 응답에 `Referrer-Policy: no-referrer`·`Cache-Control: no-store`             | 수동                          | 구현(`handoff-redaction`, `next.config`)         |
-| AUTH-HANDOFF-17 | P1 | 인앱 UA + 분석 SDK 캠페인 쿠키 보유(UTM 계열 6종) | 로그인 CTA로 핸드오프 생성 | 전환 URL(`/login/continue?handoff=`)에 UTM 계열 6종(`utm_source`·`utm_medium`·`utm_campaign`·`utm_term`·`utm_content`·`utm_id`)이 함께 실림. `referrer`·클릭 ID(`fbclid` 등)는 실리지 않음 | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프), §6-4-2-12, KNK-964 |
-| AUTH-HANDOFF-18 | P2 | 인앱 UA + 캠페인 쿠키의 UTM 값이 빈 문자열(캠페인 없는 진입) | 로그인 CTA로 핸드오프 생성 | 전환 URL에 UTM 파라미터를 붙이지 않음 — 빈 값을 실으면 외부 브라우저의 기존 귀속을 빈 값으로 덮어씀 | ✅ e2e `auth/in-app-handoff` | [웹 핸드오프](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프), KNK-964 |
+
+## AUTH-POPUP — Google 인증 팝업
+
+기준: [웹 인앱 로그인 계약](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프). 단위 테스트와 UA 분기 검사는 실제 앱의 Google 인증 허용 여부를 증명하지 않습니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| AUTH-POPUP-01 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android 실기기, 게스트 | 홈 또는 마이의 로그인 링크 → Google 로그인 | 로그인 선택 화면을 유지하고 Auth.js 팝업 시작. 원래 탭의 세션과 인증 API가 같은 회원일 때만 성공. 새로 고침과 페이지 이동 후 세션 유지 | 수동(실기기) | US-9-8, 웹 §3-2-5 |
+| AUTH-POPUP-02 | P0 | 감지 대상 인앱 실기기, 신규 가입 또는 로컬 게스트 데이터 보유 | 로그인 화면 또는 기존 로그인 필요 시트 → Google 팝업 인증 완료 | 원래 탭의 기존 온보딩과 자동 이관 진행. 복귀 경로 유지. 시도한 소모 요청을 자동 재실행하지 않음 | 수동(실기기) | 웹 §3-2-5 |
+| AUTH-POPUP-03 | P1 | 팝업 차단, 취소, OAuth 거절 또는 네트워크 실패 | Google 버튼 → 각 실패 조건 → 재시도 | 원래 화면 유지, 기존 실패 안내, 버튼 잠금 해제. 빈 팝업 정리. 중복 클릭으로 추가 팝업을 열지 않음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-handoff`(차단과 재시도), 실기기 별도 | 웹 §3-2-5 |
+| AUTH-POPUP-04 | P0 | 다른 origin, 다른 창 또는 이전 시도의 완료 메시지 | 완료 메시지 전달 | 메시지를 무시하고 인증 상태나 이동 경로를 변경하지 않음. 유효한 메시지도 원래 창의 서버 세션을 재검증 | ◐ 단위 `start-google-popup-login.test.ts` | 웹 §3-2-5 |
+| AUTH-POPUP-05 | P0 | Google OAuth 네트워크 확인 가능 | 인증 시작과 callback 관찰 | PKCE S256, state, nonce가 요청에 포함되고 일치하지 않는 callback은 거절. 토큰을 URL이나 메시지에 노출하지 않음 | 수동 | 웹 §3-2-5 |
+| AUTH-POPUP-06 | P0 | 실기기에서 앱 전환, opener 단절 또는 쿠키 저장소 분리 | Google 인증 후 자동 또는 수동으로 원래 탭 복귀 | 같은 저장소의 세션이면 재확인 후 복귀. 저장소가 분리된 인증만으로 성공을 표시하지 않음. 완료 화면은 원래 화면으로 돌아가는 안내 제공 | 수동(실기기) | 웹 §3-2-5 |
+| AUTH-POPUP-07 | P1 | 완료 응답 없이 5분 경과 | 대기 → 만료 → 늦은 메시지 또는 재시도 | 잠금과 리스너 정리. 이전 완료 메시지로 화면 이동하지 않고 새 시도로 재시도 가능 | ◐ 단위 `start-google-popup-login.test.ts` | 웹 §3-2-5 |
+| AUTH-POPUP-08 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android UA, 게스트 | 홈과 마이 로그인 링크 → Google 팝업 차단 → 재시도 | 일반 로그인 화면과 두 provider 버튼 표시. 핸드오프 생성이나 외부 안내 이동 없음. 실패 후 같은 화면에서 버튼 잠금 해제와 재시도 | ✅ e2e `auth/in-app-handoff`(UA 분기), 실제 앱 검수 별도 | US-9-8, 웹 §3-2-5 |
+| AUTH-POPUP-09 | P0 | 감지 대상 인앱, 게스트 | callbackUrl이 있는 로그인 화면 → Kakao 로그인 시작 | 같은 탭에서 Auth.js 시작. callbackUrl의 쿼리와 해시 유지. 신규 핸드오프 생성 없음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-handoff`(시작 요청), 완료 실기기 별도 | US-9-10, 웹 §3-2-5 |
 
 ## AUTH-LOGOUT — 로그아웃
 

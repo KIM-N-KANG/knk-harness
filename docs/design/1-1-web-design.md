@@ -264,11 +264,22 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 
 ### 소셜 로그인·계정 연동 (웹 구현)
 
+- Google 로그인 provider는 `checks: ['pkce', 'state', 'nonce']`를 명시합니다. 팝업과 일반 redirect 모두 같은 `/api/auth/callback/google`과 기존 백엔드 세션 발급을 사용합니다. 기존 Google 클라이언트 ID, secret과 Console callback 등록을 재사용합니다.
 - Kakao는 issuer `https://kauth.kakao.com`의 OIDC, `client_secret_post`, scope `openid`를 명시합니다. `/api/auth/callback/{provider}`는 각 콘솔 등록과 일치해야 합니다.
 - 공통 시작 함수가 `redirected`·`failed`로 진행 잠금을 제어하고 `pageshow(persisted)`에서 bfcache로 복원된 잠금을 해제합니다. OAuth 실패는 `/login?error=…`로 돌아옵니다.
 - `link-google`·`link-kakao`는 자격증명을 명시한 연동 전용 provider입니다. 링크 코드는 httpOnly 쿠키에 두고 `/my/link/continue?target=`가 대상 OAuth를 시작합니다. Google 재인증에는 현재 세션의 `login_hint`를 사용할 수 있습니다.
 - 연동 콜백은 기존 세션 쿠키를 복호화해 원래 클레임을 반환합니다. 새 OAuth 프로필로 세션을 교체하지 않으며 기존 세션이 없으면 실패시킵니다. 연동 전용 콜백 URL 등록도 필요합니다.
 - 동의·연동 실패의 사용자 결과는 [공통 계정 계약](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지)을 따릅니다.
+
+#### 인앱 브라우저의 Google 인증 팝업
+
+[start-google-popup-login](../../../manyak-web/src/features/auth/_shared/utils/start-google-popup-login.ts)은 클릭 중 빈 팝업을 먼저 열고 `signIn('google', { redirect: false })`로 얻은 Google 인가 URL을 그 창에 로드합니다. 코드 교환과 PKCE, state, nonce 검증은 Auth.js가 처리하며 별도 Google SDK나 Credentials provider는 추가하지 않습니다. Auth.js의 단일 Google 트랜잭션 쿠키에 맞춰 문서 안에서 중복 팝업을 막습니다.
+
+성공 후 `/api/auth/popup-complete?attempt=<UUID>`가 원래 창에 완료 여부만 알립니다. 이 Route Handler는 루트 레이아웃을 실행하지 않습니다. 응답은 `no-store`, `no-referrer`, 인라인 스크립트 nonce와 프레임 차단 CSP를 사용합니다. 안내 문구는 [popup-login](../../../manyak-web/src/lib/auth/popup-login.ts)의 `POPUP_LOGIN_COPY`가 소유합니다.
+
+원래 창은 `postMessage`의 origin, source와 시도 UUID를 모두 확인합니다. 알림을 자격증명으로 신뢰하지 않고 Auth.js 세션을 재조회한 뒤 생성 API 클라이언트의 `me()` 응답 회원 ID가 일치할 때만 검증된 상대 경로로 전체 이동합니다. 인증 확인용 `/auth/me` 호출은 로그인 완료 검사이며, 온보딩과 자동 이관은 이동한 원래 탭에서 기존 절차를 따릅니다.
+
+창 닫힘과 원래 문서의 focus 또는 visibility 복귀도 세션 재확인의 계기로 사용합니다. OAuth 오류로 `/login?error=…`에 도착하면 팝업을 닫고 실패를 반환합니다. 차단, 취소와 5분 타임아웃에서 리스너와 타이머를 정리하고 버튼 잠금을 풉니다. COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀 안내를 남깁니다. 쿠키 저장소가 분리되면 완료 메시지만으로 원래 창에 세션을 생성할 수 없으며 실패로 처리합니다. 제품 범위와 실기기 확인은 [웹 계약](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)을 따릅니다.
 
 ### 원격 이미지 최적화
 
@@ -289,18 +300,18 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 | `KAKAOTALK` | `kakaotalk://web/openExternal?url=…` |
 | `Instagram`·`Barcelona` | Android `intent://`, iOS `x-safari-`; 사용자 클릭과 수동 외부 열기 안내 병행 |
 
-provider별 적용은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)를 따릅니다. 실제 전환은 앱 버전에 영향을 받으므로 실기기 QA와 수동 대체 경로를 유지합니다.
+탈출 스킴과 안내는 이미 발급된 `/login/continue?handoff=…` 링크의 복구에만 사용합니다. 새 로그인은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)에 따라 일반 로그인 화면과 Google 인증 팝업을 사용합니다.
 
 ### 인앱 게스트 허용·로그인 핸드오프
 
-모든 소셜 CTA는 `start-social-login`을 사용합니다. 홈·마이 직행 단축은 Instagram·Threads만 적용하고 KakaoTalk은 `/login`에서 provider를 선택합니다.
+모든 소셜 CTA는 [start-social-login](../../../manyak-web/src/features/auth/_shared/utils/start-social-login.ts)을 사용합니다. 감지 대상인 KakaoTalk, Instagram, Threads는 OS에 관계없이 Google 팝업을 시도하고 Kakao는 같은 탭의 Auth.js redirect를 사용합니다. 홈과 마이의 로그인 링크는 일반 `/login`을 열며, 기존 게스트 한도와 로그인 필요 시트의 진입 조건은 유지합니다. 신규 핸드오프 생성과 외부 전환 직행은 없습니다.
 
-1. 서버에 게스트 스토리·채팅 ID, 원본 device ID, callbackPath, 출처 앱을 보내 핸드오프를 생성합니다. device ID 해시는 서버가 하므로 클라이언트에서 해시하지 않습니다.
-2. 외부 전환 전에 주소를 `/login/continue?handoff=…`로 교체합니다. URL에는 코드와 SDK 캠페인 쿠키의 비어 있지 않은 UTM 6종(`utm_source`·`utm_medium`·`utm_campaign`·`utm_term`·`utm_content`·`utm_id`)만 싣습니다. 콘텐츠 ID·device ID·토큰·`fbclid`는 싣지 않습니다.
-3. 외부 랜딩은 코드를 검증해 짧은 httpOnly 쿠키로 옮기고 주소에서 코드만 제거합니다. UTM은 유지합니다. `Cache-Control: no-store`·`Referrer-Policy: no-referrer`를 적용하고, 이관 건수를 보여준 뒤 사용자 클릭으로 로그인을 시작합니다. 성공 수령 시 온보딩 열람도 기록합니다.
-4. BFF는 **첫 백엔드 로그인 전에** 쿠키를 읽어 `handoffCode`를 로그인 본문에 싣습니다. 핸드오프가 없으면 Amplitude 쿠키의 device ID를 헤더로 전달합니다. 회원 체험 시드가 확정된 뒤 보충하지 않습니다.
-5. 로그인 자체가 시드·이관을 소비하므로 별도 소비 API를 호출하지 않습니다. 성공 후 검증된 앱 내 상대 callbackPath로 이동합니다. 서버의 이관 1회·시도 5회 상한을 따릅니다.
-6. 인앱 복귀 시 이관에 성공한 ID만 제거합니다. 발급 뒤 만든 데이터·`migrationClosed`로 이관하지 못한 ID는 보존합니다. 일반 로그인 이관도 [use-auto-migration](../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts)의 평가 결과별 정리를 따릅니다.
+기존에 발급된 핸드오프는 다음 복구 경로를 유지합니다.
+
+1. 기존 `/login/continue?handoff=…` 링크를 인앱에서 열면 외부 전환 안내를 유지합니다. 외부 랜딩은 코드를 검증해 짧은 httpOnly 쿠키로 옮기고 주소에서 코드만 제거합니다. 함께 전달된 UTM은 유지합니다. `Cache-Control: no-store`와 `Referrer-Policy: no-referrer`를 적용하고, 이관 건수를 보여준 뒤 사용자 클릭으로 로그인을 시작합니다. 성공 수령 시 온보딩 열람도 기록합니다.
+2. BFF는 첫 백엔드 로그인 전에 쿠키를 읽어 `handoffCode`를 로그인 본문에 싣습니다. 핸드오프가 없으면 Amplitude 쿠키의 device ID를 헤더로 전달합니다. 회원 체험 시드가 확정된 뒤 보충하지 않습니다.
+3. 로그인 자체가 시드와 이관을 소비하므로 별도 소비 API를 호출하지 않습니다. 성공 후 검증된 앱 내 상대 callbackPath로 이동하고 이관 결과를 반영합니다. 서버의 이관 1회, 시도 5회 상한을 따릅니다.
+4. 인앱 복귀 시 이관에 성공한 ID만 제거합니다. 발급 뒤 만든 데이터와 `migrationClosed`로 이관하지 못한 ID는 보존합니다. 새 로그인은 같은 저장소의 [use-auto-migration](../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts)을 통해 기존 게스트 데이터를 이관합니다.
 
 코드·토큰·공유 식별자는 관측 데이터에서 제외합니다. 실패 분기는 [인증 QA](../qa/auth.md)로 확인합니다.
 
