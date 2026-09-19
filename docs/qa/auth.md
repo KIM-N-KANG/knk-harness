@@ -12,7 +12,7 @@
 | 화면 | 로그인 `/login`(FE-SCREEN-008) + 계정 연동(마이 페이지 Chip 행·`/my/link/continue` 중계) + 전역 세션·이관 동작(루트 레이아웃 상주 컴포넌트) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md FE-SCREEN-008(§3-1-3)·§3-1-7`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5`](../spec/3-2-web-spec.md), [`4-backend-server-spec.md §4-3-5`](../spec/4-backend-server-spec.md)(로그인 핸드오프), [`2-user-stories.md §2-8·§2-9`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/my/login-page.spec.ts`, `e2e/my/session-expiry.spec.ts`, `e2e/auth/in-app-handoff.spec.ts`(인앱 게스트·로그인 핸드오프), `e2e/my/invite.spec.ts`(신규 가입 다이얼로그), `e2e/my/my-page.spec.ts`, `e2e/legal/legal.spec.ts`(로그인 고지), `manyak-web/e2e/visual/auth-visual.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/my/login-page.spec.ts`, `e2e/my/session-expiry.spec.ts`, `e2e/auth/in-app-login.spec.ts`(팝업 로그인), `e2e/auth/in-app-handoff.spec.ts`(기존 핸드오프 복구), `e2e/my/invite.spec.ts`(신규 가입 다이얼로그), `e2e/my/my-page.spec.ts`, `e2e/legal/legal.spec.ts`(로그인 고지), `manyak-web/e2e/visual/auth-visual.spec.ts` |
 
 ## 읽는 순서
 
@@ -65,7 +65,7 @@
 | AUTH-LINK-05 | P1  | 회원 A(Google), 별도 회원 B로 이미 가입된 Kakao 계정 보유    | A 세션에서 카카오 연동 시도 → B의 카카오 계정으로 인증   | 409 `SOCIAL_ACCOUNT_LINKED_TO_OTHER_USER` → **토스트가 아니라 다이얼로그**로 "이미 다른 마냑 계정에 연동된 계정" 상황과 결론(지금 계정에는 연동 불가)·대처(로그아웃 후 해당 소셜 계정으로 로그인)를 안내. 확인 버튼 1개. A 세션은 그대로 유지            | 수동                            | FE-SCREEN-008 계정 연동 에러 처리, KNK-740       |
 | AUTH-LINK-06 | P2  | 회원(Google만 연동), 이미 자기 계정에 연동된 소셜 계정 재시도 | 연동 시도 → 이미 연동된 계정으로 인증                    | 409 `PROVIDER_ALREADY_LINKED` → "이미 연동된 계정이에요" 토스트 + Chip 상태 재조회. 세션 유지                                                                                                                | 수동                            | FE-SCREEN-008 계정 연동 에러 처리, KNK-740       |
 | AUTH-LINK-07 | P1  | 회원, 재인증 단계에서 다른(연동되지 않은) 계정으로 인증      | 확인 → 재인증 화면에서 엉뚱한 계정 선택                  | 403 `REAUTH_FAILED` → "계정 연동에 실패했어요" 토스트 후 `/my` 유지. **로그아웃되지 않음**(연동 실패가 세션 만료로 처리되지 않아야 함). 링크 코드는 소비되지 않아 재시도 가능                                     | 수동(복귀 안내 표시는 e2e `my/my-page`) | FE-SCREEN-008 계정 연동 에러 처리, KNK-740       |
-| AUTH-LINK-08 | P2  | 회원, 카카오톡·인스타그램 등 인앱 브라우저                   | 연동 버튼 탭                                            | 플로우를 시작하지 않고 "계정 연동은 외부 브라우저에서만 할 수 있어요" 토스트만 표시(Google OAuth가 인앱 WebView를 막기 때문)                                                                                 | 수동                            | FE-SCREEN-008 인앱 브라우저 차단, KNK-740        |
+| AUTH-LINK-08 | P2  | 회원, 카카오톡·인스타그램 등 인앱 브라우저                   | 연동 버튼 탭                                            | 플로우를 시작하지 않고 "계정 연동은 외부 브라우저에서만 할 수 있어요" 토스트만 표시. 현재 연동 흐름은 원래 회원 세션을 보존하는 팝업을 지원하지 않음                                                                                 | 수동                            | [웹 계정 연동 제한](../spec/3-2-web-spec.md#로그인과-회원-이관)        |
 | AUTH-LINK-09 | P2  | 회원, `/my` 진입 직후(`GET /auth/me` 응답 전)               | 닉네임 아래 칩 행 확인                                  | 칩 자리에 칩 크기의 스켈레톤이 보이고 연동 버튼·Chip은 아직 없음. 응답이 오면 스켈레톤이 실제 Chip·버튼으로 교체됨(레이아웃 시프트 없음)                                                                     | ✅ e2e `my/my-page`             | FE-SCREEN-008 계정 연동, KNK-740                 |
 | AUTH-LINK-10 | P2  | 회원, 연동 도중 OAuth 취소                                  | 확인 → 재인증 화면에서 취소·뒤로가기                     | 연동되지 않은 채 종료. 현재 구현은 NextAuth 전역 error 경로를 타 `/login?error=...` 복귀 + 로그인 실패 토스트가 뜸(알려진 트레이드오프 — 세션은 유지됨)                                                       | 수동                            | 구현(`auth.ts` `pages.error`), KNK-740  |
 
@@ -127,15 +127,17 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| AUTH-POPUP-01 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android 실기기, 게스트 | 홈 또는 마이의 로그인 링크 → Google 로그인 | 로그인 선택 화면을 유지하고 Auth.js 팝업 시작. 원래 탭의 세션과 인증 API가 같은 회원일 때만 성공. 새로 고침과 페이지 이동 후 세션 유지 | 수동(실기기) | US-9-8, 웹 §3-2-5 |
+| AUTH-POPUP-01 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android 실기기, 게스트 | 홈 또는 마이의 로그인 링크 → Google 로그인 | 로그인 선택 화면을 유지하고 Auth.js 팝업 시작. 원래 탭의 세션과 인증 API가 같은 회원일 때만 성공. 새로 고침과 페이지 이동 후 세션 유지 | ◐ e2e `auth/in-app-login`(공급자와 세션 목킹), 실기기 별도 | US-9-8, 웹 §3-2-5 |
 | AUTH-POPUP-02 | P0 | 감지 대상 인앱 실기기, 신규 가입 또는 로컬 게스트 데이터 보유 | 로그인 화면 또는 기존 로그인 필요 시트 → Google 팝업 인증 완료 | 원래 탭의 기존 온보딩과 자동 이관 진행. 복귀 경로 유지. 시도한 소모 요청을 자동 재실행하지 않음 | 수동(실기기) | 웹 §3-2-5 |
-| AUTH-POPUP-03 | P1 | 팝업 차단, 취소, OAuth 거절 또는 네트워크 실패 | Google 버튼 → 각 실패 조건 → 재시도 | 원래 화면 유지, 기존 실패 안내, 버튼 잠금 해제. 빈 팝업 정리. 중복 클릭으로 추가 팝업을 열지 않음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-handoff`(차단과 재시도), 실기기 별도 | 웹 §3-2-5 |
+| AUTH-POPUP-03 | P1 | 팝업 차단, 명시적 인증 실패 또는 네트워크 실패 | Google 버튼 → 각 실패 조건 → 재시도 | 원래 화면 유지, 기존 실패 안내, 버튼 잠금 해제. 빈 팝업 정리. 중복 클릭으로 추가 팝업을 열지 않음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-login`(차단과 재시도), 실기기 별도 | 웹 §3-2-5 |
 | AUTH-POPUP-04 | P0 | 다른 origin, 다른 창 또는 이전 시도의 완료 메시지 | 완료 메시지 전달 | 메시지를 무시하고 인증 상태나 이동 경로를 변경하지 않음. 유효한 메시지도 원래 창의 서버 세션을 재검증 | ◐ 단위 `start-google-popup-login.test.ts` | 웹 §3-2-5 |
-| AUTH-POPUP-05 | P0 | Google OAuth 네트워크 확인 가능 | 인증 시작과 callback 관찰 | PKCE S256, state, nonce가 요청에 포함되고 일치하지 않는 callback은 거절. 토큰을 URL이나 메시지에 노출하지 않음 | 수동 | 웹 §3-2-5 |
-| AUTH-POPUP-06 | P0 | 실기기에서 앱 전환, opener 단절 또는 쿠키 저장소 분리 | Google 인증 후 자동 또는 수동으로 원래 탭 복귀 | 같은 저장소의 세션이면 재확인 후 복귀. 저장소가 분리된 인증만으로 성공을 표시하지 않음. 완료 화면은 원래 화면으로 돌아가는 안내 제공 | 수동(실기기) | 웹 §3-2-5 |
-| AUTH-POPUP-07 | P1 | 완료 응답 없이 5분 경과 | 대기 → 만료 → 늦은 메시지 또는 재시도 | 잠금과 리스너 정리. 이전 완료 메시지로 화면 이동하지 않고 새 시도로 재시도 가능 | ◐ 단위 `start-google-popup-login.test.ts` | 웹 §3-2-5 |
-| AUTH-POPUP-08 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android UA, 게스트 | 홈과 마이 로그인 링크 → Google 팝업 차단 → 재시도 | 일반 로그인 화면과 두 provider 버튼 표시. 핸드오프 생성이나 외부 안내 이동 없음. 실패 후 같은 화면에서 버튼 잠금 해제와 재시도 | ✅ e2e `auth/in-app-handoff`(UA 분기), 실제 앱 검수 별도 | US-9-8, 웹 §3-2-5 |
-| AUTH-POPUP-09 | P0 | 감지 대상 인앱, 게스트 | callbackUrl이 있는 로그인 화면 → Kakao 로그인 시작 | 같은 탭에서 Auth.js 시작. callbackUrl의 쿼리와 해시 유지. 신규 핸드오프 생성 없음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-handoff`(시작 요청), 완료 실기기 별도 | US-9-10, 웹 §3-2-5 |
+| AUTH-POPUP-05 | P0 | Google 로그인과 link-google 네트워크 확인 가능 | 인증 시작과 callback 관찰 | PKCE S256, state, nonce가 요청에 포함되고 일치하지 않는 callback은 거절. 토큰을 URL이나 메시지에 노출하지 않음 | ◐ 단위 `auth.test.ts`(두 provider 설정), 실제 OAuth 검증은 수동 | 웹 §3-2-5 |
+| AUTH-POPUP-06 | P0 | 실기기에서 앱 전환, opener 단절 또는 쿠키 저장소 분리 | Google 인증 후 자동 또는 수동으로 원래 탭 복귀 | 실제 팝업은 열려 있고 closed가 true여도 취소로 처리하지 않음. 같은 저장소의 세션이면 재확인 후 복귀. 저장소가 분리된 인증만으로 성공을 표시하지 않음. 완료 화면은 원래 화면으로 돌아가는 안내 제공 | ◐ e2e `auth/in-app-login`(Chromium COOP 헤더, 인증 목킹), 쿠키 격리와 실기기 별도 | 웹 §3-2-5 |
+| AUTH-POPUP-07 | P1 | 완료 응답 없이 5분 경과 | 대기 → 만료 → 늦은 메시지 또는 재시도 | 잠금과 리스너 정리, 진행 중 인증창 유지. 이전 메시지와 늦은 세션/회원 응답으로 이동하지 않음. 명시적 재시도 때 이전 창 정리. 기존 signIn 요청 응답 전 새 시작 요청 차단 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-login`(만료 후 창 유지와 재시도) | 웹 §3-2-5 |
+| AUTH-POPUP-08 | P0 | KakaoTalk, Instagram, Threads의 iOS와 Android UA, 게스트 | 홈과 마이 로그인 링크 → Google 팝업 차단 → 재시도 | 일반 로그인 화면과 두 provider 버튼 표시. 핸드오프 생성이나 외부 안내 이동 없음. 실패 후 같은 화면에서 버튼 잠금 해제와 재시도 | ✅ e2e `auth/in-app-login`(UA 분기), 실제 앱 검수 별도 | US-9-8, 웹 §3-2-5 |
+| AUTH-POPUP-09 | P0 | 감지 대상 인앱, 게스트 | callbackUrl이 있는 로그인 화면 → Kakao 로그인 시작 | 같은 탭에서 Auth.js 시작. callbackUrl의 쿼리와 해시 유지. 신규 핸드오프 생성 없음 | ◐ 단위 `start-google-popup-login.test.ts`, e2e `auth/in-app-login`(시작 요청), 완료 실기기 별도 | US-9-10, 웹 §3-2-5 |
+
+WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 단절이 재현되지 않아 AUTH-POPUP-06의 해당 E2E를 건너뜁니다. Chromium은 팝업이 열려 있는데 원래 창의 참조가 closed인 상태를 검증합니다. 성공 메시지와 만료 후 창 유지 및 재시도는 두 엔진에서 실행합니다.
 
 ## AUTH-LOGOUT — 로그아웃
 
