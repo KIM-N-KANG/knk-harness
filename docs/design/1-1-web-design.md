@@ -262,6 +262,8 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 
 로그아웃은 서버 실패에도 로컬 정리를 끝냅니다. 탈퇴는 204 이후 정리합니다. 토큰은 브라우저 JS·로그에 노출하지 않습니다.
 
+Auth.js의 `__Secure-` 세션 쿠키와 청크를 삭제할 때는 실행 모드와 무관하게 `Secure`를 붙입니다. ngrok 등 HTTPS 개발 환경에서도 이 접두사를 사용하므로 운영 모드 여부만으로 삭제 속성을 정하면 브라우저가 삭제를 거부하고 만료 401이 반복됩니다. 접두사가 없는 HTTP 로컬 쿠키의 삭제 속성은 기존 정책을 유지합니다.
+
 ### 소셜 로그인·계정 연동 (웹 구현)
 
 - Google 로그인과 `link-google` provider는 동일하게 `checks: ['pkce', 'state', 'nonce']`를 명시합니다. 이는 팝업 전용 요건이 아닌 보안 정책으로, 인가 코드와 요청 상태 검증에 OIDC ID 토큰의 nonce 검증을 더합니다. 팝업과 일반 redirect 모두 같은 `/api/auth/callback/google`과 기존 백엔드 세션 발급을 사용합니다. 기존 Google 클라이언트 ID, secret과 Console callback 등록을 재사용합니다.

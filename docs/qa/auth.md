@@ -83,6 +83,7 @@
 | AUTH-SESSION-06 | P2  | 회원, BFF 토큰 쿠키(`manyak_session_*`)만 수동 삭제(NextAuth 세션 쿠키 유지) | API 호출                                       | "화면은 회원, 서버엔 열쇠 없음" 불일치로 판정 → 세션 폐기 + AUTH-SESSION-04와 동일한 만료 처리                                                                      | 수동                                                             | 구현(`backend-session`)          |
 | AUTH-SESSION-08 | P1  | 같은 계정, 다른 브라우저·기기                                                | 로그인                                         | 같은 서재(서버 정본 스토리·채팅 목록)가 보임                                                                                                                        | 수동                                                             | US-9-4, FE-SCREEN-008 검수 기준  |
 | AUTH-SESSION-09 | P2  | 게스트                                                                       | API 호출을 백엔드 로그로 관찰                  | `Authorization` 없이 익명으로 통과하고 게스트 기능이 정상 동작                                                                                                      | 수동                                                             | §3-1-7 BFF 프록시                  |
+| AUTH-SESSION-10 | P1 | HTTPS 개발 환경, BFF 토큰 없이 `__Secure-authjs.session-token` 또는 청크만 잔존 | 공개 스토리 상세 조회 → 만료 응답 → 재조회 | 첫 401의 삭제 응답에 Secure가 포함되어 잔여 세션 쿠키가 제거됨. 이후 게스트 조회는 정상이며 401이 반복되지 않음. HTTP 로컬의 일반 세션 쿠키도 정상 삭제 | ◐ 단위 `token-cookies.test.ts`(삭제 속성), 실제 쿠키 삭제는 수동 | [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff), AUTH-SESSION-06 |
 
 ## AUTH-MIGRATE — 게스트 데이터 자동 이관
 
