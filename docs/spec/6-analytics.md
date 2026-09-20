@@ -209,7 +209,6 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0                  | server | `server_chat_aiMessage_processed_succeeded`              |
 | P0                  | server | `server_chat_aiMessage_processed_failed`                 |
 | P0 `Phase 1 · 구현` | client | `client_creditShortageDialog_shown`                      |
-| P0 `Phase 1 · 구현` | client | `client_guestLimitDialog_shown`                          |
 | P0 `Phase 1 · 구현` | client | `client_login_oauthError_shown`                          |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_succeeded`           |
 | P0 `Phase 1 · 구현` | server | `server_login_googleLogin_processed_failed`              |
@@ -264,8 +263,6 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `폐기`           | client | `client_chatShareDialog_dismissed`                       |
 | P1 `Phase 1 · 구현` | client | `client_chatShare_viewed`                                |
 | P1 `Phase 1 · 구현` | client | `client_chatShare_ctaButton_clicked`                     |
-| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_loginButton_clicked`            |
-| P1 `Phase 1 · 구현` | client | `client_guestLimitDialog_dismissed`                      |
 | P1 `Phase 1 · 구현` | client | `client_login_viewed`                                    |
 | P1 `Phase 1 · 구현` | client | `client_login_googleButton_clicked`                      |
 | P1 `Phase 1 · 구현` | client | `client_login_kakaoButton_clicked`                       |
@@ -504,7 +501,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-9. 이프 — `Phase 1 · 구현`
 
-이프 적립 인터랙션과 이프·체험 한도 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 이프 원장(`credit_transactions`)이 정본이고([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+이프 적립 인터랙션과 이프 부족 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 이프 원장(`credit_transactions`)이 정본이고([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
 | 이벤트                                           | 우선순위 | 발생 시점                                                                        | 고유 프로퍼티                                                                                                  |
 | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -518,14 +515,11 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 모달 바텀 시트 노출(KNK-567·1045)                   | 없음                                                                                                           |
 | `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "닫기" 버튼·배경 탭·ESC 공통(KNK-567·1045)           | 없음                                                                                                           |
 | `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
-| `client_guestLimitDialog_shown`                  | P0       | 로컬 카운터 선차단 또는 서버 402로 게스트 체험 한도 바텀 시트 노출              | `trigger` (string, 필수: `storyline_generate` / `story_create` / `chat_start` / `chat_turn`)                   |
-| `client_guestLimitDialog_loginButton_clicked`    | P1       | 게스트 한도 바텀 시트의 로그인 CTA 클릭                                          | `trigger` (동일) · `provider` (string, 필수 — `google` · `kakao`, KNK-728)                                     |
-| `client_guestLimitDialog_dismissed`              | P1       | 게스트 한도 바텀 시트 닫기                                                       | `trigger` (동일)                                                                                               |
 | `client_creditShortageDialog_shown`              | P0       | 402 `INSUFFICIENT_CREDIT`로 회원 이프 부족 토스트 노출. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
 
-- `guestLimitDialog`·`creditShortageDialog` 노출은 Phase 1의 핵심 한도 신호입니다 — 게스트 한도 소진 → 가입 전환(US-10-5), 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
-- 게스트 한도는 화면 횡단 모달 바텀 시트지만 기존 대시보드 호환을 위해 `Dialog` 이벤트 이름을 유지합니다. 발생 지점은 `trigger`(`storyline_generate`: 스토리라인 생성/재생성, `story_create`: 스토리 완성, `chat_start`: 채팅 시작, `chat_turn`: 채팅 턴)로 구분하고 로그인 CTA·닫기까지 수집합니다.
-- 좋아요의 일반 로그인 필요 바텀 시트는 체험 한도 초과가 아니므로 `client_guestLimitDialog_*`를 보내지 않습니다. `LoginRequiredSheet`를 재사용하더라도 해당 이벤트는 기존 한도 `trigger`가 있는 경우에만 수집합니다(2026-09-06 사용자 요청, KNK-1207).
+- `creditShortageDialog` 노출은 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
+- **폐기(2026-09-19).** `client_guestLimitDialog_shown`·`client_guestLimitDialog_loginButton_clicked`·`client_guestLimitDialog_dismissed`는 웹 게스트 제작·채팅 체험이 신규 경로에서 사라지면서 더 이상 발화하지 않습니다(코드 정의도 제거). 이전 시계열은 대시보드에 남지만 새 값은 들어오지 않습니다. 게스트가 보호 기능(제작·채팅)에서 보는 로그인 필요 바텀 시트와 로그인 직후 필수 동의 시트는 별도 이벤트를 두지 않습니다 — 가입 전환은 `client_login_*`·`client_loginContinue_*`와 서버 로그인 이벤트로, 동의 완료는 서버 기록으로 봅니다. 로그인 필요 시트 노출 이벤트 추가 여부는 후속 결정 사항입니다.
+- 게스트 동의 후 체험을 복원한 현재 경로에서도 위 한도 이벤트 3개는 재도입하지 않습니다. 체험 소진 시 로그인 필요 시트를 표시하며 게스트 동의 완료는 서버 기록으로 확인합니다.
 - 회원 이프 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
@@ -653,14 +647,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
 
-카탈로그 이벤트 91개 중 앱이 그대로 쓰는 것은 58개, 이름을 바꿔 쓰는 것은 1개(`client_account_attendanceButton_clicked` → `client_creditCharge_attendanceButton_clicked`), 앱에 해당 없는 것은 23개입니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개와 `client_inappBrowser_loginHandoffCreated`는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 23개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 18개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 인앱 브라우저 (5)   | `client_inappBrowser_*` 3개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
-| 게스트 한도 (3)     | `client_guestLimitDialog_*`                                                                                                                                        | 앱은 로그인 필수              |
 | 온보딩 (3)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 채팅 투어 (4)       | `client_chat_tour_*` · `client_chat_tourStep_viewed` · `client_chat_tourSkipButton_clicked`                                                                          | 앱 미구현                     |
@@ -1275,7 +1268,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry·Crashlytics context/log, `ai_ca
 | 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`·`_failed`, `server_login_kakaoLogin_processed_succeeded`·`_failed`, `server_login_migration_processed_succeeded`·`_failed`가 수집되고, `client_login_oauthError_shown`이 `error_code`와 함께 수집됩니다(§6-4-3 — 콜백 단계 실패는 서버 이벤트가 못 잡음). |
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정됩니다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리합니다. |
 | Android 안정성        | 내부 release의 test crash·non-fatal이 Crashlytics에 앱 버전·빌드·수동 화면 로그와 함께 보이고, debug 빌드는 수집하지 않습니다. API 30+ ANR을 확인하며 API 24~29·NDK 공백은 §6-6-4 범위대로 처리합니다. |
-| 이벤트 수집 `Phase 1` | `client_guestLimitDialog_shown`·`client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다.                                                                                 |
+| 이벤트 수집 `Phase 1` | `client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다(`client_guestLimitDialog_*`는 2026-09-19 폐기).                                                                 |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다.                           |
 

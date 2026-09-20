@@ -30,7 +30,8 @@
 - [STORY-RECOVER — 생성 퍼널 백그라운드 복귀](#story-recover--생성-퍼널-백그라운드-복귀)
 - [STORY-GUARD — 생성 퍼널 이탈 가드](#story-guard--생성-퍼널-이탈-가드)
 - [STORY-DRAFT — 제작 자동 저장·재개 `/studio/story/simple` (KNK-648·994)](#story-draft--제작-자동-저장재개-studiostorysimple-knk-648994)
-- [STORY-LIMIT — 게스트 한도·이프 게이팅](#story-limit--게스트-한도이프-게이팅)
+- [STORY-GATE — 제작과 채팅 시작 동의 게이트](#story-gate--제작과-채팅-시작-동의-게이트)
+- [STORY-LIMIT — 회원 이프 게이팅](#story-limit--회원-이프-게이팅)
 - [⚠️ 확인 필요](#️-확인-필요)
 
 ---
@@ -47,13 +48,13 @@
 | STORY-LIST-02 | P1 | STORY-LIST-01                              | 카드 구성 확인                            | 목록과 카드 전체 링크가 콘텐츠 폭을 모두 사용하고 각 행은 가로 16px·세로 8px 패딩과 16px 열 간격을 가짐. 왼쪽 폭 128px 3:4 썸네일 자리(placeholder 아이콘), 오른쪽에 제목(최대 2줄)+옵션 버튼·한 줄 소개(최대 2줄)·장르 배지(넘치면 `+N`), 우측 하단에 턴 수(천 단위 콤마)·제작 시각(당일은 "방금 전"·"n분 전"·"n시간 전", 다음 날부터 KST 날짜)을 순서대로 표시(좋아요 수는 KNK-1260 비노출). 좁은 폭에서는 지표 단위로 줄바꿈. 기존 웹 아이콘·시맨틱 글자색 유지 | ✅ e2e `stories/story-list`·`visual/stories-visual` | US-2-1·2-4, §3-1-3, KNK-1012·1043        |
 | STORY-LIST-03 | P0 | STORY-LIST-01                              | 카드 탭                                   | 해당 스토리 상세(`/stories/{id}`)로 이동                                                                                                                     | ✅ e2e `stories/story-list`                     | US-2-2                                      |
 | STORY-LIST-04 | P1 | 배치 응답에 `thumbnailUrlSm`이 있는 스토리 | 카드 확인                                 | placeholder 대신 썸네일 이미지 렌더. `null`이면 placeholder 유지                                                                                             | 수동                                            | US-2-7, §3-1-3, 구현(`story-card`)          |
-| STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음              | `/studio` 진입                            | 별도 섹션 제목과 FAB를 숨김. "아직 만든 스토리가 없어요" + "3단계로 간단하게 스토리를 만들어보세요" + "스토리 만들기" CTA(`/studio/story/simple`) 표시 | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3                           |
+| STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음              | `/studio` 진입                            | 별도 섹션 제목과 FAB를 숨김. "아직 만든 스토리가 없어요" + "3단계로 간단하게 스토리를 만들어보세요" + "스토리 만들기" CTA 표시(게스트 탭은 STORY-GATE-02, 회원은 `/studio/story/simple`) | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3                           |
 | STORY-LIST-06 | P1 | 게스트, 스토리 ID 있음                     | 배치 조회가 4xx·5xx로 실패                | "스토리를 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                                                              | ✅ e2e `stories/story-list`                     | US-2-6, §3-1-3                              |
 | STORY-LIST-07 | P2 | 게스트, 스토리 ID 있음                     | `/studio` 진입 직후 관찰                  | 별도 섹션 제목과 빈 상태 깜빡임 없이 실제 카드와 같은 전체 폭, 가로 16px·세로 8px 패딩, 128px 표지·제목·소개·장르·하단 메타의 1열 행 스켈레톤 5개 → 목록 전환. 지연 전에는 목록 영역을 비움 | ✅ e2e `stories/story-list`                     | §3-1-3 상태표, [웹 저장소 3-state](../spec/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
 | STORY-LIST-08 | P2 | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨  | `/studio` 진입                            | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                                                               | 수동                                            | §3-1-6 배치 재조회                          |
 | STORY-LIST-09 | P0 | 회원 로그인 상태                           | `/studio` 진입                            | 로컬 ID와 무관하게 `GET /users/me/stories` 서버 목록으로 카드 표시(서버 순서 유지, 이관 미발동)                                                              | ✅ e2e `stories/story-list`                     | 구현(`use-created-stories`), §3-1-3         |
 | STORY-LIST-10 | P2 | 세션 판별 중(`loading`)                    | `/studio` 진입 직후 관찰                  | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                                                            | 수동                                            | 구현(`use-created-stories`)                 |
-| STORY-LIST-11 | P1 | 제작 목록에 스토리 있음                    | 오른쪽 아래 FAB 확인 → 마우스 호버 → 탭 | primary FAB에 plus 아이콘과 "만들기" 표시. 마우스 호버에도 배경 불투명도를 유지하면서 3% 확대하고, 모션 감소 환경에서는 확대하지 않음. 스크롤 후에는 아이콘만 남고 접근 가능한 이름 "스토리 만들기"는 유지. 탭하면 `/studio/story/simple` 이동(한도 게스트 분기는 STORY-LIMIT-01) | ✅ e2e `stories/story-list`, ◐ `visual/stories-visual` | US-2-3, §3-1-3 검수, KNK-994            |
+| STORY-LIST-11 | P1 | 제작 목록에 스토리 있음                    | 오른쪽 아래 FAB 확인 → 마우스 호버 → 탭 | primary FAB에 plus 아이콘과 "만들기" 표시. 마우스 호버에도 배경 불투명도를 유지하면서 3% 확대하고, 모션 감소 환경에서는 확대하지 않음. 스크롤 후에는 아이콘만 남고 접근 가능한 이름 "스토리 만들기"는 유지. 탭하면 `/studio/story/simple` 이동(게스트는 STORY-GATE-01) | ✅ e2e `stories/story-list`, ◐ `visual/stories-visual` | US-2-3, §3-1-3 검수, KNK-994            |
 | STORY-LIST-12 | P1 | 게스트                                     | 홈(`/`)·제작(`/studio`) 헤더 오른쪽 확인 → 로그인 탭 | 두 화면의 제목 오른쪽 끝에 secondary "로그인" 버튼을 기본 사이즈(높이 40px)로 표시. 탭하면 `/login`으로 이동                                                                           | ◐ e2e `smoke/navigation`(노출·높이)·`stories/story-list`(홈 이동) | 구현(`main-header`)                         |
 | STORY-LIST-13 | P1 | 회원 로그인 상태 또는 세션 판별 중         | 홈·제작 헤더 오른쪽 확인                  | 로그인 버튼 없음. 세션 판별 중에도 표시하지 않아 회원에게 버튼이 깜빡이지 않음                                                                                | ◐ e2e `stories/story-list`(회원 상태만)         | 구현(`main-header`)                         |
 | STORY-LIST-14 | P0 | 게스트, 오리지널·내 스토리 응답 준비됨     | `/`와 `/studio`를 각각 확인               | 게스트 홈에는 별도 상단 패딩 없이 굵은 "오리지널 스토리" 제목과 오리지널 카드만 표시. 제작에는 별도 섹션 제목 없이 오른쪽 아래 FAB·내 스토리 카드·제작 진행 카드만 표시 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001·013, KNK-983·988·1043 |
@@ -84,7 +85,7 @@
 | STORY-DETAIL-03 | P2  | `thumbnailUrl` 없는 스토리  | 히어로 확인·탭                                     | placeholder 아이콘 표시. 탭해도 이미지 뷰어가 열리지 않음                                                                                                     | ◐ e2e `visual/stories-visual`(표시만)                    | §3-1-3, 구현(`story-detail`)          |
 | STORY-DETAIL-04 | P1  | `thumbnailUrl` 있는 스토리  | 썸네일 탭 → X·화면 탭·뒤로가기로 각각 닫기         | 풀스크린 이미지 뷰어 열림. 어느 방법으로든 페이지 이동 없이 뷰어만 닫힘(더미 히스토리 트래핑, UI로 닫으면 더미 소비)                                          | ◐ e2e `stories/story-detail`·`visual/stories-visual`(화면 탭 닫기 제외) | US-4-8, §3-1-3                        |
 | STORY-DETAIL-05 | P1  | 시작 설정 2개 이상          | "채팅 시작 상황" Select 조작                       | 첫 번째 설정이 기본 선택. 옵션 모서리는 10px. 변경 시 상황 설명(`startSituation`)과 엔딩 이름 목록(`endings[].name`)이 선택한 설정으로 교체. 프롤로그·달성 조건·에필로그는 표시하지 않음 | ✅ e2e `stories/story-detail` | US-4-7, §3-1-3, KNK-1012 |
-| STORY-DETAIL-06 | P0  | 임의 스토리                 | 시작 설정 선택 → "새 채팅 시작하기" 탭             | `POST /chats {storyId, startSettingId}`(선택한 설정 ID) → 게스트는 채팅 ID 로컬 저장·회원은 회원 채팅 쿼리 무효화 → 상세 prefetch → `/chats/{id}`로 `replace` | ✅ e2e `stories/story-detail`                            | US-4-2·4-7, §3-1-3                    |
+| STORY-DETAIL-06 | P0  | 동의를 마친 회원, 임의 스토리 | 시작 설정 선택 → "새 채팅 시작하기" 탭             | `POST /chats {storyId, startSettingId}`(선택한 설정 ID) → 회원 채팅 쿼리 무효화 → 상세 prefetch → `/chats/{id}`로 `replace`. 게스트는 STORY-GATE-04 | ✅ e2e `stories/story-detail`                            | US-4-2·4-7, §3-1-3                    |
 | STORY-DETAIL-07 | P1  | 채팅 생성 응답 지연         | 시작 직후 버튼 관찰                                | 버튼 크기·접근 가능한 이름 유지한 중앙 스피너("새 채팅 시작 중") + 비활성화                                                                                   | ✅ e2e `stories/story-detail`                            | §3-1-3                                |
 | STORY-DETAIL-08 | P1  | 채팅 생성이 5xx로 실패      | 시작 시도                                          | "채팅을 시작하지 못했어요" 토스트, 화면·선택 상태 유지                                                                                                        | 수동                                                     | US-4-2 유형, 구현(`use-start-chat`) |
 | STORY-DETAIL-13 | P1  | 상세 조회가 404 외 4xx·5xx로 실패 | 진입                                           | 인라인 "스토리를 불러오지 못했어요" + "잠시 후 다시 시도해주세요" + "다시 시도하기". 재시도 성공 시 본문 표시. 헤더는 유지 | ✅ e2e `stories/story-detail` | US-4-4, §3-1-3 |
@@ -198,7 +199,7 @@
 | STORY-FINAL-02 | P1  | 완성 응답 지연                    | 완성 중 카드 관찰      | 표지 점 격자 대기 애니메이션이 유지되고 5초마다 완성 상태를 조회. 탭을 숨기면 조회 정지, 돌아오면 재개 | 수동                          | §3-2 웹 제작 흐름, KNK-1261 |
 | STORY-FINAL-03 | P0  | 스토리 생성이 5xx로 실패, 편집 슬롯 비어 있음 | 완성 시도            | 제작 탭에 "스토리를 완성하지 못했어요" 토스트, 완성 중 카드가 초안 카드("만들고 있는 스토리")로 전환. "이어서 만들기" 탭 시 추가 정보 단계 복귀, 자유 텍스트 입력·추천 선택·스토리라인·생성 ID 유지 | ✅ e2e `stories/story-create` | §3-2 웹 제작 흐름, KNK-1261 |
 | STORY-FINAL-04 | P1 | 스토리 생성이 5xx로 실패, 편집 슬롯에 다른 초안 있음 | 완성 실패 후 제작 탭 관찰 | 토스트 표시, 실패한 완성 중 카드만 사라지고 기존 초안 카드는 그대로 유지(덮어쓰지 않음) | ✅ unit `creation-request-storage` | §3-2 웹 제작 흐름, KNK-1316 |
-| STORY-FINAL-05 | P2  | 게스트/회원 각각 완성 성공        | 저장 상태 확인       | 게스트는 스토리 ID를 로컬에 저장. 회원은 로컬 미저장, 회원 스토리 쿼리 무효화로 서버 목록에 반영. 둘 다 체험 잔여를 다시 조회. 채팅 ID는 상세에서 채팅을 시작해야 생김 | 수동                          | §3-1-6 쓰기, 구현(`use-creation-progress-polling`)     |
+| STORY-FINAL-05 | P2  | 회원 완성 성공                    | 저장 상태 확인       | 로컬 미저장, 회원 스토리 쿼리 무효화로 서버 목록에 반영. 체험 잔여를 다시 조회. 채팅 ID는 상세에서 채팅을 시작해야 생김(제작은 회원 전용) | 수동                          | §3-1-6 쓰기, 구현(`use-creation-progress-polling`)     |
 | STORY-FINAL-08 | P0 | 완성 중 카드 표시됨 | FAB로 새 제작 진입 → 키워드 → 스토리라인 → 추가 정보 → 완성 | 이어서/새로 만들기 확인 없이 빈 키워드에서 시작. 두 번째 완성 제출 뒤 제작 탭에 완성 중 카드 2장과 FAB 표시, 초안 카드 없음. 첫 요청은 유지 | ✅ e2e `stories/story-create` | §3-1-4 제작 카드와 다중 완성 진행, KNK-1316 |
 
 ## STORY-RECOVER — 생성 퍼널 백그라운드 복귀
@@ -261,21 +262,31 @@
 | STORY-DRAFT-06 | P0  | 스토리라인 생성 진행 중                  | 그 사이 편집 자동 저장 타이머 도착            | in-flight 레코드를 draft가 덮지 않음. 생성 결과 draft도 늦은 키워드 draft로 덮이지 않음. 완성 요청은 별도 목록이라 편집 저장과 충돌하지 않음 | ✅ unit `creation-request-storage` | §3-1-4 단일 슬롯 우선순위, KNK-994·1316 |
 | STORY-DRAFT-07 | P1  | 입력 변경 뒤 300ms 전                    | 헤더 X·문서 hidden·`pagehide`                 | 예약된 현재 값을 즉시 flush해 다음 진입·새로고침에서 복원 | ✅ e2e `stories/story-create-draft`(헤더 X·새로고침) | §3-1-4 자동 저장, KNK-994 |
 
-## STORY-LIMIT — 게스트 한도·이프 게이팅
+## STORY-GATE — 제작과 채팅 시작 동의 게이트
 
-기준: [계약·구조](../spec/3-2-web-spec.md#웹-사용자-모델).
+기준: [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [동의 모델](../spec/3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침). 게스트는 제작 화면 진입과 입력은 바로 하고 스토리라인 생성 요청 직전에 동의한다. 채팅방 생성도 동의 전 가능하다. 시트의 공통 계약과 검수는 AUTH-GUEST가 소유한다. 로그인 뒤 절차는 [AUTH-LOGIN-07 및 AUTH-CONSENT](auth.md)를 따른다.
 
-| ID             | P   | 사전조건                                      | 절차                                                    | 기대 결과                                                                                                                                                               | 자동화                                                                 | 근거                                              |
-| -------------- | --- | --------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------- |
-| STORY-LIMIT-01 | P0  | 게스트, 체험 조회 `storyCreation` 잔여 0      | 제작 탭 FAB 탭                                       | 이동 없이 모달 바텀 시트 표시. 제목 "게스트 체험 한도를 모두 사용했어요" 한 줄 + 기존 설명. 설명 아래 32px에 "카카오로 시작하기"·"Google로 시작하기" 버튼을 8px 간격으로 배치하고 Google 버튼 아래 16px에 로그인 약관 고지. 닫기(X) 없이 바깥 탭·Escape로 닫힘 | ✅ e2e `stories/story-guest-limit` · visual `chats-visual` | US-10-5, §3-1-4 402, 구현(`create-story-fab`), KNK-1045 |
-| STORY-LIMIT-02 | P1  | 같은 상태의 게스트                            | 빈 상태 CTA·딥링크로 `/studio/story/simple` 직접 진입 | 진입 직후 백스톱으로 같은 로그인 바텀 시트 표시. 닫으면 재노출 없이 퍼널 조작 가능(최종 차단은 서버 402)                                                                 | ✅ e2e `stories/story-create-limit`                                    | 구현(`use-story-create-funnel` 백스톱)            |
-| STORY-LIMIT-03 | P0 | 게스트, 체험 조회 `storylineGeneration` 잔여 0 | "스토리라인 만들기"/"다시 만들기" 탭 | 요청 없이 로그인 바텀 시트. 키워드 단계에 머문다. 인라인 한도 문구는 이 경로에 표시되지 않는다(생성 요청이 없어 에러 상태가 아님) — 서버 402 경로(STORY-LIMIT-04) 전용 | ✅ e2e `stories/story-create-limit` | §3-1-4 402 |
-| STORY-LIMIT-04 | P0  | 게스트, 서버 판정 한도 초과(조회한 잔여가 남아 있어도) | 생성·재생성 요청(서버 402 `GUEST_TRIAL_LIMIT_EXCEEDED`) | 로그인 바텀 시트 + 같은 인라인 한도 문구. 키워드 선택 상태 유지                                                                                                    | ✅ e2e `stories/story-create-limit`                                    | US-10-5, §3-1-4 402                                 |
-| STORY-LIMIT-05 | P0  | 게스트, 완성 요청이 402                       | "스토리 완성하기" 탭                               | 제작 탭에 "게스트 체험 한도를 모두 사용했어요" 토스트(바텀 시트 없음), 완성 중 카드가 초안 카드로 전환. "이어서 만들기" 탭 시 추가 정보 단계 복귀, 입력·선택 유지| ✅ e2e `stories/story-create-limit`                                    | US-10-5, §3-1-4 완성 402                            |
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| STORY-GATE-01 | P0 | 미동의 게스트, 제작 목록 있음 | 제작 FAB 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13, 웹 게스트 이용 동의 |
+| STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-03 | P0 | 미동의 게스트 | 제작 URL 직접 진입, 키워드 입력 후 생성 버튼 탭, 취소 후 재시도 및 동의 | 진입 시 태그 조회와 입력 화면 표시. 생성 버튼에서만 동의 시트 표시. 취소 시 입력 및 단계 유지, 동의 후 같은 키워드로 한 번만 생성 요청 | ✅ e2e `stories/story-login-gate`, `auth/guest-consent` | 웹 게스트 이용 동의 |
+| STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
+| STORY-GATE-05 | P0 | 게스트, 채팅 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-07 | P1 | 게스트, 온보딩 "바로 시작하기" / 공유 열람 CTA | 각각 탭 | 모두 동의 시트 없이 제작 입력 화면으로 이동. 공유 CTA도 온보딩 열람 처리 | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |
+| STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
+
+## STORY-LIMIT — 회원 이프 게이팅
+
+기준: [§3-1-4 완성 402](../spec/3-1-client-spec.md#3-1-4-스토리-생성-퍼널). 과거 폐기한 번호(STORY-LIMIT-01~05, 07~09)는 재사용하지 않는다. 게스트 체험 복원 검수는 STORY-LIMIT-11에서 다룬다.
+
+| ID             | P   | 사전조건                                      | 절차                                                 | 기대 결과                                                                                                                                                         | 자동화                                                                | 근거                                                |
+| -------------- | --- | --------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------- |
 | STORY-LIMIT-06 | P0  | 회원, 완성 API의 이프 부족 402 응답을 준비                          | "스토리 완성하기" 탭(서버 402 `INSUFFICIENT_CREDIT`) | 제작 탭에 "이프가 부족해요" 오류 토스트만 표시(다이얼로그 없음), 완성 중 카드가 초안 카드로 전환. "이어서 만들기" 탭 시 추가 정보 단계 복귀·입력 유지| ✅ e2e `stories/story-create-limit`                                    | US-10-4, §3-1-4 완성 402, KNK-1045                  |
-| STORY-LIMIT-07 | P0  | 게스트, 체험 조회 `chatTurn` 잔여 0           | 상세에서 "새 채팅 시작하기" 탭                     | 선차단 없이 `POST /chats`로 채팅방을 만들어 진입. 턴 한도는 채팅방 전송 시점에 판정(CHAT-LIMIT-01)                                                                    | ✅ e2e `stories/story-guest-limit`                                     | US-10-5, 구현(`use-start-chat`)                   |
-| STORY-LIMIT-08 | P1  | 게스트 채팅 생성이 402 체험 한도로 거절       | 상세에서 채팅 시작                                   | 로그인 바텀 시트 표시(실패 토스트 아님). 회원 채팅 생성은 무료이므로 이프 잔액과 관계없이 진행                                                                      | ✅ e2e `stories/story-guest-limit`                                     | US-10-5, 구현(`use-start-chat`), KNK-1045          |
-| STORY-LIMIT-09 | P2  | 게스트 각 액션 수행                           | 체험 잔여 재조회 확인                                   | 스토리라인 201 성공·스토리 완성 뒤 `GET /users/me/trials`를 다시 조회해 잔여를 갱신(실패는 서버가 복원). 브라우저 카운터·저장된 스토리 ID 시드 없음. 로그인 뒤에는 서버가 옮긴 사용량으로 이어짐   | ◐ e2e `stories/story-create-limit`(스토리라인 성공 후 재조회 선차단만) | §3-2-2, 구현(`creation-side-effects`)             |
+| STORY-LIMIT-10 | P2  | 회원, 체험이 남은 상태에서 스토리라인 생성·스토리 완성 | 비용 표시 확인                                       | 스토리라인 201 성공·스토리 완성 뒤 `GET /users/me/trials`를 다시 조회해 취소선 정가·적용가를 갱신(실패는 서버가 복원). 브라우저 카운터 없음 | ◐ e2e `stories/story-create`(비용 표시) | §3-2-2, 구현(`creation-side-effects`)             |
+
+| STORY-LIMIT-11 | P0 | 게스트 동의 완료, 소모할 항목의 서버 잔여 0 또는 서버 402 | 스토리라인 생성, 재생성, 완성 시도 | 잔여 0이면 요청 없이 로그인 시트. 서버 402도 사유에 맞게 안내하며 초안 보존. 이미 제작 탭으로 나간 완성 실패는 시트 없이 초안 복원 및 토스트 | 수동 | US-10-5, 웹 사용자 모델 |
 
 ## ⚠️ 확인 필요
 
