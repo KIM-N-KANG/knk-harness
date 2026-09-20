@@ -519,6 +519,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - `creditShortageDialog` 노출은 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
 - **폐기(2026-09-19).** `client_guestLimitDialog_shown`·`client_guestLimitDialog_loginButton_clicked`·`client_guestLimitDialog_dismissed`는 웹 게스트 제작·채팅 체험이 신규 경로에서 사라지면서 더 이상 발화하지 않습니다(코드 정의도 제거). 이전 시계열은 대시보드에 남지만 새 값은 들어오지 않습니다. 게스트가 보호 기능(제작·채팅)에서 보는 로그인 필요 바텀 시트와 로그인 직후 필수 동의 시트는 별도 이벤트를 두지 않습니다 — 가입 전환은 `client_login_*`·`client_loginContinue_*`와 서버 로그인 이벤트로, 동의 완료는 서버 기록으로 봅니다. 로그인 필요 시트 노출 이벤트 추가 여부는 후속 결정 사항입니다.
+- 게스트 동의 후 체험을 복원한 현재 경로에서도 위 한도 이벤트 3개는 재도입하지 않습니다. 체험 소진 시 로그인 필요 시트를 표시하며 게스트 동의 완료는 서버 기록으로 확인합니다.
 - 회원 이프 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
@@ -548,35 +549,30 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_terms_viewed`   | P2       | 이용약관 화면 진입          | 없음          |
 | `client_privacy_viewed` | P2       | 개인정보 처리방침 화면 진입 | 없음          |
 
-#### 6-4-2-12. 인앱 브라우저 대응 — `Phase 1 · 계획`(KNK-567·KNK-681)
+#### 6-4-2-12. 인앱 브라우저 대응
 
-인앱 브라우저 감지·탈출([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md))의 관측 이벤트입니다. 카카오톡 탈출 스킴은 비공식 진입점이라 앱 업데이트로 깨질 수 있고, 이 이벤트가 스킴 생존율(시도 대비 실패 배너 노출 비율)을 관측하는 유일한 수단입니다. 화면 횡단 전역 동작이라 네이밍 원칙(§6-3-1)의 screenName 자리에 `inappBrowser`를 씁니다.
+[웹 인앱 로그인 계약](3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)의 관측 이벤트입니다. 신규 로그인은 일반 로그인 화면과 Google 팝업 또는 같은 탭의 Kakao 로그인을 사용합니다. 신규 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. `escapeAttempted`, `bannerShown`과 `loginContinue_*`는 기존 발급 링크의 복구에서만 발생합니다. 화면 횡단 전역 동작이므로 screenName 자리에 `inappBrowser`를 씁니다.
 
-| 이벤트                                | 우선순위 | 발생 시점                                    | 고유 프로퍼티                                               |
-| ------------------------------------- | -------- | -------------------------------------------- | ----------------------------------------------------------- |
-| `client_inappBrowser_detected`        | P1       | 인앱 브라우저 UA 감지                        | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
-| `client_inappBrowser_escapeAttempted` | P1       | 카카오톡 탈출 스킴 호출                      | `app` (string, 필수: `kakaotalk`)                           |
-| `client_inappBrowser_bannerShown`     | P1       | 안내 배너 노출(카카오톡 탈출 실패 판정 포함) | `app` (동일 enum)                                           |
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_inappBrowser_detected` | P1 | 인앱 브라우저 UA 감지 | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
+| `client_inappBrowser_escapeAttempted` | P1 | 기존 핸드오프 링크에서 카카오톡 탈출 스킴 호출 | `app` (string, 필수: `kakaotalk`) |
+| `client_inappBrowser_bannerShown` | P1 | 기존 핸드오프 링크의 외부 전환 안내 표시 | `app` (동일 enum) |
+| `client_loginContinue_viewed` | P1 | 기존 핸드오프의 외부 랜딩 진입 | 없음 |
+| `client_loginContinue_loginButton_clicked` | P1 | 기존 핸드오프 랜딩에서 소셜 로그인 시작 | `provider` (string, 필수: `google` / `kakao`) |
 
-- 탈출 성공은 직접 계측할 수 없습니다(스킴 호출에 콜백이 없고 성공 시 페이지가 닫힘). `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다.
-- 인앱별 유입량(`detected`의 `app` 분포)은 안내 배너만 두는 인스타그램·쓰레드에 자동 탈출 투자를 추가할지 판단하는 근거입니다.
+- 카카오톡 탈출 스킴은 비공식 진입점입니다. 성공 콜백이 없으므로 `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다. 신규 로그인 전환율과 섞지 않습니다.
+- 인앱 유입량은 `detected`의 `app` 분포로 확인합니다. 비밀 핸드오프 코드와 토큰 및 공유 식별자는 분석 이벤트나 Sentry에 넣지 않습니다.
 
-**로그인 핸드오프 퍼널 — `Phase 1 · 계획`(KNK-681)**
+**종료된 핸드오프 생성 이벤트와 과거 퍼널 해석**
 
-인앱 게스트 허용·로그인 핸드오프 개편([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md))의 관측 이벤트입니다. 인앱 브라우저와 외부 브라우저는 Amplitude `device_id`가 서로 달라, 서버가 핸드오프 생성 시 발급하는 분석용 `handoff_id`가 두 구간을 잇는 유일한 키입니다. `handoff_id`는 비밀 핸드오프 코드와 별개의 값이며, 비밀 코드는 분석 이벤트·Sentry에 넣지 않습니다.
+`client_inappBrowser_loginHandoffCreated`는 발행이 종료되어 활성 이벤트 타입과 위 계약에서 제외합니다. 과거 속성은 `app`과 비밀 코드와 별개인 분석용 `handoff_id`였습니다. 기존 Amplitude 차트의 이 이벤트는 과거 경로 분석용이며, 신규 경로 배포 뒤 0건은 로그인 장애를 뜻하지 않습니다. 생성 이벤트가 시작점인 차트로 현재 로그인 전환율을 판단하지 않습니다.
 
-**유입 출처 연속성** — 전환 URL에 UTM 계열 6종을 함께 실어 외부 브라우저의 어트리뷰션을 잇습니다([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md) 흐름 4, KNK-964). 이전에는 전환 URL을 코드만으로 새로 만들어 광고 유입 사용자의 외부 구간이 전부 direct로 집계됐고, 가입이 외부 브라우저에서 일어나므로 광고 전환이 캠페인에서 누락됐습니다. **`device_id`는 여전히 끊기므로 핸드오프를 탄 사용자는 캠페인에 인앱·외부 두 명으로 집계됩니다** — 캠페인 유입 수를 중복 없이 보려면 `client_inappBrowser_detected` 기준으로 셉니다. `device_id` 연속성을 붙이더라도 UTM 전달은 함께 유지해야 합니다. SDK가 캠페인 없는 진입에 빈 문자열을 기록해, UTM 없이 같은 `device_id`로 랜딩하면 기존 귀속을 빈 값으로 덮어쓰기 때문입니다.
+과거 핸드오프는 인앱과 외부 브라우저의 `device_id`가 달랐습니다. 전환 URL에 UTM 6종을 실어 유입 귀속을 유지했지만 같은 사용자가 두 명으로 집계될 수 있습니다. 새 로그인에는 핸드오프 URL이나 캠페인 파라미터를 조립하지 않습니다. 이미 발급된 URL에 포함된 UTM은 복구 랜딩에서도 유지합니다.
 
-| 이벤트                                     | 우선순위 | 발생 시점                               | 고유 프로퍼티                                    |
-| ------------------------------------------- | -------- | ---------------------------------------- | ------------------------------------------------ |
-| `client_inappBrowser_loginHandoffCreated`   | P1       | 로그인 선택으로 핸드오프 생성 성공       | `app` (동일 enum), `handoff_id` (string, 필수)   |
-| `client_loginContinue_viewed`               | P1       | 외부 브라우저 핸드오프 랜딩 진입         | 없음 (아래 `handoff_id` 갭 참조)                 |
-| `client_loginContinue_loginButton_clicked`  | P1       | 랜딩에서 소셜 로그인 시작                | `provider` (string, 필수 — `google` · `kakao`, KNK-728) |
+과거 랜딩 이벤트 2종에는 `handoff_id`가 없어 생성부터 외부 랜딩까지 사용자 또는 ID로 이어지지 않는 갭이 있습니다. 따라서 과거 핸드오프 퍼널의 0%를 실제 로그인 실패율로 읽지 않습니다. 기존 링크의 이관 상태는 [핸드오프 복구 구조](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프)로 확인합니다. Kakao 같은 탭 로그인과 신규 Google 팝업은 핸드오프 생성 퍼널을 거치지 않습니다.
 
-- **`handoff_id` 갭(미결)** — 랜딩 이벤트 2종에는 `handoff_id`가 실려 있지 않습니다. 외부 랜딩이 호출하는 핸드오프 확인 응답에 id가 없어 KNK-682 구현 시 이벤트에서 뺐습니다. 그 결과 **인앱 생성 → 외부 랜딩 구간은 사용자 단위로도 `handoff_id`로도 이을 수 없어 Amplitude 퍼널 전환이 0%로 나옵니다**(이벤트 자체는 정상 발생). 해소하려면 백엔드가 확인 응답에 `handoffId`를 추가해야 합니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md) 소유 — 협의 필요).
-- 목표 퍼널은 `인앱 유입(detected) → 스토리 생성 → 첫 채팅 → 핸드오프 생성 → 외부 랜딩 → 로그인 성공 → 이관 성공`입니다. 로그인·이관 구간은 서버 이벤트(§6-4-3)에 `handoff_id`를 실어 연결하며, 서버 측 프로퍼티 추가는 [`4-backend-server-spec.md`](4-backend-server-spec.md) 소유로 협의합니다.
-- **카카오톡 인앱의 카카오 로그인은 이 퍼널을 타지 않습니다** (`Phase 1 · 구현`, KNK-721·KNK-728). 같은 브라우저에서 핸드오프 없이 완료되므로([`3-2-web-spec.md §3-2-5`](3-2-web-spec.md) 분기 표) 핸드오프 이벤트가 발생하지 않고, `device_id`가 연속이라 연결 키도 필요 없습니다. 카카오 로그인 배포 후 핸드오프 생성 건수 감소는 퍼널 이탈이 아니라 이 경로 전환의 정상 신호이므로, 인앱 로그인 전환은 핸드오프 퍼널과 `client_login_kakaoButton_clicked` → `server_login_kakaoLogin_processed_succeeded`를 합쳐 봅니다.
-- 게스트 체험 이중 사용(미결, [`3-2-web-spec.md §3-2-5`](3-2-web-spec.md)) 규모 판단을 위해, 개편 배포 시 공통 프로퍼티(§6-3-2)에 인앱 여부(`in_app_browser`: 동일 enum 또는 null)를 추가하는 것을 검토합니다 — 게스트 한도 도달 이벤트의 인앱 분포가 판단 근거입니다.
+- 게스트 체험 이중 사용 규모 판단을 위한 공통 프로퍼티 `in_app_browser` 추가 검토는 별도 후속 사항입니다. 이번 핸드오프 생성 이벤트 폐기는 이 프로퍼티를 추가하지 않습니다.
 
 #### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
 
@@ -651,13 +647,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
 
-카탈로그 이벤트 92개 중 앱이 그대로 쓰는 것은 58개, 이름을 바꿔 쓰는 것은 1개(`client_account_attendanceButton_clicked` → `client_creditCharge_attendanceButton_clicked`), 앱에 해당 없는 것은 24개입니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개와 `client_inappBrowser_loginHandoffCreated`는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 24개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 18개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| 인앱 브라우저 (6)   | `client_inappBrowser_*` 4개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
+| 인앱 브라우저 (5)   | `client_inappBrowser_*` 3개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
 | 온보딩 (3)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 채팅 투어 (4)       | `client_chat_tour_*` · `client_chat_tourStep_viewed` · `client_chat_tourSkipButton_clicked`                                                                          | 앱 미구현                     |

@@ -94,7 +94,7 @@
 | `X-Manyak-Session-Id` | 수신 | MDC `session_id`에 적재. 없으면 `unknown` |
 | `X-Manyak-Device-Id` | 수신 | 원본을 저장하지 않고 해시(`device_id_hash`)로 변환해 MDC에 적재. 없으면 `unknown` |
 
-- 식별 헤더가 없어도 요청을 거부하지 않습니다. 예외: 게스트 체험 한도 대상 요청은 `X-Manyak-Device-Id`가 필수이며 누락 시 400입니다([§4-3-7](#4-3-api-계약)).
+- 식별 헤더가 없어도 요청을 거부하지 않습니다. 예외: [게스트 동의 API](#게스트-개인정보-수집-동의)와 게스트 체험 한도 대상 요청은 `X-Manyak-Device-Id`가 필수이며 누락 시 400입니다([§4-3-7](#4-3-api-계약)).
 - 해시 방식과 AI 서버로의 전달 규칙은 [§4-7](#4-7-운영과-관측)에 정의합니다.
 
 ### 엔드포인트 카탈로그
@@ -156,6 +156,8 @@
 | 사용자 | `PUT /users/me/push-settings` | 알림 수신 동의 전체 교체(세 필드 필수, 야간 단독 400) | 200 | 400·401·403 | 필수 |
 | 사용자 | `GET /users/me/consents` | 약관·개인정보 처리방침·만 14세 동의 상태(요구 버전, 재동의 필요 여부) | 200 | 401·403 | 필수 |
 | 사용자 | `POST /users/me/consents` | 동의 기록(보낸 항목만, 버전 불일치 400) | 200 | 400·401·403 | 필수 |
+| 게스트 | `GET /guests/consents` | 개인정보 수집 동의 상태(요구 버전, 재동의 필요 여부) | 200 | 400 | 없음(디바이스 헤더 필수) |
+| 게스트 | `POST /guests/consents` | 개인정보 수집 동의 기록(버전 불일치 400) | 200 | 400 | 없음(디바이스 헤더 필수) |
 | 사용자 | `GET /users/me/trials` | 체험 사용량·한도 조회([§4-3-9](#채팅-실시간-이미지-생성)) | 200 | 400 | 선택 |
 | 이프 | `GET /credits/policies` | 현재 유효한 적립·소모 수치 7종 조회(정책 오버라이드 반영) | 200 | 없음 | 불필요 |
 | 이프 | `GET /credits/products` | 충전 상품 목록 | 200 | 없음 | 불필요 |
@@ -737,7 +739,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **로그인 요청과 분리.** 로그인 요청에는 동의를 싣지 않습니다. 로그인 뒤 동의 상태 조회와 기록이라는 한 경로를 사용합니다.
 - **광고성 정보 수신 동의와 분리.** `users`의 푸시 동의 컬럼과 통합하지 않습니다. 철회 가능한 현재 상태와 철회 없는 버전별 수락 이력은 수명주기가 다릅니다. `PRIVACY` 동의는 개인정보 처리방침 문서의 수락 기록일 뿐, 광고 수신·평가 활용 등 개별 처리 목적의 동의·철회 상태를 대표하지 않습니다.
 
-**동의 API.** 인증이 필요하며 게스트는 호출할 수 없습니다. 로그인 직후와 서비스 진입 시 조회하고, 세션 부트스트랩 응답(`GET /auth/me`)에는 싣지 않습니다.
+**동의 API.** 회원 계약은 인증이 필수입니다. 게스트는 아래 [게스트 개인정보 수집 동의](#게스트-개인정보-수집-동의) 계약을 사용합니다. 로그인 직후와 서비스 진입 시 조회하고, 세션 부트스트랩 응답(`GET /auth/me`)에는 싣지 않습니다.
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
@@ -748,6 +750,25 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **보낸 항목만 기록합니다.** 필드 누락은 미제출이며 철회가 아닙니다. 세 필드가 모두 없으면 400을 반환합니다. 값이 현행 `requiredVersion`과 다르면 400과 `CONSENT_VERSION_MISMATCH`를 반환합니다([§4-6](#4-6-오류와-예외-처리)). 서버 값으로 덮어쓰면 사용자가 보지 않은 개정본에 동의한 기록이 생기고, 임의 문자열을 허용하면 존재하지 않는 문서에 동의한 행이 생깁니다. 클라이언트는 이 오류를 받으면 해당 문서를 다시 표시하며, 값을 바꿔 자동으로 재전송하지 않습니다. 여러 항목을 함께 보내면 모든 값을 검증한 뒤 한 트랜잭션에 저장합니다.
 - **철회 API는 없습니다.** 필수 동의라 철회는 탈퇴입니다(`DELETE /users/me`).
 - **계정 상태.** 조회·기록 모두 사용자 행을 잠근 뒤 상태를 재검사합니다(푸시 수신 동의와 같은 관례). `SUSPENDED` 403, `DELETED`·사용자 없음 401. 잠금 없이는 탈퇴 처리와 경합해 탈퇴 뒤 동의 행이 들어갈 수 있습니다.
+
+<a id="게스트-개인정보-수집-동의"></a>
+
+##### 게스트 개인정보 수집 동의
+
+게스트는 채팅 5회와 스토리 완성 1회의 체험을 유지하며, 게스트 전용 동의 바텀 시트에서 **개인정보 수집 및 이용 동의**를 받습니다. 회원 계약과 별개인 문서 하나를 정의합니다([BE-046](../adr/2-backend-server-adr.md#be-046)).
+
+- **문서와 버전.** 문서 종류는 `GUEST_PRIVACY` 하나입니다. 추가 문서가 필요하면 종류를 추가합니다. 원문은 회원 처리방침에서 게스트에게 필요한 항목만 발췌하며, [웹 법적 콘텐츠](../design/1-1-web-design.md#법적-콘텐츠-소스-웹)가 정본입니다. 서버는 현행 버전을 `manyak.legal.guest-privacy-version` 설정으로 받으며, 웹 콘텐츠 `version`과 같은 릴리스에 맞춥니다.
+- **저장.** `guest_consents`에 `device_id_hash`, `doc_type`, `version`, `agreed_at`을 저장합니다. `device_id_hash`는 [§4-3-7 게스트 체험 한도](#4-3-api-계약)가 사용하는 디바이스 ID 해시와 같으며 원본 ID는 저장하지 않습니다. PK는 `(device_id_hash, doc_type, version)`이고 FK는 없습니다. 행은 추가 전용(append-only)입니다. 회원 테이블과 같은 PK 충돌 무시 조건부 삽입을 사용해 같은 버전 재제출 시 최초 `agreed_at`을 유지합니다.
+- **인증과 헤더.** 두 API 모두 인증 없이 호출하며 `X-Manyak-Device-Id` 헤더가 필수입니다. 헤더가 없거나 공백이면 400입니다. 체험 한도와 같은 헤더 검증 및 해시 규칙을 적용합니다.
+
+| 엔드포인트 | 요청 | 응답 |
+| --- | --- | --- |
+| `GET /guests/consents` | 본문 없음, 디바이스 헤더 필수 | 200 `{ "guestPrivacy": { "requiredVersion": "<version>", "needsConsent": boolean } }` |
+| `POST /guests/consents` | `{ "guestPrivacy": "<version>" }`, 디바이스 헤더 필수 | 200 갱신 후 상태(GET과 같은 스키마) |
+
+- **동의 판정과 검증.** 서버는 해당 디바이스의 `GUEST_PRIVACY`와 현행 `requiredVersion`에 해당하는 행이 없으면 `needsConsent=true`를 반환합니다. POST의 `guestPrivacy`가 현행 버전과 다르면 400 `CONSENT_VERSION_MISMATCH`를 반환합니다. 클라이언트는 해당 문서를 다시 표시하며 버전만 바꿔 자동 재전송하지 않습니다.
+- **서버 게이트 없음.** 회원과 동일하게 미동의 게스트의 채팅과 제작을 서버가 막지 않습니다. 클라이언트가 `needsConsent`에 따라 동의 시트를 표시합니다.
+- **이관 없음.** 로그인 후 회원 동의를 다시 받으므로 게스트 동의를 `user_consents`로 이관하지 않습니다. 회원 탈퇴와 무관하게 게스트 기록은 디바이스 단위로 남습니다.
 
 <a id="스토리-완성-푸시--phase-3--구현knk-1115"></a>
 
@@ -1798,6 +1819,14 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 현재 런타임 설정은 [백엔드 Design §2-5](../design/2-backend-server-design.md#2-5-런타임-설정), 환경별 주입은 [배포 Design](../design/4-deployment.md#4-6-런타임-설정과-시크릿)을 따릅니다.
 
+동의 문서의 현행 버전 설정은 웹 콘텐츠와 같은 릴리스에 맞춥니다.
+
+| 환경 변수 | 설정 키 | 값 |
+| --- | --- | --- |
+| `MANYAK_LEGAL_TERMS_VERSION` | `manyak.legal.terms-version` | 회원 이용약관의 웹 콘텐츠 `version` |
+| `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
+| `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
+
 ### 헬스체크·API 문서·배포
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
@@ -1859,7 +1888,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 채팅 스트림은 `started` → `token` → `completed` 순서로 도착하고, `completed`의 `aiOutput`이 이후 `GET /chats/{chatId}`의 마지막 턴과 일치해야 합니다.
 - 채팅 스트림 실패 시 `error` 이벤트에 `code`·`message`가 실려야 하며, 실패한 턴은 저장되지 않아야 합니다.
 - 오류 응답이 모든 실패 경로에서 `ApiErrorResponse` 형태를 유지해야 합니다.
-- 모든 응답에 `X-Manyak-Request-Id` 헤더가 있어야 합니다. MVP·비한도 요청은 식별 헤더가 없어도 거부되지 않아야 하지만, 체험 한도 대상 게스트 요청은 [§4-3-7](#4-3-api-계약)에 따라 `X-Manyak-Device-Id`가 필수이며, 누락 시 400을 반환해야 합니다.
+- 모든 응답에 `X-Manyak-Request-Id` 헤더가 있어야 합니다. 일반 요청은 식별 헤더가 없어도 거부되지 않아야 하지만, [게스트 동의 API](#게스트-개인정보-수집-동의)와 체험 한도 대상 게스트 요청은 [§4-3-7](#4-3-api-계약)에 따라 `X-Manyak-Device-Id`가 필수이며, 누락 시 400을 반환해야 합니다.
 - 사용자 입력 원문이 로그·Sentry에 남지 않아야 합니다([`6-analytics.md §6-8-5`](6-analytics.md)).
 - 마이그레이션: 1건 이상 `MIGRATED`로 성공한 계정의 재호출은 `migrationClosed: true`·빈 결과의 200을 반환해야 하고 소유권이 변하지 않아야 합니다. 성공 0건 호출(빈 배열·전부 `CONFLICT`/`NOT_FOUND`)은 계정을 잠그지 않아야 합니다. 다른 회원 소유 ID는 `CONFLICT`, 삭제된 ID는 `NOT_FOUND`, 101개 배열은 400을 반환해야 합니다.
 - 마이그레이션 동시성: 같은 계정의 동시 이관 호출 2건이 경합해도 잠금·이관 결과가 순차 실행과 같아야 합니다(직렬화).
