@@ -58,7 +58,7 @@
 | LEGAL-DOC-07 | P2  | 두 페이지 각각  | 브라우저 탭 제목 확인 | `서비스 이용약관 - 마냑`·`개인정보 처리방침 - 마냑`(읽기 쉬운 띄어쓰기를 적용한 탭 제목 + 서비스명, 정본 `src/features/legal/constants.ts`, [§3-2-4](../spec/3-2-web-spec.md))                    | ✅ e2e `legal/legal`                              | 구현(`terms`·`privacy` page), KNK-713·KNK-1037 |
 | LEGAL-DOC-08 | P1  | 두 페이지 각각  | 이용 연령 조항 확인 | 약관 제3조와 처리방침 제15항이 서비스를 만 14세 이상으로 제한하고, 만 14세 미만 이용 사실을 알게 된 경우 이용 중지·삭제 절차를 안내 | ✅ unit `tests/features/legal/content.test.ts` | 2026-08-29 사용자 정책 결정 |
 | LEGAL-DOC-09 | P1 | `/privacy` 진입 | 보유·위탁·국외 이전 확인 | 삭제된 회원·스토리·채팅, 피드백, Langfuse 원문의 1년 보유와 OpenSearch 14일·CloudWatch 30일·백업 최대 7일을 구분하고 AWS·Vercel·Cloudflare·AI·분석·오류·피드백 수탁자 및 국외 이전 항목을 표시 | ✅ unit `tests/features/legal/content.test.ts` | 처리방침 콘텐츠 정본, 각 레포 구현 |
-| LEGAL-DOC-10 | P1 | 두 페이지 각각 | 로그인 조건과 게스트 저장 및 동의 기록 고지 확인 | [공통 법적 문서 고지](../spec/3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침)와 [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델)에 맞는 회원 기능 이용 조건, 동의 기록 항목, 탭 저장 및 서버 삭제 구분을 표시 | 수동 | FE-SCREEN-010 법적 문서의 이용 조건 고지 |
+| LEGAL-DOC-10 | P1 | 두 페이지 각각 | 로그인 조건과 게스트 저장 및 동의 기록 고지 확인 | [공통 법적 문서 고지](../spec/3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침)와 [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델)에 맞는 회원 기능 이용 조건, 동의 기록 항목, 게스트 지속 저장과 동의 기록 및 서버 삭제 구분을 표시 | 수동 | FE-SCREEN-010 법적 문서의 이용 조건 고지 |
 
 ## ⚠️ 확인 필요
 

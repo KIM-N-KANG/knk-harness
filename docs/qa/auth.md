@@ -23,6 +23,7 @@
 
 - [AUTH-LOGIN — 로그인 페이지 `/login`](#auth-login--로그인-페이지-login)
 - [AUTH-CONSENT — 로그인 직후 필수 동의 게이트](#auth-consent--로그인-직후-필수-동의-게이트)
+- [AUTH-GUEST 게스트 이용 동의](#auth-guest-게스트-이용-동의)
 - [AUTH-LINK — 계정 연동 (마이 페이지, KNK-740)](#auth-link--계정-연동-마이-페이지-knk-740)
 - [AUTH-SESSION — BFF 토큰 세션·세션 만료](#auth-session--bff-토큰-세션세션-만료)
 - [AUTH-MIGRATE — 게스트 데이터 자동 이관](#auth-migrate--게스트-데이터-자동-이관)
@@ -47,12 +48,26 @@
 | AUTH-LOGIN-02 | P1  | 게스트                                                                    | 로그인 화면의 보조 문구 확인                   | 이관 1회 안내("계정마다 처음 로그인할 때…")와 약관 동의 고지·링크가 없음(2026-09-19). 버튼 위에는 로고·제목만, 아래에는 계정 연동 안내(AUTH-LOGIN-10)만 표시 | ✅ e2e `legal/legal`·`visual/auth-visual`     | [웹 로그인](../spec/3-2-web-spec.md#로그인과-회원-이관) |
 | AUTH-LOGIN-05 | P2 | `/login` 직접 진입(앱 히스토리 없음) / 앱 내 진입 각각 | 뒤로가기 헤더 탭 | 직접 진입은 스토리 목록(`/`)으로 폴백, 앱 내 진입은 이전 화면으로 복귀 | ✅ e2e `my/login-page` | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | AUTH-LOGIN-06 | P0  | 게스트, Google 계정 보유                                                  | "Google로 시작하기" 탭 → Google OAuth 완료     | Google 계정 선택으로 리다이렉트(내부는 범위 외). 완료 후 앱 복귀, 회원 상태로 전환되어 스토리 목록(`/`) 표시                                                              | 수동                                          | US-9-1, FE-SCREEN-008                                    |
-| AUTH-LOGIN-07 | P1  | 로그인 필요 시트 표시 상태(제작·채팅 진입, STORY-GATE·CHAT-GATE) | "카카오로 시작하기"(위)·"Google로 시작하기"(아래) 중 하나 탭 → 로그인 완료 | `/login`을 거치지 않고 즉시 해당 provider OAuth 진입. 완료 후 홈이 아니라 시트가 떴던 원래 화면(경로·쿼리·해시 포함)으로 복귀하고 그 위에서 AUTH-CONSENT 절차. 약관 고지·링크 없음. 닫기(X) 버튼 없이 바깥 터치·Escape로 닫힘(단, 로그인 진행 중에는 닫히지 않음 — AUTH-LOGIN-12). 시도했던 제작·채팅 요청은 자동 재실행되지 않음 | ◐ e2e `stories/story-login-gate`·`chats/chat-login-gate`(시트·요청 차단)·`auth/in-app-handoff`(복귀 경로) | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`login-callback-url`, `login-required-sheet`) |
+| AUTH-LOGIN-07 | P1  | 게스트 체험 한도로 로그인 필요 시트 표시 상태 | "카카오로 시작하기"(위)·"Google로 시작하기"(아래) 중 하나 탭 → 로그인 완료 | `/login`을 거치지 않고 즉시 해당 provider OAuth 진입. 완료 후 홈이 아니라 시트가 떴던 원래 화면(경로·쿼리·해시 포함)으로 복귀하고 그 위에서 AUTH-CONSENT 절차. 약관 고지·링크 없음. 닫기(X) 버튼 없이 바깥 터치·Escape로 닫힘(단, 로그인 진행 중에는 닫히지 않음 — AUTH-LOGIN-12). 시도했던 제작·채팅 요청은 자동 재실행되지 않음 | ◐ e2e `auth/guest-consent`(한도 시트)·`auth/in-app-handoff`(복귀 경로) | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`login-callback-url`, `login-required-sheet`) |
 | AUTH-LOGIN-08 | P2  | `callbackUrl`에 외부 절대 URL·`//` 시작·제어 문자 포함 값                 | 로그인 완료                                    | 외부로 이동하지 않고 스토리 목록(`/`)으로 폴백(오픈 리다이렉트 차단)                                                                                                      | 수동                                          | 구현(`login-callback-url`)                               |
 | AUTH-LOGIN-09 | P1  | 백엔드 로그인 실패(서버 모킹 필요) 또는 OAuth 중단·거절                   | 소셜 로그인 시도                               | `/login?error=...`로 복귀 + "로그인에 실패했어요" 토스트 + `login_oauthError_shown`(error_code, provider=null) 계측(§6-4-3). URL의 error 파라미터 제거 후 화면 유지. 회원 상태로 전환되지 않음(NextAuth 로그인 자체가 실패 — 반쪽 세션 없음) | 수동                                          | FE-SCREEN-008 예외 처리, 구현(`login-screen`, `auth.ts`) |
 | AUTH-LOGIN-10 | P1  | 게스트                                                                    | 계정 연동 안내 확인                            | 버튼 아래에 "소셜 계정 하나로 먼저 로그인한 뒤 다른 계정을 연동하면, / 어느 계정으로 로그인해도 똑같이 이용할 수 있어요"가 14px(`text-sm`)로 상시 노출. 하나의 계정으로 먼저 로그인한 뒤 다른 provider를 연동하는 순서를 안내하며, 가입 여부 조회로 안내를 분기하지 않음(열거 오라클 방지) | ◐ e2e `visual/auth-visual`(스크린샷)          | §3-1-3 계정 연동 정적 안내, KNK-728·KNK-740·KNK-1037      |
 | AUTH-LOGIN-11 | P0  | 게스트, Kakao 계정 보유                                                   | "카카오로 시작하기" 탭 → Kakao OAuth 완료      | 카카오 로그인으로 리다이렉트(내부는 범위 외). 완료 후 앱 복귀, 회원 상태로 전환(이관·온보딩 등 후처리는 Google과 동일). Google 계정과는 별개 계정                          | 수동                                          | US-9-1, §3-1-3 카카오 로그인 버튼, KNK-728                 |
 | AUTH-LOGIN-12 | P1  | 게스트                                                                    | 소셜 로그인 버튼 하나 탭 직후 관찰(로그인 화면·외부 핸드오프 랜딩·로그인 필요 시트 공통) | 탭한 버튼은 문구 공간을 유지한 중앙 스피너로 바뀌고 두 provider 버튼 모두 비활성화(중복·교차 클릭 방지). 페이지 이탈 없이 실패하면(핸드오프 생성 실패 등) 실패 토스트와 함께 버튼이 다시 활성화. OAuth 화면에서 뒤로가기로 복귀(bfcache 포함)하면 버튼이 활성 상태로 돌아옴 | 수동                                          | FE-SCREEN-008 로그인 진행 중 상태, KNK-760               |
+
+## AUTH-GUEST 게스트 이용 동의
+
+기준: [웹 게스트 이용 동의](../spec/3-2-web-spec.md#게스트-이용-동의). 화면 문구는 Spec을 따르며 회원 필수 동의와 혼합하지 않는다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| AUTH-GUEST-01 | P0 | 미동의 게스트 | 키워드 입력 후 스토리라인 생성 버튼 또는 채팅 전송 | 제작 진입과 입력 중에는 시트 없음. 생성 요청 직전에 한 줄 시트 제목, 안내 카드와 단일 동의 버튼 표시. 제목, 카드, 동의 버튼 사이 간격과 카드 간격, 카드 제목 서체, 보조 설명과 제목 오른쪽 상세 버튼의 배치, 높이 및 밑줄 없음은 웹 게스트 이용 동의 규격을 따름. 체크박스 없음 | ✅ e2e `auth/guest-consent`, visual `guest-consent-visual` | US-9-13, 웹 게스트 이용 동의 |
+| AUTH-GUEST-02 | P0 | 동의 시트 열림 | 상세 열기, 본문 끝까지 스크롤, 안내로 돌아가기, 동의 | 같은 시트에서 내용 전환. 상세 높이와 제목 및 동의 버튼 유지, 본문 스크롤은 웹 게스트 이용 동의 규격을 따름. 전체 문서 새 탭 링크, 동의 뒤 대기한 동작 한 번만 실행 | ✅ e2e `auth/guest-consent`, visual `guest-consent-visual` | 웹 게스트 이용 동의 |
+| AUTH-GUEST-03 | P0 | 입력 후 동의 시트 열림 | 뒤로가기 또는 Escape | 요청 없이 닫힘, 현재 URL과 입력 유지, 재시도 가능 | ✅ e2e `auth/guest-consent`, `chats/chat-login-gate` | 웹 게스트 이용 동의 |
+| AUTH-GUEST-04 | P0 | 한 기능에서 동의 완료 | 새로고침, 다른 기능 이용, 사이트 데이터 삭제 후 재시도 | 동의 공유, 삭제 후 재노출 | ✅ e2e `auth/guest-consent` | 웹 게스트 이용 동의 |
+| AUTH-GUEST-05 | P1 | 일반 브라우저 동의 완료 | 새로운 시크릿 세션에서 키워드 입력 후 스토리라인 생성 버튼 탭 | 이전 저장소와 분리되어 재노출. 같은 시크릿 세션의 창은 공유 가능 | ◐ e2e `auth/guest-consent`(분리 컨텍스트), 실제 시크릿 창 수동 | 웹 게스트 이용 동의 |
+| AUTH-GUEST-06 | P1 | 손상, 구버전 또는 차단된 저장소 | 동의 확인 및 동의 후 새로고침 | 손상과 구버전은 미동의. 차단 시 현재 페이지에서만 유지 | ✅ unit `guest-consent-storage.test.ts`, e2e `auth/guest-consent` | 웹 게스트 이용 동의 |
+| AUTH-GUEST-07 | P0 | 동의 대기 중 | 다른 경로 이동 또는 인증 상태 변경 | 대기 동작 취소. 이전 입력이나 제작 요청을 실행하지 않음 | 수동 | 웹 게스트 이용 동의 |
 
 ## AUTH-CONSENT — 로그인 직후 필수 동의 게이트
 
