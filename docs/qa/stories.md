@@ -48,7 +48,7 @@
 | STORY-LIST-02 | P1 | STORY-LIST-01                              | 카드 구성 확인                            | 목록과 카드 전체 링크가 콘텐츠 폭을 모두 사용하고 각 행은 가로 16px·세로 8px 패딩과 16px 열 간격을 가짐. 왼쪽 폭 128px 3:4 썸네일 자리(placeholder 아이콘), 오른쪽에 제목(최대 2줄)+옵션 버튼·한 줄 소개(최대 2줄)·장르 배지(넘치면 `+N`), 우측 하단에 턴 수(천 단위 콤마)·제작 시각(당일은 "방금 전"·"n분 전"·"n시간 전", 다음 날부터 KST 날짜)을 순서대로 표시(좋아요 수는 KNK-1260 비노출). 좁은 폭에서는 지표 단위로 줄바꿈. 기존 웹 아이콘·시맨틱 글자색 유지 | ✅ e2e `stories/story-list`·`visual/stories-visual` | US-2-1·2-4, §3-1-3, KNK-1012·1043        |
 | STORY-LIST-03 | P0 | STORY-LIST-01                              | 카드 탭                                   | 해당 스토리 상세(`/stories/{id}`)로 이동                                                                                                                     | ✅ e2e `stories/story-list`                     | US-2-2                                      |
 | STORY-LIST-04 | P1 | 배치 응답에 `thumbnailUrlSm`이 있는 스토리 | 카드 확인                                 | placeholder 대신 썸네일 이미지 렌더. `null`이면 placeholder 유지                                                                                             | 수동                                            | US-2-7, §3-1-3, 구현(`story-card`)          |
-| STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음              | `/studio` 진입                            | 별도 섹션 제목과 FAB를 숨김. "아직 만든 스토리가 없어요" + "3단계로 간단하게 스토리를 만들어보세요" + "스토리 만들기" CTA 표시(게스트 탭은 STORY-GATE-02, 회원은 `/studio/story/simple`) | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3                           |
+| STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음, 진행 카드 없음 | `/studio` 진입                            | 별도 섹션 제목 없음. 앱과 같이 가운데 한 줄 보조 안내(§3-1-3 빈 상태 문구)만 두고 별도 CTA 없음. FAB는 표시(STORY-LIST-11과 동일 동작). 초안·완성 중 진행 카드가 있으면 안내를 표시하지 않음 | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3, KNK-1355                 |
 | STORY-LIST-06 | P1 | 게스트, 스토리 ID 있음                     | 배치 조회가 4xx·5xx로 실패                | "스토리를 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                                                              | ✅ e2e `stories/story-list`                     | US-2-6, §3-1-3                              |
 | STORY-LIST-07 | P2 | 게스트, 스토리 ID 있음                     | `/studio` 진입 직후 관찰                  | 별도 섹션 제목과 빈 상태 깜빡임 없이 실제 카드와 같은 전체 폭, 가로 16px·세로 8px 패딩, 128px 표지·제목·소개·장르·하단 메타의 1열 행 스켈레톤 5개 → 목록 전환. 지연 전에는 목록 영역을 비움 | ✅ e2e `stories/story-list`                     | §3-1-3 상태표, [웹 저장소 3-state](../spec/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
 | STORY-LIST-08 | P2 | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨  | `/studio` 진입                            | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                                                               | 수동                                            | §3-1-6 배치 재조회                          |
@@ -72,6 +72,7 @@
 | STORY-LIST-26 | P1 | 회원, 내가 만든 스토리 카드                 | 옵션 시트 → "신고하기"               | 옵션 시트가 닫히고 스토리 신고 시트가 열림(시트 동작은 STORY-DETAIL-28~30). 대상은 그 카드의 스토리 | ◐ e2e `chats/chat-list`(채팅 카드로 같은 컴포넌트 검증) | §3-1-3 스토리 신고, KNK-1186 |
 | STORY-LIST-28 | P1 | 개발 환경, `thumbnailUrl`·`thumbnailUrlSm`이 `dev-cdn.manyak.app/thumbnails/**` URL(한글 파일명 포함) | 목록·상세 썸네일 확인 | 운영과 동일하게 이미지가 렌더되고 placeholder로 남지 않음 | 수동 | [웹 이미지 검증](../design/1-1-web-design.md#원격-이미지-최적화), KNK-1079 |
 | STORY-LIST-29 | P1 | 홈 오리지널 카드 | 제목 아래 제작자 줄 확인 | 닉네임 앞에 `@`를 붙여 표시(공식 계정은 "@마냑"). 상세의 제작자 값에는 `@`를 붙이지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001, KNK-1079 |
+| STORY-LIST-30 | P1 | 홈 또는 제작 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | "당겨서 새로고침" → 임계값 넘으면 "놓으면 새로고침" → 놓으면 "새로고침 중"과 함께 그 화면의 목록을 다시 조회. 응답 전까지 기존 카드 유지, 스크롤이 내려간 상태에서는 당김이 시작되지 않음 | ◐ e2e `stories/story-list`(홈, 마우스 드래그 경로), 제작·터치는 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | STORY-LIST-27 | P1 | 백엔드 도달 가능(`API_BASE_URL`), 오리지널 존재 | 스크립트 비활성 또는 페이지 소스로 `/` 첫 HTML 확인 | 첫 HTML에 오리지널 카드(제목·제작자·상세 링크)가 포함됨. 스켈레톤 없이 첫 렌더부터 카드 표시. 서버 조회 실패(백엔드 미도달·타임아웃 5초) 시에는 기존대로 스켈레톤 → 클라이언트 조회 | 수동 | KNK-1183, [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md) 라우팅 규칙(홈 서버 렌더), 구현(`(main)/page`·`use-original-stories`) |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
@@ -269,10 +270,10 @@
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
 | STORY-GATE-01 | P0 | 미동의 게스트, 제작 목록 있음 | 제작 FAB 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13, 웹 게스트 이용 동의 |
-| STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | FAB 탭(빈 상태에도 별도 CTA 없음, KNK-1355) | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
 | STORY-GATE-03 | P0 | 미동의 게스트 | 제작 URL 직접 진입, 키워드 입력 후 생성 버튼 탭, 취소 후 재시도 및 동의 | 진입 시 태그 조회와 입력 화면 표시. 생성 버튼에서만 동의 시트 표시. 취소 시 입력 및 단계 유지, 동의 후 같은 키워드로 한 번만 생성 요청 | ✅ e2e `stories/story-login-gate`, `auth/guest-consent` | 웹 게스트 이용 동의 |
 | STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
-| STORY-GATE-05 | P0 | 게스트, 채팅 목록 비어 있음 | 빈 상태 "스토리 만들기" CTA 탭 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-05 | — | (폐기, KNK-1355) 채팅 빈 상태의 "스토리 만들기" CTA를 없애 진입 경로가 사라짐. 제작 진입은 STORY-GATE-01·02로 검증 | — | — | — | — |
 | STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | US-9-13 |
 | STORY-GATE-07 | P1 | 게스트, 온보딩 "바로 시작하기" / 공유 열람 CTA | 각각 탭 | 모두 동의 시트 없이 제작 입력 화면으로 이동. 공유 CTA도 온보딩 열람 처리 | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |
 | STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
