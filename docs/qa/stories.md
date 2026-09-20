@@ -72,6 +72,7 @@
 | STORY-LIST-26 | P1 | 회원, 내가 만든 스토리 카드                 | 옵션 시트 → "신고하기"               | 옵션 시트가 닫히고 스토리 신고 시트가 열림(시트 동작은 STORY-DETAIL-28~30). 대상은 그 카드의 스토리 | ◐ e2e `chats/chat-list`(채팅 카드로 같은 컴포넌트 검증) | §3-1-3 스토리 신고, KNK-1186 |
 | STORY-LIST-28 | P1 | 개발 환경, `thumbnailUrl`·`thumbnailUrlSm`이 `dev-cdn.manyak.app/thumbnails/**` URL(한글 파일명 포함) | 목록·상세 썸네일 확인 | 운영과 동일하게 이미지가 렌더되고 placeholder로 남지 않음 | 수동 | [웹 이미지 검증](../design/1-1-web-design.md#원격-이미지-최적화), KNK-1079 |
 | STORY-LIST-29 | P1 | 홈 오리지널 카드 | 제목 아래 제작자 줄 확인 | 닉네임 앞에 `@`를 붙여 표시(공식 계정은 "@마냑"). 상세의 제작자 값에는 `@`를 붙이지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001, KNK-1079 |
+| STORY-LIST-30 | P1 | 홈 또는 제작 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | "당겨서 새로고침" → 임계값 넘으면 "놓으면 새로고침" → 놓으면 "새로고침 중"과 함께 그 화면의 목록을 다시 조회. 응답 전까지 기존 카드 유지, 스크롤이 내려간 상태에서는 당김이 시작되지 않음 | ◐ e2e `stories/story-list`(홈, 마우스 드래그 경로), 제작·터치는 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | STORY-LIST-27 | P1 | 백엔드 도달 가능(`API_BASE_URL`), 오리지널 존재 | 스크립트 비활성 또는 페이지 소스로 `/` 첫 HTML 확인 | 첫 HTML에 오리지널 카드(제목·제작자·상세 링크)가 포함됨. 스켈레톤 없이 첫 렌더부터 카드 표시. 서버 조회 실패(백엔드 미도달·타임아웃 5초) 시에는 기존대로 스켈레톤 → 클라이언트 조회 | 수동 | KNK-1183, [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md) 라우팅 규칙(홈 서버 렌더), 구현(`(main)/page`·`use-original-stories`) |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`

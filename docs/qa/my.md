@@ -119,6 +119,8 @@
 | MY-CREDITS-33 | P2 | 대기 주문 없음 또는 24시간 지난 기록 | `/my/credits` 진입 | 확인 카드를 그리지 않음 | ✅ e2e `my/credits`(없음)·단위 `pending-credit-order-storage`(만료) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
 | MY-CREDITS-34 | P0 | 대기 주문이 `REFUNDED`(또는 `COMPLETED`·404)로 확정돼 카드가 표시된 상태 | 닫기 없이 새로고침 또는 재진입 | 확인 카드를 다시 그리지 않고 주문 재조회도 없음. 확인 중·60초 초과·조회 오류 상태는 기록이 남아 재진입 시 다시 확인 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 | MY-CREDITS-35 | P1 | 가격 버튼 탭으로 주문 생성 성공 후 결제창으로 이동 | 브라우저 뒤로가기로 문서가 bfcache 복원(`pageshow` persisted) | 가격 버튼의 스피너·비활성이 풀려 다시 주문 가능 | ✅ e2e `my/credits`(이벤트 직접 발생) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
+| MY-CREDITS-37 | P1 | 무료 충전 탭 | 탭 내용을 아래로 당겼다 놓기 | STORY-LIST-30과 같은 표시자로 프로필(잔액·출석 여부)과 정책 수치를 다시 조회 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
+| MY-CREDITS-38 | P1 | 내역 탭, 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 같은 표시자로 내역을 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지. 구매 탭에는 당김 없음 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
