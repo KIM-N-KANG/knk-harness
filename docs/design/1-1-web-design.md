@@ -200,7 +200,9 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 기존 Drawer를 앱 프레임에 표시합니다. 시트용 히스토리를 먼저 소비한 뒤 대기 중인 생성이나 전송 요청을 재개합니다. `useGuestConsentOpen`이 열린 상태를 전달하고 제작 퍼널은 `usePreventPageLeave`의 `ignoreBack`으로 자기 뒤로가기 처리를 건너뛰므로 동의 시트만 닫힙니다. 제작 진입점은 동의를 요청하지 않으며 `use-story-create-funnel`의 생성 핸들러가 입력 검증 뒤 공용 확인 함수를 호출합니다. [문구 상수](../../../manyak-web/src/features/auth/_shared/constants/guest-consent.ts)와 [상세 내용](../../../manyak-web/src/features/legal/content/guest-consent-content.ts)이 안내를 소유하며 사용자 계약은 [웹 Spec](../spec/3-2-web-spec.md#게스트-이용-동의)을 따릅니다.
 
-[게스트 동의 저장소](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-storage.ts)는 localStorage의 `manyak:guest-consent`에 `{version, acceptedAt}`를 저장합니다. 매 동작에서 다시 읽으며 손상과 버전 불일치는 미동의, 읽기 및 쓰기 예외는 현재 페이지 메모리로 처리합니다. 서버 동의 API를 호출하지 않으며 이 기록은 서버 권한 검사나 감사 증빙이 아닙니다. 서버 게스트 동의 API가 제공되면 저장 성공 판정과 재동의 계약을 별도 연동해야 합니다.
+[GuestConsentSheet](../../../manyak-web/src/features/auth/_shared/components/guest-consent-sheet.tsx)가 생성된 `useGetConsents1`과 `useRecordConsents1`을 호출합니다. 동작별 시트 마운트마다 조회하며 사용하지 않는 조회 캐시는 즉시 제거하고 포커스 복귀 시 자동 재조회는 하지 않습니다. [응답 검증](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-status.ts)은 비어 있지 않은 `requiredVersion`과 boolean `needsConsent`가 모두 있을 때만 유효한 상태로 처리합니다. 이미 동의했다면 Drawer를 표시하지 않고 대기 요청을 재개합니다. 저장 완료는 전송한 버전과 응답 버전의 일치 및 `needsConsent: false`로 확인합니다. 버전 충돌 시 상세를 열고 재조회하되 자동 제출하지 않습니다. 취소와 언마운트 뒤 응답은 원래 동작을 재개하지 않습니다.
+
+`X-Manyak-Device-Id`는 공통 mutator의 기존 분석 식별자 헤더를 재사용합니다. 동의 전용 식별자를 만들지 않습니다. production에서는 Amplitude SDK 또는 기존 식별자 쿠키, development에서는 기존 개발용 폴백을 사용합니다. 식별자 누락으로 서버가 오류를 반환하면 조회 오류로 차단합니다. 기존 `manyak:guest-consent` 로컬 기록과 메모리 폴백은 더 이상 읽거나 쓰지 않습니다. 서버 API는 `guestPrivacy`만 기록하며 회원 동의로 이관하거나 다른 게스트 API의 요청을 차단하지 않습니다.
 
 ### 온보딩 소개 이미지 (웹)
 
