@@ -141,6 +141,14 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·토큰을 가진 기동·계정 연동 성공·마이 노출·출석/초대 성공에서 프로필을 갱신합니다. 마이 재노출 요청은 5초 간격으로 제한합니다. 네트워크 실패는 회원 세션을 유지하며 명시적인 `ACCOUNT_SUSPENDED`만 해당 사유로 중앙 종료합니다. 모든 403을 로그아웃으로 처리하지 않습니다.
 
+### 약관 동의 게이트
+
+`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트는 `NotificationPermissionRequest(onSettled)`가 끝난 뒤 `LegalConsentSheet(enabled = true)`로 시트를 그리고, ViewModel의 `isSatisfied`로 나머지 안내(초대 코드·광고 재질문)를 잠급니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 완료 판정은 서버 기록 성공 하나이며 로컬 플래그를 두지 않습니다.
+
+ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepository.sessionState`를 보고 회원이 될 때마다 다시 조회하며, 회원이 아니면 상태를 비웁니다. 조회는 세션 수집을 막지 않는 별도 작업으로 돌려 조회 중의 로그아웃·재로그인이 접히지 않게 합니다. `CONSENT_VERSION_MISMATCH`와 기록 응답에 남은 `needsConsent`는 같은 안내로 재조회하고 체크를 비웁니다. 401·403은 세션 종료 흐름이 처리하므로 시트는 재시도만 둡니다.
+
+시트는 `ManyakBottomSheet(dismissEnabled = false, dismissOnBackPress = !isLocked)`로 끌어내리기·스크림을 막고 뒤로가기만 `signOut`으로 잇습니다. 전문은 백스택 대신 시트 위 `Dialog`에 `LegalDocumentScreen`을 문서별 ViewModel 키로 띄웁니다 — 모달 시트가 아래 화면을 덮어 백스택의 문서가 보이지 않기 때문입니다. 선택 항목인 광고 알림 동의는 체크만 받고 성공 시 `marketingAnswer`로 남기며, 루트가 `MarketingConsentViewModel`에 넘긴 뒤 소비 표시를 보냅니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../adr/1-3-android-adr.md#a-044)를 참조합니다.
+
 ### 토큰 저장과 만료 판정
 
 토큰은 Android Keystore 키로 암호화해 DataStore에 저장합니다. 사용자 상호작용이 필요한 키는 사용하지 않으며 하드웨어 보안 저장소 제공 여부를 필수 조건으로 삼지 않습니다. `allowBackup=false`와 토큰·정리 journal의 백업 제외 규칙을 함께 유지합니다. 토큰은 auth/data와 network 포트 안에서만 다루며 UI·로그로 보내지 않습니다.
@@ -215,9 +223,11 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ### 광고 알림 수신 동의
 
-`notification/consent`가 동의 시트·처리 결과 다이얼로그·"물었음" 저장소를 소유합니다. 루트가 순서를 정합니다 — `NotificationPermissionRequest(onSettled)`가 권한 응답 완료를 알리고, 루트 ViewModel이 초대 코드 안내의 `pending`(초기값 참)을 읽어 둘 다 끝났을 때만 `MarketingConsentSheet(enabled = true)`입니다. 시트는 `areNotificationsEnabled`가 참이고 `GET /users/me/push-settings`의 `marketingPush`가 거짓일 때만 뜹니다.
+`notification/consent`가 재질문 시트·처리 결과 다이얼로그·질문 단계 저장소를 소유합니다. 첫 질문은 약관 동의 시트의 선택 항목이며, 루트가 그 답을 `MarketingConsentIntent.AnsweredInConsentSheet`로 같은 ViewModel에 넘깁니다. 허용이면 `GET /users/me/push-settings`로 서비스 값을 읽어 광고만 켠 `PUT`으로 저장하고 통지하며, 거절이면 첫 거절로 기록합니다. 루트는 이 저장·통지가 도는 동안(`isBusy`) 알림 권한·초대 코드 안내를 시작하지 않습니다.
 
-"물었음"은 사용자 귀속 DataStore(`marketing-consent`)에 두고 `UserScopedStore`로 로그아웃 정리 대상입니다. 기록은 사용자가 답한 뒤에 남기며 저장 실패는 시트를 유지합니다. 허용은 조회한 서비스 값을 유지한 채 광고만 켜서 `PUT`으로 전체 교체하며 야간은 설정 화면에서만 켭니다. 처리 결과 통지(`ConsentNotice`)의 일시는 서버 응답이 아니라 의사 표시 시점의 기기 시각이며, 시트 허용과 설정 화면의 광고·야간 토글이 같은 `ConsentNoticeDialog`를 씁니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/marketing-consent.md)과 [A-040](../adr/1-3-android-adr.md#a-040)을 참조합니다.
+재질문 순서는 루트가 정합니다 — 알림 권한 응답과 약관 동의가 끝난 뒤 루트 ViewModel이 초대 코드 안내의 `pending`(초기값 참)을 읽어 끝났을 때만 `MarketingConsentSheet(enabled = true)`입니다. 시트는 `claimPrompt()`가 참이고 `areNotificationsEnabled`가 참이며 서버 `marketingPush`가 거짓일 때만 뜹니다.
+
+질문 단계는 사용자 귀속 DataStore(`marketing-consent`)에 거절 횟수(0 미질문·1 한 번 거절·2 닫힘)와 첫 거절 뒤 재진입 횟수로 두고 `UserScopedStore`로 로그아웃 정리 대상입니다. `claimPrompt()`는 호출마다 재진입을 세어 거절 1회일 때 세 번째부터 참을 돌려주고, 두 번째 거절·허용은 닫힘으로 기록합니다. 단계 도입 전의 "물었음" 값은 한 번 거절로 읽습니다. 기록은 사용자가 답한 뒤에 남기며 저장 실패는 시트를 유지합니다. ViewModel은 세션이 회원이 아니게 되면 준비 표시를 되돌려 같은 프로세스의 재로그인에서도 판정합니다. 처리 결과 통지(`ConsentNotice`)의 일시는 서버 응답이 아니라 의사 표시 시점의 기기 시각이며, 시트 허용과 설정 화면의 광고·야간 토글이 같은 `ConsentNoticeDialog`를 씁니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../adr/1-3-android-adr.md#a-044)를 참조합니다.
 
 ## 1-2-7. 제작과 상태 복원
 
