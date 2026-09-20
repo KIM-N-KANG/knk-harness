@@ -2,6 +2,8 @@
 
 간편 제작 스토리 생성 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 대상은 스토리라인 생성, 컴파일, 인물 이미지와 썸네일 생성이다.
 
+제품·스펙 문서는 하네스의 `docs/AI/`와 `docs/REFERENCE/` 안에서만 참조한다. 그 밖의 과거 문서와 해당 문서로 연결된 링크는 근거로 사용하지 않는다.
+
 명세 본문과 설정값은 이 문서에 복사하지 않는다. 모델 이름, 제한 시간과 횟수는 해당 명세에서 확인한다.
 
 <br>
@@ -27,7 +29,7 @@
 | [7-2-TEST-CASES.md](7-2-TEST-CASES.md) | 단위와 통합 테스트 케이스 | 작성 |
 | [7-3-OBSERVABILITY.md](7-3-OBSERVABILITY.md) | 추적 단위, 기록 항목, 지표와 알림 | 작성 |
 | [7-4-DEPLOYMENT.md](7-4-DEPLOYMENT.md) | 배포 경로, 환경 변수, 운영 설정과 복구 | 작성 |
-| [DECISIONS.md](DECISIONS.md) | 중요한 결정의 이력 | 목차만 작성 |
+| [DECISIONS.md](DECISIONS.md) | 중요한 결정의 이력 | 작성 |
 
 - 처음에는 1번부터 5번까지 순서대로 읽어 요구사항, 설계와 계약을 확인한다. 6번 문서들은 구현과 평가를, 7번 문서들은 운영을 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추려고 앞 단계의 결정을 임의로 바꾸지 않는다. 구현과 설계가 다르면 6번이나 7번 문서에 차이를 적는다.
@@ -41,24 +43,24 @@
 
 | 하려는 일 | 먼저 볼 곳 | 함께 볼 곳 |
 |---|---|---|
-| 요청이나 응답의 필드 변경 | [5-CONTRACT.md](5-CONTRACT.md) | [3-TASK-DEFINITION.md](3-TASK-DEFINITION.md), [7-4-7 적용과 복구](7-4-DEPLOYMENT.md#7-4-7-적용과-복구) |
-| 프롬프트 수정 | [6-3-4 개선 과정](6-3-AI-ALIGNMENT.md#6-3-4-개선-과정) | [6-1-4 프롬프트 조립](6-1-AI-EXECUTION.md#6-1-4-프롬프트-조립), [6-3-6 평가 데이터와 채택](6-3-AI-ALIGNMENT.md#6-3-6-평가-데이터와-채택) |
-| 모델이나 호출 옵션 변경 | [6-1-5 모델 호출](6-1-AI-EXECUTION.md#6-1-5-모델-호출) | [6-3-5 허용 수단](6-3-AI-ALIGNMENT.md#6-3-5-허용-수단), [7-4-6 운영 설정](7-4-DEPLOYMENT.md#7-4-6-운영-설정) |
-| 검증과 보완 규칙 변경 | [6-1-6 검증과 복구](6-1-AI-EXECUTION.md#6-1-6-검증과-복구) | [7-1-ERROR-HANDLING.md](7-1-ERROR-HANDLING.md), [7-2-TEST-CASES.md](7-2-TEST-CASES.md) |
-| 코드 작성과 수정 | [6-2-SOFTWARE-IMPLEMENTATION.md](6-2-SOFTWARE-IMPLEMENTATION.md) | [6-2-6 금지 패턴](6-2-SOFTWARE-IMPLEMENTATION.md#6-2-6-금지-패턴) |
-| 오류 처리 변경 | [7-1-ERROR-HANDLING.md](7-1-ERROR-HANDLING.md) | [5-4 실패 계약](5-CONTRACT.md#5-4-실패-계약) |
+| 요청이나 응답의 필드 변경 | [5-CONTRACT.md](5-CONTRACT.md) | [3-TASK-DEFINITION.md](3-TASK-DEFINITION.md), [7-4-7 배포](7-4-DEPLOYMENT.md#7-4-7-적용과-복구) |
+| 프롬프트 수정 | [6-3-4 AI 정렬](6-3-AI-ALIGNMENT.md#6-3-4-개선-과정) | [6-1-4 AI 실행](6-1-AI-EXECUTION.md#6-1-4-프롬프트-조립), [6-3-6 AI 정렬](6-3-AI-ALIGNMENT.md#6-3-6-평가-데이터와-채택) |
+| 모델이나 호출 옵션 변경 | [6-1-5 AI 실행](6-1-AI-EXECUTION.md#6-1-5-모델-호출) | [6-3-5 AI 정렬](6-3-AI-ALIGNMENT.md#6-3-5-허용-수단), [7-4-6 배포](7-4-DEPLOYMENT.md#7-4-6-운영-설정) |
+| 검증과 보완 규칙 변경 | [6-1-6 AI 실행](6-1-AI-EXECUTION.md#6-1-6-검증과-복구) | [7-1-ERROR-HANDLING.md](7-1-ERROR-HANDLING.md), [7-2-TEST-CASES.md](7-2-TEST-CASES.md) |
+| 코드 작성과 수정 | [6-2-SOFTWARE-IMPLEMENTATION.md](6-2-SOFTWARE-IMPLEMENTATION.md) | [6-2-6 소프트웨어 구현](6-2-SOFTWARE-IMPLEMENTATION.md#6-2-6-금지-패턴) |
+| 오류 처리 변경 | [7-1-ERROR-HANDLING.md](7-1-ERROR-HANDLING.md) | [5-4 계약](5-CONTRACT.md#5-4-실패-계약) |
 | 테스트 추가 | [7-2-TEST-CASES.md](7-2-TEST-CASES.md) | 연결된 명세의 절 |
-| 품질 문제의 원인 분석 | [6-3-3 원인 구분](6-3-AI-ALIGNMENT.md#6-3-3-원인-구분) | [7-3-OBSERVABILITY.md](7-3-OBSERVABILITY.md) |
+| 품질 문제의 원인 분석 | [6-3-3 AI 정렬](6-3-AI-ALIGNMENT.md#6-3-3-원인-구분) | [7-3-OBSERVABILITY.md](7-3-OBSERVABILITY.md) |
 | 평가 추가와 실행 | [6-4-AI-EVALUATION-METHOD.md](6-4-AI-EVALUATION-METHOD.md) | [6-5-AI-EVALUATION-IMPLEMENTATION.md](6-5-AI-EVALUATION-IMPLEMENTATION.md) |
-| 기록 항목이나 지표 변경 | [7-3-OBSERVABILITY.md](7-3-OBSERVABILITY.md) | [분석 명세 6-7](../../spec/6-analytics.md#6-7-개인정보와-원문-수집-원칙) |
-| 배포와 되돌리기 | [7-4-DEPLOYMENT.md](7-4-DEPLOYMENT.md) | [배포 설계](../../design/4-deployment.md) |
-| 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | [AI 서버 ADR](../../adr/3-ai-server-adr.md) |
+| 기록 항목이나 지표 변경 | [7-3-OBSERVABILITY.md](7-3-OBSERVABILITY.md) | [7-3-7 관측](7-3-OBSERVABILITY.md#7-3-7-데이터와-수집-실패) |
+| 배포와 되돌리기 | [7-4-DEPLOYMENT.md](7-4-DEPLOYMENT.md) | [7-4-7 배포](7-4-DEPLOYMENT.md#7-4-7-적용과-복구) |
+| 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 태스크 문서 |
 
 <br>
 
 ### 3. 명세와 코드의 대응
 
-코드 경로는 `manyak-ai` 저장소 루트 기준이다. 아래 표는 주요 코드와 관련 명세를 연결한다. 파일별 역할은 파일 배치 절에서 확인한다. ([6-2-1 파일 배치](6-2-SOFTWARE-IMPLEMENTATION.md#6-2-1-파일-배치))
+코드 경로는 `manyak-ai` 저장소 루트 기준이다. 아래 표는 주요 코드와 관련 명세를 연결한다. 파일별 역할은 파일 배치 절에서 확인한다. ([6-2-1 소프트웨어 구현](6-2-SOFTWARE-IMPLEMENTATION.md#6-2-1-파일-배치))
 
 | 코드 | 명세 |
 |---|---|
@@ -88,7 +90,7 @@
 | 하네스 전체의 문서 지침 | 하네스 루트의 `CLAUDE.md` |
 | 코드 규칙 | `manyak-ai`의 `AGENTS.md`, `.agents/STYLEGUIDE.md` |
 | 문서 변경 뒤의 검사 | `git diff --check` 실행. 링크, 앵커와 참조한 절 번호도 확인 |
-| 테스트 실행 | `manyak-ai`의 `scripts/test.sh`로 실행. [7-2-7 실행 증거](7-2-TEST-CASES.md#7-2-7-실행-증거) |
+| 테스트 실행 | `manyak-ai`의 `scripts/test.sh`로 실행. [7-2-7 테스트 케이스](7-2-TEST-CASES.md#7-2-7-실행-증거) |
 
 - 명세의 작성, 수정과 검토를 서브에이전트에 맡기지 않는다.
 - 실제 비밀값, 사용자 입력 원문, 프롬프트 전문과 생성 결과 원문을 문서에 넣지 않는다.
