@@ -360,7 +360,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_resumeDialog_shown`                  | P2       | 퍼널 진입 시 임시 저장본 재개 다이얼로그 노출                                  | 없음                                                                                                             |
 | `client_storyCreate_resumeDialog_continued`              | P1       | 재개 다이얼로그에서 "이어서 만들기" 선택                                       | 없음                                                                                                             |
 | `client_storyCreate_resumeDialog_discarded`              | P2       | 재개 다이얼로그에서 "새로 만들기" 선택 — 임시 저장본 폐기                      | 없음                                                                                                             |
-| `client_storyCreate_completed`                           | P0       | 스토리화 완료                                                                  | `story_id` (string, 필수), `chat_id` (string, 필수), `genres` (string[], 선택). **`creation_id`는 포함하지 않습니다** — §6-5 퍼널·지표가 이 이벤트를 `creation_id`로 조인한다고 정의해 간극이 있습니다(§6-8-7 A2) |
+| `client_storyCreate_completed`                           | P0       | 스토리화 완료. 서버가 스토리 ID를 확정한 시점(원 응답 또는 제작 탭 폴링)에 발화하며 채팅 생성과 무관합니다 | `story_id` (string, 필수), `genres` (string[], 선택). **`chat_id`·`creation_id`는 포함하지 않습니다** — 완성 시점에는 채팅이 없고, §6-5 퍼널·지표가 이 이벤트를 `creation_id`로 조인한다고 정의해 간극이 있습니다(§6-8-7 A2) |
 
 `client_storyCreate_storyGeneration_requested`는 `analytics_creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `analytics_creation_id`를 싣는 것이 목표 계약이지만, **현재 구현은 성공 이벤트만 항상 포함하고(타입은 문자열이 아닌 Long) 실패 이벤트는 발급 전 실패에서 값이 없을 수 있습니다**(§6-8-7 A1·A3). 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
@@ -762,10 +762,10 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 1    | 메인 방문  | `client_storyList_viewed`                                    | device    |
 | 2    | 제작 시작  | `client_storyList_createButton_clicked`                      | device    |
 | 3    | 제작 완료  | `client_storyCreate_completed`                               | device    |
-| 4    | 첫 메시지  | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
+| 4    | 첫 메시지  | `client_chat_messageInput_submitted` where `turn_number = 1` | device    |
 | 5    | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded`                  | `chat_id` |
 
-3단계 `client_storyCreate_completed`에서 발급된 `chat_id`로 4~5단계를 연결합니다.
+완성과 채팅 생성이 분리돼 3단계에는 `chat_id`가 없습니다. 3~4단계는 `device_id` 순차 기준으로 근사하고, 4단계 `chat_id`로 5단계를 연결합니다.
 
 ### 6-5-4. 핵심 지표
 
