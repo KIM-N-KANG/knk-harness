@@ -125,6 +125,7 @@
 | AUTH-SESSION-08 | P1  | 같은 계정, 다른 브라우저·기기                                                | 로그인                                         | 같은 서재(서버 정본 스토리·채팅 목록)가 보임                                                                                                                        | 수동                                                             | US-9-4, FE-SCREEN-008 검수 기준  |
 | AUTH-SESSION-09 | P2  | 게스트                                                                       | API 호출을 백엔드 로그로 관찰                  | `Authorization` 없이 익명으로 통과하고 게스트 기능이 정상 동작                                                                                                      | 수동                                                             | §3-1-7 BFF 프록시                  |
 | AUTH-SESSION-10 | P1 | HTTPS 개발 환경, BFF 토큰 없이 값이 있는 `__Secure-authjs.session-token` 또는 청크만 잔존 | 공개 스토리 상세 조회 → 만료 응답 → 재조회 | 첫 401의 삭제 응답에 Secure가 포함되어 잔여 세션 쿠키가 제거됨. 이후 게스트 조회는 정상이며 401이 반복되지 않음. HTTP 로컬의 일반 세션 쿠키도 정상 삭제 | ◐ 단위 `token-cookies.test.ts`(삭제 속성), 실제 쿠키 삭제는 수동 | [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff), AUTH-SESSION-06 |
+| AUTH-SESSION-11 | P1 | 회원, 만료 전 access 토큰을 백엔드가 401로 거절(다른 기기에서 탈퇴·로그아웃해 refresh family 폐기 — 서버 모킹 필요) | 임의 API 호출 | 프록시가 강제 재발급 1회 시도. 재발급 4xx면 AUTH-SESSION-04와 동일한 만료 처리(백엔드 401을 통과시키지 않음). 재발급 성공(서버 모킹)이면 새 토큰으로 같은 요청을 재시도해 정상 응답. 게스트 요청의 401은 그대로 통과 | ◐ 단위 `api-proxy-route.test.ts`(재시도·만료·게스트 분기), 실기 확인은 수동 | [웹 세션 구조](../design/1-1-web-design.md#토큰-세션-bff), KNK-1357 |
 
 ## AUTH-MIGRATE — 게스트 데이터 자동 이관
 
