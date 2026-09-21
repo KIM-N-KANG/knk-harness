@@ -77,7 +77,7 @@
 
 ### 공통 규칙
 
-- 모든 비즈니스 API는 `/api/v1` prefix를 사용합니다.
+- 공개 비즈니스 API는 `/api/v1` prefix를 사용합니다. 계획 단계의 [알림 서비스 내부 API](#알림-서비스-계약)는 `/internal`로 시작하는 전체 경로를 표기하며 `/api/v1`을 붙이지 않습니다.
 - 요청·응답 JSON 필드는 camelCase입니다([`0-glossary.md §0-4`](0-glossary.md)).
 - 시각 필드(`createdAt`, `updatedAt`)는 ISO 8601 UTC 문자열입니다.
 - 문자 수 제약("N자")은 UTF-16 code unit(Java `String.length`, Bean Validation `@Size` 기준)으로 판정합니다. 이모지·서로게이트 페어는 2로 셉니다.
@@ -98,6 +98,8 @@
 - 해시 방식과 AI 서버로의 전달 규칙은 [§4-7](#4-7-운영과-관측)에 정의합니다.
 
 ### 엔드포인트 카탈로그
+
+`내부` 행은 알림 서비스 분리 계획이며 구현 전입니다. 공개 ALB에서 라우팅하지 않습니다.
 
 | 도메인 | 메서드·경로 | 설명 | 성공 | 주요 실패 | 인증 |
 | --- | --- | --- | --- | --- | --- |
@@ -170,6 +172,9 @@
 | 이프 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 |
 | 이프 | `GET /users/me/invite` | 내 초대 코드·보상 진행 조회 | 200 | 401 | 필수 |
 | 이프 | `POST /users/me/invite/redeem` | 초대 코드 입력·양측 보상 적립 | 200 | 400·401·404·409 | 필수 |
+| 내부 | `GET /internal/users/{publicId}/push-eligibility` | 발송 직전 자격과 토큰 조회(계획, 구현 전) | 200 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
+| 내부 | `DELETE /internal/push-tokens` | 무효 토큰 삭제, 본문 `token`(계획, 구현 전) | 204 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
+| 내부 | `GET /internal/push/attendance-candidates` | KST 날짜별 출석 미수령 회원 publicId 페이지(계획, 구현 전) | 200 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
 
 인증 열의 `선택`은 익명을 허용하되 유효한 access 토큰이 오면 `user_id`를 귀속하는 엔드포인트입니다([§4-5](#4-5-인증과-권한)).
 
@@ -695,6 +700,17 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **수신 동의·야간 제한**은 시나리오 계약(KNK-1129 정책 결정, KNK-1132 동의 API)에서 정합니다. 정보성 알림(스토리 완성·검수 완료)은 동의 없이, 광고성(프로모션·출석 리마인드)은 사전 동의·야간 별도 동의·`(광고)` 표기가 필요합니다(정보통신망법 제50조). 광고성 발송에 FCM 토픽은 쓰지 않습니다: 서버가 수신자 명단을 알아야 동의 증빙이 가능합니다.
 
 
+<a id="실행-주체-전환"></a>
+
+##### 실행 주체 전환 (Phase 4 · 계획)
+
+구현 전 계약입니다. `push` 모듈의 **발송 실행만** `manyak-notification` 알림 서비스로 옮기고, 서버는 발송 요청을 담당합니다([BE-047](../adr/2-backend-server-adr.md#be-047)). 토큰 등록 API, 동의 API, `users`의 동의 컬럼과 `device_push_tokens`, `push_campaigns`, `push_message_templates` 테이블은 서버가 계속 소유합니다. 알림 서비스는 발송 직전에 서버 내부 API로 자격과 토큰을 받으며 회원 데이터와 동의를 복제하지 않습니다. 소비자 멱등 기록 외에는 상태를 최소화합니다.
+
+- **전환 순서.** 동기 HTTP 발송기 검증 → 큐 전환 → 서버 로컬 발송 경로 제거입니다. 전환 중에는 기존 코드를 롤백용으로 보존하고 `manyak.push.mode=local|remote`로 발송 주체를 하나만 켭니다. 기본값은 `local`이며, `remote`는 해당 전환 단계의 원격 경로만 사용합니다. 같은 요청을 로컬과 원격에 동시에 보내지 않습니다.
+- **기존 계약 유지.** 플랫폼별 메시지 구성, 우선순위와 TTL, 수신자 `recipientId`, 무효 토큰 정리, 사용자 요청으로 발송 실패를 전파하지 않는 격리, `manyak.push.send.result{outcome=success|unregistered|failure}` 이름과 사전 등록을 유지합니다. `@Deprecated` 표기만으로 실행을 차단하지 않으며 모드 설정으로 분기합니다.
+- **실패 처리 경계.** 위의 명시적 재시도 없음은 현행 로컬 발송 경로입니다. 큐 전환 후 소비자와 어댑터 사이에서는 [알림 서비스 계약](#알림-서비스-계약)의 결과와 재전달 규칙을 적용합니다. 소비자 실패가 원래 스토리 제작 응답을 실패로 바꾸지는 않습니다.
+- **자격 재확인.** 로컬, 동기 원격, 큐 소비의 모든 단계에서 회원 상태와 종류별 수신 동의를 발송 직전에 다시 확인합니다. 요청 생성 시점의 동의나 토큰 스냅샷으로 대체하지 않습니다.
+
 <a id="푸시-수신-동의--phase-3--구현정책-knk-1129-확정-구현-knk-1132-v73"></a>
 
 #### 푸시 수신 동의
@@ -774,6 +790,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 스토리 완성 푸시
 
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
 회원이 간편 제작으로 스토리를 완성하면 제작자 기기에 서비스 알림을 보냅니다. 앱을 백그라운드로 보낸 채 기다리는 사용자를 위한 알림이며, 진실의 기준은 여전히 복귀 조회([§4-3-8](#4-3-api-계약) 백그라운드 복구)입니다.
 
 - **발행 지점.** 스토리 생성 요청 기록기(`StoryCreationRequestRecorder`)가 요청 행을 `COMPLETED`로 마킹하는 **그 트랜잭션 안**에서 이벤트를 발행하고, 리스너가 `AFTER_COMMIT`에서 받습니다. 스토리 저장 트랜잭션이 아니라 마킹 트랜잭션인 이유: 둘은 별개(`REQUIRES_NEW`)라 "저장은 됐지만 마킹이 실패해 `PENDING`으로 남은" 창에서 완료 알림이 먼저 나가면 안 됩니다. 발행 값(스토리 `publicId`·제목)은 방금 만든 응답 객체에서 꺼내며 저장된 `result_json`을 다시 읽지 않습니다.
@@ -786,6 +804,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 <a id="출석-리마인드-푸시--phase-3--구현knk-1116-v74"></a>
 
 #### 출석 리마인드 푸시
+
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
+스케줄러 이전 여부는 큐 전환 결과를 보고 판단합니다.
 
 당일 출석 보상([§4-3-7](#4-3-api-계약) `POST /users/me/credits/attendance`)을 아직 받지 않은 회원에게 하루 한 번 리마인드를 보냅니다. **광고성 알림**입니다(보상 수령 유도 = 재이용 유도, KNK-1129).
 
@@ -802,6 +824,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 프로모션 푸시
 
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
+스케줄러 이전 여부는 큐 전환 결과를 보고 판단합니다.
+
 운영자가 예약한 프로모션·공지 문구를 광고 동의 회원 전원에게 보냅니다. **광고성 알림**입니다. 2026-09-07 결정 기록입니다.
 
 - **트리거는 운영자 SQL 예약.** 관리자 API·화면은 두지 않습니다: 팀이 전원 개발자이고 서버에 관리자 역할 체계가 없습니다. `push_campaigns`([§4-4](#4-4-데이터-모델))에 `status = 'SCHEDULED'`, `scheduled_at`을 넣으면 예약이고, 집기 전 `status = 'CANCELED'`로 바꾸면 취소입니다. 문구는 캠페인 행의 `title`·`body`에 직접 둡니다(`push_message_templates`는 반복 알림용이라 쓰지 않음).
@@ -811,6 +837,99 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **이력은 캠페인 행이 전부입니다.** 회차가 끝나면 `status = 'SENT'`, `target_count`·`sent_count`·`skipped_count`·`started_at`·`finished_at`을 기록합니다. 회원별 발송 기록 테이블은 두지 않습니다. 발송 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 `promotion_push_sent{campaignId, targets, sent, skipped}`입니다.
 - **한도(`ponytail:`).** 회차 중간에 태스크가 죽으면 행이 `SENDING`으로 남고 재개 로직은 없습니다: 운영자가 새 행을 넣습니다(남은 회원만 골라 보낼 수 없어 일부 중복 가능, 캠페인 빈도가 낮아 수용). 회원별 빈도 캡도 두지 않습니다: 캠페인 수가 운영자 손에 있습니다. 예외로 회차가 끝나지 못한 경우는 `FAILED`로 기록합니다(예: 대상 조회 실패).
 - **결정 필요 없음.** 프로덕션 릴리스는 검수 트랙과 무관하며, 실기기 도달 확인은 Android 앱 Firebase 등록 뒤입니다.
+
+<a id="알림-서비스-계약"></a>
+
+#### 알림 서비스 계약 (Phase 4 · 계획)
+
+아래는 구현 전 계약입니다. 서버가 소유하는 회원 상태와 토큰을 내부 API로 조회하고, 알림 서비스가 FCM 발송을 실행합니다. 동기 HTTP 단계를 먼저 검증한 뒤 같은 발송 책임을 큐 소비로 연결합니다. 시나리오의 대상, 문구와 클라이언트 페이로드는 기존 절을 유지합니다.
+
+##### 서버 내부 API
+
+세 API의 제공자는 `manyak-server`, 호출자는 알림 서비스입니다. 경로는 `/api/v1`을 포함하지 않는 전체 경로입니다. 공개 ALB 라우팅에서 제외하고 서비스 간 인증을 적용합니다. 초기 인증은 공유 시크릿 헤더이며, 비밀값은 환경별로 주입합니다. 사용자 Bearer 토큰을 서비스 인증으로 대신하지 않습니다. 헤더 이름과 최종 인증 방식은 구현 시 확정합니다.
+
+| 엔드포인트 | 입력 | 응답과 판정 |
+| --- | --- | --- |
+| `GET /internal/users/{publicId}/push-eligibility?kind=SERVICE\|MARKETING&at=` | 회원 UUID `publicId`, 알림 종류 `kind`, 회원별 실제 발송 직전 시각 `at`(ISO 8601 UTC) | 200 `{ allowed, reason, tokens: [{ token, platform }] }`. `allowed`는 boolean, `reason`은 판정 사유, `platform`은 `ANDROID` 또는 `WEB`. 허용 시 최근 갱신 토큰 최대 10개 |
+| `DELETE /internal/push-tokens` | JSON 본문 `{ "token": "<FCM token>" }` | 204. `UNREGISTERED` 토큰 한 행만 정리하며 부재도 멱등 성공. 토큰을 URL에 싣지 않음 |
+| `GET /internal/push/attendance-candidates?date=&cursor=` | `date`는 KST 날짜 `YYYY-MM-DD`, `cursor`는 다음 페이지 조회용이며 첫 요청에서 생략 | 200. 회원 publicId 페이지와 다음 커서. 기존 출석 미수령 후보 판정 유지. 내부 순차 PK와 보상 신원은 응답에 노출하지 않음 |
+
+- **자격 판정.** 회원 부재, 정지 또는 탈퇴는 허용하지 않습니다. `ACTIVE` 회원만 종류별 동의를 판정합니다. `SERVICE`는 `service_push_enabled`, `MARKETING`은 광고 동의와 `at` 기준 KST 야간 동의를 확인합니다([푸시 수신 동의](#푸시-수신-동의)). 거절 시 `allowed=false`이며 토큰을 반환하지 않습니다. 후보 조회 결과는 발송 허가가 아닙니다.
+- **조회 실패.** 인증 또는 통신 실패를 `allowed=true`나 과거 허가로 대체하지 않습니다. 동기 단계에서는 미발송 결과를 남기고, 큐 단계에서는 만료 전 `RETRY`, 만료 후 `DISCARD`로 처리합니다. 재시도 때도 새 시각으로 자격을 조회합니다.
+- `reason`의 코드 목록, 후보 페이지 DTO와 커서 인코딩, 내부 API 오류 응답의 세부 코드는 구현 시 확정합니다. 후보 조회는 기존 보상 신원의 당일 출석 미수령 조건을 서버 안에서 판정합니다.
+
+##### 알림 서비스 동기 API
+
+| 엔드포인트 | 요청 | 결과 |
+| --- | --- | --- |
+| `POST /internal/notifications` | JSON `recipientId`(회원 publicId UUID), `kind`, `type`, `data` 필수. `expiresAt` 선택 | 발송 직전 자격 조회 후 기기별 발송 결과 요약. 자격 거절 또는 만료면 미발송. 응답 DTO와 HTTP 상태 코드 상세는 동기 발송기 구현 시 확정 |
+
+- 이 경로도 공개 ALB 라우팅에서 제외하고 공유 시크릿 헤더로 서비스 간 인증을 적용합니다.
+- 서버의 도메인 커밋 뒤 비동기 리스너에서 호출합니다. HTTP 통신은 동기여도 스토리 제작 요청 스레드와 실패 격리는 유지합니다. HTTP 실패 시 로컬 발송기로 중복 폴백하지 않습니다.
+- `kind`, `type`, `data`, `expiresAt`의 의미는 아래 메시지 스키마와 같습니다. 상관 헤더는 [§4-7](#상관관계-식별자)의 요청, 세션, 기기 해시 전달 관례를 따르며 원본 기기 ID는 보내지 않습니다.
+
+##### 큐 메시지 스키마
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `messageId` | string | 예 | 시나리오별 멱등키. 최초 요청에서 정하고 릴레이 재발행, 브로커 재전달 때 바꾸지 않음 |
+| `recipientId` | string(UUID) | 예 | 수신 회원 `publicId`. 서버 내부 순차 PK 사용 금지 |
+| `kind` | string enum | 예 | `SERVICE` 또는 `MARKETING` |
+| `type` | string enum | 예 | `STORY_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`. 기존 시나리오의 FCM `data.type`과 일치 |
+| `data` | `object<string, string>` | 예 | 기존 시나리오 페이로드. 값은 모두 문자열이며 동의와 토큰을 포함하지 않음 |
+| `expiresAt` | string(ISO 8601 UTC) | 아니오 | 발송 가능 기한. 현재 시각이 기한에 도달했거나 지났으면 폐기. 미지정은 메시지 자체 만료 없음 |
+| `requestId` | string | 예 | 발행 원인의 상관 ID. 재전달 때 유지하며 HTTP 요청 상관 ID와 연결 |
+| `sessionId` | string | 예 | 원인 세션의 상관 ID. 세션 없는 스케줄러 등은 기존 관측 규칙에 따라 `unknown` |
+| `schemaVersion` | integer | 예 | 최초 스키마는 `1`. 생산자와 소비자가 같은 필드 의미를 해석하기 위한 버전 |
+
+- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
+- 동의, 동의 시각, FCM 토큰과 원본 기기 ID를 큐 메시지에 싣지 않습니다. `requestId`와 `sessionId`는 관측용이며 동의나 발송 허가를 대신하지 않습니다. 원인 HTTP 요청이 없는 작업은 발행 작업의 상관 ID를 부여하고 재전달 때 유지합니다.
+- 출석 메시지는 해당 KST 날짜의 다음 날 00:00을 `expiresAt`으로 표현합니다. 소비 시 만료를 확인하고 Android TTL은 발송 시점부터 남은 시간으로 계산합니다. 웹의 기존 메시지 구성은 바꾸지 않습니다. 스토리 완성과 프로모션은 기존 기본값대로 만료 시각을 지정하지 않습니다.
+
+| 시나리오 | `messageId` 규칙 | 식별자 근거 |
+| --- | --- | --- |
+| 스토리 완성 | `story-completed:{requestId}` | 이 자리의 `requestId`는 스토리 완성 요청 본문의 UUID인 도메인 멱등키. 메시지의 관측용 `requestId`와 구분 |
+| 출석 리마인드 | `attendance:{userPublicId}:{KST 날짜}` | 회원 publicId와 `YYYY-MM-DD`. 원장의 내부 보상 신원 키와 구분 |
+| 프로모션 | `promotion:{campaignId}:{userPublicId}` | 캠페인 publicId와 회원 publicId |
+
+##### 발행 포트와 아웃박스
+
+- 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
+- 큐 단계에서 서버는 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호와 물리 컬럼 상세는 구현 시 확정합니다.
+- 릴레이는 `FOR UPDATE SKIP LOCKED`로 미발행 행을 선점하고, 전송은 도메인 트랜잭션 밖에서 수행합니다. 선점 이후 복구 가능한 상태를 남기고 브로커 발행 성공 뒤 발행 완료를 기록합니다. 브로커 장애 시 미발행 요청을 보존해 복구 후 재발행합니다.
+- 전송 성공과 발행 완료 기록 사이 장애로 릴레이가 중복 발행할 수 있습니다. 두 브로커 모두 소비자 멱등 처리를 전제로 하며, 도메인 커밋 후 외부 전송만 하는 방식으로 아웃박스를 대체하지 않습니다.
+
+##### 소비 순서와 멱등 기록
+
+1. `messageId`로 `processed_messages`를 확인합니다. 이미 완료한 메시지는 재발송하지 않습니다. 동시 소비도 같은 키로 선점해 중복 실행을 제어합니다.
+2. `expiresAt`을 확인합니다. 기한이 지났으면 `DISCARD`로 완료 기록을 남깁니다.
+3. 서버 내부 API로 현재 상태, 종류별 동의와 토큰을 다시 조회합니다. `at`에는 예약 시각이나 회차 시작 시각이 아닌 수신 회원의 실제 발송 직전 시각을 넣습니다. 자격 거절과 토큰 없음은 미발송 `DISCARD`입니다.
+4. 허용된 기기에 기존 플랫폼별 구성으로 FCM을 발송합니다. 다른 회원으로 바뀐 토큰을 메시지에 저장해 재사용하지 않습니다.
+5. 기기별 결과를 반영해 `SUCCESS`, `RETRY`, `DISCARD`를 반환합니다. 재시도할 기기가 남으면 `RETRY`, 재시도 대상 없이 발송 성공이 있으면 `SUCCESS`, 모두 미발송 또는 영구 실패이면 `DISCARD`입니다. `SUCCESS`와 `DISCARD`는 완료 기록 후 ack 대상이며 `RETRY`를 처리 완료로 기록하지 않습니다.
+
+`processed_messages`는 알림 서비스 저장소의 멱등 테이블이며 보존 TTL은 7일입니다. `messageId`와 처리 시각을 기준으로 완료 결과를 보존합니다. 만료 또는 자격 거절로 폐기한 메시지도 완료로 기록해 재전달을 막습니다. 7일 뒤에는 같은 키의 처리 이력이 남아 있다고 가정하지 않습니다.
+
+FCM 호출과 DB 완료 기록은 원자적이지 않습니다. 발송 성공 직후 완료 기록 전 장애, 여러 기기 중 일부 성공 후 재시도에는 중복 발송 가능성이 남습니다. 메시지 멱등성만으로 FCM의 정확히 한 번 도달을 보장하지 않으며, 기기별 부분 성공의 재개 방식은 소비자 구현에서 검증합니다.
+
+##### FCM 결과와 브로커별 재전달
+
+Admin SDK 내부 재시도에 맡기고 애플리케이션은 같은 SDK 호출에 즉시 재시도 루프를 겹치지 않습니다. 아래는 SDK 호출의 최종 결과에 적용하는 규칙입니다.
+
+| 결과 | 소비 판단 | 후속 처리 |
+| --- | --- | --- |
+| 발송 성공 | `SUCCESS` | 완료 기록과 ack |
+| SDK 내부 재시도 후 일시 오류 최종 실패 또는 429 | `RETRY` | 브로커 어댑터에 재전달 위임. 매 재전달마다 만료와 자격 재확인 |
+| 400, 401, 403, 404 | `DISCARD` | 영구 오류를 반복 발송하지 않고 로그와 메트릭 기록 |
+| `UNREGISTERED` | 해당 토큰 `DISCARD` | 서버 내부 삭제 API 호출 후 다음 기기 계속. 정리 실패도 다른 기기 발송을 막지 않음 |
+| `INVALID_ARGUMENT` | `DISCARD` | 페이로드 오류일 수 있으므로 토큰 삭제 금지 |
+| 만료 또는 자격 거절 | `DISCARD` | 발송 없이 완료 기록과 ack |
+
+| 브로커 | 결과 반영과 재시도 | DLQ |
+| --- | --- | --- |
+| dev/prod SQS 표준 큐 | 가시성 60초. `SUCCESS`와 `DISCARD`는 삭제 ack, `RETRY`는 삭제하지 않아 재전달. SDK 처리 중 가시성 만료로 중복 소비되지 않도록 처리 시간과 연장 검증 | `RedrivePolicy.maxReceiveCount=5`로 DLQ 이동 |
+| 로컬 Kafka | `SUCCESS`와 `DISCARD`는 오프셋 커밋. `RETRY`는 재시도 토픽에 안전하게 재발행한 뒤 원본 오프셋 커밋. 재시도 또는 DLQ 발행 실패 시 원본 오프셋을 커밋하지 않음 | 재시도 토픽과 DLQ 토픽을 직접 구성. 재시도 상한과 백오프 방식은 구현 시 결정 |
+
+푸시는 부가 기능이며 사용자에게 보이는 진실의 기준은 복귀 조회입니다. 알림 서비스나 브로커가 내려가도 이미 커밋된 스토리 제작 결과를 실패로 되돌리지 않습니다. 큐 단계에서는 아웃박스와 큐에 남은 요청을 복구 후 소비하되, 복구 시점의 만료와 철회된 동의를 다시 확인합니다. 출석 리마인드와 프로모션 스케줄러의 이전 여부는 큐 전환 결과를 보고 판단합니다.
 
 <a id="4-3-6-로어북--phase-1--구현"></a>
 
@@ -1826,6 +1945,15 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_TERMS_VERSION` | `manyak.legal.terms-version` | 회원 이용약관의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
+
+알림 서비스 분리용 설정은 **계획이며 구현 전**입니다. 기본 모드는 `local`이며 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
+
+| 환경 변수 | 설정 키 | 값 |
+| --- | --- | --- |
+| `MANYAK_PUSH_MODE` | `manyak.push.mode` | 기본 `local`, 허용값 `local` 또는 `remote` |
+| `MANYAK_NOTIFICATION_BASE_URL` | `manyak.notification.base-url` | 미정. 동기 원격 발송기의 내부 주소 |
+| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 미정. dev/prod SQS 표준 큐 URL, 로컬 Kafka에는 사용하지 않음 |
+| `MANYAK_NOTIFICATION_SHARED_SECRET` | `manyak.notification.shared-secret` | 미정. 양쪽 내부 API 호출 인증용 비밀값, 코드와 문서에 실제 값 기록 금지 |
 
 ### 헬스체크·API 문서·배포
 
