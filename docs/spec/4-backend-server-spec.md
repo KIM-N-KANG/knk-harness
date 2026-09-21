@@ -111,6 +111,7 @@
 | 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 |
 | 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 |
 | 스토리 | `POST /stories/{storyId}/images/presign` | 이미지 업로드용 presigned PUT 발급(표지·인물) | 201 | 400·401·403·404 | 필수 |
+| 스토리 | `POST /stories/images/presign` | 등록 전 이미지 업로드용 presigned PUT 발급(draft 키) | 201 | 400·401·403 | 필수 |
 | 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드·생성 표지 제거(프리셋 폴백, 멱등) | 204 | 401·403·404 | 필수 |
 | 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 인물 이미지 연결(업로드 완료 객체 + 이름) | 201 | 400·401·403·404·409 | 필수 |
 | 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) | 204 | 401·403·404 | 필수 |
@@ -243,7 +244,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `reachedEndings` | string[] | 요청자가 이 스토리에서 도달한 엔딩 **이름** 목록(엔딩은 이름으로 식별). 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
 | `isOwner` | boolean | (KNK-1016·1018, 2026-08-29) 요청 회원이 이 스토리의 소유자인지. 와이어 필드명은 `@JsonProperty("isOwner")`로 고정(springdoc이 `owner`로 문서화하는 문제 차단). 서버가 요청자 `user_id`와 `stories.user_id`를 비교해 판단하며(클라이언트 id 비교 없음: `author.id`가 null이라 클라이언트는 판단 불가), 게스트·미인증은 false. 용도는 상세 헤더 메뉴(수정·삭제 등) 노출 판단 |
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
-| `characters` | object[] | 등장인물 `{name, imageUrl}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·일반 제작)는 빈 배열입니다 |
+| `characters` | object[] | 등장인물 `{name, imageUrl}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
 
 - `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
 - **인물 목록**: 상세의 `characters[]`에는 이름과 이미지만 싣고 공개 식별자와 외형 필드는 제외합니다. 인물별 설명은 저장하지 않습니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환합니다.
@@ -1052,7 +1053,7 @@ graph TD
 
 [결정 근거 BE-013](../adr/2-backend-server-adr.md#be-013)
 
-등록 요청에 이미지 필드는 없습니다. 등록 시점의 표지·배경은 팀 제작 자산(자동 연결)이고 인물 이미지는 컴파일 산출물입니다([§4-3-9](#4-3-api-계약)). 등록 **이후** 표지·인물 이미지는 사용자가 직접 올리고 지울 수 있습니다([아래 스토리 이미지 업로드](#4-3-api-계약)).
+등록 요청은 **표지 1장과 인물별 이미지**를 함께 받습니다(2026-09-22 결정). 스토리가 아직 없는 시점이므로 등록 **전에** `POST /stories/images/presign`으로 draft 키를 발급받아 올린 뒤 그 키를 요청에 싣습니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 배경은 지금도 팀 제작 자산 자동 연결입니다([§4-3-9](#4-3-api-계약)). 등록 이후의 추가·교체·삭제는 같은 절의 업로드 API가 담당합니다. 이미지 필드는 **회원만** 쓸 수 있습니다: 소유자가 없으면 올린 이미지의 책임 주체가 없기 때문이며, 미인증 요청이 이미지 필드를 보내면 400입니다(인물 이름만 보내는 것은 게스트도 허용).
 
 일반 제작이 저장한 주요 사건·엔딩이 채팅 턴, 선택지, 엔딩 판정으로 실제 반영되는 계약은 [§4-3-10](#4-3-api-계약)이 정의합니다. 이미지의 런타임 반영(썸네일·채팅 이미지 표시)은 [§4-3-9](#4-3-api-계약)가 정의합니다. 이 절은 **편집 폼의 저장·왕복 계약**을 정의합니다.
 
@@ -1069,6 +1070,8 @@ graph TD
 | ↳ `startSettings[].endings` | 시작 설정당 0~10개 | 엔딩 `{name, requirement{minTurns, achievementCondition}, epilogue}`: 타입 없이 이름으로 식별(이름은 시작 설정 내 유니크, 중복 400). `name` 100자, `minTurns` ≥ 0, `achievementCondition`·`epilogue` NotBlank. 도달 판정 계약은 [§4-3-10](#4-3-api-계약) |
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`(스토리 범위): `name` 100자, `description`·`keySentence` NotBlank, 이름은 스토리 내 유니크. 채팅 런타임 의미는 [§4-3-10](#4-3-api-계약) |
 | `visibility` | 선택, 기본 `PRIVATE`. **게스트는 `PRIVATE`만** | 공개 범위(`PUBLIC` · `PRIVATE`). 기본값이 PRIVATE인 이유: 제작자가 명시적으로 공개하기 전까지 타인에게 노출되지 않는 것이 안전하기 때문입니다. 회원 소유 스토리의 읽기 게이팅에 즉시 적용됩니다(읽기 가시성: [§4-3-1](#4-3-api-계약)·[§4-5](#4-5-인증과-권한)). **미인증(게스트) 요청이 `PUBLIC`을 지정하면 400**이고 바디 `code`는 `GUEST_CANNOT_PUBLISH`입니다([아래 게스트 공개 제한](#게스트는-public을-지정할-수-없습니다--phase-2--구현knk-149)) |
+| `thumbnailObjectKey` | 선택, **회원만** | 등록 전에 올린 표지의 객체 키(아래 draft presign 응답의 `objectKey`). 검증을 통과하면 `stories.thumbnail_image_url`에 서빙 URL로 굳히며, 노출은 생성 표지와 같은 폴백 규칙을 탑니다([§4-3-9](#4-3-api-계약)). 프리셋 자동 연결(`thumbnail_image_key`)도 함께 저장해 표지를 지우면 폴백이 남습니다 |
+| `characters` | 최대 6명, 선택 | 인물 `{name, images[]}`: `name`은 100자이며 스토리 내 유니크(중복 400). `images[]`는 인물당 최대 10장이고 각 항목은 `{objectKey, imageName}`입니다. `imageName` 형식(`{인물이름}_{접미}`)과 인물당 상한은 등록 후 추가 경로와 같은 규칙입니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 이미지가 있으면 **회원만**이고, 이름만 보내면 게스트도 인물 행을 만들 수 있습니다(이관 뒤 이미지를 붙일 자리). 외형 필드는 받지 않습니다: 컴파일 산출물이며 일반 제작의 인물 묘사는 `storySettings.characterSetting`이 담습니다. 상한 6명은 간편 제작(주인공 1 + 주변 인물 5)과 같은 값입니다 |
 
 - 응답 201: 간편 제작과 동일한 `{id, title, oneLineIntro, description, genres, startSettings[]}`(각 시작 설정에 `suggestedInputs`·`endings` 포함: 복수화). 생성 직후 상세 조회와 채팅 시작의 **기본 메타·스토리 설정·시작 설정**은 제작 방식과 무관하게 동작해야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약)을 따릅니다.
 - 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩 필드는 저장·편집 왕복만 보장합니다(런타임 반영은 [§4-3-10](#4-3-api-계약)).
@@ -1117,17 +1120,19 @@ graph TD
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
 | `POST /stories/{storyId}/images/presign` | `{ "kind": "COVER" \| "CHARACTER", "contentType": "image/jpeg" \| "image/png" \| "image/webp", "contentLength": number(1~5,242,880) }` | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
+| `POST /stories/images/presign` | 위와 같음(스토리 없이 발급: 등록 전 업로드) | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
 | `PATCH /stories/{storyId}` | `{ "thumbnailObjectKey": string }`(위 표지 교체) | 200 편집 폼 |
 | `DELETE /stories/{storyId}/thumbnail` | 없음 | 204: 업로드·생성 표지 URL을 지우고 상태를 `APPROVED`로 되돌려 프리셋 폴백으로 내림. 없어도 204 |
 | `POST /stories/{storyId}/characters/{characterId}/images` | `{ "objectKey": string, "imageName": string }` | 201 `{ "id": uuid, "imageName": string, "imageUrl": string, "moderationStatus": string }` |
 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 없음 | 204: 없어도 204 |
 
 - **클라이언트가 S3에 직접 올립니다(presigned PUT).** 서버를 거치지 않는 이유는 파일이 서버 메모리·대역폭을 지날 이유가 없기 때문입니다. presign은 `Content-Type`과 `Content-Length`를 서명에 고정하므로 클라이언트는 요청한 값 그대로 PUT해야 합니다. 객체 키는 서버가 정합니다: `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}` · `characters/uploaded/{storyPublicId}/{uuid}.{ext}`. 표지가 `thumbnails/` 아래인 이유는 웹이 원격 이미지를 `cdn.manyak.app/thumbnails/**`만 허용하기 때문입니다([§4-3-9](#4-3-api-계약)). 만료 10분.
+- **등록 전 업로드는 draft 키를 씁니다.** 일반 제작은 폼 제출 한 번으로 이미지까지 등록하는데 그 시점에는 스토리가 없습니다([§4-3-8 일반 제작 등록](#4-3-api-계약)). 그래서 `POST /stories/images/presign`은 스토리 대신 **요청자**를 소유 스코프로 삼아 `thumbnails/uploaded/drafts/{userPublicId}/{uuid}.{ext}` · `characters/uploaded/drafts/{userPublicId}/{uuid}.{ext}`를 발급합니다. 인증 필수(미인증 401·정지 403)이며 형식·크기·만료 규칙은 스토리 스코프 발급과 같습니다. 등록 요청은 키가 **요청자의** draft prefix 아래인지 먼저 확인한 뒤 같은 `HEAD` 검증을 거칩니다(남의 draft 키는 400). 객체는 등록 뒤에도 draft 경로에 그대로 둡니다: 저장하는 값이 절대 URL이라 옮길 이유가 없고, 옮기면 그 URL을 가리키는 기록이 깨집니다. 기존 `thumbnails/uploaded/*`·`characters/uploaded/*` 권한·CORS 범위 안이라 인프라 변경은 없습니다.
 - **연결 시 서버가 검증합니다.** `thumbnailObjectKey`·`objectKey`는 이 스토리의 업로드 prefix 아래여야 하고(다른 스토리·프리셋 키는 400), 서버가 `HEAD`로 객체 존재·`Content-Length`(5MB 이하)·`Content-Type`(3종)을 확인합니다. 객체가 없으면 400이고 바디 `code`는 `UPLOAD_NOT_FOUND`(클라이언트가 PUT 완료 뒤 다시 부르면 됨). 픽셀 크기·비율은 검증하지 않습니다: 변환 없이 원본을 저장하므로 비율 크롭(표지 3:4)은 클라이언트 몫입니다.
 - **인물 이미지 이름은 필수이며 형식을 강제합니다.** `{인물이름}_{접미}`: 접미는 1~20자 한글·영문·숫자, 같은 인물 안에서 유일(위반 400, 중복 409 `CONFLICT`). 접미는 표정·상황·감정입니다(`세린_기본`, `세린_웃음`, `세린_분노`). 컴파일이 만든 첫 장은 `{인물이름}_기본`입니다. AI가 대사 문맥으로 여러 장 중 하나를 고르는 것은 AI 서버 몫이며, 그 전까지 AI는 같은 이름의 마지막 항목 한 장만 씁니다. **인물당 상한 10장.**
 - **채팅 요청에는 인물별 전부를 실어 보냅니다.** 채팅 요청 `character_images[]`는 `story_character_images` 전체를 `{name, image_name, image_url}`로 싣습니다(같은 `name`의 항목이 여러 개: [§4-3-9](#4-3-api-계약) 채팅 인물 이미지 전달). 상세 응답 `characters[].imageUrl`은 `_기본` 이미지, 없으면 첫 장입니다.
 - **삭제·교체는 DB 참조만 지웁니다. S3 객체는 남깁니다.** 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리키고 있어 지우면 옛 대화가 깨집니다. 객체 키가 uuid라 재사용 충돌이 없고 저장 비용은 무시할 수준입니다. 연결되지 않은 고아 객체(PUT 뒤 연결 안 함)도 같은 이유로 방치합니다: 쌓이면 lifecycle 규칙으로 정리합니다.
-- **권한.** 네 경로 모두 인증 필수라 미인증은 **401**입니다(좋아요·신고와 같은 결). 회원 소유 스토리만이며 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물이 없으면 404(존재 비노출을 위해 403보다 먼저 판정). 삭제 대상 이미지·표지가 없는 것은 멱등 삭제 계약대로 204입니다. 정지 계정은 403.
+- **권한.** 다섯 경로 모두 인증 필수라 미인증은 **401**입니다(좋아요·신고와 같은 결). 스토리 스코프 네 경로는 회원 소유 스토리만이며 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물이 없으면 404(존재 비노출을 위해 403보다 먼저 판정). 삭제 대상 이미지·표지가 없는 것은 멱등 삭제 계약대로 204입니다. 정지 계정은 403.
 - **저장소 미설정 시 503.** 버킷·base URL 설정(`manyak.asset.character-image.*`)이 비어 있으면 presign은 503("이미지 업로드가 설정되지 않았습니다.")입니다. 생성 이미지처럼 건너뛸 수 없는 기능이라 로컬·미구성 환경에서 명시적으로 실패합니다.
 - **이미지 검수**
   - 인물 이미지와 표지에는 `APPROVED`·`PENDING`·`REJECTED` 상태를 저장합니다.
@@ -1547,6 +1552,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
 | 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 막지 않음(클라이언트 게이트)([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
 | 스토리 이미지 업로드(`POST /stories/{storyId}/images/presign` · `PATCH` `thumbnailObjectKey` · `DELETE …/thumbnail` · `POST·DELETE …/characters/{characterId}/images`) | **회원 소유 스토리만**(게스트 소유는 400). 소유자만, 타인·익명 403. 정지 계정 403([§4-3-8](#4-3-api-계약)) |
+| 등록 전 이미지 업로드(`POST /stories/images/presign`) | **회원만**(미인증 401·정지 403). 키가 요청자의 draft prefix 아래인지로 소유를 가르며, 일반 제작 등록이 같은 규칙으로 재검증합니다([§4-3-8](#4-3-api-계약)) |
 | 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)): 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
@@ -1907,7 +1913,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 게스트 한도: 디바이스 ID별 스토리라인 생성·재생성 5회, 스토리 생성 1회, 모든 채팅방 합산 채팅 턴(재생성 포함) 5회 초과 요청은 402를 반환하고 AI 호출이 시작되지 않아야 합니다. 실패한 요청은 예약한 게스트 카운터를 복원해야 합니다. 축소 적용 시 기존 카운터는 리셋하지 않아야 합니다.
 - 회원 체험 시드 운영 보정: 잘못 소진 시드된 테스트 계정에서 `member_trial_seeded_at`을 유지한 채 두 회원 카운터를 CAS로 삭제·조정하면 의도한 잔여만 복구돼야 합니다. 보정 중 카운터가 바뀌면 스크립트는 아무 값도 덮어쓰지 않고 실패해야 합니다.
 - 이프: 동시 턴 요청 2건이 잔액 20 이프만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
-- 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 이프가 소모되지 않아야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약) 기준으로 검수합니다(이미지는 [§4-3-9](#4-3-api-계약) 기준). 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다.
+- 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 이프가 소모되지 않아야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약) 기준으로 검수합니다(이미지는 [§4-3-9](#4-3-api-계약) 기준). 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다. 이미지를 함께 보낸 등록은 표지와 인물 이미지가 수정 폼·상세에 그대로 보여야 하고, 미인증 요청의 이미지 필드·남의 draft 키·업로드하지 않은 키는 400이어야 합니다([§4-3-8](#4-3-api-계약)).
 - 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
 - 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이전 출력은 버전 이력으로 보존되고 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 이프가 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
 - 이미지 시드: 매니페스트의 `imageKey`가 `[a-z0-9_]{1,64}` 형식·유니크여야 하고, `genres[]` 값이 GENRE 마스터 태그명과 하나라도 불일치하면 시드가 실패해야 합니다(조용한 매칭 0건 금지). 등재된 키의 서빙 URL(`{base}/{prefix}/{imageKey}.png`)이 실제 S3 객체와 일치해야 합니다.
