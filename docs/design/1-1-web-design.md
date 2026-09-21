@@ -67,6 +67,8 @@ graph LR
 
 [use-created-stories](../../../manyak-web/src/features/studio/menu/hooks/use-created-stories.ts)는 게스트의 ID 목록 변경 시 `placeholderData`로 이전 카드를 유지하며 현재 ID에 없는 카드는 제외합니다. 새 스토리 배치 조회가 기존 목록을 스켈레톤으로 바꾸지 않고 낙관 삭제도 유지합니다.
 
+로컬 ID 목록에는 세션이 `unauthenticated`로 확정됐을 때만 씁니다. `authenticated`와 세션 판정 전(`loading`)은 회원 목록 무효화만 합니다. 제작 탭의 완성 폴링은 세션 판정을 기다리지 않아 `loading` 중에도 완성이 도착할 수 있는데, 이를 게스트로 취급하면 회원의 스토리 ID가 로컬에 남아 로그아웃 뒤 게스트 서재에 노출됩니다([creation-side-effects](../../../manyak-web/src/features/stories/_shared/utils/creation-side-effects.ts)).
+
 웹 채팅 목록 변환은 `lastStoryPreview=null`을 제외합니다. 빈 문자열은 안내 문구로 표시하며 제목이 없는 삭제된 스토리의 채팅은 유지합니다. Android 목록에 이 필터를 적용하지 않습니다.
 
 ### 게스트 저장소 키 (웹)
@@ -273,8 +275,9 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 | 재발급 5xx·네트워크 오류 | 쿠키 유지. 기존 access가 있으면 best-effort 전달, 없으면 503 |
 | 토큰·세션 모두 없음 | 게스트 요청 |
 | access 없이 refresh만 남음 | 재발급 시도 |
+| 회원 요청에 백엔드가 401 응답 | 만료 전 access를 백엔드가 거절한 경우(다른 기기 탈퇴·로그아웃으로 family 폐기, 서버 키 회전 등). 강제 재발급 1회 후 새 access를 받았으면 버퍼링한 본문으로 같은 요청을 한 번 재시도한다. 재발급 4xx면 위 만료 처리(쿠키 정리, 401·만료 헤더). 일시 실패로 같은 access가 돌아오면 재시도 없이 백엔드 401을 그대로 통과시킨다. 게스트 요청의 401은 손대지 않는다 |
 
-로그아웃은 서버 실패에도 로컬 정리를 끝냅니다. 탈퇴는 204 이후 정리합니다. 토큰은 브라우저 JS·로그에 노출하지 않습니다.
+로그아웃은 서버 실패에도 로컬 정리를 끝냅니다. 탈퇴는 204 이후 정리합니다. 토큰은 브라우저 JS·로그에 노출하지 않습니다. 명시적 로그아웃·탈퇴·세션 만료 로그아웃의 브라우저 측 정리(분석 사용자 초기화, 탭 로그인 표시, 제작 복구·완성 요청·결제 확인 레코드)는 [clear-local-member-state](../../../manyak-web/src/features/auth/_shared/utils/clear-local-member-state.ts) 한 곳이 소유하고 세 호출처가 공유합니다. 필수 동의 전 로그아웃(`signOutBeforeConsent`)은 회원 데이터를 연 적이 없어 이 정리를 쓰지 않습니다.
 
 NextAuth 세션의 잔존 여부는 쿠키 이름뿐 아니라 비어 있지 않은 값으로 판정합니다. 로그아웃 뒤 빈 세션 쿠키나 빈 청크만 남고 BFF 토큰도 없으면 게스트로 처리합니다. 값이 있는 세션 쿠키나 청크가 남았을 때의 불일치 401 처리는 유지합니다.
 
