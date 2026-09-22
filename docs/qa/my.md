@@ -86,13 +86,13 @@
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
 | MY-NOTIFICATIONS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/notifications` | [웹 접근 조건](../spec/3-2-web-spec.md#라우팅-테이블) |
-| MY-NOTIFICATIONS-02 | P0 | 회원 | 마이 > 계정 > "알림 설정" 탭 | 뒤로가기 헤더 "알림 설정" + 브라우저 알림 상태 줄 + 서비스 알림(켜짐)·광고 알림(꺼짐) 스위치. 야간 줄 없음 | ✅ e2e `my/notifications` | 웹 PWA 푸시 알림 설정 화면 |
+| MY-NOTIFICATIONS-02 | P0 | 회원 | 마이 > 계정 > "알림 설정" 탭 | 뒤로가기 헤더 "알림 설정" + (브라우저 알림을 못 받으면) 상태 배너 + 서비스 알림(켜짐)·광고 알림(꺼짐) 스위치 줄(광고 라벨 옆 개인정보 처리방침 외부 링크 아이콘). 야간 줄 없음. 조회 중에는 스위치 자리에 골격 | ✅ e2e `my/notifications` | 웹 PWA 푸시 알림 설정 화면 |
 | MY-NOTIFICATIONS-03 | P0 | 회원, 광고 꺼짐 | 광고 알림 스위치 탭 | `PUT /users/me/push-settings`에 세 값 전체(`marketingPush: true`) 전송 → 처리 결과 다이얼로그(제목·"광고 알림 수신 동의 완료"·전송자·일시) → 닫으면 야간 광고 허용 줄 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시, §4-3-5 푸시 수신 동의 |
 | MY-NOTIFICATIONS-04 | P0 | 회원, 광고·야간 켜짐 | 광고 알림 스위치 탭 | 야간도 함께 `false`인 본문 전송, "광고 알림 수신 동의 철회 완료" 통지, 야간 줄 사라짐 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
 | MY-NOTIFICATIONS-05 | P1 | 회원 | 서비스 알림 스위치 탭 | 통지 없이 저장. 저장 5xx면 "알림 설정을 저장하지 못했어요" 토스트 + 스위치 원복 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
-| MY-NOTIFICATIONS-06 | P1 | 설정 조회 5xx | 진입 | "알림 설정을 불러오지 못했어요" + "다시 시도" 버튼. 재시도 성공 시 스위치 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
-| MY-NOTIFICATIONS-07 | P1 | 푸시 활성 빌드, 권한 `default` | 상태 줄 확인 → "알림 켜기" 탭 | "브라우저 알림이 꺼져 있어요" + 버튼. 허용하면 "켜져 있어요"로 바뀌고 토큰 PUT 발생, 거부하면 "차단되어 있어요" 토스트와 안내 | 수동(실기기) | 웹 PWA 푸시 |
-| MY-NOTIFICATIONS-08 | P1 | iOS Safari 탭(비설치본) | 상태 줄 확인 | 홈 화면 추가 안내 표시, 버튼 없음 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-06 | P1 | 설정 조회 5xx | 진입 | 목록 대신 "알림 설정을 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 스위치 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-07 | P1 | 푸시 활성 빌드, 권한 `default` | 배너 확인 → "알림 켜기" 탭 | 배너 "브라우저 알림 설정이 꺼져 있어요" + 버튼, 스위치 줄은 비활성. 허용하면 배너가 사라지고 줄이 활성으로 바뀌며 토큰 PUT 발생. 거부하면 "브라우저 알림이 차단되어 있어요" 토스트와 차단 배너 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-08 | P1 | iOS Safari 탭(비설치본) | 배너 확인 | 홈 화면 추가 안내 배너, 버튼 없음, 스위치 줄 비활성 | 수동(실기기) | 웹 PWA 푸시 |
 | MY-NOTIFICATIONS-09 | P2 | 회원, 광고 켜짐 | 야간 광고 허용 탭 | 야간만 `true`인 본문 전송, "야간 광고 알림 수신 동의 완료" 통지 | 수동 | 웹 PWA 푸시 |
 
 ## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)
