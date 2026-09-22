@@ -96,7 +96,7 @@ graph LR
 - [use-creation-progress-polling](../../../manyak-web/src/features/studio/menu/hooks/use-creation-progress-polling.ts)은 제작 카드가 보일 때 카드마다 5초마다 조회합니다. 퍼널 복구는 보이는 동안 3초입니다. 두 경로는 [use-is-creation-request-pending](../../../manyak-web/src/features/stories/_shared/hooks/use-is-creation-request-pending.ts)으로 QueryClient의 MutationCache에서 생성 단계 mutationKey의 진행 중 POST `requestId` 목록을 구독하고 렌더에서 레코드와 비교합니다(`useMutationState`는 캐시 이벤트에만 스냅샷을 갱신하므로 필터에 레코드를 넣지 않습니다). 원 POST가 끝날 때까지 쿼리와 캐시 결과 판정을 보류해 요청 등록 전 404와 재시도 전 FAILED를 소비하지 않습니다. 별도 저장소나 고정 지연은 두지 않으며, 새로고침 후에는 메모리의 원 POST가 없으므로 저장 레코드로 즉시 복구합니다. 사용자 결과는 [웹 제작 상태 표](../spec/3-2-web-spec.md#웹-제작-흐름)를 따릅니다.
 - 완성 폴링은 카드마다 돌며 `createdStoryId`를 확정하고 부수효과를 적용하되 레코드를 즉시 제거하지 않습니다. [created-story-list](../../../manyak-web/src/features/studio/menu/components/created-story-list.tsx)가 새 ID를 목록에서 확인하면 같은 렌더에서 해당 카드와 완성 카드를 교체한 뒤 그 요청만 목록에서 뺍니다. 진행·완성 행은 같은 `ul`의 `AnimatePresence(mode="popLayout")`에서 전환하며, 기존 스토리 행의 ID key와 DOM을 유지합니다.
 - `resolveCreationRecovery`로 결과를 판정하고 `replacePendingCreationRequest`·`markPendingStoryCreated` 선점에 성공한 경로만 게스트 카운터·ID·픽셀·회원 목록 무효화를 적용합니다. 레코드 저장에 실패해 퍼널에 남은 경우에만 완성 성공 뒤 채팅을 만들어 이동합니다.
-- 진행 카드의 재개 동작은 `sessionStorage` 의도로 연결하고 새 제작(FAB)은 의도 없이 이동합니다. 카드 삭제는 그 `requestId`만 제거합니다.
+- 진행 카드의 재개 동작은 `sessionStorage` 의도로 연결하고 새 제작(FAB)은 의도 없이 이동합니다. 카드 삭제는 그 `requestId`만 제거합니다. FAB은 `MainScrollProvider`가 넘기는 `overlayContainer`(메인 레이아웃의 positioned 스크롤 래퍼)에 포털로 `absolute` 배치해 스크롤·당김 새로고침의 이동을 따라가지 않습니다(스크롤 콘텐츠 안의 `absolute`는 콘텐츠 끝으로 밀려 가려지고, `sticky`는 당김 변환을 따라감).
 
 ### 데이터 패칭 기본 옵션 (웹)
 
@@ -164,7 +164,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 `next-themes`가 기기 선택값과 시스템 테마를 적용합니다. 레이아웃·키보드·안전 영역 계약은 [웹 Spec](../spec/3-2-web-spec.md#3-2-5-반응형접근성브라우저-지원)을 따릅니다.
 
-메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용)이며 이프 충전의 무료 충전·내역 탭도 같은 컴포넌트가 스크롤러입니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 둡니다. 스크롤 상태(`MainScrollProvider`)는 컴포넌트의 `onScroll`로 받습니다.
+메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용, 네이티브 터치 리스너만 두고 마우스·펜 포인터 경로는 없음)이며 이프 충전의 무료 충전·내역 탭도 같은 컴포넌트가 스크롤러입니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 둡니다. 스크롤 상태(`MainScrollProvider`)는 컴포넌트의 `onScroll`로 받습니다.
 
 ### 상단 헤더·하단 네비게이션
 
