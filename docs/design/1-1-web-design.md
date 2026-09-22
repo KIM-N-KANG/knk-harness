@@ -89,6 +89,7 @@ graph LR
 편집 초안 목록은 `KEYWORD_DRAFT`·`STORY_DRAFT`·`STORYLINE_GENERATION` 레코드를, 완성 요청 목록은 `STORY_COMPLETION` 레코드를 각각 `requestId`별로 둡니다(Android Room의 `pending_story_creation`·`story_completion_request` 분리와 같은 모델). 두 키는 같은 변경 이벤트를 공유합니다. 읽기·쓰기·삭제 예외를 처리하며 실패를 저장 성공으로 표시하지 않습니다.
 
 - 편집은 300ms 디바운스, `visibilitychange(hidden)`·`pagehide`에서 flush합니다. 복원 직후 삭제하지 않습니다. 저장 중·성공 배지는 실제 쓰기 결과를 따릅니다.
+- 레코드의 `createdAt`(ISO)은 처음 저장(upsert)에 찍고 갱신·교체·완성 이관·강등에서 기존 값을 유지합니다. 퍼널의 `persistOwnRecord`가 단계 전환으로 `requestId`가 바뀔 때 이전 소유 레코드의 값을 새 레코드로 옮깁니다. 초안·완성 중 카드 모두 `formatDateTime`(KST `yyyy-MM-dd HH:mm`)으로 표시하고 값이 없는 구 레코드는 날짜 줄을 생략합니다. 제작 탭 구독 훅은 두 목록을 `sortByCreatedAtDesc`로 최신순 정렬해 넘깁니다(구 레코드는 뒤, 저장 순 유지).
 - 목록 연산은 모두 `requestId` 기준 upsert·교체·제거입니다. 같은 `requestId`의 `STORYLINE_GENERATION`은 늦은 초안 자동 저장이 덮지 않습니다. 서버 결과는 같은 `requestId`의 레코드만 교체·제거합니다.
 - 퍼널 한 세션은 레코드를 최대 한 건 소유합니다. [use-story-create-funnel](../../../manyak-web/src/features/stories/new/hooks/use-story-create-funnel.ts)의 `ownedRequestIdRef`와 `persistOwnRecord`가 모든 목록 쓰기를 거치며, 단계 전환(키워드 초안→생성 요청, 재생성, 복원 뒤 자동 저장)으로 `requestId`가 바뀌면 이전 소유 레코드를 지웁니다. 단일 슬롯이 덮어쓰기로 하던 정리를 명시적 제거로 대신해 유령 초안을 막습니다.
 - 진입은 [use-story-create-draft](../../../manyak-web/src/features/stories/new/hooks/use-story-create-draft.ts)가 세션스토리지 재개 의도를 한 번 읽어 그 레코드만 복원합니다(초안은 저장 단계로, 생성 중이면 로딩 화면으로). 의도가 없으면 새 세션이며 다른 레코드는 건드리지 않습니다. 이어서/새로 만들기 다이얼로그는 없습니다.
