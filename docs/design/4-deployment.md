@@ -113,7 +113,7 @@ Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리합니다
 
 비주얼 기준 이미지는 Linux 렌더링만 정본입니다. UI를 의도적으로 바꾸면 `manyak-web`에서 `pnpm test:e2e:visual:update`로 Playwright Docker 이미지 기준을 갱신하고 diff를 검토합니다. macOS 로컬 실행은 폰트·안티앨리어싱 차이 때문에 스냅샷 비교를 건너뜁니다.
 
-운영 Terraform에는 `manyak-web` 컨테이너를 호스팅에 배포하는 리소스가 없습니다. 웹은 Vercel에서 서빙하며 release PR은 GHCR release 이미지 발행과 외부 호스팅 반영을 전제로 합니다. Web Sentry는 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성이고, SDK는 `NODE_ENV=production`이면서 Vercel 배포일 때만 전송합니다. 배포 판별에 쓰는 `VERCEL_ENV`는 `next.config.ts`가 빌드 시점에 인라인합니다. GHCR release workflow와 Dockerfile에는 이 build arg가 없어 컨테이너 경로는 비활성입니다.
+운영 Terraform에는 `manyak-web` 컨테이너를 호스팅에 배포하는 리소스가 없습니다. 웹은 Vercel에서 서빙하며 release PR은 GHCR release 이미지 발행과 외부 호스팅 반영을 전제로 합니다. Web Sentry는 Vercel 환경 변수 `NEXT_PUBLIC_SENTRY_DSN`으로 활성이고, SDK는 `NODE_ENV=production`이면서 Vercel 배포일 때만 전송합니다. 배포 판별에 쓰는 `VERCEL_ENV`는 `next.config.ts`가 빌드 시점에 인라인합니다. GHCR release workflow와 Dockerfile에는 이 build arg가 없어 컨테이너 경로는 비활성입니다. 웹 푸시는 Vercel 환경 변수 `NEXT_PUBLIC_FIREBASE_API_KEY`·`NEXT_PUBLIC_FIREBASE_PROJECT_ID`·`NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`·`NEXT_PUBLIC_FIREBASE_APP_ID`·`NEXT_PUBLIC_FIREBASE_VAPID_KEY`(Production·Preview, 공개값)로 활성이며 하나라도 비면 전체가 꺼집니다. 값은 서버·Android와 같은 Firebase 프로젝트의 웹 앱 `manyak-web`과 클라우드 메시징의 웹 푸시 인증서에서 발급하고, GHCR 컨테이너 경로에는 이 build arg가 없어 비활성입니다.
 
 ### manyak-android CI
 

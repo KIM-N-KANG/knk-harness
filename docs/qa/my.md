@@ -23,6 +23,7 @@
 
 - [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
 - [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
+- [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
@@ -47,7 +48,7 @@
 | MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
 | MY-MENU-03   | P0  | 게스트                                            | 로그인 버튼 탭         | `/login`으로 이동(마이 → 로그인 진입점)                                                                                 | ✅ e2e `my/login-page`                         | US-9-1, FE-SCREEN-008 진입점                 |
 | MY-MENU-04   | P0  | 회원 로그인 상태                                  | `/my` 진입             | 닉네임 표시 + 로그아웃·회원 탈퇴 메뉴 표시. 로그인 버튼 없음                                                            | ✅ e2e `my/my-page`·`my/account-deletion`     | FE-SCREEN-008                                |
-| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 4개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
+| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 기타(서비스 안내 → 피드백 순) / 계정(알림 설정 → 기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 4개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
 | MY-MENU-06   | P2  | 회원, `me` 응답에 `profileThumbnailBase64` 있음   | 프로필 이미지 확인     | base64 썸네일(`data:image/png;base64,...`)을 세션 이미지보다 우선해 원형으로 렌더                                       | ✅ e2e `my/my-page`                            | 구현(`profile-header`)                       |
 | MY-MENU-07 | P1 | 회원 | 닉네임 아래 영역 확인 | 닉네임 아래 google → kakao 순서로 Chip 표시. Google만 연동이면 점선 "카카오 연동하기", 둘 다 연동이면 Chip 2개만 표시. 연동 실행·오류는 AUTH-LINK 담당 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 계정 연동, KNK-740 |
 | MY-MENU-08   | P2  | 회원, `me` 응답의 `linkedProviders`가 비었거나 없음 | 닉네임 아래 영역 확인  | 연동 Chip 행 자체를 렌더하지 않음(연동 버튼 2개가 잠깐 보이는 오해 방지)                                                | 수동                                           | FE-SCREEN-008 계정 연동, KNK-740             |
@@ -77,6 +78,22 @@
 | MY-ACCOUNT-DELETION-08 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | 탈퇴 요청 없이 `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 
 <a id="my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포"></a>
+
+## MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)
+
+기준: [웹 PWA 푸시](../spec/3-2-web-spec.md#pwa-푸시). E2E 빌드는 Firebase 키를 비워 푸시가 꺼진 상태라 브라우저 권한·토큰 등록·완성 직후 프롬프트는 실기기 수동 검증입니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-NOTIFICATIONS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/notifications` | [웹 접근 조건](../spec/3-2-web-spec.md#라우팅-테이블) |
+| MY-NOTIFICATIONS-02 | P0 | 회원 | 마이 > 계정 > "알림 설정" 탭 | 뒤로가기 헤더 "알림 설정" + 브라우저 알림 상태 줄 + 서비스 알림(켜짐)·광고 알림(꺼짐) 스위치. 야간 줄 없음 | ✅ e2e `my/notifications` | 웹 PWA 푸시 알림 설정 화면 |
+| MY-NOTIFICATIONS-03 | P0 | 회원, 광고 꺼짐 | 광고 알림 스위치 탭 | `PUT /users/me/push-settings`에 세 값 전체(`marketingPush: true`) 전송 → 처리 결과 다이얼로그(제목·"광고 알림 수신 동의 완료"·전송자·일시) → 닫으면 야간 광고 허용 줄 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시, §4-3-5 푸시 수신 동의 |
+| MY-NOTIFICATIONS-04 | P0 | 회원, 광고·야간 켜짐 | 광고 알림 스위치 탭 | 야간도 함께 `false`인 본문 전송, "광고 알림 수신 동의 철회 완료" 통지, 야간 줄 사라짐 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-05 | P1 | 회원 | 서비스 알림 스위치 탭 | 통지 없이 저장. 저장 5xx면 "알림 설정을 저장하지 못했어요" 토스트 + 스위치 원복 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-06 | P1 | 설정 조회 5xx | 진입 | "알림 설정을 불러오지 못했어요" + "다시 시도" 버튼. 재시도 성공 시 스위치 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-07 | P1 | 푸시 활성 빌드, 권한 `default` | 상태 줄 확인 → "알림 켜기" 탭 | "브라우저 알림이 꺼져 있어요" + 버튼. 허용하면 "켜져 있어요"로 바뀌고 토큰 PUT 발생, 거부하면 "차단되어 있어요" 토스트와 안내 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-08 | P1 | iOS Safari 탭(비설치본) | 상태 줄 확인 | 홈 화면 추가 안내 표시, 버튼 없음 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-09 | P2 | 회원, 광고 켜짐 | 야간 광고 허용 탭 | 야간만 `true`인 본문 전송, "야간 광고 알림 수신 동의 완료" 통지 | 수동 | 웹 PWA 푸시 |
 
 ## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)
 
