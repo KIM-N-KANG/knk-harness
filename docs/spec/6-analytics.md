@@ -240,9 +240,6 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_storyCreate_draftSaved`                          |
 | P2                  | client | `client_storyCreate_continueBanner_shown`                |
 | P1                  | client | `client_storyCreate_continueBanner_clicked`              |
-| P2                  | client | `client_storyCreate_resumeDialog_shown`                  |
-| P1                  | client | `client_storyCreate_resumeDialog_continued`              |
-| P2                  | client | `client_storyCreate_resumeDialog_discarded`              |
 | P1                  | client | `client_chatList_viewed`                                 |
 | P1                  | client | `client_chatList_chatCard_clicked`                       |
 | P1                  | client | `client_chatList_chatCard_impressed`                     |
@@ -357,16 +354,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_draftSaved`                          | P1       | 300ms 자동 저장 쓰기 성공                                                      | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
 | `client_storyCreate_continueBanner_shown`                | P2       | 제작 탭 진행 카드(이어서 만들기) 노출(임프레션)                                | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)            |
 | `client_storyCreate_continueBanner_clicked`              | P1       | 제작 탭 진행 카드의 "이어서 만들기" 클릭                                      | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)            |
-| `client_storyCreate_resumeDialog_shown`                  | P2       | 퍼널 진입 시 임시 저장본 재개 다이얼로그 노출                                  | 없음                                                                                                             |
-| `client_storyCreate_resumeDialog_continued`              | P1       | 재개 다이얼로그에서 "이어서 만들기" 선택                                       | 없음                                                                                                             |
-| `client_storyCreate_resumeDialog_discarded`              | P2       | 재개 다이얼로그에서 "새로 만들기" 선택 — 임시 저장본 폐기                      | 없음                                                                                                             |
 | `client_storyCreate_completed`                           | P0       | 스토리화 완료. 서버가 스토리 ID를 확정한 시점(원 응답 또는 제작 탭 폴링)에 발화하며 채팅 생성과 무관합니다 | `story_id` (string, 필수), `genres` (string[], 선택). **`chat_id`·`creation_id`는 포함하지 않습니다** — 완성 시점에는 채팅이 없고, §6-5 퍼널·지표가 이 이벤트를 `creation_id`로 조인한다고 정의해 간극이 있습니다(§6-8-7 A2) |
 
 `client_storyCreate_storyGeneration_requested`는 `analytics_creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `analytics_creation_id`를 싣는 것이 목표 계약이지만, **현재 구현은 성공 이벤트만 항상 포함하고(타입은 문자열이 아닌 Long) 실패 이벤트는 발급 전 실패에서 값이 없을 수 있습니다**(§6-8-7 A1·A3). 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-자동 저장 관련 이벤트([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md) 제작 자동 저장)는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 각 단계의 300ms 저장 쓰기가 실제 성공했을 때만 발생하고 입력 원문·선택값은 싣지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 배너 회수) 또는 `client_storyCreate_resumeDialog_shown`/`_continued`(퍼널 재진입 회수)로 이어지며, `_discarded`는 재개 다이얼로그에서 저장본을 버린 이탈입니다. 제작 배너는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않습니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 자동 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994).
+자동 저장 관련 이벤트([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md) 제작 자동 저장)는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 각 단계의 300ms 저장 쓰기가 실제 성공했을 때만 발생하고 입력 원문·선택값은 싣지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 자동 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994).
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
