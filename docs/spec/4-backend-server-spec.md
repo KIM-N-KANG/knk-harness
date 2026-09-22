@@ -194,8 +194,6 @@
 
 `filter=original`은 공식 계정(`manyak.official-user-public-id`) 소유 스토리로 좁힙니다. 설정이 비었거나 그 `publicId`의 회원이 없는 환경은 빈 페이지(`items: []`, `nextCursor: null`)입니다. `filter`는 커서에 싣지 않으므로 클라이언트가 `nextCursor`를 넘길 때 같은 `filter`·`sort`를 함께 보냅니다.
 
-`filter`와 `likes`·`chats` 정렬은 구현 전 계약입니다. 현재 구현은 `sort`의 `latest`·`popular`만 받으며, 오리지널은 `GET /stories/originals`가 담당합니다.
-
 응답은 `{items: StorySummaryResponse[], nextCursor: string | null}`입니다. `items`의 카드는 `POST /stories/batch`·`GET /stories/originals`·`GET /users/me/stories`와 **같은 `StorySummaryResponse`**(아래 표)를 재사용합니다: 목록 카드 컴포넌트를 경로마다 다시 만들지 않기 위해서입니다. 마지막 페이지의 `nextCursor`는 null입니다.
 
 **노출 조건.** 다음 넷을 모두 만족하는 스토리만 싣습니다.
