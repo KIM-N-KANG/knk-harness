@@ -2008,19 +2008,17 @@ HTTP 상태는 승인·거절·실행 실패 모두 200입니다.
 이미지 이름 `imageName`을 포함한 텍스트 필드는 `TEXT`입니다.
 텍스트·이미지 결합 위반은 관련 필드별 문제 항목으로 표시합니다.
 
-| 상황 | `decision` | `issues` | `error_code` |
-| --- | --- | --- | --- |
-| 정상 검수·위반 없음 | `APPROVED` | `[]` | `null` |
-| 정상 검수·명백한 위반 | `REJECTED` | 위반 항목 1개 이상 | `null` |
-| 이미지 내려받기 실패(접근 불가·시간 초과) | `REJECTED` | `[]` | `IMAGE_DOWNLOAD_FAILED` |
-| 이미지 파일 불량(이미지 아님·미지원 형식·32MiB 초과) | `REJECTED` | `[]` | `IMAGE_INVALID` |
-| 모델이 이미지를 판독하지 못함 | `REJECTED` | `[]` | `IMAGE_UNREADABLE` |
-| OpenAI·DeepSeek 모두 호출 실패 또는 응답 검증 실패 | `REJECTED` | `[]` | `MODEL_CALL_FAILED` |
+| 상황 | `decision` | `issues` | `error_code` | `error_path` | 백엔드가 할 일 |
+| --- | --- | --- | --- | --- | --- |
+| 정상 검수·위반 없음 | `APPROVED` | `[]` | `null` | `null` | 게시 |
+| 정상 검수·명백한 위반 | `REJECTED` | 위반 항목 1개 이상 | `null` | `null` | `issues`의 위치·기준·이유를 사용자에게 안내 |
+| 이미지 내려받기 실패(접근 불가·시간 초과) | `REJECTED` | `[]` | `IMAGE_DOWNLOAD_FAILED` | 해당 이미지 경로 | 인프라 문제. 다시 시도 |
+| 이미지 파일 불량(이미지 아님·미지원 형식·32MiB 초과) | `REJECTED` | `[]` | `IMAGE_INVALID` | 해당 이미지 경로 | 사용자에게 이미지 교체 안내 |
+| 모델이 이미지를 판독하지 못함(흐림·너무 작음) | `REJECTED` | `[]` | `IMAGE_UNREADABLE` | 해당 이미지 경로 | 사용자에게 이미지 교체 안내 |
+| OpenAI·DeepSeek 모두 호출 실패 또는 응답 검증 실패 | `REJECTED` | `[]` | `MODEL_CALL_FAILED` | `null` | 인프라 문제. 다시 시도 |
 
-이미지 오류 3종은 `error_path`에 해당 이미지의 입력 경로를 넣습니다. 여러 장이 실패하면 입력 순서상
-첫 번째만 넣습니다. `MODEL_CALL_FAILED`와 정상 검수는 `error_path`가 `null`입니다.
-백엔드는 `IMAGE_DOWNLOAD_FAILED`·`MODEL_CALL_FAILED`를 다시 시도할 문제로,
-`IMAGE_INVALID`·`IMAGE_UNREADABLE`을 사용자에게 이미지 교체를 안내할 문제로 구분합니다.
+이미지 오류가 여러 장이면 `error_path`에는 입력 순서상 첫 번째 이미지 경로만 넣습니다.
+내려받기 실패와 파일 불량은 모델을 호출하기 전에 서버가 판단하고, 판독 불가만 모델의 보고로 판단합니다.
 이미지 실행 실패도 `issues`에 유해성 위반이나 빈 필드의 문제 객체를 만들지 않습니다.
 정상적인 내용 거절 예시는 다음과 같습니다.
 
