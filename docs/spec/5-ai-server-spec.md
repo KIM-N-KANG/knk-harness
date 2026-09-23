@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.37 |
+| 버전 | v2.38 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-21 |
+| 수정일 | 2026-09-24 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
 | 기준 코드 | manyak-ai `feat/KNK-1284-chat-image-s3-upload` 브랜치 `fe2286297d1a`. 아래 기능별 기준 외의 구현을 가리키며 운영 배포 여부와 구분합니다. |
@@ -746,6 +746,7 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 | Langfuse | 요청별 trace에 구조화 입력과 연결 metadata. 채팅 턴에만 `user_source` 기록하고 선택지 입력·metadata에서는 제외. 호출별 허용 키는 아래 표를 따름 |
 | Langfuse 이미지 관측 | 컴파일 trace 안에 인물 이미지·썸네일 호출마다, 채팅 trace 안에 자식 이미지 호출마다 generation 관측을 남깁니다(이름 `이미지 생성:인물`·`이미지 생성:썸네일`·`이미지 생성:자식`). 입력은 이미지 프롬프트, 출력은 형식과 바이트 수(이미지 바이너리는 싣지 않음), 모델·크기·화질·출력 형식을 함께 기록합니다. usage는 표준 키 `input`·`output`·`total`과 세부 키 `input_text`·`input_image`·`output_text`·`output_image`이며, 응답에 없는 값은 생략합니다. 실패는 ERROR와 예외 타입 이름만 남기고 오류 원문은 싣지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
 | 자식 이미지 결과 | 생성 기능을 켠 채팅의 루트 관측에 `child_image`를 기록합니다. 전체 생성 시간·결과·실패 및 생략 이유·부모 대체 여부·프롬프트 버전을 담습니다. 인물 이름·이미지 이름·URL·base64는 넣지 않으며, 사용량·비용은 이미지 generation에만 기록합니다. 정확한 필드는 [AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)을 따릅니다. |
+| Langfuse Gemini 관측 | Gemini 단발 호출(컴파일·스토리라인)마다 해당 trace 안에 `Gemini-generation` 관측을 남깁니다. 모델명·모델 인자·입력 메시지·응답 본문·usage를 기록하며, usage는 `input`·`input_cached_tokens`·`output`·`output_reasoning`·`total`로 나눕니다. 실패는 ERROR로 남깁니다. 스트리밍 호출은 기록하지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
 | DeepSeek 단가 구간 | DeepSeek 텍스트 호출(스토리라인·채팅 본문·판정·선택지)의 generation 관측에 metadata `pricing_window`를 기록합니다. 값은 `peak`(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 또는 `off_peak`이며, Langfuse가 이 값으로 단가 구간을 고릅니다. Langfuse가 꺼져 있으면 기록하지 않습니다 |
 
 | 루트 trace | 구조화 입력 | 제품 연결 metadata |
