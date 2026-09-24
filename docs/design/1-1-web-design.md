@@ -179,7 +179,11 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 ### 스토리 좋아요 버튼·집계 배지 (웹)
 
-렌더 호출은 비활성화되어 있고 `use-story-like.ts`·`story-like-count.tsx`·상수·아이콘·생성 API 훅은 남아 있습니다. 중단한 테스트는 [스토리 QA](../qa/stories.md#좋아요-재노출-검증)에서 확인합니다.
+계약은 [공통 Spec](../spec/3-1-client-spec.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**가 소유합니다.
+
+- `StoryDetailCta`가 CTA 행 왼쪽에 `Button variant="ghost" size="icon-lg"`와 `heart-outline-icon`·`heart-filled-icon`(`currentColor`, 선택 `text-destructive`)을 두고 `aria-pressed`·`aria-busy`로 상태를 전달합니다. 게스트 탭은 `isLikeLoginOpen`으로 `LoginRequiredSheet`를 엽니다.
+- [use-story-like](../../../manyak-web/src/features/stories/detail/hooks/use-story-like.ts)가 생성 훅으로 등록·취소하고, 성공하면 상세 캐시의 `isLiked`·`likeCount`를 고친 뒤 상세·공개 목록(`GET /stories` 접두 키) 쿼리를 무효화합니다.
+- `StoryLikeCount`는 `StoryTurnCount`와 같은 배지로 턴 수 왼쪽에 둡니다. 제작 카드는 하단 메타에 하트·좋아요 수 → 턴 수 → 제작일 순입니다. 두 지표 모두 [format-count](../../../manyak-web/src/lib/format-count.ts)의 `formatCompactCount`로 축약합니다.
 
 ### 스토리 상세 CTA 배경 연결 (웹)
 
