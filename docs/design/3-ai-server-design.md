@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.22 |
+| 버전 | v0.23 |
 | 작성일 | 2026-09-09 |
 | 수정일 | 2026-09-24 |
 | 대상 | manyak-ai |
@@ -155,8 +155,8 @@ flowchart LR
 | 스토리라인 | `STORYLINES_MODEL`: deepseek-flash, temperature 0.75, 출력 한도 6144 | SDK 90초. invalid 응답 재호출 경로는 전체 60초 예산 |
 | 컴파일 | `STORY_COMPILE_MODEL`: 기본 gpt-5.6-terra, 추론 medium, 출력 한도 16384. Gemini 공급자 선택 시 전용 템플릿 | SDK 90초(이미지 시간 별도) |
 | 본문 | `CHAT_MODEL`: deepseek-flash, 출력 토큰 상한 미지정 | 첫 토큰 제한 90초 |
-| 선택지 | `CHAT_MODEL`, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
-| 판정 | `CHAT_MODEL`, 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
+| 선택지 | `CHAT_CHOICE_MODEL`: deepseek-flash, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
+| 판정 | `CHAT_MODEL`(본문과 같은 모델), 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
 | 컴파일 이미지 | `IMAGE_MODEL`: gpt-image-2.5-flare, `IMAGE_QUALITY=low` | `IMAGE_TIMEOUT=60`은 시도당 제한, 한 장의 전체 제한 아님 |
 | 자식 이미지 | 같은 `IMAGE_MODEL`·크기·화질, 부모 첨부 편집·직접 업로드, SDK·PUT 재시도 없음 | 다운로드·생성·업로드 합계 30초와 남은 턴 예산 중 작은 값 |
 
@@ -174,9 +174,9 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 판정은 본문 완성 후 시작하며 전송용 시간을 별도로 빼지 않고 전체 마감과 60초 중 작은 예산을
 사용합니다. 이미지 시간 초과 후에도 부모 이미지와 글을 전송할 시간을 남기는 구조입니다.
 
-위 값은 기준 코드의 설정이며 현재 운영 설정을 다시 조회한 결과가 아닙니다. 판정 예산은 `120초 - AI에서 잰 경과 시간 - 안전 여유 15초`로 계산하므로 백엔드 대기열 시간을 정확히 반영하지 못합니다. SDK 자동 재시도로 실제 대기가 길어질 수 있으며, 품질·속도·비용 비교에서 재시도까지 포함해야 합니다.
+위 표는 기준 코드의 기본값입니다. 운영 설정은 2026-09-24에 채팅 본문·판정을 `gpt-6-luna`, 스토리라인을 `gemini-3.7-flash`로 바꿨습니다. 컴파일은 그 전부터 `gemini-3.7-flash`이고, 선택지는 운영 설정값이 없어 기본값 deepseek-flash를 씁니다. dev는 채팅 본문·판정만 `gpt-6-luna`로 바꿨습니다. 판정 예산은 `120초 - AI에서 잰 경과 시간 - 안전 여유 15초`로 계산하므로 백엔드 대기열 시간을 정확히 반영하지 못합니다. SDK 자동 재시도로 실제 대기가 길어질 수 있으며, 품질·속도·비용 비교에서 재시도까지 포함해야 합니다.
 
-등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `gpt-6-luna`(추론 없음)가 등록돼 있어 `CHAT_MODEL`로 선택할 수 있지만, 위 표의 채팅 모델은 여전히 deepseek-flash입니다(KNK-1410). `CHAT_MODEL`의 Anthropic 선택은 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
+등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `gpt-6-luna`(추론 없음)가 등록돼 있어 `CHAT_MODEL`로 선택할 수 있습니다(KNK-1410). 선택지는 `CHAT_CHOICE_MODEL`로 본문과 따로 고르며, 값이 없으면 기본값 deepseek-flash를 씁니다(KNK-1416). 기동 검사 대상에 이 설정이 추가됐고, `CHAT_MODEL`과 `CHAT_CHOICE_MODEL` 모두 Anthropic 선택을 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
 
 프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록합니다.
 
