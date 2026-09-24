@@ -230,6 +230,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | --- | --- | --- |
 | `id` | string | 스토리 공개 식별자(UUID) |
 | `title` | string | 제목 |
+| `isOriginal` | boolean | 오리지널 여부. `filter=original`과 같은 공식 계정(`manyak.official-user-public-id`)의 소유 스토리이면 true입니다. 설정이 비었거나 해당 회원이 없으면 false입니다. null이 아닌 `isOriginal` 필드로 반환하며 목록·배치·내 스토리·오리지널·검색 카드에 같은 판정 규칙을 적용합니다 |
 | `oneLineIntro` | string | 한 줄 소개. 저장값이 NULL이면 빈 문자열 |
 | `genres` | string[] | 장르 태그명 목록: `stories.genre`를 쉼표 분리 후 각 항목 trim·빈 항목 제거 |
 | `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 `author` 자체가 null. `profileImageUrl`은 이미지 미배정 회원이면 null(클라이언트는 기본 아바타로 처리). (KNK-1016, 2026-08-29): 회원 소유 스토리는 목록·상세 모두 실제 작성자의 `nickname`·`profileImageUrl`을 채웁니다(2026-08-28 팀 결정: 스토리 상세의 공개 소비 전환). 목록은 배치 조회로 채워 N+1을 막습니다. `author.id`는 내부 PK 비노출 원칙([§4-4](#4-4-데이터-모델))에 따라 항상 null입니다 |
@@ -239,7 +240,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `thumbnailUrlSm` | string·null | 썸네일 축소 변형(`_sm`) 서빙 URL: 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
 
-**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드에 다음을 더합니다.
+**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드(`isOriginal` 제외)에 다음을 더합니다.
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
