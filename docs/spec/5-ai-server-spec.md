@@ -9,7 +9,7 @@
 | 수정일 | 2026-09-26 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `feat/KNK-1284-chat-image-s3-upload` 브랜치 `fe2286297d1a`. 아래 기능별 기준 외의 구현을 가리키며 운영 배포 여부와 구분합니다. |
+| 기준 코드 | manyak-ai `dev` 브랜치 `3da251acb98b`. 아래 기능별 기준 외의 구현을 가리키며 운영 배포 여부와 구분합니다. |
 | 채팅 전송 기준 | KNK-1300의 이미지 대기·본문 순차 전송은 manyak-ai `dev`의 `6741368ed3e8` 기준입니다. |
 | 스토리 인물 구성 기준 | KNK-1329의 입력 인원수·카드 검증·이야기 인물 유지 지시는 manyak-ai `dev`의 `81801d910514` 기준입니다. 다른 기능 전체를 이 커밋까지 동기화했다는 뜻은 아닙니다. |
 | 스토리라인 서비스 구조 기준 | KNK-1336의 내부 역할 분리는 manyak-ai `dev`의 `ed589f486c3f` 기준입니다([PR #127](https://github.com/KIM-N-KANG/manyak-ai/pull/127)). API 계약은 유지하며 내부 구조는 [Design](../design/3-ai-server-design.md#스토리라인-라우터와-서비스)을 따릅니다. |
@@ -323,7 +323,7 @@ flowchart LR
 
 ### 5-3-4. 채팅 턴
 
-채팅 본문·사건 및 엔딩 판정·선택지는 서로 다른 프롬프트로 호출합니다. 세 호출의 기본 모델은 모두 `deepseek-flash`(`CHAT_MODEL`)입니다.
+채팅 본문·사건 및 엔딩 판정·선택지는 서로 다른 프롬프트로 호출합니다. 본문과 판정은 `CHAT_MODEL`, 선택지는 `CHAT_CHOICE_MODEL`로 모델을 고르며, 세 호출의 기본 모델은 모두 `deepseek-flash`입니다.
 
 **채팅 본문 생성**
 
@@ -628,7 +628,7 @@ flowchart LR
         C_item4["<div style='width:240px;text-align:center;'><span>방금 생성된 채팅 본문<br/>ai_output</span></div>"]
     end
     CP["선택지 프롬프트<br/>CHOICES-TEMPLATE.md"]
-    CM["모델<br/>deepseek-flash · CHAT_MODEL"]
+    CM["모델<br/>deepseek-flash · CHAT_CHOICE_MODEL"]
     subgraph CO["선택지 출력"]
         direction LR
         CO_item1["<div style='width:240px;text-align:center;'><span>다음 행동 선택지 3개</span></div>"]
@@ -777,6 +777,7 @@ Sentry 실패 코드는 `provider_timeout`, `provider_rate_limited`, `provider_b
 | Langfuse | 요청별 trace에 구조화 입력과 연결 metadata. 채팅 턴에만 `user_source` 기록하고 선택지 입력·metadata에서는 제외. 호출별 허용 키는 아래 표를 따름 |
 | Langfuse 이미지 관측 | 컴파일 trace 안에 인물 이미지·썸네일 호출마다, 채팅 trace 안에 자식 이미지 호출마다 generation 관측을 남깁니다(이름 `이미지 생성:인물`·`이미지 생성:썸네일`·`이미지 생성:자식`). 입력은 이미지 프롬프트, 출력은 형식과 바이트 수(이미지 바이너리는 싣지 않음), 모델·크기·화질·출력 형식을 함께 기록합니다. usage는 표준 키 `input`·`output`·`total`과 세부 키 `input_text`·`input_image`·`output_text`·`output_image`이며, 응답에 없는 값은 생략합니다. 실패는 ERROR와 예외 타입 이름만 남기고 오류 원문은 싣지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
 | 자식 이미지 결과 | 생성 기능을 켠 채팅의 루트 관측에 `child_image`를 기록합니다. 전체 생성 시간·결과·실패 및 생략 이유·부모 대체 여부·프롬프트 버전을 담습니다. 인물 이름·이미지 이름·URL·base64는 넣지 않으며, 사용량·비용은 이미지 generation에만 기록합니다. 정확한 필드는 [AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)을 따릅니다. |
+| Langfuse Gemini 관측 | Gemini 단발 호출(컴파일·스토리라인)마다 해당 trace 안에 `Gemini-generation` 관측을 남깁니다. 모델명·모델 인자·입력 메시지·응답 본문·usage를 기록하며, usage는 `input`·`input_cached_tokens`·`output`·`output_reasoning`·`total`로 나눕니다. 실패는 ERROR로 남깁니다. 스트리밍 호출은 기록하지 않습니다. 비용은 Langfuse 모델 단가 등록에 따릅니다([AI Design §3-3](../design/3-ai-server-design.md#3-3-관측과-런타임-설정)) |
 | DeepSeek 단가 구간 | DeepSeek 텍스트 호출(스토리라인·채팅 본문·판정·선택지)의 generation 관측에 metadata `pricing_window`를 기록합니다. 값은 `peak`(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 또는 `off_peak`이며, Langfuse가 이 값으로 단가 구간을 고릅니다. Langfuse가 꺼져 있으면 기록하지 않습니다 |
 
 | 루트 trace | 구조화 입력 | 제품 연결 metadata |
@@ -817,7 +818,7 @@ API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포
 평가 세트로 오탐·미탐을 측정하는 절차는 두지 않기로 했으며, 실측은 이미지 입력과 JSON 출력이
 함께 동작하는지와 응답 형식 확인에 한정합니다.
 
-현재 제약은 전체 History·오프닝 시드 차이(A3·A4), 출력 한도 미정(A8), 엔딩 판정 강화 미실측(A10), 전체 시간 예산·취소 전파 부족(A1·A11·A12·A15·A18), 공급자 배치·계측 부족(A13), 모델 별칭(A14), 시간 초과 외 판정 실패의 상태 초기화 위험(A16), 요약 마커 미정(A20)입니다. 인물 이미지 매핑·극단 라벨 입력은 수용한 제약(A19·A22)입니다. 종전 추적 항목 전체와 판단 근거는 [ADR 추적 이력](../adr/3-ai-server-adr.md#기존-제약과-후속-판단-이력)에 남깁니다.
+현재 제약은 전체 History·오프닝 시드 차이(A3·A4), 출력 한도 미정(A8), 엔딩 판정 강화 미실측(A10), 전체 시간 예산·취소 전파 부족(A1·A11·A12·A15·A18), 공급자 배치·계측 부족(A13), 모델 별칭(A14), 시간 초과 외 판정 실패의 상태 초기화 위험(A16), 요약 마커 미정(A20)입니다. 선택지 모델 설정(`CHAT_CHOICE_MODEL`)을 빈 값으로 두면 기본값이 아니라 빈 모델 이름이 되어 기동에 실패하고, 추론 모델을 고르면 출력 한도 512토큰에서 응답이 잘릴 수 있습니다. 후자를 기동에서 막을지는 정하지 않았습니다([ADR](../adr/3-ai-server-adr.md#선택지-모델을-본문-모델과-따로-선택)). 인물 이미지 매핑·극단 라벨 입력은 수용한 제약(A19·A22)입니다. 종전 추적 항목 전체와 판단 근거는 [ADR 추적 이력](../adr/3-ai-server-adr.md#기존-제약과-후속-판단-이력)에 남깁니다.
 
 다른 서비스의 배포 여부는 해당 서비스 명세가 정본입니다. 구현 동기화 때는 기준 코드 SHA를 갱신하고 현재 계약만 이 문서에 반영하며, 결정이 바뀌면 ADR에 근거를 남깁니다.
 

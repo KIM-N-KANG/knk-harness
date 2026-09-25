@@ -155,8 +155,8 @@ flowchart LR
 | 스토리라인 | `STORYLINES_MODEL`: deepseek-flash, temperature 0.75, 출력 한도 6144 | SDK 90초. invalid 응답 재호출 경로는 전체 60초 예산 |
 | 컴파일 | `STORY_COMPILE_MODEL`: 기본 gpt-5.6-terra, 추론 medium, 출력 한도 16384. Gemini 공급자 선택 시 전용 템플릿 | SDK 90초(이미지 시간 별도) |
 | 본문 | `CHAT_MODEL`: deepseek-flash, 출력 토큰 상한 미지정 | 첫 토큰 제한 90초 |
-| 선택지 | `CHAT_MODEL`, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
-| 판정 | `CHAT_MODEL`, 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
+| 선택지 | `CHAT_CHOICE_MODEL`: deepseek-flash, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
+| 판정 | `CHAT_MODEL`(본문과 같은 모델), 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
 | 컴파일 이미지 | `IMAGE_MODEL`: gpt-image-2.5-flare, `IMAGE_QUALITY=low` | `IMAGE_TIMEOUT=60`은 시도당 제한, 한 장의 전체 제한 아님 |
 | 자식 이미지 | 같은 `IMAGE_MODEL`·크기·화질, 부모 첨부 편집·직접 업로드, SDK·PUT 재시도 없음 | 다운로드·생성·업로드 합계 30초와 남은 턴 예산 중 작은 값 |
 
@@ -174,15 +174,15 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 판정은 본문 완성 후 시작하며 전송용 시간을 별도로 빼지 않고 전체 마감과 60초 중 작은 예산을
 사용합니다. 이미지 시간 초과 후에도 부모 이미지와 글을 전송할 시간을 남기는 구조입니다.
 
-위 값은 기준 코드의 설정이며 현재 운영 설정을 다시 조회한 결과가 아닙니다. 판정 예산은 `120초 - AI에서 잰 경과 시간 - 안전 여유 15초`로 계산하므로 백엔드 대기열 시간을 정확히 반영하지 못합니다. SDK 자동 재시도로 실제 대기가 길어질 수 있으며, 품질·속도·비용 비교에서 재시도까지 포함해야 합니다.
+위 표는 기준 코드의 기본값입니다. 운영 설정은 2026-09-24에 채팅 본문·판정을 `gpt-6-luna`, 스토리라인을 `gemini-3.7-flash`로 바꿨습니다. 컴파일은 그 전부터 `gemini-3.7-flash`이고, 선택지는 운영 설정값이 없어 기본값 deepseek-flash를 씁니다. dev는 채팅 본문·판정만 `gpt-6-luna`로 바꿨습니다. 판정 예산은 `120초 - AI에서 잰 경과 시간 - 안전 여유 15초`로 계산하므로 백엔드 대기열 시간을 정확히 반영하지 못합니다. SDK 자동 재시도로 실제 대기가 길어질 수 있으며, 품질·속도·비용 비교에서 재시도까지 포함해야 합니다.
 
-등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `CHAT_MODEL`의 Anthropic 선택은 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
+등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `gpt-6-luna`(추론 없음)가 등록돼 있어 `CHAT_MODEL`로 선택할 수 있습니다(KNK-1410). 선택지는 `CHAT_CHOICE_MODEL`로 본문과 따로 고르며, 값이 없으면 기본값 deepseek-flash를 씁니다(KNK-1416). 기동 검사 대상에 이 설정이 추가됐고, `CHAT_MODEL`과 `CHAT_CHOICE_MODEL` 모두 Anthropic 선택을 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
 
 프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록합니다.
 
 ## 3-3. 관측과 런타임 설정
 
-Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 텍스트 호출(DeepSeek·GPT)은 `langfuse.openai` 자동 계측이 하위 호출 관측을 만들고 Anthropic·Google은 이 관측이 미완입니다. 이미지 호출(`images.generate`·`images.edit`)은 자동 계측이 감싸지 않으므로 [이미지 어댑터](../../../manyak-ai/src/services/image/openai_api.py)가 [`observe_generation`](../../../manyak-ai/src/core/langfuse.py)으로 generation 관측을 직접 엽니다. 인물 이미지는 병렬 작업마다 관측이 따로 열리고 모두 컴파일 trace 아래에 붙습니다. 응답을 받은 직후 usage를 먼저 기록해 응답 해석에 실패해도 과금분이 남습니다. 비용 계산은 Langfuse 프로젝트의 모델 단가에 의존하며, 이미지는 세부 키(`input_text`·`input_image`·`output_image`)에만 단가를 등록해 표준 키와 이중 계산되지 않게 합니다. deepseek-flash 단가는 피크·오프피크 두 구간으로 등록돼 있습니다. gpt-image-2 단가도 등록돼 있습니다. DeepSeek 텍스트 호출은 어댑터가 호출마다 피크 시간(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 여부를 판정해 metadata `pricing_window`(`peak`·`off_peak`)를 싣고, Langfuse의 조건 구간이 이 값으로 단가를 고릅니다. 이 인자는 `langfuse.openai` 래퍼가 걷어내는 것이라 Langfuse가 꺼져 있을 때는 공급자 API로 새지 않도록 붙이지 않습니다. 판정은 호출 시작 시각 기준이며 시간대 경계를 넘는 긴 호출은 한쪽 구간으로 잡힙니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](../spec/6-analytics.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
+Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 텍스트 호출(DeepSeek·GPT)은 `langfuse.openai` 자동 계측이 하위 호출 관측을 만듭니다. 이 자동 계측은 google-genai 호출을 감싸지 않으므로 [Google 어댑터](../../../manyak-ai/src/services/llm/google_sdk.py)가 단발 호출(컴파일·스토리라인)마다 `observe_generation`으로 `Gemini-generation` 관측을 직접 엽니다. 모델명·모델 인자(temperature·출력 한도·추론 강도·JSON 모드)·입력 메시지·응답 본문·usage를 기록하고, 공급자 실패는 관측에 ERROR로 남긴 뒤 예외를 그대로 전파합니다. usage는 Langfuse 관리 단가가 가격을 매기는 키에 맞춰 `input`(프롬프트에서 캐시 적중분을 뺀 값)·`input_cached_tokens`·`output`·`output_reasoning`(추론 토큰)·`total`로 나눕니다. 추론 토큰을 `output`에 합치면 `output_reasoning`과 두 번 과금되므로 따로 보냅니다. Gemini 스트리밍 호출은 관측이 yield를 넘나들며 부모가 틀어지는 문제로 아직 기록하지 않으며, Gemini는 현재 단발 호출에만 쓰입니다. Anthropic 호출의 관측은 미완입니다. 이미지 호출(`images.generate`·`images.edit`)은 자동 계측이 감싸지 않으므로 [이미지 어댑터](../../../manyak-ai/src/services/image/openai_api.py)가 [`observe_generation`](../../../manyak-ai/src/core/langfuse.py)으로 generation 관측을 직접 엽니다. 인물 이미지는 병렬 작업마다 관측이 따로 열리고 모두 컴파일 trace 아래에 붙습니다. 응답을 받은 직후 usage를 먼저 기록해 응답 해석에 실패해도 과금분이 남습니다. 비용 계산은 Langfuse 프로젝트의 모델 단가에 의존하며, 이미지는 세부 키(`input_text`·`input_image`·`output_image`)에만 단가를 등록해 표준 키와 이중 계산되지 않게 합니다. deepseek-flash 단가는 피크·오프피크 두 구간으로 등록돼 있습니다. gpt-image-2 단가도 등록돼 있습니다. DeepSeek 텍스트 호출은 어댑터가 호출마다 피크 시간(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 여부를 판정해 metadata `pricing_window`(`peak`·`off_peak`)를 싣고, Langfuse의 조건 구간이 이 값으로 단가를 고릅니다. 이 인자는 `langfuse.openai` 래퍼가 걷어내는 것이라 Langfuse가 꺼져 있을 때는 공급자 API로 새지 않도록 붙이지 않습니다. 판정은 호출 시작 시각 기준이며 시간대 경계를 넘는 긴 호출은 한쪽 구간으로 잡힙니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](../spec/6-analytics.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
 
 자식 이미지 generation의 이름은 `이미지 생성:자식`이며 병렬 작업에 복사된 호출 컨텍스트를
 통해 같은 채팅 trace에 붙습니다. 입력 프롬프트는 기존 원문 수집 규칙을 따르고 부모 첨부

@@ -230,6 +230,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | --- | --- | --- |
 | `id` | string | 스토리 공개 식별자(UUID) |
 | `title` | string | 제목 |
+| `isOriginal` | boolean | 오리지널 여부. `filter=original`과 같은 공식 계정(`manyak.official-user-public-id`)의 소유 스토리이면 true입니다. 설정이 비었거나 해당 회원이 없으면 false입니다. null이 아닌 `isOriginal` 필드로 반환하며 목록·배치·내 스토리·오리지널·검색 카드에 같은 판정 규칙을 적용합니다 |
 | `oneLineIntro` | string | 한 줄 소개. 저장값이 NULL이면 빈 문자열 |
 | `genres` | string[] | 장르 태그명 목록: `stories.genre`를 쉼표 분리 후 각 항목 trim·빈 항목 제거 |
 | `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 `author` 자체가 null. `profileImageUrl`은 이미지 미배정 회원이면 null(클라이언트는 기본 아바타로 처리). (KNK-1016, 2026-08-29): 회원 소유 스토리는 목록·상세 모두 실제 작성자의 `nickname`·`profileImageUrl`을 채웁니다(2026-08-28 팀 결정: 스토리 상세의 공개 소비 전환). 목록은 배치 조회로 채워 N+1을 막습니다. `author.id`는 내부 PK 비노출 원칙([§4-4](#4-4-데이터-모델))에 따라 항상 null입니다 |
@@ -239,7 +240,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `thumbnailUrlSm` | string·null | 썸네일 축소 변형(`_sm`) 서빙 URL: 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
 
-**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드에 다음을 더합니다.
+**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드(`isOriginal` 제외)에 다음을 더합니다.
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
@@ -900,8 +901,14 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 ##### 발행 포트와 아웃박스
 
 - 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
-- 큐 단계에서 서버는 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호와 물리 컬럼 상세는 구현 시 확정합니다.
-- 릴레이는 `FOR UPDATE SKIP LOCKED`로 미발행 행을 선점하고, 전송은 도메인 트랜잭션 밖에서 수행합니다. 선점 이후 복구 가능한 상태를 남기고 브로커 발행 성공 뒤 발행 완료를 기록합니다. 브로커 장애 시 미발행 요청을 보존해 복구 후 재발행합니다.
+- 발행 포트 뒤 어댑터는 `local` 프로파일의 Kafka 어댑터를 먼저 도입하고, SQS 어댑터는 dev/prod 큐 인프라와 함께 도입합니다. Kafka 어댑터의 메시지 키는 `recipientId`입니다. SQS 어댑터 도입 전까지 dev와 prod는 `manyak.push.mode=local`을 유지합니다. 이때 `remote`로 전환하면 발행할 어댑터가 없습니다.
+- 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호는 구현 시 확정합니다.
+- `push_outbox.message_id`에는 유일 제약을 둡니다. 값은 위 표의 `messageId` 규칙을 그대로 사용하며, 스토리 완성은 `story-completed:{requestId}`입니다.
+- 행 상태는 `PENDING`, `PUBLISHED`, `FAILED`입니다. 시도 횟수 `attempts`는 관찰용으로 기록하며 포기 판정에는 사용하지 않습니다. 브로커 발행 성공 뒤 `PUBLISHED`로 발행 완료를 기록합니다.
+- 릴레이는 `status = PENDING`이고 `next_attempt_at`이 현재 시각 이전인 행을 `FOR UPDATE SKIP LOCKED`로 선점합니다. 같은 트랜잭션에서 `next_attempt_at`을 임대 만료 시각으로 옮기고 커밋한 뒤, 트랜잭션 밖에서 전송합니다. 전송 도중 릴레이가 종료되면 임대가 끝난 뒤 다른 릴레이가 다시 선점합니다. 별도의 발행 중 상태는 두지 않습니다.
+- 임대 시간은 한 번에 선점한 배치 전체의 전송 제한 시간보다 길어야 합니다. 브로커 클라이언트의 전송 제한 시간도 임대보다 짧게 설정합니다. 그렇지 않으면 전송이 끝나기 전에 다른 릴레이가 같은 행을 가져가 중복 발행할 수 있습니다.
+- 발행 실패 시 `next_attempt_at`을 지수 백오프로 미룹니다. 재시도 간격은 5초에서 시작해 실패마다 두 배로 늘리며 최대 5분입니다. 행 생성 후 24시간이 지나도 발행하지 못하면 `FAILED`로 두고 로그와 메트릭을 남깁니다. 브로커 장애 시 미발행 요청을 보존하며, 행 생성 후 24시간 안에 복구되면 재발행합니다.
+- 재시도 횟수 상한은 두지 않습니다. 짧은 간격의 횟수 상한은 긴 브로커 장애에서 모든 행을 일찍 포기하게 해 복구 후 발행하려는 아웃박스의 목적을 무너뜨립니다. 24시간의 포기 기준은 스토리 완성 알림이 하루 넘게 늦으면 가치가 없다는 판단에 따릅니다.
 - 전송 성공과 발행 완료 기록 사이 장애로 릴레이가 중복 발행할 수 있습니다. 두 브로커 모두 소비자 멱등 처리를 전제로 하며, 도메인 커밋 후 외부 전송만 하는 방식으로 아웃박스를 대체하지 않습니다.
 
 ##### 소비 순서와 멱등 기록
@@ -971,7 +978,7 @@ Admin SDK 내부 재시도에 맡기고 애플리케이션은 같은 SDK 호출�
 - **보상 이프 유효기간·차감 순서 · (V39·KNK-503)** · 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)과 **환불(`REFUND`) 재적립**은 적립 시점부터 30일 유효하며, 만료분은 잔액에서 제외합니다( 유료 `PURCHASE` 로트는 웹·앱 모두 적립 시점부터 5년 유효). 적립·환불마다 `credit_lots` 행(원금·잔여·`expires_at`)을 만들고, 차감은 만료 임박(`expires_at` 오름차순, 레거시 NULL은 마지막, 동률은 `id` 오름차순) 로트부터 잔여를 소진합니다(FIFO). 만료 회수는 원장에 `EXPIRE` 음수 행(`ref_type=CREDIT_LOT` · `ref_id=로트 ID`)을 남겨 `balance = SUM(amount)` 불변식을 유지합니다. 조회 잔액(`balance`)은 **미만료·잔여 > 0 로트의 합**이며, 부족 판정은 만료 정리(쓰기) 전에 활성 잔여 기준으로 수행해 실패한 차감이 만료 정리를 롤백시키지 않게 합니다.
 - **초대 보상(KNK-567)**
   - `POST /users/me/invite/redeem` 성공 시 초대자와 제출자에게 각각 2000 이프를 적립합니다.
-  - 제출은 계정당 평생 1회이며 가입 시점과 무관합니다. 자기 코드는 제출할 수 없습니다.
+  - 제출은 계정당 평생 1회이며 제출 기한은 없습니다. 자기 코드는 제출할 수 없습니다.
   - 월 10회 상한은 초대자 몫에만 적용합니다. 상한에 도달해도 제출자 몫은 적립하고 성공을 반환합니다.
   - 월 귀속은 적립 시점의 KST 월입니다.
   - 초대 관계 저장과 양측 적립은 한 트랜잭션에서 처리합니다. 지갑 락은 계정 순서로 획득해 교차 제출의 데드락을 막습니다.
@@ -980,6 +987,10 @@ Admin SDK 내부 재시도에 맡기고 애플리케이션은 같은 SDK 호출�
   - 코드는 앞뒤 공백을 제거하고 대문자로 바꿔 비교합니다.
   - 빈 값·형식 오류는 400, 없는 코드는 404, 자기 코드는 409 `INVITE_SELF_CODE`, 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다([§4-6](#4-6-오류와-예외-처리)).
   - 제출자가 정지 상태면 403입니다. 초대자가 탈퇴했으면 409 `INVITE_INVITER_WITHDRAWN`, 정지 상태면 409 `INVITE_INVITER_UNAVAILABLE`입니다.
+  - 초대자는 제출자보다 먼저 가입한 회원이어야 합니다(KNK-1404). 가입 순서는 가입 시각이 아니라 보상 신원 id(`reward_identity_user_id ?: id`)로 비교하며, 초대자 신원 id가 제출자 신원 id보다 크면 409 `INVITE_INVITER_NEWER`입니다.
+    - id는 가입 순서대로 증가하므로 같은 시각 가입의 동률 판정이 필요 없습니다. 재가입 계정은 최초 계정의 신원을 승계하므로 탈퇴·재가입으로 나중 가입자가 되어 이 검사를 피할 수 없습니다.
+    - 제출은 신원 id가 더 작은 쪽의 코드로만 성립합니다. 그래서 두 계정이 서로의 코드를 등록하는 상호 등록도, A→B→C→A 같은 순환 등록도 성립하지 않습니다.
+  - 검사 순서는 제출자 정지 403, 형식 400, 재제출 409, 매칭 없음 404, 자기 코드 409, 초대자 탈퇴·정지 409, 가입 순서 409입니다. 앞선 검사에 걸리면 뒤 검사는 하지 않습니다.
   - 탈퇴한 초대자의 코드도 충돌 방지를 위해 보존합니다. 평생 1회 제출 기록은 재가입 계정에 승계됩니다([§4-3-5](#4-3-api-계약)).
 - **초대 코드 발급**: 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. (KNK-567·V47): 문자 집합은 **혼동 문자(`O`·`0`·`I`·`1`·`L`)를 제외한 대문자+숫자 집합**입니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이므로 시각 혼동이 곧 입력 실패율입니다. 기존 발급분(영대소문자+숫자 62종)은 V47 마이그레이션으로 전량 리셋해 새 집합으로 재발급합니다: 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다. `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기했습니다.
 - **초대 상한 진행 표시**
@@ -1747,7 +1758,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 404 | `NOT_FOUND` | 리소스 없음·이미 삭제됨·읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드. 응답에 `Allow` 헤더 포함 |
 | 406 | `NOT_ACCEPTABLE` | Accept 협상 실패 |
-| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
+| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `INVITE_INVITER_NEWER` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지·초대자가 나중 가입([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
 | 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일·선택지 생성 트리거: [§4-3-3](#4-3-api-계약)) |
@@ -2044,6 +2055,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
   - 초대 코드 제출 성공은 관계별 한 번만 양쪽에 2000 이프를 적립합니다. 초대자가 월 10회 상한에 도달해도 제출자만 적립하고 200을 반환합니다.
   - 제출자 보상은 월 상한과 `monthlyRewardCount`에 포함하지 않습니다. count는 해당 KST 월의 초대자 역할 `INVITE_REWARD` 원장과 같아야 합니다.
   - 재제출은 409 `INVITE_ALREADY_REDEEMED`, 자기 코드는 409 `INVITE_SELF_CODE`, 없는 코드는 404입니다.
+  - 초대자의 보상 신원 id가 제출자보다 크면 409 `INVITE_INVITER_NEWER`이고, 양쪽 잔액과 제출자의 평생 1회 자격이 변하지 않아야 합니다. 나중 가입자가 먼저 가입한 회원의 코드를 제출해 성공한 뒤, 반대 방향 제출은 이 코드로 거부돼야 합니다.
   - 재가입 전후 다른 지갑의 동시 경합에서 허용하는 초과 범위는 보상 신원 계약을 따릅니다.
 - 이프: 회원 스토리라인 생성·재생성은 무료여야 합니다. 스토리 생성은 250 이프, 채팅 턴·AI 응답 재생성은 20 이프를 선차감하고, AI 실패 시 원장에 `REFUND` 행이 추가되어 잔액이 복원돼야 합니다.
 - 게스트 한도: 디바이스 ID별 스토리라인 생성·재생성 5회, 스토리 생성 1회, 모든 채팅방 합산 채팅 턴(재생성 포함) 5회 초과 요청은 402를 반환하고 AI 호출이 시작되지 않아야 합니다. 실패한 요청은 예약한 게스트 카운터를 복원해야 합니다. 축소 적용 시 기존 카운터는 리셋하지 않아야 합니다.

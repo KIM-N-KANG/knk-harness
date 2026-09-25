@@ -134,7 +134,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 - 루트 제목 템플릿은 `%s - 마냑`이며 기본값은 `src/constants/site.ts`입니다. 법적 문서·서비스 안내는 콘텐츠 제목, 스토리·채팅·공유는 조회한 제목을 사용합니다. 클라이언트 조회 전에는 서버 제목을 유지합니다.
 - 상세 색인은 공개 오리지널 목록 포함 여부로 판정합니다. 사용자 스토리·판정 실패는 `noindex, nofollow`; 오리지널은 제목·소개·canonical·OG를 생성합니다. 썸네일 조회 실패에는 브랜드 이미지를 사용합니다.
 - 공유 메타데이터는 공유본과 스토리 썸네일을 조회합니다. 실패에는 기본 제목과 `noindex, nofollow`를 반환하고 화면 조회는 계속합니다. 색인 범위는 [웹 Spec](../spec/3-2-web-spec.md#문서-열람과-검색-노출)을 따릅니다.
-- 사이트맵은 요청마다 오리지널 목록을 읽고 실패하면 정적 공개 페이지만 반환합니다. 홈 서버 컴포넌트도 5초 제한으로 목록을 읽어 Query 초기 데이터에 넣으며 실패하면 클라이언트 조회로 이어집니다. 이 fetch는 서버 데이터 캐시에 60초 재검증(`revalidate`)으로 재사용합니다. 홈은 동적 API를 쓰지 않으므로 이로써 60초 ISR 정적 페이지가 되어 탭 이동이 CDN·라우터 캐시에서 즉시 열리고, 목록 갱신은 백그라운드 재생성이 맡습니다(`no-store`였을 때는 요청마다 서버 렌더돼 탭 이동마다 백엔드를 기다렸습니다). 사이트맵·상세 메타데이터도 같은 캐시를 공유해 최대 60초 늦은 목록을 봅니다.
+- 사이트맵과 상세 색인 판정은 `GET /stories?filter=original`을 50개씩 커서로 끝까지(최대 10페이지) 이어 읽은 오리지널 목록을 씁니다. 한 페이지라도 실패하면 목록 전체를 읽지 못한 것으로 다뤄 사이트맵은 정적 공개 페이지만 반환하고 상세는 색인을 허용하지 않습니다. 홈 서버 컴포넌트는 5초 제한으로 기본 필터·정렬(전체·인기순)의 `GET /stories` 첫 페이지를 읽어 무한 Query 초기 데이터에 넣으며 실패하면 클라이언트 조회로 이어집니다. 두 fetch는 [backend-story-client](../../../manyak-web/src/lib/stories/backend-story-client.ts)가 서버 데이터 캐시에 60초 재검증(`revalidate`)으로 재사용합니다. 홈은 동적 API를 쓰지 않으므로 이로써 60초 ISR 정적 페이지가 되어 탭 이동이 CDN·라우터 캐시에서 즉시 열리고, 목록 갱신은 백그라운드 재생성이 맡습니다(`no-store`였을 때는 요청마다 서버 렌더돼 탭 이동마다 백엔드를 기다렸습니다). 필터·정렬 URL 쿼리는 `searchParams`(동적 API) 대신 클라이언트 `useSearchParams`로 읽어 ISR을 유지하고, 이를 감싼 Suspense 폴백에 기본 필터·정렬 목록을 그려 정적 HTML에 첫 페이지가 실리게 합니다. 쿼리가 있는 URL을 새로고침하면 기본 목록 HTML 뒤에 선택한 목록을 클라이언트에서 조회합니다. 필터·정렬 줄은 `(main)` 레이아웃이 홈 경로에서만 헤더와 스크롤 영역 사이에 그려 당김·스크롤에 따라가지 않고, 목록과는 URL 쿼리로만 연결됩니다(같은 Suspense 폴백 방식). 사이트맵·상세 메타데이터도 같은 캐시를 공유해 최대 60초 늦은 목록을 봅니다.
 - 루트의 `WebSite`·`Organization` JSON-LD는 로마자 `alternateName`·공식 SNS `sameAs`를 포함합니다. 인라인 JSON의 `<`를 이스케이프해 `</script>` 조기 종료를 막습니다. 검색 결과·오타 보정 효과를 보장하지 않습니다.
 
 ### 히스토리 처리
@@ -179,7 +179,11 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 ### 스토리 좋아요 버튼·집계 배지 (웹)
 
-렌더 호출은 비활성화되어 있고 `use-story-like.ts`·`story-like-count.tsx`·상수·아이콘·생성 API 훅은 남아 있습니다. 중단한 테스트는 [스토리 QA](../qa/stories.md#좋아요-재노출-검증)에서 확인합니다.
+계약은 [공통 Spec](../spec/3-1-client-spec.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**가 소유합니다.
+
+- `StoryDetailCta`가 CTA 행 왼쪽에 `Button variant="ghost" size="icon-lg"`와 `heart-outline-icon`·`heart-filled-icon`(`currentColor`, 선택 `text-destructive`)을 두고 `aria-pressed`·`aria-busy`로 상태를 전달합니다. 게스트 탭은 `isLikeLoginOpen`으로 `LoginRequiredSheet`를 엽니다.
+- [use-story-like](../../../manyak-web/src/features/stories/detail/hooks/use-story-like.ts)가 생성 훅으로 등록·취소하고, 성공하면 상세 캐시의 `isLiked`·`likeCount`를 고친 뒤 상세·공개 목록(`GET /stories` 접두 키) 쿼리를 무효화합니다.
+- `StoryLikeCount`는 `StoryTurnCount`와 같은 배지로 턴 수 왼쪽에 둡니다. 제작 카드는 하단 메타에 하트·좋아요 수 → 턴 수 → 제작일 순입니다. 두 지표 모두 [format-count](../../../manyak-web/src/lib/format-count.ts)의 `formatCompactCount`로 축약합니다.
 
 ### 스토리 상세 CTA 배경 연결 (웹)
 
