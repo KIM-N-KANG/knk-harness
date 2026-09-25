@@ -755,7 +755,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 - **버전별 이력.** 개정 후 재동의의 증빙은 회원이 어느 버전에 언제 동의했는지입니다. 광고성 정보 수신 동의([푸시 수신 동의](#푸시-수신-동의))처럼 현재 상태 하나만 저장하지 않고, 문서·버전별 행을 **추가 전용(append-only)**으로 쌓습니다. 재동의는 새 행으로 기록하고 과거 행은 지우지 않습니다.
 - **저장.** `user_consents`는 `user_id`(FK `users`) · `doc_type`(`TERMS` · `PRIVACY` · `AGE14`) · `version` · `agreed_at`을 저장하며, PK는 `(user_id, doc_type, version)`입니다. 같은 버전을 다시 보내도 새 행을 만들거나 **기존 `agreed_at`을 갱신하지 않습니다**. 최초 동의 시각을 증빙으로 보존하기 위해 PK 충돌을 무시하는 조건부 삽입을 사용하고, 예외를 잡아 넘기는 방식에 의존하지 않습니다.
-- **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.2`, 2026-09-01 시행) · `manyak.legal.privacy-version`(현재 `v1.4`, 2026-09-18 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
+- **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.4`, 2026-09-20 시행) · `manyak.legal.privacy-version`(현재 `v1.7`, 2026-09-25 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
 - **탈퇴 후 보존.** 회원 탈퇴는 soft delete이며 동의 행을 지우지 않습니다. 계약 종료 뒤에도 동의 증빙을 보존하기 위해 FK에 `ON DELETE` 연쇄를 두지 않습니다. 재가입하면 새 `user_id`에 동의를 다시 받으며, 이전 계정의 동의를 승계하지 않습니다.
 - **서버 게이트 없음.** 미동의 회원의 다른 API를 막지 않고, 클라이언트가 `needsConsent`에 따라 이용을 제한합니다. 서버 게이트가 필요해지면 유예기간과 대상 API를 정해 별도로 추가합니다.
 - **로그인 요청과 분리.** 로그인 요청에는 동의를 싣지 않습니다. 로그인 뒤 동의 상태 조회와 기록이라는 한 경로를 사용합니다.
@@ -765,8 +765,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `GET /users/me/consents` | 없음 | 200 `{ "terms": { "requiredVersion": "v1.2", "needsConsent": boolean }, "privacy": { "requiredVersion": "v1.4", "needsConsent": boolean }, "age14": { "requiredVersion": "1", "needsConsent": boolean } }` |
-| `POST /users/me/consents` | `{ "terms": "v1.2", "privacy": "v1.4", "age14": "1" }` 각 필드 선택 | 200 갱신 후 상태(GET과 같은 스키마) |
+| `GET /users/me/consents` | 없음 | 200 `{ "terms": { "requiredVersion": "v1.4", "needsConsent": boolean }, "privacy": { "requiredVersion": "v1.7", "needsConsent": boolean }, "age14": { "requiredVersion": "1", "needsConsent": boolean } }` |
+| `POST /users/me/consents` | `{ "terms": "v1.4", "privacy": "v1.7", "age14": "1" }` 각 필드 선택 | 200 갱신 후 상태(GET과 같은 스키마) |
 
 - **`needsConsent`는 서버가 계산합니다.** 해당 `doc_type`과 현행 `requiredVersion`에 해당하는 행이 없으면 `true`입니다. 클라이언트는 버전을 비교하지 않습니다. 설정을 롤백하거나 과거 버전을 다시 수용하면 "최신 동의 버전"과 "현행 버전 동의 여부"가 달라질 수 있습니다.
 - **보낸 항목만 기록합니다.** 필드 누락은 미제출이며 철회가 아닙니다. 세 필드가 모두 없으면 400을 반환합니다. 값이 현행 `requiredVersion`과 다르면 400과 `CONSENT_VERSION_MISMATCH`를 반환합니다([§4-6](#4-6-오류와-예외-처리)). 서버 값으로 덮어쓰면 사용자가 보지 않은 개정본에 동의한 기록이 생기고, 임의 문자열을 허용하면 존재하지 않는 문서에 동의한 행이 생깁니다. 클라이언트는 이 오류를 받으면 해당 문서를 다시 표시하며, 값을 바꿔 자동으로 재전송하지 않습니다. 여러 항목을 함께 보내면 모든 값을 검증한 뒤 한 트랜잭션에 저장합니다.
