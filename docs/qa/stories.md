@@ -78,7 +78,7 @@
 | STORY-LIST-32 | P0 | STORY-LIST-31 | "오리지널" 칩 탭 → 정렬 드롭다운에서 "최신순" 선택 | 칩 선택이 바뀌고 드롭다운은 선택 후 닫힘. URL이 `/?filter=original` → `/?filter=original&sort=latest`로 바뀌고 같은 값으로 첫 페이지부터 다시 조회. 선택된 칩을 다시 탭해도 해제되지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001, [웹 URL](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸), KNK-1421 |
 | STORY-LIST-33 | P1 | STORY-LIST-32 | 카드 탭으로 상세 이동 → 뒤로가기. 또는 `/?filter=original&sort=latest` 새로고침 | 필터·정렬 선택과 해당 목록이 유지됨. 알 수 없는 쿼리 값은 전체·인기순으로 대체 | ✅ e2e `stories/story-list`(뒤로가기), 새로고침은 수동 | [웹 URL](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸), KNK-1421 |
 | STORY-LIST-34 | P1 | 공개 목록이 한 페이지(20개)를 넘음 | 목록 끝까지 스크롤 | 같은 필터·정렬과 `nextCursor`로 다음 페이지를 이어 붙임(조회 중 목록 끝 스피너). 다음 페이지 실패 시 목록 끝 "다시 시도하기"로 복구. 이미 받은 스토리가 다시 와도 카드가 중복되지 않음 | ◐ e2e `stories/story-list`(이어 붙이기), 실패·중복은 수동 | §3-1-3 FE-SCREEN-001, KNK-1421 |
-| STORY-LIST-35 | P1 | 공개 목록에 오리지널 포함 | "전체"·"오리지널" 필터에서 각각 카드 좌상단 확인 | "오리지널" 필터에서는 모든 카드에 ORIGINAL 태그. "전체"에서는 응답에 오리지널 여부가 없어 태그를 표시하지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001 ORIGINAL 태그, KNK-1421 |
+| STORY-LIST-35 | P1 | 공개 목록에 오리지널(`isOriginal: true`)과 사용자 스토리가 섞임 | "전체"·"오리지널" 필터에서 각각 카드 좌상단 확인 | 필터와 무관하게 오리지널 카드에만 ORIGINAL 태그, 사용자 스토리 카드에는 없음 | ✅ e2e `stories/story-list`("전체" 필터) | §3-1-3 FE-SCREEN-001 ORIGINAL 태그, KNK-1421·1426 |
 | STORY-LIST-36 | P1 | 홈 카드 `turnCount` 12345, 내 스토리 카드 `turnCount` 1280 | `/`와 `/studio` 카드의 턴 수 확인 | 각각 "12.3K"·"1.2K"로 축약 표시(버림, 1,000 미만은 그대로). 상세 히어로도 "1.2K"처럼 같은 축약 | ✅ e2e `stories/story-list`·`stories/story-detail` | §3-1-3 FE-SCREEN-001·013, KNK-1421 |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
