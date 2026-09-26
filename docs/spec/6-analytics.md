@@ -643,14 +643,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개와 `client_inappBrowser_loginHandoffCreated`는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 18개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 14개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 인앱 브라우저 (5)   | `client_inappBrowser_*` 3개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
 | 온보딩 (3)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
-| 채팅 투어 (4)       | `client_chat_tour_*` · `client_chat_tourStep_viewed` · `client_chat_tourSkipButton_clicked`                                                                          | 앱 미구현                     |
 | 대화 공유 (3)       | `client_chat_shareButton_clicked` · `client_chatShare_*` 2개(`client_chatShareDialog_*` 2개는 폐기)                                                                  | 앱 미구현                     |
 | 상황 삽입 (1)       | `client_chat_situationInsertButton_clicked`                                                                                                                        | 앱은 `addBlockButton_clicked`로 통합 |
 
