@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.1 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-18 |
+| 수정일 | 2026-09-26 |
 | 대상 | 마냑 Android 네이티브 앱 |
 | 작성 목적 | Android 전용 기술 결정의 맥락·선택·이유·영향과 대체 관계를 보존합니다. |
 | 대상 저장소 | [manyak-android](../../../manyak-android) |
@@ -68,6 +68,7 @@
 - [A-044. 약관 동의 시트를 legal이 소유하고 광고 동의는 선택 항목과 재진입 재질문으로 받음](#a-044-약관-동의-시트를-legal이-소유하고-광고-동의는-선택-항목과-재진입-재질문으로-받음) — 2026-09-20
 - [A-045. 알림 진입 목적지는 서버 deepLink를 정본으로 해석](#a-045-알림-진입-목적지는-서버-deeplink를-정본으로-해석) — 2026-09-20
 - [A-046. 편집 초안을 퍼널 세션 ID 키의 여러 행으로 확장](#a-046-편집-초안을-퍼널-세션-id-키의-여러-행으로-확장) — 2026-09-23
+- [A-047. release 빌드에 R8 축소·난독화 적용](#a-047-release-빌드에-r8-축소난독화-적용) — 2026-09-26
 
 ---
 
@@ -595,3 +596,14 @@
 - **이유:** 키워드 초안에는 `requestId`가 없고 재생성마다 `requestId`가 바뀌어, 라우트에 실은 키가 프로세스 재시작 뒤 이미 지운 행을 가리킬 수 있습니다. 세션 ID를 키로 두면 단계 전환이 같은 행을 덮어 웹의 소유 레코드 이관이 필요 없고, 완성 제출도 그 ID로 정확히 한 초안만 내립니다.
 - **주요 영향:** v3→v4 마이그레이션이 편집 테이블을 다시 만들어 남은 초안을 `legacy-0`으로 옮기고 날짜 없이 맨 뒤에 둡니다. 새로 만들기 확인 다이얼로그와 `client_storyCreate_resumeDialog_*` 이벤트를 제거합니다. 퍼널 라우트에 필드가 늘어 이전 형식으로 저장된 백스택은 해석하지 못하는데, 앱 업데이트는 액티비티를 새로 시작하므로 영향이 없다고 판단했습니다.
 - 근거: [KNK-1395](https://kimandkang.atlassian.net/browse/KNK-1395), [Android 계획](../../../manyak-android/docs/plans/multiple-story-drafts.md)
+
+<a id="a-047"></a>
+
+## A-047. release 빌드에 R8 축소·난독화 적용
+
+- 결정일: 2026-09-26 · 기록 확정 상태: Accepted
+- **맥락:** v1.1.1은 R8을 끈 채 출시했고, Play Console이 DEX 난독화 비율 1%를 기준 미달로 표시했습니다(2027년 2월까지 해결하지 않으면 공개·게시가 제한될 수 있음). 앱이 이름이나 리플렉션에 기대는 곳과 라이브러리 consumer rules의 빈틈을 확인해야 했습니다.
+- **결정:** release만 AGP `optimization { enable = true }`로 코드·리소스 축소와 난독화를 켜고, keep 규칙은 `app/proguard-rules.pro` 한 파일에 consumer rules로 부족한 곳만 둡니다. 현재는 분석 이벤트가 `::class.simpleName`으로 보내는 `DomainError` 하위 타입 이름과, 오류 원인 enum 필드를 이름으로 읽는 카카오 SDK 모델(카카오 공식 규칙)입니다. Crashlytics 매핑 업로드는 `mappingFileUploadEnabled = true`로 명시합니다. debug는 켜지 않습니다.
+- **이유:** Crashlytics 플러그인은 `variant.isMinifyEnabled`로 업로드 여부를 정하는데 `optimization` DSL로 켠 R8을 그 값이 반영하지 않아, 명시하지 않으면 매핑 없이 난독화된 스택만 쌓입니다. 규칙을 넓게 잡으면 축소 효과가 줄고 어떤 규칙이 왜 필요한지 흐려지므로, 실제로 깨진 곳만 이유와 함께 둡니다. 카카오 규칙이 없으면 카카오 토큰이 없는 상태에서 앱 시작 직후 `NoSuchFieldException`으로 크래시합니다.
+- **주요 영향:** `bundleRelease`가 Crashlytics로 매핑을 올리고 AAB에도 매핑이 실려 Play 역난독에 쓰입니다. 새 라이브러리나 이름·리플렉션에 기대는 코드를 더하면 R8을 켠 빌드로 해당 흐름을 확인합니다. 로컬 업로드 키로 서명한 release는 운영 로그인이 되지 않아, 로그인 뒤 흐름은 같은 규칙으로 R8을 켠 debug 빌드(dev 서버)로 검증합니다.
+- 근거: [KNK-1408](https://kimandkang.atlassian.net/browse/KNK-1408), [Android 계획](../../../manyak-android/docs/plans/r8-minification.md)
