@@ -192,7 +192,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 계약은 [공통 Spec](../spec/3-1-client-spec.md#fe-screen-003-스토리-상세)의 **스토리 좋아요**가 소유합니다.
 
 - `StoryDetailCta`가 CTA 행 왼쪽에 `Button variant="ghost" size="icon-lg"`와 `heart-outline-icon`·`heart-filled-icon`(`currentColor`, 선택 `text-destructive`)을 두고 `aria-pressed`·`aria-busy`로 상태를 전달합니다. 게스트 탭은 `isLikeLoginOpen`으로 `LoginRequiredSheet`를 엽니다.
-- [use-story-like](../../../manyak-web/src/features/stories/detail/hooks/use-story-like.ts)가 생성 훅으로 등록·취소하고, 성공하면 상세 캐시의 `isLiked`·`likeCount`를 고친 뒤 상세·공개 목록(`GET /stories` 접두 키) 쿼리를 무효화합니다.
+- [use-story-like](../../../manyak-web/src/features/stories/detail/hooks/use-story-like.ts)가 진행 중 상세 조회를 취소하고 캐시 스냅샷을 보관한 뒤 `isLiked`와 `likeCount`를 즉시 바꿉니다. 생성 훅의 등록 또는 취소 요청이 실패하면 스냅샷을 복원하고, 204 성공이면 상세와 공개 목록(`GET /stories` 접두 키) 쿼리를 무효화합니다. 조회 취소부터 요청 완료까지 ref로 중복 호출을 막고 버튼을 비활성화합니다.
 - `StoryLikeCount`는 `StoryTurnCount`와 같은 배지로 턴 수 왼쪽에 둡니다. 제작 카드는 하단 메타에 하트·좋아요 수 → 턴 수 → 제작일 순입니다. 두 지표 모두 [format-count](../../../manyak-web/src/lib/format-count.ts)의 `formatCompactCount`로 축약합니다.
 
 ### 스토리 상세 CTA 배경 연결 (웹)
