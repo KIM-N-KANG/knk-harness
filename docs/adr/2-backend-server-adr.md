@@ -668,6 +668,7 @@
 - 알림 식별: type은 STORY_MODERATION_COMPLETED, kind는 SERVICE, messageId는 `story-moderation:{submissionId}:{attempt}`입니다. 웹 화면의 딥링크 경로와 Android의 새 type 처리는 클라이언트와 함께 반영합니다.
 - 입력과 오류: 수정 폼과 재제출 검증은 현재 라이브에 PATCH payload를 다시 적용하고 삭제된 기존 이미지 id를 제외합니다. 서버 실행 실패는 MODERATION_UNAVAILABLE과 APPLY_FAILED로 구분합니다. 최초 CREATE에는 멱등키를 두지 않고 중복 제출을 허용합니다.
 - 대체 범위: [BE-048](#be-048)의 모든 종료 알림을 아웃박스와 함께 커밋한다는 조건은 remote 모드에만 적용합니다. 제출본 폐기·재제출·복구의 세부 규칙은 이 결정과 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)으로 구체화합니다. 승인 후 라이브 반영, 게스트 제한, 검수 예외 등 나머지 결정은 유지합니다.
+- 보완 결정: 미구현(KNK-1161). dispatched_at은 제출·재제출 트랜잭션 시각으로 채우고 호출 시작마다 갱신하며 회수 기준은 항상 `dispatched_at + 300초`입니다. issues.path는 원본 기준으로 보관하되 조회 응답에서는 기존 이미지 id·새 이미지 objectKey·인물 id 또는 이름으로 현재 폼 인덱스에 재매핑하고 사라진 대상의 이슈는 제외합니다. 제출본 DELETE는 PENDING을 포함한 모든 미승인 상태에서 허용하며 중복 CREATE 정리와 수정 취소에 사용합니다. 삭제된 행의 늦은 결과는 PENDING·attempt 조건으로 무시합니다. 이 보완은 2026-09-26 3차 확정 결정입니다.
 - 출처: 2026-09-26 2차 확정 결정, [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1380](https://kimandkang.atlassian.net/browse/KNK-1380), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164).
 
 ## 복원 범위와 날짜 해석
