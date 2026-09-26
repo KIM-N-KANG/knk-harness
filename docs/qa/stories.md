@@ -259,7 +259,7 @@
 
 | ID             | P   | 사전조건                                      | 절차                                                    | 기대 결과                                                                                                                                                               | 자동화                                                                 | 근거                                              |
 | -------------- | --- | --------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------- | -------- |
-| STORY-DRAFT-01 | P0  | 키워드 입력 변경                         | 299ms·300ms 경계에서 저장소와 뱃지 확인       | 변경 즉시 `임시 저장중`, 299ms에는 미영속, 300ms에 마지막 값만 저장 후 `임시 저장됨`. 쓰기 실패는 완료 표시 없음 | ✅ unit `draft-autosave` + e2e `stories/story-create-draft` | §3-1-4 자동 저장, KNK-994 |
+| STORY-DRAFT-01 | P0  | 키워드 입력 변경                         | 299ms·300ms 경계에서 저장소와 뱃지 확인       | 변경 즉시 저장 중 표시, 300ms 디바운스 후 마지막 값을 저장하고 IndexedDB 커밋 완료 뒤에만 저장 완료 표시. 앞선 쓰기 뒤 더 최신 입력이 있거나 쓰기 실패 시 완료 표시 없음 | ✅ unit `draft-autosave` + e2e `stories/story-create-draft` | §3-1-4 자동 저장, KNK-994 |
 | STORY-DRAFT-02 | P0  | 장르·주인공 키워드 입력 후 자동 저장     | 새로고침 → `이어서 만들기`                    | 첫 장르 탭에서 제공 선택·이름·성별·특징·직접 추가 상태 복원. 레코드는 복원 뒤에도 유지 | ✅ e2e `stories/story-create-draft` | §3-1-4 키워드 저장, KNK-994 |
 | STORY-DRAFT-03 | P0  | 스토리라인 생성 201                      | 응답 직후 저장소 확인, 추가 정보 편집 후 새로고침 | 별도 편집·이탈 없이 즉시 `STORY_DRAFT` 저장. 이후 활성 순번·선택·빈 행 포함 자유 입력·추천 선택을 300ms마다 갱신하고 그대로 복원 | ✅ e2e `stories/story-create-draft` | §3-1-4 생성 이후 저장, KNK-994 |
 | STORY-DRAFT-04 | P0  | 자동 저장본 존재                         | 제작 화면의 FAB 탭                            | 다이얼로그 없이 퍼널로 이동해 빈 키워드부터 새 세션 시작. 기존 저장본은 그대로 유지되고 제작 탭 초안 카드로 남음 | ✅ e2e `stories/story-create-draft` | §3-1-4 재개, KNK-648·994·1394 |
@@ -269,7 +269,13 @@
 | STORY-DRAFT-05 | P1  | 자동 저장본 존재, 진행 카드 표시         | 카드 확인 후 `이어서 만들기`                  | 닫기(X) 없이 "이어서 만들기"·더보기만 표시. 저장본을 유지하며 다이얼로그 없이 비소모 복원 | ✅ e2e `stories/story-create-draft` | KNK-648·988·994·1261 |
 | STORY-DRAFT-10 | P1  | 자동 저장본 존재, 진행 카드 표시         | 더보기 → "삭제하기" → 확인 다이얼로그에서 "삭제하기" | "만들던 스토리를 삭제할까요?"·"삭제하면 만들던 내용이 사라져요" 확인 뒤 그 레코드만 제거, 카드 숨김. 다른 초안은 유지. "남겨두기"는 유지 | ✅ e2e `stories/story-create-draft` | §3-2 웹 제작 흐름 진행 카드, KNK-1261 |
 | STORY-DRAFT-06 | P0  | 스토리라인 생성 진행 중                  | 그 사이 편집 자동 저장 타이머 도착            | 같은 `requestId`의 in-flight 레코드를 draft가 덮지 않음. 다른 세션의 초안은 별도 항목으로 공존. 완성 요청은 별도 목록이라 편집 저장과 충돌하지 않음 | ✅ unit `creation-request-storage` | §3-1-4 초안 목록, KNK-994·1316·1394 |
-| STORY-DRAFT-07 | P1  | 입력 변경 뒤 300ms 전                    | 헤더 X·문서 hidden·`pagehide`                 | 예약된 현재 값을 즉시 flush해 다음 진입·새로고침에서 복원 | ✅ e2e `stories/story-create-draft`(헤더 X·새로고침) | §3-1-4 자동 저장, KNK-994 |
+| STORY-DRAFT-07 | P1  | 입력 변경 뒤 300ms 전                    | 헤더 X·문서 hidden·`pagehide`                 | 명시적 이탈은 예약된 현재 값의 커밋을 기다려 복원 가능성을 확인. hidden과 pagehide는 저장을 시작하지만 강제 종료 시 완료를 보장하지 않음 | ✅ e2e `stories/story-create-draft`(헤더 X·새로고침) | §3-1-4 자동 저장, KNK-994 |
+| STORY-DRAFT-13 | P0 | 구 localStorage 단일 객체 또는 배열, 최초 시각 및 입력 보유 | 제작 진입 후 저장소 확인, 삭제 후 새로고침 | 검증한 데이터와 순서 보존, 커밋 후 원본 제거, 삭제본 재삽입 없음. 손상 항목 포함 원문 또는 커밋 실패 시 원문 보존 | ✅ e2e `stories/story-creation-storage.spec.ts`, unit `creation-request-storage` | US-3-1, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
+| STORY-DRAFT-14 | P0 | IndexedDB 열기 실패 | 퍼널 진입 후 재시도 | 조회 실패와 빈 저장소를 구분. Spec의 오류 및 재시도 표시, 복원 전 편집 차단 | ✅ e2e `stories/story-creation-storage.spec.ts` | US-3-1, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
+| STORY-DRAFT-15 | P0 | 입력 후 IndexedDB 쓰기 용량 초과 | 헤더 닫기 확정, 생성 제출 | 입력과 화면 유지, 성공 배지 없음, 생성 API 전송 없음, Spec의 저장 실패 안내 | ✅ e2e `stories/story-creation-storage.spec.ts` | US-3-4, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
+| STORY-DRAFT-16 | P0 | 같은 origin의 두 탭, 초안 보유 | 한 탭에서 초안 삭제 | 다른 탭 목록도 갱신. 삭제 후 늦은 편집 저장이나 중복 성공 응답으로 초안 부활 또는 중복 전환 없음 | ✅ e2e `stories/story-creation-storage.spec.ts`, unit `creation-request-storage` | US-3-1, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
+| STORY-DRAFT-17 | P0 | 다른 탭에 제작 편집기 또는 지연 쓰기 보유 | 세션 종료 후 이전 탭 조작 | 이전 저장 세대의 입력 및 결과 반영 차단. DB 정리 실패 시 다음 접근에서 정리 재시도 | ◐ e2e `stories/story-creation-storage.spec.ts`(세대 변경), unit `creation-request-storage`. 실제 로그아웃은 AUTH-LOGOUT-08 | US-3-1, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
+| STORY-DRAFT-18 | P0 | 생성 POST 성공 직후 IndexedDB 초안 승격 1회 실패 | 생성 요청 후 결과 대기 | 진행 기록을 유지하고 복구 GET으로 결과를 다시 받아 초안 저장 및 선택 화면 표시. API 성공만으로 복구를 중지하지 않음 | ✅ e2e `stories/story-create-recovery.spec.ts` | US-3-4, [웹 제작](../spec/3-2-web-spec.md#웹-제작-흐름) |
 
 ## STORY-GATE — 제작과 채팅 시작 동의 게이트
 
