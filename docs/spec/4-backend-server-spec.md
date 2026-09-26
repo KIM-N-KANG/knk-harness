@@ -119,7 +119,7 @@
 | 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드·생성 표지 제거(프리셋 폴백, 멱등) 검수 중 409. 미구현(KNK-1161) | 204 | 401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 폐지 예정. 등록·PATCH 본문으로 대체. 미구현(KNK-1161) | 해당 없음 | 해당 없음 | 해당 없음 |
 | 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) 검수 중 409. 미구현(KNK-1161) | 204 | 401·403·404·409 | 필수 |
-| 스토리 | `POST /stories/general` | 일반 제작 검수 제출. 미구현(KNK-1161) | 202 | 400·401·403 | 필수 |
+| 스토리 | `POST /stories/general` | 일반 제작 검수 제출. 미구현(KNK-1161) | 202 | 400·401·403·409 | 필수 |
 | 검수 제출본 | `GET /stories/submissions` | 내 미승인 제출본 목록. 미구현(KNK-1161) | 200 | 400·401 | 필수 |
 | 검수 제출본 | `GET /stories/submissions/{submissionId}` | 소유 제출본 상세. 미구현(KNK-1161) | 200 | 401·404 | 필수 |
 | 검수 제출본 | `PUT /stories/submissions/{submissionId}` | 신규 등록 반려·실패본 재제출. 미구현(KNK-1161) | 202 | 400·401·403·404·409 | 필수 |
@@ -818,7 +818,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 **미구현(KNK-1161)** 검수 완료 푸시(KNK-1118)는 제출본이 APPROVED·REJECTED·FAILED로 종료될 때 발행합니다. 정보성 서비스 알림이며 사전 동의는 요구하지 않고 기존 `servicePush` 옵트아웃 설정을 따릅니다. 게스트는 푸시 토큰을 등록할 수 없어 검수 제출 대상에서 제외합니다.
 
 - `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
-- 딥링크는 기존 스토리의 수정 폼 또는 신규 등록 제출본을 대상으로 합니다. 경로는 웹 KNK-1163 화면 계약을 따르며 서버는 `manyak.push.web-base-url`과 경로를 조합하는 규칙만 소유합니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
+- 딥링크는 `storyId`가 있으면 `/stories/{storyId}/edit`, 없으면 `/studio/story/general?submissionId={submissionId}`입니다. 따라서 UPDATE와 승인된 CREATE는 스토리 수정 폼으로 이동합니다. CREATE의 일반 제작 경로는 웹 KNK-1163 확정 전 임시값입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 경로를 조합합니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
 - 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
 - 발송 실패나 사용자의 서비스 알림 끄기는 검수 결과를 되돌리지 않습니다. 화면 재진입 때 제출본 조회로 현재 상태를 표시합니다. 상태 조회는 푸시를 대신해 계속 폴링하도록 정한 계약이 아닙니다.
 
@@ -1268,7 +1268,7 @@ graph TD
 
 #### 스토리 검수 제출 흐름
 
-**상태는 미구현(KNK-1161)입니다. 이 절과 하위 절 전체에 적용합니다.** 에픽 KNK-1120의 일반 제작 등록·수정 계약이며, 결정 근거는 [BE-048](../adr/2-backend-server-adr.md#be-048)입니다.
+**상태는 미구현(KNK-1161)입니다. 이 절과 하위 절 전체에 적용합니다.** 서버 [PR #280](https://github.com/KIM-N-KANG/manyak-server/pull/280)의 `c8b0031`과 대조한 에픽 KNK-1120의 일반 제작 등록·수정 계약이며, 결정 근거는 [BE-048](../adr/2-backend-server-adr.md#be-048)입니다.
 
 라이브는 승인된 버전만 유지합니다. 기존 스토리는 승인된 라이브로 간주하고 백필하지 않습니다. 일반 제작 등록과 모든 수정은 공개·비공개를 가리지 않고 검수합니다. 간편 제작 완성본은 검수하지 않으며 이후 수정부터 검수합니다. `Story.isReadableBy`, 목록·검색의 노출 조건, 공개 스냅샷(KNK-1065), 진행 중 채팅의 읽기 규칙은 변경하지 않습니다. 미승인 제출본을 이 경로들에 노출하지 않습니다.
 
@@ -1284,7 +1284,7 @@ graph TD
 
 ##### 검수 제출본 모델
 
-예정 테이블명은 `story_submissions`입니다. 마이그레이션 번호는 구현 시 확정합니다.
+서버 PR #280의 V87은 `story_submissions`를 정의합니다. 서버 머지 전이므로 이 절의 미구현 표기는 유지합니다.
 
 | 필드 | 의미 |
 | --- | --- |
@@ -1292,7 +1292,8 @@ graph TD
 | `story_id` | 대상 스토리 FK. CREATE 접수 시 NULL, 승인 시 생성한 스토리로 설정 |
 | 소유 회원 | 제출본 접근 권한의 기준. 게스트 제출 없음 |
 | 종류 | `CREATE` 또는 `UPDATE` |
-| `payload` | jsonb. 요청 본문 원형 전체 보관. UPDATE는 원래 PATCH 본문 |
+| `payload` | jsonb. 요청 DTO를 직렬화한 원본 입력 보관. UPDATE는 원래 PATCH 본문이며 조회 응답의 payload와 구분 |
+| `input_form` | jsonb. 검수 시점 전체 폼. AI 입력 조립과 issues.path 재매핑의 기준이며 내부 컬럼 |
 | `status` | `PENDING`, `APPROVED`, `REJECTED`, `FAILED` |
 | `issues` | jsonb. AI의 `{path, type, rule, reason}` 목록. path는 제출 입력 원본 기준으로 보관하고 조회 응답에서는 현재 폼 기준으로 재매핑 |
 | `error_code` | 실행 실패 코드. API에서는 `errorCode`로 노출 |
@@ -1300,22 +1301,28 @@ graph TD
 | `attempt` | 제출·재제출·회수 재실행마다 1 증가하는 검수 회차 번호 |
 | `dispatched_at` | 제출·재제출 트랜잭션 시각으로 초기화하고 검수 호출 시작마다 갱신. PENDING 회수의 300초 기준 |
 
-`story_id`가 있는 `PENDING` 행에 부분 유니크 제약을 두어 같은 스토리의 중복 제출을 막습니다. CREATE는 승인 전 story_id가 없어 이 제약의 스토리별 대상이 아닙니다. 미승인 제출본은 스토리당 UPDATE 한 행 또는 신규 등록 건당 CREATE 한 행입니다. 반려·실패 상태에서도 payload 전체와 issues를 보존합니다. 제출본 상태는 라이브 스토리의 `status`나 이미지별 `moderation_status`와 별개입니다.
+`story_id`가 있는 PENDING 행과 APPROVED가 아닌 행에 각각 부분 유니크 제약을 두어 스토리별 검수 중·미승인 제출본을 한 건으로 제한합니다. CREATE는 승인 전 story_id가 없어 이 제약의 스토리별 대상이 아닙니다. 미승인 제출본은 스토리당 UPDATE 한 행 또는 신규 등록 건당 CREATE 한 행입니다. 반려·실패 상태에서도 payload 전체와 issues를 보존합니다. 제출본 상태는 라이브 스토리의 `status`나 이미지별 `moderation_status`와 별개입니다.
 
 미승인 행은 재제출 시 같은 submissionId로 payload를 덮어쓰고 issues·error_code·판정 시각을 비운 뒤 PENDING으로 되돌립니다. 이력은 별도로 남기지 않고 AI 판정 기록은 Langfuse에서 확인합니다. APPROVED 행은 감사용으로 보존하며 이후 PATCH는 새 행을 만듭니다. REJECTED·FAILED는 재제출·DELETE·회원 탈퇴까지 보관하고, 스토리 삭제 시 해당 스토리의 제출본 전부, 회원 탈퇴 시 해당 회원의 제출본을 하드 삭제합니다.
 
 ##### 제출 검증과 AI 입력
 
-1. 인증·소유권과 검수 중 쓰기 제한을 확인합니다. 일반 제작 등록·PATCH의 미인증 요청은 401입니다.
+1. 일반 제작 등록·PATCH·제출본 API의 미인증 요청은 401입니다. PATCH·제출본 PUT의 필드 검증 순서는 인증 → 소유권·존재 → 검수 중·상태 409 → 입력 검증 400입니다. 두 컨트롤러는 `@Valid` 선검증 없이 서비스에서 검증합니다. 타인 스토리 PATCH는 403, 타인·미존재 제출본 PUT은 404이며 UPDATE 종류의 PUT도 409입니다. JSON 파싱·타입 변환 실패는 서비스 진입 전 400일 수 있습니다.
 2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
-3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 제외합니다. 새 이미지 객체 키는 서빙 URL로 바꾸고 유지되는 이미지도 포함합니다.
-4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`을 포함하며 공개 설정·최소 턴 수·ID·제출본 처리 상태는 AI 입력에서 제외합니다. 제외한 값도 제출본에는 보관합니다.
+3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 이전 input_form에 있던 ID에 한해 재제출 검증에서 제외합니다. 임의의 다른 이미지 ID는 400입니다. 새 이미지 객체 키는 서빙 URL로 바꾸고 유지되는 이미지도 포함합니다.
+4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`을 포함하며 공개 설정·최소 턴 수·ID·제출본 처리 상태는 AI 입력에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
+
+응답은 `ModerationResult.validated(input)`로 REST 클라이언트와 실행기에서 같은 전송 입력을 기준으로 검증합니다. 다음 중 하나라도 어긋나면 FAILED·MODERATION_UNAVAILABLE이며 issues는 비웁니다.
+
+- decision은 APPROVED 또는 REJECTED입니다. APPROVED는 issues가 비고 error_code가 null이어야 합니다. REJECTED는 오류 코드가 없으면 issues가 한 개 이상, 오류 코드가 있으면 issues가 비어야 합니다. 오류 코드는 IMAGE_READ_FAILED·MODEL_CALL_FAILED만 허용합니다.
+- issues[].rule은 MINOR_SEXUAL_EXPLOITATION, EXPLICIT_SEXUAL_CONTENT, NONCONSENSUAL_SEXUAL_EXPLOITATION, DRUGS, EXTREME_GORE, SELF_HARM_PROMOTION, HATE_VIOLENCE_INCITEMENT 중 하나입니다. reason은 공백만으로 구성될 수 없습니다.
+- path는 실제 전송한 검수 입력의 문자열 leaf 경로이며 배열 인덱스는 0부터 시작합니다. 객체·배열 자체, 없는 필드·범위 밖 인덱스는 허용하지 않습니다. thumbnailUrl과 characters[n].images[m].imageUrl만 IMAGE이고 나머지는 TEXT입니다.
 
 검수 정책과 `issues`의 의미는 AI [§5-3-6](5-ai-server-spec.md#5-3-6-게시물-검수)이 소유합니다. 백엔드는 검수 규칙을 중복 정의하지 않습니다.
 
 ##### 비동기 실행과 결과 적용
 
-제출 트랜잭션 커밋 뒤 이름 지정 실행기로 AI를 호출합니다. AI의 요청 전체 제한은 150초이며 서버 클라이언트 타임아웃은 이보다 길게 설정합니다. 구체적인 실행기 이름·풀 크기와 서버 타임아웃 값은 구현 시 정합니다. 제출·재제출·회수 재실행마다 attempt를 1 증가시킵니다. dispatched_at은 제출·재제출 트랜잭션에서 그 시각으로 채우고, 검수 호출을 시작할 때마다 다시 갱신합니다. 결과는 `status=PENDING`이고 attempt가 호출 시점 값과 같을 때만 조건부 갱신으로 반영합니다. 조건이 맞지 않거나 행이 삭제됐으면 늦은 결과를 무시합니다.
+제출 트랜잭션 커밋 뒤 이름 지정 실행기로 AI를 호출합니다. AI의 요청 전체 제한은 150초이며 서버 클라이언트 타임아웃은 이보다 길게 설정합니다. `storyModerationExecutor`는 기본 고정 스레드 4개, 큐 100개, 스레드 접두어 `story-moderation-`와 MDC 전달을 사용합니다. 실행기 포화로 제출을 거부해도 접수 202와 PENDING은 유지하고 회수로 복구합니다. HTTP 연결 제한은 5초, 읽기 제한은 기본 180초이며 설정이 150초 이하면 클라이언트 초기화가 실패합니다. 제출·재제출·회수 재실행마다 attempt를 1 증가시킵니다. dispatched_at은 제출·재제출 트랜잭션에서 그 시각으로 채우고, 검수 호출을 시작할 때마다 다시 갱신합니다. 결과는 `status=PENDING`이고 attempt가 호출 시점 값과 같을 때만 조건부 갱신으로 반영합니다. 조건이 맞지 않거나 행이 삭제됐으면 늦은 결과를 무시합니다.
 
 | AI·적용 결과 | 제출본 상태 | 후속 동작 |
 | --- | --- | --- |
@@ -1326,15 +1333,27 @@ graph TD
 | 승인 후 적용 단계의 검증 실패 | `FAILED` | 라이브 변경 롤백, APPLY_FAILED 기록, 알림 발행 |
 | DB 일시 장애 | `PENDING` 유지 | 트랜잭션 롤백, 회수 스케줄러가 재실행 |
 
-승인 결과 적용은 스토리 락 다음 인물 락 순서로 기존 수정과 같은 동시성 규칙을 사용합니다. 라이브 반영, 기존 공개 조건에 따른 공개 스냅샷 갱신, 제출본 `APPROVED`를 한 트랜잭션으로 커밋하고 그 안에서 검수 완료 도메인 이벤트를 발행합니다. CREATE 승인은 제출본 행을 잠그고 PENDING·attempt 조건을 확인한 뒤 처음 스토리를 만들고 story_id를 채워 중복 생성을 막습니다. 검색은 기존 라이브 커밋 뒤 색인 경로를 유지합니다.
+승인 결과 적용의 락 순서는 회원 → 스토리 → 제출본 → 인물입니다. CREATE는 기존 스토리가 없으므로 회원 → 제출본을 잠근 뒤 스토리를 생성합니다. PENDING·attempt는 잠근 제출본에서 확인합니다. 라이브 반영, 기존 공개 조건에 따른 공개 스냅샷 갱신, 제출본 `APPROVED`를 한 트랜잭션으로 커밋하고 그 안에서 검수 완료 도메인 이벤트를 발행합니다. CREATE 승인은 제출본 행을 잠그고 PENDING·attempt 조건을 확인한 뒤 처음 스토리를 만들고 story_id를 채워 중복 생성을 막습니다. 검색은 기존 라이브 커밋 뒤 색인 경로를 유지합니다.
 
 반려·실패는 라이브를 바꾸지 않고 제출본의 판정·issues·error_code를 기록하는 트랜잭션에서 도메인 이벤트를 발행합니다. 적용 검증 실패는 라이브 적용 트랜잭션을 롤백한 뒤 PENDING·attempt 조건을 다시 확인해 FAILED와 이벤트를 기록합니다. local 모드는 커밋 뒤 서버가 발송하고 remote 모드는 같은 트랜잭션에 아웃박스를 기록합니다. 외부 푸시 발송 자체는 도메인 트랜잭션 안에서 실행하지 않습니다. DB 일시 장애는 롤백으로 PENDING에 남겨 회수 대상으로 둡니다.
 
-종료된 REJECTED·FAILED는 서버가 자동 재시도하지 않고 사용자가 재제출합니다. 서버 재시작 등으로 오래 남은 PENDING은 스케줄러가 dispatched_at부터 300초 경과 후 attempt를 증가시켜 다시 검수합니다. 회수 기준은 항상 `dispatched_at + 300초`이며 실행기에 전달되기 전 서버가 종료돼도 제출·재제출 시각을 기준으로 같은 규칙을 적용합니다. 이는 기존 `pending-reclaim`과 같은 미완료 작업 복구이며, FAILED 재시도와 구분합니다.
+종료된 REJECTED·FAILED는 서버가 자동 재시도하지 않고 사용자가 재제출합니다. 서버 재시작 등으로 오래 남은 PENDING은 스케줄러가 dispatched_at부터 설정된 회수 시간(기본 300초) 경과 후 attempt를 증가시켜 다시 검수합니다. 회수 기준은 `dispatched_at + reclaim-after`(기본 300초)이며 실행기에 전달되기 전 서버가 종료돼도 제출·재제출 시각을 기준으로 같은 규칙을 적용합니다. 이는 기존 `pending-reclaim`과 같은 미완료 작업 복구이며, FAILED 재시도와 구분합니다. 스케줄러는 기본 60초 fixed delay로 회수 기준보다 오래된 PENDING을 최대 100건 조회합니다. 제출본을 잠그고 상태·시각을 재확인한 뒤 attempt를 증가시키고 새 이벤트를 발행합니다. 호출 시작·재제출·회수 시 updatedAt도 갱신합니다.
+
+##### 검수 실행 설정
+
+미구현(KNK-1161). 서버 PR #280의 설정과 기본값입니다. `manyak.ai.base-url`을 기준으로 검수 API를 호출합니다.
+
+| 설정 키 | 환경 변수 | 기본값·동작 |
+| --- | --- | --- |
+| `manyak.ai.moderation.timeout` | `MANYAK_AI_MODERATION_TIMEOUT` | 180s, 150초 초과 필수 |
+| `manyak.ai.moderation.pool-size` | `MANYAK_AI_MODERATION_POOL_SIZE` | 4, core·max 동일 |
+| `manyak.ai.moderation.reclaim-after` | `MANYAK_AI_MODERATION_RECLAIM_AFTER` | 300s |
+| `manyak.ai.moderation.reclaim-interval` | `MANYAK_AI_MODERATION_RECLAIM_INTERVAL` | 60000ms, fixed delay |
+| `manyak.ai.moderation.stub` | 별도 YAML 치환 없음 | 미지정 시 실제 호출. local·test는 true로 즉시 APPROVED 스텁 사용 |
 
 ##### 검수 제출본 API
 
-아래 API는 모두 인증 필수이며 미인증은 401입니다. 제출본 조회는 소유 회원만 허용하고 타인·미존재 식별자는 404로 처리합니다. 재제출·폐기도 소유 회원만 수행할 수 있습니다.
+아래 API는 모두 인증 필수이며 미인증은 401입니다. 제출본 조회는 소유 회원만 허용하고 타인·미존재 식별자는 404로 처리합니다. 재제출·폐기도 소유 회원만 수행할 수 있으며 타인·미존재·잘못된 UUID는 404입니다. 정지 회원의 쓰기는 403입니다.
 
 | 엔드포인트 | 요청·응답과 동작 |
 | --- | --- |
@@ -1343,13 +1362,13 @@ graph TD
 | `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 입력 검증 뒤 같은 submissionId의 payload를 덮어쓰고 issues·error_code·판정 시각을 비운 뒤 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
 | `DELETE /stories/submissions/{submissionId}` | APPROVED가 아닌 PENDING·REJECTED·FAILED 제출본을 물리 삭제, 204. APPROVED는 409. 중복 CREATE 정리와 UPDATE 취소에 같은 경로 사용 |
 
-상세와 목록 항목은 `{submissionId, storyId, kind, payload, status, issues, errorCode, createdAt, updatedAt, decidedAt}`을 사용합니다. `storyId`는 외부 공개 UUID이며 승인 전 CREATE에서는 null입니다. issues는 AI의 필드 구조를 유지하되 path를 응답 폼 기준으로 재매핑하고 대상이 사라진 항목은 응답에서 제외합니다. `error_code`는 클라이언트 camelCase인 `errorCode`로 전달합니다.
+상세와 목록 항목은 `{submissionId, storyId, kind, payload, status, issues, errorCode, createdAt, updatedAt, decidedAt}`을 사용합니다. 응답 payload는 DB 원본 요청이 아니라 현재 라이브에 제출 입력을 합성한 복원 폼이며 새 이미지 미리보기를 포함하고 응답 전용 submission 필드는 제외합니다. CREATE는 제출 입력에서 폼을 복원합니다. APPROVED 상세는 현재 라이브를 다시 합성하지 않고 저장된 input_form을 반환하므로 승인 이후 발급된 자식 ID로 교체하지 않습니다. 내부 attempt·dispatched_at·input_form은 별도 응답 필드로 노출하지 않습니다. `storyId`는 외부 공개 UUID이며 승인 전 CREATE에서는 null입니다. issues는 AI의 필드 구조를 유지하되 path를 응답 폼 기준으로 재매핑하고 대상이 사라진 항목은 응답에서 제외합니다. `error_code`는 클라이언트 camelCase인 `errorCode`로 전달합니다.
 
 목록은 [내 콘텐츠 목록](#내-콘텐츠-목록) 관례를 따릅니다. `limit` 기본 100, 정수는 1~100으로 보정하고 비정수는 400입니다. 페이지네이션 없이 생성 시각 내림차순, 동률이면 내부 PK 내림차순으로 정렬합니다. 내부 PK는 응답에 싣지 않습니다. 신규 등록 대기·반려·실패본은 아직 라이브 스토리가 없으므로 이 목록으로 내 스토리 화면을 구성합니다.
 
 UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId를 유지합니다. 수정 폼은 매번 현재 라이브에 미승인 제출본의 PATCH payload를 다시 적용해 계산하고, 그 사이 삭제된 기존 이미지 id는 폼에서 제외합니다. `submission: {submissionId, status, issues, errorCode}` 필드는 항상 존재하며 대상 제출본이 없거나 APPROVED이면 null입니다.
 
-아직 라이브가 아닌 새 이미지는 `id: null`, `objectKey`, 미리보기용 서빙 URL을 반환합니다. 서버는 제출본의 issues.path를 입력 원본 기준으로 보관합니다. 수정 폼·제출본 조회 응답을 만들 때 기존 이미지는 id, 새 이미지는 objectKey, 인물은 id 또는 이름으로 대응시켜 현재 폼 인덱스로 다시 매핑합니다. 대상이 사라진 항목의 이슈는 응답에서 제외하며 응답의 path는 항상 응답 폼 기준입니다. CREATE는 storyId가 없으므로 제출본 상세로 입력을 복원합니다.
+아직 라이브가 아닌 새 인물의 id도 null입니다. 아직 라이브가 아닌 새 이미지는 `id: null`, `objectKey`, 미리보기용 서빙 URL을 반환합니다. 서버는 제출본의 issues.path를 입력 원본 기준으로 보관합니다. 수정 폼·제출본 조회 응답을 만들 때 기존 이미지는 id, 새 이미지는 objectKey, 인물은 id 또는 이름으로 대응시켜 현재 폼 인덱스로 다시 매핑합니다. 대상이 사라진 항목의 이슈는 응답에서 제외하며 응답의 path는 항상 응답 폼 기준입니다. 표지 URL이 검수 시점과 달라졌으면 해당 표지 이슈도 응답에서 제외합니다. CREATE는 승인 전 storyId가 없으므로 제출본 상세로 입력을 복원합니다.
 
 최초 CREATE POST에는 멱등키를 두지 않고 중복 제출을 허용합니다. 202 응답이 유실되면 사용자가 미승인 목록에서 제출본을 확인합니다. 중복 CREATE 정리와 수정 취소는 위 DELETE 계약에 따라 PENDING을 포함한 모든 미승인 상태에서 수행합니다. PENDING 제출본을 지우면 행이 사라지므로 늦은 검수 결과는 PENDING·attempt 조건을 만족하지 못해 무시됩니다.
 
@@ -2188,7 +2207,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - **검수 결과와 알림, 미구현(KNK-1161)** 승인 시 라이브 적용·공개 스냅샷의 기존 규칙에 따른 갱신·APPROVED를 함께 커밋하고 트랜잭션 안에서 도메인 이벤트를 발행해야 합니다. local은 커밋 뒤 서버 발송, remote는 같은 트랜잭션의 아웃박스 기록이어야 합니다. 내용 위반은 REJECTED와 issues, AI 오류·호출 실패·적용 검증 실패는 FAILED와 errorCode로 구분해야 합니다. 세 종료 상태 모두 서비스 알림을 발행하고 실제 발송은 수신 설정을 따라야 합니다.
 - **검수 중 쓰기, 미구현(KNK-1161)** 스토리당 PENDING은 한 건이며 PATCH 전부와 인물 이미지·표지 삭제는 409여야 합니다. 스토리 삭제는 허용하고 해당 스토리의 제출본을 전부 물리 삭제해 늦은 판정이 라이브를 되살리지 않아야 합니다.
 - **즉시 반영과 검수 제외, 미구현(KNK-1161)** PENDING이 없을 때 visibility 단독 PATCH·인물 이미지 삭제·표지 삭제는 검수 없이 반영해야 합니다. 스토리 삭제는 PENDING 유무와 무관하게 기존 권한으로 허용해야 합니다. 혼합 PATCH는 전체를 검수하고 간편 제작 완성본은 검수하지 않으며 이후 수정부터 검수해야 합니다.
-- **제출본 복구·접근, 미구현(KNK-1161)** 반려·실패 입력과 issues를 보존하고 UPDATE 재제출은 PATCH, CREATE 재제출은 같은 submissionId의 PUT으로 처리해야 합니다. 타인·미존재 제출본 조회는 404여야 합니다. FAILED 자동 재시도는 없고 오래 남은 PENDING만 dispatched_at부터 300초 경과 후 attempt를 증가시켜 복구 실행해야 합니다. 결과 적용은 PENDING·attempt 일치 조건을 확인하고 CREATE는 제출본 행 잠금으로 중복 생성을 막아야 합니다. 재제출은 같은 ID를 유지하고 판정 필드를 비우며, DB 일시 장애는 PENDING 롤백·회수로 복구해야 합니다. dispatched_at은 제출·재제출 트랜잭션에서 초기화하고 호출 시작마다 갱신해 실행기 전달 전 종료도 회수해야 합니다. 제출본 DELETE는 PENDING·REJECTED·FAILED에 204, APPROVED에 409여야 하며 삭제 후 늦은 결과는 무시해야 합니다.
+- **제출본 복구·접근, 미구현(KNK-1161)** 반려·실패 입력과 issues를 보존하고 UPDATE 재제출은 PATCH, CREATE 재제출은 같은 submissionId의 PUT으로 처리해야 합니다. 타인·미존재 제출본 조회는 404여야 합니다. FAILED 자동 재시도는 없고 오래 남은 PENDING만 dispatched_at부터 설정된 회수 시간(기본 300초) 경과 후 attempt를 증가시켜 복구 실행해야 합니다. 결과 적용은 PENDING·attempt 일치 조건을 확인하고 CREATE는 제출본 행 잠금으로 중복 생성을 막아야 합니다. 재제출은 같은 ID를 유지하고 판정 필드를 비우며, DB 일시 장애는 PENDING 롤백·회수로 복구해야 합니다. dispatched_at은 제출·재제출 트랜잭션에서 초기화하고 호출 시작마다 갱신해 실행기 전달 전 종료도 회수해야 합니다. 제출본 DELETE는 PENDING·REJECTED·FAILED에 204, APPROVED에 409여야 하며 삭제 후 늦은 결과는 무시해야 합니다.
 - **폼·알림 회차, 미구현(KNK-1161)** 새 이미지는 id null·objectKey·미리보기 URL을 반환하고 저장된 issues.path는 입력 원본 기준으로 유지해야 합니다. 조회 응답에서는 기존 이미지 id·새 이미지 objectKey·인물 id 또는 이름으로 현재 폼 인덱스에 재매핑하고 사라진 대상의 이슈를 제외해야 합니다. submission 필드는 항상 존재하고 해당 제출본이 없거나 APPROVED이면 null이어야 합니다. `STORY_MODERATION_COMPLETED`는 SERVICE로 처리하고 `story-moderation:{submissionId}:{attempt}`로 회차를 구분해야 합니다. remote 전환 전에 알림 소비자의 허용 목록과 분류를 검증해야 합니다.
 - **이미지 우회 차단, 미구현(KNK-1161)** 개별 인물 이미지 연결 POST가 제거되고 presign은 유지돼야 합니다. 등록·PATCH 승인 전에 새 이미지가 라이브에 연결되지 않아야 하며 V76 이미지별 상태는 APPROVED로 유지해야 합니다.
 
