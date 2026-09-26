@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-26 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드 결정의 맥락, 선택, 근거 보존 |
 | 기준 | [백엔드 Spec](../spec/4-backend-server-spec.md)에서 이관한 결정 기록과 후속 Git·PR 이력 |
@@ -65,6 +65,8 @@
 - [BE-045. 남용 방지의 수용 범위](#be-045)
 - [BE-046. 게스트 개인정보 수집 동의는 별도 문서·디바이스 단위 기록](#be-046)
 - [BE-047. 알림 서비스 분리와 큐 도입](#be-047)
+- [BE-048. 스토리 등록·수정의 검수 제출본과 비동기 반영](#be-048)
+- [BE-049. 검수 제출본 회차와 알림 모드별 발송](#be-049)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -637,6 +639,39 @@
 - 근거: 2026-09-18 김태완 멘토링에서 학습 범위를 알림만으로 제한하고 운영 SQS, 로컬 Kafka, 동기 경로 선행과 기존 코드 보존을 정했다. 코드 조사에서는 `push`가 시나리오 데이터와 회원 자격 조회를 경계로 발송 책임을 떼기 가장 고립된 후보였다. 현행 `StoryCompletionPushListener`와 `FcmPushSender`는 커밋 뒤 실패를 로그로 남기고 앱 수준 재시도를 하지 않는다. 검색도 `StorySearchIndexListener`의 색인 실패를 삼키지만 PostgreSQL 정본에서 재색인할 수 있다. 반면 알림 발송 요청은 별도 기록이 없어 실패 후 재개할 근거가 없으므로 아웃박스와 멱등 소비를 학습할 대상으로 삼는다. 색인 실패와 복구 사례가 보여 준 커밋 이후 외부 전달의 공백을 다루되 검색 분리로 범위를 넓히지 않는다.
 - 관계: [BE-035](#be-035)의 토큰 소유권과 동의 계약, 발송 직전 재확인은 유지한다. 실행 주체와 큐 재전달만 이 결정으로 확장하며 메시지에 동의나 토큰 스냅샷을 싣지 않는다. [BE-036](#be-036)의 검색 파생 사본과 재색인 구조는 유지하고 검색은 분리하지 않는다. 출석 리마인드와 프로모션 스케줄러 이전은 큐 전환 결과를 보고 판단한다.
 - 출처: [KNK-1361](https://kimandkang.atlassian.net/browse/KNK-1361), [KNK-1368](https://kimandkang.atlassian.net/browse/KNK-1368), [KNK-1370](https://kimandkang.atlassian.net/browse/KNK-1370), 노션 멘토링 정리(2026-09-18 김태완, 티켓에 정리된 결정), 2026-09-19 코드 조사. 코드 근거는 `manyak-server`의 `push/event/StoryCompletionPushListener.kt`, `push/service/FcmPushSender.kt`, `search/event/StorySearchIndexListener.kt`다.
+
+<a id="be-048"></a>
+
+## BE-048. 스토리 등록·수정의 검수 제출본과 비동기 반영
+
+- 날짜: 2026-09-26.
+- 상태: 채택, 미구현(KNK-1161).
+- 배경: AI 게시물 검수는 요청 전체 제한이 150초이며 텍스트와 표지·인물 이미지를 함께 판정합니다. 검수 중 화면 대기를 길게 유지하지 않고, 반려된 입력은 사용자가 고쳐 다시 제출할 수 있어야 합니다.
+- 결정: 공개·비공개 일반 제작 등록과 수정은 라이브와 별도인 검수 제출본에 저장하고 202로 접수합니다. 커밋 뒤 비동기로 검수하며 승인 시에만 라이브에 적용합니다. 간편 제작 완성본은 검수하지 않고 이후 수정부터 적용합니다. 기존 라이브는 승인된 것으로 간주해 백필하지 않습니다.
+- 적용 방법: 스토리당 PENDING 한 건을 허용하고 검수 중 PATCH·표지 및 인물 이미지 삭제는 409로 막습니다. 스토리 삭제는 허용하며 제출본을 폐기합니다. 검수 중이 아니면 visibility 단독 PATCH·이미지 삭제·표지 삭제·스토리 삭제는 즉시 반영합니다. 승인 적용·제출본 종료·검수 완료 알림 아웃박스를 함께 커밋합니다. 내용 위반은 REJECTED, 실행 실패는 FAILED로 나누고 입력과 issues를 보존합니다.
+- 게스트 제외 이유: 푸시 토큰은 회원 전용이므로 게스트는 비동기 검수 결과를 받을 수 없습니다. 일반 제작 등록과 PATCH를 인증 필수로 바꾸며 미인증은 401로 거절합니다. 기존 게스트 콘텐츠는 이관 후 수정할 수 있습니다.
+- 이미지 연결 API 폐지 이유: 개별 인물 이미지 연결 POST는 PATCH와 기능이 겹치고 검수 우회 경로가 됩니다. presign은 유지하며 이미지 추가는 등록·PATCH 본문으로만 받습니다. 이미지별 moderation_status를 PENDING으로 전환하는 계획 대신 게시물 제출본에서 판정합니다.
+- 대안과 기각 이유: 동기 검수는 최대 150초 대기와 연결 유지를 요구하므로 비동기 접수·알림을 선택했습니다. 저장 후 공개 대기 상태 머신은 미승인 데이터를 라이브에 넣어 공개 게이트·목록·검색·공개 스냅샷·진행 중 채팅의 읽기 규칙까지 바꿔야 하므로 채택하지 않았습니다. 라이브를 승인된 버전으로 유지하면 기존 읽기 계약을 보존할 수 있습니다.
+- 이전 결정과의 관계: [BE-013](#be-013)의 전체 입력 한 번 제출·컴파일 없음은 유지하되 즉시 라이브 등록을 검수 후 반영으로 대체합니다. [BE-014](#be-014)의 이미지별 자동 검수 도입 방식과 개별 연결 경로를 대체합니다. [BE-001](#be-001)의 게스트 공개 지정 400과 [BE-027](#be-027)·[BE-045](#be-045)의 게스트 쓰기 허용 중 일반 제작 등록·PATCH 범위를 인증 필수 401로 대체합니다. 나머지 조회·삭제·간편 제작·채팅·이관 계약과 과거 결정 기록은 보존합니다. [BE-030](#be-030)의 공개 스냅샷과 [BE-035](#be-035)·[BE-047](#be-047)의 서비스 알림 수신 설정·원격 발송 책임은 유지합니다.
+- 영향: 등록 201·수정 200 완성본 응답이 202 제출본으로 바뀌므로 서버·웹·앱 동반 배포가 필요합니다. 상세 계약은 [Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
+- 출처: 2026-09-26 사용자·클라이언트 담당 합의, [KNK-1120](https://kimandkang.atlassian.net/browse/KNK-1120), [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164), [KNK-1378](https://kimandkang.atlassian.net/browse/KNK-1378).
+
+<a id="be-049"></a>
+
+## BE-049. 검수 제출본 회차와 알림 모드별 발송
+
+- 날짜: 2026-09-26.
+- 상태: 채택, 미구현(KNK-1161).
+- 배경: SQS 어댑터 도입 전 dev·prod는 local 발송을 유지하므로 검수 릴리스에 원격 경로를 필수로 요구하면 안 됩니다. 같은 제출본의 재제출과 회수 재실행에서는 이전 판정의 적용과 알림 회차 혼동을 막아야 합니다.
+- 결정: 검수 종료 트랜잭션에서 도메인 이벤트를 발행합니다. local은 커밋 뒤 서버 FCM 발송, remote는 같은 트랜잭션의 push_outbox 기록을 사용합니다. 검수 릴리스는 KNK-1380을 기다리지 않습니다. remote 전환 전 알림 서비스는 STORY_MODERATION_COMPLETED를 SERVICE로 허용해야 합니다.
+- 회차와 수명: 미승인 제출본은 같은 submissionId로 덮어쓰며 판정 필드를 비웁니다. 제출·재제출·회수마다 attempt를 증가시키고 PENDING·attempt 일치 조건에서만 결과를 반영합니다. CREATE 승인은 제출본 행을 잠가 중복 생성을 막습니다. dispatched_at부터 기본 300초가 지난 PENDING을 회수하며 DB 일시 장애는 롤백 후 회수합니다. APPROVED는 감사용으로 보존하고 이후 PATCH는 새 행을 만듭니다. 스토리 삭제·회원 탈퇴 시 해당 제출본은 하드 삭제합니다.
+- 알림 식별: type은 STORY_MODERATION_COMPLETED, kind는 SERVICE, messageId는 `story-moderation:{submissionId}:{attempt}`입니다. 웹 화면의 딥링크 경로와 Android의 새 type 처리는 클라이언트와 함께 반영합니다.
+- 입력과 오류: 수정 폼과 재제출 검증은 현재 라이브에 PATCH payload를 다시 적용하고 삭제된 기존 이미지 id를 제외합니다. 서버 실행 실패는 MODERATION_UNAVAILABLE과 APPLY_FAILED로 구분합니다. 최초 CREATE에는 멱등키를 두지 않고 중복 제출을 허용합니다.
+- 대체 범위: [BE-048](#be-048)의 모든 종료 알림을 아웃박스와 함께 커밋한다는 조건은 remote 모드에만 적용합니다. 제출본 폐기·재제출·복구의 세부 규칙은 이 결정과 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)으로 구체화합니다. 승인 후 라이브 반영, 게스트 제한, 검수 예외 등 나머지 결정은 유지합니다.
+- 보완 결정: 미구현(KNK-1161). dispatched_at은 제출·재제출 트랜잭션 시각으로 채우고 호출 시작마다 갱신하며 회수 기준은 항상 `dispatched_at + 300초`입니다. issues.path는 원본 기준으로 보관하되 조회 응답에서는 기존 이미지 id·새 이미지 objectKey·인물 id 또는 이름으로 현재 폼 인덱스에 재매핑하고 사라진 대상의 이슈는 제외합니다. 제출본 DELETE는 PENDING을 포함한 모든 미승인 상태에서 허용하며 중복 CREATE 정리와 수정 취소에 사용합니다. 삭제된 행의 늦은 결과는 PENDING·attempt 조건으로 무시합니다. 이 보완은 2026-09-26 3차 확정 결정입니다.
+- 구현 대조 보완: 미구현(KNK-1161). 서버 [PR #280](https://github.com/KIM-N-KANG/manyak-server/pull/280)의 c8b0031은 V87에 input_form을 두고 DB 원본 요청과 API 복원 폼을 분리합니다. 승인 락은 회원 → 스토리 → 제출본 → 인물 순서이고 회수 시간은 reclaim-after 설정(기본 300초)을 따릅니다. 실행 설정·응답 검증·딥링크 세부값은 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
+- 불변 이미지·임대 선점 보완: 미구현(KNK-1161). 서버 PR #280의 653c157을 기준으로 앞선 dispatched_at 초기화·직접 실행·회수 규칙을 대체합니다. 10분 유효 presign을 재사용해 승인 뒤 원본을 덮어쓸 수 있으므로 새 이미지를 서버 전용 moderated 키에 복사하고 검수·승인 저장에 같은 복사본 URL을 사용합니다. image_copies는 재선점 때 재사용하고 재제출 때 비웁니다. 메모리 큐 대기 작업이 회수돼 중복 실행이 증폭되는 문제를 막기 위해 제출은 PENDING·dispatched_at NULL만 저장하고 빈 슬롯 기반 DB 임대 선점 폴러를 사용합니다. 실행기 큐는 0이며 선점마다 dispatched_at·attempt를 갱신합니다. 별도 회수 스케줄러는 없고 임대 만료도 같은 폴러가 처리합니다. 선점마다 새 UUID를 발급해 AI·아웃박스 상관관계의 시작점으로 삼습니다. 세부 설정과 오류는 현재 Spec을 따릅니다.
+- 출처: 2026-09-26 2차 확정 결정, [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1380](https://kimandkang.atlassian.net/browse/KNK-1380), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164).
 
 ## 복원 범위와 날짜 해석
 
