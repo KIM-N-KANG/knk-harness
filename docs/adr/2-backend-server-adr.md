@@ -66,6 +66,7 @@
 - [BE-046. 게스트 개인정보 수집 동의는 별도 문서·디바이스 단위 기록](#be-046)
 - [BE-047. 알림 서비스 분리와 큐 도입](#be-047)
 - [BE-048. 스토리 등록·수정의 검수 제출본과 비동기 반영](#be-048)
+- [BE-049. 검수 제출본 회차와 알림 모드별 발송](#be-049)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -654,6 +655,20 @@
 - 이전 결정과의 관계: [BE-013](#be-013)의 전체 입력 한 번 제출·컴파일 없음은 유지하되 즉시 라이브 등록을 검수 후 반영으로 대체합니다. [BE-014](#be-014)의 이미지별 자동 검수 도입 방식과 개별 연결 경로를 대체합니다. [BE-001](#be-001)의 게스트 공개 지정 400과 [BE-027](#be-027)·[BE-045](#be-045)의 게스트 쓰기 허용 중 일반 제작 등록·PATCH 범위를 인증 필수 401로 대체합니다. 나머지 조회·삭제·간편 제작·채팅·이관 계약과 과거 결정 기록은 보존합니다. [BE-030](#be-030)의 공개 스냅샷과 [BE-035](#be-035)·[BE-047](#be-047)의 서비스 알림 수신 설정·원격 발송 책임은 유지합니다.
 - 영향: 등록 201·수정 200 완성본 응답이 202 제출본으로 바뀌므로 서버·웹·앱 동반 배포가 필요합니다. 상세 계약은 [Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
 - 출처: 2026-09-26 사용자·클라이언트 담당 합의, [KNK-1120](https://kimandkang.atlassian.net/browse/KNK-1120), [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164), [KNK-1378](https://kimandkang.atlassian.net/browse/KNK-1378).
+
+<a id="be-049"></a>
+
+## BE-049. 검수 제출본 회차와 알림 모드별 발송
+
+- 날짜: 2026-09-26.
+- 상태: 채택, 미구현(KNK-1161).
+- 배경: SQS 어댑터 도입 전 dev·prod는 local 발송을 유지하므로 검수 릴리스에 원격 경로를 필수로 요구하면 안 됩니다. 같은 제출본의 재제출과 회수 재실행에서는 이전 판정의 적용과 알림 회차 혼동을 막아야 합니다.
+- 결정: 검수 종료 트랜잭션에서 도메인 이벤트를 발행합니다. local은 커밋 뒤 서버 FCM 발송, remote는 같은 트랜잭션의 push_outbox 기록을 사용합니다. 검수 릴리스는 KNK-1380을 기다리지 않습니다. remote 전환 전 알림 서비스는 STORY_MODERATION_COMPLETED를 SERVICE로 허용해야 합니다.
+- 회차와 수명: 미승인 제출본은 같은 submissionId로 덮어쓰며 판정 필드를 비웁니다. 제출·재제출·회수마다 attempt를 증가시키고 PENDING·attempt 일치 조건에서만 결과를 반영합니다. CREATE 승인은 제출본 행을 잠가 중복 생성을 막습니다. dispatched_at부터 기본 300초가 지난 PENDING을 회수하며 DB 일시 장애는 롤백 후 회수합니다. APPROVED는 감사용으로 보존하고 이후 PATCH는 새 행을 만듭니다. 스토리 삭제·회원 탈퇴 시 해당 제출본은 하드 삭제합니다.
+- 알림 식별: type은 STORY_MODERATION_COMPLETED, kind는 SERVICE, messageId는 `story-moderation:{submissionId}:{attempt}`입니다. 웹 화면의 딥링크 경로와 Android의 새 type 처리는 클라이언트와 함께 반영합니다.
+- 입력과 오류: 수정 폼과 재제출 검증은 현재 라이브에 PATCH payload를 다시 적용하고 삭제된 기존 이미지 id를 제외합니다. 서버 실행 실패는 MODERATION_UNAVAILABLE과 APPLY_FAILED로 구분합니다. 최초 CREATE에는 멱등키를 두지 않고 중복 제출을 허용합니다.
+- 대체 범위: [BE-048](#be-048)의 모든 종료 알림을 아웃박스와 함께 커밋한다는 조건은 remote 모드에만 적용합니다. 제출본 폐기·재제출·복구의 세부 규칙은 이 결정과 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)으로 구체화합니다. 승인 후 라이브 반영, 게스트 제한, 검수 예외 등 나머지 결정은 유지합니다.
+- 출처: 2026-09-26 2차 확정 결정, [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1380](https://kimandkang.atlassian.net/browse/KNK-1380), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164).
 
 ## 복원 범위와 날짜 해석
 

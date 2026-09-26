@@ -731,7 +731,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | 종류 | 대상 | 기본값 | 요건 |
 | --- | --- | --- | --- |
-| 서비스 알림 | 스토리 완성, 검수 완료(통과·반려·실패, 미구현(KNK-1161)) | **켜짐**: 사용자가 끌 수 있음(옵트아웃) | 사용자가 유발한 작업의 결과 통지라 법적 사전 동의가 필요 없습니다. 끄는 토글은 "종류별 수신 여부 설정"(KNK-1113 완료 조건)을 위해 둡니다 |
+| 서비스 알림 | 스토리 완성, 검수 완료 `STORY_MODERATION_COMPLETED`(`SERVICE`, 통과·반려·실패, 미구현(KNK-1161)) | **켜짐**: 사용자가 끌 수 있음(옵트아웃) | 사용자가 유발한 작업의 결과 통지라 법적 사전 동의가 필요 없습니다. 끄는 토글은 "종류별 수신 여부 설정"(KNK-1113 완료 조건)을 위해 둡니다 |
 | 광고 알림 | 프로모션, **출석 리마인드** | **꺼짐**: 옵트인 | 사전 동의 필수. 제목 앞에 `(광고)` 표기. 출석 리마인드는 보상 수령 유도라 재이용 유도(광고성)로 분류합니다 |
 | 야간 광고 허용 | 광고 알림 중 **21:00~08:00 KST** 발송 | **꺼짐**: 별도 옵트인 | 야간 별도 동의 필수. 예외 없음. 서비스 알림에는 야간 제한을 두지 않습니다(사용자 본인이 유발한 작업) |
 
@@ -817,9 +817,9 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 **미구현(KNK-1161)** 검수 완료 푸시(KNK-1118)는 제출본이 APPROVED·REJECTED·FAILED로 종료될 때 발행합니다. 정보성 서비스 알림이며 사전 동의는 요구하지 않고 기존 `servicePush` 옵트아웃 설정을 따릅니다. 게스트는 푸시 토큰을 등록할 수 없어 검수 제출 대상에서 제외합니다.
 
-- 데이터는 `submissionId`, `storyId`(있으면), `status`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
-- 딥링크는 기존 스토리의 수정 폼 또는 신규 등록 제출본을 대상으로 합니다. 구체적인 경로와 시나리오 type은 KNK-1118·클라이언트 계약에서 확정합니다.
-- 원격 발송 아웃박스(KNK-1378) 경로를 사용합니다. 승인 시 라이브 적용·제출본 종료·알림 발행 요청을 함께 커밋하고 반려·실패도 종료 상태와 발행 요청을 함께 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)).
+- `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
+- 딥링크는 기존 스토리의 수정 폼 또는 신규 등록 제출본을 대상으로 합니다. 경로는 웹 KNK-1163 화면 계약을 따르며 서버는 `manyak.push.web-base-url`과 경로를 조합하는 규칙만 소유합니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
+- 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
 - 발송 실패나 사용자의 서비스 알림 끄기는 검수 결과를 되돌리지 않습니다. 화면 재진입 때 제출본 조회로 현재 상태를 표시합니다. 상태 조회는 푸시를 대신해 계속 폴링하도록 정한 계약이 아닙니다.
 
 <a id="출석-리마인드-푸시--phase-3--구현knk-1116-v74"></a>
@@ -863,6 +863,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 알림 서비스 계약 (Phase 4 · 계획)
 
+**미구현(KNK-1161)** 검수 알림의 remote 전환 전에는 manyak-notification 소비자가 `STORY_MODERATION_COMPLETED`를 `SERVICE`로 허용해야 합니다. 현재 소비자는 허용 type을 고정 목록으로 검증하고 `STORY_COMPLETED`만 SERVICE, 나머지는 MARKETING으로 분류하므로 선행 변경 없이 새 시나리오를 원격 발송하지 않습니다. Android의 새 data.type 처리(KNK-1164)도 함께 반영합니다.
+
 아래는 구현 전 계약입니다. 서버가 소유하는 회원 상태와 토큰을 내부 API로 조회하고, 알림 서비스가 FCM 발송을 실행합니다. 동기 HTTP 단계를 먼저 검증한 뒤 같은 발송 책임을 큐 소비로 연결합니다. 시나리오의 대상, 문구와 클라이언트 페이로드는 기존 절을 유지합니다.
 
 ##### 서버 내부 API
@@ -896,14 +898,14 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `messageId` | string | 예 | 시나리오별 멱등키. 최초 요청에서 정하고 릴레이 재발행, 브로커 재전달 때 바꾸지 않음 |
 | `recipientId` | string(UUID) | 예 | 수신 회원 `publicId`. 서버 내부 순차 PK 사용 금지 |
 | `kind` | string enum | 예 | `SERVICE` 또는 `MARKETING` |
-| `type` | string enum | 예 | `STORY_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`. 기존 시나리오의 FCM `data.type`과 일치. **미구현(KNK-1161)** 검수 완료를 추가하며 정확한 값은 KNK-1118에서 확정 |
+| `type` | string enum | 예 | `STORY_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`. 기존 시나리오의 FCM `data.type`과 일치. **미구현(KNK-1161)** `STORY_MODERATION_COMPLETED` 추가 |
 | `data` | `object<string, string>` | 예 | 기존 시나리오 페이로드. 값은 모두 문자열이며 동의와 토큰을 포함하지 않음 |
 | `expiresAt` | string(ISO 8601 UTC) | 아니오 | 발송 가능 기한. 현재 시각이 기한에 도달했거나 지났으면 폐기. 미지정은 메시지 자체 만료 없음 |
 | `requestId` | string | 예 | 발행 원인의 상관 ID. 재전달 때 유지하며 HTTP 요청 상관 ID와 연결 |
 | `sessionId` | string | 예 | 원인 세션의 상관 ID. 세션 없는 스케줄러 등은 기존 관측 규칙에 따라 `unknown` |
 | `schemaVersion` | integer | 예 | 최초 스키마는 `1`. 생산자와 소비자가 같은 필드 의미를 해석하기 위한 버전 |
 
-- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. **미구현(KNK-1161)** 검수 완료도 `SERVICE`이며 data에 `submissionId`·`storyId`(있으면)·`status`를 포함합니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
+- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. **미구현(KNK-1161)** 검수 완료의 type은 `STORY_MODERATION_COMPLETED`, kind는 `SERVICE`이며 data에 `type`·`submissionId`·`storyId`(있을 때만)·`status`·`deepLink`를 포함합니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
 - 동의, 동의 시각, FCM 토큰과 원본 기기 ID를 큐 메시지에 싣지 않습니다. `requestId`와 `sessionId`는 관측용이며 동의나 발송 허가를 대신하지 않습니다. 원인 HTTP 요청이 없는 작업은 발행 작업의 상관 ID를 부여하고 재전달 때 유지합니다.
 - 출석 메시지는 해당 KST 날짜의 다음 날 00:00을 `expiresAt`으로 표현합니다. 소비 시 만료를 확인하고 Android TTL은 발송 시점부터 남은 시간으로 계산합니다. 웹의 기존 메시지 구성은 바꾸지 않습니다. 스토리 완성과 프로모션은 기존 기본값대로 만료 시각을 지정하지 않습니다.
 
@@ -912,11 +914,11 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | 스토리 완성 | `story-completed:{requestId}` | 이 자리의 `requestId`는 스토리 완성 요청 본문의 UUID인 도메인 멱등키. 메시지의 관측용 `requestId`와 구분 |
 | 출석 리마인드 | `attendance:{userPublicId}:{KST 날짜}` | 회원 publicId와 `YYYY-MM-DD`. 원장의 내부 보상 신원 키와 구분 |
 | 프로모션 | `promotion:{campaignId}:{userPublicId}` | 캠페인 publicId와 회원 publicId |
-| 검수 완료, 미구현(KNK-1161) | KNK-1118에서 확정 | CREATE 재제출은 같은 submissionId를 재사용하므로 제출본 ID만으로 서로 다른 검수 회차의 종료 알림을 합치지 않아야 함 |
+| 검수 완료, 미구현(KNK-1161) | `story-moderation:{submissionId}:{attempt}` | 제출·재제출·회수 재실행의 회차 번호 attempt로 구분. 같은 submissionId의 서로 다른 회차 알림을 합치지 않음 |
 
 ##### 발행 포트와 아웃박스
 
-**미구현(KNK-1161)** 검수 완료는 KNK-1378과 같은 원격 아웃박스 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에 발송 요청을 함께 저장합니다. 로컬 발송으로 대체하지 않으며 검수 흐름 배포 시 원격 발송 경로가 준비돼야 합니다.
+**미구현(KNK-1161)** 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 local이며 SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
 
 - 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
 - 발행 포트와 소비 포트 뒤 어댑터는 모두 `local` 프로파일의 Kafka 어댑터를 먼저 도입하고, SQS 어댑터는 dev/prod 큐 인프라와 함께 도입합니다. Kafka 어댑터의 메시지 키는 `recipientId`입니다. SQS 어댑터 도입 전까지 dev와 prod는 `manyak.push.mode=local`을 유지합니다. 이때 `remote`로 전환하면 발행할 어댑터가 없습니다.
@@ -1027,7 +1029,7 @@ Kafka 재시도 간격과 횟수는 운영 SQS의 가시성 60초와 `maxReceive
   - `GET /credits/policies`는 `chatImageCost`를 포함한 현재 유효한 적립·소모 수치 7종을 반환합니다. 클라이언트는 이 값을 사용하며 수치를 하드코딩하지 않습니다.
   - 로그인 전 안내에도 쓰는 공개 정보이므로 인증이 필요 없습니다. 다만 탈퇴 계정의 유효 토큰은 401이며 만료·위조 토큰은 익명으로 처리합니다([§4-3-5](#4-3-api-계약)).
   - 한 응답은 같은 정책 스냅샷에서 계산합니다. 변경 반영은 기본 약 1분인 갱신 주기를 따릅니다.
-  - `inviteMonthlyCap`은 초대자 보상의 월 횟수 상한입니다. `storyCreationCost`와 `chatTurnCost`는 회원 무료 체험을 모두 쓴 뒤 적용합니다. 일반 제작은 무료이며 게스트는 디바이스 한도를 사용합니다.
+  - `inviteMonthlyCap`은 초대자 보상의 월 횟수 상한입니다. `storyCreationCost`와 `chatTurnCost`는 회원 무료 체험을 모두 쓴 뒤 적용합니다. **미구현(KNK-1161)** 일반 제작은 회원에게 무료이고, 게스트의 간편 제작·채팅은 디바이스 한도를 사용합니다.
 - **이용내역 조회**: `GET /users/me/credits/transactions`로 원장을 사용자에게 공개합니다. 잔액만으로는 그 값이 나온 이유(적립·소모·환불·만료)를 설명할 수 없어, 원장(`credit_transactions`)을 화면용으로 가공해 내려줍니다. 원장을 운영·정산 전용으로 두던 이전 방침을 대체합니다.
   - **분류(`type`)** · 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`·`CHAT_IMAGE`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`·`PURCHASE`) · `EXPIRE`(`EXPIRE`·`PURCHASE_REVERSAL`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** · 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. 구매 원장의 `PURCHASE`를 `EARN`과 `ALL`에 포함하고, 결제 환불 회수 `PURCHASE_REVERSAL`은 회수 계열인 `EXPIRE`에 묶습니다. 새 분류는 추가하지 않으며 두 사유의 `title`은 `null`입니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
   - **응답 항목**: `{type, reason, amount, title, expiresAt, createdAt}`. `reason`은 원장 enum 원문이고 **한국어 라벨은 클라이언트가 붙입니다**: 문구 변경에 서버 배포와 3레포 동반 배포가 걸리지 않게 하기 위해서이며, 402의 `code` 계약과 같은 원칙입니다. `ref_type`·`ref_id`는 순차 PK라 노출하지 않습니다.
@@ -1244,7 +1246,7 @@ graph TD
 
 #### 스토리 수정
 
-**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. **미구현(KNK-1161)** 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
+**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. **미구현(KNK-1161)** 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). 새 이미지의 id null·objectKey·미리보기 URL과 항상 존재하는 submission 필드는 [검수 제출본 API](#검수-제출본-api)를 따릅니다. 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
 
 응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings[]`: 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다: 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
 
@@ -1276,7 +1278,7 @@ graph TD
 | `PATCH /stories/{storyId}` | UPDATE 제출본 접수, 202. 승인 때 라이브 변경 |
 | `visibility`만 담은 PATCH | 검수 없이 즉시 반영, 기존 200 편집 폼 응답 유지 |
 | 인물 이미지 삭제·표지 삭제 | 검수 없이 즉시 반영, 기존 204 유지 |
-| 스토리 삭제 | 검수 없이 삭제, 진행 중 제출본 폐기. 기존 204·권한 규칙 유지 |
+| 스토리 삭제 | 검수 없이 삭제, 해당 스토리의 제출본 전부 물리 삭제. 기존 204·권한 규칙 유지 |
 
 `visibility`와 다른 필드를 함께 보내면 전체가 검수 대상입니다. 스토리당 `PENDING` 제출본은 한 건만 허용합니다. 검수 중에는 PATCH 전부와 인물 이미지·표지 삭제를 409 `CONFLICT`로 거절합니다. 즉시 반영 예외보다 이 잠금 규칙이 우선하며 스토리 삭제만 허용합니다. 판정 전에 적용 기준인 라이브가 바뀌지 않게 하는 제약입니다.
 
@@ -1295,35 +1297,40 @@ graph TD
 | `issues` | jsonb. AI의 `{path, type, rule, reason}` 목록 |
 | `error_code` | 실행 실패 코드. API에서는 `errorCode`로 노출 |
 | 생성·수정·판정 시각 | API에서는 `createdAt`, `updatedAt`, `decidedAt`. 판정 전 `decidedAt`은 null |
+| `attempt` | 제출·재제출·회수 재실행마다 1 증가하는 검수 회차 번호 |
+| `dispatched_at` | 마지막 검수 호출 시작 시각. PENDING 회수의 300초 기준 |
 
-`story_id`가 있는 `PENDING` 행에 부분 유니크 제약을 두어 같은 스토리의 중복 제출을 막습니다. CREATE는 승인 전 story_id가 없어 이 제약의 스토리별 대상이 아닙니다. 반려·실패 상태에서도 payload 전체와 issues를 보존합니다. 제출본 상태는 라이브 스토리의 `status`나 이미지별 `moderation_status`와 별개입니다.
+`story_id`가 있는 `PENDING` 행에 부분 유니크 제약을 두어 같은 스토리의 중복 제출을 막습니다. CREATE는 승인 전 story_id가 없어 이 제약의 스토리별 대상이 아닙니다. 미승인 제출본은 스토리당 UPDATE 한 행 또는 신규 등록 건당 CREATE 한 행입니다. 반려·실패 상태에서도 payload 전체와 issues를 보존합니다. 제출본 상태는 라이브 스토리의 `status`나 이미지별 `moderation_status`와 별개입니다.
+
+미승인 행은 재제출 시 같은 submissionId로 payload를 덮어쓰고 issues·error_code·판정 시각을 비운 뒤 PENDING으로 되돌립니다. 이력은 별도로 남기지 않고 AI 판정 기록은 Langfuse에서 확인합니다. APPROVED 행은 감사용으로 보존하며 이후 PATCH는 새 행을 만듭니다. REJECTED·FAILED는 재제출·DELETE·회원 탈퇴까지 보관하고, 스토리 삭제 시 해당 스토리의 제출본 전부, 회원 탈퇴 시 해당 회원의 제출본을 하드 삭제합니다.
 
 ##### 제출 검증과 AI 입력
 
 1. 인증·소유권과 검수 중 쓰기 제한을 확인합니다. 일반 제작 등록·PATCH의 미인증 요청은 401입니다.
-2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 요청 검증 실패는 400으로 거절하고 AI를 호출하지 않습니다. 기존 이미지 이름 중복의 409 규칙은 유지합니다.
-3. CREATE는 요청 전체, UPDATE는 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 적용한 전체 결과로 검수 입력을 조립합니다. 새 이미지 객체 키는 서빙 URL로 바꾸고 유지되는 이미지도 포함합니다.
+2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
+3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 제외합니다. 새 이미지 객체 키는 서빙 URL로 바꾸고 유지되는 이미지도 포함합니다.
 4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`을 포함하며 공개 설정·최소 턴 수·ID·제출본 처리 상태는 AI 입력에서 제외합니다. 제외한 값도 제출본에는 보관합니다.
 
 검수 정책과 `issues`의 의미는 AI [§5-3-6](5-ai-server-spec.md#5-3-6-게시물-검수)이 소유합니다. 백엔드는 검수 규칙을 중복 정의하지 않습니다.
 
 ##### 비동기 실행과 결과 적용
 
-제출 트랜잭션 커밋 뒤 이름 지정 실행기로 AI를 호출합니다. AI의 요청 전체 제한은 150초이며 서버 클라이언트 타임아웃은 이보다 길게 설정합니다. 구체적인 실행기 이름·풀 크기와 서버 타임아웃 값은 구현 시 정합니다.
+제출 트랜잭션 커밋 뒤 이름 지정 실행기로 AI를 호출합니다. AI의 요청 전체 제한은 150초이며 서버 클라이언트 타임아웃은 이보다 길게 설정합니다. 구체적인 실행기 이름·풀 크기와 서버 타임아웃 값은 구현 시 정합니다. 제출·재제출·회수 재실행마다 attempt를 1 증가시키고 검수 호출을 시작할 때 dispatched_at을 기록합니다. 결과는 `status=PENDING`이고 attempt가 호출 시점 값과 같을 때만 조건부 갱신으로 반영합니다. 조건이 맞지 않거나 행이 삭제됐으면 늦은 결과를 무시합니다.
 
 | AI·적용 결과 | 제출본 상태 | 후속 동작 |
 | --- | --- | --- |
 | `APPROVED`, `error_code=null`, 적용 성공 | `APPROVED` | 라이브 반영과 알림 발행 |
 | `REJECTED`, `error_code=null`, 내용 위반 issues | `REJECTED` | 라이브 불변, issues·입력 보존, 알림 발행 |
 | `REJECTED`, `error_code` 있음 | `FAILED` | 내용 위반으로 취급하지 않음. AI 오류 코드 보존, 알림 발행 |
-| AI 호출 타임아웃·통신 실패·5xx | `FAILED` | 서버 오류 코드 기록, 라이브 불변, 알림 발행 |
-| 승인 후 적용 단계의 검증 실패 | `FAILED` | 라이브 변경 롤백, 오류 코드 기록, 알림 발행 |
+| AI 호출 타임아웃·통신 실패·5xx·응답 형식 오류 | `FAILED` | MODERATION_UNAVAILABLE 기록, 라이브 불변, 알림 발행 |
+| 승인 후 적용 단계의 검증 실패 | `FAILED` | 라이브 변경 롤백, APPLY_FAILED 기록, 알림 발행 |
+| DB 일시 장애 | `PENDING` 유지 | 트랜잭션 롤백, 회수 스케줄러가 재실행 |
 
-승인 결과 적용은 스토리 락 다음 인물 락 순서로 기존 수정과 같은 동시성 규칙을 사용합니다. 라이브 반영, 기존 공개 조건에 따른 공개 스냅샷 갱신, 제출본 `APPROVED`, 검수 완료 알림의 아웃박스 기록을 한 트랜잭션으로 커밋합니다. CREATE는 이때 처음 스토리를 만들고 제출본의 story_id를 채웁니다. 검색은 기존 라이브 커밋 뒤 색인 경로를 유지합니다.
+승인 결과 적용은 스토리 락 다음 인물 락 순서로 기존 수정과 같은 동시성 규칙을 사용합니다. 라이브 반영, 기존 공개 조건에 따른 공개 스냅샷 갱신, 제출본 `APPROVED`를 한 트랜잭션으로 커밋하고 그 안에서 검수 완료 도메인 이벤트를 발행합니다. CREATE 승인은 제출본 행을 잠그고 PENDING·attempt 조건을 확인한 뒤 처음 스토리를 만들고 story_id를 채워 중복 생성을 막습니다. 검색은 기존 라이브 커밋 뒤 색인 경로를 유지합니다.
 
-반려·실패는 라이브를 바꾸지 않고 제출본의 판정·issues·error_code와 알림 아웃박스를 기록합니다. 적용 검증 실패는 라이브 적용 트랜잭션을 롤백한 뒤 FAILED와 알림을 기록합니다. 원격 푸시 발송 자체는 도메인 트랜잭션 안에서 실행하지 않습니다. 삭제로 폐기된 제출본의 늦은 결과는 라이브에 적용하지 않습니다.
+반려·실패는 라이브를 바꾸지 않고 제출본의 판정·issues·error_code를 기록하는 트랜잭션에서 도메인 이벤트를 발행합니다. 적용 검증 실패는 라이브 적용 트랜잭션을 롤백한 뒤 PENDING·attempt 조건을 다시 확인해 FAILED와 이벤트를 기록합니다. local 모드는 커밋 뒤 서버가 발송하고 remote 모드는 같은 트랜잭션에 아웃박스를 기록합니다. 외부 푸시 발송 자체는 도메인 트랜잭션 안에서 실행하지 않습니다. DB 일시 장애는 롤백으로 PENDING에 남겨 회수 대상으로 둡니다.
 
-종료된 REJECTED·FAILED는 서버가 자동 재시도하지 않고 사용자가 재제출합니다. 서버 재시작 등으로 오래 남은 PENDING은 스케줄러가 설정값(기본 300초) 경과 후 다시 검수합니다. 이는 기존 `pending-reclaim`과 같은 미완료 작업 복구이며, FAILED 재시도와 구분합니다.
+종료된 REJECTED·FAILED는 서버가 자동 재시도하지 않고 사용자가 재제출합니다. 서버 재시작 등으로 오래 남은 PENDING은 스케줄러가 마지막 검수 호출 시작 시각 dispatched_at부터 설정값(기본 300초) 경과 후 attempt를 증가시켜 다시 검수합니다. 이는 기존 `pending-reclaim`과 같은 미완료 작업 복구이며, FAILED 재시도와 구분합니다.
 
 ##### 검수 제출본 API
 
@@ -1333,14 +1340,18 @@ graph TD
 | --- | --- |
 | `GET /stories/submissions/{submissionId}` | 200 제출본 상세. 화면 재진입 때 현재 상태와 입력을 복원 |
 | `GET /stories/submissions` | 200 내 미승인 제출본 배열. PENDING·REJECTED·FAILED를 조회하고 APPROVED는 제외 |
-| `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 입력 검증 뒤 같은 제출본을 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
-| `DELETE /stories/submissions/{submissionId}` | REJECTED·FAILED 제출본만 폐기, 204. 다른 상태는 409 |
+| `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 입력 검증 뒤 같은 submissionId의 payload를 덮어쓰고 issues·error_code·판정 시각을 비운 뒤 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
+| `DELETE /stories/submissions/{submissionId}` | REJECTED·FAILED 제출본만 물리 삭제, 204. 다른 상태는 409 |
 
 상세와 목록 항목은 `{submissionId, storyId, kind, payload, status, issues, errorCode, createdAt, updatedAt, decidedAt}`을 사용합니다. `storyId`는 외부 공개 UUID이며 승인 전 CREATE에서는 null입니다. issues는 AI의 필드 구조를 그대로 유지하고 `error_code`만 클라이언트 camelCase인 `errorCode`로 전달합니다.
 
 목록은 [내 콘텐츠 목록](#내-콘텐츠-목록) 관례를 따릅니다. `limit` 기본 100, 정수는 1~100으로 보정하고 비정수는 400입니다. 페이지네이션 없이 생성 시각 내림차순, 동률이면 내부 PK 내림차순으로 정렬합니다. 내부 PK는 응답에 싣지 않습니다. 신규 등록 대기·반려·실패본은 아직 라이브 스토리가 없으므로 이 목록으로 내 스토리 화면을 구성합니다.
 
-UPDATE의 반려·실패본은 `PATCH /stories/{storyId}`로 재제출해 직전 제출본을 대체합니다. 수정 폼은 최신 제출본이 PENDING·REJECTED·FAILED이면 그 payload를 반영한 전체 폼과 `submission: {submissionId, status, issues, errorCode}`를 반환합니다. APPROVED 이후에는 승인된 라이브를 폼의 기준으로 사용합니다. CREATE는 storyId가 없으므로 제출본 상세로 입력을 복원합니다.
+UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId를 유지합니다. 수정 폼은 매번 현재 라이브에 미승인 제출본의 PATCH payload를 다시 적용해 계산하고, 그 사이 삭제된 기존 이미지 id는 폼에서 제외합니다. `submission: {submissionId, status, issues, errorCode}` 필드는 항상 존재하며 대상 제출본이 없거나 APPROVED이면 null입니다.
+
+아직 라이브가 아닌 새 이미지는 `id: null`, `objectKey`, 미리보기용 서빙 URL을 반환합니다. 폼의 인물·이미지 순서를 검수 입력 조립 순서와 같게 유지해 issues.path가 폼 항목 인덱스에 그대로 대응하게 합니다. CREATE는 storyId가 없으므로 제출본 상세로 입력을 복원합니다.
+
+최초 CREATE POST에는 멱등키를 두지 않고 중복 제출을 허용합니다. 202 응답이 유실되면 사용자가 미승인 목록에서 제출본을 확인합니다. 삭제는 위 DELETE 계약에 따라 REJECTED·FAILED일 때 수행합니다.
 
 ##### 검수 실행 실패 코드
 
@@ -1350,9 +1361,8 @@ UPDATE의 반려·실패본은 `PATCH /stories/{storyId}`로 재제출해 직전
 | --- | --- |
 | `IMAGE_READ_FAILED` | AI 이미지 다운로드·읽기 실패. AI 코드 그대로 전달 |
 | `MODEL_CALL_FAILED` | AI 최종 모델 호출 실패. AI 코드 그대로 전달 |
-| `MODERATION_CALL_FAILED` | 서버에서 AI 호출 통신 실패·5xx |
-| `MODERATION_TIMEOUT` | 서버의 AI 호출 타임아웃 |
-| `MODERATION_APPLY_VALIDATION_FAILED` | AI 승인 후 라이브 적용 단계의 검증 실패 |
+| `MODERATION_UNAVAILABLE` | AI 호출 실패·타임아웃·응답 형식 오류 |
+| `APPLY_FAILED` | AI 승인 후 라이브 적용 단계의 검증 실패 |
 
 AI 실행 실패의 issues는 빈 배열이며 내용 위반 항목을 만들어 넣지 않습니다. 서버 실행 실패도 내용 위반 issues와 구분합니다. 검수 제출본의 입력 원문·이미지 URL을 로그나 오류 메시지에 복제하지 않습니다.
 
@@ -2092,7 +2102,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 ### 헬스체크·API 문서·배포
 
-**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 원격 발송 아웃박스(KNK-1378) 경로를 사용합니다.
+**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지하며 검수 릴리스는 이를 기다리지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
 - Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([백엔드 Design §2-4](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
@@ -2175,10 +2185,11 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 이프: 동시 턴 요청 2건이 잔액 20 이프만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
 - **일반 제작 검수 제출, 미구현(KNK-1161)** 미인증 요청은 이미지 유무·인물 이름만 전송·공개 범위와 무관하게 401이어야 합니다. 유효한 회원 등록은 202 `{submissionId, status: "PENDING"}`만 반환하고 라이브 스토리는 만들지 않아야 합니다. 필수·길이·개수·draft prefix·S3 HEAD 검증 실패는 제출 전에 400이어야 합니다. 승인 뒤 상세·채팅 계약은 기존과 같으며 일반 제작 등록에 이프를 소모하지 않아야 합니다.
 - **스토리 수정 검수 제출, 미구현(KNK-1161)** PATCH는 202 제출본을 반환하고 승인 후에만 인물·이미지·시작 설정·엔딩 동기화와 다음 채팅 턴 반영을 수행해야 합니다. 인물 개명 시 이미지 이름 접두도 바뀌고 images 생략 시 기존 이미지를 유지하며 지난 턴은 바뀌지 않아야 합니다. 반려·실패 시 라이브·공개 스냅샷·검색·기존 채팅 입력이 변하지 않아야 합니다. 수정 폼은 최신 PENDING·REJECTED·FAILED 제출본의 입력을 반영한 값과 `submission` 메타를 반환해야 합니다. 타인 수정은 403이어야 합니다.
-- **검수 결과와 알림, 미구현(KNK-1161)** 승인 시 라이브 적용·공개 스냅샷의 기존 규칙에 따른 갱신·APPROVED·알림 아웃박스를 함께 커밋해야 합니다. 내용 위반은 REJECTED와 issues, AI 오류·호출 실패·적용 검증 실패는 FAILED와 errorCode로 구분해야 합니다. 세 종료 상태 모두 서비스 알림을 발행하고 실제 발송은 수신 설정을 따라야 합니다.
-- **검수 중 쓰기, 미구현(KNK-1161)** 스토리당 PENDING은 한 건이며 PATCH 전부와 인물 이미지·표지 삭제는 409여야 합니다. 스토리 삭제는 허용하고 진행 중 제출본을 폐기해 늦은 판정이 라이브를 되살리지 않아야 합니다.
+- **검수 결과와 알림, 미구현(KNK-1161)** 승인 시 라이브 적용·공개 스냅샷의 기존 규칙에 따른 갱신·APPROVED를 함께 커밋하고 트랜잭션 안에서 도메인 이벤트를 발행해야 합니다. local은 커밋 뒤 서버 발송, remote는 같은 트랜잭션의 아웃박스 기록이어야 합니다. 내용 위반은 REJECTED와 issues, AI 오류·호출 실패·적용 검증 실패는 FAILED와 errorCode로 구분해야 합니다. 세 종료 상태 모두 서비스 알림을 발행하고 실제 발송은 수신 설정을 따라야 합니다.
+- **검수 중 쓰기, 미구현(KNK-1161)** 스토리당 PENDING은 한 건이며 PATCH 전부와 인물 이미지·표지 삭제는 409여야 합니다. 스토리 삭제는 허용하고 해당 스토리의 제출본을 전부 물리 삭제해 늦은 판정이 라이브를 되살리지 않아야 합니다.
 - **즉시 반영과 검수 제외, 미구현(KNK-1161)** PENDING이 없을 때 visibility 단독 PATCH·인물 이미지 삭제·표지 삭제는 검수 없이 반영해야 합니다. 스토리 삭제는 PENDING 유무와 무관하게 기존 권한으로 허용해야 합니다. 혼합 PATCH는 전체를 검수하고 간편 제작 완성본은 검수하지 않으며 이후 수정부터 검수해야 합니다.
-- **제출본 복구·접근, 미구현(KNK-1161)** 반려·실패 입력과 issues를 보존하고 UPDATE 재제출은 PATCH, CREATE 재제출은 같은 submissionId의 PUT으로 처리해야 합니다. 타인·미존재 제출본 조회는 404여야 합니다. FAILED 자동 재시도는 없고 오래 남은 PENDING만 기본 300초 경과 후 복구 실행해야 합니다.
+- **제출본 복구·접근, 미구현(KNK-1161)** 반려·실패 입력과 issues를 보존하고 UPDATE 재제출은 PATCH, CREATE 재제출은 같은 submissionId의 PUT으로 처리해야 합니다. 타인·미존재 제출본 조회는 404여야 합니다. FAILED 자동 재시도는 없고 오래 남은 PENDING만 dispatched_at부터 기본 300초 경과 후 attempt를 증가시켜 복구 실행해야 합니다. 결과 적용은 PENDING·attempt 일치 조건을 확인하고 CREATE는 제출본 행 잠금으로 중복 생성을 막아야 합니다. 재제출은 같은 ID를 유지하고 판정 필드를 비우며, DB 일시 장애는 PENDING 롤백·회수로 복구해야 합니다.
+- **폼·알림 회차, 미구현(KNK-1161)** 새 이미지는 id null·objectKey·미리보기 URL을 반환하고 폼 순서와 issues.path 인덱스가 일치해야 합니다. submission 필드는 항상 존재하고 해당 제출본이 없거나 APPROVED이면 null이어야 합니다. `STORY_MODERATION_COMPLETED`는 SERVICE로 처리하고 `story-moderation:{submissionId}:{attempt}`로 회차를 구분해야 합니다. remote 전환 전에 알림 소비자의 허용 목록과 분류를 검증해야 합니다.
 - **이미지 우회 차단, 미구현(KNK-1161)** 개별 인물 이미지 연결 POST가 제거되고 presign은 유지돼야 합니다. 등록·PATCH 승인 전에 새 이미지가 라이브에 연결되지 않아야 하며 V76 이미지별 상태는 APPROVED로 유지해야 합니다.
 
 - 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이전 출력은 버전 이력으로 보존되고 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 이프가 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
