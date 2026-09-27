@@ -918,10 +918,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 ##### 발행 포트와 아웃박스
 
-**미구현(KNK-1161)** 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 local이며 SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
+**미구현(KNK-1161)** 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
 
 - 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
-- 발행 포트와 소비 포트 뒤 어댑터는 모두 `local` 프로파일의 Kafka 어댑터를 먼저 도입하고, SQS 어댑터는 dev/prod 큐 인프라와 함께 도입합니다. Kafka 어댑터의 메시지 키는 `recipientId`입니다. SQS 어댑터 도입 전까지 dev와 prod는 `manyak.push.mode=local`을 유지합니다. 이때 `remote`로 전환하면 발행할 어댑터가 없습니다.
+- 발행 포트와 소비 포트 뒤에는 `local` 프로파일의 Kafka 어댑터와 dev/prod용 SQS 표준 큐 어댑터가 구현되어 있습니다. Kafka 어댑터의 메시지 키는 `recipientId`이며 SQS 표준 큐에는 메시지 키와 그룹을 사용하지 않습니다. 서버의 SQS 발행 어댑터는 `dev` 또는 `prod` 프로파일에서 `manyak.push.mode=remote`일 때만 등록합니다. dev는 2026-09-27부터 `remote`를 사용하며 prod는 `local`을 유지합니다. prod 큐 인프라는 별도 티켓에서 준비합니다.
 - 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호는 구현 시 확정합니다.
 - `push_outbox.message_id`에는 유일 제약을 둡니다. 값은 위 표의 `messageId` 규칙을 그대로 사용하며, 스토리 완성은 `story-completed:{requestId}`입니다.
 - 행 상태는 `PENDING`, `PUBLISHED`, `FAILED`입니다. 시도 횟수 `attempts`는 관찰용으로 기록하며 포기 판정에는 사용하지 않습니다. 브로커 발행 성공 뒤 `PUBLISHED`로 발행 완료를 기록합니다.
@@ -958,10 +958,16 @@ FCM Admin SDK의 최대 재시도 횟수를 0으로 설정해 내부 재시도�
 
 | 브로커 | 결과 반영과 재시도 | DLQ |
 | --- | --- | --- |
-| dev/prod SQS 표준 큐 | 가시성 60초. `SUCCESS`와 `DISCARD`는 삭제 ack, `RETRY`는 삭제하지 않아 재전달. SDK 처리 중 가시성 만료로 중복 소비되지 않도록 처리 시간과 연장 검증 | `RedrivePolicy.maxReceiveCount=5`로 DLQ 이동 |
-| 로컬 Kafka | `SUCCESS`와 `DISCARD`는 오프셋을 커밋합니다. `RETRY`는 단일 재시도 토픽 `push.requested.retry`에서 60초 고정 간격으로 재처리하며, 최초 처리를 포함해 총 5회까지 시도합니다. 재시도 또는 DLQ 발행 성공 뒤 원본 오프셋을 커밋하며, 발행 실패 시 커밋하지 않습니다. | 총 5회 처리 후에도 `RETRY`이면 `push.requested.dlq`로 보냅니다. |
+| dev/prod SQS 표준 큐 | 가시성은 60초로 유지하며 연장하지 않습니다. `SUCCESS`와 `DISCARD`는 삭제로 ack합니다. `RETRY`는 삭제하지 않아 재전달합니다. 처리 중 가시성이 만료되면 Redis 선점으로 중복 발송을 막습니다. | 역직렬화·검증 실패도 삭제하지 않고 `RedrivePolicy.maxReceiveCount=5`에 따라 원본 본문을 보존한 채 DLQ로 이동합니다. |
+| 로컬 Kafka | `SUCCESS`와 `DISCARD`는 오프셋을 커밋합니다. `RETRY`는 단일 재시도 토픽 `push.requested.retry`에서 60초 고정 간격으로 재처리하며, 최초 처리를 포함해 총 5회까지 시도합니다. 재시도 또는 DLQ 발행 성공 뒤 원본 오프셋을 커밋하며, 발행 실패 시 커밋하지 않습니다. | 총 5회 처리 후에도 `RETRY`이면 `push.requested.dlq`로 보냅니다. 역직렬화·검증 실패는 재시도하지 않고 원본 바이트를 보존해 곧장 `push.requested.dlq`로 보냅니다. |
+
+SQS는 `ChangeMessageVisibility`를 사용하지 않으며 가시성 값도 올리지 않습니다. 처리 예산 합계인 최악 소요 약 104초가 가시성 60초를 넘어 다른 소비자가 재수신해도 Redis 처리 중 선점이 남아 있으면 발송 없이 `RETRY`를 반환하고 삭제하지 않습니다. 먼저 처리한 소비자는 이전 수신 핸들로 삭제를 요청하므로 삭제가 반영되지 않을 수 있습니다. 이때 다음 수신에서 완료 키를 확인해 `SUCCESS`로 삭제합니다. 이 가시성 만료 경로에서는 중복 발송 없이 수신 횟수만 소모되며 이를 수용합니다. 선점한 소비자가 종료돼도 재시도 창 안에서 다시 선점할 수 있도록 처리 중 선점을 연장하지 않는 기존 원칙과 같은 이유입니다.
+
+SQS의 역직렬화·검증 실패는 예외로 두어 메시지를 삭제하지 않습니다. 즉시 DLQ로 옮기지 않고 `RedrivePolicy.maxReceiveCount=5`에 도달하면 약 4분 뒤 DLQ로 이동하며 원본 본문을 그대로 보존합니다. 권한과 코드 경로를 추가해야 하는 애플리케이션의 DLQ 직접 `SendMessage`나 원본을 유실하는 로그 후 삭제는 사용하지 않습니다. 파싱 실패는 Redis 선점과 FCM 호출 이전에 발생하므로 반복 수신해도 발송하지 않습니다.
 
 Kafka 재시도 간격과 횟수는 운영 SQS의 가시성 60초와 `maxReceiveCount=5`에 맞춰 포기 시점을 맞춥니다. 간격을 늘리면 한 토픽 안에서 대기 시간이 다른 메시지가 서로를 막으므로 간격마다 토픽이 필요합니다. 단일 재시도 토픽을 사용하기 위해 60초 고정 간격을 선택합니다.
+
+SQS 재시도 간격과 횟수는 애플리케이션이 아니라 Terraform의 큐 설정인 가시성 타임아웃과 `maxReceiveCount`로 정합니다. 알림 서비스의 `manyak.push.consumer.retry-delay-ms`와 `retry-attempts`는 처리 중 선점 유효시간 검증(`선점 유효시간 < (횟수 - 1) × 간격`)에 사용하므로 dev/prod에서는 각각 큐의 가시성 타임아웃을 초에서 밀리초로 변환한 값과 `maxReceiveCount`에 일치해야 합니다.
 
 푸시는 부가 기능이며 사용자에게 보이는 진실의 기준은 복귀 조회입니다. 알림 서비스나 브로커가 내려가도 이미 커밋된 스토리 제작 결과를 실패로 되돌리지 않습니다. 큐 단계에서는 아웃박스와 큐에 남은 요청을 복구 후 소비하되, 복구 시점의 만료와 철회된 동의를 다시 확인합니다. 출석 리마인드와 프로모션 스케줄러의 이전 여부는 큐 전환 결과를 보고 판단합니다.
 
@@ -2122,18 +2128,19 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
 
-알림 서비스 분리용 설정은 **계획이며 구현 전**입니다. 기본 모드는 `local`이며 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
+알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
 
 | 환경 변수 | 설정 키 | 값 |
 | --- | --- | --- |
 | `MANYAK_PUSH_MODE` | `manyak.push.mode` | 기본 `local`, 허용값 `local` 또는 `remote` |
 | `MANYAK_NOTIFICATION_BASE_URL` | `manyak.notification.base-url` | 미정. 동기 원격 발송기의 내부 주소 |
-| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 미정. dev/prod SQS 표준 큐 URL, 로컬 Kafka에는 사용하지 않음 |
+| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 기본값은 빈 값입니다. dev/prod에서 `remote`로 SQS 어댑터를 활성화할 때 필수이며 비어 있으면 기동에 실패합니다. 로컬 Kafka에는 사용하지 않습니다. |
+| `AWS_REGION` | `manyak.push.region` | 기본값은 `ap-northeast-2`입니다. SQS 클라이언트 리전으로 사용합니다. |
 | `MANYAK_NOTIFICATION_SHARED_SECRET` | `manyak.notification.shared-secret` | 미정. 양쪽 내부 API 호출 인증용 비밀값, 코드와 문서에 실제 값 기록 금지 |
 
 ### 헬스체크·API 문서·배포
 
-**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지하며 검수 릴리스는 이를 기다리지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
+**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380)는 구현되었으며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 SQS 전환에 종속되지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
 - Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([백엔드 Design §2-4](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
