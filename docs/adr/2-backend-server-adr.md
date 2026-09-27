@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-26 |
+| 수정일 | 2026-09-27 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드 결정의 맥락, 선택, 근거 보존 |
 | 기준 | [백엔드 Spec](../spec/4-backend-server-spec.md)에서 이관한 결정 기록과 후속 Git·PR 이력 |
@@ -67,6 +67,7 @@
 - [BE-047. 알림 서비스 분리와 큐 도입](#be-047)
 - [BE-048. 스토리 등록·수정의 검수 제출본과 비동기 반영](#be-048)
 - [BE-049. 검수 제출본 회차와 알림 모드별 발송](#be-049)
+- [BE-050. 검수 일시 실패 재시도·보류와 요청 용량 예산](#be-050)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -672,6 +673,19 @@
 - 구현 대조 보완: 미구현(KNK-1161). 서버 [PR #280](https://github.com/KIM-N-KANG/manyak-server/pull/280)의 c8b0031은 V87에 input_form을 두고 DB 원본 요청과 API 복원 폼을 분리합니다. 승인 락은 회원 → 스토리 → 제출본 → 인물 순서이고 회수 시간은 reclaim-after 설정(기본 300초)을 따릅니다. 실행 설정·응답 검증·딥링크 세부값은 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
 - 불변 이미지·임대 선점 보완: 미구현(KNK-1161). 서버 PR #280의 653c157을 기준으로 앞선 dispatched_at 초기화·직접 실행·회수 규칙을 대체합니다. 10분 유효 presign을 재사용해 승인 뒤 원본을 덮어쓸 수 있으므로 새 이미지를 서버 전용 moderated 키에 복사하고 검수·승인 저장에 같은 복사본 URL을 사용합니다. image_copies는 재선점 때 재사용하고 재제출 때 비웁니다. 메모리 큐 대기 작업이 회수돼 중복 실행이 증폭되는 문제를 막기 위해 제출은 PENDING·dispatched_at NULL만 저장하고 빈 슬롯 기반 DB 임대 선점 폴러를 사용합니다. 실행기 큐는 0이며 선점마다 dispatched_at·attempt를 갱신합니다. 별도 회수 스케줄러는 없고 임대 만료도 같은 폴러가 처리합니다. 선점마다 새 UUID를 발급해 AI·아웃박스 상관관계의 시작점으로 삼습니다. 세부 설정과 오류는 현재 Spec을 따릅니다.
 - 출처: 2026-09-26 2차 확정 결정, [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1380](https://kimandkang.atlassian.net/browse/KNK-1380), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164).
+
+<a id="be-050"></a>
+
+## BE-050. 검수 일시 실패 재시도·보류와 요청 용량 예산
+
+- 날짜: 2026-09-27.
+- 결정: IMAGE_DOWNLOAD_FAILED·MODEL_CALL_FAILED·MODERATION_UNAVAILABLE 중 사용자 수정 사유가 없는 일시 실패는 두 번 자동 재시도하고 세 번째 실패에서 보류합니다. 기본 간격은 1분·5분이며 예약·보류 모두 PENDING을 유지합니다. 내용 위반 issues나 IMAGE_INVALID·IMAGE_UNREADABLE이 있거나 APPLY_FAILED이면 자동 재시도하지 않습니다. 형식이 잘못된 응답도 확인 가능한 사용자 수정 사유가 있으면 재시도를 금지합니다.
+- 보류와 운영: 보류 필드는 사용자 응답에 노출하지 않고 완료 푸시를 보내지 않습니다. 기존 PENDING 쓰기 제한·DELETE 취소를 유지합니다. 운영자는 입력 원문 없는 Slack 알림을 받고 SQL로 보류를 해제합니다. 알림은 커밋 후 best-effort이며 전용 웹훅 미설정 시 신고 웹훅을 사용합니다. test 프로필은 두 웹훅을 모두 비웁니다.
+- 용량 예산: 이미지 base64 예상 크기와 입력 JSON UTF-8 크기를 합해 기본 40MiB를 넘으면 접수 전에 IMAGES_TOO_LARGE로 거절합니다. AI의 실제 본문 48MiB 방어 검사는 유지합니다. 새 이미지의 검증 HEAD 값을 재사용하고 유지 이미지의 크기 확인 실패는 장당 5MiB로 계산합니다.
+- 근거: 일시적인 다운로드·모델·통신 장애는 사용자가 입력을 고칠 사유가 아니므로 제한된 재시도로 복구합니다. 자동 시도가 소진되면 실패 확정 대신 운영 조치를 기다립니다. 내용 위반·영구 이미지 오류는 사용자 수정이 필요하므로 반복 호출하지 않습니다. 사전 용량 예산은 base64 증가량과 프롬프트 여유를 고려해 AI 호출 전 수정 가능한 오류를 반환합니다.
+- 대체 범위: KNK-1161의 기존 Spec에 있던 서버 자동 재시도 없음 결정을 위 일시 실패에 한해 대체합니다. [BE-048](#be-048)·[BE-049](#be-049)의 실행 실패 종료 규칙을 이 범위에서 PENDING 재시도·보류로 확장합니다. 종료된 REJECTED·FAILED의 사용자 재제출, DB 장애의 임대 복구, 승인 후 라이브 반영과 종료 푸시의 모드별 발송은 유지합니다. 기존 ADR 본문·ID·당시 근거는 보존합니다.
+- 관련 계약: [검수 제출 흐름](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)은 관측 전용 submissionId·UPDATE storyId, 이미지 오류 3종과 issues·imageErrors 동시 보존도 반영합니다. [AI 검수 계약](../spec/5-ai-server-spec.md#5-9-6-게시물-검수)이 판정 의미를 소유합니다.
+- 출처: [KNK-1438](https://kimandkang.atlassian.net/browse/KNK-1438), [KNK-1444](https://kimandkang.atlassian.net/browse/KNK-1444), 서버 [PR #283](https://github.com/KIM-N-KANG/manyak-server/pull/283)·[PR #284](https://github.com/KIM-N-KANG/manyak-server/pull/284), AI 계약 [하네스 PR #291](https://github.com/KIM-N-KANG/knk-harness/pull/291).
 
 ## 복원 범위와 날짜 해석
 
