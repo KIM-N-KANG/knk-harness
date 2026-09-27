@@ -532,6 +532,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_storyEdit_viewed`                  | P1       | 수정 화면 진입            | `story_id` (string, 필수)                                                                     |
 | `client_storyEdit_completed`               | P1       | 수정 저장 성공            | `story_id` (string, 필수)                                                                     |
 
+- 웹은 제작 FAB로 들어오는 제작 방식 선택 화면에서 선택지를 누를 때 `client_storyCreate_methodOption_selected`를 발화합니다. `client_storyList_createButton_clicked`는 FAB를 눌러 선택 화면으로 이동하는 시점에 그대로 발화하므로 제작 시작률의 분자는 바뀌지 않습니다.
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
 
 #### 6-4-2-11. 법적 고지
