@@ -918,10 +918,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 ##### 발행 포트와 아웃박스
 
-**미구현(KNK-1161)** 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 local이며 SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
+**미구현(KNK-1161)** 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
 
 - 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
-- 발행 포트와 소비 포트 뒤 어댑터는 모두 `local` 프로파일의 Kafka 어댑터를 먼저 도입하고, SQS 어댑터는 dev/prod 큐 인프라와 함께 도입합니다. Kafka 어댑터의 메시지 키는 `recipientId`입니다. SQS 어댑터 도입 전까지 dev와 prod는 `manyak.push.mode=local`을 유지합니다. 이때 `remote`로 전환하면 발행할 어댑터가 없습니다.
+- 발행 포트와 소비 포트 뒤에는 `local` 프로파일의 Kafka 어댑터와 dev/prod용 SQS 표준 큐 어댑터가 구현되어 있습니다. Kafka 어댑터의 메시지 키는 `recipientId`이며 SQS 표준 큐에는 메시지 키와 그룹을 사용하지 않습니다. 서버의 SQS 발행 어댑터는 `dev` 또는 `prod` 프로파일에서 `manyak.push.mode=remote`일 때만 등록합니다. dev는 2026-09-27부터 `remote`를 사용하며 prod는 `local`을 유지합니다. prod 큐 인프라는 별도 티켓에서 준비합니다.
 - 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호는 구현 시 확정합니다.
 - `push_outbox.message_id`에는 유일 제약을 둡니다. 값은 위 표의 `messageId` 규칙을 그대로 사용하며, 스토리 완성은 `story-completed:{requestId}`입니다.
 - 행 상태는 `PENDING`, `PUBLISHED`, `FAILED`입니다. 시도 횟수 `attempts`는 관찰용으로 기록하며 포기 판정에는 사용하지 않습니다. 브로커 발행 성공 뒤 `PUBLISHED`로 발행 완료를 기록합니다.
@@ -2128,18 +2128,19 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
 
-알림 서비스 분리용 설정은 **계획이며 구현 전**입니다. 기본 모드는 `local`이며 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
+알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
 
 | 환경 변수 | 설정 키 | 값 |
 | --- | --- | --- |
 | `MANYAK_PUSH_MODE` | `manyak.push.mode` | 기본 `local`, 허용값 `local` 또는 `remote` |
 | `MANYAK_NOTIFICATION_BASE_URL` | `manyak.notification.base-url` | 미정. 동기 원격 발송기의 내부 주소 |
-| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 미정. dev/prod SQS 표준 큐 URL, 로컬 Kafka에는 사용하지 않음 |
+| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 기본값은 빈 값입니다. dev/prod에서 `remote`로 SQS 어댑터를 활성화할 때 필수이며 비어 있으면 기동에 실패합니다. 로컬 Kafka에는 사용하지 않습니다. |
+| `AWS_REGION` | `manyak.push.region` | 기본값은 `ap-northeast-2`입니다. SQS 클라이언트 리전으로 사용합니다. |
 | `MANYAK_NOTIFICATION_SHARED_SECRET` | `manyak.notification.shared-secret` | 미정. 양쪽 내부 API 호출 인증용 비밀값, 코드와 문서에 실제 값 기록 금지 |
 
 ### 헬스체크·API 문서·배포
 
-**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380) 전까지 dev·prod는 local을 유지하며 검수 릴리스는 이를 기다리지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
+**미구현(KNK-1161)** 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380)는 구현되었으며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 SQS 전환에 종속되지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
 - Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([백엔드 Design §2-4](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
