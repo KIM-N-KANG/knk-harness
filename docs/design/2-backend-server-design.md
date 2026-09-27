@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-26 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드의 현재 기술 환경·요청 경계·저장 구조·동시성·운영 연결을 설명합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Flyway V81. 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md)이 소유합니다. |
@@ -90,6 +90,8 @@ graph LR
 
 디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 막지 않고 수용합니다. 판단 근거는 [BE-045](../adr/2-backend-server-adr.md#be-045)에 있습니다.
 
+**계획(KNK-1161, 미구현)** 일반 제작 등록·수정을 검수 제출본으로 접수하고 커밋 뒤 검수해 승인 시에만 라이브에 반영할 예정입니다. 제출본·실패 복구·검수 완료 알림의 계약은 [Spec의 검수 제출 흐름](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름), 결정은 [BE-048](../adr/2-backend-server-adr.md#be-048)·[BE-049](../adr/2-backend-server-adr.md#be-049)를 따릅니다. 검수 완료 알림도 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스 기록을 따를 계획입니다. 아래 현재 구현 구조에 이 계획이 반영된 것으로 해석하지 않습니다.
+
 ## 2-2. 저장소와 데이터 수명
 
 RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 전체 컬럼·ERD는 [dbdoc](../../../manyak-server/dbdoc)으로 대조합니다. 아래는 현재 저장 책임과 수명입니다.
@@ -103,7 +105,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 | 사용자 | `push_campaigns` | 서버 소유이며 발송 서비스 분리 후에도 이관하지 않습니다. 프로모션 푸시의 예약 시각, 상태, 대상·성공·건너뜀 수, 시작·종료 시각을 기록합니다. 운영자가 SQL로 등록하고 스케줄러가 `SCHEDULED → SENDING` 조건부 갱신으로 선점합니다([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 사용자 | `push_message_templates` | 서버 소유이며 발송 서비스 분리 후에도 이관하지 않습니다. (V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스: PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now) · `effective_until`(timestamptz nullable: NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약) 출석 리마인드) |
 | 알림 발행(계획) | `push_outbox` | 구현 전 서버 소유 테이블. 도메인 커밋과 같은 트랜잭션에 발송 요청을 기록하고 릴레이가 선점해 발행할 예정입니다. 예정 컬럼은 `message_id`(유일), `payload`(큐 메시지 JSON), `status`, `attempts`, `next_attempt_at`(백오프와 임대 겸용), `created_at`, `published_at`입니다. 마이그레이션 번호는 구현 시 확정합니다([아웃박스 계약](../spec/4-backend-server-spec.md#발행-포트와-아웃박스)) |
-| 알림 소비(계획) | `processed_messages` | 구현 전 알림 서비스 저장소의 멱등 테이블. `messageId`별 완료 결과와 처리 시각을 7일 보존할 예정입니다. 서버의 회원 테이블이나 토큰 복제본이 아닙니다([소비 계약](../spec/4-backend-server-spec.md#소비-순서와-멱등-기록)) |
+| 알림 소비(계획) | Redis `notification:` 접두어 키 | 구현 전 알림 서비스의 멱등 저장소입니다. `messageId`별 `SET NX`와 짧은 유효시간으로 선점하고, 완료 기록과 메시지별 성공 기기 집합은 유효시간 7일로 저장할 예정입니다. 운영에서는 서버와 같은 Redis(ElastiCache)를 접두어로 구분해 사용하며 별도 PostgreSQL 테이블을 두지 않습니다. 서버의 회원 테이블이나 토큰 복제본이 아닙니다([소비 계약](../spec/4-backend-server-spec.md#소비-순서와-멱등-기록)) |
 | 사용자 | `user_consents` | 약관·개인정보 처리방침·만 14세 확인의 버전별 동의 이력. `user_id`(FK `users`, `ON DELETE` 없음: 탈퇴 후에도 보존) · `doc_type`(CHECK `TERMS`·`PRIVACY`·`AGE14`) · `version`(웹 콘텐츠 버전 문자열, `AGE14`는 `1`) · `agreed_at`. PK는 `(user_id, doc_type, version)`이며, 행은 추가 전용(append-only)으로 관리하고 기존 `agreed_at`을 갱신하지 않습니다. 현행 요구 버전은 `manyak.legal.*-version` 설정값입니다([약관·개인정보 처리방침 동의](../spec/4-backend-server-spec.md#약관개인정보-처리방침-동의)) |
 | 게스트 | `guest_consents` | 게스트 개인정보 수집 및 이용 동의의 버전별 이력(추가 설계, 구현 전). `device_id_hash`(체험 한도와 같은 해시), `doc_type`(`GUEST_PRIVACY`), `version`, `agreed_at`. PK는 `(device_id_hash, doc_type, version)`이고 FK는 없습니다. 추가 전용(append-only)이며 조건부 삽입으로 같은 버전의 최초 `agreed_at`을 보존합니다. 회원 이관 없이 탈퇴와 무관하게 디바이스 단위로 남습니다. 현행 버전은 `manyak.legal.guest-privacy-version` 설정값입니다([게스트 개인정보 수집 동의](../spec/4-backend-server-spec.md#게스트-개인정보-수집-동의)) |
 | 스토리 | `stories` | 제목·소개·장르·소유자·삭제 상태를 저장합니다. 프리셋 표지 키와 생성·업로드 표지 URL이 공존하며, 검수 상태가 `APPROVED`인 URL을 우선 노출합니다([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)) |

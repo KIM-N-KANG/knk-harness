@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v1.1 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-26 |
 | 대상 | 마냑 운영·개발·통합 배포 |
 | 작성 목적 | 현재 배포 구성·설정·실행·검수·복구 구조를 설명합니다. 코드와 함께 갱신합니다. |
 | 기준 코드 | `manyak-terraform` dev `4c9921970160`. 실제 AWS 활성 상태와 구분합니다. |
@@ -125,7 +125,7 @@ release 번들(AAB)은 CI가 만들지 않습니다. 릴리스 담당자가 로�
 - **서명키 보관.** Play 앱 서명을 쓰므로 배포 인증서는 Google이 보관하고 팀은 업로드 키만 가집니다. 업로드 키스토어는 저장소 밖에 두고 `local.properties`의 `RELEASE_STORE_FILE`·`RELEASE_STORE_PASSWORD`·`RELEASE_KEY_ALIAS`·`RELEASE_KEY_PASSWORD`로 주입합니다. 키 파일과 비밀번호는 암호화 백업 두 곳에 둡니다. 잃으면 Google 지원으로 업로드 키를 재설정할 때까지 업데이트를 올릴 수 없습니다. 키 값과 실제 경로는 문서에도 저장소에도 적지 않습니다.
 - **release BuildConfig 주입값**도 `local.properties`에서 읽습니다(`GOOGLE_SERVER_CLIENT_ID_RELEASE`·`KAKAO_NATIVE_APP_KEY_RELEASE`·`AMPLITUDE_API_KEY_RELEASE`). 비어 있어도 빌드는 성공하고 해당 공급자만 런타임에 실패하므로 번들을 만들기 전에 세 값을 확인합니다. 운영 `BASE_URL`은 `app/build.gradle.kts`에 고정돼 있습니다.
 - **`google-services.json`은 저장소에 커밋합니다.** CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌리므로 파일이 없으면 모든 PR이 실패합니다. 값은 APK에 실려 나가고 보호는 Firebase 보안 규칙과 API 키 제한이 맡습니다. Firebase 프로젝트는 서버 FCM과 같은 하나를 쓰며 환경별로 나누지 않습니다. `applicationId`가 빌드 타입 간 같고 debug는 `firebase_crashlytics_collection_enabled=false`로 수집하지 않습니다.
-- release는 현재 R8 미적용(`optimization.enable = false`)이라 Crashlytics 매핑 파일이 없습니다.
+- release는 R8 축소·난독화를 적용합니다(`optimization.enable = true`, keep 규칙은 `app/proguard-rules.pro`). `bundleRelease`가 Crashlytics로 매핑 파일을 올리고 AAB의 `BUNDLE-METADATA`에도 매핑이 실립니다. 결정 이유는 [Android ADR A-047](../adr/1-3-android-adr.md#a-047)에 있습니다.
 
 ## 4-6. 런타임 설정과 시크릿
 
