@@ -4,12 +4,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.42 |
+| 버전 | v2.43 |
 | 작성일 | 원문 미기재 |
 | 수정일 | 2026-09-28 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `dev` 브랜치 `23088a9d71d8`. 운영 배포 여부와 구분합니다. |
+| 기준 코드 | manyak-ai `dev` 브랜치 `8b8b4ff84148`. 운영 배포 여부와 구분합니다. |
 | 채팅 전송 기준 | KNK-1300의 이미지 대기·본문 순차 전송은 manyak-ai `dev`의 `6741368ed3e8` 기준입니다. |
 | 스토리 인물 구성 기준 | KNK-1329의 입력 인원수·카드 검증·이야기 인물 유지 지시는 manyak-ai `dev`의 `81801d910514` 기준입니다. 다른 기능 전체를 이 커밋까지 동기화했다는 뜻은 아닙니다. |
 | 스토리라인 서비스 구조 기준 | KNK-1336의 내부 역할 분리는 manyak-ai `dev`의 `ed589f486c3f` 기준입니다([PR #127](https://github.com/KIM-N-KANG/manyak-ai/pull/127)). API 계약은 유지하며 내부 구조는 [Design](../design/3-ai-server-design.md#스토리라인-라우터와-서비스)을 따릅니다. |
@@ -162,6 +162,11 @@ flowchart LR
 ### 5-3-3. 스토리 컴파일
 
 선택한 줄거리를 플레이 설정으로 확장합니다. 생성된 인물 외형은 아래 이미지 생성의 입력으로 이어집니다.
+
+상세 화면의 “주요 내용”은 응답의 `stories.description`입니다. 주인공의 상황·핵심 갈등·선택에 따른
+위험이나 기대를 보여주는 소개문을 6~8문장으로 작성하도록 지시합니다. 한 줄 소개를 반복하거나
+세계관 설정만 나열하지 않고 결말은 밝히지 않습니다. 세계관 본문은 `story_settings.world_setting`이
+담당합니다. 6~8문장은 프롬프트 생성 지침이며 서버가 문장 수를 강제 검증하는 조건은 아닙니다.
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
@@ -1376,7 +1381,7 @@ flowchart LR
   "stories": {
     "title": "사라지는 내일의 기록",
     "one_line_intro": "마법 도서관에서 지워진 미래를 추적하는 신입 기록관의 이야기",
-    "description": "신입 기록관 서윤은 마법 도서관에서 다음 날의 기록이 지워지고 있음을 발견한다. 과묵한 사서 도현과 함께 사라진 기록의 출처를 추적한다."
+    "description": "신입 기록관 서윤은 마법 도서관에서 다음 날의 기록이 지워지고 있음을 발견한다.\n\n과묵한 사서 도현과 함께 사라진 기록의 출처를 추적하기 시작한다.\n\n지워진 문장이 남긴 푸른 흔적은 출입이 금지된 지하 보관실을 가리킨다.\n\n기록이 사라질 때마다 두 사람이 알고 있던 과거도 조금씩 흔들린다.\n\n원본을 공개하면 진실에 다가갈 수 있지만 도서관이 숨겨 온 비밀과 함께 도현까지 위험에 빠뜨릴 수 있다.\n\n서윤은 누구의 말을 믿고 어떤 기록을 지킬지 선택해야 한다."
   },
   "story_settings": {
     "world_setting": "# 세계관\n왕립 마법 도서관은 도시의 과거와 미래를 기록한다. 지워진 문장은 원본 가까이에 푸른 잔향을 남긴다.",
@@ -1480,7 +1485,7 @@ flowchart LR
 | `stories` | `object` | 이야기 정보 |
 | `stories.title` | `string` | 이야기 제목 |
 | `stories.one_line_intro` | `string` | 한 줄 소개 |
-| `stories.description` | `string` | 이야기 상세 소개 |
+| `stories.description` | `string` | 상세 화면의 “주요 내용”. 6~8문장 소개문을 생성하도록 지시하며 문장 수는 서버에서 강제 검증하지 않음 |
 | `story_settings` | `object` | 플레이 설정 |
 | `story_settings.world_setting` | `string` | 세계관 통글 |
 | `story_settings.character_setting` | `string` | 주변 인물 설정 통글 |

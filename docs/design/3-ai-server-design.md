@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.25 |
+| 버전 | v0.26 |
 | 작성일 | 2026-09-09 |
 | 수정일 | 2026-09-28 |
 | 대상 | manyak-ai |
@@ -179,6 +179,14 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `gpt-6-luna`(추론 없음)가 등록돼 있어 `CHAT_MODEL`로 선택할 수 있습니다(KNK-1410). 선택지는 `CHAT_CHOICE_MODEL`로 본문과 따로 고르며, 값이 없으면 기본값 deepseek-flash를 씁니다(KNK-1416). 기동 검사 대상에 이 설정이 추가됐고, `CHAT_MODEL`과 `CHAT_CHOICE_MODEL` 모두 Anthropic 선택을 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
 
 프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록합니다.
+
+기본 컴파일 템플릿 `COMPILE-TEMPLATE.md`(버전 12)와 Gemini용 `COMPILE-TEMPLATE-gemini.md`
+(버전 6)는 모두 내부 생성 필드 `meta.description`에 6~8문장 소개문을 지시합니다.
+[응답 조립](../../../manyak-ai/src/services/story_compile_render.py)은 이 값을 `stories.description`으로
+옮깁니다. `meta.one_line_intro`는 별도의 한 줄 소개이며, 주요 내용의 작성 기준은
+[Spec §5-3-3](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
+[컴파일 검증](../../../manyak-ai/src/services/story_llm.py)은 소개문의 누락·빈 값과 스키마를 확인하지만
+문장 수는 세지 않습니다. 문장 수만으로 보완 호출·502 응답을 발생시키는 로직은 없습니다.
 
 ## 3-3. 관측과 런타임 설정
 
