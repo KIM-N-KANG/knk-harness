@@ -6,9 +6,10 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-26 |
+| 수정일 | 2026-09-27 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드의 현재 기술 환경·요청 경계·저장 구조·동시성·운영 연결을 설명합니다. |
+| 검수 구조 기준 | 서버 dev `25b8c5e`, V87·V88. 아래 검수 실행 구조에 한정합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Flyway V81. 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md)이 소유합니다. |
 
 ## 읽는 순서
@@ -90,7 +91,7 @@ graph LR
 
 디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 막지 않고 수용합니다. 판단 근거는 [BE-045](../adr/2-backend-server-adr.md#be-045)에 있습니다.
 
-**계획(KNK-1161, 미구현)** 일반 제작 등록·수정을 검수 제출본으로 접수하고 커밋 뒤 검수해 승인 시에만 라이브에 반영할 예정입니다. 제출본·실패 복구·검수 완료 알림의 계약은 [Spec의 검수 제출 흐름](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름), 결정은 [BE-048](../adr/2-backend-server-adr.md#be-048)·[BE-049](../adr/2-backend-server-adr.md#be-049)를 따릅니다. 검수 완료 알림도 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스 기록을 따를 계획입니다. 아래 현재 구현 구조에 이 계획이 반영된 것으로 해석하지 않습니다.
+일반 제작 등록·수정은 `StorySubmissionService`가 제출본으로 접수합니다. `SubmissionPoller`가 빈 실행 슬롯만큼 DB 임대를 선점하고 `SubmissionExecutor`가 트랜잭션 밖에서 이미지 복사·AI 검수를 수행합니다. `SubmissionTransactions`가 회차를 확인해 승인 시에만 라이브에 반영하며, 완료 알림은 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스 기록을 사용합니다. `SubmissionFormAssembler`는 원본 폼 identity로 issues·imageErrors를 현재 폼에 재매핑합니다. 이 구조는 서버 dev의 KNK-1438까지를 기준으로 합니다. 재시도·보류·용량 검사의 계약은 [Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름), 결정은 [BE-050](../adr/2-backend-server-adr.md#be-050)을 따릅니다.
 
 ## 2-2. 저장소와 데이터 수명
 
