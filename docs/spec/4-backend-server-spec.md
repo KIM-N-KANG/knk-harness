@@ -701,7 +701,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 - data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
 - **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.
-- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료도 수정 폼 또는 제출본으로 연결하며 경로는 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
+- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료는 결과와 무관하게 내 제작 스토리 목록(`/studio`)으로 연결하며 상세 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
 - **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다: 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
 - **무효 토큰 정리.** FCM이 `UNREGISTERED`를 돌려주면 그 토큰 행만 지우고 다음 기기로 계속합니다. `INVALID_ARGUMENT`는 지우지 않습니다: 토큰 형식 오류뿐 아니라 **서버가 만든 페이로드 오류**에도 오는 코드라, 삭제 신호로 쓰면 서버 버그 하나가 회원 전체의 토큰을 지웁니다. 정리 자체가 실패해도(DB 오류) 다음 기기 발송은 이어집니다.
@@ -817,10 +817,18 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 검수 완료 푸시(KNK-1118)는 제출본이 APPROVED·REJECTED·FAILED로 종료될 때 발행합니다. 정보성 서비스 알림이며 사전 동의는 요구하지 않고 기존 `servicePush` 옵트아웃 설정을 따릅니다. 게스트는 푸시 토큰을 등록할 수 없어 검수 제출 대상에서 제외합니다.
 
-- `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
-- 딥링크는 `storyId`가 있으면 `/stories/{storyId}/edit`, 없으면 `/studio/story/general?submissionId={submissionId}`입니다. 따라서 UPDATE와 승인된 CREATE는 스토리 수정 폼으로 이동합니다. CREATE의 일반 제작 경로는 웹 KNK-1163 확정 전 임시값입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 경로를 조합합니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
-- 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
+- `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`, `title`, `body`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
+- `title`·`body`는 아래 결과별 문구를 사용합니다. `{스토리 제목}`은 새 등록과 수정 제출 모두 검수 대상 제출본의 제목입니다. 웹은 data의 `title`·`body`로 표시하고 Android는 기존 data-only 규칙을 유지합니다.
+- `deepLink`는 결과와 `storyId` 유무에 관계없이 `{manyak.push.web-base-url}/studio`로 통일합니다. 이동 대상은 내 제작 스토리 목록([FE-SCREEN-013](3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록))입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 `/studio`를 붙입니다. 스토리 수정 화면(`/stories/{storyId}/edit`)과 `/studio/story/general?submissionId=` 링크는 사용하지 않습니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
+- 반려 사유는 잠금 화면 노출과 길이를 고려해 푸시에 넣지 않습니다. 반려 사유 화면이 생기면 별도 작업에서 이동 대상을 변경합니다.
+- 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). local 발송과 remote 발송(아웃박스 → SQS → 알림 서비스)은 모두 서버가 만든 같은 data를 사용합니다. 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
 - 발송 실패나 사용자의 서비스 알림 끄기는 검수 결과를 되돌리지 않습니다. 화면 재진입 때 제출본 조회로 현재 상태를 표시합니다. 상태 조회는 푸시를 대신해 계속 폴링하도록 정한 계약이 아닙니다.
+
+| `status` | `title` | `body` |
+| --- | --- | --- |
+| `APPROVED` | 검수를 통과했어요 | 「{스토리 제목}」이 등록됐어요. 지금 확인해 보세요. |
+| `REJECTED` | 검수에서 반려됐어요 | 「{스토리 제목}」은 등록되지 않았어요. 내용을 수정해 다시 제출해 주세요. |
+| `FAILED` | 검수를 진행하지 못했어요 | 「{스토리 제목}」 검수 중 문제가 생겼어요. 잠시 후 다시 제출해 주세요. |
 
 <a id="출석-리마인드-푸시--phase-3--구현knk-1116-v74"></a>
 
@@ -899,13 +907,13 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `recipientId` | string(UUID) | 예 | 수신 회원 `publicId`. 서버 내부 순차 PK 사용 금지 |
 | `kind` | string enum | 예 | `SERVICE` 또는 `MARKETING` |
 | `type` | string enum | 예 | `STORY_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`. 기존 시나리오의 FCM `data.type`과 일치. `STORY_MODERATION_COMPLETED` 추가 |
-| `data` | `object<string, string>` | 예 | 기존 시나리오 페이로드. 값은 모두 문자열이며 동의와 토큰을 포함하지 않음 |
+| `data` | `object<string, string>` | 예 | 기존 시나리오 페이로드. 검수 완료의 `title`·`body`와 `deepLink`는 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 값은 모두 문자열이며 동의와 토큰을 포함하지 않음 |
 | `expiresAt` | string(ISO 8601 UTC) | 아니오 | 발송 가능 기한. 현재 시각이 기한에 도달했거나 지났으면 폐기. 미지정은 메시지 자체 만료 없음 |
 | `requestId` | string | 예 | 발행 원인의 상관 ID. 재전달 때 유지하며 HTTP 요청 상관 ID와 연결 |
 | `sessionId` | string | 예 | 원인 세션의 상관 ID. 세션 없는 스케줄러 등은 기존 관측 규칙에 따라 `unknown` |
 | `schemaVersion` | integer | 예 | 최초 스키마는 `1`. 생산자와 소비자가 같은 필드 의미를 해석하기 위한 버전 |
 
-- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. 검수 완료의 type은 `STORY_MODERATION_COMPLETED`, kind는 `SERVICE`이며 data에 `type`·`submissionId`·`storyId`(있을 때만)·`status`·`deepLink`를 포함합니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
+- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. 검수 완료의 type은 `STORY_MODERATION_COMPLETED`, kind는 `SERVICE`이며 data에 `type`·`submissionId`·`storyId`(있을 때만)·`status`·`deepLink`·`title`·`body`를 포함합니다. 결과별 문구와 `/studio` 이동 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
 - 동의, 동의 시각, FCM 토큰과 원본 기기 ID를 큐 메시지에 싣지 않습니다. `requestId`와 `sessionId`는 관측용이며 동의나 발송 허가를 대신하지 않습니다. 원인 HTTP 요청이 없는 작업은 발행 작업의 상관 ID를 부여하고 재전달 때 유지합니다.
 - 출석 메시지는 해당 KST 날짜의 다음 날 00:00을 `expiresAt`으로 표현합니다. 소비 시 만료를 확인하고 Android TTL은 발송 시점부터 남은 시간으로 계산합니다. 웹의 기존 메시지 구성은 바꾸지 않습니다. 스토리 완성과 프로모션은 기존 기본값대로 만료 시각을 지정하지 않습니다.
 
@@ -914,7 +922,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | 스토리 완성 | `story-completed:{requestId}` | 이 자리의 `requestId`는 스토리 완성 요청 본문의 UUID인 도메인 멱등키. 메시지의 관측용 `requestId`와 구분 |
 | 출석 리마인드 | `attendance:{userPublicId}:{KST 날짜}` | 회원 publicId와 `YYYY-MM-DD`. 원장의 내부 보상 신원 키와 구분 |
 | 프로모션 | `promotion:{campaignId}:{userPublicId}` | 캠페인 publicId와 회원 publicId |
-| 검수 완료 | `story-moderation:{submissionId}:{attempt}` | 선점·재선점·재제출마다 증가하는 attempt로 구분. 같은 submissionId의 서로 다른 회차 알림을 합치지 않음 |
+| [검수 완료](#스토리-검수-완료-푸시) | `story-moderation:{submissionId}:{attempt}` | 선점·재선점·재제출마다 증가하는 attempt로 구분. 같은 submissionId의 서로 다른 회차 알림을 합치지 않음 |
 
 ##### 발행 포트와 아웃박스
 
