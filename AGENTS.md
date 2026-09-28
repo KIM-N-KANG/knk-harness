@@ -18,7 +18,20 @@
 
 ## Knowledge Base
 
-작업과 관련된 문서만 선택합니다. 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
+작업과 관련된 문서만 선택합니다. 제품 문서는 `docs/domain/` 아래 도메인 단위로 재구성 중입니다. 도메인 폴더에 해당 세트가 있으면 그 문서가 기준이고, 아직 없으면 아래 기존 Spec·Design·ADR이 기준입니다.
+
+| 도메인 | 다루는 것 | 세트 |
+| --- | --- | --- |
+| [STORY](docs/domain/STORY/CLAUDE.md) | 스토리 탐색·제작·상세·공개·검색 | AI · BACKEND · WEB · ANDROID |
+| [CHAT](docs/domain/CHAT/CLAUDE.md) | 채팅 플레이·선택지·실시간 이미지·피드백 | AI · BACKEND · WEB · ANDROID |
+| [ACCOUNT](docs/domain/ACCOUNT/CLAUDE.md) | 게스트·회원·로그인·동의·이관·프로필 | BACKEND · WEB · ANDROID |
+| [PAYMENT](docs/domain/PAYMENT/CLAUDE.md) | 이프·충전 결제·보상·체험 한도 | BACKEND · WEB · ANDROID |
+| [NOTIFICATION](docs/domain/NOTIFICATION/CLAUDE.md) | 푸시 토큰·발송·알림 서비스 | BACKEND · WEB · ANDROID |
+| [MODERATION](docs/domain/MODERATION/CLAUDE.md) | 게시물 검수·15세 모드·입력 검수 | AI · BACKEND · WEB · ANDROID |
+
+- 각 도메인의 `CLAUDE.md`가 세트 상태와 이관 원본을 안내합니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `CLAUDE.md`를 따릅니다.
+- 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
+- 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
 
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |
