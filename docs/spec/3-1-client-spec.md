@@ -367,7 +367,7 @@
 
 | 탭 | 항목 | 요청 필드 |
 | --- | --- | --- |
-| 기본 정보 | 커버 이미지(선택), 제목, 한 줄 소개 | `thumbnailObjectKey`, `title`, `oneLineIntro` |
+| 스토리 프로필 | 커버 이미지(선택), 제목, 한 줄 소개 | `thumbnailObjectKey`, `title`, `oneLineIntro` |
 | 스토리 설정 | 세계관, 전개 방식, 분량 배분 | `storySettings.worldSetting`·`ruleSetting` |
 | 주인공(나) | 이름·성별, 특징 | `storySettings.userRoleSetting` |
 | 주변 인물 | 인물(1~5명)마다 이미지(선택, 1장), 이름·성별, 특징(선택) | `storySettings.characterSetting`, `characters[]` |
