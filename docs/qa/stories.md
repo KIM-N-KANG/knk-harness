@@ -33,6 +33,7 @@
 - [STORY-GATE — 제작과 채팅 시작 동의 게이트](#story-gate--제작과-채팅-시작-동의-게이트)
 - [STORY-LIMIT — 회원 이프 게이팅](#story-limit--회원-이프-게이팅)
 - [STORY-GENERAL — 일반 제작 `/studio/story/general`](#story-general--일반-제작-studiostorygeneral)
+- [STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`](#story-submission--제작-탭-검수-제출본-studio)
 - [⚠️ 확인 필요](#️-확인-필요)
 
 ---
@@ -336,10 +337,23 @@
 | STORY-GENERAL-22 | P1  | 회원, 필수 항목을 모두 채움, 등록 요청 실패(5xx·400·네트워크) | 등록하기 | "스토리를 등록하지 못했어요" 토스트, 일반 제작 화면과 입력 유지, 등록하기 다시 켜짐 | ✅ e2e `stories/story-general-create`(5xx), 400·네트워크는 수동 | FE-SCREEN-009 |
 | STORY-GENERAL-23 | P1  | 게스트 | 제작 방식 선택에서 일반 제작 선택 → 시트 닫기 → 주소로 `/studio/story/general` 진입 | 선택 화면에 머문 채 로그인 필요 시트를 열고, 주소 진입은 로그인 화면으로 이동(로그인하면 일반 제작으로 복귀) | ✅ e2e `stories/story-general-create`(시트·로그인 화면 이동), 로그인 후 복귀는 수동 | FE-SCREEN-009, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) |
 | STORY-GENERAL-24 | P1  | 회원, 검수 통과·반려 환경(dev) | 커버·주변 인물 이미지와 엔딩·주요 사건을 넣어 등록 → 검수 결과 기다림 | 통과하면 제작 탭 목록과 상세에 입력한 제목·설정·이미지·시작 상황·엔딩이 보이고 채팅을 시작할 수 있음. 반려 표시는 KNK-1163 범위 | 수동 | US-3-15, FE-SCREEN-009 |
-| STORY-GENERAL-25 | P1  | 회원, 필수 항목을 모두 채움, 검수가 반려·실패 | 등록하기 → 반려 안내 확인 → 다시 등록하기 | "스토리가 검토를 통과하지 못했어요" 토스트, 일반 제작 화면과 입력 유지, 등록하기 다시 켜짐. 임시 저장본은 없고 임시 저장 버튼은 꺼짐. 다시 누르면 새 제출 없이 같은 제출본을 재제출(`PUT /stories/submissions/{submissionId}`) | ✅ e2e `stories/story-general-create` | FE-SCREEN-009 |
+| STORY-GENERAL-25 | P1  | 회원, 필수 항목을 모두 채움, 검수가 반려·실패(`issues`·`imageErrors` 포함) | 등록하기 → 반려 안내 확인 → 사유 칸 수정 → 등록 탭에서 다시 등록하기 | "스토리가 검토를 통과하지 못했어요" 토스트, 일반 제작 화면과 입력 유지, 폼 위 반려 안내와 첫 사유 탭으로 이동해 칸에 사유 표시([FE-SCREEN-009](../spec/3-1-client-spec.md) 검수 결과 표시). 칸을 고치면 사유가 사라짐. 임시 저장본은 없고 임시 저장 버튼은 꺼짐. 다시 누르면 새 제출 없이 같은 제출본을 재제출(`PUT /stories/submissions/{submissionId}`) | ✅ e2e `stories/story-general-create`(안내·탭 이동·칸 사유·재제출), 칸 수정 시 사유 해제는 `stories/story-general-submission`·단위 테스트 `review-issues` | FE-SCREEN-009 |
 | STORY-GENERAL-26 | P1  | 회원, 필수 항목을 모두 채움, 검수가 60초 넘게 대기 | 등록하기 → 1분 기다림 | 기다림을 멈추고 제작 탭으로 이동해 "검토가 늦어지고 있어요. 끝나면 제작 탭에 추가돼요" 토스트. 임시 저장본 없음 | ✅ e2e `stories/story-general-create` | FE-SCREEN-009 |
 | STORY-GENERAL-27 | P2  | 회원, 검수 승인 후 채팅 생성 실패 | 등록하기 | "채팅을 시작하지 못했어요" 토스트와 함께 만든 스토리의 상세로 이동 | 수동 | FE-SCREEN-009 |
 | STORY-GENERAL-28 | P1  | 회원, 필수 항목을 모두 채움, 검수 대기 중 | 등록하기 → 닫기(X) → 나가기 → 제작 탭 확인 / (별도) 반려 뒤 입력 수정 → 닫기(X) | 닫기는 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 제출본 안내(고친 것이 없으면 "등록을 요청한 내용은 제작 탭에서 확인할 수 있어요", 고쳤으면 "지금 나가면 등록을 요청한 뒤에 고친 내용은 사라져요"). 나가면 검토 중 토스트가 닫히고 제작 탭에 일반 초안 카드가 남지 않음 | ◐ e2e `stories/story-general-create`(검토 중 이탈), 반려 뒤 수정 문구는 수동(단위 테스트 `draft-exit-warning`) | FE-SCREEN-009 |
+
+
+## STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`
+
+기준: [§3-1-3 FE-SCREEN-013 검수 제출본 카드](../spec/3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록), [FE-SCREEN-009](../spec/3-1-client-spec.md) 재제출. 등록 직후 흐름은 STORY-GENERAL-21~28에서 다룬다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| STORY-SUBMISSION-01 | P0 | 회원, 검토 중·반려(사유 1개)·실패(이미지 오류) 신규 등록 제출본 | 제작 탭 진입 → 검토 중 카드 옵션 → 등록 취소 → 확인 | 세 카드가 내 스토리 목록 위에 상태 배지·설명([FE-SCREEN-013](../spec/3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록) 표)·등록을 요청한 시각과 함께 보임. 검토 중은 수정하기가 없고, 반려는 "수정이 필요한 곳이 1곳 있어요", 실패는 이미지 안내. 등록 취소를 확정하면 제출본 삭제 요청 뒤 "등록을 취소했어요"와 함께 카드가 사라짐 | ✅ e2e `stories/story-general-submission` | FE-SCREEN-013 |
+| STORY-SUBMISSION-02 | P0 | 회원, 반려 제출본(시작 상황 프롤로그 사유) | 반려 카드 수정하기 → 사유 칸 수정 → 등록 탭 → 등록하기 | `?submissionId=` 주소로 제출본 입력이 채워진 폼이 열리고, 폼 위 반려 안내, 시작 상황 설정 탭이 선택되어 프롤로그 칸에 사유와 오류 테두리. 임시 저장 버튼 꺼짐. 칸을 고치면 사유가 사라지고, 등록하면 같은 제출본을 PUT으로 재제출하며 반려 안내가 사라짐 | ✅ e2e `stories/story-general-submission` | FE-SCREEN-009 |
+| STORY-SUBMISSION-03 | P1 | 회원 | 검토 중 제출본 주소로 진입 → 없는 제출본 주소로 진입 | 검토 중은 제작 탭으로 가며 "아직 검토 중이에요", 없는 제출본은 제작 탭으로 가며 "스토리를 불러오지 못했어요". 폼은 열지 않음 | ✅ e2e `stories/story-general-submission` | FE-SCREEN-009 |
+| STORY-SUBMISSION-04 | P1 | 회원, 검토 중 제출본, 실제 dev 검수 | 제작 탭에 머무름 | 검토가 끝나 승인되면 몇 초 안에 제출본 카드가 사라지고 내 스토리 목록에 스토리가 나타남. 반려되면 반려 카드로 바뀜 | 수동 | FE-SCREEN-013 |
+| STORY-SUBMISSION-05 | P2 | 회원, 커버·주변 인물 이미지가 있는 반려·실패 제출본 | 수정하기 | 커버·주변 인물 이미지 미리보기가 서버 이미지로 보이고, 이미지 오류가 있으면 이미지 칸 설명 자리에 오류 안내. 이미지를 바꾸면 안내가 사라짐 | 수동(단위 테스트 `review-issues`·`submission-form`) | FE-SCREEN-009 |
 
 ## ⚠️ 확인 필요
 
