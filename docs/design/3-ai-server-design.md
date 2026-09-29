@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.26 |
+| 버전 | v0.27 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-28 |
+| 수정일 | 2026-09-29 |
 | 대상 | manyak-ai |
 | 작성 목적 | AI 호출 계층, 모델·프롬프트 설정과 관측 실패의 격리 구조를 설명합니다. |
 | 기준 | [Spec](../spec/5-ai-server-spec.md)의 기준 코드·브랜치를 따릅니다. 운영 배포 검증과 구분합니다. |
@@ -87,6 +87,14 @@ DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google�
 기존 최대 2회 보완 한도 안에서 다른 블록·인물 필드 문제와 함께 처리합니다. 보완 후 사용자 이름을 ID로 다시 적용하고 같은 검사를 반복합니다. 불일치가 남으면 이미지·표지 호출 전에 502를 반환하고, 통과하면 내부 ID를 제거한 뒤 응답 스키마 검사와 이미지 생성을 수행합니다. 0명 입력은 입력 ID 대응 검사를 건너뛰되 필수 필드·이름·카드 1~5명 스키마 검증은 유지합니다.
 
 보완 프롬프트는 직전 결과의 잘못 만든 인물이 아니라 원래 선택한 이야기의 인물·관계를 기준으로 삼도록 지시합니다. 별도 인물 명단 API나 의미 판정 LLM 호출은 없습니다. API 계약과 품질 기준의 구분은 [Spec의 컴파일](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
+
+### 공개 인물 소개 생성과 응답 변환
+
+컴파일 모델은 `StorySpec.prompt_settings.character_setting[]`에 공개용 `description`을 함께 생성한다. 소개 전용 LLM 호출은 추가하지 않는다. 내부 인물 카드와 응답 소개 모델은 `CharacterDescription` 타입을 공유한다. ([컴파일 스키마](../../../manyak-ai/src/schemas/story_compile.py))
+
+`_find_character_field_repairs()`는 같은 타입의 `TypeAdapter`로 소개를 검사한다. 카드 목록이 유효하면 잘못된 소개를 인물 index별 `character_updates`로 요청하고, 요청한 필드만 병합한다. 카드 블록 전체를 다시 받는 차수에는 개별 필드 보완을 함께 요청하지 않는다. 이름, 소개, 외형과 다른 블록 문제는 기존 보완 한도를 공유하며, 소개 오류가 남으면 이미지 생성 전에 502를 반환한다. ([컴파일 서비스](../../../manyak-ai/src/services/story_llm.py))
+
+`spec_to_response()`는 최종 인물 카드의 이름과 소개를 `character_introductions` 배열로 옮긴다. `story_settings`의 마크다운 4필드와 인물 외형은 각자의 기존 변환을 거치고, 인물 소개를 채팅용 마크다운이나 이미지 프롬프트에 넣지 않는다. 이미지 생성 결과가 실패여도 소개 배열은 유지한다. 외부 필드와 검증 조건은 Spec을 따른다. ([응답 변환](../../../manyak-ai/src/services/story_compile_render.py), [컴파일 계약](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일))
 
 ### 자식 이미지가 있는 채팅 흐름
 
@@ -180,13 +188,15 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 
 프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록합니다.
 
-기본 컴파일 템플릿 `COMPILE-TEMPLATE.md`(버전 12)와 Gemini용 `COMPILE-TEMPLATE-gemini.md`
-(버전 6)는 모두 내부 생성 필드 `meta.description`에 6~8문장 소개문을 지시합니다.
+기본 컴파일 템플릿 `COMPILE-TEMPLATE.md`(버전 13)와 Gemini용 `COMPILE-TEMPLATE-gemini.md`
+(버전 7)는 모두 내부 생성 필드 `meta.description`에 6~8문장 소개문을 지시합니다.
 [응답 조립](../../../manyak-ai/src/services/story_compile_render.py)은 이 값을 `stories.description`으로
 옮깁니다. `meta.one_line_intro`는 별도의 한 줄 소개이며, 주요 내용의 작성 기준은
 [Spec §5-3-3](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
 [컴파일 검증](../../../manyak-ai/src/services/story_llm.py)은 소개문의 누락·빈 값과 스키마를 확인하지만
 문장 수는 세지 않습니다. 문장 수만으로 보완 호출·502 응답을 발생시키는 로직은 없습니다.
+
+두 템플릿은 인물 카드의 `description`에 공개용 짧은 소개를 지시하고, 문장마다 이중 개행하는 공통 규칙에서 이 필드를 제외한다. 생성 기준과 코드 검증의 범위는 컴파일 계약을 따른다. ([Spec §5-3-3](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일))
 
 ## 3-3. 관측과 런타임 설정
 
