@@ -4,12 +4,12 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v2.43 |
+| 버전 | v2.44 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-28 |
+| 수정일 | 2026-09-29 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
-| 기준 코드 | manyak-ai `dev` 브랜치 `8b8b4ff84148`. 운영 배포 여부와 구분합니다. |
+| 기준 코드 | manyak-ai `dev` 브랜치 `b47fd59a2952`. 운영 배포 여부와 구분합니다. |
 | 채팅 전송 기준 | KNK-1300의 이미지 대기·본문 순차 전송은 manyak-ai `dev`의 `6741368ed3e8` 기준입니다. |
 | 스토리 인물 구성 기준 | KNK-1329의 입력 인원수·카드 검증·이야기 인물 유지 지시는 manyak-ai `dev`의 `81801d910514` 기준입니다. 다른 기능 전체를 이 커밋까지 동기화했다는 뜻은 아닙니다. |
 | 스토리라인 서비스 구조 기준 | KNK-1336의 내부 역할 분리는 manyak-ai `dev`의 `ed589f486c3f` 기준입니다([PR #127](https://github.com/KIM-N-KANG/manyak-ai/pull/127)). API 계약은 유지하며 내부 구조는 [Design](../design/3-ai-server-design.md#스토리라인-라우터와-서비스)을 따릅니다. |
@@ -168,6 +168,12 @@ flowchart LR
 세계관 설정만 나열하지 않고 결말은 밝히지 않습니다. 세계관 본문은 `story_settings.world_setting`이
 담당합니다. 6~8문장은 프롬프트 생성 지침이며 서버가 문장 수를 강제 검증하는 조건은 아닙니다.
 
+작품 페이지용 주변 인물 소개는 `character_introductions` 배열로 반환한다. 주인공을 제외한 모든 주변 인물 카드에 대해 최종 `name`과 `description`을 하나씩 포함한다. 입력 인물이 있으면 입력 인원수와 같고, 0명 입력이면 자유 생성한 1~5명 모두를 포함한다. 외형과 이미지는 같은 `name`으로 연결하며, 이미지 생성 실패로 소개 항목을 제거하지 않는다. 소개는 `story_settings.character_setting` 마크다운에 포함하지 않는다.
+
+`description`은 앞뒤 공백 제거 후 공백 포함 1~80자인 문자열이며 CR, LF와 탭을 허용하지 않는다. 누락, 빈값, 타입 오류나 형식 위반은 기존 최대 2회 보완 한도에서 해당 필드만 다시 받는다. 끝내 유효하지 않으면 인물 이미지와 표지를 생성하기 전에 502를 반환한다.
+
+인물의 역할, 성격과 주인공과의 초기 관계를 1~2개의 짧은 문장으로 소개하도록 지시한다. 마크다운과 숨겨진 정체, 동기, 반전, 결말은 제외하도록 지시하며, 문장 수와 내용의 의미를 코드로 판정하지 않는다. 소개 분리의 선택 근거는 ADR을 따른다. ([인물 소개 결정](../adr/3-ai-server-adr.md#작품-페이지용-인물-소개를-채팅-설정과-분리))
+
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
 flowchart LR
@@ -184,7 +190,7 @@ flowchart LR
         O_item1["<div style='width:240px;text-align:center;'><span>제목·소개·플레이 설정</span></div>"]
         O_item2["<div style='width:240px;text-align:center;'><span>시작 장면·첫 선택지 3개</span></div>"]
         O_item3["<div style='width:240px;text-align:center;'><span>주요 사건·엔딩</span></div>"]
-        O_item4["<div style='width:240px;text-align:center;'><span>인물 외형·인물 이미지·표지</span></div>"]
+        O_item4["<div style='width:240px;text-align:center;'><span>인물 소개·외형·이미지·표지</span></div>"]
     end
     I --> P
     P --> M
@@ -217,7 +223,7 @@ flowchart LR
         direction LR
         L_item1["<div style='width:240px;text-align:center;'><span>제목·한 줄 소개·상세 소개</span></div>"]
         L_item2["<div style='width:240px;text-align:center;'><span>세계관·줄거리 구성</span></div>"]
-        L_item3["<div style='width:240px;text-align:center;'><span>인물 성격·외형·사용자 역할</span></div>"]
+        L_item3["<div style='width:240px;text-align:center;'><span>인물 소개·성격·외형·사용자 역할</span></div>"]
         L_item4["<div style='width:240px;text-align:center;'><span>전개 규칙·문체·분량 배분</span></div>"]
         L_item5["<div style='width:240px;text-align:center;'><span>시작 장면·프롤로그·첫 선택지 3개</span></div>"]
         L_item6["<div style='width:240px;text-align:center;'><span>주요 사건·엔딩 조건·에필로그</span></div>"]
@@ -230,7 +236,7 @@ flowchart LR
     end
     INPUT --> L
     L --> V["입력값 보존·필수 필드 검증<br/>문제 부분 최대 2회 보완"]
-    V -->|"필수 설정·인물 이름·주요 사건 미충족"| E["502"]
+    V -->|"필수 설정·인물 이름과 소개·주요 사건 미충족"| E["502"]
     V -->|"필수 조건 충족"| R["불완전 엔딩은 빈 배열<br/>최종 설정 스키마 검증"]
     R -->|형식 위반| E
     R -->|통과| P["인물 이미지와 표지 동시 생성<br/>외형 누락 인물은 실패 항목"]
@@ -242,7 +248,7 @@ flowchart LR
 
 기존 설정과 수정 대상을 프롬프트에 더해 필요한 부분만 다시 받습니다.
 
-입력 인물이 있을 때 카드 수가 다르거나 내부 입력 ID가 누락·중복·미등록 값·잘못된 형식이면 카드 블록을 통째로 보완합니다. 다른 필드 보완과 합쳐 최대 2회이며, 매번 입력 이름을 다시 적용하고 재검사합니다. 끝내 맞지 않으면 인물 이미지·표지 생성 전에 502를 반환합니다. 내부 ID는 검증 뒤 제거하므로 요청·응답 API에 새 필드는 없습니다.
+입력 인물이 있을 때 카드 수가 다르거나 내부 입력 ID가 누락·중복·미등록 값·잘못된 형식이면 카드 블록을 통째로 보완합니다. 다른 필드 보완과 합쳐 최대 2회이며, 매번 입력 이름을 다시 적용하고 재검사합니다. 끝내 맞지 않으면 인물 이미지·표지 생성 전에 502를 반환합니다. 내부 ID는 검증 뒤 제거하므로 요청·응답 API에 노출하지 않습니다.
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 12, "subGraphTitleMargin": {"top": 8, "bottom": 24}}}}%%
@@ -817,6 +823,8 @@ API 응답에 관측용 `meta`를 추가하지 않습니다.
 API 형식·필드 보존·부분 실패·SSE 순서·관측 격리는 AI 레포의 도커 테스트(`scripts/test.sh`·`scripts/test.ps1`)로 검수합니다. 프롬프트·판정 품질은 라이브 실측이 별도로 필요하며 유닛 테스트로 대신하지 않습니다. 호출 전 규모를 보고하고 승인받습니다. 조립 미리보기는 무과금 로컬 스크립트입니다.
 
 주변 인물 검수는 0명 자유 생성, 1~5명 고정, 이름 미정·혼합 입력, 카드 순서 변경, 카드 수·ID 불일치의 보완 성공·실패를 포함합니다. 이야기 속 역할·관계 유지 여부는 실제 LLM 출력으로 별도 확인합니다. 이 의미 검증은 코드에 없으며 본문의 단역 언급을 설정 인원수 초과로 판정하지 않습니다. 특정 모델·소수 사례의 성공이 모든 입력의 품질을 보장하지는 않습니다.
+
+공개 인물 소개 검수는 모든 카드와 소개의 일대일 대응, 최종 이름 연결, 이미지 실패 시 소개 유지, 채팅용 마크다운에 소개가 포함되지 않는지를 확인한다. 누락, 비문자열, 빈값, 80자 초과와 CR/LF/탭에 대해 필드 보완 성공 및 한도 소진 후 502를 확인한다. 소개의 표현과 스포일러 제외는 실제 LLM 출력으로 별도 검수하며, AI 응답 검증을 백엔드 저장과 작품 페이지 표시의 연동 검증으로 대신하지 않는다.
 
 게시물 검수 구현은 `dev`에 반영됐습니다. 실제 백엔드 연동·Langfuse 전송·모델 품질 실측은 미완료입니다.
 현재 48MiB 본문 사전 검사는 대체 모델 DeepSeek의 전송 본문을 대상으로 합니다. 첫 모델 OpenAI의
@@ -1436,6 +1444,12 @@ flowchart LR
       "epilogue": "사용자의 선택이 남긴 손실과 인물들의 반응을 보여준다."
     }
   ],
+  "character_introductions": [
+    {
+      "name": "도현",
+      "description": "기록을 지키는 과묵한 사서. 신입 기록관의 조사를 조용히 돕는다."
+    }
+  ],
   "character_appearances": [
     {
       "name": "도현",
@@ -1505,6 +1519,9 @@ flowchart LR
 | `story_endings[].min_turns` | `integer` | 최소 턴 수; 1 이상 |
 | `story_endings[].achievement_condition` | `string` | 엔딩 달성 조건 |
 | `story_endings[].epilogue` | `string` | 에필로그 연출 방향 |
+| `character_introductions` | `object[]` | 필수 배열. 주인공 제외, 주변 인물 전원 1~5명. 이미지 성공 여부와 무관하게 포함 |
+| `character_introductions[].name` | `string` | 입력값 보존과 보완을 마친 최종 인물 이름. 외형, 이미지와 연결하는 기준 |
+| `character_introductions[].description` | `string` | 작품 페이지용 짧은 소개. 앞뒤 공백 제거 후 공백 포함 1~80자, CR/LF/탭 불가. 채팅용 인물 마크다운에는 미포함 |
 | `character_appearances` | `object[]` | 주변 인물 외형; 입력이 있으면 입력 인원수와 같고, 0명 입력이면 1~5명 |
 | `character_appearances[].name` | `string` | 인물 이름 |
 | `character_appearances[].gender` | `string` | 성별 |
