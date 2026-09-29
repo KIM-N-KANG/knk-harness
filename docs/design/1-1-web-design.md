@@ -147,6 +147,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | --- | --- |
 | 카드 → 상세, 제작 → 퍼널 | `Link`; 초안이 있으면 먼저 재개 확인 |
 | 상세 → 새 채팅 | `replace` |
+| 상세 헤더 뒤로 | 루트 [in-app-navigation-tracker](../../../manyak-web/src/components/providers/in-app-navigation-tracker.tsx)가 첫 진입 경로에서 벗어난 클라이언트 이동을 기록합니다. 기록이 있으면 `back()`, 없으면(공유·외부 링크로 바로 진입) `replace('/')`. 인앱·자동화 브라우저가 빈 첫 기록을 남겨 `history.length`로는 판정하지 않습니다 |
 | 완성 제출 → 제작 | 저장 성공 뒤 `replace('/studio')`; 직접 복구·저장 실패 예외는 웹 Spec |
 | 채팅 헤더 뒤로 | `push('/chats')` |
 | 스토리·채팅 삭제 성공 | 각각 `replace('/studio')`·`replace('/chats')`; 목록 삭제는 현재 화면 유지 |
