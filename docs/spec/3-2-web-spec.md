@@ -136,7 +136,7 @@
 | 홈·채팅 목록·제작·마이 | `/`·`/chats`·`/studio`·`/my` | 게스트·회원 |
 | 제작 방식 선택 | `/studio/story` | 게스트·회원 |
 | 간편 제작 | `/studio/story/simple` | 동의를 마친 회원 또는 게스트. 게스트 동의는 스토리라인 생성 요청 직전에 확인 |
-| 일반 제작·수정 | `/studio/story/general`·`/stories/[id]/edit` | 일반 제작은 동의를 마친 회원. 게스트는 로그인 화면으로 보내고 로그인 후 일반 제작으로 돌아옴. 수정은 공통 계약의 소유 조건 |
+| 일반 제작·수정 | `/studio/story/general`(`?submissionId=`로 반려·실패 제출본 재제출)·`/stories/[id]/edit` | 일반 제작은 동의를 마친 회원. 게스트는 로그인 화면으로 보내고 로그인 후 같은 주소로 돌아옴. 수정은 공통 계약의 소유 조건 |
 | 스토리 상세·채팅방 | `/stories/[id]`·`/chats/[id]` | 서버 권한 판정 |
 | 로그인·로그인 이어가기 | `/login`·`/login/continue` | 인증 진입 |
 | 친구 초대·이프 충전·회원 탈퇴 | `/my/invite`·`/my/credits`·`/my/account-deletion` | 회원 |

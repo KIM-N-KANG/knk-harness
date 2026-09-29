@@ -234,6 +234,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_generalCreate_completed`                         |
 | P1                  | client | `client_generalCreate_registerError_shown`               |
 | P1                  | client | `client_generalCreate_reviewResult_shown`                |
+| P1                  | client | `client_storyList_submissionCard_clicked`                |
 | P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed`                                |
 | P1 `Phase 1 · 계획` | client | `client_storyEdit_completed`                             |
 | P1                  | client | `client_storyCreate_storyCompletion_requested`           |
@@ -324,6 +325,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈·채팅·제작 헤더 로그인 버튼 클릭(게스트) | 없음 |
+| `client_storyList_submissionCard_clicked` | P1 | 제작 탭 검수 제출본 카드의 수정하기·등록 취소·삭제 선택 | `submission_id` (string, 필수), `status` (string, 필수: `pending` / `rejected` / `failed`), `action` (string, 필수: `edit` / `cancel` / `delete`) |
 
 `client_storyList_loginButton_clicked`는 게스트가 홈·채팅·제작의 공통 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 기존 이벤트명과 대시보드 호환성을 유지하기 위해 이름은 바꾸지 않으며, 마이 본문발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
@@ -1268,7 +1270,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry·Crashlytics context/log, `ai_ca
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정됩니다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리합니다. |
 | Android 안정성        | 내부 release의 test crash·non-fatal이 Crashlytics에 앱 버전·빌드·수동 화면 로그와 함께 보이고, debug 빌드는 수집하지 않습니다. API 30+ ANR을 확인하며 API 24~29·NDK 공백은 §6-6-4 범위대로 처리합니다. |
 | 이벤트 수집 `Phase 1` | `client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다(`client_guestLimitDialog_*`는 2026-09-19 폐기).                                                                 |
-| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_generalCreate_registerError_shown`, `client_generalCreate_reviewResult_shown`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_generalCreate_registerError_shown`, `client_generalCreate_reviewResult_shown`, `client_storyList_submissionCard_clicked`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다.                           |
 
 ### 6-8-4. 계층별 검수 기준
