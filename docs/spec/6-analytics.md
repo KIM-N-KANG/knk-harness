@@ -230,8 +230,10 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_storyCreate_regenerateButton_clicked`            |
 | P1                  | client | `client_storyCreate_storylineRating_clicked`             |
 | P1 `Phase 1 · 계획` | client | `client_storyCreate_methodOption_selected`               |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_viewed`                            |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_completed`                         |
+| P1                  | client | `client_generalCreate_viewed`                            |
+| P1                  | client | `client_generalCreate_completed`                         |
+| P1                  | client | `client_generalCreate_registerError_shown`               |
+| P1                  | client | `client_generalCreate_reviewResult_shown`                |
 | P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed`                                |
 | P1 `Phase 1 · 계획` | client | `client_storyEdit_completed`                             |
 | P1                  | client | `client_storyCreate_storyCompletion_requested`           |
@@ -522,18 +524,21 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-10. 일반 제작·스토리 수정 — `Phase 1 · 계획`
 
-일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 처리가 없는 동기 CRUD라 서버 이벤트 없이 클라이언트 계측으로 충분합니다.
+일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 생성이 없고 검수 판정은 서버가 비동기로 처리하므로, 클라이언트 계측은 등록 요청 접수까지 봅니다.
 
 | 이벤트                                     | 우선순위 | 발생 시점                 | 고유 프로퍼티                                                                                 |
 | ------------------------------------------ | -------- | ------------------------- | --------------------------------------------------------------------------------------------- |
 | `client_storyCreate_methodOption_selected` | P1       | 제작 방식 선택(간편/일반) | `method` (string, 필수: `simple` / `general`)                                                 |
-| `client_generalCreate_viewed`              | P1       | 일반 제작 폼 진입         | 없음                                                                                          |
-| `client_generalCreate_completed`           | P1       | 일반 제작 등록 성공       | `story_id` (string, 필수), `main_event_count` · `ending_count` · `image_count` (number, 필수) |
+| `client_generalCreate_viewed`              | P1       | 일반 제작 폼 진입(회원 게이트 통과 후) | 없음                                                                                          |
+| `client_generalCreate_completed`           | P1       | 일반 제작 등록 요청 접수(202) | `submission_id` (string, 필수), `start_setting_count` · `ending_count` · `main_event_count` · `image_count` (number, 필수). `image_count`는 커버와 주변 인물 이미지 수의 합 |
+| `client_generalCreate_registerError_shown` | P1       | 등록 실패 토스트 표시     | `status` (number, 필수: HTTP 상태, 응답이 없거나 요청 전 실패는 0)                              |
+| `client_generalCreate_reviewResult_shown`  | P1       | 접수 뒤 검수 결과 안내(승인은 채팅방 이동 직전) | `submission_id` (string, 필수), `result` (string, 필수: `approved` / `rejected` / `failed` / `timeout`. `timeout`은 화면의 기다림 상한 60초 초과) |
 | `client_storyEdit_viewed`                  | P1       | 수정 화면 진입            | `story_id` (string, 필수)                                                                     |
 | `client_storyEdit_completed`               | P1       | 수정 저장 성공            | `story_id` (string, 필수)                                                                     |
 
 - 웹은 제작 FAB로 들어오는 제작 방식 선택 화면에서 선택지를 누를 때 `client_storyCreate_methodOption_selected`를 발화합니다. `client_storyList_createButton_clicked`는 FAB를 눌러 선택 화면으로 이동하는 시점에 그대로 발화하므로 제작 시작률의 분자는 바뀌지 않습니다.
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
+- 일반 제작 등록은 검수 제출본만 만들어 접수 시점에 스토리 ID가 없으므로 `completed`는 `submission_id`를 싣고, 반려 뒤 재제출도 접수마다 발화합니다. 검수 통과 여부는 `reviewResult_shown`의 `result`로 봅니다. 장르 이름은 직접 입력한 키워드가 섞여 사용자 입력 원문이 되므로 보내지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)).
 
 #### 6-4-2-11. 법적 고지
 
@@ -1263,7 +1268,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry·Crashlytics context/log, `ai_ca
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정됩니다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리합니다. |
 | Android 안정성        | 내부 release의 test crash·non-fatal이 Crashlytics에 앱 버전·빌드·수동 화면 로그와 함께 보이고, debug 빌드는 수집하지 않습니다. API 30+ ANR을 확인하며 API 24~29·NDK 공백은 §6-6-4 범위대로 처리합니다. |
 | 이벤트 수집 `Phase 1` | `client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다(`client_guestLimitDialog_*`는 2026-09-19 폐기).                                                                 |
-| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_generalCreate_registerError_shown`, `client_generalCreate_reviewResult_shown`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다.                           |
 
 ### 6-8-4. 계층별 검수 기준
