@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.27 |
+| 버전 | v0.28 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-29 |
+| 수정일 | 2026-09-30 |
 | 대상 | manyak-ai |
 | 작성 목적 | AI 호출 계층, 모델·프롬프트 설정과 관측 실패의 격리 구조를 설명합니다. |
 | 기준 | [Spec](../spec/5-ai-server-spec.md)의 기준 코드·브랜치를 따릅니다. 운영 배포 검증과 구분합니다. |
@@ -37,24 +37,24 @@ Python 3.11·FastAPI·Pydantic v2 기반입니다.
 | --- | --- | --- |
 | 호출부 | 프롬프트·모델·출력 길이·시간 제한을 요청하고, 결과 검증·보완 호출·실패 시 대체 처리를 담당 | `story_llm.py`, `chat_llm.py` 등 기능별 서비스 |
 | 모델 특성 | 모델별 공급자·어댑터·추론 설정·지원 인자·한도를 정의 | [registry.py](../../../manyak-ai/src/services/llm/registry.py) |
-| SDK 어댑터 | 공통 요청을 공급자별 SDK 인자로 바꾸고, 응답·토큰 사용량·오류를 공통 형식으로 반환 | [llm/](../../../manyak-ai/src/services/llm)의 `openai_sdk.py`, `anthropic_sdk.py`, `google_sdk.py` |
+| 공급자 어댑터 | 공통 요청을 공급자별 요청 인자로 바꾸고, 응답·토큰 사용량·오류를 공통 형식으로 반환 | [llm/](../../../manyak-ai/src/services/llm)의 `openai_sdk.py`, `anthropic_sdk.py`, `google_sdk.py`; JEV는 HTTP 어댑터 `typesafe_api.py` |
 
-호출부가 요청을 넘기면 [공통 통로](../../../manyak-ai/src/services/llm/__init__.py)가 모델 등록부에서 설정을 조회하고, 해당 SDK 어댑터를 선택해 공급자 API를 호출합니다. 아래 그림의 1~4는 AI 서버 내부 처리입니다. 4번 SDK 어댑터가 서버 밖으로 요청을 전송하면, 5번 외부 공급자 서버에서 모델을 실행합니다.
+호출부가 요청을 넘기면 [공통 통로](../../../manyak-ai/src/services/llm/__init__.py)가 모델 등록부에서 설정을 조회하고, 해당 공급자 어댑터를 선택해 공급자 API를 호출합니다. 아래 그림의 1~4는 AI 서버 내부 처리입니다. 4번 공급자 어댑터가 서버 밖으로 요청을 전송하면, 5번 외부 공급자 서버에서 모델을 실행합니다.
 
 ```mermaid
 flowchart LR
     C["<div style='width:200px;text-align:center;'>1. 호출부<br/>프롬프트·모델 이름·호출 조건 전달</div>"]
-    G["<div style='width:200px;text-align:center;'>2. 공통 통로 · complete / stream<br/>registry.py에서 모델 설정 조회</div>"]
-    S["<div style='width:200px;text-align:center;'>3. 공통 통로<br/>설정에 맞는 SDK 어댑터 선택</div>"]
-    A["<div style='width:200px;text-align:center;'>4. SDK 어댑터<br/>공급자별 인자로 변환해 요청 전송</div>"]
+    G["<div style='width:200px;text-align:center;'>2. 공통 통로 · complete / stream / evaluate<br/>registry.py에서 모델 설정 조회</div>"]
+    S["<div style='width:200px;text-align:center;'>3. 공통 통로<br/>설정에 맞는 공급자 어댑터 선택</div>"]
+    A["<div style='width:200px;text-align:center;'>4. 공급자 어댑터<br/>공급자별 인자로 변환해 요청 전송</div>"]
     P["<div style='width:200px;text-align:center;'>5. 외부 공급자 AI API<br/>모델 실행</div>"]
     C --> G --> S --> A
     A -->|서버 외부로 API 요청 전송| P
 ```
 
-응답은 SDK 어댑터가 공통 형식으로 바꿔 공통 통로를 통해 호출부에 돌려줍니다. `complete()`는 완성된 결과를, `stream()`은 생성 중인 본문 조각과 완료 정보를 전달합니다. 공급자 오류도 공통 오류 형식으로 변환합니다.
+응답은 공급자 어댑터가 공통 형식으로 바꿔 공통 통로를 통해 호출부에 돌려줍니다. `complete()`는 완성된 결과를, `stream()`은 생성 중인 본문 조각과 완료 정보를 전달합니다. 공급자 오류도 공통 오류 형식으로 변환합니다.
 
-DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google은 각각의 SDK 어댑터를 사용합니다.
+DeepSeek과 GPT는 OpenAI 공급자 어댑터를 공유합니다. Anthropic과 Google은 각각의 공급자 어댑터를 사용합니다.
 
 이미지는 [별도 이미지 통로](../../../manyak-ai/src/services/image)의 `generate_image()`를 사용합니다. 인물·썸네일·자식 이미지 생성 호출부가 프롬프트를 넘기면, 이미지 모델 매핑과 설정을 적용해 `openai_api.py`의 Images API 어댑터로 전달합니다. 이미지 결과·오류도 텍스트와 별도의 공통 형식으로 반환합니다.
 
@@ -100,20 +100,29 @@ DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google�
 
 [chat_child_image.py](../../../manyak-ai/src/services/chat_child_image.py)가 본문을 수집하고,
 [child_input.py](../../../manyak-ai/src/services/image/child_input.py)가 부모가 있는 첫 화자와
-최근 대화를 고릅니다. [child_prompt.py](../../../manyak-ai/src/services/image/child_prompt.py)는
-`CHILD-IMAGE-TEMPLATE.md`에 대화 재료를 XML 텍스트로 넣어 이스케이프합니다. 채팅 본문은
-저장 마커를 제거한 복사본을 사용하고 요청 이력은 수정하지 않습니다.
+최근 대화를 고릅니다. 채팅 본문은 저장 마커를 제거한 복사본을 사용하고 요청 이력은 수정하지 않습니다.
+[emotion_evaluation.py](../../../manyak-ai/src/services/image/emotion_evaluation.py)는 대상 이름을
+`state.target_character`, 이전 최대 2턴을 `recent_turns`, 현재 사용자 입력·완성된 본문을
+`current_turn`으로 구성해 `llm.evaluate`를 한 번 호출합니다.
+[emotion_selection.py](../../../manyak-ai/src/services/image/emotion_selection.py)가 원래 확률의
+85% 기준으로 최대 두 감정을 고르고 각 감정의 강도 `choice`를 사용합니다. 같은 확률·제외 항목의 처리 규칙은
+[Spec](../spec/5-ai-server-spec.md#부모-이미지와-자식-이미지)을 따릅니다.
+[child_prompt.py](../../../manyak-ai/src/services/image/child_prompt.py)는 선택 결과만
+`CHILD-IMAGE-TEMPLATE.md`에 넣습니다. JEV에는 이미지 파일·URL을, 이미지 모델에는 대화·이름을 보내지 않습니다.
 
-[generate_child.py](../../../manyak-ai/src/services/image/generate_child.py)는 부모를 내려받아
-참조 이미지로 첨부합니다. 이미지 어댑터는 참조가 있으면 OpenAI `images.edit`를 호출하며
+[generate_child.py](../../../manyak-ai/src/services/image/generate_child.py)는 JEV 1순위가
+중립이면 부모 이름·URL을 그대로 반환합니다. 그 외에는 부모를 한 번 내려받아 참조 이미지로
+첨부합니다. `ImageGenerationError`이면 편집을 다시 시도하되 최초 시도를 포함해 최대 두 번입니다.
+JEV·다운로드는 반복하지 않고 취소는 전파합니다. 선택할 감정이 없거나 JEV·편집이 실패하면 부모를 사용합니다.
+이미지 어댑터는 참조가 있으면 OpenAI `images.edit`를 호출하며
 SDK 재시도를 0으로 지정합니다. 컴파일의 `images.generate`는 기존 재시도 설정을 유지합니다.
 부모 다운로드는 `IMAGE_PARENT_ALLOWED_HOSTS`의 HTTPS 호스트만 허용하고 사용자 정보·443
 외 포트·리다이렉트를 거부합니다. 50,000,000바이트 이상이면 중단하며 PNG·JPEG·WebP 파일
 시그니처를 검사합니다. 허용 호스트 기본값은 설정 코드가 소유합니다.
 
 `image_slots`가 있으면 이 경로를 사용합니다. [upload_child.py](../../../manyak-ai/src/services/image/upload_child.py)는
-유료 생성 전에 `upload_url`의 HTTPS 호스트가 `IMAGE_UPLOAD_ALLOWED_HOSTS`와 정확히 일치하는지
-검사합니다. 기본값은 빈 배열로, 미설정·거부 시 다운로드·생성·업로드를 생략합니다.
+JEV 호출 전에 `upload_url`의 HTTPS 호스트가 `IMAGE_UPLOAD_ALLOWED_HOSTS`와 정확히 일치하는지
+검사합니다. 기본값은 빈 배열로, 미설정·거부 시 JEV·다운로드·생성·업로드를 하지 않고 부모를 반환합니다.
 생성한 base64를 바이트로 변환해 `Content-Type: image/webp`로 PUT하며 재시도·리다이렉트는
 하지 않습니다. HTTP 2xx이면 슬롯의 `public_url`을 사용합니다. 응답 본문·S3 HEAD·CDN 조회는
 수행하지 않습니다. `key`는 주소 조립에 사용하지 않으며 주소 간 일치는 백엔드가 책임집니다.
@@ -123,15 +132,15 @@ flowchart LR
     BODY["본문 전체 수집<br/>실패 시 오류 종료"] --> READY["본문 완성"]
     READY --> J["사건·엔딩 판정<br/>재료·시간 없으면 생략<br/>최대 60초"]
     READY --> SELECT["부모가 있는 첫 화자 선택<br/>최근 최대 3턴 구성"]
-    SELECT --> I["대상 있으면 주소 검사·다운로드·편집·PUT<br/>없으면 자식 생성 생략<br/>업로드까지 최대 30초"]
-    I --> EVENTS["성공 시 자식 · 실패 시 부모 확정<br/>지문 → 이미지 → 대사 순차 전송"]
+    SELECT --> I["대상 있으면 주소 검사·JEV·다운로드·편집·PUT<br/>없으면 자식 생성 생략<br/>업로드까지 최대 30초"]
+    I --> EVENTS["성공 시 자식 · 중립·실패 시 부모 확정<br/>지문 → 이미지 → 대사 순차 전송"]
     J --> JOIN["판정과 본문 전달<br/>모두 완료될 때까지 대기"]
     EVENTS --> JOIN
     JOIN --> COMPLETE["completed 전송<br/>이벤트와 같은 최종 URL의 본문·목록"]
 ```
 
 판정과 이미지 처리는 본문 완성 후 동시에 시작하며, 각각 남은 턴 시간에 맞춰 제한을 줄입니다.
-이미지 결과가 정해질 때까지 앞 지문도 보내지 않습니다. AI는 업로드 성공이면 자식, 실패이면 부모를
+이미지 결과가 정해질 때까지 앞 지문도 보내지 않습니다. AI는 업로드 성공이면 자식, 중립·실패이면 부모를
 선택한 뒤 앞 지문부터 전송합니다. 이미지는 원래 위치에 두고 대사와 뒤 지문을 이어 보냅니다.
 완료 본문·목록도 같은 이미지를 사용하며
 백엔드는 AI가 보낸 최종 본문·참조를 해당 턴·응답 버전에 저장합니다.
@@ -166,19 +175,30 @@ flowchart LR
 | 선택지 | `CHAT_CHOICE_MODEL`: deepseek-flash, 출력 한도 512 | SDK 호출당 60초, 누적 호출 전체 제한 아님 |
 | 판정 | `CHAT_MODEL`(본문과 같은 모델), 출력 한도 256 | SDK 재시도 포함 60초와 남은 턴 예산 중 작은 값 |
 | 컴파일 이미지 | `IMAGE_MODEL`: gpt-image-2.5-flare, `IMAGE_QUALITY=low` | `IMAGE_TIMEOUT=60`은 시도당 제한, 한 장의 전체 제한 아님 |
-| 자식 이미지 | 같은 `IMAGE_MODEL`·크기·화질, 부모 첨부 편집·직접 업로드, SDK·PUT 재시도 없음 | 다운로드·생성·업로드 합계 30초와 남은 턴 예산 중 작은 값 |
+| 감정 판정 | `JEV_MODEL`: jev-1.13.0, `llm.evaluate` 단발 호출, HTTP 재시도 없음 | 자식 이미지의 전체 30초 예산에 포함 |
+| 자식 이미지 | 같은 `IMAGE_MODEL`·크기·화질, 부모 첨부 편집 최대 2회 시도·직접 업로드, SDK·PUT 재시도 없음 | JEV·다운로드·생성·업로드 합계 30초와 남은 턴 예산 중 작은 값 |
 
 이미지 모델 기본값은 `gpt-image-2.5-flare`입니다. 자식 이미지 브랜치의 후속 변경으로
 Flare와 날짜 고정 모델 `gpt-image-2.5-flare-2026-09-08`을 등록했습니다. 부모·자식·표지는
 같은 설정을 사용하며, 환경 변수에 `IMAGE_MODEL`이 지정되어 있으면 그 값이 우선합니다.
-Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하지 않았습니다.
+Flare를 통한 로컬 자식 이미지 생성은 수행했지만 실제 S3·채팅 화면 연동과 Langfuse 전송·단가 적용은 검증하지 않았습니다.
 
-자식 이미지 프롬프트 `CHILD-IMAGE-TEMPLATE.md`는 버전 2입니다. 부모 인물을 성인으로
-한정하지 않고 실제 연령대와 외형을 유지하도록 지시합니다. 이미지 품질 실측은 미실시입니다.
+자식 이미지 프롬프트 `CHILD-IMAGE-TEMPLATE.md`는 버전 3입니다. 선택한 감정·강도를 넣고,
+한 인물을 중앙에 배치해 상반신 전체·정면·감정에 맞는 표정과 자연스러운 새 자세를 지시합니다.
+JEV 프롬프트 `JEV-EMOTION-TEMPLATE.md`도 버전 3입니다. 로더는 Markdown 전체가 아닌 JSON
+블록의 `emotion`·`intensity` 질문을 읽습니다. 감정 질문 한 개와 중립을 제외한 감정별 강도
+질문 19개를 만들어 한 요청에 전달합니다. 감동·호기심·지루함을 포함한 후보 정의는 프롬프트
+파일을 따르며 `other`·`unknown`은 후보에서 제외합니다. 강도 후보는 `none`·`low`·`medium`·`high`입니다.
+
+JEV는 [TypeSafe HTTP 어댑터](../../../manyak-ai/src/services/llm/typesafe_api.py)에서
+`TYPESAFE_API_URL`(기본 `https://api.typesafe.ai`)의 `/v1/systemone`으로 POST합니다.
+키는 `TYPESAFE_API_KEY`이며 누락은 서버 기동 대신 호출 시 실패로 처리해 부모를 반환합니다.
+모델 등록부는 JEV를 선택형 판정 전용으로 제한하므로 `complete`·`stream`에 사용할 수 없습니다.
+어댑터는 리다이렉트·자동 재시도 없이 응답의 모델·질문·후보·확률을 검증합니다.
 
 자식 이미지 요청의 전체 마감은 `턴 시작 + 120초 - 15초`입니다. 본문 수집 전에 남은 시간의
 4분의 1과 8초 중 작은 값을 본문 순차 전송용으로 남깁니다. 본문 수집은 이 시간을 뺀 시각까지,
-이미지 다운로드·생성·업로드는 그 시각과 시작 후 30초 중 먼저 오는 시각까지 수행합니다.
+JEV·이미지 다운로드·생성·업로드는 그 시각과 시작 후 30초 중 먼저 오는 시각까지 수행합니다.
 판정은 본문 완성 후 시작하며 전송용 시간을 별도로 빼지 않고 전체 마감과 60초 중 작은 예산을
 사용합니다. 이미지 시간 초과 후에도 부모 이미지와 글을 전송할 시간을 남기는 구조입니다.
 
@@ -186,7 +206,7 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 
 등록된 모델만 호출하며 공급자·허용 인자·한도·가격 근거는 [텍스트 등록부](../../../manyak-ai/src/services/llm/registry.py)와 이미지 등록부가 소유합니다. DeepSeek의 옛 이름(`deepseek-v4-flash`·`deepseek-v4-pro`)은 등록하지 않으므로 설정에 남아 있으면 기동 검사에서 실패합니다. `gpt-6-luna`(추론 없음)가 등록돼 있어 `CHAT_MODEL`로 선택할 수 있습니다(KNK-1410). 선택지는 `CHAT_CHOICE_MODEL`로 본문과 따로 고르며, 값이 없으면 기본값 deepseek-flash를 씁니다(KNK-1416). 기동 검사 대상에 이 설정이 추가됐고, `CHAT_MODEL`과 `CHAT_CHOICE_MODEL` 모두 Anthropic 선택을 기동에서 차단합니다. Google은 뒤쪽 지시문 유실 문제가 남아 채팅용으로 사용할 수 없지만 등록부 차단은 미반영입니다. 선택한 텍스트 공급자 키·주소·기능 지원을 기동 검사하며, 이미지 검사는 별도여서 OpenAI 키가 항상 필요합니다. 검사는 문자열·설정 검사로 실제 인증 성공을 보장하지 않습니다.
 
-프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록합니다.
+프롬프트는 `prompt/` 파일의 frontmatter `version`이 정본입니다. 수정 시 `version`·`updated`를 올리고 LF로 저장하며 변경 이력은 git에 남깁니다. frontmatter·버전 누락은 기동 실패입니다. 버전 키는 스토리라인 `STORYLINES`, 컴파일 `COMPILE` 또는 `COMPILE_GEMINI`와 이미지 2종(`CHARACTER_IMAGE`·`THUMBNAIL_IMAGE`), 채팅 6레이어와 `JUDGEMENT`, 선택지 `NEXT_ACTIONS`입니다. 자식 이미지 버전은 채팅 완료 meta에 합산하지 않고 루트 관측 `child_image.prompt_version`에 기록하며 JEV 버전은 `child_image.jev_prompt_version`에 기록합니다.
 
 기본 컴파일 템플릿 `COMPILE-TEMPLATE.md`(버전 13)와 Gemini용 `COMPILE-TEMPLATE-gemini.md`
 (버전 7)는 모두 내부 생성 필드 `meta.description`에 6~8문장 소개문을 지시합니다.
@@ -202,9 +222,14 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 
 Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 텍스트 호출(DeepSeek·GPT)은 `langfuse.openai` 자동 계측이 하위 호출 관측을 만듭니다. 이 자동 계측은 google-genai 호출을 감싸지 않으므로 [Google 어댑터](../../../manyak-ai/src/services/llm/google_sdk.py)가 단발 호출(컴파일·스토리라인)마다 `observe_generation`으로 `Gemini-generation` 관측을 직접 엽니다. 모델명·모델 인자(temperature·출력 한도·추론 강도·JSON 모드)·입력 메시지·응답 본문·usage를 기록하고, 공급자 실패는 관측에 ERROR로 남긴 뒤 예외를 그대로 전파합니다. usage는 Langfuse 관리 단가가 가격을 매기는 키에 맞춰 `input`(프롬프트에서 캐시 적중분을 뺀 값)·`input_cached_tokens`·`output`·`output_reasoning`(추론 토큰)·`total`로 나눕니다. 추론 토큰을 `output`에 합치면 `output_reasoning`과 두 번 과금되므로 따로 보냅니다. Gemini 스트리밍 호출은 관측이 yield를 넘나들며 부모가 틀어지는 문제로 아직 기록하지 않으며, Gemini는 현재 단발 호출에만 쓰입니다. Anthropic 호출의 관측은 미완입니다. 이미지 호출(`images.generate`·`images.edit`)은 자동 계측이 감싸지 않으므로 [이미지 어댑터](../../../manyak-ai/src/services/image/openai_api.py)가 [`observe_generation`](../../../manyak-ai/src/core/langfuse.py)으로 generation 관측을 직접 엽니다. 인물 이미지는 병렬 작업마다 관측이 따로 열리고 모두 컴파일 trace 아래에 붙습니다. 응답을 받은 직후 usage를 먼저 기록해 응답 해석에 실패해도 과금분이 남습니다. 비용 계산은 Langfuse 프로젝트의 모델 단가에 의존하며, 이미지는 세부 키(`input_text`·`input_image`·`output_image`)에만 단가를 등록해 표준 키와 이중 계산되지 않게 합니다. deepseek-flash 단가는 피크·오프피크 두 구간으로 등록돼 있습니다. gpt-image-2 단가도 등록돼 있습니다. DeepSeek 텍스트 호출은 어댑터가 호출마다 피크 시간(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 여부를 판정해 metadata `pricing_window`(`peak`·`off_peak`)를 싣고, Langfuse의 조건 구간이 이 값으로 단가를 고릅니다. 이 인자는 `langfuse.openai` 래퍼가 걷어내는 것이라 Langfuse가 꺼져 있을 때는 공급자 API로 새지 않도록 붙이지 않습니다. 판정은 호출 시작 시각 기준이며 시간대 경계를 넘는 긴 호출은 한쪽 구간으로 잡힙니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](../spec/6-analytics.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
 
+JEV는 공통 판정 통로에서 `LLM 판정` generation을 같은 채팅 trace에 기록합니다.
+모델·질문 수·응답 수와 `usage.input_tokens`·`usage.output_tokens`를 각각 `input`·`output`으로
+남깁니다. 유효한 사용량은 답변 검증 전에 기록해 파싱 실패에도 보존합니다. JEV의 질문·state·
+답변 원문은 이 generation에 넣지 않습니다. 비용은 Langfuse 모델 단가 설정에 의존합니다.
+
 자식 이미지 generation의 이름은 `이미지 생성:자식`이며 병렬 작업에 복사된 호출 컨텍스트를
 통해 같은 채팅 trace에 붙습니다. 입력 프롬프트는 기존 원문 수집 규칙을 따르고 부모 첨부
-파일·생성 바이너리는 기록하지 않습니다. 사용량이 없는 실패를 0원으로 추정하지 않습니다.
+파일·생성 바이너리는 기록하지 않습니다. 편집 시도마다 generation을 따로 남기며 사용량이 없는 실패를 0원으로 추정하지 않습니다.
 
 루트 관측의 `child_image`에는 다음을 기록합니다. 다운로드 전에 실패하여 이미지 API를 부르지
 못한 경우에도 이 결과는 남습니다. 요청마다 별도 객체를 만들며 기능이 꺼져 있으면 생략합니다.
@@ -213,9 +238,10 @@ Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. �
 | --- | --- |
 | `status` | `not_started`, `skipped`, `success`, `failed`, `cancelled` |
 | `reason` | 성공 시 null. `body_incomplete`, `no_parent`, `body_error`, `body_timeout`, `invalid_upload_url`, `timeout`, `rate_limited`, `rejected`, `generation_failed`, `cancelled`, `unexpected_error` |
-| `duration_ms` | 주소 검사·부모 다운로드·생성·업로드 시간. 취소 정리 포함; 시작하지 않았으면 null |
+| `duration_ms` | 주소 검사·JEV·부모 다운로드·생성·업로드 시간. 취소 정리 포함; 시작하지 않았으면 null |
 | `parent_fallback` | AI가 부모 대체 이벤트를 만들면 true. 백엔드 저장 실패·클라이언트 표시 성공 여부는 알 수 없음 |
 | `prompt_version` | 자식 이미지 프롬프트 버전 |
+| `jev_prompt_version` | JEV 감정 프롬프트 버전 |
 
 이미지 시간 제한 래퍼에서 예상하지 못한 일반 예외가 발생하면
 `status=failed`, `reason=unexpected_error`로 기록하고 `generation_failed` 결과를 반환합니다.
@@ -227,7 +253,9 @@ Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. �
 남기고 루트 metadata에 복사하지 않습니다. 새 metadata에 인물 이름·이미지 이름·URL·대화
 원문·base64를 넣지 않습니다.
 
-`success`는 생성·업로드 성공, `failed`는 생성·업로드 실패입니다. 주소 거부는
+`success`는 자식 생성·업로드 성공 또는 중립으로 부모를 정상 반환한 결과입니다. 중립은
+`reason=null`, `parent_fallback=true`이며 이미지 generation은 없습니다. `failed`는 JEV·
+생성·업로드 실패입니다. 주소 거부는
 `skipped`·`invalid_upload_url`로 기록하고 부모로 대체합니다. 업로드 HTTP·데이터 오류는
 `generation_failed`, 네트워크 시간 초과는 `timeout`입니다. 업로드가 실패해도 이미 수행한
 생성 사용량은 남습니다. 주소 검사·부모 다운로드에서 중단하면 이미지 generation은 없습니다.
@@ -252,14 +280,13 @@ Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. �
 - 관측 실패는 본 작업 실패와 분리합니다. SDK 기록 실패가 응답을 실패시키지 않으며 본 작업 예외는 그대로 전달합니다.
 - API·부분 실패·관측 격리는 기존 `scripts/test.sh`·`scripts/test.ps1`을 사용합니다. 라이브 프롬프트 품질·비용 실측은 [검수 기준](../spec/5-ai-server-spec.md#5-7-검수와-남은-제약)의 별도 범위입니다.
 
-자식 이미지 직접 업로드 구현 단계에서 관련 Docker 테스트 130개가 통과했고, 같은 부모 URL을
-쓰는 다른 인물 보존 테스트를 추가해 1개 별도 실행·통과했습니다. 병렬 실행·시간 초과·연결 종료·
-업로드 실패 시 부모 대체·최종 URL 일치·슬롯 관측 제외를 확인했습니다. API 테스트는 본문 SDK·
-외부 HTTP·업로드 함수를 대체하며, 별도 업로드 테스트와 일부 채팅 테스트는 HTTP 전송만 대체합니다.
-실제 S3 저장·CDN 조회·모델 품질·Langfuse 전송·백엔드 저장·클라이언트 표시는 미검증입니다.
-[채팅 API 테스트](../../../manyak-ai/tests/test_chat_api.py)는 슬롯 필수값 누락·개수 초과·
-잘못된 URL·일반 필수값 누락 시 서명 URL 비노출과 비채팅 API의 오류 형식 보존을 확인합니다.
-이번 문서 갱신에서는 테스트 코드를 대조했으며 Docker 테스트를 재실행하지 않았습니다.
+[채팅 API 테스트](../../../manyak-ai/tests/test_chat_api.py)와 이미지·JEV 단위 테스트는
+JEV 요청 구성·감정 선택·이미지 프롬프트·중립 부모 반환·편집 재시도·최종 URL 일치를 확인합니다.
+시간 초과·연결 종료·업로드 실패와 서명 URL 비노출도 검사합니다. 외부 모델·HTTP를 대체하는
+검사이므로 실제 공급자 품질이나 S3 저장 성공을 보장하지 않습니다.
+로컬에서 JEV와 자식 이미지 모델을 호출한 결과는 있지만, 감동·호기심·지루함 추가 후 품질과
+실제 S3·CDN·Langfuse 전송·백엔드 저장·클라이언트 표시는 별도 검증 대상입니다.
+검증 결과의 상세 범위는 [PR #142](https://github.com/KIM-N-KANG/manyak-ai/pull/142)를 따릅니다.
 컴파일 이미지의 전체 시간 예산 문제는 이 변경으로 해소되지 않습니다.
 
 
