@@ -68,6 +68,7 @@
 - [BE-048. 스토리 등록·수정의 검수 제출본과 비동기 반영](#be-048)
 - [BE-049. 검수 제출본 회차와 알림 모드별 발송](#be-049)
 - [BE-050. 검수 일시 실패 재시도·보류와 요청 용량 예산](#be-050)
+- [BE-051. 알림 서비스 운영 배치와 내부 호출 경로](#be-051)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -686,6 +687,41 @@
 - 대체 범위: KNK-1161의 기존 Spec에 있던 서버 자동 재시도 없음 결정을 위 일시 실패에 한해 대체합니다. [BE-048](#be-048)·[BE-049](#be-049)의 실행 실패 종료 규칙을 이 범위에서 PENDING 재시도·보류로 확장합니다. 종료된 REJECTED·FAILED의 사용자 재제출, DB 장애의 임대 복구, 승인 후 라이브 반영과 종료 푸시의 모드별 발송은 유지합니다. 기존 ADR 본문·ID·당시 근거는 보존합니다.
 - 관련 계약: [검수 제출 흐름](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)은 관측 전용 submissionId·UPDATE storyId, 이미지 오류 3종과 issues·imageErrors 동시 보존도 반영합니다. [AI 검수 계약](../spec/5-ai-server-spec.md#5-9-6-게시물-검수)이 판정 의미를 소유합니다.
 - 출처: [KNK-1438](https://kimandkang.atlassian.net/browse/KNK-1438), [KNK-1444](https://kimandkang.atlassian.net/browse/KNK-1444), 서버 [PR #283](https://github.com/KIM-N-KANG/manyak-server/pull/283)·[PR #284](https://github.com/KIM-N-KANG/manyak-server/pull/284), AI 계약 [하네스 PR #291](https://github.com/KIM-N-KANG/knk-harness/pull/291).
+
+<br>
+
+<a id="be-051"></a>
+
+## BE-051. 알림 서비스 운영 배치와 내부 호출 경로
+
+- 날짜: 2026-09-30.
+- 상태: 채택. prod는 결정된 목표 구성이며 아직 코드와 인프라에 적용하지 않았다. dev의 아웃박스, SQS 어댑터, Redis 멱등 처리와 서버 태스크 안 알림 컨테이너는 구현되어 있다.
+- 배포와 권한: 알림을 prod ECS 클러스터의 별도 ECS 서비스로 둔다. dev는 서버 태스크 안 컨테이너를 유지한다. prod 태스크 역할을 분리해 본 큐의 메시지 권한은 서버에 `sqs:SendMessage`만 허용하고 알림에 `sqs:ReceiveMessage`와 `sqs:DeleteMessage`만 허용한다.
+- 내부 호출: AWS Cloud Map private DNS 서비스 디스커버리를 사용한다. 서버 ECS 서비스를 네임스페이스에 등록하고 알림은 `http://server.manyak-prod.local:8080`으로 호출한다. 레코드 TTL은 10초로 정한다. 옛 태스크 레코드로 자격 조회가 실패하면 소비자가 `ELIGIBILITY_UNAVAILABLE`을 `RETRY`로 처리해 메시지를 삭제하지 않으며 SQS가 60초 뒤 재전달한다. KNK-1381의 기동 순서 실측과 같은 복구 원리다. 재시도 한도를 넘으면 DLQ에 보존하므로 일시적인 서버 불가 때문에 요청을 버리지 않는다.
+- 공개 경로 보호: 공개 ALB는 `/internal/*`에 404 고정 응답을 준다. 서버에 `MANYAK_INTERNAL_SHARED_SECRET`을 넣기 전이나 같은 적용에서 차단한다. 현재 prod는 시크릿이 없어 필터가 `/internal/**`을 404로 숨기지만 시크릿을 넣으면 공개 경로에서도 올바른 헤더로 접근할 수 있기 때문이다. 내부 API는 네트워크 경로 차단과 `X-Manyak-Internal-Secret` 공유 시크릿 헤더로 보호한다.
+- 멱등 저장소: 서버와 같은 ElastiCache를 `notification:` 접두어로 구분해 사용한다. Redis 보안 그룹에 알림 태스크의 ingress를 추가한다. 완료 기록과 성공 기기 기록의 수명 및 중복 가능성은 기존 소비 계약을 유지한다.
+- 로그와 태스크 크기: 서버와 같은 FireLens 구성으로 OpenSearch `manyak-logs-prod-*`에 보내고 CloudWatch 안전망을 유지한다. Fargate FireLens에는 영속 디스크 버퍼가 없어 OpenSearch 장애 때 유실을 막을 별도 저장 경로가 필요하다. CloudWatch는 OpenSearch 403 진단에 쓰는 라우터 자체 로그도 저장한다. 알림 CloudWatch 보존은 7일이며 사이드카를 포함한 태스크는 0.25 vCPU, 1GB로 정한다.
+- 이미지와 복구: prod ECR `manyak-notification` 저장소를 사용한다. 알림 저장소 main push로 배포하며 실패 시 이전 digest를 복원한다.
+- FCM 인증: 서비스 계정을 알림에 주입한다. 서버의 `MANYAK_FCM_SERVICE_ACCOUNT_JSON`은 `local` 롤백 창 동안 유지하며 제거는 KNK-1367에서 처리한다.
+- 큐 경보: prod에도 DLQ 가시 메시지 수가 0보다 크면 SNS 이메일로 알리는 경보를 둔다. 본 큐 적체 경보는 dev에서 임계값 근거 부족으로 보류한 KNK-1381 결정을 유지한다.
+
+기각한 내부 호출 경로는 다음과 같다.
+
+| 대안 | 기각 이유 |
+| --- | --- |
+| 공개 ALB와 NAT EIP 출발지 IP 규칙 | 추가 비용이 0이고 서버 ECS 서비스를 변경하지 않아도 되지만 트래픽이 NAT에서 공개 ALB로 돌아 들어온다. `api.manyak.app`의 Cloudflare 프록시는 현재 `proxied = false`이며 이를 켜면 ALB가 보는 출발지가 Cloudflare IP로 바뀌어 규칙이 조용히 깨진다. |
+| 내부 ALB | 서비스 하나의 내부 호출을 위해 월 고정비 $16 이상을 부담하기에는 과하다. |
+
+전환은 다음 순서로 수행한다.
+
+1. 알림 서비스의 desired count를 0으로 두고 인프라를 적용한다. 공개 ALB 차단과 Cloud Map, 큐, 역할 및 보안 그룹을 준비한다.
+2. 알림 prod CD를 준비한다.
+3. 시크릿의 길이를 검증한 뒤 저장하고 주입한다. dev의 빈 값 저장 사고를 반복하지 않도록 빈 값은 거부하며 값 자체는 기록하지 않는다.
+4. 알림 서비스를 기동하고 큐 소비를 확인한다.
+5. SQS 발행 코드가 포함된 서버 릴리스 뒤 `MANYAK_PUSH_MODE=remote`로 전환한다.
+
+- 관계: BE-047의 분리와 큐 도입을 prod 운영 배치로 구체화한다. BE-047의 책임 경계, 모드별 배타 실행, 아웃박스와 소비자 멱등 계약은 유지하며 과거 기록을 대체하거나 수정하지 않는다. 트레이싱은 이 결정의 범위 밖이며 KNK-1464의 OpenSearch Trace Analytics에서 다룬다. ([BE-047](#be-047), [알림 서비스 계약](../spec/4-backend-server-spec.md#알림-서비스-계약))
+- 출처: [KNK-1440](https://kimandkang.atlassian.net/browse/KNK-1440)의 운영 구성 결정, [KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367), [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464). 현재 구현은 서버 `a0a89ca`의 `push/outbox/`, 알림 `ac51603`의 `push/consumer/`, Terraform `ae315c3`의 `envs/dev/sqs.tf`, `envs/dev/alarms.tf`, `modules/compute-ecs/main.tf`로 대조했다. prod 실서비스 상태는 별도로 조회하지 않았다.
 
 ## 복원 범위와 날짜 해석
 

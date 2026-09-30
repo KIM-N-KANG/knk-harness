@@ -179,8 +179,8 @@
 | 이프 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 |
 | 이프 | `GET /users/me/invite` | 내 초대 코드·보상 진행 조회 | 200 | 401 | 필수 |
 | 이프 | `POST /users/me/invite/redeem` | 초대 코드 입력·양측 보상 적립 | 200 | 400·401·404·409 | 필수 |
-| 내부 | `GET /internal/users/{publicId}/push-eligibility` | 발송 직전 자격과 토큰 조회(계획, 구현 전) | 200 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
-| 내부 | `DELETE /internal/push-tokens` | 무효 토큰 삭제, 본문 `token`(계획, 구현 전) | 204 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
+| 내부 | `GET /internal/users/{publicId}/push-eligibility` | 발송 직전 자격과 토큰 조회 | 200 | 400, 401, 404 | 서비스 간 인증 |
+| 내부 | `DELETE /internal/push-tokens` | 무효 토큰 삭제, 본문 `token` | 204 | 400, 401, 404 | 서비스 간 인증 |
 | 내부 | `GET /internal/push/attendance-candidates` | KST 날짜별 출석 미수령 회원 publicId 페이지(계획, 구현 전) | 200 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
 
 인증 열의 `선택`은 익명을 허용하되 유효한 access 토큰이 오면 `user_id`를 귀속하는 엔드포인트입니다([§4-5](#4-5-인증과-권한)).
@@ -714,9 +714,11 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 <a id="실행-주체-전환"></a>
 
-##### 실행 주체 전환 (Phase 4 · 계획)
+##### 실행 주체 전환
 
-구현 전 계약입니다. `push` 모듈의 **발송 실행만** `manyak-notification` 알림 서비스로 옮기고, 서버는 발송 요청을 담당합니다([BE-047](../adr/2-backend-server-adr.md#be-047)). 토큰 등록 API, 동의 API, `users`의 동의 컬럼과 `device_push_tokens`, `push_campaigns`, `push_message_templates` 테이블은 서버가 계속 소유합니다. 알림 서비스는 발송 직전에 서버 내부 API로 자격과 토큰을 받으며 회원 데이터와 동의를 복제하지 않습니다. 소비자 멱등 기록 외에는 상태를 최소화합니다.
+dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`이 발송을 실행합니다. 서버는 발송 요청을 담당하며 prod는 `local`을 유지합니다. prod의 별도 ECS 서비스와 내부 호출 경로는 결정된 목표 구성이며 아직 적용하지 않았습니다. ([BE-047](../adr/2-backend-server-adr.md#be-047), [BE-051](../adr/2-backend-server-adr.md#be-051))
+
+토큰 등록 API, 동의 API, `users`의 동의 컬럼과 `device_push_tokens`, `push_campaigns`, `push_message_templates` 테이블은 서버가 계속 소유합니다. 알림 서비스는 발송 직전에 서버 내부 API로 자격과 토큰을 받으며 회원 데이터와 동의를 복제하지 않습니다. 소비자 멱등 기록 외에는 상태를 최소화합니다.
 
 - **전환 순서.** 동기 HTTP 발송기 검증 → 큐 전환 → 서버 로컬 발송 경로 제거입니다. 전환 중에는 기존 코드를 롤백용으로 보존하고 `manyak.push.mode=local|remote`로 발송 주체를 하나만 켭니다. 기본값은 `local`이며, `remote`는 해당 전환 단계의 원격 경로만 사용합니다. 같은 요청을 로컬과 원격에 동시에 보내지 않습니다.
 - **기존 계약 유지.** 플랫폼별 메시지 구성, 우선순위와 TTL, 수신자 `recipientId`, 무효 토큰 정리, 사용자 요청으로 발송 실패를 전파하지 않는 격리, `manyak.push.send.result{outcome=success|unregistered|failure}` 이름과 사전 등록을 유지합니다. `@Deprecated` 표기만으로 실행을 차단하지 않으며 모드 설정으로 분기합니다.
@@ -869,34 +871,36 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 <a id="알림-서비스-계약"></a>
 
-#### 알림 서비스 계약 (Phase 4 · 계획)
+#### 알림 서비스 계약
 
-검수 알림의 remote 전환 전에는 manyak-notification 소비자가 `STORY_MODERATION_COMPLETED`를 `SERVICE`로 허용해야 합니다. 현재 소비자는 허용 type을 고정 목록으로 검증하고 `STORY_COMPLETED`만 SERVICE, 나머지는 MARKETING으로 분류하므로 선행 변경 없이 새 시나리오를 원격 발송하지 않습니다. Android의 새 data.type 처리(KNK-1164)도 함께 반영합니다.
+소비자는 `STORY_COMPLETED`와 `STORY_MODERATION_COMPLETED`를 `SERVICE`로 허용합니다. 검수 완료 타입은 알림 서비스 `ac51603`에서 확인했습니다. 배포할 이미지에도 이 처리가 포함되어야 하며 Android의 새 data.type 처리(KNK-1164)도 함께 맞춥니다.
 
-아래는 구현 전 계약입니다. 서버가 소유하는 회원 상태와 토큰을 내부 API로 조회하고, 알림 서비스가 FCM 발송을 실행합니다. 동기 HTTP 단계를 먼저 검증한 뒤 같은 발송 책임을 큐 소비로 연결합니다. 시나리오의 대상, 문구와 클라이언트 페이로드는 기존 절을 유지합니다.
+서버 내부 자격 조회와 토큰 삭제 API, 알림 서비스의 동기 발송 API, 아웃박스, SQS 어댑터와 Redis 멱등 처리는 구현되어 있습니다. dev는 서버와 같은 태스크의 알림 컨테이너가 SQS를 소비하며 서버를 `http://localhost:8080`으로 호출합니다. 출석 후보 조회 API는 계획 계약이며 아직 구현하지 않았습니다. 시나리오의 대상, 문구와 클라이언트 페이로드는 기존 절을 유지합니다. prod의 별도 ECS 서비스, Cloud Map, 공개 ALB 차단과 큐 인프라는 아직 미적용인 목표 구성입니다. ([BE-051](../adr/2-backend-server-adr.md#be-051))
 
 ##### 서버 내부 API
 
-세 API의 제공자는 `manyak-server`, 호출자는 알림 서비스입니다. 경로는 `/api/v1`을 포함하지 않는 전체 경로입니다. 공개 ALB 라우팅에서 제외하고 서비스 간 인증을 적용합니다. 초기 인증은 공유 시크릿 헤더이며, 비밀값은 환경별로 주입합니다. 사용자 Bearer 토큰을 서비스 인증으로 대신하지 않습니다. 헤더 이름과 최종 인증 방식은 구현 시 확정합니다.
+내부 API의 제공자는 `manyak-server`이고 호출자는 알림 서비스입니다. 경로는 `/api/v1`을 포함하지 않는 전체 경로입니다. 구현된 인증은 `X-Manyak-Internal-Secret` 헤더와 `MANYAK_INTERNAL_SHARED_SECRET`을 비교합니다. 시크릿이 비어 있으면 `/internal/**`에 404를 반환하며 설정된 시크릿과 헤더가 다르거나 헤더가 없으면 401을 반환합니다. 사용자 Bearer 토큰으로 서비스 인증을 대신하지 않습니다.
+
+prod 목표 계약에서는 내부 API가 공개 경로(`api.manyak.app`)로 닿지 않아야 합니다. 공개 ALB는 `/internal/*`에 404 고정 응답을 주며 서버 시크릿 주입 전이나 같은 적용에서 차단합니다. 알림은 Cloud Map private DNS의 `http://server.manyak-prod.local:8080`으로 호출하고 공유 시크릿 헤더를 함께 보냅니다. ALB 차단은 아직 미적용이며 현재 시크릿 미설정 시의 애플리케이션 404와 구분합니다. ([BE-051](../adr/2-backend-server-adr.md#be-051))
 
 | 엔드포인트 | 입력 | 응답과 판정 |
 | --- | --- | --- |
 | `GET /internal/users/{publicId}/push-eligibility?kind=SERVICE\|MARKETING&at=` | 회원 UUID `publicId`, 알림 종류 `kind`, 회원별 실제 발송 직전 시각 `at`(ISO 8601 UTC) | 200 `{ allowed, reason, tokens: [{ token, platform }] }`. `allowed`는 boolean, `reason`은 판정 사유, `platform`은 `ANDROID` 또는 `WEB`. 허용 시 최근 갱신 토큰 최대 10개 |
 | `DELETE /internal/push-tokens` | JSON 본문 `{ "token": "<FCM token>" }` | 204. `UNREGISTERED` 토큰 한 행만 정리하며 부재도 멱등 성공. 토큰을 URL에 싣지 않음 |
-| `GET /internal/push/attendance-candidates?date=&cursor=` | `date`는 KST 날짜 `YYYY-MM-DD`, `cursor`는 다음 페이지 조회용이며 첫 요청에서 생략 | 200. 회원 publicId 페이지와 다음 커서. 기존 출석 미수령 후보 판정 유지. 내부 순차 PK와 보상 신원은 응답에 노출하지 않음 |
+| `GET /internal/push/attendance-candidates?date=&cursor=` (계획, 미구현) | `date`는 KST 날짜 `YYYY-MM-DD`, `cursor`는 다음 페이지 조회용이며 첫 요청에서 생략 | 200. 회원 publicId 페이지와 다음 커서. 기존 출석 미수령 후보 판정 유지. 내부 순차 PK와 보상 신원은 응답에 노출하지 않음 |
 
 - **자격 판정.** 회원 부재, 정지 또는 탈퇴는 허용하지 않습니다. `ACTIVE` 회원만 종류별 동의를 판정합니다. `SERVICE`는 `service_push_enabled`, `MARKETING`은 광고 동의와 `at` 기준 KST 야간 동의를 확인합니다([푸시 수신 동의](#푸시-수신-동의)). 거절 시 `allowed=false`이며 토큰을 반환하지 않습니다. 후보 조회 결과는 발송 허가가 아닙니다.
 - **조회 실패.** 인증 또는 통신 실패를 `allowed=true`나 과거 허가로 대체하지 않습니다. 동기 단계에서는 미발송 결과를 남기고, 큐 단계에서는 만료 전 `RETRY`, 만료 후 `DISCARD`로 처리합니다. 재시도 때도 새 시각으로 자격을 조회합니다.
-- `reason`의 코드 목록, 후보 페이지 DTO와 커서 인코딩, 내부 API 오류 응답의 세부 코드는 구현 시 확정합니다. 후보 조회는 기존 보상 신원의 당일 출석 미수령 조건을 서버 안에서 판정합니다.
+- 구현된 자격 판정과 응답은 [PushEligibilityService](../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/PushEligibilityService.kt)를 기준으로 확인합니다. 미구현인 후보 페이지 DTO와 커서 인코딩, 후보 조회의 오류 상세는 구현 시 확정합니다. 후보 조회는 기존 보상 신원의 당일 출석 미수령 조건을 서버 안에서 판정합니다.
 
 ##### 알림 서비스 동기 API
 
 | 엔드포인트 | 요청 | 결과 |
 | --- | --- | --- |
-| `POST /internal/notifications` | JSON `recipientId`(회원 publicId UUID), `kind`, `type`, `data` 필수. `expiresAt` 선택 | 발송 직전 자격 조회 후 기기별 발송 결과 요약. 자격 거절 또는 만료면 미발송. 응답 DTO와 HTTP 상태 코드 상세는 동기 발송기 구현 시 확정 |
+| `POST /internal/notifications` | JSON `recipientId`(회원 publicId UUID), `kind`, `type`, `data` 필수. `expiresAt` 선택 | 발송 직전 자격 조회 후 기기별 발송 결과 요약. 자격 거절 또는 만료면 미발송. 정상 처리 200, 자격 조회 불가(`ELIGIBILITY_UNAVAILABLE`)는 502. 응답은 [NotificationResponse](../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/dto/NotificationDtos.kt) 참조 |
 
 - 이 경로도 공개 ALB 라우팅에서 제외하고 공유 시크릿 헤더로 서비스 간 인증을 적용합니다.
-- 서버의 도메인 커밋 뒤 비동기 리스너에서 호출합니다. HTTP 통신은 동기여도 스토리 제작 요청 스레드와 실패 격리는 유지합니다. HTTP 실패 시 로컬 발송기로 중복 폴백하지 않습니다.
+- 동기 API는 초기 발송 검증 경로이며 현재 dev의 `remote` 경로는 아웃박스와 SQS를 사용합니다. 발송 실패를 스토리 제작 요청으로 전파하지 않으며 원격 실패 시 로컬 발송기로 중복 폴백하지 않습니다.
 - `kind`, `type`, `data`, `expiresAt`의 의미는 아래 메시지 스키마와 같습니다. 상관 헤더는 [§4-7](#상관관계-식별자)의 요청, 세션, 기기 해시 전달 관례를 따르며 원본 기기 ID는 보내지 않습니다.
 
 ##### 큐 메시지 스키마
@@ -929,8 +933,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
 
 - 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
-- 발행 포트와 소비 포트 뒤에는 `local` 프로파일의 Kafka 어댑터와 dev/prod용 SQS 표준 큐 어댑터가 구현되어 있습니다. Kafka 어댑터의 메시지 키는 `recipientId`이며 SQS 표준 큐에는 메시지 키와 그룹을 사용하지 않습니다. 서버의 SQS 발행 어댑터는 `dev` 또는 `prod` 프로파일에서 `manyak.push.mode=remote`일 때만 등록합니다. dev는 2026-09-27부터 `remote`를 사용하며 prod는 `local`을 유지합니다. prod 큐 인프라는 별도 티켓에서 준비합니다.
-- 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 마이그레이션 번호는 구현 시 확정합니다.
+- 발행 포트와 소비 포트 뒤에는 `local` 프로파일의 Kafka 어댑터와 dev/prod용 SQS 표준 큐 어댑터가 구현되어 있습니다. Kafka 어댑터의 메시지 키는 `recipientId`이며 SQS 표준 큐에는 메시지 키와 그룹을 사용하지 않습니다. 서버의 SQS 발행 어댑터는 `dev` 또는 `prod` 프로파일에서 `manyak.push.mode=remote`일 때만 등록합니다. dev는 2026-09-27부터 `remote`를 사용하며 prod는 `local`을 유지합니다. prod 큐 인프라는 아직 미적용이며 [BE-051](../adr/2-backend-server-adr.md#be-051)의 목표 구성에 따라 준비합니다.
+- 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 테이블은 `V86__create_push_outbox.sql`로 생성합니다.
 - `push_outbox.message_id`에는 유일 제약을 둡니다. 값은 위 표의 `messageId` 규칙을 그대로 사용하며, 스토리 완성은 `story-completed:{requestId}`입니다.
 - 행 상태는 `PENDING`, `PUBLISHED`, `FAILED`입니다. 시도 횟수 `attempts`는 관찰용으로 기록하며 포기 판정에는 사용하지 않습니다. 브로커 발행 성공 뒤 `PUBLISHED`로 발행 완료를 기록합니다.
 - 릴레이는 `status = PENDING`이고 `next_attempt_at`이 현재 시각 이전인 행을 `FOR UPDATE SKIP LOCKED`로 선점합니다. 같은 트랜잭션에서 `next_attempt_at`을 임대 만료 시각으로 옮기고 커밋한 뒤, 트랜잭션 밖에서 전송합니다. 전송 도중 릴레이가 종료되면 임대가 끝난 뒤 다른 릴레이가 다시 선점합니다. 별도의 발행 중 상태는 두지 않습니다.
@@ -947,7 +951,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 4. 허용된 기기에 기존 플랫폼별 구성으로 FCM을 발송합니다. 다른 회원으로 바뀐 토큰을 메시지에 저장해 재사용하지 않습니다.
 5. 기기별 결과를 반영해 `SUCCESS`, `RETRY`, `DISCARD`를 반환합니다. 일부 기기만 성공했더라도 재시도할 기기가 남으면 `RETRY`, 재시도 대상 없이 발송 성공이 있으면 `SUCCESS`, 모두 미발송 또는 영구 실패이면 `DISCARD`입니다. 성공한 기기는 메시지별로 Redis에 유효시간 7일로 기록하고, 재처리 때 성공 기기 집합에 있는 기기는 발송 대상에서 제외합니다. `SUCCESS`와 `DISCARD`는 처리 중 키를 완료 상태로 바꾸고 유효시간을 7일로 설정한 뒤 ack 대상이 됩니다. `RETRY`는 처리 완료로 기록하지 않습니다.
 
-알림 서비스는 PostgreSQL 테이블 없이 유지하며, 멱등 기록은 `notification:` 접두어의 Redis 키에 저장합니다. 운영에서는 서버와 같은 Redis(ElastiCache)를 접두어로 구분해 사용합니다. 만료 또는 자격 거절로 폐기한 메시지도 완료로 기록하며, 완료 키의 유효시간은 7일입니다. 7일 뒤에는 같은 키의 처리 이력이 남아 있다고 가정하지 않습니다. 운영 Redis의 메모리 정책상 유효시간이 있는 키가 먼저 축출될 수 있어, 유효시간 안에도 드물게 중복 발송이 생길 수 있습니다.
+알림 서비스는 PostgreSQL 테이블 없이 유지하며, 멱등 기록은 `notification:` 접두어의 Redis 키에 저장합니다. prod 목표 구성에서는 서버와 같은 Redis(ElastiCache)를 접두어로 구분해 사용합니다. 만료 또는 자격 거절로 폐기한 메시지도 완료로 기록하며, 완료 키의 유효시간은 7일입니다. 7일 뒤에는 같은 키의 처리 이력이 남아 있다고 가정하지 않습니다. 운영 Redis의 메모리 정책상 유효시간이 있는 키가 먼저 축출될 수 있어, 유효시간 안에도 드물게 중복 발송이 생길 수 있습니다.
 
 FCM 호출과 Redis 기록은 원자적이지 않습니다. 일부 기기만 성공한 경우에도 Redis에 기록된 성공 기기는 재처리 때 제외하지만, 발송 성공 직후 성공 기기를 기록하기 전 장애에는 중복 발송 가능성이 남습니다. 이 장애와 Redis 키 축출 때문에 메시지 멱등성만으로 FCM의 정확히 한 번 도달을 보장하지 않습니다.
 
@@ -2179,15 +2183,16 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
 
-알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 환경별 주소와 비밀값은 구현 및 배포 때 확정합니다.
+알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 알림의 prod 내부 주소는 Cloud Map 네임스페이스 `manyak-prod.local`의 `http://server.manyak-prod.local:8080`으로 정했습니다. 비밀값은 배포 때 정합니다. 실제 비밀값은 문서에 기록하지 않습니다.
 
 | 환경 변수 | 설정 키 | 값 |
 | --- | --- | --- |
 | `MANYAK_PUSH_MODE` | `manyak.push.mode` | 기본 `local`, 허용값 `local` 또는 `remote` |
-| `MANYAK_NOTIFICATION_BASE_URL` | `manyak.notification.base-url` | 미정. 동기 원격 발송기의 내부 주소 |
+| `MANYAK_SERVER_INTERNAL_BASE_URL` | 알림의 `manyak.server.internal-base-url` | dev는 `http://localhost:8080`. prod 목표는 `http://server.manyak-prod.local:8080` |
 | `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 기본값은 빈 값입니다. dev/prod에서 `remote`로 SQS 어댑터를 활성화할 때 필수이며 비어 있으면 기동에 실패합니다. 로컬 Kafka에는 사용하지 않습니다. |
 | `AWS_REGION` | `manyak.push.region` | 기본값은 `ap-northeast-2`입니다. SQS 클라이언트 리전으로 사용합니다. |
-| `MANYAK_NOTIFICATION_SHARED_SECRET` | `manyak.notification.shared-secret` | 미정. 양쪽 내부 API 호출 인증용 비밀값, 코드와 문서에 실제 값 기록 금지 |
+| `MANYAK_INTERNAL_SHARED_SECRET` | 양쪽의 `manyak.internal.shared-secret` | `X-Manyak-Internal-Secret` 헤더 인증용. 같은 값을 주입하며 저장 전 길이를 검사해 빈 값을 거부합니다 |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 알림의 `manyak.push.fcm.service-account-json` | 알림 서비스 FCM 인증. prod는 목표 구성이며 서버 값은 `local` 롤백 창 동안 유지 |
 
 ### 헬스체크·API 문서·배포
 
