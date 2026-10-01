@@ -176,6 +176,8 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용, 네이티브 터치 리스너만 두고 마우스·펜 포인터 경로는 없음)이며 이프 충전의 무료 충전·내역 탭도 같은 컴포넌트가 스크롤러입니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 두고 네이티브 터치 리스너를 연결하지 않습니다. 활성 화면으로 돌아오면 리스너를 다시 연결합니다. 비활성화 시 진행 중인 당김은 복원하되 이미 시작한 새로고침은 완료까지 유지합니다. 스크롤 상태(`MainScrollProvider`)는 홈과 제작에서만 컴포넌트의 `onScroll`로 받습니다. 홈은 필터 바의 스크롤 방향을, 제작은 FAB 축소 여부만 계산하며 탭 전환 시 유지되는 스크롤러의 실제 위치와 표시 상태를 동기화합니다.
 
+가로 스크롤 영역(`overflow-x-auto` + `scrollbar-none`)의 마우스 드래그는 [use-drag-scroll](../../../manyak-web/src/hooks/use-drag-scroll.ts)이 반환한 포인터 핸들러를 스크롤 컨테이너에 펼쳐 처리합니다. `pointerType`이 `mouse`인 주 버튼만 다루고 터치·펜은 네이티브 스크롤에 맡깁니다. 5px 이상 움직여야 드래그로 보고, 그 뒤의 클릭은 캡처 단계에서 한 번 막습니다. 스냅 컨테이너는 드래그 중 `scroll-snap-type`을 끄고, 놓으면 스크롤 범위 안에서 가장 가까운 `snap-start` 지점으로 부드럽게 이동한 뒤 그 지점에 도착한 `scrollend`에서 스냅을 되돌립니다(놓치면 최대 1초 뒤). 바로 되돌리면 브라우저가 순간 이동으로 스냅하고, WebKit은 이동 중에 되돌리면 맞추지 않은 채 멈출 수 있기 때문입니다. 커서는 `pointerenter`마다 넘침을 재서 컨테이너에 `data-drag-scrollable`(`grab`)을 두고, 드래그 중에는 문서 루트의 `data-drag-scrolling`으로 모든 요소에 `grabbing`을 적용합니다(`globals.css`). 루트에 두는 이유는 포인터가 영역 밖으로 나가도 커서를 유지하기 위해서입니다.
+
 ### 상단 헤더·하단 네비게이션
 
 메인 헤더는 현재 섹션을 표시하며 홈만 로고와 스크린 리더용 `h1` "홈"을 사용합니다. 홈·채팅·제작의 로그인 버튼은 세션이 게스트로 확정된 뒤 표시하고 마이 헤더에는 두지 않습니다. 하단 4탭의 라벨·경로는 웹 Spec을 따릅니다.
