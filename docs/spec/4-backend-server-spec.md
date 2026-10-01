@@ -260,10 +260,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `reachedEndings` | string[] | 요청자가 이 스토리에서 도달한 엔딩 **이름** 목록(엔딩은 이름으로 식별). 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
 | `isOwner` | boolean | (KNK-1016·1018, 2026-08-29) 요청 회원이 이 스토리의 소유자인지. 와이어 필드명은 `@JsonProperty("isOwner")`로 고정(springdoc이 `owner`로 문서화하는 문제 차단). 서버가 요청자 `user_id`와 `stories.user_id`를 비교해 판단하며(클라이언트 id 비교 없음: `author.id`가 null이라 클라이언트는 판단 불가), 게스트·미인증은 false. 용도는 상세 헤더 메뉴(수정·삭제 등) 노출 판단 |
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
-| `characters` | object[] | 등장인물 `{name, imageUrl, description}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). `description`은 string·null인 인물 소개입니다. 소개 도입 이전 스토리·소개 없는 컴파일·일반 제작이나 수정으로 추가한 인물은 null입니다. 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
+| `characters` | object[] | 등장인물 `{name, imageUrl, description}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). `description`은 string·null인 인물 소개입니다. 소개 도입 이전 스토리·소개 없는 컴파일·소개를 보내지 않고 일반 제작이나 수정으로 추가한 인물은 null입니다. 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
 
 - `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
-- **인물 목록**: 상세의 `characters[]`에는 이름·이미지·인물 소개를 싣고 공개 식별자와 외형 필드는 제외합니다. 기존 `isReadableBy(userId)` 읽기 게이트를 적용한 뒤 라이브 인물 행에서 조회합니다. 라이브는 검수 승인 뒤에만 바뀝니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환하며 `description`은 싣지 않습니다. 일반 제작·수정(PATCH) 요청으로 인물 소개를 받지 않습니다. 수정에서 이름을 바꿔도 같은 인물 행의 소개는 유지합니다.
+- **인물 목록**: 상세의 `characters[]`에는 이름·이미지·인물 소개를 싣고 공개 식별자와 외형 필드는 제외합니다. 기존 `isReadableBy(userId)` 읽기 게이트를 적용한 뒤 라이브 인물 행에서 조회합니다. 라이브는 검수 승인 뒤에만 바뀝니다. 수정 폼의 `StoryEditCharacterResponse`는 `id`·`name`·`description`(string·null)·`images[]`를 반환합니다. 스토리 소유자는 일반 제작·수정(PATCH) 요청의 선택 필드 `description`으로 인물 소개를 입력할 수 있습니다. 소개 변경도 검수 제출본으로 접수하며 승인 뒤 라이브에 반영합니다. 수정에서 이름만 바꿔도 같은 인물 행의 소개는 유지합니다. 입력·수정 폼 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. 저장은 V90의 `story_characters.description` 컬럼을 재사용하며 추가 마이그레이션은 없습니다.
 
 **`DELETE /stories/{storyId}`**: 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다. 404 판정(형식 오류·순차 정수·부재·이미 삭제: 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69: 채팅 삭제 동일).
 
@@ -1247,7 +1247,7 @@ graph TD
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`(스토리 범위): `name` 100자, `description`·`keySentence` NotBlank, 이름은 스토리 내 유니크. 채팅 런타임 의미는 [§4-3-10](#4-3-api-계약) |
 | `visibility` | 선택, 기본 `PRIVATE` | 공개 범위(`PUBLIC` · `PRIVATE`). 공개·비공개 모두 검수하며 승인 후 라이브에 반영합니다. 게스트는 값과 무관하게 등록 401입니다 |
 | `thumbnailObjectKey` | 선택, **회원만** | 등록 전에 올린 표지의 객체 키(아래 draft presign 응답의 `objectKey`). 제출 검증과 게시물 검수를 통과하면 `stories.thumbnail_image_url`에 서빙 URL로 굳히며, 노출은 생성 표지와 같은 폴백 규칙을 탑니다([§4-3-9](#4-3-api-계약)). 프리셋 자동 연결(`thumbnail_image_key`)도 함께 저장해 표지를 지우면 폴백이 남습니다 |
-| `characters` | 최대 6명, 선택 | 인물 `{name, images[]}`: `name`은 100자이며 스토리 내 유니크(중복 400). `images[]`는 인물당 최대 10장이고 각 항목은 `{objectKey, imageName}`입니다. `imageName` 형식(`{인물이름}_{접미}`)과 인물당 상한은 등록 후 추가 경로와 같은 규칙입니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 이미지 유무와 관계없이 회원만 제출할 수 있습니다. 외형 필드는 받지 않습니다: 컴파일 산출물이며 일반 제작의 인물 묘사는 `storySettings.characterSetting`이 담습니다. 상한 6명은 간편 제작(주인공 1 + 주변 인물 5)과 같은 값입니다. 각 항목의 `id`는 수정에서만 쓰는 매칭 키라 제작 요청에 실으면 400입니다 |
+| `characters` | 최대 6명, 선택 | 인물 `{name, description, images[]}`(`GeneralCharacterInput`, 일반 제작 등록·PATCH 공용): `name`은 100자이며 스토리 내 유니크(중복 400). `description`은 선택 필드(string·null)인 인물 소개입니다. 일반 제작 등록에서는 생략·null·빈 문자열·공백만인 값을 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장하며, 제거 후 공백 포함 1~80자여야 합니다. 입력에 CR·LF·탭이 있거나 길이 제한을 어기면 400입니다. PATCH의 유지·삭제 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. `images[]`는 인물당 최대 10장이고 각 항목은 `{objectKey, imageName}`입니다. `imageName` 형식(`{인물이름}_{접미}`)과 인물당 상한은 등록 후 추가 경로와 같은 규칙입니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 이미지 유무와 관계없이 회원만 제출할 수 있습니다. 외형 필드는 받지 않습니다: 컴파일 산출물이며 일반 제작의 인물 묘사는 `storySettings.characterSetting`이 담습니다. 상한 6명은 간편 제작(주인공 1 + 주변 인물 5)과 같은 값입니다. 각 항목의 `id`는 수정에서만 쓰는 매칭 키라 제작 요청에 실으면 400입니다 |
 
 - 응답은 202 `{submissionId, status: "PENDING"}`입니다. 기존 201 완성본 응답을 대체하며 접수 시점에는 스토리 ID가 없습니다. 승인 후 생성되는 스토리의 기본 메타·스토리 설정·시작 설정과 채팅 런타임 계약은 기존과 같습니다.
 - 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩 필드는 저장·편집 왕복만 보장합니다(런타임 반영은 [§4-3-10](#4-3-api-계약)).
@@ -1264,7 +1264,7 @@ graph TD
 
 #### 스토리 수정
 
-**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode, imageErrors}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). 새 이미지의 id null·objectKey·미리보기 URL과 항상 존재하는 submission 필드는 [검수 제출본 API](#검수-제출본-api)를 따릅니다. 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
+**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, description, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode, imageErrors}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). `characters[].description`은 인물 `id` 기준으로 라이브 행의 소개를 싣습니다. 제출본을 반영할 때 기존 인물의 소개가 생략·null이면 라이브 소개를 유지하고, 소개를 보냈으면 아래 PATCH의 정규화·삭제 규칙을 적용한 값을 보여 줍니다. 새 인물은 보낸 소개를 같은 규칙으로 반영하며 생략·null이면 null입니다. 이름을 바꿔도 같은 `id`의 소개가 따라갑니다. 새 이미지의 id null·objectKey·미리보기 URL과 항상 존재하는 submission 필드는 [검수 제출본 API](#검수-제출본-api)를 따릅니다. 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
 
 응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings[]`: 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다: 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
 
@@ -1277,12 +1277,13 @@ graph TD
 - 부분 갱신은 전송한 필드만 검증합니다. DTO가 nullable이므로 `null`은 미전송과 같아 기존 값을 유지합니다. `title`·`oneLineIntro`에 빈 문자열이나 공백만 보내면 400입니다. `genres`는 1~8개, 각 30자로 검증한 뒤 `", "`로 연결해 교체합니다. `mainEvents`는 전송하면 전체를 교체하고 빈 배열이면 모두 삭제합니다.
 - **`startSettings` 동기화.** 보내면 최소 1개(빈 배열 400)이며 컬렉션 전체를 동기화합니다: 각 항목의 `id`(시작 설정 공개 식별자)가 기존과 일치하면 **행 identity를 보존한 채 in-place 갱신**(진행 중 채팅의 `start_setting_id` 참조 유지), `id`가 없으면 신규 추가, 요청에서 빠진 기존 시작 설정은 자식(추천 입력·엔딩)과 함께 삭제(그 설정을 참조하던 채팅은 FK `ON DELETE SET NULL`로 해제)합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`는 모두 400입니다(조용한 무시·silent wipe 금지). 각 시작 설정의 `suggestedInputs`(정확히 3개)·`endings`는 보낸 값으로 전체 교체하며, `endings` 교체 시 레거시 행(`enabled=false`)도 함께 삭제됩니다: 새 엔딩이 `(start_setting_id, sort_order)` 유니크 제약에서 레거시 행과 충돌하지 않게 하기 위해서입니다.
 - **`characters` 동기화.** 보내면 컬렉션 전체를 동기화합니다(빈 배열이면 인물을 모두 삭제): 항목의 `id`(인물 공개 식별자)가 기존과 일치하면 **개명**(행 identity 보존), `id`가 없으면 신규 추가, 요청에서 빠진 기존 인물은 그 인물의 이미지와 함께 삭제합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`, 이름 중복은 모두 400입니다. 인물을 만들 수 있는 경로가 컴파일과 제작 등록뿐이면 등록 때 인물을 넣지 않은 스토리는 인물 이미지를 영영 붙일 수 없어, 수정에 인물 쓰기 경로를 둡니다.
+  - **인물 소개는 선택적으로 갱신합니다.** `description`을 생략하거나 null로 보내면 같은 `id`의 기존 소개를 유지하고 새 인물이면 null로 저장합니다. 소개 없이 인물 목록을 보내는 구버전 웹·앱도 기존 소개를 지우지 않습니다. 빈 문자열·공백만 보내면 소개를 삭제해 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장합니다. 입력의 CR·LF·탭 금지와 제거 후 공백 포함 80자 이하 규칙을 어기면 400입니다. 소개 변경은 다른 필드처럼 검수 승인 뒤 라이브에 반영합니다.
   - **인물 이미지도 함께 동기화합니다.** `images[]` 항목은 `{id}`(기존 유지)이거나 `{objectKey, imageName}`(신규 추가) 중 하나이며, 둘 다 있거나 둘 다 없으면 400입니다. 수정 폼은 저장된 이미지의 객체 키를 모르므로(저장값이 URL) 기존 이미지는 `id`로 지목합니다. 요청에서 빠진 기존 이미지는 삭제하고 배열 순서가 표시 순서가 됩니다. `images`를 **생략하면 그 인물의 이미지를 유지**하고 빈 배열이면 모두 삭제합니다(다른 리스트 필드와 같은 null = 미전송 규칙).
   - **개명하면 이미지 이름의 접두도 함께 바꿉니다.** 이미지 이름이 `{인물이름}_{접미}` 규칙이라 인물만 개명하면 기존 이미지가 규칙을 벗어난 상태로 남습니다. 유지되는 이미지의 접미는 그대로 두고 접두만 새 이름으로 갈아끼웁니다(항목이 `imageName`을 직접 보내면 그 값을 씁니다).
   - 이미지가 실린 PATCH도 인증 필수이며 미인증 401, 이관 전 게스트 스토리에 대한 회원 요청은 403입니다. 삭제는 승인 후 DB 참조만 지우고 S3 객체는 남깁니다. 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리킵니다.
 - 보낸 `storySettings`는 기존 행이 없으면 생성하고 있으면 교체합니다(upsert). PATCH는 스토리 행 비관적 쓰기 락으로 동시 수정을 스토리 단위 직렬화합니다(자식 리스트 교체·시작 설정 동기화의 유니크 충돌 방지).
 - 저장 순번: 추천 입력 `input_order` 1부터, 주요 사건 `sort_order` 0부터, 엔딩 `sort_order` 1부터(`> 0` 체크 제약): 모두 요청 배열 순서를 그대로 씁니다. 등록되는 스토리의 `status`는 항상 PUBLISHED입니다(초안 저장 경로 없음).
-- **표지 교체 `thumbnailObjectKey`.** 아래 presign으로 올린 객체 키를 PATCH에 보내면 검수 제출본을 만들고 승인 후 표지를 바꿉니다(`stories.thumbnail_image_url`에 서빙 URL 저장: 생성 표지와 같은 컬럼이라 노출 폴백 규칙([§4-3-9](#4-3-api-계약))이 그대로 적용). 다른 필드와 같은 부분 갱신이며, 미인증은 401이고 회원 소유자만 허용합니다. `GET /stories/{storyId}/edit` 응답에는 `thumbnailUrl`과 `characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)와 `thumbnailModerationStatus`를 실어 편집 화면이 현재 이미지와 검수 상태를 보여 줍니다.
+- **표지 교체 `thumbnailObjectKey`.** 아래 presign으로 올린 객체 키를 PATCH에 보내면 검수 제출본을 만들고 승인 후 표지를 바꿉니다(`stories.thumbnail_image_url`에 서빙 URL 저장: 생성 표지와 같은 컬럼이라 노출 폴백 규칙([§4-3-9](#4-3-api-계약))이 그대로 적용). 다른 필드와 같은 부분 갱신이며, 미인증은 401이고 회원 소유자만 허용합니다. `GET /stories/{storyId}/edit` 응답에는 `thumbnailUrl`과 `characters[]`(`{id, name, description, images: [{id, imageName, imageUrl, moderationStatus}]}`)와 `thumbnailModerationStatus`를 실어 편집 화면이 현재 이미지와 검수 상태를 보여 줍니다.
 
 #### 스토리 검수 제출 흐름
 
@@ -1331,9 +1332,9 @@ V87은 `story_submissions`, V88은 이미지 오류 저장, V89는 재시도·�
 ##### 제출 검증과 AI 입력
 
 1. 일반 제작 등록·PATCH·제출본 API의 미인증 요청은 401입니다. PATCH·제출본 PUT의 필드 검증 순서는 인증 → 소유권·존재 → 검수 중·상태 409 → 입력 검증 400입니다. 두 컨트롤러는 `@Valid` 선검증 없이 서비스에서 검증합니다. 타인 스토리 PATCH는 403, 타인·미존재 제출본 PUT은 404이며 UPDATE 종류의 PUT도 409입니다. JSON 파싱·타입 변환 실패는 서비스 진입 전 400일 수 있습니다.
-2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
+2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·인물 소개 형식(앞뒤 공백 제거 후 공백 포함 80자 이하, 입력의 CR·LF·탭 금지)·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
 3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 이전 input_form에 있던 ID에 한해 재제출 검증에서 제외합니다. 임의의 다른 이미지 ID는 400입니다. 제출 폼은 새 이미지의 원본 객체 키·미리보기 URL과 유지되는 이미지를 포함합니다. 실제 검수 호출 직전에는 아래 불변 복사본 URL로 교체합니다.
-4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`을 포함하며 공개 설정·최소 턴 수·중첩 ID·제출본 처리 상태는 AI 입력에서 제외합니다. 관측 식별자는 예외로 최상위 `submissionId`에 제출본 public UUID를 항상 넣고, UPDATE에서만 `storyId`에 스토리 public UUID를 넣습니다. 두 필드는 검수 대상이 아니며 issues.path·image_errors.path 검증에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
+4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`, `characters[n].description`을 포함하며 공개 설정·최소 턴 수·중첩 ID·제출본 처리 상태는 AI 입력에서 제외합니다. 관측 식별자는 예외로 최상위 `submissionId`에 제출본 public UUID를 항상 넣고, UPDATE에서만 `storyId`에 스토리 public UUID를 넣습니다. 두 필드는 검수 대상이 아니며 issues.path·image_errors.path 검증에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
 
 새 업로드 표지·인물 이미지는 AI 호출 직전 서버가 S3 CopyObject로 `{thumbnails|characters}/uploaded/moderated/{uuid}.{ext}`에 복사합니다. 기존 라이브의 `{id}` 이미지 참조는 복사하지 않습니다. 복사는 DB 트랜잭션 밖에서 수행하고, 각 복사 완료 뒤 짧은 트랜잭션에서 PENDING·attempt를 확인해 image_copies에 원본→복사본 키를 기록합니다. 저장된 input_form은 원본 identity를 보존하고 AI로 보낼 사본만 복사본 URL로 바꿉니다. AI 입력과 승인 라이브 저장은 같은 복사본 URL을 사용하며 매핑이 없으면 원본으로 폴백하지 않습니다.
 
@@ -1345,7 +1346,7 @@ V87은 `story_submissions`, V88은 이미지 오류 저장, V89는 재시도·�
 - image_errors가 있으면 최상위 error_code는 목록에 나타난 코드 중 IMAGE_INVALID → IMAGE_UNREADABLE → IMAGE_DOWNLOAD_FAILED 순으로 고릅니다. 이때 검증된 내용 위반 issues를 함께 보존할 수 있습니다. 이미지 오류 코드를 보내면서 image_errors가 빈 응답은 거절합니다.
 - image_errors의 항목은 `{path, error_code}`이며 실제 IMAGE 문자열 경로와 위 이미지 오류 3종만 허용합니다. 같은 path 중복은 거절합니다. 최상위와 issues·image_errors 항목의 알 수 없는 필드는 무시합니다. image_errors 생략은 빈 배열로 읽되 나머지 불변식은 그대로 검증합니다.
 - issues[].rule은 MINOR_SEXUAL_EXPLOITATION, EXPLICIT_SEXUAL_CONTENT, NONCONSENSUAL_SEXUAL_EXPLOITATION, DRUGS, EXTREME_GORE, SELF_HARM_PROMOTION, HATE_VIOLENCE_INCITEMENT 중 하나입니다. reason은 공백만으로 구성될 수 없습니다.
-- path는 실제 전송한 검수 입력의 문자열 leaf 경로이며 배열 인덱스는 0부터 시작합니다. 객체·배열 자체, 없는 필드·범위 밖 인덱스는 허용하지 않습니다. thumbnailUrl과 characters[n].images[m].imageUrl만 IMAGE이고 나머지는 TEXT입니다.
+- path는 실제 전송한 검수 입력의 문자열 leaf 경로이며 배열 인덱스는 0부터 시작합니다. 객체·배열 자체, 없는 필드·범위 밖 인덱스는 허용하지 않습니다. thumbnailUrl과 characters[n].images[m].imageUrl만 IMAGE이고 나머지는 TEXT입니다. `characters[n].description`이 문자열이면 해당 issues.path는 TEXT 경로입니다.
 
 검수 정책과 `issues`의 의미는 AI [§5-3-6](5-ai-server-spec.md#5-3-6-게시물-검수)이 소유합니다. 백엔드는 검수 규칙을 중복 정의하지 않습니다.
 
@@ -2257,6 +2258,7 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 - 배치 조회는 존재하지 않는 ID를 오류 없이 제외하고, 100개 초과·빈 배열 요청에 400을 반환해야 합니다.
 - 삭제는 최초 204, 재시도 404를 반환하고, 삭제된 리소스가 상세·배치 조회에서 사라져야 합니다.
 - 간편 제작은 계약 위반(장르 합산 20 초과·인물당 특징 3 초과·직접 입력 원소가 빈 문자열이거나 30자 초과·인물 이름 중복·무효 태그 ID) 시 400, 게스트 스토리라인 한도 소진 시 AI 호출 전 402, 같은 진행으로 두 번째 스토리 생성 시 409, AI 실패 시 502를 반환해야 합니다. **장르와 인물 특징이 모두 빈 요청은 400이 아니라 201입니다**([§4-3-2](#4-3-api-계약): 최소 입력 요건 없음).
+- 일반 제작·수정의 인물 소개는 폼 조회의 `id` 기준 매칭과 미승인 제출본 반영, PATCH 생략·null 유지와 빈 값 삭제, 앞뒤 공백 제거·80자 상한·CR/LF/탭 금지 위반 시 400, 검수 입력 포함·TEXT 경로 판정, 승인 뒤 라이브 반영을 검증합니다.
 - 스토리라인 평가는 설정 → 같은 값 재설정 → 취소 → 재취소가 모두 성공해야 합니다(취소 멱등).
 - 채팅 스트림은 `started` → `token` → `completed` 순서로 도착하고, `completed`의 `aiOutput`이 이후 `GET /chats/{chatId}`의 마지막 턴과 일치해야 합니다.
 - 채팅 스트림 실패 시 `error` 이벤트에 `code`·`message`가 실려야 하며, 실패한 턴은 저장되지 않아야 합니다.
