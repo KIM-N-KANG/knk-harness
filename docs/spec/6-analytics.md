@@ -230,10 +230,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_storyCreate_regenerateButton_clicked`            |
 | P1                  | client | `client_storyCreate_storylineRating_clicked`             |
 | P1 `Phase 1 · 계획` | client | `client_storyCreate_methodOption_selected`               |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_viewed`                            |
-| P1 `Phase 1 · 계획` | client | `client_generalCreate_completed`                         |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed`                                |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_completed`                             |
+| P1                  | client | `client_generalCreate_viewed`                            |
+| P1                  | client | `client_generalCreate_completed`                         |
+| P1                  | client | `client_generalCreate_registerError_shown`               |
+| P1                  | client | `client_generalCreate_reviewResult_shown`                |
+| P1                  | client | `client_storyList_submissionCard_clicked`                |
+| P1                  | client | `client_storyEdit_viewed`                                |
+| P1                  | client | `client_storyEdit_completed`                             |
 | P1                  | client | `client_storyCreate_storyCompletion_requested`           |
 | P1                  | client | `client_storyCreate_completeError_shown`                 |
 | P1                  | client | `client_storyCreate_exitButton_clicked`                  |
@@ -322,6 +325,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈·채팅·제작 헤더 로그인 버튼 클릭(게스트) | 없음 |
+| `client_storyList_submissionCard_clicked` | P1 | 제작 탭 검수 제출본 카드의 수정하기·등록 취소·삭제 선택 | `submission_id` (string, 필수), `status` (string, 필수: `pending` / `rejected` / `failed`), `action` (string, 필수: `edit` / `cancel` / `delete`) |
 
 `client_storyList_loginButton_clicked`는 게스트가 홈·채팅·제작의 공통 헤더에서 로그인 화면으로 이동한 유입을 구분합니다. 기존 이벤트명과 대시보드 호환성을 유지하기 위해 이름은 바꾸지 않으며, 마이 본문발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교합니다.
 
@@ -350,17 +354,17 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_storyCompletion_requested`           | P1       | 스토리 완성 요청 전송                                                          | `creation_id` (string, 필수)                                                                                     |
 | `client_storyCreate_completeError_shown`                 | P1       | 스토리 완성 실패 에러 표시                                                     | `stage` (string, 필수: `story` / `chat`)                                                                         |
 | `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 이프 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
-| `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확정(이탈 확인 다이얼로그의 나가기·그만 만들기 클릭. 빈 키워드 단계는 헤더 X·브라우저 뒤로가기 즉시) | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
-| `client_storyCreate_draftSaved`                          | P1       | 300ms 자동 저장 쓰기 성공                                                      | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
-| `client_storyCreate_continueBanner_shown`                | P2       | 제작 탭 진행 카드(이어서 만들기) 노출(임프레션)                                | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)            |
-| `client_storyCreate_continueBanner_clicked`              | P1       | 제작 탭 진행 카드의 "이어서 만들기" 클릭                                      | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT`)            |
+| `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확정(이탈 확인 다이얼로그의 나가기 클릭. 잃을 것이 없으면 헤더 X·브라우저 뒤로가기 즉시) | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
+| `client_storyCreate_draftSaved`                          | P1       | 임시 저장 쓰기 성공(임시 저장 버튼·단계 이동·화면 숨김)                        | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
+| `client_storyCreate_continueBanner_shown`                | P2       | 제작 탭 진행 카드(이어서 만들기) 노출(임프레션)                                | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT` / `GENERAL_DRAFT`)            |
+| `client_storyCreate_continueBanner_clicked`              | P1       | 제작 탭 진행 카드의 "이어서 만들기" 클릭                                      | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT` / `GENERAL_DRAFT`)            |
 | `client_storyCreate_completed`                           | P0       | 스토리화 완료. 서버가 스토리 ID를 확정한 시점(원 응답 또는 제작 탭 폴링)에 발화하며 채팅 생성과 무관합니다 | `story_id` (string, 필수), `genres` (string[], 선택). **`chat_id`·`creation_id`는 포함하지 않습니다** — 완성 시점에는 채팅이 없고, §6-5 퍼널·지표가 이 이벤트를 `creation_id`로 조인한다고 정의해 간극이 있습니다(§6-8-7 A2) |
 
 `client_storyCreate_storyGeneration_requested`는 `analytics_creation_id` 발급 전 이벤트입니다. `server_storyCreate_storyGeneration_processed_*`는 백엔드가 스토리라인 생성 처리를 시작하며 발급한 `analytics_creation_id`를 싣는 것이 목표 계약이지만, **현재 구현은 성공 이벤트만 항상 포함하고(타입은 문자열이 아닌 Long) 실패 이벤트는 발급 전 실패에서 값이 없을 수 있습니다**(§6-8-7 A1·A3). 이벤트명의 `storyGeneration`은 키워드로 스토리라인 후보를 생성하는 동작(AI feature `storyline_generation`)을 뜻하고, 최종 스토리 완성은 `storyCompletion`(AI feature `story_completion`)으로 구분합니다.
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-자동 저장 관련 이벤트([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md) 제작 자동 저장)는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 각 단계의 300ms 저장 쓰기가 실제 성공했을 때만 발생하고 입력 원문·선택값은 싣지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 자동 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994).
+임시 저장 관련 이벤트([웹 제작 흐름](3-2-web-spec.md#3-2-3-웹-제작-흐름))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼·단계 이동·화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼·단계 이동·화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
@@ -522,17 +526,21 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-10. 일반 제작·스토리 수정 — `Phase 1 · 계획`
 
-일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 처리가 없는 동기 CRUD라 서버 이벤트 없이 클라이언트 계측으로 충분합니다.
+일반 제작 폼(FE-SCREEN-009)과 스토리 수정의 이벤트입니다. AI 생성이 없고 검수 판정은 서버가 비동기로 처리하므로, 클라이언트 계측은 등록 요청 접수까지 봅니다.
 
 | 이벤트                                     | 우선순위 | 발생 시점                 | 고유 프로퍼티                                                                                 |
 | ------------------------------------------ | -------- | ------------------------- | --------------------------------------------------------------------------------------------- |
 | `client_storyCreate_methodOption_selected` | P1       | 제작 방식 선택(간편/일반) | `method` (string, 필수: `simple` / `general`)                                                 |
-| `client_generalCreate_viewed`              | P1       | 일반 제작 폼 진입         | 없음                                                                                          |
-| `client_generalCreate_completed`           | P1       | 일반 제작 등록 성공       | `story_id` (string, 필수), `main_event_count` · `ending_count` · `image_count` (number, 필수) |
+| `client_generalCreate_viewed`              | P1       | 일반 제작 폼 진입(회원 게이트 통과 후) | 없음                                                                                          |
+| `client_generalCreate_completed`           | P1       | 일반 제작 등록 요청 접수(202) | `submission_id` (string, 필수), `start_setting_count` · `ending_count` · `main_event_count` · `image_count` (number, 필수). `image_count`는 커버와 주변 인물 이미지 수의 합 |
+| `client_generalCreate_registerError_shown` | P1       | 등록 실패 토스트 표시     | `status` (number, 필수: HTTP 상태, 응답이 없거나 요청 전 실패는 0)                              |
+| `client_generalCreate_reviewResult_shown`  | P1       | 접수 뒤 검수 결과 안내(승인은 채팅방 이동 직전) | `submission_id` (string, 필수), `result` (string, 필수: `approved` / `rejected` / `failed` / `timeout`. `timeout`은 화면의 기다림 상한 60초 초과) |
 | `client_storyEdit_viewed`                  | P1       | 수정 화면 진입            | `story_id` (string, 필수)                                                                     |
-| `client_storyEdit_completed`               | P1       | 수정 저장 성공            | `story_id` (string, 필수)                                                                     |
+| `client_storyEdit_completed`               | P1       | 수정 저장 접수(검수 제출 202 또는 공개 범위만 바꿔 즉시 반영 200) | `story_id` (string, 필수)                                                                     |
 
+- 웹은 제작 FAB로 들어오는 제작 방식 선택 화면에서 선택지를 누를 때 `client_storyCreate_methodOption_selected`를 발화합니다. `client_storyList_createButton_clicked`는 FAB를 눌러 선택 화면으로 이동하는 시점에 그대로 발화하므로 제작 시작률의 분자는 바뀌지 않습니다.
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
+- 일반 제작 등록은 검수 제출본만 만들어 접수 시점에 스토리 ID가 없으므로 `completed`는 `submission_id`를 싣고, 반려 뒤 재제출도 접수마다 발화합니다. 검수 통과 여부는 `reviewResult_shown`의 `result`로 봅니다. 장르 이름은 직접 입력한 키워드가 섞여 사용자 입력 원문이 되므로 보내지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)).
 
 #### 6-4-2-11. 법적 고지
 
@@ -1262,7 +1270,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry·Crashlytics context/log, `ai_ca
 | 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정됩니다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리합니다. |
 | Android 안정성        | 내부 release의 test crash·non-fatal이 Crashlytics에 앱 버전·빌드·수동 화면 로그와 함께 보이고, debug 빌드는 수집하지 않습니다. API 30+ ANR을 확인하며 API 24~29·NDK 공백은 §6-6-4 범위대로 처리합니다. |
 | 이벤트 수집 `Phase 1` | `client_creditShortageDialog_shown`이 `trigger`와 함께 수집됩니다(`client_guestLimitDialog_*`는 2026-09-19 폐기).                                                                 |
-| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
+| 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_generalCreate_registerError_shown`, `client_generalCreate_reviewResult_shown`, `client_storyList_submissionCard_clicked`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집됩니다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실립니다.                           |
 
 ### 6-8-4. 계층별 검수 기준
