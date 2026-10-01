@@ -69,6 +69,7 @@
 - [BE-049. 검수 제출본 회차와 알림 모드별 발송](#be-049)
 - [BE-050. 검수 일시 실패 재시도·보류와 요청 용량 예산](#be-050)
 - [BE-051. 알림 서비스 운영 배치와 내부 호출 경로](#be-051)
+- [BE-052. 스토리 표지 프리셋 자동 연결 제거](#be-052)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -722,6 +723,17 @@
 
 - 관계: BE-047의 분리와 큐 도입을 prod 운영 배치로 구체화한다. BE-047의 책임 경계, 모드별 배타 실행, 아웃박스와 소비자 멱등 계약은 유지하며 과거 기록을 대체하거나 수정하지 않는다. 트레이싱은 이 결정의 범위 밖이며 KNK-1464의 OpenSearch Trace Analytics에서 다룬다. ([BE-047](#be-047), [알림 서비스 계약](../spec/4-backend-server-spec.md#알림-서비스-계약))
 - 출처: [KNK-1440](https://kimandkang.atlassian.net/browse/KNK-1440)의 운영 구성 결정, [KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367), [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464). 현재 구현은 서버 `a0a89ca`의 `push/outbox/`, 알림 `ac51603`의 `push/consumer/`, Terraform `ae315c3`의 `envs/dev/sqs.tf`, `envs/dev/alarms.tf`, `modules/compute-ecs/main.tf`로 대조했다. prod 실서비스 상태는 별도로 조회하지 않았다.
+
+<a id="be-052"></a>
+
+## BE-052. 스토리 표지 프리셋 자동 연결 제거
+
+- 날짜: 2026-10-01.
+- 결정: 간편 제작과 일반 제작 모두 등록 시 프리셋 키를 저장하지 않습니다. AI 생성 표지는 유지하되 생성 실패 시 프리셋으로 대체하지 않고 null로 둡니다. 표지 삭제는 URL과 프리셋 키를 함께 지우며 멱등 204와 검수 중 409를 유지합니다.
+- 근거: 표지가 없는 스토리는 프론트엔드가 라이트 모드와 다크 모드에 맞는 기본 이미지를 표시합니다.
+- 대체 범위: [BE-014](#be-014)의 업로드 허용과 [BE-016](#be-016)의 AI 인물 이미지 생성은 유지하며, 기존 Spec의 표지 자동 연결과 삭제 후 프리셋 폴백 계약을 대체합니다. 기존 스토리의 프리셋 키, 카탈로그와 FK는 유지하고 마이그레이션과 백필은 하지 않습니다. URL과 검수 상태에 따른 노출 판정, 와이어 필드 이름과 타입도 유지합니다. 과거 ADR 본문과 ID는 보존합니다.
+- 관련 계약: [썸네일 저장과 노출 규칙](../spec/4-backend-server-spec.md#썸네일-저장과-노출-규칙).
+- 출처: 2026-10-01 사용자 확정 결정, [KNK-1522](https://kimandkang.atlassian.net/browse/KNK-1522).
 
 ## 복원 범위와 날짜 해석
 
