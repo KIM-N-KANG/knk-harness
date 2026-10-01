@@ -235,8 +235,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_generalCreate_registerError_shown`               |
 | P1                  | client | `client_generalCreate_reviewResult_shown`                |
 | P1                  | client | `client_storyList_submissionCard_clicked`                |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_viewed`                                |
-| P1 `Phase 1 · 계획` | client | `client_storyEdit_completed`                             |
+| P1                  | client | `client_storyEdit_viewed`                                |
+| P1                  | client | `client_storyEdit_completed`                             |
 | P1                  | client | `client_storyCreate_storyCompletion_requested`           |
 | P1                  | client | `client_storyCreate_completeError_shown`                 |
 | P1                  | client | `client_storyCreate_exitButton_clicked`                  |
@@ -536,7 +536,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_generalCreate_registerError_shown` | P1       | 등록 실패 토스트 표시     | `status` (number, 필수: HTTP 상태, 응답이 없거나 요청 전 실패는 0)                              |
 | `client_generalCreate_reviewResult_shown`  | P1       | 접수 뒤 검수 결과 안내(승인은 채팅방 이동 직전) | `submission_id` (string, 필수), `result` (string, 필수: `approved` / `rejected` / `failed` / `timeout`. `timeout`은 화면의 기다림 상한 60초 초과) |
 | `client_storyEdit_viewed`                  | P1       | 수정 화면 진입            | `story_id` (string, 필수)                                                                     |
-| `client_storyEdit_completed`               | P1       | 수정 저장 성공            | `story_id` (string, 필수)                                                                     |
+| `client_storyEdit_completed`               | P1       | 수정 저장 접수(검수 제출 202 또는 공개 범위만 바꿔 즉시 반영 200) | `story_id` (string, 필수)                                                                     |
 
 - 웹은 제작 FAB로 들어오는 제작 방식 선택 화면에서 선택지를 누를 때 `client_storyCreate_methodOption_selected`를 발화합니다. `client_storyList_createButton_clicked`는 FAB를 눌러 선택 화면으로 이동하는 시점에 그대로 발화하므로 제작 시작률의 분자는 바뀌지 않습니다.
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.

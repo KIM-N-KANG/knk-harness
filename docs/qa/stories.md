@@ -6,13 +6,13 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-09-24 |
+| 수정일 | 2026-10-01 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 스토리 목록·제작·상세의 수동 QA와 E2E 검수 기준을 정의합니다. |
-| 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003) |
+| 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003), 스토리 수정 `/stories/[id]/edit`(FE-SCREEN-009) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인) |
+| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts` |
 
 ## 읽는 순서
 
@@ -33,6 +33,7 @@
 - [STORY-GATE — 제작과 채팅 시작 동의 게이트](#story-gate--제작과-채팅-시작-동의-게이트)
 - [STORY-LIMIT — 회원 이프 게이팅](#story-limit--회원-이프-게이팅)
 - [STORY-GENERAL — 일반 제작 `/studio/story/general`](#story-general--일반-제작-studiostorygeneral)
+- [STORY-EDIT — 스토리 수정 `/stories/[id]/edit`](#story-edit--스토리-수정-storiesidedit)
 - [STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`](#story-submission--제작-탭-검수-제출본-studio)
 - [⚠️ 확인 필요](#️-확인-필요)
 
@@ -84,6 +85,9 @@
 | STORY-LIST-36 | P1 | 홈 카드 `turnCount` 12345, 내 스토리 카드 `turnCount` 1280 | `/`와 `/studio` 카드의 턴 수 확인 | 각각 "12.3K"·"1.2K"로 축약 표시(버림, 1,000 미만은 그대로). 상세 히어로도 "1.2K"처럼 같은 축약 | ✅ e2e `stories/story-list`·`stories/story-detail` | §3-1-3 FE-SCREEN-001·013, KNK-1421 |
 | STORY-LIST-37 | P1 | 공개 목록이 화면보다 김 | 목록을 아래로 스크롤 → 위로 조금 스크롤 → 제작과 마이 경유 → 홈 복귀 후 다시 스크롤 | 아래로 스크롤하면 필터·정렬 줄이 위로 밀려 숨고, 위로 스크롤하면 다시 내려옴. 숨고 나타날 때 목록이 튀거나 밀리지 않음. 맨 위에서 당기면 줄이 목록과 함께 내려감. 짧은 제작 목록에서는 FAB 라벨이 펼쳐지고 홈 복귀 후에도 필터 줄의 숨김과 재노출이 동작함 | ◐ e2e `stories/story-list`(숨김·재노출, 탭 왕복과 제작 FAB 라벨), 목록 튐·당김·모션은 수동 | §3-1-3 FE-SCREEN-001, KNK-1426 |
 | STORY-LIST-38 | P0 | 회원, 제작 목록 FAB 표시됨(게스트의 일반 제작 선택은 STORY-GENERAL-23) | FAB 탭 → 각 선택지 확인 → 일반 제작 탭 → 입력 탭 전환 → 닫기(X) | `/studio/story`에 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 헤더 제목·선택지 문구 표시. 두 일러스트가 엇갈린 박자로 반복 재생되고 hover 시 선택지 배경·앱 화면이 반응. 간편 제작은 `/studio/story/simple`(게스트는 STORY-GATE-01), 일반 제작은 `/studio/story/general`로 이동해 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 입력 탭 7개를 가로 스크롤 한 줄로 표시하고(주요 사건을 뺀 필수 탭 이름에 `*`) 첫 탭(스토리 프로필)을 연다. 탭을 누르면 가운데로 스크롤되고 해당 탭의 입력 항목이 보인다. 일반 제작 헤더는 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 제목·임시 저장 버튼(입력 없음이라 비활성)·닫기를 표시하고, 입력이 없으니 닫기는 다이얼로그 없이 제작 탭으로 이동. 다크 모드에서도 토큰 색 유지, 동작 줄이기에서는 완성 상태 정지 화면 | ◐ e2e `stories/story-list`(진입·이동·일반 제작 헤더·입력 탭 전환·닫기 이동·접근 가능한 이름), 일러스트 모션·다크 모드는 수동 | US-3-16, §3-1-3 FE-SCREEN-013, KNK-1445 |
+| STORY-LIST-39 | P1 | 회원, 내가 만든 스토리 카드 | 카드 옵션(⋮) → "수정하기" | 시트 맨 위에 "수정하기"(연필 아이콘)가 있고 누르면 스토리 수정 화면으로 이동. 저장을 마치거나 나가면 제작 탭으로 돌아옴. 게스트 카드에는 없음 | ◐ e2e `stories/story-edit` | US-4-5, §3-1-3 FE-SCREEN-013 사용자 액션 |
+| STORY-LIST-40 | P2 | 회원, 공백 없이 긴 제목·한 줄 소개, 서른 글자 직접 추가 장르의 내 스토리 카드와 진행 카드 | 제작 탭 카드 확인 | 글이 카드 폭 안에서 줄바꿈돼 옆으로 잘리지 않고 두 줄을 넘으면 말줄임표로 끝남. 긴 장르 배지는 "+N" 자리를 남기고 말줄임 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-013 |
+| STORY-LIST-41 | P2 | 공백 없는 긴 영문·숫자 제목의 홈 카드 | 홈 카드 확인 | 제목이 카드 폭 안에서 한 줄 말줄임으로 끝나고 옆으로 잘리지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001 |
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
@@ -112,6 +116,9 @@
 | STORY-DETAIL-31 | P2  | 신고 전송 진행 중           | 전송 직후 시트 관찰                                | 전송 버튼이 문구 공간을 유지한 스피너("신고 접수 중")로 잠기고, 닫기·바깥 탭으로 시트를 닫을 수 없음 | 수동 | §3-1-3 스토리 신고, 구현(`story-report-sheet`) |
 | STORY-DETAIL-32 | P1  | 게스트, 로컬 서재에 있는 스토리 | 헤더 옵션(⋮) 탭                                  | 바텀 시트(종류 "내가 만든 스토리" + 제목)에 "삭제하기"만 표시(신고하기 없음 — 게스트에게는 신고 항목을 두지 않음) | ✅ e2e `stories/story-detail` | §3-1-3 스토리 신고, KNK-1186 |
 | STORY-DETAIL-33 | P0  | 회원, 내가 만든 스토리(`isOwner` 참) | 헤더 옵션 시트 → "삭제하기" → 시트가 닫히고 뜨는 "스토리를 삭제할까요?" 다이얼로그 확정 | 항목 순서는 신고하기 → 삭제하기. 확정 시 "스토리가 삭제되었어요" 토스트 + `/studio`로 `replace` 이동, 회원 목록 쿼리 무효화 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003 사용자 액션, KNK-1186 |
+| STORY-DETAIL-44 | P0 | 회원, 내가 만든 스토리(`isOwner` 참) | 헤더 옵션(⋮) 탭 → "수정하기" | 시트 맨 위에 "수정하기"(연필 아이콘)가 있고, 누르면 스토리 수정 화면(`/stories/[id]/edit`)으로 이동 | ✅ e2e `stories/story-edit` | US-4-5, §3-1-3 FE-SCREEN-003 사용자 액션 |
+| STORY-DETAIL-45 | P1 | 회원, 내가 만들지 않은 스토리 / 게스트, 로컬 서재에 있는 스토리 | 헤더 옵션(⋮) 탭 | "수정하기"가 없음(회원은 신고하기만, 게스트는 삭제하기만) | ◐ e2e `stories/story-edit` | §3-1-3 FE-SCREEN-003 사용자 액션 |
+| STORY-DETAIL-46 | P2 | 공백 없는 긴 영문·숫자의 제목·한 줄 소개·주요 내용·상황 설명, 띄어쓰기 있는 긴 본 엔딩·상황 이름 | 상세 확인 → 상황 이름 선택 칸 펼치기 | 글은 화면 폭 안에서 줄바꿈되고, 본 엔딩 배지와 선택 칸은 말줄임, 펼친 목록 항목은 줄바꿈되어 화면 밖으로 넘치지 않음 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003 |
 | STORY-DETAIL-21 | P1  | `characters`에 이름·이미지가 있는 스토리 | 주요 내용 아래 확인 | "주변 인물" 섹션이 주요 내용과 채팅 시작 상황 사이에 표시. 인물마다 이름 소제목 + 그 아래 채팅 화면과 같은 4:3 인물 이미지 카드를 저장 순서대로 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
 | STORY-DETAIL-22 | P2  | `characters`의 일부 인물이 `imageUrl: null` | 해당 인물 확인 | 이름만 표시하고 이미지 카드는 만들지 않음. 나머지 인물은 정상 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1058 |
 | STORY-DETAIL-40 | P1  | `characters`에 이미지가 있는 스토리 | 인물 이미지 탭 → 뷰어의 이미지 더블 탭 두 번 → 이미지 탭 → X·이미지 밖 배경 탭·뒤로가기로 각각 닫기 | 썸네일과 같은 풀스크린 이미지 뷰어 열림(접근 가능한 이름 "{이름} 인물 이미지 크게 보기"). 더블 탭하면 누른 지점 기준 2.5배로 커지고 다시 더블 탭하면 원래 크기. 뷰어 안 이미지를 탭하면 닫히지 않음. X·배경 탭·뒤로가기로는 페이지 이동 없이 뷰어만 닫힘 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1276·1427 |
@@ -227,7 +234,7 @@
 | STORY-RECOVER-06 | P2  | 게스트로 복구 `COMPLETED` 반영                       | 로컬 저장 상태 확인                 | 원 성공 경로와 동일한 부수효과 수행 — 체험 잔여 재조회, 스토리·채팅 ID 로컬 저장(회원은 쿼리 무효화)                   | 수동                                                  | §3-1-4 백그라운드 생성 복귀               |
 | STORY-RECOVER-07 | P1 | 완성 제출 후 제작 탭 복귀, 서버 확정 실패(402·5xx) | 실패 후 재진입 | 추가 정보 초안·입력 유지와 실패 토스트. 진행 폴링 중단, 이어서 만들기로 편집 복귀. 네트워크 오류·409는 진행 레코드 유지 | ✅ e2e `stories/story-create` | 웹 Spec 제작 상태 표 |
 | STORY-RECOVER-08 | P1  | 미정리 레코드 잔존                                   | 제작(`/studio`) 진입                | 목록 첫 행부터 진행 카드 표시(초안·생성 중 카드가 먼저, 그다음 완성 중 카드. 각각 처음 임시 저장 시각 최신순)(스토리라인 생성 중은 "만들고 있는 스토리"+"이어서 만들기", 완성 중은 "스토리를 완성 중이에요"+표지 점 격자 대기 애니메이션, 버튼 없음, 본문 아래 처음 임시 저장 시각). 카드가 보이고 같은 원 POST가 진행 중이 아닐 때 5초 조회. 스토리라인이 이미 완료면 초안으로 승격돼 "이어서 만들기"가 로딩 없이 스토리라인 선택으로 진입, 아직이면 퍼널 로딩으로 복구 합류 | ✅ e2e `stories/story-create-recovery`                | §3-2 웹 제작 흐름 진행 카드, KNK-1261 |
-| STORY-RECOVER-09 | P2 | 초안·스토리라인 진행 카드 표시됨 | 카드 구성·스타일 확인 | 내 스토리 카드와 같은 행 패딩(가로 16px·세로 8px)·128px 3:4 회색 표지(심벌)·보조색 제목·멈춘 단계별 설명(§3-2 웹 제작 흐름 카드 문구)·버튼 위 처음 임시 저장 시각(KST `yyyy-MM-dd HH:mm`, 단계 전환 뒤에도 유지)·풀폭 primary "이어서 만들기" 버튼·제목 줄 더보기. 닫기(X) 없음, 레코드는 유지됨 | ✅ e2e `stories/story-create-recovery` | §3-2 웹 제작 흐름 진행 카드, KNK-1261 |
+| STORY-RECOVER-09 | P2 | 초안·스토리라인 진행 카드 표시됨 | 카드 구성·스타일 확인 | 내 스토리 카드와 같은 행 패딩(가로 16px·세로 8px)·128px 3:4 회색 표지(심벌)·보조색 제목·멈춘 단계별 설명(§3-2 웹 제작 흐름 카드 문구)·버튼 위 처음 임시 저장 시각(KST `yyyy-MM-dd HH:mm`, 단계 전환 뒤에도 유지)·풀폭 secondary "이어서 만들기" 버튼·제목 줄 더보기. 닫기(X) 없음, 레코드는 유지됨 | ✅ e2e `stories/story-create-recovery` | §3-2 웹 제작 흐름 진행 카드, KNK-1261 |
 | STORY-RECOVER-10 | P2  | 레코드 없음                                          | 제작(`/studio`) 진입                | 진행 카드 미표시                                                                                                         | ✅ e2e `stories/story-create-recovery`                | §3-2 웹 제작 흐름 진행 카드           |
 | STORY-RECOVER-11 | P0  | 복구 상태 `PENDING`, 문서 hidden                     | 3초 이상 대기 후 visible 복귀       | hidden 동안 조회 횟수가 늘지 않고, visible 복귀 뒤 즉시 폴링을 재개해 `COMPLETED` 결과 표시                              | ✅ e2e `stories/story-create-recovery`                | §3-1-4 3초 복구·백그라운드, KNK-994 |
 | STORY-RECOVER-12 | P0  | 스토리라인 POST 네트워크 오류, 같은 요청은 서버 완료 | 화면 유지                           | 진행 레코드와 `requestId`를 보존해 복구 조회로 결과 표시                                                               | ✅ e2e `stories/story-create-recovery`                | §3-1-4 정리 규칙, KNK-994 |
@@ -342,6 +349,28 @@
 | STORY-GENERAL-28 | P1  | 회원, 필수 항목을 모두 채움, 검수 대기 중 | 등록하기 → 닫기(X) → 나가기 → 제작 탭 확인 / (별도) 반려 뒤 입력 수정 → 닫기(X) | 닫기는 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 제출본 안내(고친 것이 없으면 "등록을 요청한 내용은 제작 탭에서 확인할 수 있어요", 고쳤으면 "지금 나가면 등록을 요청한 뒤에 고친 내용은 사라져요"). 나가면 검토 중 토스트가 닫히고 제작 탭에 일반 초안 카드가 남지 않음 | ◐ e2e `stories/story-general-create`(검토 중 이탈), 반려 뒤 수정 문구는 수동(단위 테스트 `draft-exit-warning`) | FE-SCREEN-009 |
 | STORY-GENERAL-29 | P1 | 회원, 스토리 프로필 탭 | 이미지 추가 → 파일 선택 → 자르기 시트에서 이미지 끌기·확대 슬라이더 조작 → 닫기 / (별도) 시트를 아래로 끌어 닫기 | 시트 안에서 이미지를 끌어도 시트가 닫히지 않음. "닫기"를 누르거나 시트를 내려 닫으면 업로드 요청 없이 기존 커버 이미지 유지([웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)) | ◐ e2e `stories/story-general-create`(닫기) | FE-SCREEN-009, KNK-1504 |
 
+
+## STORY-EDIT — 스토리 수정 `/stories/[id]/edit`
+
+기준: [§3-1-3 FE-SCREEN-009](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정) 수정, [웹 제작 흐름](../spec/3-2-web-spec.md#3-2-3-웹-제작-흐름) 스토리 수정 화면. 폼 입력 자체의 동작(탭·검증·자르기)은 STORY-GENERAL과 같다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| STORY-EDIT-01 | P0 | 회원, 내가 만든 스토리 | 상세 옵션 시트 → 수정하기 | 헤더 "스토리 수정"과 닫기만 있고(임시 저장 버튼 없음) 현재 제목·설정·시작 상황·장르·표지로 폼이 채워짐. 표지·주변 인물 이미지 칸에는 "이미지 변경"만 있고 "삭제"가 없음 | ✅ e2e `stories/story-edit` | US-4-5, FE-SCREEN-009 |
+| STORY-EDIT-02 | P0 | STORY-EDIT-01 | 제목만 고침 → 등록 탭 → 저장하기 → 검수 승인 | PATCH 본문에 제목만 실림. 저장하기에 스피너, "스토리를 검토하고 있어요" 뒤 승인되면 "스토리를 수정했어요"와 함께 들어온 화면(상세)으로 돌아가고 새 제목이 보임 | ✅ e2e `stories/story-edit` | US-4-5, FE-SCREEN-009 |
+| STORY-EDIT-03 | P1 | STORY-EDIT-01 | 아무것도 고치지 않고 저장하기 | 요청 없이 들어온 화면으로 돌아감 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
+| STORY-EDIT-04 | P1 | STORY-EDIT-01 | 공개 스위치만 바꿈 → 저장하기 | 검토 중 토스트 없이 바로 "스토리를 수정했어요"와 함께 상세로 돌아가고 공개 범위가 바뀜 | 수동 | FE-SCREEN-009 |
+| STORY-EDIT-05 | P0 | STORY-EDIT-01, 검수 반려 | 제목을 고쳐 저장하기 → 반려 → 다시 고쳐 저장하기 | 반려 토스트, 폼 위 "검토를 통과하지 못했어요"·"표시된 곳을 고쳐 다시 저장해 주세요", 제목 칸에 사유. 다시 저장하면 바뀌지 않은 필드까지 모두 보냄 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
+| STORY-EDIT-06 | P1 | 회원, 검토 중인 수정 제출본이 있는 스토리 | 수정 화면 진입 → 등록 탭 | 폼 위 "수정 내용을 검토하고 있어요"·"검토가 끝나면 다시 수정할 수 있어요", 입력은 잠기고 탭은 옮길 수 있으며 저장하기가 꺼짐 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
+| STORY-EDIT-07 | P1 | STORY-EDIT-01, 검수가 60초 넘게 대기 | 고쳐서 저장하기 → 1분 대기 | "검토가 늦어지고 있어요. 끝나면 스토리에 반영돼요"와 함께 상세로 돌아감. 다시 수정 화면에 들어오면 STORY-EDIT-06 또는 결과 표시 | 수동 | FE-SCREEN-009 |
+| STORY-EDIT-08 | P1 | 게스트 | 수정 주소로 진입 | 수정 주소를 돌아올 곳으로 단 로그인 화면으로 이동 | ✅ e2e `stories/story-edit` | 웹 라우팅 테이블 |
+| STORY-EDIT-09 | P1 | 회원, 내가 만들지 않았거나 없는 스토리 | 수정 주소로 진입 | "스토리를 불러오지 못했어요"와 함께 상세로 이동 | 수동 | 웹 라우팅 테이블 |
+| STORY-EDIT-10 | P1 | STORY-EDIT-01, 주변 인물 이미지가 여러 장인 간편 제작 스토리 | 주변 인물 이미지 변경 → 자르기 → 저장하기 → 승인 | 대표 이미지만 새 이미지로 바뀌고 나머지 이미지와 설정 글에 없는 인물은 그대로 남음 | 수동 | FE-SCREEN-009 |
+| STORY-EDIT-11 | P1 | STORY-EDIT-01 | 제목을 고친 뒤 닫기(X) / 뒤로가기 → 닫기 → 다시 닫기 → 나가기 | 고친 내용이 있으면 "저장하지 않은 내용이 있어요"·"지금 나가면 수정한 내용이 사라져요" 확인, 나가기로 상세에 돌아감. 고친 것이 없으면 묻지 않고 상세로 | 수동 | 웹 제작 흐름 |
+| STORY-EDIT-12 | P1 | 진행 중 채팅이 있는 내 스토리, 실제 dev 검수 | 설정 글을 고쳐 저장 → 승인 → 채팅에서 다음 턴 전송 | 새 설정이 다음 턴부터 반영되고 지난 턴은 바뀌지 않음 | 수동 | US-4-5, FE-SCREEN-009 검수 기준 |
+| STORY-EDIT-13 | P1 | STORY-EDIT-01, 검수 반려 | 고쳐서 저장하기 → 반려 → 닫기(X) → 상세에서 다시 수정하기 | 처음 열 때 받아 둔 내용이 아니라 새로 받은 수정 폼으로 열려 반려 안내와 칸별 사유가 보임 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
+| STORY-EDIT-14 | P1 | 회원, 제작 탭 → 상세 → 수정하기 | 고쳐서 저장하기 → 승인 → 상세에서 뒤로가기 | 제작 탭으로 돌아가고 수정 화면이 다시 나오지 않음 | ✅ e2e `stories/story-edit` | 웹 제작 흐름 |
+| STORY-EDIT-15 | P1 | 회원, 제작 탭 카드 옵션 → 수정하기 | 고쳐서 저장하기 → 승인 → 제작 탭에서 뒤로가기 | 저장 후 제작 탭으로 돌아오고, 뒤로가기를 눌러도 수정 화면이 나오지 않음 | ✅ e2e `stories/story-edit` | 웹 제작 흐름 |
 
 ## STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`
 
