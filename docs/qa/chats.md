@@ -150,6 +150,7 @@
 | CHAT-IMAGE-11 | P1  | 허용 CDN URL이지만 마커가 독립 줄이 아니거나 뒤에 인물명 대사 라벨이 없음 | 상세·공유 화면 관찰 | 이미지로 해석하지 않고 마커 모양 문자열과 나머지 내용을 일반 본문으로 유지                                                                        | ✅ unit `chat-message-segments` | §3-1-5 저장 마커             |
 | CHAT-IMAGE-12 | P0  | 오리지널 스토리 인물 이미지가 `/characters/originals/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch | 스트리밍 중 이미지가 즉시 표시되고 확정 뒤에도 같은 위치에 유지되며, 저장 마커 글자와 URL은 노출되지 않음                                         | ✅ e2e `chats/chat-room` + unit `chat-message-segments` | §3-1-5 인물 이미지 렌더, KNK-1055 |
 | CHAT-IMAGE-13 | P1  | 확정 턴 또는 공유 화면에 인물 이미지 존재      | 이미지 탭 → 뷰어의 이미지 탭 → X·이미지 밖 배경 탭·뒤로가기로 각각 닫기 | 스토리 상세 썸네일과 같은 풀스크린 이미지 뷰어 열림. 뷰어 안 이미지를 탭하면 닫히지 않음. X·배경 탭·뒤로가기로는 페이지 이동 없이 뷰어만 닫히고 채팅방·공유 화면에 머묾 | ◐ e2e `chats/chat-room`·`share/shared-chat`(X 닫기만), 이미지·배경 탭은 `stories/story-detail` 공용 뷰어로 검증 | §3-1-5 인물 이미지 렌더, KNK-1276·1427 |
+| CHAT-IMAGE-14 | P0  | 일반 제작·수정에서 올린 인물 이미지가 `/characters/uploaded/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch, 스토리 상세 주변 인물 확인 | 채팅에서는 오리지널 이미지와 같이 스트리밍 중 즉시 표시되고 확정 뒤에도 같은 위치에 유지됨. 스토리 상세 주변 인물 카드에도 같은 이미지가 표시됨 | ◐ unit `chat-message-segments`(URL 허용) + e2e `stories/story-detail`(상세 카드), 채팅 화면은 수동 | §3-1-5 인물 이미지 렌더, KNK-1503 |
 
 ## CHAT-INPUT — 입력창·추천 입력·선택지
 

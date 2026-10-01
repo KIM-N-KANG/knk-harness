@@ -354,7 +354,7 @@ COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀
 | 경계 | 허용 범위 |
 | --- | --- |
 | Next 이미지 최적화 | Google `lh3.googleusercontent.com` 전체, `api.manyak.app`·`dev-api.manyak.app`의 `/profile-presets/**`, `cdn.manyak.app`·`dev-cdn.manyak.app` 전체. [next.config.ts](../../../manyak-web/next.config.ts) |
-| 인물 이미지 런타임 | HTTPS + 정확한 운영·개발 CDN 호스트 + `/characters/generated/`·`/characters/originals/`·`/chat-images/`(실시간 이미지). 스트림·저장 마커·상세 인물 카드에 동일 적용 |
+| 인물 이미지 런타임 | HTTPS + 정확한 운영·개발 CDN 호스트 + `/characters/generated/`·`/characters/originals/`·`/characters/uploaded/`(일반 제작·수정 업로드)·`/chat-images/`(실시간 이미지). 스트림·저장 마커·상세 인물 카드에 동일 적용 |
 | 저장 마커 파싱 | 독립된 `[[URL]]` 한 줄 + 빈 줄 하나 + 비어 있지 않은 `인물명:` 대사 라벨 + 위 URL 허용 범위. 불일치는 이미지 요청 없이 일반 본문 유지 |
 
 최적화기의 호스트 허용이 임의 모델 출력 URL을 허용하지는 않습니다. 이전 `[[인물이름:URL]]` 형식은 지원하지 않습니다. 이미지 실패·대체 텍스트·뷰어는 공통 계약을 따릅니다.
