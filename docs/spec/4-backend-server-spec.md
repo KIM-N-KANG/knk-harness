@@ -260,10 +260,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `reachedEndings` | string[] | 요청자가 이 스토리에서 도달한 엔딩 **이름** 목록(엔딩은 이름으로 식별). 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
 | `isOwner` | boolean | (KNK-1016·1018, 2026-08-29) 요청 회원이 이 스토리의 소유자인지. 와이어 필드명은 `@JsonProperty("isOwner")`로 고정(springdoc이 `owner`로 문서화하는 문제 차단). 서버가 요청자 `user_id`와 `stories.user_id`를 비교해 판단하며(클라이언트 id 비교 없음: `author.id`가 null이라 클라이언트는 판단 불가), 게스트·미인증은 false. 용도는 상세 헤더 메뉴(수정·삭제 등) 노출 판단 |
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
-| `characters` | object[] | 등장인물 `{name, imageUrl}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
+| `characters` | object[] | 등장인물 `{name, imageUrl, description}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). `description`은 string·null인 인물 소개입니다. 소개 도입 이전 스토리·소개 없는 컴파일·일반 제작이나 수정으로 추가한 인물은 null입니다. 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
 
 - `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
-- **인물 목록**: 상세의 `characters[]`에는 이름과 이미지만 싣고 공개 식별자와 외형 필드는 제외합니다. 인물별 설명은 저장하지 않습니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환합니다.
+- **인물 목록**: 상세의 `characters[]`에는 이름·이미지·인물 소개를 싣고 공개 식별자와 외형 필드는 제외합니다. 기존 `isReadableBy(userId)` 읽기 게이트를 적용한 뒤 라이브 인물 행에서 조회합니다. 라이브는 검수 승인 뒤에만 바뀝니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환하며 `description`은 싣지 않습니다. 일반 제작·수정(PATCH) 요청으로 인물 소개를 받지 않습니다. 수정에서 이름을 바꿔도 같은 인물 행의 소개는 유지합니다.
 
 **`DELETE /stories/{storyId}`**: 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다. 404 판정(형식 오류·순차 정수·부재·이미 삭제: 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69: 채팅 삭제 동일).
 
@@ -1559,6 +1559,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 인물 이미지의 위치는 AI가 감지한 줄 머리 `인물명:` 라벨을 기준으로 합니다. 저장된 `aiOutput`에는 해당 대사 위 별도 줄에 `[[URL]]` 마커와 뒤의 빈 줄을 둡니다. 예전 `[character:이름]` 출력 지시·`[[인물이름:URL]]` 저장 방식의 결정 이력은 [BE-028](../adr/2-backend-server-adr.md#be-028)에 보존합니다.
 
 1. 컴파일 응답 `character_images[]`의 성공 이미지는 디코딩해 S3에 업로드하고 `story_character_images`에 연결합니다. `name`은 인물 이름, `image_name`은 이미지 한 장의 이름입니다. `story_characters.image_name` 컬럼은 만들지 않습니다.
+   - `character_introductions[]`를 받아 같은 이름의 인물 행에 `description`을 저장합니다. 필드가 없으면 빈 배열로 취급해 소개를 보내지 않는 운영 AI 응답도 수용합니다. 이름은 `character_appearances`·`character_images`와 같은 규칙으로 정규화합니다. 매칭되는 인물 행이 없는 소개는 버리며 소개만으로 인물 행을 만들지 않습니다. `description`이 null·빈 문자열이면 null로 저장합니다. AI의 소개 생성 형식은 [AI Spec](5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
 2. 이미지 생성 실패·빈 목록은 스토리 생성을 실패시키지 않습니다. 생성 표지는 `stories.thumbnail_image_url`로 저장하며 노출은 검수 상태와 폴백 규칙을 따릅니다.
 3. 채팅 요청은 `APPROVED` 인물 이미지들을 `{name, image_name, image_url}`로 전달합니다. 인물 하나에 여러 이미지가 있을 수 있습니다. 어떤 이미지를 고를지는 AI 계약을 따릅니다. **재료의 출처는 다른 턴 재료와 같은 규칙입니다**: 요청자가 스토리의 현재 메타데이터를 읽을 수 있으면 현재 인물 이미지, 아니면 마지막 공개 스냅샷에 담긴 인물 이미지입니다([공개 스냅샷](#4-3-api-계약)). 라이브 행을 직접 읽으면 소유자가 비공개로 되돌린 뒤 인물을 고쳤을 때 그 개작이 타인의 진행 중 채팅과 생성 결과로 새어 나갑니다.
 4. 클라이언트로 나가는 실시간 `character_image`는 `{name, imageUrl}`입니다. 같은 인물이 다시 말하면 그때마다 다시 보냅니다. 이미지 이름은 저장·업로드와 AI 요청에서만 쓰고 클라이언트로 내보내지 않습니다([BE-044](../adr/2-backend-server-adr.md#be-044)).
@@ -1719,12 +1720,15 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 물리 테이블·Redis·검색 인덱스의 책임과 컬럼 상세는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)를 따릅니다. 잔존 컬럼과 개명 예정 항목도 그 절에 있습니다.
 
+`story_characters`에는 인물 소개를 저장하는 `description TEXT NULL` 컬럼을 추가합니다(V90). 기존 스토리는 백필하지 않고 null을 유지합니다. 컴파일 수신과 상세 반환 규칙은 [인물 목록](#4-3-api-계약)을 따릅니다.
+
 ### 공개 스냅샷과 과거 기록 복원
 
 현재 스냅샷은 `story_public_snapshots`의 스토리당 한 행에 JSON으로 보존합니다(V69). 스토리가 미삭제·`PUBLISHED`·`PUBLIC`인 상태로 저장될 때 자식 교체가 끝난 동일 트랜잭션에서 갱신합니다. 비공개·초안·삭제 상태의 개작은 이 스냅샷을 덮어쓰지 않습니다.
 
 - 보존 대상은 제목·표지 키와 생성 URL·장르·스토리 설정·시작 설정·프롤로그·추천 입력·활성 엔딩·주요 사건입니다. 행이 없으면 마지막 공개 버전을 알 수 없다는 뜻입니다. V69 백필에서 이미 비공개·초안·삭제였던 과거 데이터는 임의로 현재 값을 공개본으로 만들지 않습니다.
 - 서재·채팅 상세·공유·이용내역은 해당 요청자의 현재 메타데이터 읽기 권한을 기준으로 최신 값과 마지막 공개본을 선택합니다. AI 턴 입력은 턴을 진행하는 사람의 권한을 사용합니다. 공유 링크 소지는 비공개 스토리의 최신 개작을 읽을 권한이 아닙니다.
+- 인물 소개(`story_characters.description`)는 공개 스냅샷에 넣지 않습니다. 스토리 상세는 읽기 권한을 확인한 라이브 행을 사용합니다. 인물 소개는 채팅 턴 조립에 쓰지 않으며 채팅 AI 요청에도 싣지 않습니다. AI의 채팅용 인물 마크다운에도 포함하지 않습니다.
 - AI 입력의 최신 값 분기는 선택한 시작 설정과 그 엔딩만 읽는 부분 캡처를 사용합니다. 마지막 공개본 분기도 같은 자료형으로 조립해 두 경로의 필드 누락을 줄입니다.
 - `story_chats.story_title_snapshot`·`story_thumbnail_key_snapshot`은 V71에서 제거했습니다. 시작 설정·엔딩·사건 FK가 끊겼을 때 복원할 `story_prologue_snapshot`·`reached_ending_name_snapshot`·`occurred_main_event_names_snapshot`과 메시지의 `reached_ending_name_snapshot`은 유지합니다. 공개 스냅샷도 복원할 참조를 찾지 못하면 해당 이름·프롤로그 폴백을 사용하며, 없는 과거 기록을 새로 만들어 내지 않습니다.
 - 엔딩 도달 집계는 V70에서 CASCADE를 SET NULL로 완화하고 V71에서 이름 NOT NULL·이름 유니크로 확정했습니다. 마이그레이션 전에 이미 삭제된 도달 기록은 소급 복구하지 않습니다.
