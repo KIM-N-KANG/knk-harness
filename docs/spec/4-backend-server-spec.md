@@ -116,7 +116,7 @@
 | 스토리 | `PATCH /stories/{storyId}` | 수정 검수 제출. `visibility` 단독은 즉시 반영. | 202 제출본 / 200 공개 범위 단독 | 400·401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/{storyId}/images/presign` | 이미지 업로드용 presigned PUT 발급(표지·인물) | 201 | 400·401·403·404 | 필수 |
 | 스토리 | `POST /stories/images/presign` | 등록 전 이미지 업로드용 presigned PUT 발급(draft 키) | 201 | 400·401·403 | 필수 |
-| 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드·생성 표지 제거(프리셋 폴백, 멱등) 검수 중 409. | 204 | 401·403·404·409 | 필수 |
+| 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드와 생성 표지 URL, 프리셋 키 제거(결과 null, 멱등). 검수 중 409. | 204 | 401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 폐지. 등록·PATCH 본문으로 대체. | 해당 없음 | 해당 없음 | 해당 없음 |
 | 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) 검수 중 409. | 204 | 401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/general` | 일반 제작 검수 제출. | 202 | 400·401·403·409 | 필수 |
@@ -251,7 +251,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `thumbnailUrl` | string·null | (KNK-515·V45) 썸네일 **원본** 서빙 URL(상세 히어로용: 목록·카드는 `thumbnailUrlSm`). 이전 `coverImageUrl`을 개명. 자동 연결([§4-3-9](#4-3-api-계약))이 등록 시 확정한 `stories.thumbnail_image_key`로 백엔드가 조합하며, 연결 소스가 없거나 규칙 도입 전 스토리는 null. 컴파일이 생성한 표지가 있으면 `stories.thumbnail_image_url`(WebP 절대 URL)이 이 값을 대신합니다: 필드 이름·타입은 그대로이고 값의 출처만 늘었습니다 |
+| `thumbnailUrl` | string·null | 썸네일 **원본** 서빙 URL(상세 히어로용: 목록과 카드는 `thumbnailUrlSm`). `stories.thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 해당 URL, 아니면 기존 `stories.thumbnail_image_key`로 조합한 URL을 반환하며 둘 다 없으면 null입니다. 새 스토리는 프리셋 키를 저장하지 않습니다([썸네일 저장과 노출 규칙](#썸네일-저장과-노출-규칙)). 필드 이름과 타입은 유지합니다 |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `startSettings` | object[] | 시작 설정 목록(복수화: 등록 순서). 각 항목 `{id, name, prologue, startSituation, suggestedInputs[], endings[]}`: `id`는 시작 설정 공개 식별자(UUID: `POST /chats`의 `startSettingId`로 사용), `suggestedInputs`는 이 시작 설정의 추천 입력, `endings`는 `{name, requirement{minTurns, achievementCondition}, epilogue}`(이름 기반·유형 없음, 활성 엔딩만, 레거시 `enabled=false` 제외, [§4-3-8](#4-3-api-계약)·[§4-3-10](#4-3-api-계약)). 시작 설정이 없으면 빈 배열 |
 | `visibility` | enum | `PUBLIC` · `PRIVATE`(기본 PRIVATE) |
@@ -1240,13 +1240,13 @@ graph TD
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
 | `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
-| `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장: 현행 방식). 입력 순서를 보존해 저장·반환하며, 썸네일 자동 연결의 "첫 번째 장르"([§4-3-9](#4-3-api-계약))는 이 순서의 0번 원소로 확정합니다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
+| `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장: 현행 방식). 입력 순서를 보존해 저장하고 반환합니다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
 | `storySettings` | 4필드 모두 필수 | 단일 마크다운 문자열: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 프론트엔드가 섹션별 입력을 조합 |
 | `startSettings` | 최소 1개(상한 없음) | 시작 설정 배열(복수화). 각 항목 `{name, prologue, startSituation, suggestedInputs, endings}`: `name`(100자)·`prologue`·`startSituation` 필수, `suggestedInputs`는 정확히 3개(각 NotBlank), `endings`는 이 시작 설정의 엔딩 0~10개. 채팅 시작 시 선택은 `POST /chats`의 `startSettingId`([§4-3-3](#4-3-api-계약)). 빈 배열은 400 |
 | ↳ `startSettings[].endings` | 시작 설정당 0~10개 | 엔딩 `{name, requirement{minTurns, achievementCondition}, epilogue}`: 타입 없이 이름으로 식별(이름은 시작 설정 내 유니크, 중복 400). `name` 100자, `minTurns` ≥ 0, `achievementCondition`·`epilogue` NotBlank. 도달 판정 계약은 [§4-3-10](#4-3-api-계약) |
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`(스토리 범위): `name` 100자, `description`·`keySentence` NotBlank, 이름은 스토리 내 유니크. 채팅 런타임 의미는 [§4-3-10](#4-3-api-계약) |
 | `visibility` | 선택, 기본 `PRIVATE` | 공개 범위(`PUBLIC` · `PRIVATE`). 공개·비공개 모두 검수하며 승인 후 라이브에 반영합니다. 게스트는 값과 무관하게 등록 401입니다 |
-| `thumbnailObjectKey` | 선택, **회원만** | 등록 전에 올린 표지의 객체 키(아래 draft presign 응답의 `objectKey`). 제출 검증과 게시물 검수를 통과하면 `stories.thumbnail_image_url`에 서빙 URL로 굳히며, 노출은 생성 표지와 같은 폴백 규칙을 탑니다([§4-3-9](#4-3-api-계약)). 프리셋 자동 연결(`thumbnail_image_key`)도 함께 저장해 표지를 지우면 폴백이 남습니다 |
+| `thumbnailObjectKey` | 선택, **회원만** | 등록 전에 올린 표지의 객체 키(아래 draft presign 응답의 `objectKey`). 제출 검증과 게시물 검수를 통과하면 `stories.thumbnail_image_url`에 서빙 URL로 굳히며, 노출은 생성 표지와 같은 폴백 규칙을 탑니다([§4-3-9](#4-3-api-계약)). `thumbnail_image_key`는 저장하지 않으며 표지를 지우면 표지는 null입니다 |
 | `characters` | 최대 6명, 선택 | 인물 `{name, description, images[]}`(`GeneralCharacterInput`, 일반 제작 등록·PATCH 공용): `name`은 100자이며 스토리 내 유니크(중복 400). `description`은 선택 필드(string·null)인 인물 소개입니다. 일반 제작 등록에서는 생략·null·빈 문자열·공백만인 값을 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장하며, 제거 후 공백 포함 1~80자여야 합니다. 입력에 CR·LF·탭이 있거나 길이 제한을 어기면 400입니다. PATCH의 유지·삭제 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. `images[]`는 인물당 최대 10장이고 각 항목은 `{objectKey, imageName}`입니다. `imageName` 형식(`{인물이름}_{접미}`)과 인물당 상한은 등록 후 추가 경로와 같은 규칙입니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 이미지 유무와 관계없이 회원만 제출할 수 있습니다. 외형 필드는 받지 않습니다: 컴파일 산출물이며 일반 제작의 인물 묘사는 `storySettings.characterSetting`이 담습니다. 상한 6명은 간편 제작(주인공 1 + 주변 인물 5)과 같은 값입니다. 각 항목의 `id`는 수정에서만 쓰는 매칭 키라 제작 요청에 실으면 400입니다 |
 
 - 응답은 202 `{submissionId, status: "PENDING"}`입니다. 기존 201 완성본 응답을 대체하며 접수 시점에는 스토리 ID가 없습니다. 승인 후 생성되는 스토리의 기본 메타·스토리 설정·시작 설정과 채팅 런타임 계약은 기존과 같습니다.
@@ -1470,7 +1470,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 | `POST /stories/{storyId}/images/presign` | `{ "kind": "COVER" \| "CHARACTER", "contentType": "image/jpeg" \| "image/png" \| "image/webp", "contentLength": number(1~5,242,880) }` | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
 | `POST /stories/images/presign` | 위와 같음(스토리 없이 발급: 등록 전 업로드) | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
 | `PATCH /stories/{storyId}` | `{ "thumbnailObjectKey": string }` 및 인물 이미지 본문 | 202 `{submissionId, status}`. |
-| `DELETE /stories/{storyId}/thumbnail` | 없음 | 204: 업로드·생성 표지 URL을 지우고 상태를 `APPROVED`로 되돌려 프리셋 폴백으로 내림. 없어도 204 |
+| `DELETE /stories/{storyId}/thumbnail` | 없음 | 204: `thumbnail_image_url`과 `thumbnail_image_key`를 모두 지우고 상태를 `APPROVED`로 되돌립니다. 결과 표지는 null이며 없어도 204입니다. 검수 중에는 409입니다 |
 | `POST /stories/{storyId}/characters/{characterId}/images` | 폐지. 등록·PATCH 본문으로 대체 | 검수 우회 경로로 남기지 않음 |
 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 없음 | 204: 없어도 204 |
 
@@ -1486,7 +1486,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
   - V76의 이미지별 `moderation_status`와 표지 검수 상태는 이번 제출 흐름의 상태 머신으로 사용하지 않으며 `APPROVED`로 유지합니다. 기존 이미지도 승인된 라이브로 간주하고 백필하지 않습니다.
   - 등록·PATCH의 텍스트와 이미지를 게시물 전체로 검수하고 승인 후에만 라이브 이미지 참조를 저장합니다. 반려·실패 입력은 제출본에 보존합니다.
   - 기존의 자동 검수 도입 시 이미지 기본값을 `PENDING`으로 바꾸는 계획은 [비동기 검수 제출](#스토리-검수-제출-흐름)로 대체합니다. 운영 릴리스는 서버·웹·앱이 함께 진행합니다.
-- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 사용합니다. 업로드 이미지가 생성 표지를 대체하며, 삭제하면 프리셋 표지를 사용합니다. 인물 이미지는 `story_character_images`(V76)에 저장합니다([§4-4](#4-4-데이터-모델)). V76은 기존 `story_characters.image_url`의 이미지를 `name || '_기본'` 행으로 옮깁니다. 사용하지 않는 옛 컬럼은 읽는 코드가 사라진 다음 릴리스에서 제거합니다([배포 Design](../design/4-deployment.md)의 두 단계 마이그레이션 규칙).
+- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 사용합니다. 업로드 이미지가 생성 표지를 대체하며, 삭제하면 표지 URL과 프리셋 키를 모두 지워 표지는 null입니다. 인물 이미지는 `story_character_images`(V76)에 저장합니다([§4-4](#4-4-데이터-모델)). V76은 기존 `story_characters.image_url`의 이미지를 `name || '_기본'` 행으로 옮깁니다. 사용하지 않는 옛 컬럼은 읽는 코드가 사라진 다음 릴리스에서 제거합니다([배포 Design](../design/4-deployment.md)의 두 단계 마이그레이션 규칙).
 - **인프라(KNK-1200, `manyak-terraform`).** 서버 역할의 S3 쓰기 범위에 `thumbnails/uploaded/*`·`characters/uploaded/*`(Put·Delete·Head)를 더하고, assets 버킷에 CORS(`PUT`·`HEAD`, 웹 origin)를 신설합니다. apply 전에는 presign 발급은 되지만 PUT이 403입니다. 안드로이드는 CORS와 무관합니다.
 
 [결정 근거 BE-014](../adr/2-backend-server-adr.md#be-014)
@@ -1496,7 +1496,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 
 ### 4-3-9. 채팅 확장: AI 응답 재생성 · 인물 이미지 · 배경 이미지
 
-인물 이미지와 표지는 컴파일 결과를 저장하고 프리셋 표지는 폴백으로 유지합니다. 채팅 인물 이미지는 화자 라벨 감지와 URL 저장 마커를 사용합니다. 배경 마커는 별도 계약입니다. 현재 구현 범위는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)에서 확인합니다.
+인물 이미지와 표지는 컴파일 결과를 저장합니다. 새 스토리에는 프리셋 표지를 연결하지 않으며, 기존 프리셋 키는 노출 폴백으로 유지합니다. 채팅 인물 이미지는 화자 라벨 감지와 URL 저장 마커를 사용합니다. 배경 마커는 별도 계약입니다. 현재 구현 범위는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)에서 확인합니다.
 
 [결정 근거 BE-015](../adr/2-backend-server-adr.md#be-015)
 
@@ -1520,22 +1520,23 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 
 [결정 근거 BE-017](../adr/2-backend-server-adr.md#be-017)
 
-#### 썸네일 자동 연결 규칙
+#### 썸네일 저장과 노출 규칙
 
-스토리의 대표 이미지(표지)는 팀 이미지(카탈로그의 `THUMBNAIL` 타입: 아래 자산 카탈로그) 중에서 서버가 자동 연결합니다. 프리셋 직접 선택은 제공하지 않으며 사용자 표지 업로드는 [스토리 이미지 업로드](#스토리-이미지-업로드)를 따릅니다.
+스토리의 대표 이미지(표지)는 생성하거나 업로드한 이미지를 사용합니다. 간편 제작과 일반 제작 모두 등록 시 팀 프리셋을 자동 연결하지 않으며 `stories.thumbnail_image_key`는 null입니다. 프리셋 직접 선택은 제공하지 않으며 사용자 표지 업로드는 [스토리 이미지 업로드](#스토리-이미지-업로드)를 따릅니다.
 
-- **자동 연결**: 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그가 이미지의 장르 태그 목록(`genres[]`: 복수 가능, 값은 장르 마스터와 정확 일치라 매칭이 문자열 동등 비교)에 포함되는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL. 확정값은 `stories.thumbnail_image_key`에 저장하고 응답 `thumbnailUrl`은 백엔드가 조합합니다([§4-4](#4-4-데이터-모델)).
-- 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다.
-- 기존 스토리(규칙 도입 전 생성분)는 백필하지 않고 NULL을 유지합니다. 프론트엔드는 NULL이면 현행 placeholder를 표시합니다.
-- **와이어 필드**: 상세 응답의 `coverImageUrl`은 `thumbnailUrl`(string·null, 원본 서빙 URL)로 개명 완료, 자동 연결 소스(이 절)도 구현 완료(V45·46)라 등록 스토리는 값이 채워집니다(후보 없음·규칙 도입 전 스토리만 null). 목록(`StorySummaryResponse`)과 채팅 카드(`ChatSummaryResponse`)에는 축소 변형 `thumbnailUrlSm`을 싣습니다([§4-3-1](#4-3-api-계약)·[§4-3-3](#4-3-api-계약)).
+- **표지 없는 스토리**: 표지를 지정하지 않으면 표지는 null입니다. 프론트엔드는 라이트 모드와 다크 모드에 맞는 기본 이미지를 표시합니다.
+- **기존 프리셋 키**: 이미 등록된 스토리의 `thumbnail_image_key`는 그대로 두며 마이그레이션과 백필은 하지 않습니다. 기존 키의 표지는 계속 노출합니다. `image_presets`의 `THUMBNAIL` 행과 `image_key` FK도 유지합니다. 장르를 수정해도 프리셋을 연결하거나 재연결하지 않습니다.
+- **와이어 필드**: 상세 응답은 원본 `thumbnailUrl`, 목록(`StorySummaryResponse`)과 채팅 카드(`ChatSummaryResponse`)는 `thumbnailUrlSm`을 사용합니다. 필드 이름과 타입(string 또는 null)은 유지하며 표지가 없으면 두 필드 모두 null입니다([§4-3-1](#4-3-api-계약), [§4-3-3](#4-3-api-계약)).
 - **반응형 변형(`_sm`)**: 썸네일 단일 원본이 채팅 목록(46px)부터 상세 히어로까지 쓰이면 "가벼운 목록"과 "선명한 상세"를 동시에 잡을 수 없어, 상세=원본(`thumbnails/{imageKey}.png`)·목록·채팅 카드=축소 변형(`thumbnails/{imageKey}_sm.png`)으로 나눕니다. 변형은 썸네일에만 있고(배경·캐릭터는 채팅 중 한 장씩 로드라 단일 원본 유지), `_sm`은 DB에 저장하지 않고 URL 조합 시 접미사로 파생합니다(`imageKey` 불변). `_sm` 객체의 생성·업로드는 인프라 소유(`manyak-terraform`)이며, 응답에 두 URL을 모두 실어 프론트엔드의 URL 문자열 조작을 금지합니다(URL은 백엔드 소유: [`4-deployment.md §4-4`](../design/4-deployment.md)).
-- **AI 생성 표지로의 전환.** 간편 제작(컴파일 경로)은 AI가 만든 표지를 우선합니다. 컴파일 응답의 `thumbnail_image`(768×1024 WebP base64: [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md))를 백엔드가 디코딩해 `thumbnails/generated/{storyPublicId}/{이름}_{uuid8}.webp`로 S3에 올리고, 그 절대 URL을 `stories.thumbnail_image_url`(V68 신설)에 저장합니다. 위 프리셋 자동 연결은 **생성 성공이어도 계속 돌아가** `thumbnail_image_key`를 함께 채웁니다.
-- **2단 폴백**: 노출은 `thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 그 값, 아니면 프리셋 키로 조합한 URL입니다. 판정은 백엔드의 URL 조합 지점 한 곳이 소유하며 상세·목록·채팅 카드가 모두 이를 통과합니다. 생성·업로드 표지가 없는 경우(구버전 AI 응답, 생성 실패 4종, 표지 없는 일반 제작, 규칙 도입 전 스토리)는 전부 프리셋 경로에 그대로 남습니다. 간편 제작의 표지 생성 실패는 스토리 생성을 막지 않습니다. 일반 제작의 제출 이미지 검증 실패는 400, 검수 실행 실패는 FAILED이며 승인 전에 스토리를 생성하지 않습니다.
-- **왜 컬럼을 새로 두는가**: `stories.thumbnail_image_key`에는 `image_presets.image_key` FK가 걸려 있어 카탈로그 행이 없는 생성 자산을 가리킬 수 없습니다. 생성 자산은 절대 URL을 저장하며 인물은 `story_character_images.image_url`을 사용합니다. 생성 표지의 서빙 URL은 업로드 시점에 확정해 저장하고, 프리셋처럼 조회 때 조합하지 않습니다.
+- **AI 생성 표지.** 간편 제작(컴파일 경로)은 AI가 만든 표지를 우선합니다. 컴파일 응답의 `thumbnail_image`(768×1024 WebP base64: [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md))를 백엔드가 디코딩해 `thumbnails/generated/{storyPublicId}/{이름}_{uuid8}.webp`로 S3에 올리고, 그 절대 URL을 `stories.thumbnail_image_url`(V68 신설)에 저장합니다. 생성 성공 여부와 관계없이 `thumbnail_image_key`는 null입니다. 생성이 실패하거나 AI 응답에 표지가 없으면 프리셋으로 대체하지 않고 표지는 null입니다.
+- **2단 폴백**: 노출은 `thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 그 값, 아니면 프리셋 키로 조합한 URL입니다. 판정은 백엔드의 URL 조합 지점 한 곳이 소유하며 상세·목록·채팅 카드가 모두 이를 통과합니다. 프리셋 키도 없으면 null입니다. 업로드 표지가 검수 대기나 반려 상태인 경우도 같은 규칙을 적용하므로 기존 프리셋 키가 있으면 해당 표지를, 키가 없는 새 스토리는 null을 반환합니다. 간편 제작의 표지 생성 실패는 스토리 생성을 막지 않습니다. 일반 제작의 제출 이미지 검증 실패는 400, 검수 실행 실패는 FAILED이며 승인 전에 스토리를 생성하지 않습니다.
+- **표지 URL과 프리셋 키**: `stories.thumbnail_image_key`에는 `image_presets.image_key` FK가 걸려 있어 카탈로그 행이 없는 생성 자산을 가리킬 수 없습니다. 생성 자산은 절대 URL을 저장하며 인물은 `story_character_images.image_url`을 사용합니다. 생성 표지의 서빙 URL은 업로드 시점에 확정해 저장하고, 프리셋처럼 조회 때 조합하지 않습니다.
 - **생성 표지에는 `_sm` 변형이 없습니다.** 목록·채팅 카드도 원본 URL을 받습니다(카드 무게는 후속 과제: 업로드 시 축소본을 함께 만들거나 CDN 리사이즈를 붙이는 방향). 프리셋 표지의 `_sm` 규칙은 그대로입니다.
-- **저장소는 프리셋과 같은 assets 버킷**이며(같은 CloudFront로 서빙, path 제한 없음) 서버 태스크 역할의 쓰기 허용 범위에 `thumbnails/generated/*`를 추가했습니다(KNK-1072, `manyak-terraform`). 프리셋 자산 키(`thumbnails/{imageKey}.png`)는 서버가 덮어쓰지 못하도록 허용 범위에서 제외합니다. 권한 적용이 서버 배포보다 늦으면 업로드가 403으로 실패하고 프리셋으로 폴백합니다.
+- **저장소는 프리셋과 같은 assets 버킷**이며(같은 CloudFront로 서빙, path 제한 없음) 서버 태스크 역할의 쓰기 허용 범위에 `thumbnails/generated/*`를 추가했습니다(KNK-1072, `manyak-terraform`). 프리셋 자산 키(`thumbnails/{imageKey}.png`)는 서버가 덮어쓰지 못하도록 허용 범위에서 제외합니다. 권한 적용이 서버 배포보다 늦으면 업로드가 403으로 실패하고 새 스토리의 표지는 null입니다.
 - **사용자 업로드 표지.** 소유자가 올린 표지도 같은 `thumbnail_image_url` 컬럼에 들어가 생성 표지와 같은 폴백·노출 규칙을 탑니다. 객체 키는 `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}`이고 `_sm` 변형은 없습니다([§4-3-8](#4-3-api-계약) 스토리 이미지 업로드).
 - **채팅 카드 표지**: 현재 메타데이터를 읽을 권한이 있으면 현재 표지, 아니면 마지막 공개 스냅샷의 생성 URL·프리셋 키를 사용합니다. 채팅별 제목·프리셋 키 스냅샷 컬럼은 V71에서 제거했습니다. 생성 URL을 보존하지 않는다는 예전 한계는 현재 구조에 적용하지 않습니다([공개 스냅샷](#공개-스냅샷과-과거-기록-복원)).
+
+[결정 근거 BE-052](../adr/2-backend-server-adr.md#be-052)
 
 #### 이미지 자산 카탈로그와 저장소
 
@@ -1543,7 +1544,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 
 | 타입 | 용도 | 비율 | 의미 태그 축(원본 파일명 유래: 등재는 매니페스트) |
 | --- | --- | --- | --- |
-| `THUMBNAIL` | 스토리 카드 표지(자동 연결: 위 규칙) | 세로 3:4 | 장르(복수 가능)·분위기·장소·소품 |
+| `THUMBNAIL` | 기존 스토리의 프리셋 표지(새 스토리에는 연결하지 않음) | 세로 3:4 | 장르(복수 가능)·분위기·장소·소품 |
 | `BACKGROUND` | 채팅 장면 배경(매 턴 AI 선택) | 가로 4:3 | 장르·분위기·장소·소품 |
 | `CHARACTER` | 채팅 등장 인물(NPC) 초상(컴파일 시 AI가 생성: KNK-414) | 가로 4:3 | AI가 외형 필드로 직접 생성(카탈로그 아님) |
 
@@ -2298,8 +2299,9 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 
 - 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이전 출력은 버전 이력으로 보존되고 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 이프가 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
 - 이미지 시드: 매니페스트의 `imageKey`가 `[a-z0-9_]{1,64}` 형식·유니크여야 하고, `genres[]` 값이 GENRE 마스터 태그명과 하나라도 불일치하면 시드가 실패해야 합니다(조용한 매칭 0건 금지). 등재된 키의 서빙 URL(`{base}/{prefix}/{imageKey}.png`)이 실제 S3 객체와 일치해야 합니다.
-- 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 상세 응답에 원본 `thumbnailUrl`, 목록·채팅 카드 응답에 축소 변형 `thumbnailUrlSm`(`_sm` 접미사 파생)이 실려야 합니다. 규칙 도입 전 스토리는 두 필드 모두 null이어야 합니다.
-- 생성 표지: 간편 제작으로 만든 스토리는 컴파일이 준 표지가 `stories.thumbnail_image_url`에 저장되고 상세·목록·채팅 카드가 그 URL을 써야 합니다. 표지 생성이 실패하거나 구버전 AI라 필드가 없으면 스토리는 그대로 생성되고 프리셋 표지로 떨어져야 하며, 두 경우 모두 `thumbnail_image_key`는 계속 채워져 있어야 합니다.
+- 썸네일: 간편 제작과 일반 제작 모두 등록 시 `stories.thumbnail_image_key`는 null이어야 합니다. 생성하거나 업로드한 표지 없이 등록하면 `thumbnailUrl`과 `thumbnailUrlSm`은 모두 null이어야 합니다. 기존 프리셋 키가 있는 스토리는 승인된 표지 URL이 없을 때 원본 URL과 `_sm` 축소 URL을 계속 반환해야 합니다.
+- 생성 표지: 간편 제작으로 만든 스토리는 컴파일이 준 표지가 `stories.thumbnail_image_url`에 저장되고 상세, 목록과 채팅 카드가 그 URL을 써야 합니다. 표지 생성이나 업로드가 실패하거나 AI 응답에 표지가 없으면 스토리는 그대로 생성되고 두 표지 필드는 null이어야 합니다. 생성 성공 여부와 관계없이 `thumbnail_image_key`는 null이어야 합니다.
+- 표지 삭제와 검수: `DELETE /stories/{storyId}/thumbnail`은 표지 URL과 기존 프리셋 키를 모두 지워 결과 표지가 null이어야 하며, 반복 삭제도 204이고 검수 중에는 409여야 합니다. 업로드 표지가 검수 대기나 반려 상태이면 기존 프리셋 키가 있을 때만 그 표지를 노출하고, 키가 없는 새 스토리는 null이어야 합니다.
 - 채팅 인물 이미지: 이미지 보유 인물의 모든 `인물명:` 대사 바로 앞에서 `character_image`가 `{name, imageUrl}`로 나와야 합니다. 여러 인물과 같은 인물의 재발화를 모두 반복해야 하며 유효 태그는 `token`에 보이지 않아야 합니다. `completed.aiOutput`에는 같은 위치에 `[[URL]]` 마커가 대사 줄 위 별도 줄(뒤에 빈 줄)로 있어야 하고, 완료 이벤트에 이미지 목록이 실리지 않아야 합니다. 상세·공유 조회는 저장된 `aiOutput`을 마커째 그대로 반환해야 합니다. 재생성 실패는 기존 본문과 이미지를 유지해야 합니다.
 - 채팅 배경 이미지: `completed`·상세 조회의 `images[]`에는 카탈로그에 있는 키가 타입별 최대 1장씩만 실려야 합니다(백엔드 이중 강제: 본문 마커는 무변경). `images[]`에 없는 마커는 프론트엔드가 마커 텍스트째 숨겨야 하며 사용자에게 `[[image:…]]` 원문이 보이면 안 됩니다. 상세 조회의 `images[]` 재구성 결과가 `completed` 시점과 동일해야 합니다: 특히 턴 확정 이후 등록된 프리셋 키의 마커는 재구성에서도 무효로 남아야 합니다(삭제 금지 + 등록 시각 컷오프). 비활성(`deactivated_at` 기록)으로 내린 이미지는 다음 턴부터 후보 전달·`images[]`에서 빠져야 하고, 비활성 **이전에** 확정된 지난 턴 재구성에는 계속 남아야 하며, 비활성 **중에** 확정된 턴의 마커는 재구성에서도 무효여야 합니다(`completed` 대칭: 비활성 적용 범위). 후보가 없는 스토리의 턴에는 이미지가 없어야 합니다.
 - 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`의 `reachedEnding`(엔딩 이름·null)이 일치해야 하고, 채팅 상세 턴 항목의 `reachedEnding`에도 같은 이름이 노출돼야 하며, 도달 후에도 턴 진행이 계속 가능해야 합니다.
