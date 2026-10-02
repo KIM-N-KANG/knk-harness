@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.41 |
+| 버전 | v0.42 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-09-15 |
+| 수정일 | 2026-09-27 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
@@ -22,6 +22,8 @@
 - [4-1. 문서 목적·범위와 관련 문서](#4-1-문서-목적범위와-관련-문서)
 - [4-2. 기술 환경과 아키텍처](#4-2-기술-환경과-아키텍처)
 - [4-3. API 계약](#4-3-api-계약)
+  - [스토리 검수 제출 흐름](#스토리-검수-제출-흐름)
+  - [스토리 검수 완료 푸시](#스토리-검수-완료-푸시)
 - [4-4. 데이터 모델](#4-4-데이터-모델)
 - [4-5. 인증과 권한](#4-5-인증과-권한)
 - [4-6. 오류와 예외 처리](#4-6-오류와-예외-처리)
@@ -77,7 +79,7 @@
 
 ### 공통 규칙
 
-- 모든 비즈니스 API는 `/api/v1` prefix를 사용합니다.
+- 공개 비즈니스 API는 `/api/v1` prefix를 사용합니다. 계획 단계의 [알림 서비스 내부 API](#알림-서비스-계약)는 `/internal`로 시작하는 전체 경로를 표기하며 `/api/v1`을 붙이지 않습니다.
 - 요청·응답 JSON 필드는 camelCase입니다([`0-glossary.md §0-4`](0-glossary.md)).
 - 시각 필드(`createdAt`, `updatedAt`)는 ISO 8601 UTC 문자열입니다.
 - 문자 수 제약("N자")은 UTF-16 code unit(Java `String.length`, Bean Validation `@Size` 기준)으로 판정합니다. 이모지·서로게이트 페어는 2로 셉니다.
@@ -99,22 +101,29 @@
 
 ### 엔드포인트 카탈로그
 
+`내부` 행은 알림 서비스 분리 계획이며 구현 전입니다. 공개 ALB에서 라우팅하지 않습니다. 검수 제출 흐름의 클라이언트 응답 변경은 서버·웹·앱을 함께 배포합니다.
+
 | 도메인 | 메서드·경로 | 설명 | 성공 | 주요 실패 | 인증 |
 | --- | --- | --- | --- | --- | --- |
-| 스토리 | `GET /stories` | 공개 스토리 목록(커서 페이지네이션, `?sort`·`?limit`·`?cursor`) | 200 | 400 | 불필요 |
-| 스토리 | `GET /stories/originals` | 마냑 오리지널(공식 계정 소유 공개 스토리) 카드 목록, 등록순. 공식 계정 미설정 환경은 빈 배열 | 200 | 없음 | 불필요 |
+| 스토리 | `GET /stories` | 공개 스토리 목록(커서 페이지네이션, `?filter`·`?sort`·`?limit`·`?cursor`) | 200 | 400 | 불필요 |
+| 스토리 | `GET /stories/originals` | 마냑 오리지널(공식 계정 소유 공개 스토리) 카드 목록, 등록순. 공식 계정 미설정 환경은 빈 배열. **폐기 예정**: `GET /stories?filter=original`이 대체하며 클라이언트 전환까지만 유지 | 200 | 없음 | 불필요 |
 | 스토리 | `GET /stories/search` | 공개 스토리 검색(질의 `q`, OpenSearch nori) | 200 | 400·503 | 불필요 |
 | 스토리 | `POST /stories/batch` | 공개 ID 목록으로 스토리 카드 조회 | 200 | 400 | 선택 |
 | 스토리 | `GET /stories/{storyId}` | 스토리 상세 조회 | 200 | 404 | 선택 |
 | 스토리 | `DELETE /stories/{storyId}` | 스토리 소프트 삭제 | 204 | 403·404 | 선택 |
 | 스토리 | `GET /stories/lorebooks` | 로어북 카탈로그 조회(`?genre` 필터) | 200 | 없음 | 불필요 |
 | 스토리 | `GET /stories/{storyId}/edit` | 스토리 수정 폼 데이터 조회 | 200 | 403·404 | 선택 |
-| 스토리 | `PATCH /stories/{storyId}` | 스토리 수정 | 200 | 400·403·404 | 선택 |
+| 스토리 | `PATCH /stories/{storyId}` | 수정 검수 제출. `visibility` 단독은 즉시 반영. | 202 제출본 / 200 공개 범위 단독 | 400·401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/{storyId}/images/presign` | 이미지 업로드용 presigned PUT 발급(표지·인물) | 201 | 400·401·403·404 | 필수 |
-| 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드·생성 표지 제거(프리셋 폴백, 멱등) | 204 | 401·403·404 | 필수 |
-| 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 인물 이미지 연결(업로드 완료 객체 + 이름) | 201 | 400·401·403·404·409 | 필수 |
-| 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) | 204 | 401·403·404 | 필수 |
-| 스토리 | `POST /stories/general` | 일반 제작 등록 | 201 | 400 | 선택 |
+| 스토리 | `POST /stories/images/presign` | 등록 전 이미지 업로드용 presigned PUT 발급(draft 키) | 201 | 400·401·403 | 필수 |
+| 스토리 | `DELETE /stories/{storyId}/thumbnail` | 업로드와 생성 표지 URL, 프리셋 키 제거(결과 null, 멱등). 검수 중 409. | 204 | 401·403·404·409 | 필수 |
+| 스토리 | `POST /stories/{storyId}/characters/{characterId}/images` | 폐지. 등록·PATCH 본문으로 대체. | 해당 없음 | 해당 없음 | 해당 없음 |
+| 스토리 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 인물 이미지 제거(멱등) 검수 중 409. | 204 | 401·403·404·409 | 필수 |
+| 스토리 | `POST /stories/general` | 일반 제작 검수 제출. | 202 | 400·401·403·409 | 필수 |
+| 검수 제출본 | `GET /stories/submissions` | 내 미승인 제출본 목록. | 200 | 400·401 | 필수 |
+| 검수 제출본 | `GET /stories/submissions/{submissionId}` | 소유 제출본 상세. | 200 | 401·404 | 필수 |
+| 검수 제출본 | `PUT /stories/submissions/{submissionId}` | 신규 등록 반려·실패본 재제출. | 202 | 400·401·403·404·409 | 필수 |
+| 검수 제출본 | `DELETE /stories/submissions/{submissionId}` | 미승인 제출본 취소(PENDING 포함). | 204 | 401·403·404·409 | 필수 |
 | 스토리 | `POST /stories/{storyId}/like` | 스토리 좋아요 등록(멱등) | 204 | 401·403·404 | 필수 |
 | 스토리 | `DELETE /stories/{storyId}/like` | 스토리 좋아요 취소(멱등) | 204 | 401·403·404 | 필수 |
 | 스토리 | `POST /stories/{storyId}/reports` | 스토리 신고 등록 | 201 | 400·401·403·404 | 필수 |
@@ -170,6 +179,9 @@
 | 이프 | `GET /users/me/credits/transactions` | 이용내역(원장) 커서 조회 | 200 | 400·401 | 필수 |
 | 이프 | `GET /users/me/invite` | 내 초대 코드·보상 진행 조회 | 200 | 401 | 필수 |
 | 이프 | `POST /users/me/invite/redeem` | 초대 코드 입력·양측 보상 적립 | 200 | 400·401·404·409 | 필수 |
+| 내부 | `GET /internal/users/{publicId}/push-eligibility` | 발송 직전 자격과 토큰 조회 | 200 | 400, 401, 404 | 서비스 간 인증 |
+| 내부 | `DELETE /internal/push-tokens` | 무효 토큰 삭제, 본문 `token` | 204 | 400, 401, 404 | 서비스 간 인증 |
+| 내부 | `GET /internal/push/attendance-candidates` | KST 날짜별 출석 미수령 회원 publicId 페이지(계획, 구현 전) | 200 | 오류 상세 구현 시 확정 | 서비스 간 인증 |
 
 인증 열의 `선택`은 익명을 허용하되 유효한 access 토큰이 오면 `user_id`를 귀속하는 엔드포인트입니다([§4-5](#4-5-인증과-권한)).
 
@@ -181,9 +193,12 @@
 
 | 쿼리 | 기본값 | 규칙 |
 | --- | --- | --- |
-| `sort` | `latest` | `latest`(등록 최신순) · `popular`(좋아요 많은 순). 그 외 값은 400 |
+| `filter` | `all` | `all`(공개 전체) · `original`(마냑 오리지널만). 그 외 값은 400 |
+| `sort` | `latest` | `latest`(등록 최신순) · `likes`(좋아요 많은 순) · `chats`(누적 턴 수 많은 순). 그 외 값은 400 |
 | `limit` | 20 | `[1, 50]`으로 clamp(`coerceIn`): 범위 밖은 400이 아니라 보정. 비수치는 타입 변환 실패로 400 |
 | `cursor` | 없음 | 이전 응답의 `nextCursor`. 형식이 깨졌거나 **정렬 종류가 다르면** 400 |
+
+`filter=original`은 공식 계정(`manyak.official-user-public-id`) 소유 스토리로 좁힙니다. 설정이 비었거나 그 `publicId`의 회원이 없는 환경은 빈 페이지(`items: []`, `nextCursor: null`)입니다. `filter`는 커서에 싣지 않으므로 클라이언트가 `nextCursor`를 넘길 때 같은 `filter`·`sort`를 함께 보냅니다.
 
 응답은 `{items: StorySummaryResponse[], nextCursor: string | null}`입니다. `items`의 카드는 `POST /stories/batch`·`GET /stories/originals`·`GET /users/me/stories`와 **같은 `StorySummaryResponse`**(아래 표)를 재사용합니다: 목록 카드 컴포넌트를 경로마다 다시 만들지 않기 위해서입니다. 마지막 페이지의 `nextCursor`는 null입니다.
 
@@ -202,13 +217,14 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `sort` | 1차 키 | 2차 키 |
 | --- | --- | --- |
 | `latest` | `created_at` DESC | `public_id` DESC |
-| `popular` | 좋아요 수 DESC | `public_id` DESC |
+| `likes` | 좋아요 수 DESC | `public_id` DESC |
+| `chats` | 누적 턴 수 DESC | `public_id` DESC |
 
-- 인기순의 좋아요 수는 컬럼이 아니라 `story_likes` **실시간 집계**입니다(카드·상세의 `likeCount`와 같은 출처). 정렬과 커서 조건 양쪽에서 같은 상관 서브쿼리를 씁니다. **비정규화 컬럼(`stories.like_count`)은 두지 않습니다**: 좋아요 등록·취소 양쪽의 동기화 비용이 목록 하나의 이득보다 크고, 어긋나면 카드 수치와 상세 수치가 달라집니다. 목록이 커져 정렬이 느려지면 그때 비정규화나 인덱스를 검토합니다.
+- `likes`의 좋아요 수와 `chats`의 누적 턴 수는 컬럼이 아니라 **실시간 집계**입니다. 좋아요 수는 `story_likes` 집계(카드·상세의 `likeCount`와 같은 출처), 누적 턴 수는 미삭제 채팅(`story_chats.deleted_at IS NULL`)의 `current_turn` 합(카드의 `turnCount`와 같은 출처)입니다. 둘 다 정렬과 커서 조건 양쪽에서 같은 상관 서브쿼리를 씁니다. **비정규화 컬럼(`stories.like_count`, 스토리별 누적 턴 수)은 두지 않습니다**: 좋아요 등록·취소와 턴 진행마다 치르는 동기화 비용이 목록 하나의 이득보다 크고, 어긋나면 카드 수치와 정렬 순서가 달라집니다. 목록이 커져 정렬이 느려지면 그때 비정규화나 인덱스를 검토합니다.
 - 2차 키는 내부 PK가 아니라 `public_id`입니다: 커서에 순차 PK를 실으면 외부 노출 식별자 정책([§4-4](#4-4-데이터-모델))을 어깁니다. 랜덤 UUID지만 값이 안정적이라 동률 구간(같은 시각, 같은 좋아요 수)의 순서를 결정적으로 만듭니다.
-- **커서 형식**: `"<정렬 접두>:<정렬값>:<public_id>"`를 Base64URL(패딩 없음)로 감쌉니다. 정렬 접두는 `latest`가 `l`, `popular`가 `p`이며 **디코드 시 검증**합니다: 정렬이 다른 커서를 넘기면 400입니다(인기순 커서의 정렬값은 좋아요 수라 최신순에 넣으면 엉뚱한 시각으로 해석됩니다). 정렬값은 `latest`가 `created_at`의 **epoch nanos**, `popular`가 좋아요 수입니다. millis가 아닌 이유는 PostgreSQL `timestamptz`가 마이크로초까지 담기 때문입니다: 밀리초로 자르면 같은 밀리초 안의 뒤쪽 행이 `created_at < 커서`에도 `= 커서`에도 걸리지 않아 페이지 경계에서 사라집니다.
+- **커서 형식**: `"<정렬 접두>:<정렬값>:<public_id>"`를 Base64URL(패딩 없음)로 감쌉니다. 정렬 접두는 `latest`가 `l`, `likes`가 `k`, `chats`가 `c`이며 **디코드 시 검증**합니다: 정렬이 다른 커서를 넘기면 400입니다(좋아요순 커서의 정렬값은 좋아요 수라 최신순에 넣으면 엉뚱한 시각으로 해석됩니다). 정렬값은 `latest`가 `created_at`의 **epoch nanos**, `likes`가 좋아요 수, `chats`가 누적 턴 수입니다. millis가 아닌 이유는 PostgreSQL `timestamptz`가 마이크로초까지 담기 때문입니다: 밀리초로 자르면 같은 밀리초 안의 뒤쪽 행이 `created_at < 커서`에도 `= 커서`에도 걸리지 않아 페이지 경계에서 사라집니다.
 - offset이 아니라 keyset이라 페이지 사이에 새 스토리가 끼어들어도 중복·누락이 없습니다. `limit + 1`건을 읽어 다음 페이지 유무를 판정합니다.
-- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `popular`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다.
+- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `likes`·`chats`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다.
 
 **인증 배선.** `SecurityConfig`에서 **정확 경로** permitAll이며 `OPTIONAL_AUTH_MATCHERS`에도 등록합니다([§4-5](#4-5-인증과-권한) 선택적 인증). 요청자 신원을 쓰지 않지만, 클라이언트가 자동 첨부한 만료·위조 access 헤더가 리소스 서버 필터에 걸려 401이 나면 로그아웃 상태 화면이 통째로 깨지기 때문입니다(`GET /shares/{shareId}`와 같은 이유).
 
@@ -220,6 +236,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | --- | --- | --- |
 | `id` | string | 스토리 공개 식별자(UUID) |
 | `title` | string | 제목 |
+| `isOriginal` | boolean | 오리지널 여부. `filter=original`과 같은 공식 계정(`manyak.official-user-public-id`)의 소유 스토리이면 true입니다. 설정이 비었거나 해당 회원이 없으면 false입니다. null이 아닌 `isOriginal` 필드로 반환하며 목록·배치·내 스토리·오리지널·검색 카드에 같은 판정 규칙을 적용합니다 |
 | `oneLineIntro` | string | 한 줄 소개. 저장값이 NULL이면 빈 문자열 |
 | `genres` | string[] | 장르 태그명 목록: `stories.genre`를 쉼표 분리 후 각 항목 trim·빈 항목 제거 |
 | `author` | object·null | 작성자 `{id, nickname, profileImageUrl}`. 익명 생성 시 `author` 자체가 null. `profileImageUrl`은 이미지 미배정 회원이면 null(클라이언트는 기본 아바타로 처리). (KNK-1016, 2026-08-29): 회원 소유 스토리는 목록·상세 모두 실제 작성자의 `nickname`·`profileImageUrl`을 채웁니다(2026-08-28 팀 결정: 스토리 상세의 공개 소비 전환). 목록은 배치 조회로 채워 N+1을 막습니다. `author.id`는 내부 PK 비노출 원칙([§4-4](#4-4-데이터-모델))에 따라 항상 null입니다 |
@@ -229,12 +246,12 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `thumbnailUrlSm` | string·null | 썸네일 축소 변형(`_sm`) 서빙 URL: 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
 
-**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드에 다음을 더합니다.
+**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드(`isOriginal` 제외)에 다음을 더합니다.
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `description` | string·null | 주요 내용 |
-| `thumbnailUrl` | string·null | (KNK-515·V45) 썸네일 **원본** 서빙 URL(상세 히어로용: 목록·카드는 `thumbnailUrlSm`). 이전 `coverImageUrl`을 개명. 자동 연결([§4-3-9](#4-3-api-계약))이 등록 시 확정한 `stories.thumbnail_image_key`로 백엔드가 조합하며, 연결 소스가 없거나 규칙 도입 전 스토리는 null. 컴파일이 생성한 표지가 있으면 `stories.thumbnail_image_url`(WebP 절대 URL)이 이 값을 대신합니다: 필드 이름·타입은 그대로이고 값의 출처만 늘었습니다 |
+| `thumbnailUrl` | string·null | 썸네일 **원본** 서빙 URL(상세 히어로용: 목록과 카드는 `thumbnailUrlSm`). `stories.thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 해당 URL, 아니면 기존 `stories.thumbnail_image_key`로 조합한 URL을 반환하며 둘 다 없으면 null입니다. 새 스토리는 프리셋 키를 저장하지 않습니다([썸네일 저장과 노출 규칙](#썸네일-저장과-노출-규칙)). 필드 이름과 타입은 유지합니다 |
 | `hashtags` | string[] | 해시태그(placeholder) |
 | `startSettings` | object[] | 시작 설정 목록(복수화: 등록 순서). 각 항목 `{id, name, prologue, startSituation, suggestedInputs[], endings[]}`: `id`는 시작 설정 공개 식별자(UUID: `POST /chats`의 `startSettingId`로 사용), `suggestedInputs`는 이 시작 설정의 추천 입력, `endings`는 `{name, requirement{minTurns, achievementCondition}, epilogue}`(이름 기반·유형 없음, 활성 엔딩만, 레거시 `enabled=false` 제외, [§4-3-8](#4-3-api-계약)·[§4-3-10](#4-3-api-계약)). 시작 설정이 없으면 빈 배열 |
 | `visibility` | enum | `PUBLIC` · `PRIVATE`(기본 PRIVATE) |
@@ -243,10 +260,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `reachedEndings` | string[] | 요청자가 이 스토리에서 도달한 엔딩 **이름** 목록(엔딩은 이름으로 식별). 회원은 사용자+스토리 집계, 게스트는 빈 배열([§4-3-10](#4-3-api-계약)) |
 | `isOwner` | boolean | (KNK-1016·1018, 2026-08-29) 요청 회원이 이 스토리의 소유자인지. 와이어 필드명은 `@JsonProperty("isOwner")`로 고정(springdoc이 `owner`로 문서화하는 문제 차단). 서버가 요청자 `user_id`와 `stories.user_id`를 비교해 판단하며(클라이언트 id 비교 없음: `author.id`가 null이라 클라이언트는 판단 불가), 게스트·미인증은 false. 용도는 상세 헤더 메뉴(수정·삭제 등) 노출 판단 |
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
-| `characters` | object[] | 등장인물 `{name, imageUrl}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). 인물 행이 없는 스토리(컴파일 경로 이전·일반 제작)는 빈 배열입니다 |
+| `characters` | object[] | 등장인물 `{name, imageUrl, description}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). `description`은 string·null인 인물 소개입니다. 소개 도입 이전 스토리·소개 없는 컴파일·소개를 보내지 않고 일반 제작이나 수정으로 추가한 인물은 null입니다. 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
 
 - `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
-- **인물 목록**: 상세의 `characters[]`에는 이름과 이미지만 싣고 공개 식별자와 외형 필드는 제외합니다. 인물별 설명은 저장하지 않습니다. 수정 폼의 `StoryEditCharacterResponse`는 이미지 연결·삭제에 필요한 `id`·`name`·`images[]`를 반환합니다.
+- **인물 목록**: 상세의 `characters[]`에는 이름·이미지·인물 소개를 싣고 공개 식별자와 외형 필드는 제외합니다. 기존 `isReadableBy(userId)` 읽기 게이트를 적용한 뒤 라이브 인물 행에서 조회합니다. 라이브는 검수 승인 뒤에만 바뀝니다. 수정 폼의 `StoryEditCharacterResponse`는 `id`·`name`·`description`(string·null)·`images[]`를 반환합니다. 스토리 소유자는 일반 제작·수정(PATCH) 요청의 선택 필드 `description`으로 인물 소개를 입력할 수 있습니다. 소개 변경도 검수 제출본으로 접수하며 승인 뒤 라이브에 반영합니다. 수정에서 이름만 바꿔도 같은 인물 행의 소개는 유지합니다. 입력·수정 폼 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. 저장은 V90의 `story_characters.description` 컬럼을 재사용하며 추가 마이그레이션은 없습니다.
 
 **`DELETE /stories/{storyId}`**: 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다. 404 판정(형식 오류·순차 정수·부재·이미 삭제: 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69: 채팅 삭제 동일).
 
@@ -684,7 +701,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 - data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
 - **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.
-- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드만 이 키를 싣고 프로모션은 생략합니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
+- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료는 결과와 무관하게 내 제작 스토리 목록(`/studio`)으로 연결하며 상세 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
 - **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다: 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
 - **무효 토큰 정리.** FCM이 `UNREGISTERED`를 돌려주면 그 토큰 행만 지우고 다음 기기로 계속합니다. `INVALID_ARGUMENT`는 지우지 않습니다: 토큰 형식 오류뿐 아니라 **서버가 만든 페이로드 오류**에도 오는 코드라, 삭제 신호로 쓰면 서버 버그 하나가 회원 전체의 토큰을 지웁니다. 정리 자체가 실패해도(DB 오류) 다음 기기 발송은 이어집니다.
@@ -695,6 +712,19 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **수신 동의·야간 제한**은 시나리오 계약(KNK-1129 정책 결정, KNK-1132 동의 API)에서 정합니다. 정보성 알림(스토리 완성·검수 완료)은 동의 없이, 광고성(프로모션·출석 리마인드)은 사전 동의·야간 별도 동의·`(광고)` 표기가 필요합니다(정보통신망법 제50조). 광고성 발송에 FCM 토픽은 쓰지 않습니다: 서버가 수신자 명단을 알아야 동의 증빙이 가능합니다.
 
 
+<a id="실행-주체-전환"></a>
+
+##### 실행 주체 전환
+
+dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`이 발송을 실행합니다. 서버는 발송 요청을 담당하며 prod는 `local`을 유지합니다. prod의 별도 ECS 서비스와 내부 호출 경로는 결정된 목표 구성이며 아직 적용하지 않았습니다. ([BE-047](../adr/2-backend-server-adr.md#be-047), [BE-051](../adr/2-backend-server-adr.md#be-051))
+
+토큰 등록 API, 동의 API, `users`의 동의 컬럼과 `device_push_tokens`, `push_campaigns`, `push_message_templates` 테이블은 서버가 계속 소유합니다. 알림 서비스는 발송 직전에 서버 내부 API로 자격과 토큰을 받으며 회원 데이터와 동의를 복제하지 않습니다. 소비자 멱등 기록 외에는 상태를 최소화합니다.
+
+- **전환 순서.** 동기 HTTP 발송기 검증 → 큐 전환 → 서버 로컬 발송 경로 제거입니다. 전환 중에는 기존 코드를 롤백용으로 보존하고 `manyak.push.mode=local|remote`로 발송 주체를 하나만 켭니다. 기본값은 `local`이며, `remote`는 해당 전환 단계의 원격 경로만 사용합니다. 같은 요청을 로컬과 원격에 동시에 보내지 않습니다.
+- **기존 계약 유지.** 플랫폼별 메시지 구성, 우선순위와 TTL, 수신자 `recipientId`, 무효 토큰 정리, 사용자 요청으로 발송 실패를 전파하지 않는 격리, `manyak.push.send.result{outcome=success|unregistered|failure}` 이름과 사전 등록을 유지합니다. `@Deprecated` 표기만으로 실행을 차단하지 않으며 모드 설정으로 분기합니다.
+- **실패 처리 경계.** 위의 명시적 재시도 없음은 현행 로컬 발송 경로입니다. 큐 전환 후 소비자와 어댑터 사이에서는 [알림 서비스 계약](#알림-서비스-계약)의 결과와 재전달 규칙을 적용합니다. 소비자 실패가 원래 스토리 제작 응답을 실패로 바꾸지는 않습니다.
+- **자격 재확인.** 로컬, 동기 원격, 큐 소비의 모든 단계에서 회원 상태와 종류별 수신 동의를 발송 직전에 다시 확인합니다. 요청 생성 시점의 동의나 토큰 스냅샷으로 대체하지 않습니다.
+
 <a id="푸시-수신-동의--phase-3--구현정책-knk-1129-확정-구현-knk-1132-v73"></a>
 
 #### 푸시 수신 동의
@@ -703,7 +733,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | 종류 | 대상 | 기본값 | 요건 |
 | --- | --- | --- | --- |
-| 서비스 알림 | 스토리 완성, 검수 완료 | **켜짐**: 사용자가 끌 수 있음(옵트아웃) | 사용자가 유발한 작업의 결과 통지라 법적 사전 동의가 필요 없습니다. 끄는 토글은 "종류별 수신 여부 설정"(KNK-1113 완료 조건)을 위해 둡니다 |
+| 서비스 알림 | 스토리 완성, 검수 완료 `STORY_MODERATION_COMPLETED`(`SERVICE`, 통과·반려·실패) | **켜짐**: 사용자가 끌 수 있음(옵트아웃) | 사용자가 유발한 작업의 결과 통지라 법적 사전 동의가 필요 없습니다. 끄는 토글은 "종류별 수신 여부 설정"(KNK-1113 완료 조건)을 위해 둡니다 |
 | 광고 알림 | 프로모션, **출석 리마인드** | **꺼짐**: 옵트인 | 사전 동의 필수. 제목 앞에 `(광고)` 표기. 출석 리마인드는 보상 수령 유도라 재이용 유도(광고성)로 분류합니다 |
 | 야간 광고 허용 | 광고 알림 중 **21:00~08:00 KST** 발송 | **꺼짐**: 별도 옵트인 | 야간 별도 동의 필수. 예외 없음. 서비스 알림에는 야간 제한을 두지 않습니다(사용자 본인이 유발한 작업) |
 
@@ -733,7 +763,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 - **버전별 이력.** 개정 후 재동의의 증빙은 회원이 어느 버전에 언제 동의했는지입니다. 광고성 정보 수신 동의([푸시 수신 동의](#푸시-수신-동의))처럼 현재 상태 하나만 저장하지 않고, 문서·버전별 행을 **추가 전용(append-only)**으로 쌓습니다. 재동의는 새 행으로 기록하고 과거 행은 지우지 않습니다.
 - **저장.** `user_consents`는 `user_id`(FK `users`) · `doc_type`(`TERMS` · `PRIVACY` · `AGE14`) · `version` · `agreed_at`을 저장하며, PK는 `(user_id, doc_type, version)`입니다. 같은 버전을 다시 보내도 새 행을 만들거나 **기존 `agreed_at`을 갱신하지 않습니다**. 최초 동의 시각을 증빙으로 보존하기 위해 PK 충돌을 무시하는 조건부 삽입을 사용하고, 예외를 잡아 넘기는 방식에 의존하지 않습니다.
-- **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.2`, 2026-09-01 시행) · `manyak.legal.privacy-version`(현재 `v1.4`, 2026-09-18 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
+- **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.4`, 2026-09-20 시행) · `manyak.legal.privacy-version`(현재 `v1.7`, 2026-09-25 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
 - **탈퇴 후 보존.** 회원 탈퇴는 soft delete이며 동의 행을 지우지 않습니다. 계약 종료 뒤에도 동의 증빙을 보존하기 위해 FK에 `ON DELETE` 연쇄를 두지 않습니다. 재가입하면 새 `user_id`에 동의를 다시 받으며, 이전 계정의 동의를 승계하지 않습니다.
 - **서버 게이트 없음.** 미동의 회원의 다른 API를 막지 않고, 클라이언트가 `needsConsent`에 따라 이용을 제한합니다. 서버 게이트가 필요해지면 유예기간과 대상 API를 정해 별도로 추가합니다.
 - **로그인 요청과 분리.** 로그인 요청에는 동의를 싣지 않습니다. 로그인 뒤 동의 상태 조회와 기록이라는 한 경로를 사용합니다.
@@ -743,8 +773,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
-| `GET /users/me/consents` | 없음 | 200 `{ "terms": { "requiredVersion": "v1.2", "needsConsent": boolean }, "privacy": { "requiredVersion": "v1.4", "needsConsent": boolean }, "age14": { "requiredVersion": "1", "needsConsent": boolean } }` |
-| `POST /users/me/consents` | `{ "terms": "v1.2", "privacy": "v1.4", "age14": "1" }` 각 필드 선택 | 200 갱신 후 상태(GET과 같은 스키마) |
+| `GET /users/me/consents` | 없음 | 200 `{ "terms": { "requiredVersion": "v1.4", "needsConsent": boolean }, "privacy": { "requiredVersion": "v1.7", "needsConsent": boolean }, "age14": { "requiredVersion": "1", "needsConsent": boolean } }` |
+| `POST /users/me/consents` | `{ "terms": "v1.4", "privacy": "v1.7", "age14": "1" }` 각 필드 선택 | 200 갱신 후 상태(GET과 같은 스키마) |
 
 - **`needsConsent`는 서버가 계산합니다.** 해당 `doc_type`과 현행 `requiredVersion`에 해당하는 행이 없으면 `true`입니다. 클라이언트는 버전을 비교하지 않습니다. 설정을 롤백하거나 과거 버전을 다시 수용하면 "최신 동의 버전"과 "현행 버전 동의 여부"가 달라질 수 있습니다.
 - **보낸 항목만 기록합니다.** 필드 누락은 미제출이며 철회가 아닙니다. 세 필드가 모두 없으면 400을 반환합니다. 값이 현행 `requiredVersion`과 다르면 400과 `CONSENT_VERSION_MISMATCH`를 반환합니다([§4-6](#4-6-오류와-예외-처리)). 서버 값으로 덮어쓰면 사용자가 보지 않은 개정본에 동의한 기록이 생기고, 임의 문자열을 허용하면 존재하지 않는 문서에 동의한 행이 생깁니다. 클라이언트는 이 오류를 받으면 해당 문서를 다시 표시하며, 값을 바꿔 자동으로 재전송하지 않습니다. 여러 항목을 함께 보내면 모든 값을 검증한 뒤 한 트랜잭션에 저장합니다.
@@ -774,6 +804,8 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 스토리 완성 푸시
 
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
 회원이 간편 제작으로 스토리를 완성하면 제작자 기기에 서비스 알림을 보냅니다. 앱을 백그라운드로 보낸 채 기다리는 사용자를 위한 알림이며, 진실의 기준은 여전히 복귀 조회([§4-3-8](#4-3-api-계약) 백그라운드 복구)입니다.
 
 - **발행 지점.** 스토리 생성 요청 기록기(`StoryCreationRequestRecorder`)가 요청 행을 `COMPLETED`로 마킹하는 **그 트랜잭션 안**에서 이벤트를 발행하고, 리스너가 `AFTER_COMMIT`에서 받습니다. 스토리 저장 트랜잭션이 아니라 마킹 트랜잭션인 이유: 둘은 별개(`REQUIRES_NEW`)라 "저장은 됐지만 마킹이 실패해 `PENDING`으로 남은" 창에서 완료 알림이 먼저 나가면 안 됩니다. 발행 값(스토리 `publicId`·제목)은 방금 만든 응답 객체에서 꺼내며 저장된 `result_json`을 다시 읽지 않습니다.
@@ -783,9 +815,30 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **비동기·격리.** 리스너는 `@Async`입니다([§4-3-4](#4-3-api-계약) 피드백 알림과 동일). `AFTER_COMMIT` 콜백은 원 트랜잭션의 커넥션이 반납되기 **전에** 돌아, 거기서 DB를 읽으면 요청 하나가 커넥션 두 개를 동시에 쥡니다: 풀이 포화되면 두 번째 획득이 타임아웃으로 실패하고 그 실패는 `try` 바깥이라 **이미 커밋된 생성의 응답이 500이 됩니다**. 스레드를 분리해 원 커넥션이 먼저 반납되게 합니다. 발송 실패는 로그만 남기고 생성 응답에 영향을 주지 않습니다.
 - **검증 한계.** 통합 테스트(7건)는 발송 모듈 호출까지를 고정합니다. 실기기 도달은 Firebase에 Android 앱이 등록되고 기기가 토큰을 등록한 뒤 dev에서 확인합니다.
 
+#### 스토리 검수 완료 푸시
+
+검수 완료 푸시(KNK-1118)는 제출본이 APPROVED·REJECTED·FAILED로 종료될 때 발행합니다. 정보성 서비스 알림이며 사전 동의는 요구하지 않고 기존 `servicePush` 옵트아웃 설정을 따릅니다. 게스트는 푸시 토큰을 등록할 수 없어 검수 제출 대상에서 제외합니다.
+
+- `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`, `title`, `body`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
+- `title`·`body`는 아래 결과별 문구를 사용합니다. `{스토리 제목}`은 새 등록과 수정 제출 모두 검수 대상 제출본의 제목입니다. 웹은 data의 `title`·`body`로 표시하고 Android는 기존 data-only 규칙을 유지합니다.
+- `deepLink`는 결과와 `storyId` 유무에 관계없이 `{manyak.push.web-base-url}/studio`로 통일합니다. 이동 대상은 내 제작 스토리 목록([FE-SCREEN-013](3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록))입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 `/studio`를 붙입니다. 스토리 수정 화면(`/stories/{storyId}/edit`)과 `/studio/story/general?submissionId=` 링크는 사용하지 않습니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
+- 반려 사유는 잠금 화면 노출과 길이를 고려해 푸시에 넣지 않습니다. 반려 사유 화면이 생기면 별도 작업에서 이동 대상을 변경합니다.
+- 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). local 발송과 remote 발송(아웃박스 → SQS → 알림 서비스)은 모두 서버가 만든 같은 data를 사용합니다. 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
+- 발송 실패나 사용자의 서비스 알림 끄기는 검수 결과를 되돌리지 않습니다. 화면 재진입 때 제출본 조회로 현재 상태를 표시합니다. 상태 조회는 푸시를 대신해 계속 폴링하도록 정한 계약이 아닙니다.
+
+| status | title | body |
+|---|---|---|
+| APPROVED | 검수를 통과했어요 | 「{스토리 제목}」의 등록이 완료됐어요. 지금 확인해 보세요. |
+| REJECTED | 검수에서 반려됐어요 | 「{스토리 제목}」의 내용을 수정해 다시 제출해 주세요. |
+| FAILED | 검수를 진행하지 못했어요 | 「{스토리 제목}」의 검수 중 문제가 생겼어요. 잠시 후 다시 제출해 주세요. |
+
 <a id="출석-리마인드-푸시--phase-3--구현knk-1116-v74"></a>
 
 #### 출석 리마인드 푸시
+
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
+스케줄러 이전 여부는 큐 전환 결과를 보고 판단합니다.
 
 당일 출석 보상([§4-3-7](#4-3-api-계약) `POST /users/me/credits/attendance`)을 아직 받지 않은 회원에게 하루 한 번 리마인드를 보냅니다. **광고성 알림**입니다(보상 수령 유도 = 재이용 유도, KNK-1129).
 
@@ -802,6 +855,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 프로모션 푸시
 
+발송 호출은 [실행 주체 전환](#실행-주체-전환)을 따릅니다.
+
+스케줄러 이전 여부는 큐 전환 결과를 보고 판단합니다.
+
 운영자가 예약한 프로모션·공지 문구를 광고 동의 회원 전원에게 보냅니다. **광고성 알림**입니다. 2026-09-07 결정 기록입니다.
 
 - **트리거는 운영자 SQL 예약.** 관리자 API·화면은 두지 않습니다: 팀이 전원 개발자이고 서버에 관리자 역할 체계가 없습니다. `push_campaigns`([§4-4](#4-4-데이터-모델))에 `status = 'SCHEDULED'`, `scheduled_at`을 넣으면 예약이고, 집기 전 `status = 'CANCELED'`로 바꾸면 취소입니다. 문구는 캠페인 행의 `title`·`body`에 직접 둡니다(`push_message_templates`는 반복 알림용이라 쓰지 않음).
@@ -811,6 +868,120 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **이력은 캠페인 행이 전부입니다.** 회차가 끝나면 `status = 'SENT'`, `target_count`·`sent_count`·`skipped_count`·`started_at`·`finished_at`을 기록합니다. 회원별 발송 기록 테이블은 두지 않습니다. 발송 실패는 모듈이 삼키고 메트릭·로그로 남기며, 회차 요약은 구조화 로그 `promotion_push_sent{campaignId, targets, sent, skipped}`입니다.
 - **한도(`ponytail:`).** 회차 중간에 태스크가 죽으면 행이 `SENDING`으로 남고 재개 로직은 없습니다: 운영자가 새 행을 넣습니다(남은 회원만 골라 보낼 수 없어 일부 중복 가능, 캠페인 빈도가 낮아 수용). 회원별 빈도 캡도 두지 않습니다: 캠페인 수가 운영자 손에 있습니다. 예외로 회차가 끝나지 못한 경우는 `FAILED`로 기록합니다(예: 대상 조회 실패).
 - **결정 필요 없음.** 프로덕션 릴리스는 검수 트랙과 무관하며, 실기기 도달 확인은 Android 앱 Firebase 등록 뒤입니다.
+
+<a id="알림-서비스-계약"></a>
+
+#### 알림 서비스 계약
+
+소비자는 `STORY_COMPLETED`와 `STORY_MODERATION_COMPLETED`를 `SERVICE`로 허용합니다. 검수 완료 타입은 알림 서비스 `ac51603`에서 확인했습니다. 배포할 이미지에도 이 처리가 포함되어야 하며 Android의 새 data.type 처리(KNK-1164)도 함께 맞춥니다.
+
+서버 내부 자격 조회와 토큰 삭제 API, 알림 서비스의 동기 발송 API, 아웃박스, SQS 어댑터와 Redis 멱등 처리는 구현되어 있습니다. dev는 서버와 같은 태스크의 알림 컨테이너가 SQS를 소비하며 서버를 `http://localhost:8080`으로 호출합니다. 출석 후보 조회 API는 계획 계약이며 아직 구현하지 않았습니다. 시나리오의 대상, 문구와 클라이언트 페이로드는 기존 절을 유지합니다. prod의 별도 ECS 서비스, Cloud Map, 공개 ALB 차단과 큐 인프라는 아직 미적용인 목표 구성입니다. ([BE-051](../adr/2-backend-server-adr.md#be-051))
+
+##### 서버 내부 API
+
+내부 API의 제공자는 `manyak-server`이고 호출자는 알림 서비스입니다. 경로는 `/api/v1`을 포함하지 않는 전체 경로입니다. 구현된 인증은 `X-Manyak-Internal-Secret` 헤더와 `MANYAK_INTERNAL_SHARED_SECRET`을 비교합니다. 시크릿이 비어 있으면 `/internal/**`에 404를 반환하며 설정된 시크릿과 헤더가 다르거나 헤더가 없으면 401을 반환합니다. 사용자 Bearer 토큰으로 서비스 인증을 대신하지 않습니다.
+
+prod 목표 계약에서는 내부 API가 공개 경로(`api.manyak.app`)로 닿지 않아야 합니다. 공개 ALB는 `/internal/*`에 404 고정 응답을 주며 서버 시크릿 주입 전이나 같은 적용에서 차단합니다. 알림은 Cloud Map private DNS의 `http://server.manyak-prod.local:8080`으로 호출하고 공유 시크릿 헤더를 함께 보냅니다. ALB 차단은 아직 미적용이며 현재 시크릿 미설정 시의 애플리케이션 404와 구분합니다. ([BE-051](../adr/2-backend-server-adr.md#be-051))
+
+| 엔드포인트 | 입력 | 응답과 판정 |
+| --- | --- | --- |
+| `GET /internal/users/{publicId}/push-eligibility?kind=SERVICE\|MARKETING&at=` | 회원 UUID `publicId`, 알림 종류 `kind`, 회원별 실제 발송 직전 시각 `at`(ISO 8601 UTC) | 200 `{ allowed, reason, tokens: [{ token, platform }] }`. `allowed`는 boolean, `reason`은 판정 사유, `platform`은 `ANDROID` 또는 `WEB`. 허용 시 최근 갱신 토큰 최대 10개 |
+| `DELETE /internal/push-tokens` | JSON 본문 `{ "token": "<FCM token>" }` | 204. `UNREGISTERED` 토큰 한 행만 정리하며 부재도 멱등 성공. 토큰을 URL에 싣지 않음 |
+| `GET /internal/push/attendance-candidates?date=&cursor=` (계획, 미구현) | `date`는 KST 날짜 `YYYY-MM-DD`, `cursor`는 다음 페이지 조회용이며 첫 요청에서 생략 | 200. 회원 publicId 페이지와 다음 커서. 기존 출석 미수령 후보 판정 유지. 내부 순차 PK와 보상 신원은 응답에 노출하지 않음 |
+
+- **자격 판정.** 회원 부재, 정지 또는 탈퇴는 허용하지 않습니다. `ACTIVE` 회원만 종류별 동의를 판정합니다. `SERVICE`는 `service_push_enabled`, `MARKETING`은 광고 동의와 `at` 기준 KST 야간 동의를 확인합니다([푸시 수신 동의](#푸시-수신-동의)). 거절 시 `allowed=false`이며 토큰을 반환하지 않습니다. 후보 조회 결과는 발송 허가가 아닙니다.
+- **조회 실패.** 인증 또는 통신 실패를 `allowed=true`나 과거 허가로 대체하지 않습니다. 동기 단계에서는 미발송 결과를 남기고, 큐 단계에서는 만료 전 `RETRY`, 만료 후 `DISCARD`로 처리합니다. 재시도 때도 새 시각으로 자격을 조회합니다.
+- 구현된 자격 판정과 응답은 [PushEligibilityService](../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/PushEligibilityService.kt)를 기준으로 확인합니다. 미구현인 후보 페이지 DTO와 커서 인코딩, 후보 조회의 오류 상세는 구현 시 확정합니다. 후보 조회는 기존 보상 신원의 당일 출석 미수령 조건을 서버 안에서 판정합니다.
+
+##### 알림 서비스 동기 API
+
+| 엔드포인트 | 요청 | 결과 |
+| --- | --- | --- |
+| `POST /internal/notifications` | JSON `recipientId`(회원 publicId UUID), `kind`, `type`, `data` 필수. `expiresAt` 선택 | 발송 직전 자격 조회 후 기기별 발송 결과 요약. 자격 거절 또는 만료면 미발송. 정상 처리 200, 자격 조회 불가(`ELIGIBILITY_UNAVAILABLE`)는 502. 응답은 [NotificationResponse](../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/dto/NotificationDtos.kt) 참조 |
+
+- 이 경로도 공개 ALB 라우팅에서 제외하고 공유 시크릿 헤더로 서비스 간 인증을 적용합니다.
+- 동기 API는 초기 발송 검증 경로이며 현재 dev의 `remote` 경로는 아웃박스와 SQS를 사용합니다. 발송 실패를 스토리 제작 요청으로 전파하지 않으며 원격 실패 시 로컬 발송기로 중복 폴백하지 않습니다.
+- `kind`, `type`, `data`, `expiresAt`의 의미는 아래 메시지 스키마와 같습니다. 상관 헤더는 [§4-7](#상관관계-식별자)의 요청, 세션, 기기 해시 전달 관례를 따르며 원본 기기 ID는 보내지 않습니다.
+
+##### 큐 메시지 스키마
+
+| 필드 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| `messageId` | string | 예 | 시나리오별 멱등키. 최초 요청에서 정하고 릴레이 재발행, 브로커 재전달 때 바꾸지 않음 |
+| `recipientId` | string(UUID) | 예 | 수신 회원 `publicId`. 서버 내부 순차 PK 사용 금지 |
+| `kind` | string enum | 예 | `SERVICE` 또는 `MARKETING` |
+| `type` | string enum | 예 | `STORY_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`. 기존 시나리오의 FCM `data.type`과 일치. `STORY_MODERATION_COMPLETED` 추가 |
+| `data` | `object<string, string>` | 예 | 기존 시나리오 페이로드. 검수 완료의 `title`·`body`와 `deepLink`는 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 값은 모두 문자열이며 동의와 토큰을 포함하지 않음 |
+| `expiresAt` | string(ISO 8601 UTC) | 아니오 | 발송 가능 기한. 현재 시각이 기한에 도달했거나 지났으면 폐기. 미지정은 메시지 자체 만료 없음 |
+| `requestId` | string | 예 | 발행 원인의 상관 ID. 재전달 때 유지하며 HTTP 요청 상관 ID와 연결 |
+| `sessionId` | string | 예 | 원인 세션의 상관 ID. 세션 없는 스케줄러 등은 기존 관측 규칙에 따라 `unknown` |
+| `schemaVersion` | integer | 예 | 최초 스키마는 `1`. 생산자와 소비자가 같은 필드 의미를 해석하기 위한 버전 |
+
+- 스토리 완성은 `SERVICE`, 출석 리마인드와 프로모션은 `MARKETING`입니다. 검수 완료의 type은 `STORY_MODERATION_COMPLETED`, kind는 `SERVICE`이며 data에 `type`·`submissionId`·`storyId`(있을 때만)·`status`·`deepLink`·`title`·`body`를 포함합니다. 결과별 문구와 `/studio` 이동 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 시나리오 데이터와 최상위 `type`은 같아야 합니다. 발송기는 최상위 `recipientId`를 FCM data에 부착하며 같은 이름의 시나리오 값보다 우선합니다.
+- 동의, 동의 시각, FCM 토큰과 원본 기기 ID를 큐 메시지에 싣지 않습니다. `requestId`와 `sessionId`는 관측용이며 동의나 발송 허가를 대신하지 않습니다. 원인 HTTP 요청이 없는 작업은 발행 작업의 상관 ID를 부여하고 재전달 때 유지합니다.
+- 출석 메시지는 해당 KST 날짜의 다음 날 00:00을 `expiresAt`으로 표현합니다. 소비 시 만료를 확인하고 Android TTL은 발송 시점부터 남은 시간으로 계산합니다. 웹의 기존 메시지 구성은 바꾸지 않습니다. 스토리 완성과 프로모션은 기존 기본값대로 만료 시각을 지정하지 않습니다.
+
+| 시나리오 | `messageId` 규칙 | 식별자 근거 |
+| --- | --- | --- |
+| 스토리 완성 | `story-completed:{requestId}` | 이 자리의 `requestId`는 스토리 완성 요청 본문의 UUID인 도메인 멱등키. 메시지의 관측용 `requestId`와 구분 |
+| 출석 리마인드 | `attendance:{userPublicId}:{KST 날짜}` | 회원 publicId와 `YYYY-MM-DD`. 원장의 내부 보상 신원 키와 구분 |
+| 프로모션 | `promotion:{campaignId}:{userPublicId}` | 캠페인 publicId와 회원 publicId |
+| [검수 완료](#스토리-검수-완료-푸시) | `story-moderation:{submissionId}:{attempt}` | 선점·재선점·재제출마다 증가하는 attempt로 구분. 같은 submissionId의 서로 다른 회차 알림을 합치지 않음 |
+
+##### 발행 포트와 아웃박스
+
+검수 완료도 스토리 완성과 같은 두 발송 경로를 사용합니다. APPROVED 적용 또는 REJECTED·FAILED 기록 트랜잭션에서 도메인 이벤트를 발행합니다. `local`은 커밋 뒤 서버 FCM 발송, `remote`는 같은 트랜잭션의 `push_outbox` 기록(KNK-1378)으로 연결합니다. 기존 스토리 완성의 `StoryCompletionPushListener`와 `StoryCompletionOutboxListener`(MANDATORY)가 따르는 경계와 같습니다. 기본값은 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 KNK-1380에 종속되지 않습니다.
+
+- 발행 포트는 `publish(message)`, 소비 포트는 `onMessage(message): SUCCESS|RETRY|DISCARD`입니다. `local` 프로파일은 Kafka, `dev`와 `prod`는 SQS 표준 큐 어댑터를 선택합니다. 재시도 가능 여부, 만료와 멱등 판단은 소비자 로직에서 브로커와 무관하게 처리합니다. ack, 오프셋 커밋과 가시성 변경은 어댑터가 담당합니다.
+- 발행 포트와 소비 포트 뒤에는 `local` 프로파일의 Kafka 어댑터와 dev/prod용 SQS 표준 큐 어댑터가 구현되어 있습니다. Kafka 어댑터의 메시지 키는 `recipientId`이며 SQS 표준 큐에는 메시지 키와 그룹을 사용하지 않습니다. 서버의 SQS 발행 어댑터는 `dev` 또는 `prod` 프로파일에서 `manyak.push.mode=remote`일 때만 등록합니다. dev는 2026-09-27부터 `remote`를 사용하며 prod는 `local`을 유지합니다. prod 큐 인프라는 아직 미적용이며 [BE-051](../adr/2-backend-server-adr.md#be-051)의 목표 구성에 따라 준비합니다.
+- 큐 단계에서 서버는 `manyak.push.mode=remote`일 때만 발송 요청을 `push_outbox`에 도메인 커밋과 같은 트랜잭션으로 기록합니다. `local` 모드는 기존 서버 내 발송을 사용하고 아웃박스 행을 만들지 않습니다. 해당 모드에는 행을 가져갈 릴레이 경로가 없어 미발행 요청이 쌓이기 때문입니다. 스토리 완성은 요청 행을 `COMPLETED`로 마킹하는 트랜잭션에 기록하며, 정상 replay와 완료 콜백 생략 경로에서 새 메시지를 만들지 않습니다. 테이블은 `V86__create_push_outbox.sql`로 생성합니다.
+- `push_outbox.message_id`에는 유일 제약을 둡니다. 값은 위 표의 `messageId` 규칙을 그대로 사용하며, 스토리 완성은 `story-completed:{requestId}`입니다.
+- 행 상태는 `PENDING`, `PUBLISHED`, `FAILED`입니다. 시도 횟수 `attempts`는 관찰용으로 기록하며 포기 판정에는 사용하지 않습니다. 브로커 발행 성공 뒤 `PUBLISHED`로 발행 완료를 기록합니다.
+- 릴레이는 `status = PENDING`이고 `next_attempt_at`이 현재 시각 이전인 행을 `FOR UPDATE SKIP LOCKED`로 선점합니다. 같은 트랜잭션에서 `next_attempt_at`을 임대 만료 시각으로 옮기고 커밋한 뒤, 트랜잭션 밖에서 전송합니다. 전송 도중 릴레이가 종료되면 임대가 끝난 뒤 다른 릴레이가 다시 선점합니다. 별도의 발행 중 상태는 두지 않습니다.
+- 임대 시간은 한 번에 선점한 배치 전체의 전송 제한 시간보다 길어야 합니다. 브로커 클라이언트의 전송 제한 시간도 임대보다 짧게 설정합니다. 그렇지 않으면 전송이 끝나기 전에 다른 릴레이가 같은 행을 가져가 중복 발행할 수 있습니다.
+- 발행 실패 시 `next_attempt_at`을 지수 백오프로 미룹니다. 재시도 간격은 5초에서 시작해 실패마다 두 배로 늘리며 최대 5분입니다. 행 생성 후 24시간이 지나도 발행하지 못하면 `FAILED`로 두고 로그와 메트릭을 남깁니다. 브로커 장애 시 미발행 요청을 보존하며, 행 생성 후 24시간 안에 복구되면 재발행합니다.
+- 재시도 횟수 상한은 두지 않습니다. 짧은 간격의 횟수 상한은 긴 브로커 장애에서 모든 행을 일찍 포기하게 해 복구 후 발행하려는 아웃박스의 목적을 무너뜨립니다. 24시간의 포기 기준은 스토리 완성 알림이 하루 넘게 늦으면 가치가 없다는 판단에 따릅니다.
+- 전송 성공과 발행 완료 기록 사이 장애로 릴레이가 중복 발행할 수 있습니다. 두 브로커 모두 소비자 멱등 처리를 전제로 하며, 도메인 커밋 후 외부 전송만 하는 방식으로 아웃박스를 대체하지 않습니다.
+
+##### 소비 순서와 멱등 기록
+
+1. `messageId`별 Redis 키를 확인합니다. 완료 키가 있으면 재발송하지 않습니다. 키가 없으면 `SET NX`로 처리 중 상태와 짧은 유효시간을 함께 기록해 선점합니다. 처리 중 유효시간은 2분으로 설정하며 한 번 처리의 최대 소요 시간보다 길어야 합니다. 이 유효시간은 재시도 창보다 짧아야 하며, 처리 시간이 유효시간을 넘기면 중복 처리를 허용합니다. 다른 소비자가 처리 중이면 발송하지 않고 `RETRY`를 반환합니다. 처리 중 소비자가 종료되면 유효시간이 끝난 뒤 다시 선점해 처리합니다.
+2. `expiresAt`을 확인합니다. 기한이 지났으면 `DISCARD`로 완료 기록을 남깁니다.
+3. 서버 내부 API로 현재 상태, 종류별 동의와 토큰을 다시 조회합니다. `at`에는 예약 시각이나 회차 시작 시각이 아닌 수신 회원의 실제 발송 직전 시각을 넣습니다. 자격 거절과 토큰 없음은 미발송 `DISCARD`입니다.
+4. 허용된 기기에 기존 플랫폼별 구성으로 FCM을 발송합니다. 다른 회원으로 바뀐 토큰을 메시지에 저장해 재사용하지 않습니다.
+5. 기기별 결과를 반영해 `SUCCESS`, `RETRY`, `DISCARD`를 반환합니다. 일부 기기만 성공했더라도 재시도할 기기가 남으면 `RETRY`, 재시도 대상 없이 발송 성공이 있으면 `SUCCESS`, 모두 미발송 또는 영구 실패이면 `DISCARD`입니다. 성공한 기기는 메시지별로 Redis에 유효시간 7일로 기록하고, 재처리 때 성공 기기 집합에 있는 기기는 발송 대상에서 제외합니다. `SUCCESS`와 `DISCARD`는 처리 중 키를 완료 상태로 바꾸고 유효시간을 7일로 설정한 뒤 ack 대상이 됩니다. `RETRY`는 처리 완료로 기록하지 않습니다.
+
+알림 서비스는 PostgreSQL 테이블 없이 유지하며, 멱등 기록은 `notification:` 접두어의 Redis 키에 저장합니다. prod 목표 구성에서는 서버와 같은 Redis(ElastiCache)를 접두어로 구분해 사용합니다. 만료 또는 자격 거절로 폐기한 메시지도 완료로 기록하며, 완료 키의 유효시간은 7일입니다. 7일 뒤에는 같은 키의 처리 이력이 남아 있다고 가정하지 않습니다. 운영 Redis의 메모리 정책상 유효시간이 있는 키가 먼저 축출될 수 있어, 유효시간 안에도 드물게 중복 발송이 생길 수 있습니다.
+
+FCM 호출과 Redis 기록은 원자적이지 않습니다. 일부 기기만 성공한 경우에도 Redis에 기록된 성공 기기는 재처리 때 제외하지만, 발송 성공 직후 성공 기기를 기록하기 전 장애에는 중복 발송 가능성이 남습니다. 이 장애와 Redis 키 축출 때문에 메시지 멱등성만으로 FCM의 정확히 한 번 도달을 보장하지 않습니다.
+
+##### FCM 결과와 브로커별 재전달
+
+FCM Admin SDK의 최대 재시도 횟수를 0으로 설정해 내부 재시도를 끕니다. 일시 오류와 429는 곧바로 `RETRY`로 반환하고 브로커 재시도에 맡깁니다. Kafka는 60초 고정 간격으로 최초 처리를 포함해 총 5회 시도하며, SQS는 가시성 60초를 사용합니다. 애플리케이션도 같은 SDK 호출에 즉시 재시도 루프를 두지 않아 재시도는 큐 한 층에서만 수행합니다. 처리 중 선점 유효시간 2분을 재시도 창 약 4분보다 짧게 유지해, 선점한 소비자가 종료돼도 재시도 창 안에서 다시 선점해 복구할 수 있게 합니다. 아래는 SDK 호출 결과에 적용하는 규칙입니다.
+
+| 결과 | 소비 판단 | 후속 처리 |
+| --- | --- | --- |
+| 발송 성공 | `SUCCESS` | 완료 기록과 ack |
+| 일시 오류 또는 429 | 즉시 `RETRY` | SDK 내부 재시도 없이 브로커 어댑터에 재전달 위임. 매 재전달마다 만료와 자격 재확인 |
+| 400, 401, 403, 404 | `DISCARD` | 영구 오류를 반복 발송하지 않고 로그와 메트릭 기록 |
+| `UNREGISTERED` | 해당 토큰 `DISCARD` | 서버 내부 삭제 API 호출 후 다음 기기 계속. 정리 실패도 다른 기기 발송을 막지 않음 |
+| `INVALID_ARGUMENT` | `DISCARD` | 페이로드 오류일 수 있으므로 토큰 삭제 금지 |
+| 만료 또는 자격 거절 | `DISCARD` | 발송 없이 완료 기록과 ack |
+
+| 브로커 | 결과 반영과 재시도 | DLQ |
+| --- | --- | --- |
+| dev/prod SQS 표준 큐 | 가시성은 60초로 유지하며 연장하지 않습니다. `SUCCESS`와 `DISCARD`는 삭제로 ack합니다. `RETRY`는 삭제하지 않아 재전달합니다. 처리 중 가시성이 만료되면 Redis 선점으로 중복 발송을 막습니다. | 역직렬화·검증 실패도 삭제하지 않고 `RedrivePolicy.maxReceiveCount=5`에 따라 원본 본문을 보존한 채 DLQ로 이동합니다. |
+| 로컬 Kafka | `SUCCESS`와 `DISCARD`는 오프셋을 커밋합니다. `RETRY`는 단일 재시도 토픽 `push.requested.retry`에서 60초 고정 간격으로 재처리하며, 최초 처리를 포함해 총 5회까지 시도합니다. 재시도 또는 DLQ 발행 성공 뒤 원본 오프셋을 커밋하며, 발행 실패 시 커밋하지 않습니다. | 총 5회 처리 후에도 `RETRY`이면 `push.requested.dlq`로 보냅니다. 역직렬화·검증 실패는 재시도하지 않고 원본 바이트를 보존해 곧장 `push.requested.dlq`로 보냅니다. |
+
+SQS는 `ChangeMessageVisibility`를 사용하지 않으며 가시성 값도 올리지 않습니다. 처리 예산 합계인 최악 소요 약 104초가 가시성 60초를 넘어 다른 소비자가 재수신해도 Redis 처리 중 선점이 남아 있으면 발송 없이 `RETRY`를 반환하고 삭제하지 않습니다. 먼저 처리한 소비자는 이전 수신 핸들로 삭제를 요청하므로 삭제가 반영되지 않을 수 있습니다. 이때 다음 수신에서 완료 키를 확인해 `SUCCESS`로 삭제합니다. 이 가시성 만료 경로에서는 중복 발송 없이 수신 횟수만 소모되며 이를 수용합니다. 선점한 소비자가 종료돼도 재시도 창 안에서 다시 선점할 수 있도록 처리 중 선점을 연장하지 않는 기존 원칙과 같은 이유입니다.
+
+SQS의 역직렬화·검증 실패는 예외로 두어 메시지를 삭제하지 않습니다. 즉시 DLQ로 옮기지 않고 `RedrivePolicy.maxReceiveCount=5`에 도달하면 약 4분 뒤 DLQ로 이동하며 원본 본문을 그대로 보존합니다. 권한과 코드 경로를 추가해야 하는 애플리케이션의 DLQ 직접 `SendMessage`나 원본을 유실하는 로그 후 삭제는 사용하지 않습니다. 파싱 실패는 Redis 선점과 FCM 호출 이전에 발생하므로 반복 수신해도 발송하지 않습니다.
+
+Kafka 재시도 간격과 횟수는 운영 SQS의 가시성 60초와 `maxReceiveCount=5`에 맞춰 포기 시점을 맞춥니다. 간격을 늘리면 한 토픽 안에서 대기 시간이 다른 메시지가 서로를 막으므로 간격마다 토픽이 필요합니다. 단일 재시도 토픽을 사용하기 위해 60초 고정 간격을 선택합니다.
+
+SQS 재시도 간격과 횟수는 애플리케이션이 아니라 Terraform의 큐 설정인 가시성 타임아웃과 `maxReceiveCount`로 정합니다. 알림 서비스의 `manyak.push.consumer.retry-delay-ms`와 `retry-attempts`는 처리 중 선점 유효시간 검증(`선점 유효시간 < (횟수 - 1) × 간격`)에 사용하므로 dev/prod에서는 각각 큐의 가시성 타임아웃을 초에서 밀리초로 변환한 값과 `maxReceiveCount`에 일치해야 합니다.
+
+푸시는 부가 기능이며 사용자에게 보이는 진실의 기준은 복귀 조회입니다. 알림 서비스나 브로커가 내려가도 이미 커밋된 스토리 제작 결과를 실패로 되돌리지 않습니다. 큐 단계에서는 아웃박스와 큐에 남은 요청을 복구 후 소비하되, 복구 시점의 만료와 철회된 동의를 다시 확인합니다. 출석 리마인드와 프로모션 스케줄러의 이전 여부는 큐 전환 결과를 보고 판단합니다.
 
 <a id="4-3-6-로어북--phase-1--구현"></a>
 
@@ -847,7 +1018,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 - **보상 이프 유효기간·차감 순서 · (V39·KNK-503)** · 보상 적립(`SIGNUP_REWARD` · `INVITE_REWARD` · `ATTENDANCE_REWARD`)과 **환불(`REFUND`) 재적립**은 적립 시점부터 30일 유효하며, 만료분은 잔액에서 제외합니다( 유료 `PURCHASE` 로트는 웹·앱 모두 적립 시점부터 5년 유효). 적립·환불마다 `credit_lots` 행(원금·잔여·`expires_at`)을 만들고, 차감은 만료 임박(`expires_at` 오름차순, 레거시 NULL은 마지막, 동률은 `id` 오름차순) 로트부터 잔여를 소진합니다(FIFO). 만료 회수는 원장에 `EXPIRE` 음수 행(`ref_type=CREDIT_LOT` · `ref_id=로트 ID`)을 남겨 `balance = SUM(amount)` 불변식을 유지합니다. 조회 잔액(`balance`)은 **미만료·잔여 > 0 로트의 합**이며, 부족 판정은 만료 정리(쓰기) 전에 활성 잔여 기준으로 수행해 실패한 차감이 만료 정리를 롤백시키지 않게 합니다.
 - **초대 보상(KNK-567)**
   - `POST /users/me/invite/redeem` 성공 시 초대자와 제출자에게 각각 2000 이프를 적립합니다.
-  - 제출은 계정당 평생 1회이며 가입 시점과 무관합니다. 자기 코드는 제출할 수 없습니다.
+  - 제출은 계정당 평생 1회이며 제출 기한은 없습니다. 자기 코드는 제출할 수 없습니다.
   - 월 10회 상한은 초대자 몫에만 적용합니다. 상한에 도달해도 제출자 몫은 적립하고 성공을 반환합니다.
   - 월 귀속은 적립 시점의 KST 월입니다.
   - 초대 관계 저장과 양측 적립은 한 트랜잭션에서 처리합니다. 지갑 락은 계정 순서로 획득해 교차 제출의 데드락을 막습니다.
@@ -856,6 +1027,10 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
   - 코드는 앞뒤 공백을 제거하고 대문자로 바꿔 비교합니다.
   - 빈 값·형식 오류는 400, 없는 코드는 404, 자기 코드는 409 `INVITE_SELF_CODE`, 재제출은 409 `INVITE_ALREADY_REDEEMED`입니다([§4-6](#4-6-오류와-예외-처리)).
   - 제출자가 정지 상태면 403입니다. 초대자가 탈퇴했으면 409 `INVITE_INVITER_WITHDRAWN`, 정지 상태면 409 `INVITE_INVITER_UNAVAILABLE`입니다.
+  - 초대자는 제출자보다 먼저 가입한 회원이어야 합니다(KNK-1404). 가입 순서는 가입 시각이 아니라 보상 신원 id(`reward_identity_user_id ?: id`)로 비교하며, 초대자 신원 id가 제출자 신원 id보다 크면 409 `INVITE_INVITER_NEWER`입니다.
+    - id는 가입 순서대로 증가하므로 같은 시각 가입의 동률 판정이 필요 없습니다. 재가입 계정은 최초 계정의 신원을 승계하므로 탈퇴·재가입으로 나중 가입자가 되어 이 검사를 피할 수 없습니다.
+    - 제출은 신원 id가 더 작은 쪽의 코드로만 성립합니다. 그래서 두 계정이 서로의 코드를 등록하는 상호 등록도, A→B→C→A 같은 순환 등록도 성립하지 않습니다.
+  - 검사 순서는 제출자 정지 403, 형식 400, 재제출 409, 매칭 없음 404, 자기 코드 409, 초대자 탈퇴·정지 409, 가입 순서 409입니다. 앞선 검사에 걸리면 뒤 검사는 하지 않습니다.
   - 탈퇴한 초대자의 코드도 충돌 방지를 위해 보존합니다. 평생 1회 제출 기록은 재가입 계정에 승계됩니다([§4-3-5](#4-3-api-계약)).
 - **초대 코드 발급**: 초대 코드는 최초 `GET /users/me/invite` 호출 시 지연 발급합니다(그 전까지 미보유). `SecureRandom` 8자를 생성하고, 충돌 시 최대 10회 재시도하며(DB 유니크 제약이 최종 방어) 발급은 `users` 행 비관적 락으로 직렬화합니다. (KNK-567·V47): 문자 집합은 **혼동 문자(`O`·`0`·`I`·`1`·`L`)를 제외한 대문자+숫자 집합**입니다. 사람이 카카오톡 메시지를 보고 타이핑하는 값이므로 시각 혼동이 곧 입력 실패율입니다. 기존 발급분(영대소문자+숫자 62종)은 V47 마이그레이션으로 전량 리셋해 새 집합으로 재발급합니다: 링크 방식을 실사용한 사용자가 없어 유포된 코드가 없고, 재발급 피해도 없습니다. `inviteUrl` 조립과 `MANYAK_INVITE_BASE_URL`은 폐기했습니다.
 - **초대 상한 진행 표시**
@@ -872,7 +1047,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
   - `GET /credits/policies`는 `chatImageCost`를 포함한 현재 유효한 적립·소모 수치 7종을 반환합니다. 클라이언트는 이 값을 사용하며 수치를 하드코딩하지 않습니다.
   - 로그인 전 안내에도 쓰는 공개 정보이므로 인증이 필요 없습니다. 다만 탈퇴 계정의 유효 토큰은 401이며 만료·위조 토큰은 익명으로 처리합니다([§4-3-5](#4-3-api-계약)).
   - 한 응답은 같은 정책 스냅샷에서 계산합니다. 변경 반영은 기본 약 1분인 갱신 주기를 따릅니다.
-  - `inviteMonthlyCap`은 초대자 보상의 월 횟수 상한입니다. `storyCreationCost`와 `chatTurnCost`는 회원 무료 체험을 모두 쓴 뒤 적용합니다. 일반 제작은 무료이며 게스트는 디바이스 한도를 사용합니다.
+  - `inviteMonthlyCap`은 초대자 보상의 월 횟수 상한입니다. `storyCreationCost`와 `chatTurnCost`는 회원 무료 체험을 모두 쓴 뒤 적용합니다. 일반 제작은 회원에게 무료이고, 게스트의 간편 제작·채팅은 디바이스 한도를 사용합니다.
 - **이용내역 조회**: `GET /users/me/credits/transactions`로 원장을 사용자에게 공개합니다. 잔액만으로는 그 값이 나온 이유(적립·소모·환불·만료)를 설명할 수 없어, 원장(`credit_transactions`)을 화면용으로 가공해 내려줍니다. 원장을 운영·정산 전용으로 두던 이전 방침을 대체합니다.
   - **분류(`type`)** · 응답의 각 항목과 쿼리 필터가 같은 값을 씁니다: `SPEND`(`STORY_CREATION`·`CHAT_TURN`·`CHAT_IMAGE`) · `EARN`(`SIGNUP_REWARD`·`ATTENDANCE_REWARD`·`INVITE_REWARD`·`REFUND`·`PURCHASE`) · `EXPIRE`(`EXPIRE`·`PURCHASE_REVERSAL`). 기본값 `ALL`은 이 셋의 합집합입니다. **환불은 획득으로 분류합니다** · 생성·턴 실패 시 자동 환불이라 사용자 관점에선 재화가 되돌아온 사건입니다. 구매 원장의 `PURCHASE`를 `EARN`과 `ALL`에 포함하고, 결제 환불 회수 `PURCHASE_REVERSAL`은 회수 계열인 `EXPIRE`에 묶습니다. 새 분류는 추가하지 않으며 두 사유의 `title`은 `null`입니다. 분류는 서버가 계산해 내려주며, 클라이언트가 부호나 사유로 재분류하지 않습니다.
   - **응답 항목**: `{type, reason, amount, title, expiresAt, createdAt}`. `reason`은 원장 enum 원문이고 **한국어 라벨은 클라이언트가 붙입니다**: 문구 변경에 서버 배포와 3레포 동반 배포가 걸리지 않게 하기 위해서이며, 402의 `code` 계약과 같은 원칙입니다. `ref_type`·`ref_id`는 순차 PK라 노출하지 않습니다.
@@ -1046,67 +1221,243 @@ graph TD
 
 ### 4-3-8. 일반 제작과 스토리 수정
 
-일반 제작은 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식입니다([`0-glossary.md §0-3-2`](0-glossary.md)). **일반 제작 등록 자체는 AI를 호출하지 않습니다**: 컴파일은 희소 입력을 설정으로 확장하는 기능인데 일반 제작 입력은 이미 확장된 형태이므로 검증 후 그대로 저장합니다. 따라서 일반 제작 등록은 이프 소모·게스트 체험 한도 카운트가 없습니다. 이 예외는 "스토리라인 생성, 스토리 간편 제작, 채팅 턴만 이프·체험 정책의 대상"이라는 정책입니다.
+일반 제작은 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식입니다([`0-glossary.md §0-3-2`](0-glossary.md)). 일반 제작은 AI 컴파일을 하지 않지만 게시물 검수 API는 호출합니다. 등록·수정 요청을 검수 제출본으로 보관하고 통과한 경우에만 라이브 스토리에 반영합니다. 일반 제작 등록의 이프 소모·체험 한도 카운트 없음은 유지하며 게스트 등록은 401로 차단합니다.
 
-등록은 **단발(single POST)**입니다. 엔딩·주요 사건을 포함한 전부를 `POST /stories/general` 요청 본문 한 번으로 등록하며, 부분 저장용 별도 저작 API는 없습니다(로어북 연결은 간편 제작 컴파일 전용: [§4-3-6](#4-3-api-계약)).
+등록 입력은 엔딩·주요 사건을 포함한 전체를 `POST /stories/general` 본문 한 번으로 제출합니다. 부분 저장용 별도 저작 API는 없습니다(로어북 연결은 간편 제작 컴파일 전용, [§4-3-6](#4-3-api-계약)). 접수 시에는 제출본만 만들고 승인 후 스토리를 생성합니다. 반려·실패한 신규 등록의 재제출은 [검수 제출본 API](#검수-제출본-api)를 사용합니다.
 
 [결정 근거 BE-013](../adr/2-backend-server-adr.md#be-013)
 
-등록 요청에 이미지 필드는 없습니다. 등록 시점의 표지·배경은 팀 제작 자산(자동 연결)이고 인물 이미지는 컴파일 산출물입니다([§4-3-9](#4-3-api-계약)). 등록 **이후** 표지·인물 이미지는 사용자가 직접 올리고 지울 수 있습니다([아래 스토리 이미지 업로드](#4-3-api-계약)).
+등록 요청은 **표지 1장과 인물별 이미지**를 함께 받습니다. 등록 전에 `POST /stories/images/presign`으로 draft 키를 발급받아 올린 뒤 요청에 싣습니다([스토리 이미지 업로드](#스토리-이미지-업로드)). 배경은 팀 제작 자산 자동 연결입니다([§4-3-9](#4-3-api-계약)). 이미지 추가·교체는 등록·PATCH 본문으로만 받으며, 이미지 없는 요청과 인물 이름만 있는 요청도 회원만 제출할 수 있습니다. KNK-1390의 게스트 인물 행 허용 계약을 이 규칙으로 대체합니다.
 
 일반 제작이 저장한 주요 사건·엔딩이 채팅 턴, 선택지, 엔딩 판정으로 실제 반영되는 계약은 [§4-3-10](#4-3-api-계약)이 정의합니다. 이미지의 런타임 반영(썸네일·채팅 이미지 표시)은 [§4-3-9](#4-3-api-계약)가 정의합니다. 이 절은 **편집 폼의 저장·왕복 계약**을 정의합니다.
 
-#### `POST /stories/general`: 일반 제작 등록
+<a id="post-storiesgeneral-일반-제작-등록"></a>
 
-인증 선택(간편 제작과 동일: 유효 토큰이면 `user_id` 귀속). 임시 저장 없이 등록만 지원하며, 작성 중 유실 방지는 프론트엔드 로컬 자동 보관이 담당합니다([`3-1-client-spec.md`](3-1-client-spec.md)).
+#### 일반 제작 등록
+
+`POST /stories/general`은 인증 필수이며 미인증은 401입니다. 작성 중 유실 방지는 클라이언트 로컬 자동 보관이 담당하고, 제출한 입력은 서버의 검수 제출본에 보존합니다.
 
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
 | `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
-| `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장: 현행 방식). 입력 순서를 보존해 저장·반환하며, 썸네일 자동 연결의 "첫 번째 장르"([§4-3-9](#4-3-api-계약))는 이 순서의 0번 원소로 확정합니다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
+| `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열(`stories.genre`에 쉼표 결합 저장: 현행 방식). 입력 순서를 보존해 저장하고 반환합니다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
 | `storySettings` | 4필드 모두 필수 | 단일 마크다운 문자열: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 프론트엔드가 섹션별 입력을 조합 |
 | `startSettings` | 최소 1개(상한 없음) | 시작 설정 배열(복수화). 각 항목 `{name, prologue, startSituation, suggestedInputs, endings}`: `name`(100자)·`prologue`·`startSituation` 필수, `suggestedInputs`는 정확히 3개(각 NotBlank), `endings`는 이 시작 설정의 엔딩 0~10개. 채팅 시작 시 선택은 `POST /chats`의 `startSettingId`([§4-3-3](#4-3-api-계약)). 빈 배열은 400 |
 | ↳ `startSettings[].endings` | 시작 설정당 0~10개 | 엔딩 `{name, requirement{minTurns, achievementCondition}, epilogue}`: 타입 없이 이름으로 식별(이름은 시작 설정 내 유니크, 중복 400). `name` 100자, `minTurns` ≥ 0, `achievementCondition`·`epilogue` NotBlank. 도달 판정 계약은 [§4-3-10](#4-3-api-계약) |
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`(스토리 범위): `name` 100자, `description`·`keySentence` NotBlank, 이름은 스토리 내 유니크. 채팅 런타임 의미는 [§4-3-10](#4-3-api-계약) |
-| `visibility` | 선택, 기본 `PRIVATE`. **게스트는 `PRIVATE`만** | 공개 범위(`PUBLIC` · `PRIVATE`). 기본값이 PRIVATE인 이유: 제작자가 명시적으로 공개하기 전까지 타인에게 노출되지 않는 것이 안전하기 때문입니다. 회원 소유 스토리의 읽기 게이팅에 즉시 적용됩니다(읽기 가시성: [§4-3-1](#4-3-api-계약)·[§4-5](#4-5-인증과-권한)). **미인증(게스트) 요청이 `PUBLIC`을 지정하면 400**이고 바디 `code`는 `GUEST_CANNOT_PUBLISH`입니다([아래 게스트 공개 제한](#게스트는-public을-지정할-수-없습니다--phase-2--구현knk-149)) |
+| `visibility` | 선택, 기본 `PRIVATE` | 공개 범위(`PUBLIC` · `PRIVATE`). 공개·비공개 모두 검수하며 승인 후 라이브에 반영합니다. 게스트는 값과 무관하게 등록 401입니다 |
+| `thumbnailObjectKey` | 선택, **회원만** | 등록 전에 올린 표지의 객체 키(아래 draft presign 응답의 `objectKey`). 제출 검증과 게시물 검수를 통과하면 `stories.thumbnail_image_url`에 서빙 URL로 굳히며, 노출은 생성 표지와 같은 폴백 규칙을 탑니다([§4-3-9](#4-3-api-계약)). `thumbnail_image_key`는 저장하지 않으며 표지를 지우면 표지는 null입니다 |
+| `characters` | 최대 6명, 선택 | 인물 `{name, description, images[]}`(`GeneralCharacterInput`, 일반 제작 등록·PATCH 공용): `name`은 100자이며 스토리 내 유니크(중복 400). `description`은 선택 필드(string·null)인 인물 소개입니다. 일반 제작 등록에서는 생략·null·빈 문자열·공백만인 값을 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장하며, 제거 후 공백 포함 1~80자여야 합니다. 입력에 CR·LF·탭이 있거나 길이 제한을 어기면 400입니다. PATCH의 유지·삭제 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. `images[]`는 인물당 최대 10장이고 각 항목은 `{objectKey, imageName}`입니다. `imageName` 형식(`{인물이름}_{접미}`)과 인물당 상한은 등록 후 추가 경로와 같은 규칙입니다([아래 스토리 이미지 업로드](#4-3-api-계약)). 이미지 유무와 관계없이 회원만 제출할 수 있습니다. 외형 필드는 받지 않습니다: 컴파일 산출물이며 일반 제작의 인물 묘사는 `storySettings.characterSetting`이 담습니다. 상한 6명은 간편 제작(주인공 1 + 주변 인물 5)과 같은 값입니다. 각 항목의 `id`는 수정에서만 쓰는 매칭 키라 제작 요청에 실으면 400입니다 |
 
-- 응답 201: 간편 제작과 동일한 `{id, title, oneLineIntro, description, genres, startSettings[]}`(각 시작 설정에 `suggestedInputs`·`endings` 포함: 복수화). 생성 직후 상세 조회와 채팅 시작의 **기본 메타·스토리 설정·시작 설정**은 제작 방식과 무관하게 동작해야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약)을 따릅니다.
+- 응답은 202 `{submissionId, status: "PENDING"}`입니다. 기존 201 완성본 응답을 대체하며 접수 시점에는 스토리 ID가 없습니다. 승인 후 생성되는 스토리의 기본 메타·스토리 설정·시작 설정과 채팅 런타임 계약은 기존과 같습니다.
 - 검증 실패는 400(`details`에 필드별 사유). 주요 사건·엔딩 필드는 저장·편집 왕복만 보장합니다(런타임 반영은 [§4-3-10](#4-3-api-계약)).
 
 <a id="게스트는-public을-지정할-수-없습니다--phase-2--구현knk-149"></a>
 
-#### 게스트는 `PUBLIC`을 지정할 수 없습니다
+<a id="게스트는-public을-지정할-수-없습니다"></a>
 
-소유자 없는(`user_id` NULL) 스토리를 공개 상태로 만드는 요청은 **400**이고 바디 `code`는 `GUEST_CANNOT_PUBLISH`, 메시지는 "게스트는 스토리를 공개할 수 없습니다. 로그인 후 공개해 주세요."입니다. 적용 경로는 둘입니다.
+#### 게스트 등록·수정 제한
 
-| 경로 | 판정 |
-| --- | --- |
-| `POST /stories/general` | 요청자가 미인증인데 `visibility`가 `PUBLIC`이면 400 |
-| `PATCH /stories/{storyId}` | 대상 스토리의 `user_id`가 NULL인데 `PUBLIC`으로 **전환**하려 하면 400 |
-| `POST /stories/simple` | 해당 없음: 회원·게스트 모두 `PRIVATE` 고정([§4-3-2](#4-3-api-계약)) |
+일반 제작 등록과 PATCH는 인증 필수이므로 미인증 요청은 `visibility` 값과 관계없이 401입니다. 기존의 게스트 `PRIVATE` 등록·수정 허용과 `PUBLIC` 지정 시 400 계약을 대체합니다. 소유자 없는 기존 스토리를 수정하려면 로그인 후 이관해 소유권을 얻어야 합니다. 회원이 이관하지 않은 게스트 스토리를 수정하는 요청은 기존 소유권 규칙에 따라 403입니다.
 
-- **`PRIVATE`으로 바꾸지 않고 거부합니다.** 사용자가 고른 값을 서버가 몰래 뒤집으면 나중에 "공개했는데 왜 안 보이냐"가 됩니다. 거부하고 이유를 알립니다.
-- `PATCH`에서 **값이 그대로 실려 오는 폼 왕복은 통과**시킵니다(전환이 아니므로). 수정 폼 응답이 `visibility`를 싣기 때문에 프론트가 전체 폼을 되돌려보내면 값이 그대로 오는데, 이것까지 막으면 규칙 도입 이전에 만들어진 PUBLIC 게스트 스토리는 폼 저장 자체가 불가능해집니다(`PUBLISHED`가 아닌 스토리의 공개 범위 변경 거부와 같은 이유).
-- 공개하려면 로그인해 **이관(소유권 획득)** 한 뒤 수정 API로 전환합니다. 게스트에게 공개를 영구히 막는 규칙이 아닙니다.
-- 근거는 공개 목록의 게스트 제외 결정과 같습니다([§4-3-1](#4-3-api-계약) 결정 기록): 작성자 신원과 소셜 기능의 책임 주체가 없습니다.
+간편 제작은 회원·게스트 모두 `PRIVATE`으로 생성하며 기존 체험을 유지합니다. 게스트 스토리의 목록 제외·읽기 가시성은 변경하지 않습니다. 게스트는 회원 전용 푸시 토큰을 등록할 수 없어 비동기 검수 결과를 받을 수 없으므로 등록·수정에서 제외합니다.
 
 #### 스토리 수정
 
-**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면에는 검수 전 원본과 상태를 함께 제공합니다([스토리 이미지 업로드](#4-3-api-계약)). 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
+**`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, description, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode, imageErrors}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). `characters[].description`은 인물 `id` 기준으로 라이브 행의 소개를 싣습니다. 제출본을 반영할 때 기존 인물의 소개가 생략·null이면 라이브 소개를 유지하고, 소개를 보냈으면 아래 PATCH의 정규화·삭제 규칙을 적용한 값을 보여 줍니다. 새 인물은 보낸 소개를 같은 규칙으로 반영하며 생략·null이면 null입니다. 이름을 바꿔도 같은 `id`의 소개가 따라갑니다. 새 이미지의 id null·objectKey·미리보기 URL과 항상 존재하는 submission 필드는 [검수 제출본 API](#검수-제출본-api)를 따릅니다. 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
 
 응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings[]`: 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다: 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
 
 **`PATCH /stories/{storyId}`**: 부분 갱신입니다. 보낸 필드만 교체하고 나머지는 유지합니다. 수정 가능 필드는 일반 제작 요청과 동일 전체이며, **간편 제작으로 만든 스토리도 같은 계약으로 수정**할 수 있습니다(제작 방식 무관: US-4-5의 "아쉬운 설정 고치기"가 주 사용처).
 
-- 소유권: [§4-5](#4-5-인증과-권한) 규칙을 따릅니다. 회원 소유 스토리는 소유자만 수정할 수 있습니다. `user_id`가 NULL인 게스트 스토리는 `GET /stories/{storyId}/edit`와 `PATCH` 모두 익명(게스트) 요청만 허용하고 인증된 회원은 403입니다. 서버는 게스트끼리는 구분할 수 없으므로, 프론트엔드가 로컬 서재에 해당 `storyId`가 있을 때만 수정 진입점을 표시합니다.
-- **공개 전환(`visibility`)** 스토리 공개 전환(PRIVATE → PUBLIC, 되돌림 포함)은 별도 엔드포인트 없이 이 수정 API의 `visibility` 부분 갱신으로 수행합니다: 수정 가능 필드가 "일반 제작 요청과 동일 전체"이므로 `visibility`(PUBLIC · PRIVATE)가 계약상 이미 포함되며, 소유권 규칙에 따라 소유자만 전환할 수 있습니다. 전환 즉시 읽기 가시성([§4-3-1](#4-3-api-계약))에 반영됩니다. 게스트(소유자 없는) 스토리의 `PUBLIC` 전환만 400으로 막습니다([위](#게스트는-public을-지정할-수-없습니다--phase-2--구현knk-149)). `GET /stories/{storyId}/edit` 응답에도 `visibility`를 함께 실어 폼 왕복을 보장합니다.
-- 진행 중 채팅 반영: 백엔드는 채팅 턴을 만들 때 독자의 읽기 권한에 따라 최신 스토리 또는 공개 스냅샷을 AI 서버에 전달합니다. 최신 스토리를 읽을 권한이 있는 채팅은 다음 턴부터 새 설정을 사용합니다. 이미 저장된 지난 턴은 다시 쓰지 않습니다. 공개 스토리를 타인이 플레이할 때는 현재 읽기 권한과 공개 스냅샷 정책을 적용합니다. 비공개 개작은 해당 독자의 AI 입력에 노출하지 않습니다.
-- 응답 200: `GET /stories/{storyId}/edit`과 동일한 편집 폼 스키마. 검증 규칙은 일반 제작과 동일(400), 없는 스토리는 404, 권한 위반은 403입니다.
+- PATCH는 인증 필수(미인증 401)이며 회원 소유자만 허용합니다. 타인·이관 전 게스트 스토리에 대한 회원 요청은 403입니다. 수정 폼 GET의 기존 접근 규칙은 [§4-5](#4-5-인증과-권한)를 따릅니다.
+- `visibility`만 담은 PATCH는 검수 없이 즉시 반영하고 200 편집 폼을 반환합니다. 다른 필드를 섞으면 전체를 검수 제출본으로 접수하며 공개 범위도 승인 때 반영합니다. `PENDING` 제출본이 있으면 공개 범위 단독 PATCH도 409입니다. 수정 폼 응답은 `visibility`를 포함합니다.
+- 승인 후 진행 중 채팅 반영은 기존 계약을 유지합니다. 승인 전에는 제출본이 채팅 입력에 반영되지 않습니다. 백엔드는 채팅 턴을 만들 때 독자의 읽기 권한에 따라 최신 스토리 또는 공개 스냅샷을 AI 서버에 전달합니다. 최신 스토리를 읽을 권한이 있는 채팅은 다음 턴부터 새 설정을 사용합니다. 이미 저장된 지난 턴은 다시 쓰지 않습니다. 공개 스토리를 타인이 플레이할 때는 현재 읽기 권한과 공개 스냅샷 정책을 적용합니다. 비공개 개작은 해당 독자의 AI 입력에 노출하지 않습니다.
+- 검수 대상 PATCH는 202 `{submissionId, status: "PENDING"}`으로 응답하며 기존 200 완성 폼 응답을 대체합니다. 검증 실패 400, 미인증 401, 권한 위반 403, 없는 스토리 404, 검수 중 쓰기 409입니다. 아래 컬렉션 동기화·저장 규칙은 승인 후 적용합니다. 요청 유효성 검증은 제출 시점에 수행합니다.
 - 부분 갱신은 전송한 필드만 검증합니다. DTO가 nullable이므로 `null`은 미전송과 같아 기존 값을 유지합니다. `title`·`oneLineIntro`에 빈 문자열이나 공백만 보내면 400입니다. `genres`는 1~8개, 각 30자로 검증한 뒤 `", "`로 연결해 교체합니다. `mainEvents`는 전송하면 전체를 교체하고 빈 배열이면 모두 삭제합니다.
 - **`startSettings` 동기화.** 보내면 최소 1개(빈 배열 400)이며 컬렉션 전체를 동기화합니다: 각 항목의 `id`(시작 설정 공개 식별자)가 기존과 일치하면 **행 identity를 보존한 채 in-place 갱신**(진행 중 채팅의 `start_setting_id` 참조 유지), `id`가 없으면 신규 추가, 요청에서 빠진 기존 시작 설정은 자식(추천 입력·엔딩)과 함께 삭제(그 설정을 참조하던 채팅은 FK `ON DELETE SET NULL`로 해제)합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`는 모두 400입니다(조용한 무시·silent wipe 금지). 각 시작 설정의 `suggestedInputs`(정확히 3개)·`endings`는 보낸 값으로 전체 교체하며, `endings` 교체 시 레거시 행(`enabled=false`)도 함께 삭제됩니다: 새 엔딩이 `(start_setting_id, sort_order)` 유니크 제약에서 레거시 행과 충돌하지 않게 하기 위해서입니다.
+- **`characters` 동기화.** 보내면 컬렉션 전체를 동기화합니다(빈 배열이면 인물을 모두 삭제): 항목의 `id`(인물 공개 식별자)가 기존과 일치하면 **개명**(행 identity 보존), `id`가 없으면 신규 추가, 요청에서 빠진 기존 인물은 그 인물의 이미지와 함께 삭제합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`, 이름 중복은 모두 400입니다. 인물을 만들 수 있는 경로가 컴파일과 제작 등록뿐이면 등록 때 인물을 넣지 않은 스토리는 인물 이미지를 영영 붙일 수 없어, 수정에 인물 쓰기 경로를 둡니다.
+  - **인물 소개는 선택적으로 갱신합니다.** `description`을 생략하거나 null로 보내면 같은 `id`의 기존 소개를 유지하고 새 인물이면 null로 저장합니다. 소개 없이 인물 목록을 보내는 구버전 웹·앱도 기존 소개를 지우지 않습니다. 빈 문자열·공백만 보내면 소개를 삭제해 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장합니다. 입력의 CR·LF·탭 금지와 제거 후 공백 포함 80자 이하 규칙을 어기면 400입니다. 소개 변경은 다른 필드처럼 검수 승인 뒤 라이브에 반영합니다.
+  - **인물 이미지도 함께 동기화합니다.** `images[]` 항목은 `{id}`(기존 유지)이거나 `{objectKey, imageName}`(신규 추가) 중 하나이며, 둘 다 있거나 둘 다 없으면 400입니다. 수정 폼은 저장된 이미지의 객체 키를 모르므로(저장값이 URL) 기존 이미지는 `id`로 지목합니다. 요청에서 빠진 기존 이미지는 삭제하고 배열 순서가 표시 순서가 됩니다. `images`를 **생략하면 그 인물의 이미지를 유지**하고 빈 배열이면 모두 삭제합니다(다른 리스트 필드와 같은 null = 미전송 규칙).
+  - **개명하면 이미지 이름의 접두도 함께 바꿉니다.** 이미지 이름이 `{인물이름}_{접미}` 규칙이라 인물만 개명하면 기존 이미지가 규칙을 벗어난 상태로 남습니다. 유지되는 이미지의 접미는 그대로 두고 접두만 새 이름으로 갈아끼웁니다(항목이 `imageName`을 직접 보내면 그 값을 씁니다).
+  - 이미지가 실린 PATCH도 인증 필수이며 미인증 401, 이관 전 게스트 스토리에 대한 회원 요청은 403입니다. 삭제는 승인 후 DB 참조만 지우고 S3 객체는 남깁니다. 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리킵니다.
 - 보낸 `storySettings`는 기존 행이 없으면 생성하고 있으면 교체합니다(upsert). PATCH는 스토리 행 비관적 쓰기 락으로 동시 수정을 스토리 단위 직렬화합니다(자식 리스트 교체·시작 설정 동기화의 유니크 충돌 방지).
 - 저장 순번: 추천 입력 `input_order` 1부터, 주요 사건 `sort_order` 0부터, 엔딩 `sort_order` 1부터(`> 0` 체크 제약): 모두 요청 배열 순서를 그대로 씁니다. 등록되는 스토리의 `status`는 항상 PUBLISHED입니다(초안 저장 경로 없음).
-- **표지 교체 `thumbnailObjectKey`.** 아래 presign으로 올린 객체 키를 보내면 표지가 그 이미지로 바뀝니다(`stories.thumbnail_image_url`에 서빙 URL 저장: 생성 표지와 같은 컬럼이라 노출 폴백 규칙([§4-3-9](#4-3-api-계약))이 그대로 적용). 다른 필드와 같은 부분 갱신이며, 회원 소유 스토리만 허용합니다(게스트 스토리는 400). `GET /stories/{storyId}/edit` 응답에는 `thumbnailUrl`과 `characters[]`(`{id, name, images: [{id, imageName, imageUrl, moderationStatus}]}`)와 `thumbnailModerationStatus`를 실어 편집 화면이 현재 이미지와 검수 상태를 보여 줍니다.
+- **표지 교체 `thumbnailObjectKey`.** 아래 presign으로 올린 객체 키를 PATCH에 보내면 검수 제출본을 만들고 승인 후 표지를 바꿉니다(`stories.thumbnail_image_url`에 서빙 URL 저장: 생성 표지와 같은 컬럼이라 노출 폴백 규칙([§4-3-9](#4-3-api-계약))이 그대로 적용). 다른 필드와 같은 부분 갱신이며, 미인증은 401이고 회원 소유자만 허용합니다. `GET /stories/{storyId}/edit` 응답에는 `thumbnailUrl`과 `characters[]`(`{id, name, description, images: [{id, imageName, imageUrl, moderationStatus}]}`)와 `thumbnailModerationStatus`를 실어 편집 화면이 현재 이미지와 검수 상태를 보여 줍니다.
+
+#### 스토리 검수 제출 흐름
+
+일반 제작 등록·수정의 검수 제출 계약입니다. 기본 제출 흐름과 이미지 오류 계약은 서버 dev에 반영됐으며, 일시 실패 재시도·보류·용량 사전 검사는 서버 [PR #284](https://github.com/KIM-N-KANG/manyak-server/pull/284)의 계약을 따릅니다. 결정 근거는 [BE-048](../adr/2-backend-server-adr.md#be-048)·[BE-049](../adr/2-backend-server-adr.md#be-049)·[BE-050](../adr/2-backend-server-adr.md#be-050)입니다.
+
+라이브는 승인된 버전만 유지합니다. 기존 스토리는 승인된 라이브로 간주하고 백필하지 않습니다. 일반 제작 등록과 모든 수정은 공개·비공개를 가리지 않고 검수합니다. 간편 제작 완성본은 검수하지 않으며 이후 수정부터 검수합니다. `Story.isReadableBy`, 목록·검색의 노출 조건, 공개 스냅샷(KNK-1065), 진행 중 채팅의 읽기 규칙은 변경하지 않습니다. 미승인 제출본을 이 경로들에 노출하지 않습니다.
+
+| 요청 | 검수와 반영 |
+| --- | --- |
+| `POST /stories/general` | CREATE 제출본 접수, 202. 승인 때 스토리 생성 |
+| `PATCH /stories/{storyId}` | UPDATE 제출본 접수, 202. 승인 때 라이브 변경 |
+| `visibility`만 담은 PATCH | 검수 없이 즉시 반영, 기존 200 편집 폼 응답 유지 |
+| 인물 이미지 삭제·표지 삭제 | 검수 없이 즉시 반영, 기존 204 유지 |
+| 스토리 삭제 | 검수 없이 삭제, 해당 스토리의 제출본 전부 물리 삭제. 기존 204·권한 규칙 유지 |
+
+`visibility`와 다른 필드를 함께 보내면 전체가 검수 대상입니다. 스토리당 `PENDING` 제출본은 한 건만 허용합니다. 검수 중에는 PATCH 전부와 인물 이미지·표지 삭제를 409 `CONFLICT`로 거절합니다. 검수 중인 스토리 데이터의 쓰기 중에는 스토리 삭제만 허용하며, 제출본 자체의 취소는 아래 DELETE 계약을 따릅니다. 판정 전에 적용 기준인 라이브가 바뀌지 않게 하는 제약입니다.
+
+##### 검수 제출본 모델
+
+V87은 `story_submissions`, V88은 이미지 오류 저장, V89는 재시도·보류 필드를 정의합니다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `public_id` | UUID. 외부 식별자 `submissionId` |
+| `story_id` | 대상 스토리 FK. CREATE 접수 시 NULL, 승인 시 생성한 스토리로 설정 |
+| 소유 회원 | 제출본 접근 권한의 기준. 게스트 제출 없음 |
+| 종류 | `CREATE` 또는 `UPDATE` |
+| `payload` | jsonb. 요청 DTO를 직렬화한 원본 입력 보관. UPDATE는 원래 PATCH 본문이며 조회 응답의 payload와 구분 |
+| `input_form` | jsonb. 검수 시점 전체 폼. AI 입력 조립과 issues.path 재매핑의 기준이며 내부 컬럼 |
+| `image_copies` | jsonb NOT NULL, 기본 빈 객체. 원본 객체 키→서버 전용 복사본 키 매핑. 임대 재선점은 재사용하고 사용자 재제출은 초기화 |
+| `status` | `PENDING`, `APPROVED`, `REJECTED`, `FAILED` |
+| `issues` | jsonb. AI의 `{path, type, rule, reason}` 목록. path는 제출 입력 원본 기준으로 보관하고 조회 응답에서는 현재 폼 기준으로 재매핑 |
+| `image_errors` | V88, jsonb NOT NULL DEFAULT `[]`, 배열 CHECK. `{path, errorCode}` 목록이며 원본 경로를 저장하고 조회 시 재매핑 |
+| `retry_count` | V89, integer NOT NULL DEFAULT 0, 0~2 CHECK. 추가 재시도 예약 횟수이며 attempt와 별개 |
+| `next_attempt_at` | V89, nullable timestamptz. 다음 재시도 가능 시각, 선점 시 NULL |
+| `held_at` · `hold_reason` | V89, nullable timestamptz·text. 보류 시각·사유 코드이며 사용자에게 비노출 |
+| `error_code` | 실행 실패 코드. API에서는 `errorCode`로 노출 |
+| 생성·수정·판정 시각 | API에서는 `createdAt`, `updatedAt`, `decidedAt`. 판정 전 `decidedAt`은 null |
+| `attempt` | 초기 1. 선점·재선점·재제출마다 증가하는 결과 적용 토큰. 최초 실제 선점은 2 |
+| `dispatched_at` | nullable, 기본값 없음. NULL은 미선점이며 값은 마지막 DB 선점의 임대 시작 시각 |
+
+`story_id`가 있는 PENDING 행과 APPROVED가 아닌 행에 각각 부분 유니크 제약을 두어 스토리별 검수 중·미승인 제출본을 한 건으로 제한합니다. CREATE는 승인 전 story_id가 없어 이 제약의 스토리별 대상이 아닙니다. 미승인 제출본은 스토리당 UPDATE 한 행 또는 신규 등록 건당 CREATE 한 행입니다. 반려·실패 상태에서도 payload 전체와 검증된 issues·image_errors를 보존합니다. V89의 `ck_story_submissions_hold`는 보류 두 필드가 모두 NULL이거나, 모두 NOT NULL이면서 PENDING·next_attempt_at NULL일 것을 강제합니다. `ix_story_submissions_claim`은 `(id, next_attempt_at, dispatched_at)`의 `status = 'PENDING' AND held_at IS NULL` 부분 인덱스입니다. 제출본 상태는 라이브 스토리의 `status`나 이미지별 `moderation_status`와 별개입니다.
+
+미승인 행은 재제출 시 같은 submissionId로 payload를 덮어쓰고 issues·image_errors·error_code·판정 시각과 image_copies를 비우고 retry_count를 0, next_attempt_at·held_at·hold_reason을 NULL로 초기화하고 attempt를 증가시키며 dispatched_at을 NULL로 되돌린 뒤 PENDING으로 보관합니다. 이력은 별도로 남기지 않고 AI 판정 기록은 Langfuse에서 확인합니다. APPROVED 행은 감사용으로 보존하며 이후 PATCH는 새 행을 만듭니다. REJECTED·FAILED는 재제출·DELETE·회원 탈퇴까지 보관하고, 스토리 삭제 시 해당 스토리의 제출본 전부, 회원 탈퇴 시 해당 회원의 제출본을 하드 삭제합니다.
+
+##### 제출 검증과 AI 입력
+
+1. 일반 제작 등록·PATCH·제출본 API의 미인증 요청은 401입니다. PATCH·제출본 PUT의 필드 검증 순서는 인증 → 소유권·존재 → 검수 중·상태 409 → 입력 검증 400입니다. 두 컨트롤러는 `@Valid` 선검증 없이 서비스에서 검증합니다. 타인 스토리 PATCH는 403, 타인·미존재 제출본 PUT은 404이며 UPDATE 종류의 PUT도 409입니다. JSON 파싱·타입 변환 실패는 서비스 진입 전 400일 수 있습니다.
+2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·인물 소개 형식(앞뒤 공백 제거 후 공백 포함 80자 이하, 입력의 CR·LF·탭 금지)·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
+3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 이전 input_form에 있던 ID에 한해 재제출 검증에서 제외합니다. 임의의 다른 이미지 ID는 400입니다. 제출 폼은 새 이미지의 원본 객체 키·미리보기 URL과 유지되는 이미지를 포함합니다. 실제 검수 호출 직전에는 아래 불변 복사본 URL로 교체합니다.
+4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`, `characters[n].description`을 포함하며 공개 설정·최소 턴 수·중첩 ID·제출본 처리 상태는 AI 입력에서 제외합니다. 관측 식별자는 예외로 최상위 `submissionId`에 제출본 public UUID를 항상 넣고, UPDATE에서만 `storyId`에 스토리 public UUID를 넣습니다. 두 필드는 검수 대상이 아니며 issues.path·image_errors.path 검증에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
+
+새 업로드 표지·인물 이미지는 AI 호출 직전 서버가 S3 CopyObject로 `{thumbnails|characters}/uploaded/moderated/{uuid}.{ext}`에 복사합니다. 기존 라이브의 `{id}` 이미지 참조는 복사하지 않습니다. 복사는 DB 트랜잭션 밖에서 수행하고, 각 복사 완료 뒤 짧은 트랜잭션에서 PENDING·attempt를 확인해 image_copies에 원본→복사본 키를 기록합니다. 저장된 input_form은 원본 identity를 보존하고 AI로 보낼 사본만 복사본 URL로 바꿉니다. AI 입력과 승인 라이브 저장은 같은 복사본 URL을 사용하며 매핑이 없으면 원본으로 폴백하지 않습니다.
+
+기존 presign은 moderated 경로를 발급하지 않고 클라이언트의 해당 키 직접 제출도 업로드 소유 prefix 검증에서 거절합니다. 임대 재선점은 기록된 매핑을 재사용하며 사용자 재제출은 매핑을 비워 새 복사본을 만듭니다. 접수 전 HEAD로 원본이 없음을 확인하면 기존 400 UPLOAD_NOT_FOUND, 접수 후 원본 소실·복사 실패는 MODERATION_UNAVAILABLE로 아래 일시 실패 재시도·보류 규칙을 적용합니다. 매핑 DB 기록 장애는 FAILED로 확정하지 않고 PENDING 임대를 남깁니다. 이미지 스토리지 미설정은 접수 전 503이며 제출본을 만들지 않습니다.
+
+응답은 `ModerationResult.validated(input)`로 REST 클라이언트와 실행기에서 같은 전송 입력을 기준으로 검증합니다. 다음 중 하나라도 어긋나면 MODERATION_UNAVAILABLE로 처리하고 응답의 issues·image_errors는 사용자 오류 목록으로 채택하지 않습니다. 역직렬화된 응답의 issues가 한 개 이상이거나 최상위·이미지별 코드에 IMAGE_INVALID·IMAGE_UNREADABLE이 있으면 `InvalidModerationResponse.retryAllowed=false`로 자동 재시도를 금지합니다. 그 외 형식 오류는 일시 실패 재시도 대상입니다.
+
+- decision은 APPROVED 또는 REJECTED입니다. APPROVED는 issues·image_errors가 비고 error_code가 null이어야 합니다. REJECTED에서 image_errors가 없으면 error_code=null과 한 개 이상의 issues, 또는 MODEL_CALL_FAILED와 빈 issues만 허용합니다.
+- image_errors가 있으면 최상위 error_code는 목록에 나타난 코드 중 IMAGE_INVALID → IMAGE_UNREADABLE → IMAGE_DOWNLOAD_FAILED 순으로 고릅니다. 이때 검증된 내용 위반 issues를 함께 보존할 수 있습니다. 이미지 오류 코드를 보내면서 image_errors가 빈 응답은 거절합니다.
+- image_errors의 항목은 `{path, error_code}`이며 실제 IMAGE 문자열 경로와 위 이미지 오류 3종만 허용합니다. 같은 path 중복은 거절합니다. 최상위와 issues·image_errors 항목의 알 수 없는 필드는 무시합니다. image_errors 생략은 빈 배열로 읽되 나머지 불변식은 그대로 검증합니다.
+- issues[].rule은 MINOR_SEXUAL_EXPLOITATION, EXPLICIT_SEXUAL_CONTENT, NONCONSENSUAL_SEXUAL_EXPLOITATION, DRUGS, EXTREME_GORE, SELF_HARM_PROMOTION, HATE_VIOLENCE_INCITEMENT 중 하나입니다. reason은 공백만으로 구성될 수 없습니다.
+- path는 실제 전송한 검수 입력의 문자열 leaf 경로이며 배열 인덱스는 0부터 시작합니다. 객체·배열 자체, 없는 필드·범위 밖 인덱스는 허용하지 않습니다. thumbnailUrl과 characters[n].images[m].imageUrl만 IMAGE이고 나머지는 TEXT입니다. `characters[n].description`이 문자열이면 해당 issues.path는 TEXT 경로입니다.
+
+검수 정책과 `issues`의 의미는 AI [§5-3-6](5-ai-server-spec.md#5-3-6-게시물-검수)이 소유합니다. 백엔드는 검수 규칙을 중복 정의하지 않습니다.
+
+##### 비동기 실행과 결과 적용
+
+제출·재제출은 PENDING 행만 커밋하며 실행기에 직접 전달하지 않습니다. `SubmissionPoller`가 인스턴스의 빈 실행 슬롯을 예약하고 그 수만큼 DB에서 선점합니다. `storyModerationExecutor`는 기본 고정 스레드 4개, 대기 큐 0개, 스레드 접두어 `story-moderation-`와 MDC 전달을 사용합니다.
+
+선점은 REQUIRES_NEW 트랜잭션에서 `status='PENDING' AND held_at IS NULL AND (next_attempt_at IS NULL OR next_attempt_at <= now) AND (dispatched_at IS NULL OR dispatched_at <= now - reclaim-after)`를 대상으로 `ORDER BY id LIMIT n FOR UPDATE SKIP LOCKED`를 적용합니다. 같은 트랜잭션에서 dispatched_at·updated_at을 현재 시각으로 설정하고 attempt를 1 증가시키고 next_attempt_at을 NULL로 비웁니다. retry_count는 유지합니다. 초기 attempt는 1이므로 최초 실제 선점은 2입니다. 선점 커밋 후 실행기에 전달하고 실행 종료 때 슬롯을 반환합니다. 슬롯이 없으면 추가 선점하지 않습니다.
+
+실행기 거부 시 해당 PENDING·attempt의 dispatched_at을 NULL로 반환합니다. 반환 DB 장애가 나면 임대 만료 후 다시 선점합니다. AI 호출은 트랜잭션 밖에서 수행하며 HTTP 연결 제한은 5초, 읽기 제한은 기본 180초입니다. 실제 클라이언트의 읽기 제한은 150초 초과여야 하고 폴러의 임대 시간은 AI 타임아웃보다 길어야 기동할 수 있습니다. 결과는 PENDING·attempt가 일치하고 next_attempt_at·held_at이 모두 NULL일 때만 반영하고 삭제됐거나 이전 회차이면 무시합니다.
+
+각 선점은 새 UUID request_id를 발급하고 MDC로 AI HTTP 요청과 알림 아웃박스까지 전달합니다. 원 HTTP 요청의 상관 ID를 저장하지 않으며 선점 실행을 상관관계의 시작점으로 삼습니다. 세션 없는 작업의 sessionId는 unknown입니다.
+
+| AI·적용 결과 | 제출본 상태 | 후속 동작 |
+| --- | --- | --- |
+| `APPROVED`, `error_code=null`, 적용 성공 | `APPROVED` | 라이브 반영과 알림 발행 |
+| `REJECTED`, `error_code=null`, 내용 위반 issues | `REJECTED` | 라이브 불변, issues·입력 보존, 알림 발행 |
+| IMAGE_DOWNLOAD_FAILED·MODEL_CALL_FAILED·MODERATION_UNAVAILABLE, issues 없음·영구 이미지 오류 없음 | `PENDING` 유지 | 첫·둘째 실패는 재시도 예약, 셋째 실패는 보류. 완료 푸시 없음 |
+| 일시 실패 코드와 issues 또는 IMAGE_INVALID·IMAGE_UNREADABLE 혼합 | `FAILED` | 자동 재시도 없이 검증된 issues·imageErrors와 오류 코드 보존, 알림 발행 |
+| IMAGE_INVALID·IMAGE_UNREADABLE | `FAILED` | 즉시 종료, 검증된 issues·imageErrors 보존, 알림 발행 |
+| 이미지 복사 실패·AI 호출 타임아웃·통신 실패·5xx | 재시도 판정에 따름 | MODERATION_UNAVAILABLE로 분류 |
+| 응답 형식 오류 | 재시도 판정에 따름 | MODERATION_UNAVAILABLE. 내용 위반·영구 이미지 오류가 담겼으면 즉시 FAILED, 목록은 채택하지 않음 |
+| 승인 후 적용 단계의 검증 실패 | `FAILED` | 라이브 변경 롤백, APPLY_FAILED 기록, 알림 발행 |
+| DB 일시 장애 | `PENDING` 유지 | 트랜잭션 롤백, 동일 폴러가 임대 만료 후 재선점 |
+
+승인 결과 적용의 락 순서는 회원 → 스토리 → 제출본 → 인물입니다. CREATE는 기존 스토리가 없으므로 회원 → 제출본을 잠근 뒤 스토리를 생성합니다. PENDING·attempt는 잠근 제출본에서 확인합니다. 라이브 반영, 기존 공개 조건에 따른 공개 스냅샷 갱신, 제출본 `APPROVED`를 한 트랜잭션으로 커밋하고 그 안에서 검수 완료 도메인 이벤트를 발행합니다. CREATE 승인은 제출본 행을 잠그고 PENDING·attempt 조건을 확인한 뒤 처음 스토리를 만들고 story_id를 채워 중복 생성을 막습니다. 검색은 기존 라이브 커밋 뒤 색인 경로를 유지합니다.
+
+반려·실패는 라이브를 바꾸지 않고 제출본의 판정·issues·image_errors·error_code를 기록하는 트랜잭션에서 도메인 이벤트를 발행합니다. 적용 검증 실패는 라이브 적용 트랜잭션을 롤백한 뒤 PENDING·attempt 조건을 다시 확인해 FAILED와 이벤트를 기록합니다. local 모드는 커밋 뒤 서버가 발송하고 remote 모드는 같은 트랜잭션에 아웃박스를 기록합니다. 외부 푸시 발송 자체는 도메인 트랜잭션 안에서 실행하지 않습니다. 복사 매핑 기록을 포함한 DB 일시 장애는 롤백으로 PENDING 임대를 남겨 재선점 대상으로 둡니다.
+
+종료된 REJECTED·FAILED는 서버가 자동 재시도하지 않고 사용자가 재제출합니다. 재시작·유실·DB 장애로 남은 PENDING은 동일 폴러가 임대 만료 후 재선점합니다. 별도 회수 스케줄러는 없습니다. 임대 시간은 AI 타임아웃뿐 아니라 이미지 복사 시간까지 포함해 여유 있게 설정합니다. 임대를 초과하면 중복 AI 호출이 생길 수 있지만 결과 정합성은 PENDING·attempt 조건으로 보존합니다.
+
+##### 일시 실패 재시도와 보류
+
+사용자 수정 사유가 없는 일시 실패만 기본 1분·5분 간격으로 추가 두 번, 총 세 번 시도합니다. 예약 시 PENDING을 유지하고 dispatched_at을 NULL로 비우며 retry_count를 1 증가시키고 next_attempt_at을 현재 시각+간격으로 설정합니다. 세 번째 실패는 held_at·hold_reason을 기록하고 next_attempt_at·dispatched_at은 NULL로 둡니다. attempt는 결과 적용 토큰이고, 보류 알림의 시도 횟수는 retry_count+1인 3입니다. DB 장애·임대 회수는 이 재시도 횟수와 별개입니다.
+
+예약·보류 상태에서는 같은 attempt의 중복 실패와 늦은 승인도 무시합니다. API는 내부 재시도·보류 필드를 노출하지 않고 status=PENDING, errorCode·decidedAt=null, issues·imageErrors=빈 배열을 유지합니다. 보류는 완료 상태가 아니므로 완료 푸시를 보내지 않습니다. PATCH·PUT 재제출은 기존 PENDING 409 규칙을 따르며 제출본 DELETE 취소는 가능합니다.
+
+보류 전환 트랜잭션에서 `SubmissionHeld` 이벤트를 발행하고 커밋 뒤 Slack Incoming Webhook에 한 번 전송합니다. 공개 제출 UUID·CREATE/UPDATE·사유 코드·시도 횟수만 보내며 사용자 입력·이미지 URL·개인정보는 제외합니다. 전용 검수 실행기에서 동기 커밋 후 리스너를 실행하고 기본 `@Async`는 사용하지 않습니다. 웹훅 미설정은 WARN, 전송 실패는 제출 UUID와 예외 종류만 WARN으로 기록합니다. 연결 제한 2초·읽기 제한 3초이며 영속 아웃박스·재전송 없는 best-effort입니다.
+
+운영자는 장애 원인을 확인하고 대상 공개 UUID로 보류를 해제합니다. 별도 해제 API는 없습니다. 아래 `<submission UUID>`를 대상 값으로 바꾸고 영향 행이 한 건인지 확인합니다. 다음 폴링에서 새 attempt로 선점하며 추가 재시도 예산도 초기화합니다.
+
+```sql
+UPDATE story_submissions
+SET held_at = NULL, hold_reason = NULL, retry_count = 0,
+    next_attempt_at = NULL, dispatched_at = NULL
+WHERE public_id = '<submission UUID>'::uuid
+  AND status = 'PENDING' AND held_at IS NOT NULL;
+```
+
+##### 검수 요청 용량 사전 검사
+
+POST 일반 제작·검수 대상 PATCH·CREATE PUT 재제출의 입력 검증 단계에서 저장·AI 호출 전에 검사합니다. 기본 예산은 40MiB(41,943,040byte)이며 `ceil(보낼 이미지 전체 byte 합 × 4/3) + 검수 입력 JSON UTF-8 byte`가 예산을 초과하면 400 `IMAGES_TOO_LARGE`, `이미지 크기나 장수를 줄여 주세요.`를 반환합니다. 인증 → 소유권·존재 → 검수 중 409 → 입력 검증 순서를 유지하며 JSON 파싱·타입 변환은 서비스 진입 전 400일 수 있습니다.
+
+- 새 업로드는 소유 prefix·형식·크기 검증에서 받은 HEAD Content-Length를 재사용합니다.
+- UPDATE에서 유지하는 표지·인물 이미지는 동일 asset 서빙 URL prefix를 객체 키로 환산해 HEAD를 조회합니다. 조회 실패·저장소 미설정·다른 URL prefix·음수 또는 없는 Content-Length는 장당 5MiB(5,242,880byte)로 계산합니다. 코드상 0byte는 유효 메타데이터로 읽습니다.
+- 중복 이미지 참조도 전송 장수대로 합산합니다. JSON에는 실제 moderated 복사본과 같은 길이의 URL, submissionId, UPDATE의 storyId를 포함합니다.
+- 조회용 폼 복원과 visibility 단독 변경은 검사하지 않습니다. 백엔드 예산은 AI 프롬프트 여유를 두는 추정치이며 [AI 실제 전송 본문 48MiB 방어 검사](5-ai-server-spec.md#5-3-6-게시물-검수)는 유지합니다.
+
+##### 검수 실행 설정
+
+검수 실행의 설정과 기본값입니다. `manyak.ai.base-url`을 기준으로 검수 API를 호출합니다.
+
+| 설정 키 | 환경 변수 | 기본값·동작 |
+| --- | --- | --- |
+| `manyak.ai.moderation.timeout` | `MANYAK_AI_MODERATION_TIMEOUT` | 180s, 150초 초과 필수 |
+| `manyak.ai.moderation.pool-size` | `MANYAK_AI_MODERATION_POOL_SIZE` | 4, 인스턴스 실행 슬롯 수. core·max 동일, 실행기 큐 0. 양수 필수 |
+| `manyak.ai.moderation.reclaim-after` | `MANYAK_AI_MODERATION_RECLAIM_AFTER` | 300s, DB 실행 임대. AI timeout보다 커야 함 |
+| `manyak.ai.moderation.poll-interval` | `MANYAK_AI_MODERATION_POLL_INTERVAL` | 1000ms, fixed delay |
+| `manyak.ai.moderation.poll-enabled` | `MANYAK_AI_MODERATION_POLL_ENABLED` | true. 테스트는 false로 자동 폴링을 끄고 직접 호출 |
+| `manyak.ai.moderation.retry-delays` | `MANYAK_AI_MODERATION_RETRY_DELAYS` | `1m,5m`, 양수 duration 정확히 두 개 |
+| `manyak.ai.moderation.request-budget-bytes` | `MANYAK_AI_MODERATION_REQUEST_BUDGET_BYTES` | `41943040`, 양수 필수 |
+| `manyak.slack.moderation-webhook-url` | `MANYAK_SLACK_MODERATION_WEBHOOK_URL` | 미설정 시 `MANYAK_SLACK_REPORT_WEBHOOK_URL`, 둘 다 없으면 빈 값·WARN |
+| `manyak.ai.moderation.stub` | 별도 YAML 치환 없음 | 미지정 시 실제 호출. local·test는 true로 즉시 APPROVED 스텁 사용 |
+
+웹훅 설정식은 `${MANYAK_SLACK_MODERATION_WEBHOOK_URL:${MANYAK_SLACK_REPORT_WEBHOOK_URL:}}`입니다. test 프로필은 `manyak.slack.moderation-webhook-url`과 `manyak.slack.report-webhook-url`을 모두 빈 문자열로 명시해 외부 발송과 신고 웹훅 폴백을 차단합니다.
+
+##### 검수 제출본 API
+
+아래 API는 모두 인증 필수이며 미인증은 401입니다. 제출본 조회는 소유 회원만 허용하고 타인·미존재 식별자는 404로 처리합니다. 재제출·폐기도 소유 회원만 수행할 수 있으며 타인·미존재·잘못된 UUID는 404입니다. 정지 회원의 쓰기는 403입니다.
+
+| 엔드포인트 | 요청·응답과 동작 |
+| --- | --- |
+| `GET /stories/submissions/{submissionId}` | 200 제출본 상세. 화면 재진입 때 현재 상태와 입력을 복원 |
+| `GET /stories/submissions` | 200 내 미승인 제출본 배열. PENDING·REJECTED·FAILED를 조회하고 APPROVED는 제외 |
+| `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 입력 검증 뒤 같은 submissionId의 payload를 덮어쓰고 issues·image_errors·error_code·판정 시각·복사 매핑과 재시도·보류 필드를 초기화한 뒤 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
+| `DELETE /stories/submissions/{submissionId}` | APPROVED가 아닌 PENDING·REJECTED·FAILED 제출본을 물리 삭제, 204. APPROVED는 409. 중복 CREATE 정리와 UPDATE 취소에 같은 경로 사용 |
+
+상세와 목록 항목은 `{submissionId, storyId, kind, payload, status, issues, imageErrors, errorCode, createdAt, updatedAt, decidedAt}`을 사용합니다. 응답 payload는 DB 원본 요청이 아니라 현재 라이브에 제출 입력을 합성한 복원 폼이며 새 이미지 미리보기를 포함하고 응답 전용 submission 필드는 제외합니다. CREATE는 제출 입력에서 폼을 복원합니다. APPROVED 상세는 현재 라이브를 다시 합성하지 않고 저장된 input_form을 반환하므로 승인 이후 발급된 자식 ID로 교체하지 않습니다. 내부 attempt·dispatched_at·input_form·image_copies·retry_count·next_attempt_at·held_at·hold_reason은 별도 응답 필드로 노출하지 않습니다. `storyId`는 외부 공개 UUID이며 승인 전 CREATE에서는 null입니다. issues는 AI의 필드 구조를 유지하되 path를 응답 폼 기준으로 재매핑하고 대상이 사라진 항목은 응답에서 제외합니다. `error_code`는 클라이언트 camelCase인 `errorCode`로, AI의 `image_errors: [{path, error_code}]`는 `imageErrors: [{path, errorCode}]`로 전달합니다. imageErrors는 오류가 없으면 빈 배열이며 issues와 같은 원본 identity 기반 재매핑·삭제 대상 제외 규칙을 사용합니다.
+
+목록은 [내 콘텐츠 목록](#내-콘텐츠-목록) 관례를 따릅니다. `limit` 기본 100, 정수는 1~100으로 보정하고 비정수는 400입니다. 페이지네이션 없이 생성 시각 내림차순, 동률이면 내부 PK 내림차순으로 정렬합니다. 내부 PK는 응답에 싣지 않습니다. 신규 등록 대기·반려·실패본은 아직 라이브 스토리가 없으므로 이 목록으로 내 스토리 화면을 구성합니다.
+
+UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId를 유지합니다. 수정 폼은 매번 현재 라이브에 미승인 제출본의 PATCH payload를 다시 적용해 계산하고, 그 사이 삭제된 기존 이미지 id는 폼에서 제외합니다. `submission: {submissionId, status, issues, errorCode, imageErrors}` 필드는 항상 존재하며 대상 제출본이 없거나 APPROVED이면 null입니다.
+
+아직 라이브가 아닌 새 인물의 id도 null입니다. 아직 라이브가 아닌 새 이미지는 `id: null`, `objectKey`, 미리보기용 서빙 URL을 반환합니다. 서버는 제출본의 issues.path를 입력 원본 기준으로 보관합니다. 수정 폼·제출본 조회 응답을 만들 때 기존 이미지는 id, 새 이미지는 objectKey, 인물은 id 또는 이름으로 대응시켜 현재 폼 인덱스로 다시 매핑합니다. 대상이 사라진 항목의 이슈는 응답에서 제외하며 응답의 path는 항상 응답 폼 기준입니다. 표지 URL이 검수 시점과 달라졌으면 해당 표지 이슈도 응답에서 제외합니다. CREATE는 승인 전 storyId가 없으므로 제출본 상세로 입력을 복원합니다.
+
+최초 CREATE POST에는 멱등키를 두지 않고 중복 제출을 허용합니다. 202 응답이 유실되면 사용자가 미승인 목록에서 제출본을 확인합니다. 중복 CREATE 정리와 수정 취소는 위 DELETE 계약에 따라 PENDING을 포함한 모든 미승인 상태에서 수행합니다. PENDING 제출본을 지우면 행이 사라지므로 늦은 검수 결과는 PENDING·attempt 조건을 만족하지 못해 무시됩니다.
+
+##### 검수 실행 실패 코드
+
+내용 위반은 REJECTED·issues·`errorCode=null`이며 실행 실패는 FAILED·오류 코드로 구분합니다. 아래 코드는 제출 접수 HTTP 응답의 `ApiErrorResponse.code`가 아니라 제출본 조회의 `errorCode`입니다.
+
+| errorCode | 원인 |
+| --- | --- |
+| `IMAGE_DOWNLOAD_FAILED` | AI 이미지 다운로드 실패. 사용자 수정 사유가 없으면 재시도·보류 |
+| `IMAGE_INVALID` | AI 이미지 형식·크기 등 유효성 오류. 즉시 FAILED |
+| `IMAGE_UNREADABLE` | AI 이미지 디코딩·읽기 실패. 즉시 FAILED |
+| `MODEL_CALL_FAILED` | AI 최종 모델 호출 실패. AI 코드 그대로 전달 |
+| `MODERATION_UNAVAILABLE` | 이미지 복사 실패·AI 호출 실패·타임아웃·응답 형식 오류 |
+| `APPLY_FAILED` | AI 승인 후 라이브 적용 단계의 검증 실패 |
+
+기존 IMAGE_READ_FAILED는 사용하지 않습니다. 유효한 이미지 실행 오류 응답의 검증된 내용 위반 issues는 FAILED에서도 imageErrors와 함께 보존합니다. MODEL_CALL_FAILED 단독 응답은 issues·imageErrors가 비어야 합니다. 서버 실행 실패·형식 오류에는 내용 위반 항목을 만들어 넣지 않습니다. 일시 실패 예약·보류에는 위 PENDING 규칙을 적용합니다. 검수 제출본의 입력 원문·이미지 URL을 로그나 오류 메시지에 복제하지 않습니다.
 
 <a id="스토리-이미지-업로드--phase-3--구현knk-1126-v76"></a>
 
@@ -1117,24 +1468,25 @@ graph TD
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
 | `POST /stories/{storyId}/images/presign` | `{ "kind": "COVER" \| "CHARACTER", "contentType": "image/jpeg" \| "image/png" \| "image/webp", "contentLength": number(1~5,242,880) }` | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
-| `PATCH /stories/{storyId}` | `{ "thumbnailObjectKey": string }`(위 표지 교체) | 200 편집 폼 |
-| `DELETE /stories/{storyId}/thumbnail` | 없음 | 204: 업로드·생성 표지 URL을 지우고 상태를 `APPROVED`로 되돌려 프리셋 폴백으로 내림. 없어도 204 |
-| `POST /stories/{storyId}/characters/{characterId}/images` | `{ "objectKey": string, "imageName": string }` | 201 `{ "id": uuid, "imageName": string, "imageUrl": string, "moderationStatus": string }` |
+| `POST /stories/images/presign` | 위와 같음(스토리 없이 발급: 등록 전 업로드) | 201 `{ "uploadUrl": string, "objectKey": string, "expiresInSeconds": 600 }` |
+| `PATCH /stories/{storyId}` | `{ "thumbnailObjectKey": string }` 및 인물 이미지 본문 | 202 `{submissionId, status}`. |
+| `DELETE /stories/{storyId}/thumbnail` | 없음 | 204: `thumbnail_image_url`과 `thumbnail_image_key`를 모두 지우고 상태를 `APPROVED`로 되돌립니다. 결과 표지는 null이며 없어도 204입니다. 검수 중에는 409입니다 |
+| `POST /stories/{storyId}/characters/{characterId}/images` | 폐지. 등록·PATCH 본문으로 대체 | 검수 우회 경로로 남기지 않음 |
 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 없음 | 204: 없어도 204 |
 
 - **클라이언트가 S3에 직접 올립니다(presigned PUT).** 서버를 거치지 않는 이유는 파일이 서버 메모리·대역폭을 지날 이유가 없기 때문입니다. presign은 `Content-Type`과 `Content-Length`를 서명에 고정하므로 클라이언트는 요청한 값 그대로 PUT해야 합니다. 객체 키는 서버가 정합니다: `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}` · `characters/uploaded/{storyPublicId}/{uuid}.{ext}`. 표지가 `thumbnails/` 아래인 이유는 웹이 원격 이미지를 `cdn.manyak.app/thumbnails/**`만 허용하기 때문입니다([§4-3-9](#4-3-api-계약)). 만료 10분.
-- **연결 시 서버가 검증합니다.** `thumbnailObjectKey`·`objectKey`는 이 스토리의 업로드 prefix 아래여야 하고(다른 스토리·프리셋 키는 400), 서버가 `HEAD`로 객체 존재·`Content-Length`(5MB 이하)·`Content-Type`(3종)을 확인합니다. 객체가 없으면 400이고 바디 `code`는 `UPLOAD_NOT_FOUND`(클라이언트가 PUT 완료 뒤 다시 부르면 됨). 픽셀 크기·비율은 검증하지 않습니다: 변환 없이 원본을 저장하므로 비율 크롭(표지 3:4)은 클라이언트 몫입니다.
+- **등록 전 업로드는 draft 키를 씁니다.** 일반 제작은 폼 제출 한 번으로 이미지까지 등록하는데 그 시점에는 스토리가 없습니다([§4-3-8 일반 제작 등록](#4-3-api-계약)). 그래서 `POST /stories/images/presign`은 스토리 대신 **요청자**를 소유 스코프로 삼아 `thumbnails/uploaded/drafts/{userPublicId}/{uuid}.{ext}` · `characters/uploaded/drafts/{userPublicId}/{uuid}.{ext}`를 발급합니다. 인증 필수(미인증 401·정지 403)이며 형식·크기·만료 규칙은 스토리 스코프 발급과 같습니다. 등록 요청은 키가 **요청자의** draft prefix 아래인지 먼저 확인한 뒤 같은 `HEAD` 검증을 거칩니다(남의 draft 키는 400). 원본 객체는 draft 경로에 남깁니다. 일반 제작·수정의 승인 라이브에는 원본 대신 검수 직전 만든 moderated 복사본 URL을 저장합니다. presign 업로드 경로와 CORS 범위는 유지합니다. 서버 복사에는 원본 GetObject와 복사본 PutObject 권한이 필요하며 배포 환경에서 확인해야 합니다.
+- 등록·PATCH 제출 시 기존 이미지 검증을 수행하고, 검증 실패는 검수 전에 거절합니다. `thumbnailObjectKey`·`objectKey`는 이 스토리의 업로드 prefix **또는 요청자의 draft prefix** 아래여야 하고(남의 스토리·남의 draft·프리셋 키는 400: 제작·수정 화면이 같은 업로드 컴포넌트를 써도 막히지 않게 둘 다 받습니다), 서버가 `HEAD`로 객체 존재·`Content-Length`(5MB 이하)·`Content-Type`(3종)을 확인합니다. 객체가 없으면 400이고 바디 `code`는 `UPLOAD_NOT_FOUND`(클라이언트가 PUT 완료 뒤 다시 부르면 됨). 픽셀 크기·비율은 검증하지 않습니다: 변환 없이 원본을 저장하므로 비율 크롭(표지 3:4)은 클라이언트 몫입니다.
 - **인물 이미지 이름은 필수이며 형식을 강제합니다.** `{인물이름}_{접미}`: 접미는 1~20자 한글·영문·숫자, 같은 인물 안에서 유일(위반 400, 중복 409 `CONFLICT`). 접미는 표정·상황·감정입니다(`세린_기본`, `세린_웃음`, `세린_분노`). 컴파일이 만든 첫 장은 `{인물이름}_기본`입니다. AI가 대사 문맥으로 여러 장 중 하나를 고르는 것은 AI 서버 몫이며, 그 전까지 AI는 같은 이름의 마지막 항목 한 장만 씁니다. **인물당 상한 10장.**
 - **채팅 요청에는 인물별 전부를 실어 보냅니다.** 채팅 요청 `character_images[]`는 `story_character_images` 전체를 `{name, image_name, image_url}`로 싣습니다(같은 `name`의 항목이 여러 개: [§4-3-9](#4-3-api-계약) 채팅 인물 이미지 전달). 상세 응답 `characters[].imageUrl`은 `_기본` 이미지, 없으면 첫 장입니다.
 - **삭제·교체는 DB 참조만 지웁니다. S3 객체는 남깁니다.** 지난 채팅의 `[[URL]]` 마커가 그 객체를 가리키고 있어 지우면 옛 대화가 깨집니다. 객체 키가 uuid라 재사용 충돌이 없고 저장 비용은 무시할 수준입니다. 연결되지 않은 고아 객체(PUT 뒤 연결 안 함)도 같은 이유로 방치합니다: 쌓이면 lifecycle 규칙으로 정리합니다.
-- **권한.** 네 경로 모두 인증 필수라 미인증은 **401**입니다(좋아요·신고와 같은 결). 회원 소유 스토리만이며 게스트 소유(`user_id` NULL) 스토리는 이관 뒤에 올립니다(presign·연결 모두 400). 소유자가 아니면 403, 스토리·인물이 없으면 404(존재 비노출을 위해 403보다 먼저 판정). 삭제 대상 이미지·표지가 없는 것은 멱등 삭제 계약대로 204입니다. 정지 계정은 403.
+- **권한.** presign·표지 교체·이미지 삭제 경로는 인증 필수이며 미인증은 401입니다. 스토리 스코프는 회원 소유 스토리만 허용하며 presign·삭제의 게스트 소유 스토리 거절 400은 유지합니다. 소유자가 아니면 403, 스토리·인물이 없으면 404이며 존재 여부를 먼저 판정합니다. PATCH의 미인증 401·이관 전 게스트 스토리 대상 회원 요청 403은 위 수정 계약을 따릅니다. 삭제 대상 이미지·표지가 없는 것은 멱등 삭제 계약대로 204이며 정지 계정은 403입니다. 개별 인물 이미지 연결 API는 폐지하고 PATCH로 대체합니다. `PENDING` 제출본이 있으면 표지·인물 이미지 삭제도 409입니다. presign 발급은 유지합니다.
 - **저장소 미설정 시 503.** 버킷·base URL 설정(`manyak.asset.character-image.*`)이 비어 있으면 presign은 503("이미지 업로드가 설정되지 않았습니다.")입니다. 생성 이미지처럼 건너뛸 수 없는 기능이라 로컬·미구성 환경에서 명시적으로 실패합니다.
 - **이미지 검수**
-  - 인물 이미지와 표지에는 `APPROVED`·`PENDING`·`REJECTED` 상태를 저장합니다.
-  - 상세·목록·채팅 카드와 AI 요청에는 `APPROVED` 이미지만 노출합니다. 나머지 상태는 소유자의 편집 화면에서만 확인할 수 있습니다.
-  - 현재 기본값은 `APPROVED`이며 신고로 대응합니다([§4-3-1](#4-3-api-계약)). 자동 검수를 도입할 때는 기본값을 `PENDING`으로 바꾸고 연결 API의 HEAD 검증 뒤에 승인 절차를 추가합니다.
-  - 운영 릴리스는 검수 기능과 함께 진행합니다.
-- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 사용합니다. 업로드 이미지가 생성 표지를 대체하며, 삭제하면 프리셋 표지를 사용합니다. 인물 이미지는 `story_character_images`(V76)에 저장합니다([§4-4](#4-4-데이터-모델)). V76은 기존 `story_characters.image_url`의 이미지를 `name || '_기본'` 행으로 옮깁니다. 사용하지 않는 옛 컬럼은 읽는 코드가 사라진 다음 릴리스에서 제거합니다([배포 Design](../design/4-deployment.md)의 두 단계 마이그레이션 규칙).
+  - V76의 이미지별 `moderation_status`와 표지 검수 상태는 이번 제출 흐름의 상태 머신으로 사용하지 않으며 `APPROVED`로 유지합니다. 기존 이미지도 승인된 라이브로 간주하고 백필하지 않습니다.
+  - 등록·PATCH의 텍스트와 이미지를 게시물 전체로 검수하고 승인 후에만 라이브 이미지 참조를 저장합니다. 반려·실패 입력은 제출본에 보존합니다.
+  - 기존의 자동 검수 도입 시 이미지 기본값을 `PENDING`으로 바꾸는 계획은 [비동기 검수 제출](#스토리-검수-제출-흐름)로 대체합니다. 운영 릴리스는 서버·웹·앱이 함께 진행합니다.
+- **저장.** 표지는 `stories.thumbnail_image_url`(V68)을 사용합니다. 업로드 이미지가 생성 표지를 대체하며, 삭제하면 표지 URL과 프리셋 키를 모두 지워 표지는 null입니다. 인물 이미지는 `story_character_images`(V76)에 저장합니다([§4-4](#4-4-데이터-모델)). V76은 기존 `story_characters.image_url`의 이미지를 `name || '_기본'` 행으로 옮깁니다. 사용하지 않는 옛 컬럼은 읽는 코드가 사라진 다음 릴리스에서 제거합니다([배포 Design](../design/4-deployment.md)의 두 단계 마이그레이션 규칙).
 - **인프라(KNK-1200, `manyak-terraform`).** 서버 역할의 S3 쓰기 범위에 `thumbnails/uploaded/*`·`characters/uploaded/*`(Put·Delete·Head)를 더하고, assets 버킷에 CORS(`PUT`·`HEAD`, 웹 origin)를 신설합니다. apply 전에는 presign 발급은 되지만 PUT이 403입니다. 안드로이드는 CORS와 무관합니다.
 
 [결정 근거 BE-014](../adr/2-backend-server-adr.md#be-014)
@@ -1144,7 +1496,7 @@ graph TD
 
 ### 4-3-9. 채팅 확장: AI 응답 재생성 · 인물 이미지 · 배경 이미지
 
-인물 이미지와 표지는 컴파일 결과를 저장하고 프리셋 표지는 폴백으로 유지합니다. 채팅 인물 이미지는 화자 라벨 감지와 URL 저장 마커를 사용합니다. 배경 마커는 별도 계약입니다. 현재 구현 범위는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)에서 확인합니다.
+인물 이미지와 표지는 컴파일 결과를 저장합니다. 새 스토리에는 프리셋 표지를 연결하지 않으며, 기존 프리셋 키는 노출 폴백으로 유지합니다. 채팅 인물 이미지는 화자 라벨 감지와 URL 저장 마커를 사용합니다. 배경 마커는 별도 계약입니다. 현재 구현 범위는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)에서 확인합니다.
 
 [결정 근거 BE-015](../adr/2-backend-server-adr.md#be-015)
 
@@ -1168,22 +1520,23 @@ graph TD
 
 [결정 근거 BE-017](../adr/2-backend-server-adr.md#be-017)
 
-#### 썸네일 자동 연결 규칙
+#### 썸네일 저장과 노출 규칙
 
-스토리의 대표 이미지(표지)는 팀 이미지(카탈로그의 `THUMBNAIL` 타입: 아래 자산 카탈로그) 중에서 서버가 자동 연결합니다. 사용자가 썸네일을 업로드하거나 선택하는 계약은 없습니다.
+스토리의 대표 이미지(표지)는 생성하거나 업로드한 이미지를 사용합니다. 간편 제작과 일반 제작 모두 등록 시 팀 프리셋을 자동 연결하지 않으며 `stories.thumbnail_image_key`는 null입니다. 프리셋 직접 선택은 제공하지 않으며 사용자 표지 업로드는 [스토리 이미지 업로드](#스토리-이미지-업로드)를 따릅니다.
 
-- **자동 연결**: 스토리 등록 시(간편 제작·일반 제작 공통) 서버가 연결합니다: 스토리의 첫 번째 장르 태그가 이미지의 장르 태그 목록(`genres[]`: 복수 가능, 값은 장르 마스터와 정확 일치라 매칭이 문자열 동등 비교)에 포함되는 팀 이미지 중 랜덤 1개 → 없으면 장르 무관 팀 이미지 중 랜덤 1개 → 하나도 없으면 NULL. 확정값은 `stories.thumbnail_image_key`에 저장하고 응답 `thumbnailUrl`은 백엔드가 조합합니다([§4-4](#4-4-데이터-모델)).
-- 자동 연결은 등록 시 1회 확정 저장합니다. 이후 수정으로 장르를 바꿔도 자동 재연결하지 않습니다.
-- 기존 스토리(규칙 도입 전 생성분)는 백필하지 않고 NULL을 유지합니다. 프론트엔드는 NULL이면 현행 placeholder를 표시합니다.
-- **와이어 필드**: 상세 응답의 `coverImageUrl`은 `thumbnailUrl`(string·null, 원본 서빙 URL)로 개명 완료, 자동 연결 소스(이 절)도 구현 완료(V45·46)라 등록 스토리는 값이 채워집니다(후보 없음·규칙 도입 전 스토리만 null). 목록(`StorySummaryResponse`)과 채팅 카드(`ChatSummaryResponse`)에는 축소 변형 `thumbnailUrlSm`을 싣습니다([§4-3-1](#4-3-api-계약)·[§4-3-3](#4-3-api-계약)).
+- **표지 없는 스토리**: 표지를 지정하지 않으면 표지는 null입니다. 프론트엔드는 라이트 모드와 다크 모드에 맞는 기본 이미지를 표시합니다.
+- **기존 프리셋 키**: 이미 등록된 스토리의 `thumbnail_image_key`는 그대로 두며 마이그레이션과 백필은 하지 않습니다. 기존 키의 표지는 계속 노출합니다. `image_presets`의 `THUMBNAIL` 행과 `image_key` FK도 유지합니다. 장르를 수정해도 프리셋을 연결하거나 재연결하지 않습니다.
+- **와이어 필드**: 상세 응답은 원본 `thumbnailUrl`, 목록(`StorySummaryResponse`)과 채팅 카드(`ChatSummaryResponse`)는 `thumbnailUrlSm`을 사용합니다. 필드 이름과 타입(string 또는 null)은 유지하며 표지가 없으면 두 필드 모두 null입니다([§4-3-1](#4-3-api-계약), [§4-3-3](#4-3-api-계약)).
 - **반응형 변형(`_sm`)**: 썸네일 단일 원본이 채팅 목록(46px)부터 상세 히어로까지 쓰이면 "가벼운 목록"과 "선명한 상세"를 동시에 잡을 수 없어, 상세=원본(`thumbnails/{imageKey}.png`)·목록·채팅 카드=축소 변형(`thumbnails/{imageKey}_sm.png`)으로 나눕니다. 변형은 썸네일에만 있고(배경·캐릭터는 채팅 중 한 장씩 로드라 단일 원본 유지), `_sm`은 DB에 저장하지 않고 URL 조합 시 접미사로 파생합니다(`imageKey` 불변). `_sm` 객체의 생성·업로드는 인프라 소유(`manyak-terraform`)이며, 응답에 두 URL을 모두 실어 프론트엔드의 URL 문자열 조작을 금지합니다(URL은 백엔드 소유: [`4-deployment.md §4-4`](../design/4-deployment.md)).
-- **AI 생성 표지로의 전환.** 간편 제작(컴파일 경로)은 AI가 만든 표지를 우선합니다. 컴파일 응답의 `thumbnail_image`(768×1024 WebP base64: [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md))를 백엔드가 디코딩해 `thumbnails/generated/{storyPublicId}/{이름}_{uuid8}.webp`로 S3에 올리고, 그 절대 URL을 `stories.thumbnail_image_url`(V68 신설)에 저장합니다. 위 프리셋 자동 연결은 **생성 성공이어도 계속 돌아가** `thumbnail_image_key`를 함께 채웁니다.
-- **2단 폴백**: 노출은 `thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 그 값, 아니면 프리셋 키로 조합한 URL입니다. 판정은 백엔드의 URL 조합 지점 한 곳이 소유하며 상세·목록·채팅 카드가 모두 이를 통과합니다. 생성 표지가 없는 경우(구버전 AI 응답, 생성 실패 4종, 일반 제작, 규칙 도입 전 스토리)는 전부 프리셋 경로에 그대로 남습니다. 표지 생성·업로드 실패는 스토리 생성을 막지 않습니다(인물 이미지와 같은 graceful 원칙).
-- **왜 컬럼을 새로 두는가**: `stories.thumbnail_image_key`에는 `image_presets.image_key` FK가 걸려 있어 카탈로그 행이 없는 생성 자산을 가리킬 수 없습니다. 생성 자산은 절대 URL을 저장하며 인물은 `story_character_images.image_url`을 사용합니다. 생성 표지의 서빙 URL은 업로드 시점에 확정해 저장하고, 프리셋처럼 조회 때 조합하지 않습니다.
+- **AI 생성 표지.** 간편 제작(컴파일 경로)은 AI가 만든 표지를 우선합니다. 컴파일 응답의 `thumbnail_image`(768×1024 WebP base64: [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md))를 백엔드가 디코딩해 `thumbnails/generated/{storyPublicId}/{이름}_{uuid8}.webp`로 S3에 올리고, 그 절대 URL을 `stories.thumbnail_image_url`(V68 신설)에 저장합니다. 생성 성공 여부와 관계없이 `thumbnail_image_key`는 null입니다. 생성이 실패하거나 AI 응답에 표지가 없으면 프리셋으로 대체하지 않고 표지는 null입니다.
+- **2단 폴백**: 노출은 `thumbnail_image_url`이 있고 검수 상태가 `APPROVED`이면 그 값, 아니면 프리셋 키로 조합한 URL입니다. 판정은 백엔드의 URL 조합 지점 한 곳이 소유하며 상세·목록·채팅 카드가 모두 이를 통과합니다. 프리셋 키도 없으면 null입니다. 업로드 표지가 검수 대기나 반려 상태인 경우도 같은 규칙을 적용하므로 기존 프리셋 키가 있으면 해당 표지를, 키가 없는 새 스토리는 null을 반환합니다. 간편 제작의 표지 생성 실패는 스토리 생성을 막지 않습니다. 일반 제작의 제출 이미지 검증 실패는 400, 검수 실행 실패는 FAILED이며 승인 전에 스토리를 생성하지 않습니다.
+- **표지 URL과 프리셋 키**: `stories.thumbnail_image_key`에는 `image_presets.image_key` FK가 걸려 있어 카탈로그 행이 없는 생성 자산을 가리킬 수 없습니다. 생성 자산은 절대 URL을 저장하며 인물은 `story_character_images.image_url`을 사용합니다. 생성 표지의 서빙 URL은 업로드 시점에 확정해 저장하고, 프리셋처럼 조회 때 조합하지 않습니다.
 - **생성 표지에는 `_sm` 변형이 없습니다.** 목록·채팅 카드도 원본 URL을 받습니다(카드 무게는 후속 과제: 업로드 시 축소본을 함께 만들거나 CDN 리사이즈를 붙이는 방향). 프리셋 표지의 `_sm` 규칙은 그대로입니다.
-- **저장소는 프리셋과 같은 assets 버킷**이며(같은 CloudFront로 서빙, path 제한 없음) 서버 태스크 역할의 쓰기 허용 범위에 `thumbnails/generated/*`를 추가했습니다(KNK-1072, `manyak-terraform`). 프리셋 자산 키(`thumbnails/{imageKey}.png`)는 서버가 덮어쓰지 못하도록 허용 범위에서 제외합니다. 권한 적용이 서버 배포보다 늦으면 업로드가 403으로 실패하고 프리셋으로 폴백합니다.
+- **저장소는 프리셋과 같은 assets 버킷**이며(같은 CloudFront로 서빙, path 제한 없음) 서버 태스크 역할의 쓰기 허용 범위에 `thumbnails/generated/*`를 추가했습니다(KNK-1072, `manyak-terraform`). 프리셋 자산 키(`thumbnails/{imageKey}.png`)는 서버가 덮어쓰지 못하도록 허용 범위에서 제외합니다. 권한 적용이 서버 배포보다 늦으면 업로드가 403으로 실패하고 새 스토리의 표지는 null입니다.
 - **사용자 업로드 표지.** 소유자가 올린 표지도 같은 `thumbnail_image_url` 컬럼에 들어가 생성 표지와 같은 폴백·노출 규칙을 탑니다. 객체 키는 `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}`이고 `_sm` 변형은 없습니다([§4-3-8](#4-3-api-계약) 스토리 이미지 업로드).
 - **채팅 카드 표지**: 현재 메타데이터를 읽을 권한이 있으면 현재 표지, 아니면 마지막 공개 스냅샷의 생성 URL·프리셋 키를 사용합니다. 채팅별 제목·프리셋 키 스냅샷 컬럼은 V71에서 제거했습니다. 생성 URL을 보존하지 않는다는 예전 한계는 현재 구조에 적용하지 않습니다([공개 스냅샷](#공개-스냅샷과-과거-기록-복원)).
+
+[결정 근거 BE-052](../adr/2-backend-server-adr.md#be-052)
 
 #### 이미지 자산 카탈로그와 저장소
 
@@ -1191,7 +1544,7 @@ graph TD
 
 | 타입 | 용도 | 비율 | 의미 태그 축(원본 파일명 유래: 등재는 매니페스트) |
 | --- | --- | --- | --- |
-| `THUMBNAIL` | 스토리 카드 표지(자동 연결: 위 규칙) | 세로 3:4 | 장르(복수 가능)·분위기·장소·소품 |
+| `THUMBNAIL` | 기존 스토리의 프리셋 표지(새 스토리에는 연결하지 않음) | 세로 3:4 | 장르(복수 가능)·분위기·장소·소품 |
 | `BACKGROUND` | 채팅 장면 배경(매 턴 AI 선택) | 가로 4:3 | 장르·분위기·장소·소품 |
 | `CHARACTER` | 채팅 등장 인물(NPC) 초상(컴파일 시 AI가 생성: KNK-414) | 가로 4:3 | AI가 외형 필드로 직접 생성(카탈로그 아님) |
 
@@ -1208,8 +1561,9 @@ graph TD
 인물 이미지의 위치는 AI가 감지한 줄 머리 `인물명:` 라벨을 기준으로 합니다. 저장된 `aiOutput`에는 해당 대사 위 별도 줄에 `[[URL]]` 마커와 뒤의 빈 줄을 둡니다. 예전 `[character:이름]` 출력 지시·`[[인물이름:URL]]` 저장 방식의 결정 이력은 [BE-028](../adr/2-backend-server-adr.md#be-028)에 보존합니다.
 
 1. 컴파일 응답 `character_images[]`의 성공 이미지는 디코딩해 S3에 업로드하고 `story_character_images`에 연결합니다. `name`은 인물 이름, `image_name`은 이미지 한 장의 이름입니다. `story_characters.image_name` 컬럼은 만들지 않습니다.
+   - `character_introductions[]`를 받아 같은 이름의 인물 행에 `description`을 저장합니다. 필드가 없으면 빈 배열로 취급해 소개를 보내지 않는 운영 AI 응답도 수용합니다. 이름은 `character_appearances`·`character_images`와 같은 규칙으로 정규화합니다. 매칭되는 인물 행이 없는 소개는 버리며 소개만으로 인물 행을 만들지 않습니다. `description`이 null·빈 문자열이면 null로 저장합니다. AI의 소개 생성 형식은 [AI Spec](5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
 2. 이미지 생성 실패·빈 목록은 스토리 생성을 실패시키지 않습니다. 생성 표지는 `stories.thumbnail_image_url`로 저장하며 노출은 검수 상태와 폴백 규칙을 따릅니다.
-3. 채팅 요청은 `APPROVED` 인물 이미지들을 `{name, image_name, image_url}`로 전달합니다. 인물 하나에 여러 이미지가 있을 수 있습니다. 어떤 이미지를 고를지는 AI 계약을 따릅니다.
+3. 채팅 요청은 `APPROVED` 인물 이미지들을 `{name, image_name, image_url}`로 전달합니다. 인물 하나에 여러 이미지가 있을 수 있습니다. 어떤 이미지를 고를지는 AI 계약을 따릅니다. **재료의 출처는 다른 턴 재료와 같은 규칙입니다**: 요청자가 스토리의 현재 메타데이터를 읽을 수 있으면 현재 인물 이미지, 아니면 마지막 공개 스냅샷에 담긴 인물 이미지입니다([공개 스냅샷](#4-3-api-계약)). 라이브 행을 직접 읽으면 소유자가 비공개로 되돌린 뒤 인물을 고쳤을 때 그 개작이 타인의 진행 중 채팅과 생성 결과로 새어 나갑니다.
 4. 클라이언트로 나가는 실시간 `character_image`는 `{name, imageUrl}`입니다. 같은 인물이 다시 말하면 그때마다 다시 보냅니다. 이미지 이름은 저장·업로드와 AI 요청에서만 쓰고 클라이언트로 내보내지 않습니다([BE-044](../adr/2-backend-server-adr.md#be-044)).
 5. 저장 정본은 마커를 포함한 `aiOutput`입니다. 상세·공유 응답은 본문을 그대로 반환하고 이미지 목록을 재구성하거나 저장하지 않습니다. 상세의 이미지 렌더링과 공유 화면의 마커 숨김은 클라이언트 계약입니다.
 6. 재생성 성공 시 새 본문이 활성 결과가 되고 실패 시 이전 본문을 유지합니다. 현재 인물 테이블을 다시 조회해 과거 턴의 이미지 URL을 바꾸지 않습니다. 스트리밍 중 이미지가 표시된 뒤 실패했을 때 화면 처리는 클라이언트 Spec을 따릅니다.
@@ -1364,7 +1718,11 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 테이블·저장소 구성
 
+`story_submissions`의 필드·상태·수명은 [검수 제출본 모델](#검수-제출본-모델)을 따릅니다.
+
 물리 테이블·Redis·검색 인덱스의 책임과 컬럼 상세는 [백엔드 Design §2-2](../design/2-backend-server-design.md#2-2-저장소와-데이터-수명)를 따릅니다. 잔존 컬럼과 개명 예정 항목도 그 절에 있습니다.
+
+`story_characters`에는 인물 소개를 저장하는 `description TEXT NULL` 컬럼을 추가합니다(V90). 기존 스토리는 백필하지 않고 null을 유지합니다. 컴파일 수신과 상세 반환 규칙은 [인물 목록](#4-3-api-계약)을 따릅니다.
 
 ### 공개 스냅샷과 과거 기록 복원
 
@@ -1372,6 +1730,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 - 보존 대상은 제목·표지 키와 생성 URL·장르·스토리 설정·시작 설정·프롤로그·추천 입력·활성 엔딩·주요 사건입니다. 행이 없으면 마지막 공개 버전을 알 수 없다는 뜻입니다. V69 백필에서 이미 비공개·초안·삭제였던 과거 데이터는 임의로 현재 값을 공개본으로 만들지 않습니다.
 - 서재·채팅 상세·공유·이용내역은 해당 요청자의 현재 메타데이터 읽기 권한을 기준으로 최신 값과 마지막 공개본을 선택합니다. AI 턴 입력은 턴을 진행하는 사람의 권한을 사용합니다. 공유 링크 소지는 비공개 스토리의 최신 개작을 읽을 권한이 아닙니다.
+- 인물 소개(`story_characters.description`)는 공개 스냅샷에 넣지 않습니다. 스토리 상세는 읽기 권한을 확인한 라이브 행을 사용합니다. 인물 소개는 채팅 턴 조립에 쓰지 않으며 채팅 AI 요청에도 싣지 않습니다. AI의 채팅용 인물 마크다운에도 포함하지 않습니다.
 - AI 입력의 최신 값 분기는 선택한 시작 설정과 그 엔딩만 읽는 부분 캡처를 사용합니다. 마지막 공개본 분기도 같은 자료형으로 조립해 두 경로의 필드 누락을 줄입니다.
 - `story_chats.story_title_snapshot`·`story_thumbnail_key_snapshot`은 V71에서 제거했습니다. 시작 설정·엔딩·사건 FK가 끊겼을 때 복원할 `story_prologue_snapshot`·`reached_ending_name_snapshot`·`occurred_main_event_names_snapshot`과 메시지의 `reached_ending_name_snapshot`은 유지합니다. 공개 스냅샷도 복원할 참조를 찾지 못하면 해당 이름·프롤로그 폴백을 사용하며, 없는 과거 기록을 새로 만들어 내지 않습니다.
 - 엔딩 도달 집계는 V70에서 CASCADE를 SET NULL로 완화하고 V71에서 이름 NOT NULL·이름 유니크로 확정했습니다. 마이그레이션 전에 이미 삭제된 도달 기록은 소급 복구하지 않습니다.
@@ -1525,7 +1884,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 ### 선택적 인증
 
-- 스토리·간편 제작·채팅·피드백 엔드포인트는 모두 익명을 허용합니다.
+- 선택적 인증은 카탈로그에서 `선택`인 경로에만 적용합니다. 일반 제작 등록·스토리 PATCH·검수 제출본 API는 인증 필수로 전환하며 간편 제작·채팅·피드백의 기존 익명 허용은 유지합니다.
 - `Authorization: Bearer` 토큰이 유효하면 해당 요청의 생성 리소스에 `user_id`를 귀속합니다. 토큰이 없거나 무효(만료·위조)면 401을 반환하지 않고 익명으로 통과시킵니다. `Bearer` 접두는 대소문자를 무시하고, 접두 뒤가 공백뿐이면 익명 처리하며, 토큰이 유효해도 사용자가 삭제됐으면 익명 처리(`user_id` 미귀속)합니다.
 - 공개 인증 3종(`login/{provider}`·`token/refresh`·`logout`)과 선택적 인증 경로는 리소스 서버의 Bearer resolve 자체를 건너뜁니다: 클라이언트가 자동 첨부한 만료·위조 access 헤더가 401을 유발하지 않고, 선택 경로의 귀속은 별도 optional 필터가 수행합니다.
 - 재발급(`POST /auth/token/refresh`)은 무효·만료·이미 회전된 토큰·매핑 사용자 부재를 모두 401로 응답하며, 회전 직후 사용자가 사라진 경우 방금 발급한 토큰을 포함해 family를 폐기하고 401을 반환합니다.
@@ -1540,25 +1899,26 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 대상 | 규칙 |
 | --- | --- |
-| 소유 리소스(`user_id` NOT NULL): 턴 진행·재생성·수정(`GET /stories/{storyId}/edit` · `PATCH`) | 요청자 `user_id`와 일치할 때만 허용. 불일치·미인증이면 `403` |
-| NULL 리소스(`user_id` NULL): 턴 진행·재생성·수정·NULL 스토리로 채팅 생성(`POST /chats`)·채팅 상세 조회(`GET /chats/{chatId}`) | 익명(게스트) 요청만 허용. 인증된 회원은 `403`(공통 판정 `isOwnerAccessAllowed`) |
+| 소유 리소스(`user_id` NOT NULL): 턴 진행·재생성·수정 폼 조회(`GET /stories/{storyId}/edit`) | 요청자 `user_id`와 일치할 때만 허용. 불일치·미인증이면 `403` |
+| NULL 리소스(`user_id` NULL): 턴 진행·재생성·수정 폼 조회·NULL 스토리로 채팅 생성(`POST /chats`)·채팅 상세 조회(`GET /chats/{chatId}`) | 익명(게스트) 요청만 허용. 인증된 회원은 `403`(공통 판정 `isOwnerAccessAllowed`) |
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | 위 두 규칙을 동일 적용: 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403 |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
 | 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 막지 않음(클라이언트 게이트)([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
-| 스토리 이미지 업로드(`POST /stories/{storyId}/images/presign` · `PATCH` `thumbnailObjectKey` · `DELETE …/thumbnail` · `POST·DELETE …/characters/{characterId}/images`) | **회원 소유 스토리만**(게스트 소유는 400). 소유자만, 타인·익명 403. 정지 계정 403([§4-3-8](#4-3-api-계약)) |
+| 스토리 이미지 업로드·삭제 | 인증 필수(미인증 401), 회원 소유자만 허용. 개별 연결 POST 폐지, 등록·PATCH 본문으로 추가. PENDING 중 표지·인물 이미지 삭제 409([§4-3-8](#4-3-api-계약)) |
+| 등록 전 이미지 업로드(`POST /stories/images/presign`) | **회원만**(미인증 401·정지 403). 키가 요청자의 draft prefix 아래인지로 소유를 가르며, 일반 제작 등록이 같은 규칙으로 재검증합니다([§4-3-8](#4-3-api-계약)) |
 | 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
 | 채팅 배치 조회(`POST /chats/batch`) 열람 필터 | 열람 불가 항목(회원 요청의 NULL 채팅·타인 소유)을 오류 없이 제외([§4-3-3](#4-3-api-계약)) |
 | 스토리 읽기(`GET /stories/{storyId}` · `POST /stories/batch` · `POST /chats` 시작 전 게이트) | 읽기 가시성 규칙([§4-3-1](#4-3-api-계약)): 공개(PUBLISHED∧PUBLIC)는 누구나, `user_id` NULL은 UUID 보유자, 회원 소유 비공개·초안은 소유자만(위반은 상세 404·배치 제외) |
 | 채팅 공유 발급(`POST /chats/{chatId}/shares`) | 채팅 상세 조회와 동일 규칙: 소유 채팅은 소유자만, NULL 채팅은 게스트만. 위반 403([§4-3-11](#4-3-api-계약)) |
 | 채팅 공유 열람(`GET /shares/{shareId}`) | 인증 불필요: 공유 토큰(UUID) 보유가 접근 수단. 소유자가 명시 발급한 별도 경로라 채팅 상세 비공개 결정(아래 결정 기록)과 충돌하지 않음([§4-3-11](#4-3-api-계약) 결정 기록) |
 | 스토리 좋아요·신고(`POST·DELETE /stories/{storyId}/like` · `POST /stories/{storyId}/reports`) | 인증 필수(게스트 불가) + 대상 스토리에 읽기 가시성 게이트 적용: 읽을 수 없는 스토리는 404([§4-3-1](#4-3-api-계약)) |
-| 스토리 공개 지정(`POST /stories/general` · `PATCH /stories/{storyId}`의 `visibility`) | 소유자 없는 스토리를 `PUBLIC`으로 만드는 요청은 400(`GUEST_CANNOT_PUBLISH`): 공개는 이관 후에만([§4-3-8](#4-3-api-계약)) |
+| 일반 제작 등록·스토리 PATCH | 미인증 401. PATCH는 회원 소유자만 허용하고 타인·이관 전 게스트 스토리는 403. 공개 범위 단독 변경도 같은 인증 규칙 적용 |
 | 공개 스토리 목록(`GET /stories`) | 인증 불필요·요청자 신원 미사용. 발행·공개·미삭제·**회원 소유** 넷을 만족하는 스토리만 노출([§4-3-1](#4-3-api-계약)) |
 
-게스트 간 접근(UUID를 아는 다른 게스트의 NULL 리소스 접근)은 서버가 게스트를 식별할 수 없어 차단하지 못합니다. 프론트엔드가 로컬 서재 ID 보유 여부로 수정·삭제 진입점을 제한하는 현행 완화를 유지하고, 이관 완료 후에는 소유자가 생겨 소유자 전용 규칙이 적용됩니다.
+게스트 간 접근(UUID를 아는 다른 게스트의 NULL 리소스 접근)은 서버가 게스트를 식별할 수 없어 차단하지 못합니다. 스토리 PATCH는 이 예외에서 제외해 게스트를 401로 차단합니다. 기존 조회·삭제 접근 범위는 유지하고, 이관 완료 후에는 소유자가 생겨 소유자 전용 규칙이 적용됩니다.
 
-`visibility`(PUBLIC·PRIVATE)와 `status`(PUBLISHED·DRAFT)는 회원 소유 스토리의 읽기 게이팅에 이미 사용됩니다(위 표: 회원 소유 비공개는 소유자만). 게스트(NULL) 스토리는 소유자 식별이 불가능해 식별자 비공개성([§4-4](#4-4-데이터-모델))이 유일한 보호로 남습니다. **공개 피드 노출 규칙: 게스트 스토리는 공개 목록(`GET /stories`)에 싣지 않고, 게스트가 스토리를 `PUBLIC`으로 지정하는 것 자체를 400으로 막습니다**(작성자 신원과 소셜 기능 책임 주체 부재: [§4-3-1](#4-3-api-계약) 결정 기록·[§4-3-8](#4-3-api-계약) 게스트 공개 제한). 이관만으로 공개 상태를 바꾸지 않습니다. 소유자가 생긴 뒤 `PUBLISHED`·`PUBLIC`·미삭제 조건까지 충족해야 공개 목록에 노출됩니다.
+`visibility`(PUBLIC·PRIVATE)와 `status`(PUBLISHED·DRAFT)는 회원 소유 스토리의 읽기 게이팅에 이미 사용됩니다(위 표: 회원 소유 비공개는 소유자만). 게스트(NULL) 스토리는 소유자 식별이 불가능해 식별자 비공개성([§4-4](#4-4-데이터-모델))이 유일한 보호로 남습니다. **공개 피드 노출 규칙: 게스트 스토리는 공개 목록(`GET /stories`)에 싣지 않습니다.** 계약에서는 게스트의 일반 제작 등록·PATCH 자체를 401로 막습니다(작성자 신원과 소셜 기능 책임 주체 부재: [§4-3-1](#4-3-api-계약) 결정 기록·[§4-3-8](#4-3-api-계약) 게스트 공개 제한). 이관만으로 공개 상태를 바꾸지 않습니다. 소유자가 생긴 뒤 `PUBLISHED`·`PUBLIC`·미삭제 조건까지 충족해야 공개 목록에 노출됩니다.
 
 [결정 근거 BE-027](../adr/2-backend-server-adr.md#be-027)
 
@@ -1581,6 +1941,8 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 ## 4-6. 오류와 예외 처리
 
 ### 오류 응답 계약
+
+비동기 검수의 내용 반려·실행 실패는 접수 응답 202를 사후 HTTP 오류로 바꾸지 않습니다. [제출본 상태와 errorCode](#검수-실행-실패-코드)로 조회합니다. 접수 전 인증·검증·경합 오류는 아래 HTTP 오류 형식을 따릅니다.
 
 모든 오류는 다음 `ApiErrorResponse` 형태로 응답합니다. 프론트엔드 처리 계약은 [`3-1-client-spec.md §3-1-7`](3-1-client-spec.md)과 정합합니다.
 
@@ -1607,14 +1969,14 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
-| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` | 본문 형식 오류, 필드 검증 실패. 게스트의 스토리 공개 지정은 `GUEST_CANNOT_PUBLISH`([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
+| 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` · `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과는 `IMAGES_TOO_LARGE`와 `이미지 크기나 장수를 줄여 주세요.`([용량 사전 검사](#검수-요청-용량-사전-검사)). 본문 형식 오류, 필드 검증 실패. `GUEST_CANNOT_PUBLISH`는 기존 공개 제한 코드입니다. 일반 제작 등록·PATCH의 미인증 요청은 공개 범위 검사 전에 401로 차단합니다([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다."): 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
-| 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
+| 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제. 등록·PATCH의 미인증은 401), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
 | 404 | `NOT_FOUND` | 리소스 없음·이미 삭제됨·읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드. 응답에 `Allow` 헤더 포함 |
 | 406 | `NOT_ACCEPTABLE` | Accept 협상 실패 |
-| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
+| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `INVITE_INVITER_NEWER` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지·초대자가 나중 가입([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
 | 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일·선택지 생성 트리거: [§4-3-3](#4-3-api-계약)) |
@@ -1682,7 +2044,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 **이 헤더의 의미는 "이 호출이 재생성 호출인가"이지 "이 턴이 재생성된 턴인가"가 아닙니다**: 구현 완료(KNK-751, `fa81b2c`):
 
-- 일반 이어쓰기·자동 재시도: `false`(백엔드에 AI 호출 자동 재시도 경로가 없어: story는 RestClient, chat은 WebClient, 양쪽 다 retry 미설정: 이 경우는 사실상 발생하지 않습니다)
+- 일반 이어쓰기·자동 재시도: `false`(이어쓰기에는 AI 호출 자동 재시도 경로가 없어 이 경우는 사실상 발생하지 않습니다. 게시물 검수의 DB 예약 재시도는 별도입니다)
 - 채팅 본문 재생성(`/turns/regenerate/stream`): `true`
 - **선택지 생성**: 항상 `false`입니다. 이미 선택지가 있으면 AI 호출 없이 기존 값을 반환합니다.
 - 스토리라인 재생성은 별도 불리언 헤더가 아니라 위 `X-Manyak-Parent-Creation-Id`의 유무로 판단합니다(있으면 재생성, 없으면 신규)
@@ -1827,7 +2189,20 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
 
+알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 알림의 prod 내부 주소는 Cloud Map 네임스페이스 `manyak-prod.local`의 `http://server.manyak-prod.local:8080`으로 정했습니다. 비밀값은 배포 때 정합니다. 실제 비밀값은 문서에 기록하지 않습니다.
+
+| 환경 변수 | 설정 키 | 값 |
+| --- | --- | --- |
+| `MANYAK_PUSH_MODE` | `manyak.push.mode` | 기본 `local`, 허용값 `local` 또는 `remote` |
+| `MANYAK_SERVER_INTERNAL_BASE_URL` | 알림의 `manyak.server.internal-base-url` | dev는 `http://localhost:8080`. prod 목표는 `http://server.manyak-prod.local:8080` |
+| `MANYAK_PUSH_QUEUE_URL` | `manyak.push.queue-url` | 기본값은 빈 값입니다. dev/prod에서 `remote`로 SQS 어댑터를 활성화할 때 필수이며 비어 있으면 기동에 실패합니다. 로컬 Kafka에는 사용하지 않습니다. |
+| `AWS_REGION` | `manyak.push.region` | 기본값은 `ap-northeast-2`입니다. SQS 클라이언트 리전으로 사용합니다. |
+| `MANYAK_INTERNAL_SHARED_SECRET` | 양쪽의 `manyak.internal.shared-secret` | `X-Manyak-Internal-Secret` 헤더 인증용. 같은 값을 주입하며 저장 전 길이를 검사해 빈 값을 거부합니다 |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 알림의 `manyak.push.fcm.service-account-json` | 알림 서비스 FCM 인증. prod는 목표 구성이며 서버 값은 `local` 롤백 창 동안 유지 |
+
 ### 헬스체크·API 문서·배포
+
+V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니다. AI의 submissionId 필수·UPDATE storyId 계약도 서버와 함께 맞춥니다. 웹(KNK-1163)·앱(KNK-1164)은 이미지 오류 3종과 issues·imageErrors 동시 안내, IMAGES_TOO_LARGE 안내를 지원해야 합니다. 일반 제작 201·수정 200 완성본을 202 제출본으로 바꾸므로 서버 릴리스에 웹(KNK-1163)·앱(KNK-1164)이 함께 나가야 합니다. 검수 완료 푸시(KNK-1118)는 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스(KNK-1378)를 지원합니다. SQS 어댑터(KNK-1380)는 구현되었으며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 검수 릴리스는 SQS 전환에 종속되지 않습니다. remote 전환 전 알림 서비스의 새 type·SERVICE 허용이 필요합니다.
 
 - 헬스체크: `GET /actuator/health`(종합), `/actuator/health/liveness`(컨테이너 활성), `/actuator/health/readiness`(DB·Redis 준비).
 - Actuator 노출 목록은 운영에서 `health,info`만입니다. 메트릭은 스크레이프가 아니라 OTLP push로 나가므로 `/actuator/prometheus`를 운영에 노출하지 않습니다([백엔드 Design §2-4](../design/2-backend-server-design.md#2-4-메트릭과-운영-연동)). 노출 목록이 1차 게이트이고, Security 설정의 무인증 허용도 로컬 프로파일로 한정합니다.
@@ -1884,6 +2259,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 배치 조회는 존재하지 않는 ID를 오류 없이 제외하고, 100개 초과·빈 배열 요청에 400을 반환해야 합니다.
 - 삭제는 최초 204, 재시도 404를 반환하고, 삭제된 리소스가 상세·배치 조회에서 사라져야 합니다.
 - 간편 제작은 계약 위반(장르 합산 20 초과·인물당 특징 3 초과·직접 입력 원소가 빈 문자열이거나 30자 초과·인물 이름 중복·무효 태그 ID) 시 400, 게스트 스토리라인 한도 소진 시 AI 호출 전 402, 같은 진행으로 두 번째 스토리 생성 시 409, AI 실패 시 502를 반환해야 합니다. **장르와 인물 특징이 모두 빈 요청은 400이 아니라 201입니다**([§4-3-2](#4-3-api-계약): 최소 입력 요건 없음).
+- 일반 제작·수정의 인물 소개는 폼 조회의 `id` 기준 매칭과 미승인 제출본 반영, PATCH 생략·null 유지와 빈 값 삭제, 앞뒤 공백 제거·80자 상한·CR/LF/탭 금지 위반 시 400, 검수 입력 포함·TEXT 경로 판정, 승인 뒤 라이브 반영을 검증합니다.
 - 스토리라인 평가는 설정 → 같은 값 재설정 → 취소 → 재취소가 모두 성공해야 합니다(취소 멱등).
 - 채팅 스트림은 `started` → `token` → `completed` 순서로 도착하고, `completed`의 `aiOutput`이 이후 `GET /chats/{chatId}`의 마지막 턴과 일치해야 합니다.
 - 채팅 스트림 실패 시 `error` 이벤트에 `code`·`message`가 실려야 하며, 실패한 턴은 저장되지 않아야 합니다.
@@ -1894,7 +2270,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 - 마이그레이션 동시성: 같은 계정의 동시 이관 호출 2건이 경합해도 잠금·이관 결과가 순차 실행과 같아야 합니다(직렬화).
 - 내 콘텐츠 목록·마이그레이션은 토큰 없음·만료·위조에 401을 반환해야 합니다.
 - 세션 부트스트랩: `GET /auth/me`의 `creditBalance`는 원장 합계와, `attendedToday`는 당일(KST) 출석 적립 여부와 일치해야 합니다. 출석 적립 직후 재조회하면 `attendedToday: true`와 증가한 잔액이 반영돼야 합니다.
-- 소유권 검증: `user_id`가 설정된 스토리·채팅은 소유자만 삭제·턴 진행·채팅 상세 조회가 가능하고, 타인·익명 요청에 403을 반환해야 합니다. `user_id`가 NULL인 리소스는 익명(게스트) 요청만 허용되고, 인증된 회원의 턴 진행·재생성·채팅 상세 조회·채팅 생성·수정·삭제는 403이어야 합니다. `POST /chats/batch`는 요청자가 열람할 수 없는 채팅을 오류 없이 제외해야 합니다. 스토리 읽기는 가시성 규칙을 따라야 합니다: 공개(PUBLISHED∧PUBLIC)·게스트(NULL) 스토리는 누구나 조회되지만, 회원 소유 PRIVATE·DRAFT 스토리는 타인·익명 요청에 상세 404·배치 제외여야 합니다([§4-3-1](#4-3-api-계약)).
+- 소유권 검증: `user_id`가 설정된 스토리·채팅은 소유자만 삭제·턴 진행·채팅 상세 조회가 가능하고, 타인·익명 요청에 403을 반환해야 합니다. `user_id`가 NULL인 리소스는 익명(게스트) 요청만 허용되고, 인증된 회원의 턴 진행·재생성·채팅 상세 조회·채팅 생성·수정·삭제는 403이어야 합니다. 스토리 PATCH는 별도로 인증을 강제해 게스트에 401을 반환해야 합니다. `POST /chats/batch`는 요청자가 열람할 수 없는 채팅을 오류 없이 제외해야 합니다. 스토리 읽기는 가시성 규칙을 따라야 합니다: 공개(PUBLISHED∧PUBLIC)·게스트(NULL) 스토리는 누구나 조회되지만, 회원 소유 PRIVATE·DRAFT 스토리는 타인·익명 요청에 상세 404·배치 제외여야 합니다([§4-3-1](#4-3-api-계약)).
 - 이관 시도 상한: 성공 여부와 무관하게 6회째 이관 호출은 `migrationClosed: true`·빈 결과의 200이어야 합니다(`migration_attempts`).
 - 이프 만료: 적립 30일이 지난 보상·환불 로트는 잔액에서 빠지고 원장에 `EXPIRE` 음수 행이 남아야 하며, 차감은 만료 임박 로트부터(FIFO: 무기한은 마지막) 소진돼야 합니다.
 - 이프 검수는 정책 오버라이드가 없을 때 다음 기본값을 사용합니다.
@@ -1902,17 +2278,30 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
   - 초대 코드 제출 성공은 관계별 한 번만 양쪽에 2000 이프를 적립합니다. 초대자가 월 10회 상한에 도달해도 제출자만 적립하고 200을 반환합니다.
   - 제출자 보상은 월 상한과 `monthlyRewardCount`에 포함하지 않습니다. count는 해당 KST 월의 초대자 역할 `INVITE_REWARD` 원장과 같아야 합니다.
   - 재제출은 409 `INVITE_ALREADY_REDEEMED`, 자기 코드는 409 `INVITE_SELF_CODE`, 없는 코드는 404입니다.
+  - 초대자의 보상 신원 id가 제출자보다 크면 409 `INVITE_INVITER_NEWER`이고, 양쪽 잔액과 제출자의 평생 1회 자격이 변하지 않아야 합니다. 나중 가입자가 먼저 가입한 회원의 코드를 제출해 성공한 뒤, 반대 방향 제출은 이 코드로 거부돼야 합니다.
   - 재가입 전후 다른 지갑의 동시 경합에서 허용하는 초과 범위는 보상 신원 계약을 따릅니다.
 - 이프: 회원 스토리라인 생성·재생성은 무료여야 합니다. 스토리 생성은 250 이프, 채팅 턴·AI 응답 재생성은 20 이프를 선차감하고, AI 실패 시 원장에 `REFUND` 행이 추가되어 잔액이 복원돼야 합니다.
 - 게스트 한도: 디바이스 ID별 스토리라인 생성·재생성 5회, 스토리 생성 1회, 모든 채팅방 합산 채팅 턴(재생성 포함) 5회 초과 요청은 402를 반환하고 AI 호출이 시작되지 않아야 합니다. 실패한 요청은 예약한 게스트 카운터를 복원해야 합니다. 축소 적용 시 기존 카운터는 리셋하지 않아야 합니다.
 - 회원 체험 시드 운영 보정: 잘못 소진 시드된 테스트 계정에서 `member_trial_seeded_at`을 유지한 채 두 회원 카운터를 CAS로 삭제·조정하면 의도한 잔여만 복구돼야 합니다. 보정 중 카운터가 바뀌면 스크립트는 아무 값도 덮어쓰지 않고 실패해야 합니다.
 - 이프: 동시 턴 요청 2건이 잔액 20 이프만 남은 지갑에서 경합하면 1건만 성공하고 1건은 402여야 합니다(비관적 락).
-- 일반 제작: 등록 후 기본 메타·스토리 설정·시작 설정 기준의 상세 조회·채팅 시작이 간편 제작 산출물과 동일하게 동작해야 하고, 이프가 소모되지 않아야 합니다. 주요 사건·엔딩의 런타임 반영은 [§4-3-10](#4-3-api-계약) 기준으로 검수합니다(이미지는 [§4-3-9](#4-3-api-계약) 기준). 필수 필드 누락은 400에 `details`로 필드별 사유가 와야 합니다.
-- 스토리 수정: `GET /stories/{storyId}/edit`이 수정 폼 필드를 왕복할 수 있어야 합니다. 회원 소유 스토리 수정 후 같은 스토리 설정을 참조하는 진행 중 채팅의 다음 턴에 새 설정이 반영돼야 하고, 지난 턴은 변하지 않아야 합니다. 타인 소유 수정 시도는 403이어야 합니다.
+- **일반 제작 검수 제출** 미인증 요청은 이미지 유무·인물 이름만 전송·공개 범위와 무관하게 401이어야 합니다. 유효한 회원 등록은 202 `{submissionId, status: "PENDING"}`만 반환하고 라이브 스토리는 만들지 않아야 합니다. 필수·길이·개수·draft prefix·S3 HEAD 검증 실패는 제출 전에 400이어야 합니다. 승인 뒤 상세·채팅 계약은 기존과 같으며 일반 제작 등록에 이프를 소모하지 않아야 합니다.
+- **스토리 수정 검수 제출** PATCH는 202 제출본을 반환하고 승인 후에만 인물·이미지·시작 설정·엔딩 동기화와 다음 채팅 턴 반영을 수행해야 합니다. 인물 개명 시 이미지 이름 접두도 바뀌고 images 생략 시 기존 이미지를 유지하며 지난 턴은 바뀌지 않아야 합니다. 반려·실패 시 라이브·공개 스냅샷·검색·기존 채팅 입력이 변하지 않아야 합니다. 수정 폼은 최신 PENDING·REJECTED·FAILED 제출본의 입력을 반영한 값과 `submission` 메타를 반환해야 합니다. 타인 수정은 403이어야 합니다.
+- **검수 결과와 알림** 승인 시 라이브 적용·공개 스냅샷의 기존 규칙에 따른 갱신·APPROVED를 함께 커밋하고 트랜잭션 안에서 도메인 이벤트를 발행해야 합니다. local은 커밋 뒤 서버 발송, remote는 같은 트랜잭션의 아웃박스 기록이어야 합니다. 내용 위반은 REJECTED와 issues, 사용자 수정 사유가 있는 AI 오류·적용 검증 실패는 FAILED와 errorCode로 구분하고, 사용자 수정 사유 없는 일시 실패는 재시도·보류해야 합니다. 세 종료 상태 모두 서비스 알림을 발행하고 실제 발송은 수신 설정을 따라야 합니다.
+- **검수 중 쓰기** 스토리당 PENDING은 한 건이며 PATCH 전부와 인물 이미지·표지 삭제는 409여야 합니다. 스토리 삭제는 허용하고 해당 스토리의 제출본을 전부 물리 삭제해 늦은 판정이 라이브를 되살리지 않아야 합니다.
+- **즉시 반영과 검수 제외** PENDING이 없을 때 visibility 단독 PATCH·인물 이미지 삭제·표지 삭제는 검수 없이 반영해야 합니다. 스토리 삭제는 PENDING 유무와 무관하게 기존 권한으로 허용해야 합니다. 혼합 PATCH는 전체를 검수하고 간편 제작 완성본은 검수하지 않으며 이후 수정부터 검수해야 합니다.
+- **제출본 복구·접근** 접수 시 PENDING·dispatched_at NULL을 저장하고 빈 슬롯만큼 DB 임대로 선점해야 합니다. 최초 attempt 1에서 선점 시 2가 되며 재선점·재제출도 증가해야 합니다. 이전 회차·삭제된 제출본의 결과는 무시해야 합니다. 사용자 재제출은 같은 ID를 유지하고 판정·복사 매핑을 비워야 합니다. DB 장애는 PENDING 임대 만료 후 동일 폴러로 복구하고 FAILED는 자동 재시도하지 않아야 합니다. 타인 조회는 404, 제출본 DELETE는 PENDING·REJECTED·FAILED에 204, APPROVED에 409여야 합니다.
+- **불변 이미지와 임대 선점** 새 이미지의 AI 입력·라이브 저장 URL이 같은 서버 복사본이어야 하며 원본 재업로드로 승인 이미지가 변하지 않아야 합니다. 복사 실패 시 원본 폴백 없이 MODERATION_UNAVAILABLE의 재시도·보류 규칙을 따라야 하고 매핑 DB 장애는 PENDING이어야 합니다. 실행기 큐는 0이며 슬롯이 가득 차면 추가 선점하지 않아야 합니다. 실행기 거부 시 임대를 반환하고 반환 장애는 임대 만료로 복구해야 합니다. 선점마다 발급한 UUID가 AI·아웃박스의 상관 ID로 일치해야 합니다.
+- **폼·알림 회차** 새 이미지는 id null·objectKey·미리보기 URL을 반환하고 저장된 issues.path는 입력 원본 기준으로 유지해야 합니다. 조회 응답에서는 기존 이미지 id·새 이미지 objectKey·인물 id 또는 이름으로 현재 폼 인덱스에 재매핑하고 사라진 대상의 이슈를 제외해야 합니다. submission 필드는 항상 존재하고 해당 제출본이 없거나 APPROVED이면 null이어야 합니다. `STORY_MODERATION_COMPLETED`는 SERVICE로 처리하고 `story-moderation:{submissionId}:{attempt}`로 회차를 구분해야 합니다. remote 전환 전에 알림 소비자의 허용 목록과 분류를 검증해야 합니다.
+- **이미지 오류 계약** submissionId 필수·UPDATE의 storyId와 관측 경로 제외, 승인 빈 목록, 이미지 오류 우선순위·중복 경로 거절, FAILED의 issues·imageErrors 동시 보존, 재매핑·재제출 초기화를 검증해야 합니다.
+- **재시도·보류** 1분·5분 예약, 세 번째 실패 보류, 예약 시각 경계·보류 선점 제외, 늦은 승인 무시, API 비노출·완료 푸시 없음·409·DELETE·운영 SQL 해제를 검증해야 합니다. 형식 오류의 사용자 수정 사유가 자동 재시도를 막아야 합니다.
+- **용량·운영 설정** 세 제출 경로의 40MiB 경계·HEAD 재사용·5MiB 폴백·중복 장수·조회 제외·IMAGES_TOO_LARGE 메시지, 신고 웹훅 폴백과 test의 두 웹훅 차단을 검증해야 합니다. V88 배열 CHECK·V89 보류 CHECK·부분 인덱스는 PostgreSQL에서 확인합니다.
+- **이미지 우회 차단** 개별 인물 이미지 연결 POST가 제거되고 presign은 유지돼야 합니다. 등록·PATCH 승인 전에 새 이미지가 라이브에 연결되지 않아야 하며 V76 이미지별 상태는 APPROVED로 유지해야 합니다.
+
 - 재생성: 마지막 턴 재생성이 성공하면 상세 조회·SSE의 활성본 `aiOutput`·선택지가 새 값이 되고, `turnCount`·사용자 입력·`turn_number`는 변하지 않아야 합니다. 이전 출력은 버전 이력으로 보존되고 사용자 응답에는 활성본만 실려야 합니다. 제출한 `turnId`가 마지막 턴이 아니면 동기 409, 턴이 없는 채팅은 404여야 합니다. 서버가 `completed`를 발행하지 못하고 종료되면 기존 활성본이 유지되고 이프가 환불돼야 하며, 발행 후 전달 실패는 확정·소모가 유지돼야 합니다.
 - 이미지 시드: 매니페스트의 `imageKey`가 `[a-z0-9_]{1,64}` 형식·유니크여야 하고, `genres[]` 값이 GENRE 마스터 태그명과 하나라도 불일치하면 시드가 실패해야 합니다(조용한 매칭 0건 금지). 등재된 키의 서빙 URL(`{base}/{prefix}/{imageKey}.png`)이 실제 S3 객체와 일치해야 합니다.
-- 썸네일: 등록한 스토리에 첫 번째 장르와 일치하는 팀 이미지가 자동 연결되어 `stories.thumbnail_image_key`에 저장되고, 상세 응답에 원본 `thumbnailUrl`, 목록·채팅 카드 응답에 축소 변형 `thumbnailUrlSm`(`_sm` 접미사 파생)이 실려야 합니다. 규칙 도입 전 스토리는 두 필드 모두 null이어야 합니다.
-- 생성 표지: 간편 제작으로 만든 스토리는 컴파일이 준 표지가 `stories.thumbnail_image_url`에 저장되고 상세·목록·채팅 카드가 그 URL을 써야 합니다. 표지 생성이 실패하거나 구버전 AI라 필드가 없으면 스토리는 그대로 생성되고 프리셋 표지로 떨어져야 하며, 두 경우 모두 `thumbnail_image_key`는 계속 채워져 있어야 합니다.
+- 썸네일: 간편 제작과 일반 제작 모두 등록 시 `stories.thumbnail_image_key`는 null이어야 합니다. 생성하거나 업로드한 표지 없이 등록하면 `thumbnailUrl`과 `thumbnailUrlSm`은 모두 null이어야 합니다. 기존 프리셋 키가 있는 스토리는 승인된 표지 URL이 없을 때 원본 URL과 `_sm` 축소 URL을 계속 반환해야 합니다.
+- 생성 표지: 간편 제작으로 만든 스토리는 컴파일이 준 표지가 `stories.thumbnail_image_url`에 저장되고 상세, 목록과 채팅 카드가 그 URL을 써야 합니다. 표지 생성이나 업로드가 실패하거나 AI 응답에 표지가 없으면 스토리는 그대로 생성되고 두 표지 필드는 null이어야 합니다. 생성 성공 여부와 관계없이 `thumbnail_image_key`는 null이어야 합니다.
+- 표지 삭제와 검수: `DELETE /stories/{storyId}/thumbnail`은 표지 URL과 기존 프리셋 키를 모두 지워 결과 표지가 null이어야 하며, 반복 삭제도 204이고 검수 중에는 409여야 합니다. 업로드 표지가 검수 대기나 반려 상태이면 기존 프리셋 키가 있을 때만 그 표지를 노출하고, 키가 없는 새 스토리는 null이어야 합니다.
 - 채팅 인물 이미지: 이미지 보유 인물의 모든 `인물명:` 대사 바로 앞에서 `character_image`가 `{name, imageUrl}`로 나와야 합니다. 여러 인물과 같은 인물의 재발화를 모두 반복해야 하며 유효 태그는 `token`에 보이지 않아야 합니다. `completed.aiOutput`에는 같은 위치에 `[[URL]]` 마커가 대사 줄 위 별도 줄(뒤에 빈 줄)로 있어야 하고, 완료 이벤트에 이미지 목록이 실리지 않아야 합니다. 상세·공유 조회는 저장된 `aiOutput`을 마커째 그대로 반환해야 합니다. 재생성 실패는 기존 본문과 이미지를 유지해야 합니다.
 - 채팅 배경 이미지: `completed`·상세 조회의 `images[]`에는 카탈로그에 있는 키가 타입별 최대 1장씩만 실려야 합니다(백엔드 이중 강제: 본문 마커는 무변경). `images[]`에 없는 마커는 프론트엔드가 마커 텍스트째 숨겨야 하며 사용자에게 `[[image:…]]` 원문이 보이면 안 됩니다. 상세 조회의 `images[]` 재구성 결과가 `completed` 시점과 동일해야 합니다: 특히 턴 확정 이후 등록된 프리셋 키의 마커는 재구성에서도 무효로 남아야 합니다(삭제 금지 + 등록 시각 컷오프). 비활성(`deactivated_at` 기록)으로 내린 이미지는 다음 턴부터 후보 전달·`images[]`에서 빠져야 하고, 비활성 **이전에** 확정된 지난 턴 재구성에는 계속 남아야 하며, 비활성 **중에** 확정된 턴의 마커는 재구성에서도 무효여야 합니다(`completed` 대칭: 비활성 적용 범위). 후보가 없는 스토리의 턴에는 이미지가 없어야 합니다.
 - 주요 사건·엔딩: `min_turns` 미충족 엔딩이 AI 요청의 `endings`에 실리지 않아야 하고, `reached_ending_id`가 있는 채팅은 `endings`가 빈 배열이어야 합니다. 도달 턴은 메시지 `reached_ending_id` 저장과 SSE `completed`의 `reachedEnding`(엔딩 이름·null)이 일치해야 하고, 채팅 상세 턴 항목의 `reachedEnding`에도 같은 이름이 노출돼야 하며, 도달 후에도 턴 진행이 계속 가능해야 합니다.

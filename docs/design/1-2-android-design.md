@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.5 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-17 |
+| 수정일 | 2026-09-26 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -120,11 +120,14 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
-- 홈 카드·상세 히어로의 `StoryThumbnail`은 누적 턴 수 배지만 그립니다. 상세 `StartChatCta`는 채팅 시작 버튼만, 제작 `MyStoryCard`의 메타에는 턴 수·제작일만 표시합니다. 좋아요 API·엔티티·`StoryDetailViewModel`의 토글 로직은 유지하고 UI에서 연결하지 않습니다.
+- 홈 카드·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를, 제작 `MyStoryCard`의 메타는 좋아요 수·턴 수·제작일을 그립니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 실패하면 상태·수를 유지하고 토스트를 띄웁니다.
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 카드 옵션·상세 옵션·채팅 메뉴는 `designsystem`의 `ManyakOptionsSheet`·`ManyakOptionItem`으로 그립니다. 시트 열림은 제작·채팅 목록에서 ViewModel의 대상 카드 상태(`optionsTarget`)가, 상세·채팅방에서 화면의 `rememberSaveable`이 들어 구성 변경에서 유지합니다. 삭제 확인·신고 시트는 옵션 시트를 닫은 뒤 엽니다. 채팅방 메뉴의 새 채팅은 `ChatRoomViewModel`이 `ChatRepository`(`ChatStarter`)로 single-flight 생성하고 진행 상태를 소유하며, `app`이 백스택 맨 위 `ChatRoomRoute`를 새 방으로 바꿔 끼웁니다. 내 이프 카드는 `designsystem/credit/CreditBalanceCard`를 마이와 함께 쓰고, 채팅방은 메뉴를 열 때 `UserProfileRepository.refresh()`로 잔액을 다시 읽습니다. 공유하기는 `ChatRepository.createShareLink`가 `DataLayerConfig.webBaseUrl`로 웹 열람 URL을 완성해 돌려주고, 화면이 `common`의 `shareText`(초대와 같은 `ACTION_SEND` 공유 시트)로 보냅니다.
+- 홈은 `HomeRepository.publicStories`로 `GET /stories`를 토큰 없는 클라이언트(`@PlainClient`)로 부릅니다. `HomeViewModel`이 조회 조건(`StoryListQuery`)·커서·다음 페이지 상태를 소유하고, 첫 페이지와 다음 페이지를 한 작업으로 직렬화해 조건을 바꾸면 진행 중인 요청을 취소합니다. 조건을 바꾸면 새 첫 페이지가 올 때까지 보던 목록을 남기고(골격은 목록이 비었을 때만), 응답이 300ms를 넘으면 그 목록을 반투명으로 흐립니다. 페이지를 이을 때 `id` 중복은 먼저 받은 쪽을 남깁니다. 필터·정렬 바는 그리드 위에 겹친 오버레이이고 그리드는 바 높이만큼 위 여백을 비워, 바가 `graphicsLayer` 이동으로 숨고 나타나도 목록 위치가 바뀌지 않습니다. 숨김은 그리드가 실제로 소비한 스크롤을 `NestedScrollConnection`으로 누적해 아래로 8dp면 숨기고 위로 32dp면 다시 보이며, 맨 위 64dp 안에서는 항상 보입니다. 모션은 웹과 같은 곡선·시간(사라짐 150ms 가속, 나타남 300ms 감속)입니다. 그리드 스크롤 상태는 첫 페이지를 받을 때마다 오르는 `firstPageVersion`을 키로 `rememberSaveable`에 두어, 조건 변경·새로고침으로 새 첫 페이지가 오면 맨 위에서 시작하고 구성 변경에서는 위치를 지킵니다. 스크롤 상태를 이어 쓰면 그리드가 첫 카드를 키로 따라가 정렬로 밀려난 카드 위치까지 내려갑니다. ORIGINAL 태그는 `StorySummary.isOriginal`로만 그립니다. 목록 끝 재시도는 이프 내역과 같은 `designsystem`의 `LoadMoreFooter`, 정렬 메뉴는 셀렉트와 같은 `ManyakSelectMenu`를 씁니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
-- `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
+- `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 배경 탭 닫기는 Coil이 알려 준 원본 크기로 Fit 그림 영역을 계산하고 현재 확대·이동을 되돌려 판정하므로, 그림 위 탭으로는 닫지 않습니다(원본 크기를 알기 전에는 그림이 없는 것으로 봅니다). 배경 탭은 떼는 즉시 닫고, 더블 탭의 두 번째 탭 대기는 그림 위 탭에만 겁니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
+- 첫 진입 안내 투어는 `ChatRoomViewModel`이 기기 귀속 `@DeviceDataStore`의 `chat_tour_seen` 키로 노출 판정(턴 0개·스트리밍 아님·200ms 뒤 재확인)과 열람 기록, 분석 이벤트 4종을 소유하고, 지금 스텝(`tourStep`)을 상태로 들어 구성 변경 뒤에도 같은 스텝에서 이어지며 도달 이벤트를 다시 보내지 않습니다. 화면은 `ChatTourTargets`가 컴포저 툴바 버튼의 `boundsInRoot`를 모으고, `ChatTourOverlay`가 대상이 그려진 스텝을 골라 딤 구멍·카드를 배치해 고른 자리를 의도로 올립니다. 오버레이는 `Dialog`가 아니라 같은 컴포지션의 상자라 대상 좌표를 그대로 쓰며, `pointerInput`으로 뒤 조작을, `BackHandler`로 뒤로가기(건너뛰기)를 받고 뒤 화면은 `clearAndSetSemantics`로 보조기술에서 가립니다.
+- 채팅방 헤더는 `ChatRoomScreen`의 `AnimatedVisibility`로 목록 위에 겹쳐 페이드(200ms)되고 숨김 여부를 `rememberSaveable`로 둡니다. `ChatTranscript`는 헤더 높이(`TopAppBarExpandedHeight`)만큼 목록 위 여백을 두고, 자식이 떼는 이벤트나 이동을 소비하지 않은 탭만 헤더 전환으로 올리며 탭 시작 때 IME가 떠 있었으면 넘깁니다. 스트리밍 앵커의 패드 높이는 위 여백을 뺀 콘텐츠 시작점부터 뷰포트 끝까지로 잽니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다. `CharacterImage`의 허용 경로는 `/characters/generated/`·`/characters/originals/`·`/chat-images/`(실시간 인물 이미지, `chat-images/{chatId}/{turn}-{uuid}.webp`)입니다.
 - 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 화면의 `rememberSaveable`이 들어 구성 변경에서 유지합니다.
 - 채팅 스트리밍 블록은 로딩과 본문을 같은 자리에 두고 첫 조각(글자·이미지)에서 로딩을 페이드로 뺍니다. 로딩이 그려지는 동안 잰 높이를 `rememberSaveable`에 두고 본문이 그만큼 자랄 때까지 최소 높이로 유지해 상단 앵커가 내려앉지 않게 하며, 재생성도 같은 블록을 씁니다. 실시간 이미지를 켠 턴은 `designsystem`의 `CyclingPhrases`와 `ImageGenerationLoading`(4:3, `CharacterImage`와 같은 모양)을, 끈 턴은 기존 시머 한 줄을 보입니다. 대화 최상단의 AI 생성 안내 문구는 목록 항목이라 재생성 앵커 인덱스가 안내·프롤로그 수를 더합니다.
@@ -233,9 +236,13 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ### 제작 카드와 다중 완성 진행
 
-Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 다른 계정의 새 편집은 단일 편집 슬롯을 덮어쓸 수 있고, 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
+Room DB v4는 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
 
-완성 요청 삽입과 해당 편집 초안 삭제는 한 DAO 트랜잭션입니다. 저장 실패 시 전송하지 않습니다. `StoryCompletionExecutor`는 앱 수명, requestId별 single-flight, `SessionGate.withAuthWork/commit`으로 실행하며 서로 다른 요청을 전역 직렬화하지 않습니다.
+두 테이블은 처음 임시 저장 시각 `createdAt`을 둡니다. `PendingStoryCreationDao.save`는 행이 없을 때만 지금 시각을 쓰고 있으면 기존 값(이전 버전 행의 null 포함)을 유지합니다. 조회는 `createdAt IS NULL, createdAt DESC`(완성 요청은 이어서 `submittedAt DESC`)로 정렬해 제작 탭이 그대로 그립니다.
+
+퍼널 세 라우트는 `draftId`를 싣습니다. 새 제작은 앱이 진입할 때 UUID를 만들고, 초안 카드는 그 초안의 ID로 재개 체인을 쌓습니다. 단계 ViewModel은 assisted 인자로 받은 ID를 `StorylineGenerationStore.bind`로 맡기며, 다른 초안을 맡으면 앞 세션의 생성 실행을 끊고 메모리를 비웁니다. 키워드 초안 → 생성 요청 → 생성 결과는 같은 행을 덮고, 스토리라인 복구는 그 초안을 재개한 퍼널에서만 합니다.
+
+완성 요청 삽입과 제출한 `draftId` 초안 삭제는 한 DAO 트랜잭션이며, 요청의 `createdAt`은 그 초안에서 이어받습니다(초안이 저장된 적 없으면 제출 시각). 저장 실패 시 전송하지 않습니다. `StoryCompletionExecutor`는 앱 수명, requestId별 single-flight, `SessionGate.withAuthWork/commit`으로 실행하며 서로 다른 요청을 전역 직렬화하지 않습니다.
 
 | 결과·복구 | 처리 |
 | --- | --- |
@@ -247,7 +254,7 @@ Room DB v3는 편집 한 건인 `pending_story_creation`과 requestId별 `story_
 | 스토리라인 복구 | STARTED 중 3초 폴링. 완성 요청 폴링과 별개 |
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
-v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. destructive migration을 사용하지 않습니다.
+v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. destructive migration을 사용하지 않습니다.
 
 ### 제작 로딩 표현
 
@@ -259,14 +266,14 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 
 ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 저장합니다. `isChangingConfigurations=true`는 제외하며 destination의 STOP은 저장 계기가 아닙니다. 저장은 Mutex로 직렬화하고 API 전송 전에 진행 중 저장을 join합니다.
 
-요청 명령·성공 결과는 즉시 영속화합니다. 늦게 전달되는 UiState가 아닌 실제 저장 snapshot으로 중복을 판단합니다. 재개만으로 초안을 소비하지 않고 새 제작·폐기는 대상 초안만 정리합니다. 복원 stack은 키워드, `[storyline]`, `[storyline, additional]`로 단계에 맞춰 구성합니다.
+요청 명령·성공 결과는 즉시 영속화합니다. 늦게 전달되는 UiState가 아닌 실제 저장 snapshot으로 중복을 판단합니다. 재개만으로 초안을 소비하지 않고 폐기는 대상 초안만 정리하며 새 제작은 다른 초안을 건드리지 않습니다. 복원 stack은 키워드, `[storyline]`, `[storyline, additional]`로 단계에 맞춰 구성합니다.
 
 ## 1-2-8. 관측
 
 분석 이벤트·식별자·수집 제한은 [분석 Spec](../spec/6-analytics.md)이 정본입니다. Android는 Amplitude와 Firebase Crashlytics를 사용하고 Firebase Analytics는 사용하지 않습니다.
 
 - 첫 이벤트 이전에 공용 device ID를 주입합니다. 로그인은 공개 사용자 ID, 로그아웃은 세션 정리 순서에 맞춰 사용자 해제와 device ID 교체를 수행합니다.
-- Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 현재 `optimization.enable = false`라 R8 mapping 파일을 생성하지 않습니다. 빌드·매핑 상태는 [배포 Design](4-deployment.md#manyak-android-ci)에서 확인합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
+- Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 R8을 적용하고 빌드마다 mapping 파일을 Crashlytics에 올립니다. 빌드·매핑 상태는 [배포 Design](4-deployment.md#manyak-android-ci)에서 확인합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
 - 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계 조건은 분석 Spec을 따릅니다. reducer에 관측 호출을 넣지 않습니다.
 - breadcrumb는 Amplitude 어댑터에서 연결해 화면에서 중복 발화하지 않습니다. 지속 Crashlytics 키는 `screen_name`을 사용하고 개별 식별자는 breadcrumb로 연결합니다.
 - ANR은 API 30+ Crashlytics와 그 이전 Android vitals의 관측 범위를 구분합니다.

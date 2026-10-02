@@ -6,9 +6,11 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-09-30 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드의 현재 기술 환경·요청 경계·저장 구조·동시성·운영 연결을 설명합니다. |
+| 알림 구조 기준 | 서버 `a0a89ca`, 알림 `ac51603`, Terraform `ae315c3`의 알림 관련 코드. AWS 활성 상태와 구분합니다. |
+| 검수 구조 기준 | 서버 dev `25b8c5e`, V87·V88. 아래 검수 실행 구조에 한정합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Flyway V81. 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md)이 소유합니다. |
 
 ## 읽는 순서
@@ -72,8 +74,9 @@ graph LR
 | `story` | 스토리 조회·삭제, 간편 제작 퍼널, 로어북, 스토리 AI 클라이언트 |
 | `chat` | 채팅 생성·조회·삭제, 턴 SSE 스트리밍, 채팅 AI 클라이언트 |
 | `feedback` | 피드백 저장, Slack 알림 |
-| `push` | 토큰의 플랫폼에 따라 안드로이드는 data-only로 발송하고 웹은 data에 webpush notification과 클릭 링크를 추가합니다. 공통 수신자 식별과 동의 판정은 유지합니다 |
+| `push` | 서버가 토큰과 동의, 발송 요청을 관리합니다. `local`은 서버 FCM 발송을 사용하고 `remote`는 도메인 트랜잭션의 아웃박스를 기록해 SQS로 발행합니다. dev는 `remote`이며 prod는 `local`을 유지합니다. 안드로이드는 data-only로 발송하고 웹은 data에 webpush notification과 클릭 링크를 추가합니다. 공통 수신자 식별과 동의 판정은 유지합니다. |
 | `global` | 보안 설정, 공통 오류 응답, 상관관계 필터, 구조화 로그, `ai_call_logs` |
+| 알림 서비스(`manyak-notification`) | dev는 서버 태스크 안의 컨테이너에서 SQS를 소비합니다. 발송 직전 서버 내부 API로 자격과 토큰을 조회하고 Redis 멱등 처리 후 FCM을 발송합니다. prod의 별도 ECS 서비스와 Cloud Map 호출은 아직 미적용인 목표 구성입니다. ([BE-051](../adr/2-backend-server-adr.md#be-051)) |
 
 ### 남용 방지 설계
 
@@ -89,6 +92,8 @@ graph LR
 
 디바이스 헤더 변조, 기기 변경, 게스트 간 접근과 미인증 쓰기 rate limit은 막지 않고 수용합니다. 판단 근거는 [BE-045](../adr/2-backend-server-adr.md#be-045)에 있습니다.
 
+일반 제작 등록·수정은 `StorySubmissionService`가 제출본으로 접수합니다. `SubmissionPoller`가 빈 실행 슬롯만큼 DB 임대를 선점하고 `SubmissionExecutor`가 트랜잭션 밖에서 이미지 복사·AI 검수를 수행합니다. `SubmissionTransactions`가 회차를 확인해 승인 시에만 라이브에 반영하며, 완료 알림은 local의 커밋 뒤 서버 발송과 remote의 트랜잭션 아웃박스 기록을 사용합니다. `SubmissionFormAssembler`는 원본 폼 identity로 issues·imageErrors를 현재 폼에 재매핑합니다. 이 구조는 서버 dev의 KNK-1438까지를 기준으로 합니다. 재시도·보류·용량 검사의 계약은 [Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름), 결정은 [BE-050](../adr/2-backend-server-adr.md#be-050)을 따릅니다.
+
 ## 2-2. 저장소와 데이터 수명
 
 RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 전체 컬럼·ERD는 [dbdoc](../../../manyak-server/dbdoc)으로 대조합니다. 아래는 현재 저장 책임과 수명입니다.
@@ -97,10 +102,12 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 | --- | --- | --- |
 | 사용자 | `users` | 계정과 상태, 프로필, 이관, 재가입, 보상 신원, 푸시 동의를 저장합니다. 닉네임은 소문자·공백 제거 키로 유일성을 보장합니다. 재가입 계정은 원래 보상 신원을 이어받습니다([회원·인증](../spec/4-backend-server-spec.md#4-3-api-계약), [보상](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 사용자 | `social_accounts` | 소셜 연동. `(provider, provider_user_id)`와 `(user_id, provider)`를 각각 유일하게 유지합니다. 탈퇴 시 행을 지우지 않고 `deleted_at`을 기록하며 재가입·계정 연동 때 재사용합니다([§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한)) |
-| 사용자 | `device_push_tokens` | (V72, KNK-1131) 회원 기기의 FCM 등록 토큰. `user_id`(FK users, `ON DELETE CASCADE`: 탈퇴는 soft delete라 실제 정리는 서비스) · `token`(varchar 512, **UNIQUE**: 토큰은 설치본 주소라 전역 유일, 재등록=갱신·소유자 이전의 최종 방어선) · `platform`(V80·KNK-1271에서 CHECK 허용값을 `ANDROID`·`WEB`으로 확장) · `created_at` · `updated_at`(마지막 등록 시각, 상한 축출 기준). `user_id` 인덱스. 게스트 기기는 저장하지 않습니다([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| 사용자 | `device_push_tokens` | 서버 소유이며 발송 서비스 분리 후에도 이관하지 않습니다. (V72, KNK-1131) 회원 기기의 FCM 등록 토큰. `user_id`(FK users, `ON DELETE CASCADE`: 탈퇴는 soft delete라 실제 정리는 서비스) · `token`(varchar 512, **UNIQUE**: 토큰은 설치본 주소라 전역 유일, 재등록=갱신·소유자 이전의 최종 방어선) · `platform`(V80·KNK-1271에서 CHECK 허용값을 `ANDROID`·`WEB`으로 확장) · `created_at` · `updated_at`(마지막 등록 시각, 상한 축출 기준). `user_id` 인덱스. 게스트 기기는 저장하지 않습니다([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 검색 | OpenSearch `stories-{env}` 인덱스 | 공개 스토리 검색용 **파생 사본**(정본은 `stories`·`story_characters`). 문서 id = `publicId`, nori 분석 필드(제목·소개·인물명)·`genres` keyword·카드 필드·`visible`. 커밋 뒤 **비동기** 색인(AFTER_COMMIT + @Async), 실패 시 재색인 러너로 복구. 테이블이 아니라 마이그레이션·dbdoc 대상이 아닙니다([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약) 스토리 검색) |
-| 사용자 | `push_campaigns` | 프로모션 푸시의 예약 시각, 상태, 대상·성공·건너뜀 수, 시작·종료 시각을 기록합니다. 운영자가 SQL로 등록하고 스케줄러가 `SCHEDULED → SENDING` 조건부 갱신으로 선점합니다([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약)) |
-| 사용자 | `push_message_templates` | (V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스: PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now) · `effective_until`(timestamptz nullable: NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약) 출석 리마인드) |
+| 사용자 | `push_campaigns` | 서버 소유이며 발송 서비스 분리 후에도 이관하지 않습니다. 프로모션 푸시의 예약 시각, 상태, 대상·성공·건너뜀 수, 시작·종료 시각을 기록합니다. 운영자가 SQL로 등록하고 스케줄러가 `SCHEDULED → SENDING` 조건부 갱신으로 선점합니다([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| 사용자 | `push_message_templates` | 서버 소유이며 발송 서비스 분리 후에도 이관하지 않습니다. (V74, KNK-1116) 푸시 문구 오버라이드. `template_key`(varchar 64, 인덱스: PK가 아님: 같은 키의 기간별 행을 미리 넣어 교체를 예약) · `title`(varchar 100) · `body`(varchar 300) · `effective_from`(timestamptz not null default now) · `effective_until`(timestamptz nullable: NULL이면 영구) · `created_at`. 읽기 규칙은 `credit_policies`와 동일(유효 행 없으면 yml 기본 문구, 여럿이면 `effective_from` 최신). 시드 없음, 관리자 API 없음([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약) 출석 리마인드) |
+| 알림 발행 | `push_outbox` | 서버 소유 테이블이며 도메인 커밋과 같은 트랜잭션에 요청을 기록합니다. 릴레이가 임대로 선점한 뒤 트랜잭션 밖에서 발행합니다. 컬럼과 제약은 [V86](../../../manyak-server/src/main/resources/db/migration/V86__create_push_outbox.sql)을 따릅니다. ([아웃박스 계약](../spec/4-backend-server-spec.md#발행-포트와-아웃박스)) |
+| 알림 소비 | Redis `notification:` 접두어 키 | 알림 서비스의 멱등 저장소입니다. `messageId`별 `SET NX`와 유효시간으로 선점하며 완료 기록과 성공 기기 집합은 7일간 저장합니다. dev는 태스크 안 Redis를 사용합니다. prod는 서버와 같은 ElastiCache를 접두어로 구분해 사용하는 목표 구성이며 아직 미적용입니다. 별도 PostgreSQL 테이블이나 회원 및 토큰 복제본은 두지 않습니다. ([소비 계약](../spec/4-backend-server-spec.md#소비-순서와-멱등-기록), [BE-051](../adr/2-backend-server-adr.md#be-051)) |
 | 사용자 | `user_consents` | 약관·개인정보 처리방침·만 14세 확인의 버전별 동의 이력. `user_id`(FK `users`, `ON DELETE` 없음: 탈퇴 후에도 보존) · `doc_type`(CHECK `TERMS`·`PRIVACY`·`AGE14`) · `version`(웹 콘텐츠 버전 문자열, `AGE14`는 `1`) · `agreed_at`. PK는 `(user_id, doc_type, version)`이며, 행은 추가 전용(append-only)으로 관리하고 기존 `agreed_at`을 갱신하지 않습니다. 현행 요구 버전은 `manyak.legal.*-version` 설정값입니다([약관·개인정보 처리방침 동의](../spec/4-backend-server-spec.md#약관개인정보-처리방침-동의)) |
 | 게스트 | `guest_consents` | 게스트 개인정보 수집 및 이용 동의의 버전별 이력(추가 설계, 구현 전). `device_id_hash`(체험 한도와 같은 해시), `doc_type`(`GUEST_PRIVACY`), `version`, `agreed_at`. PK는 `(device_id_hash, doc_type, version)`이고 FK는 없습니다. 추가 전용(append-only)이며 조건부 삽입으로 같은 버전의 최초 `agreed_at`을 보존합니다. 회원 이관 없이 탈퇴와 무관하게 디바이스 단위로 남습니다. 현행 버전은 `manyak.legal.guest-privacy-version` 설정값입니다([게스트 개인정보 수집 동의](../spec/4-backend-server-spec.md#게스트-개인정보-수집-동의)) |
 | 스토리 | `stories` | 제목·소개·장르·소유자·삭제 상태를 저장합니다. 프리셋 표지 키와 생성·업로드 표지 URL이 공존하며, 검수 상태가 `APPROVED`인 URL을 우선 노출합니다([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)) |

@@ -1,25 +1,12 @@
 # 5. 계약
 
-| 항목 | 값 |
-|---|---|
-| 적용 태스크 | 스토리라인 생성, 스토리 컴파일 |
-| 버전 | 0.1 |
+본 문서는 AI 서버가 백엔드·외부 모델 API와 통신할 때 지켜야 하는 규약을 정의한다.
 
-본 문서는 ([4-2 소프트웨어 설계](4-2-DESIGN-SOFTWARE-ARCHITECTURE.md))에서 정의한 시스템 간 연결을 요청과 응답의 계약으로 구체화한다.
-
-스토리라인과 컴파일 API의 요청 필드, 응답 구조, 필수값과 형식 제약을 명시한다. 정상 결과와 처리 실패의 응답, 요청 식별과 메타데이터, 대기 한도와 복구 책임을 정한다. 모델 호출 인터페이스와 권한 및 호환성 규칙도 다룬다.
+백엔드와의 스토리라인·컴파일 API 계약, 외부 모델과의 텍스트·이미지 생성 API 계약을 다룬다.
 
 <br>
 
 ### 5-1 연동 대상과 방식
-
-이 문서의 예시는 구조를 설명하기 위한 가상 값이다. 실제 사용자 입력, 이미지 데이터와 호출 기록이 아니다.
-
-AI 서버가 API를 제공하고 백엔드가 사용한다. 요청, 정상 응답과 422·502 오류 응답은 JSON이며 필드 이름은 `snake_case`를 사용한다. 500 응답은 실패 계약을 따른다. ([5-4 계약](#5-4-실패-계약))
-
-백엔드는 응답을 동기로 기다린다. 대기 한도는 시간 계약을 따른다. ([5-6 계약](#5-6-시간과-복구))
-
-상태 확인은 모델 API의 상태를 확인하지 않는다.
 
 | 요청 | 방식 | 성공 | 실패 |
 |---|---|---|---|
@@ -31,41 +18,38 @@ AI 서버가 API를 제공하고 백엔드가 사용한다. 요청, 정상 응�
 
 ### 5-2 스토리라인 요청과 결과
 
-주변 인물 수와 특징 태그 수는 백엔드가 검사한다. AI 서버는 검사하지 않는다. 이름을 입력한 인물끼리 이름이 같으면 422를 반환한다. 앞뒤 공백과 대소문자는 구분하지 않는다.
+**1. 요청 필드**
 
-AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
-
-| 요청 필드 | 타입 | 필수 | 뜻과 기본값 |
+| 필드명 | 타입 | 필수 | 설명 |
 |---|---|---|---|
 | `genre_tags` | `string[]` | 필수 | 장르 태그 |
 | `protagonist` | `object` | 필수 | 주인공 |
-| `protagonist.name` | `string / null` | 선택 | 이름<br>`null`이면 AI가 결정 |
-| `protagonist.gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>`null`이면 AI가 결정 |
-| `protagonist.features` | `string[] / null` | 선택 | 특징 태그<br>생략하거나 `null`이면 빈 배열 |
-| `supporting_characters` | `object[] / null` | 선택 | 주변 인물<br>생략하거나 `null`이면 빈 배열 |
-| `supporting_characters[].name` | `string / null` | 선택 | 이름<br>`null`이면 AI가 결정 |
-| `supporting_characters[].gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>`null`이면 AI가 결정 |
-| `supporting_characters[].features` | `string[] / null` | 선택 | 특징 태그<br>생략하거나 `null`이면 빈 배열 |
+| `protagonist.name` | `string / null` | 선택 | 이름<br>생략·`null`·공백만 있는 값은 AI가 결정 |
+| `protagonist.gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>생략하거나 `null`이면 AI가 결정 |
+| `protagonist.features` | `string[] / null` | 선택 | 특징 태그 최대 3개 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열 |
+| `supporting_characters` | `object[] / null` | 선택 | 주변 인물 0~5명 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열<br>빈 객체 `{}`도 한 명으로 취급 |
+| `supporting_characters[].name` | `string / null` | 선택 | 이름<br>생략·`null`·공백만 있는 값은 AI가 결정 |
+| `supporting_characters[].gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>생략하거나 `null`이면 AI가 결정 |
+| `supporting_characters[].features` | `string[] / null` | 선택 | 특징 태그 최대 3개 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열 |
 
 <br>
 
-**응답**
+**2. 응답 필드**
 
-200 응답은 후보 3편, 비어 있지 않은 줄거리와 후보별 추천 정보 3개를 보장한다. 추천 정보의 문장이 비었는지는 검사하지 않는다. 이름을 입력한 인물이 빠진 후보가 있어도 200으로 반환하며 응답에는 따로 표시하지 않는다.
-
-백엔드는 사용자가 고른 줄거리와 추천 정보를 컴파일 요청의 `selected_storyline`과 `additional_info`로 보낸다.
-
-| 응답 필드 | 타입 | 뜻 |
+| 필드명 | 타입 | 뜻 |
 |---|---|---|
 | `stories` | `object[]` | 후보 3편 |
 | `stories[].id` | `integer` | 후보 번호 1, 2, 3 |
 | `stories[].storyline` | `string` | 줄거리 |
 | `stories[].recommended_infos` | `string[]` | 추천 추가 정보 3개 |
-| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-식별과-전달)) |
+| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-요청-헤더와-메타데이터)) |
+
+<details>
+<summary><strong>요청·응답 예시</strong></summary>
 
 <br>
 
-**요청 예시**
+**1) Request body**
 
 ```json
 {
@@ -87,7 +71,7 @@ AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
 
 <br>
 
-**200 응답 예시**
+**2) 200 Response body**
 
 ```json
 {
@@ -121,10 +105,10 @@ AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
     }
   ],
   "meta": {
-    "model": "deepseek-flash",
-    "provider": "deepseek",
+    "model": "<실제 사용한 모델 이름>",
+    "provider": "google",
     "prompt_versions": {
-      "STORYLINES": 6
+      "STORYLINES": 7
     },
     "input_token_count": 900,
     "output_token_count": 1400,
@@ -133,16 +117,18 @@ AI 서버는 `genre_tags`가 빈 배열인지 검사하지 않는다.
 }
 ```
 
+</details>
+
 <br>
 
 ### 5-3 컴파일 요청과 결과
 
-AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는다.
+**1. 요청 필드**
 
-| 요청 필드 | 타입 | 필수 | 뜻과 기본값 |
+| 필드명 | 타입 | 필수 | 뜻과 기본값 |
 |---|---|---|---|
 | `selected_storyline` | `string` | 필수 | 사용자가 고른 줄거리 |
-| `additional_info` | `string` | 선택 | 추가 정보<br>기본값은 빈 문자열 |
+| `additional_info` | `string` | 선택 | 항목당 최대 100자, 최대 13개를 백엔드가 검사한 뒤 줄바꿈으로 합쳐 전달<br>기본값은 빈 문자열 |
 | `genre_tags` | `string[]` | 필수 | 스토리라인 요청과 같은 장르 태그 |
 | `protagonist` | `object` | 필수 | 스토리라인 요청과 같은 주인공 구조 ([5-2 계약](#5-2-스토리라인-요청과-결과)) |
 | `supporting_characters` | `object[] / null` | 선택 | 스토리라인 요청과 같은 주변 인물 구조 ([5-2 계약](#5-2-스토리라인-요청과-결과)) |
@@ -152,60 +138,58 @@ AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는�
 
 <br>
 
-**응답**
+**2. 응답 필드**
 
-| 응답 필드 | 타입 | 뜻 |
-|---|---|---|
-| `stories.title` | `string` | 제목 |
-| `stories.one_line_intro` | `string` | 한 줄 소개 |
-| `stories.description` | `string` | 상세 소개 |
-| `story_settings.world_setting` | `string` | 세계관 통글 |
-| `story_settings.character_setting` | `string` | 주변 인물 통글 |
-| `story_settings.user_role_setting` | `string` | 주인공 통글 |
-| `story_settings.rule_setting` | `string` | 전개 규칙 통글 |
-| `story_start_settings.name` | `string` | 시작 설정 이름 |
-| `story_start_settings.start_situation` | `string` | 시작 상황 |
-| `story_start_settings.prologue` | `string` | 프롤로그 |
-| `story_suggested_inputs` | `string[]` | 첫 선택지 3개 |
-| `story_main_events[]` | `object[]` | 주요 사건 3개에서 5개<br>`name`, `description`, `key_sentence` |
-| `story_endings[]` | `object[]` | 엔딩 3개 또는 빈 배열<br>`name`, `min_turns`, `achievement_condition`, `epilogue` |
-| `character_appearances[]` | `object[]` | 주변 인물 전원의 외형<br>최대 5명 |
-| `character_appearances[].name` | `string` | 인물 이름<br>항상 채움 |
-| `character_appearances[].gender` | `string` | 인물 성별<br>항상 채움 |
-| `character_appearances[].age` | `string` | 나이대<br>생성하지 못하면 빈 문자열 |
-| `character_appearances[].body` | `string` | 체형<br>생성하지 못하면 빈 문자열 |
-| `character_appearances[].face` | `string` | 얼굴<br>생성하지 못하면 빈 문자열 |
-| `character_appearances[].hair` | `string` | 머리 모양<br>생성하지 못하면 빈 문자열 |
-| `character_appearances[].outfit` | `string` | 의상<br>생성하지 못하면 빈 문자열 |
-| `character_appearances[].visual_identity` | `string` | 시각적 대표 특징<br>생성하지 못하면 빈 문자열 |
-| `character_images[]` | `object[]` | 인물 이미지 결과 최대 5개<br>인물 카드 순서 |
-| `character_images[].name` | `string` | 인물 이름 |
-| `character_images[].image_name` | `string` | `인물이름_기본` |
-| `character_images[].image_base64` | `string / null` | WebP 데이터<br>실패하면 `null` |
-| `character_images[].content_type` | `string` | 항상 `image/webp` |
-| `character_images[].error` | `string / null` | 실패 사유<br>성공하면 `null` |
-| `thumbnail_image` | `object` | 썸네일 결과<br>항상 객체 |
-| `thumbnail_image.image_name` | `string` | `썸네일_기본` |
-| `thumbnail_image.image_base64` | `string / null` | WebP 데이터<br>실패하면 `null` |
-| `thumbnail_image.content_type` | `string` | 항상 `image/webp` |
-| `thumbnail_image.error` | `string / null` | 실패 사유<br>성공하면 `null` |
-| `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-식별과-전달)) |
+| 필드명 | 타입 | 값 필수 여부 | 뜻 |
+|---|---|---|---|
+| `stories.title` | `string` | 필수 | 제목 |
+| `stories.one_line_intro` | `string` | 필수 | 한 줄 소개 |
+| `stories.description` | `string` | 필수 | 상세 소개 |
+| `story_settings.world_setting` | `string` | 필수 | 세계관 마크다운 본문 |
+| `story_settings.character_setting` | `string` | 필수 | 주변 인물 마크다운 본문 |
+| `story_settings.user_role_setting` | `string` | 필수 | 주인공 마크다운 본문 |
+| `story_settings.rule_setting` | `string` | 필수 | 전개 규칙 마크다운 본문 |
+| `story_start_settings.name` | `string` | 필수 | 시작 설정 이름 |
+| `story_start_settings.start_situation` | `string` | 필수 | 시작 상황 |
+| `story_start_settings.prologue` | `string` | 필수 | 프롤로그 |
+| `story_suggested_inputs` | `string[]` | 필수 | 첫 선택지 3개 |
+| `story_main_events` | `object[]` | 필수 | 주요 사건 3개에서 5개 |
+| `story_main_events[].name` | `string` | 필수 | 사건 이름 |
+| `story_main_events[].description` | `string` | 필수 | 사건 설명 |
+| `story_main_events[].key_sentence` | `string` | 필수 | 사용자 입력과 사건의 관련성을 판단하는 문장 |
+| `story_endings` | `object[]` | 선택 | 엔딩 3개 또는 빈 배열 |
+| `story_endings[].name` | `string` | 필수 | 엔딩 이름 |
+| `story_endings[].min_turns` | `integer` | 필수 | 최소 턴 수<br>1 이상 |
+| `story_endings[].achievement_condition` | `string` | 필수 | 엔딩 달성 조건 |
+| `story_endings[].epilogue` | `string` | 필수 | 에필로그 연출 방향 |
+| `character_appearances[]` | `object[]` | 필수 | 주변 인물 전원의 외형<br>최대 5명 |
+| `character_appearances[].name` | `string` | 필수 | 인물 이름 |
+| `character_appearances[].gender` | `string` | 필수 | 인물 성별 |
+| `character_appearances[].age` | `string` | 이미지 필수 | 나이대<br>생성하지 못하면 빈 문자열 |
+| `character_appearances[].body` | `string` | 이미지 필수 | 체형<br>생성하지 못하면 빈 문자열 |
+| `character_appearances[].face` | `string` | 이미지 필수 | 얼굴<br>생성하지 못하면 빈 문자열 |
+| `character_appearances[].hair` | `string` | 이미지 필수 | 머리 모양<br>생성하지 못하면 빈 문자열 |
+| `character_appearances[].outfit` | `string` | 이미지 필수 | 의상<br>생성하지 못하면 빈 문자열 |
+| `character_appearances[].visual_identity` | `string` | 이미지 필수 | 시각적 대표 특징<br>생성하지 못하면 빈 문자열 |
+| `character_images[]` | `object[]` | 선택 | 인물 이미지 결과 최대 5개<br>인물 카드 순서<br>빈 배열 허용 |
+| `character_images[].name` | `string` | 필수 | 인물 이름 |
+| `character_images[].image_name` | `string` | 필수 | `인물이름_기본` |
+| `character_images[].image_base64` | `string / null` | 이미지 성공 시 필수 | WebP 데이터<br>실패하면 `null` |
+| `character_images[].content_type` | `string` | 필수 | 항상 `image/webp` |
+| `character_images[].error` | `string / null` | 이미지 실패 시 필수 | 실패 사유<br>성공하면 `null` |
+| `thumbnail_image` | `object` | 필수 | 썸네일 결과 객체 |
+| `thumbnail_image.image_name` | `string` | 필수 | `썸네일_기본` |
+| `thumbnail_image.image_base64` | `string / null` | 이미지 성공 시 필수 | WebP 데이터<br>실패하면 `null` |
+| `thumbnail_image.content_type` | `string` | 필수 | 항상 `image/webp` |
+| `thumbnail_image.error` | `string / null` | 이미지 실패 시 필수 | 실패 사유<br>성공하면 `null` |
+| `meta` | `object` | 필수 | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-요청-헤더와-메타데이터)) |
 
-200 응답에서 보장하는 값은 다음과 같다.
-
-썸네일에는 이미지 데이터와 `error` 중 하나만 넣는다.
-
-이미지는 백엔드가 저장한다. AI 서버는 저장소에 쓰지 않는다. `min_turns`는 1 이상이다.
-
-| 구분 | 항목 |
-|---|---|
-| 항상 채워지는 값 | 제목과 소개<br>스토리 설정 4개<br>시작 설정<br>첫 선택지<br>주요 사건<br>입력한 장르 태그<br>입력한 주인공의 이름과 성별<br>입력한 주변 인물의 이름 |
-| 비어 있을 수 있는 값 | `story_endings` 빈 배열<br>`character_appearances`의 외형 값 빈 문자열<br>`character_images` 빈 배열 또는 실패 항목 |
-| 확인할 값 | 외형 값 6개가 모두 있으면 이미지 생성 대상<br>외형 값이 하나라도 비면 해당 인물 이미지를 생성하지 않음<br>`image_base64`가 문자열이면 성공<br>`null`이면 `error`에 실패 사유 포함 |
+<details>
+<summary><strong>요청·응답 예시</strong></summary>
 
 <br>
 
-**요청 예시**
+**1) Request body**
 
 ```json
 {
@@ -235,9 +219,9 @@ AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는�
 
 <br>
 
-**200 응답 예시**
+**2) 200 Response body — 전체 완료**
 
-이미지 생성이 시간 초과로 실패했지만 스토리 설정은 완성된 부분 완료 예시다.
+스토리 설정, 인물 이미지와 썸네일이 모두 생성된 예시다. 이미지의 Base64 문자열은 생략했다.
 
 ```json
 {
@@ -315,22 +299,22 @@ AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는�
     {
       "name": "도윤",
       "image_name": "도윤_기본",
-      "image_base64": null,
+      "image_base64": "<WebP 이미지의 Base64 문자열>",
       "content_type": "image/webp",
-      "error": "timeout"
+      "error": null
     }
   ],
   "thumbnail_image": {
     "image_name": "썸네일_기본",
-    "image_base64": null,
+    "image_base64": "<WebP 이미지의 Base64 문자열>",
     "content_type": "image/webp",
-    "error": "timeout"
+    "error": null
   },
   "meta": {
-    "model": "gpt-5.6-terra",
-    "provider": "openai",
+    "model": "<실제 사용한 모델 이름>",
+    "provider": "google",
     "prompt_versions": {
-      "COMPILE": 10,
+      "COMPILE": 11,
       "CHARACTER_IMAGE": 1,
       "THUMBNAIL_IMAGE": 1
     },
@@ -343,195 +327,171 @@ AI 서버는 줄거리·추가 정보·로어북 길이를 검사하지 않는�
 
 <br>
 
+**3) 200 Response body — 부분 완료**
+
+인물 이미지와 썸네일 생성이 시간 초과로 실패한 경우다. 전체 완료 예시와 달라지는 필드만 표시했다.
+
+```json
+{
+  "character_images": [
+    {
+      "name": "도윤",
+      "image_name": "도윤_기본",
+      "image_base64": null,
+      "content_type": "image/webp",
+      "error": "timeout"
+    }
+  ],
+  "thumbnail_image": {
+    "image_name": "썸네일_기본",
+    "image_base64": null,
+    "content_type": "image/webp",
+    "error": "timeout"
+  }
+}
+```
+
+</details>
+
+<br>
+
 ### 5-4 실패 계약
 
-| 상태 | 조건 | 본문 | 설명 |
-|---|---|---|---|
-| 422 | 요청 스키마 위반 또는 인물 이름 중복 | `detail` 배열<br>항목별 `type`, `loc`, `msg` | 백엔드가 요청 수정 후 재호출 |
-| 500 | 요청 처리 중 설정 오류 또는 처리하지 않은 내부 예외 | 공통 JSON 형식을 보장하지 않음 | AI 보완 없이 종료, 담당자가 오류 확인<br>백엔드는 본문 파싱·직접 노출 없이 자체 오류 안내 |
-| 502 | 모델 호출 실패<br>보완 후에도 형식이나 필수 항목 위반 | `detail` 문자열<br>아래 메시지 중 하나 | 사용자에게 표시 가능한 한국어 문구만 사용<br>공급자 오류 원문 제외 |
+422·500·502의 조건, 본문 형식, 502 메시지와 이미지 `error` 값은 오류 처리에서 정한다. ([7-1-5 실패 출력](7-1-ERROR-HANDLING.md#7-1-5-실패-출력))
 
-| 502 메시지 | 뜻 | 재시도 |
+<br>
+
+### 5-5 요청 헤더와 메타데이터
+
+**1. 요청 헤더**
+
+| 요청 헤더 | 값 형식 | 쓰임 | 필수 |
+| --- | --- | --- | --- |
+| `X-Manyak-Request-Id` | 문자열 | 백엔드 로그와 AI 관측 기록 연결 | 선택 |
+| `X-Manyak-Session-Id` | 문자열 | 클라이언트 접속 세션 식별 | 선택 |
+| `X-Manyak-Device-Id-Hash` | 해시 문자열 | 기기 식별자의 해시 | 선택 |
+| `X-Manyak-Creation-Id` | UUID 문자열 | `trace_creation_id`로 스토리라인 생성과 컴파일 연결 | 선택 |
+| `X-Manyak-Parent-Creation-Id` | UUID 문자열 | 스토리라인 재생성 시 검증된 직전 `trace_creation_id` 전달 | 선택 |
+| `X-Manyak-Storyline-Id` | 양의 정수 문자열 | 컴파일에 사용한 스토리라인 ID | 선택 |
+| `X-Manyak-Storyline-Order` | 정수 문자열 (1~3) | 컴파일에 사용한 후보 번호 | 선택 |
+
+<br>
+
+**2. 응답 `meta`**
+
+| 필드명 | 타입 | 뜻 |
 |---|---|---|
-| `LLM 응답 시간이 초과되었습니다.` | 모델이 시간 안에 응답하지 않음 | 가능 |
-| `LLM 요청이 일시적으로 제한되었습니다.` | 공급자가 호출량을 제한 | 잠시 뒤 가능 |
-| `LLM 요청이 거부되었습니다.` | 공급자가 요청을 거부 | 같은 입력은 불필요 |
-| `LLM 연동 중 오류가 발생했습니다.` | 공급자 연결 또는 서버 오류 | 가능 |
-| `LLM이 올바른 형식의 응답을 반환하지 않았습니다.` | 보완 후에도 형식이나 필수 항목 위반 | 가능 |
-| `재호출 후에도 컴파일 결과에 필수 필드가 비어 있습니다.` | 컴파일 보완 후에도 필수 값이 비어 있음 | 가능 |
-| `컴파일 결과가 스토리 명세 형식과 맞지 않습니다.` | 컴파일 결과를 응답 형식으로 바꿀 수 없음 | 가능 |
-
-502를 반환한 뒤 AI 서버는 다시 처리하지 않는다. 백엔드와 사용자가 재시도를 결정한다. 이미지 실패는 502가 아니며 200 응답의 `error`로 전달한다. 공급자 오류 원문은 제외하고 아래 값으로 바꾼다.
-
-인물별 생성 실패는 `character_images`의 해당 항목에 `error`로 표시한다. 모든 인물의 생성이 실패해도 인물별 실패 항목을 반환한다. 이미지 생성 로직 전체에서 예상하지 못한 오류가 발생하면 `character_images`는 빈 배열이다. 썸네일이 실패해도 `thumbnail_image` 객체를 반환하고 `error`를 채운다.
-
-| 이미지 `error` | 뜻 |
-|---|---|
-| `appearance_missing` | 외형 부족으로 호출하지 않음 |
-| `timeout` | 이미지 모델 응답 시간 초과 |
-| `rate_limited` | 공급자가 호출량을 제한 |
-| `rejected` | 공급자가 요청을 거부 |
-| `generation_failed` | 그 밖의 생성 실패 |
-
-Sentry 분류는 응답에 넣지 않는다.
-
-| Sentry 분류 | 값 |
-|---|---|
-| 공급자 오류 | `provider_timeout`<br>`provider_rate_limited`<br>`provider_bad_request`<br>`provider_unavailable` |
-| 응답과 실행 오류 | `invalid_ai_response`<br>`schema_validation_failed`<br>`unexpected_error` |
-
-<br>
-
-**422 응답 예시**
-
-`genre_tags`가 없는 요청의 응답이다.
-
-```json
-{
-  "detail": [
-    {
-      "type": "missing",
-      "loc": ["body", "genre_tags"],
-      "msg": "Field required"
-    }
-  ]
-}
-```
-
-<br>
-
-**502 응답 예시**
-
-```json
-{
-  "detail": "LLM 응답 시간이 초과되었습니다."
-}
-```
-
-<br>
-
-**500 응답 예시**
-
-```http
-HTTP/1.1 500 Internal Server Error
-Content-Type: text/plain; charset=utf-8
-
-Internal Server Error
-```
-
-디버그 모드가 꺼진 서버의 기본 오류 응답 예시다. 백엔드는 본문의 형식이나 문구에 의존하지 않고 HTTP 상태 코드 500을 기준으로 생성 실패를 처리한다.
-
-
-<br>
-
-### 5-5 식별과 전달
-
-헤더가 없거나 값이 `unknown`이면 요청을 허용하고 기록만 생략한다. AI 서버는 관측 도구의 `trace` 식별자를 응답하지 않는다. 백엔드는 `X-Manyak-Request-Id`로 기록을 대조한다.
-
-| 요청 헤더 | 필수 | 쓰임 |
-|---|---|---|
-| `X-Manyak-Request-Id` | 선택 | 백엔드 로그와 AI 관측 기록 연결 |
-| `X-Manyak-Session-Id` | 선택 | 클라이언트 접속 세션 식별 |
-| `X-Manyak-Device-Id-Hash` | 선택 | 기기 식별자의 해시<br>원문은 받지 않음 |
-| `X-Manyak-Creation-Id` | 선택 | 스토리라인 생성부터 컴파일까지 같은 제작 과정으로 연결 |
-| `X-Manyak-Parent-Creation-Id` | 선택 | 재생성 전 제작 요청과 연결 |
-| `X-Manyak-Storyline-Id` | 선택 | 컴파일에 사용한 스토리라인 식별 |
-| `X-Manyak-Storyline-Order` | 선택 | 컴파일에 사용한 후보 번호 식별 |
-
-<br>
-
-**응답 `meta`**
-
-`model`은 본 텍스트 호출의 실제 모델이며 `provider`는 호출 전에 모델 등록부에서 정한다. `prompt_versions`에는 실제 사용한 템플릿 버전을 기록하며, 컴파일은 컴파일·인물 이미지·썸네일 버전을 모두 포함한다.
-
-입출력 토큰 수에는 본 호출, 전체 재생성과 부분 보완을 합산하고 이미지 호출은 제외한다. `retry_count`에는 전체 재생성과 부분 보완만 포함하고 SDK 재시도는 제외한다.
-
-응답을 받지 못한 호출의 토큰 수는 빠질 수 있어 실제 청구액과 다를 수 있다. `retry_count`는 스토리라인 0에서 4, 컴파일 0에서 2다.
-
-| 필드 | 타입 | 뜻 |
-|---|---|---|
-| `model` | `string` | 실제 호출한 모델 |
+| `model` | `string` | 본 텍스트 호출의 실제 모델 이름 |
 | `provider` | `string` | 모델 공급자 |
-| `prompt_versions` | `map<string, integer>` | 프롬프트 이름별 버전 |
-| `input_token_count` | `integer / null` | 입력 토큰 수<br>알 수 없으면 `null` |
-| `output_token_count` | `integer / null` | 출력 토큰 수<br>알 수 없으면 `null` |
-| `retry_count` | `integer` | SDK 내부 재시도를 제외한 추가 호출 수 |
+| `prompt_versions` | `map<string, integer>` | 실제 사용한 템플릿의 이름별 버전<br>컴파일 요청은 컴파일·인물 이미지·썸네일 템플릿 버전 포함 |
+| `input_token_count` | `integer / null` | 본 호출·전체 재생성·부분 보완의 입력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
+| `output_token_count` | `integer / null` | 본 호출·전체 재생성·부분 보완의 출력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
+| `retry_count` | `integer` | 전체 재생성과 부분 보완의 호출 횟수<br>SDK 재시도 제외<br>스토리라인 0~4회, 컴파일 0~2회 |
 
 <br>
 
-**중복과 순서**
+### 5-6 외부 모델 API 계약
 
-| 상황 | 처리 주체와 기준 |
+#### 1. Google Gemini API
+
+**1. 요청**
+
+| 항목 | API 인자·호출 방식 |
 |---|---|
-| 같은 요청을 두 번 수신 | AI 서버가 두 번 처리<br>결과가 다를 수 있음 |
-| 중복 방지, 결과 저장과 실패 후 재요청 | 백엔드가 요청 식별자로 관리 |
-| 스토리라인 생성과 컴파일 순서 | 백엔드가 선택 상태를 관리<br>AI 서버는 확인하지 않음 |
+| API | `google-genai` SDK의 `generate_content` |
+| 모델 이름 | `model` |
+| 작성 규칙 (시스템 프롬프트) | `config.system_instruction` |
+| 입력을 채운 프롬프트 | `contents[0]` (`role="user"`) |
+| 출력 토큰 한도 | `config.max_output_tokens` |
+| 생성 온도 | `config.temperature` |
+| 추론 강도 | `config.thinking_config.thinking_level` |
+| 호출 제한 시간 | `config.http_options.timeout` (ms) |
+| JSON 모드 | `config.response_mime_type="application/json"` |
 
 <br>
 
-### 5-6 시간과 복구
+**2. 응답**
 
-SDK 재시도와 AI 결과 보완은 복구 구분을 따른다. ([7-1-3 오류 처리](7-1-ERROR-HANDLING.md#7-1-3-복구-구분))
-
-| 계층 | 책임 |
+| 결과 | 출처 |
 |---|---|
-| 백엔드 | 전체 대기 한도와 시간 초과 처리 |
-| AI 서버 | 생성과 보완 호출별 시간 제한 적용 |
-| 모델 SDK | 전송 오류 자동 재시도<br>AI 결과 보완 횟수와 별도 계산 |
+| 본문 | `response.text`. 비어 있어도 예외를 내지 않고 호출부가 판정 |
+| 입력 토큰 | `usage_metadata.prompt_token_count` |
+| 출력 토큰 | `usage_metadata.candidates_token_count`와 `thoughts_token_count`의 합 |
+| 실제 모델 이름 | 응답의 모델 이름. 비어 있으면 요청에 쓴 이름 |
 
-스토리라인 생성의 형식 재호출은 최초 생성의 90초 안에 끝낸다. 인물 누락 보완은 호출마다 90초를 적용한다.
-
-컴파일은 최초 생성과 각 보완 호출에 90초를 적용한다. 인물 이미지와 썸네일은 한 장마다 60초를 적용하며 동시에 생성한다.
-
-AI 서버는 스토리라인 생성 전체 90초와 컴파일 전체 180초를 따로 제한하지 않는다. 백엔드 연결이 먼저 끝나도 진행 중인 호출은 바로 취소하지 않는다.
-
-| 항목 | 스토리라인 생성 | 컴파일 |
-|---|---|---|
-| 백엔드 전체 대기 한도 | 90초 | 180초 |
-| 최초 텍스트 생성 한도 | 형식 재호출 포함 90초 | 90초 |
-| 텍스트 보완 호출 한도 | 호출마다 90초 | 호출마다 90초 |
-| 이미지 모델 한 번의 호출 한도 | 없음 | 60초 |
+<details>
+<summary><strong>텍스트 요청·응답 구조 예시</strong></summary>
 
 <br>
 
-### 5-7 권한과 호환성
+```text
+요청
+  model: <모델 이름>
+  config.max_output_tokens: <출력 토큰 한도>
+  config.temperature: <생성 온도>
+  config.thinking_config.thinking_level: <추론 강도>
+  config.http_options.timeout: <호출 제한 시간, 밀리초>
+  config.system_instruction: <조립된 시스템 프롬프트>
+  contents:
+    - role: user
+      parts:
+        - text: <조립된 사용자 프롬프트>
+  config.response_mime_type: application/json
 
-| 항목 | 규칙 |
-|---|---|
-| 인증과 권한 | 백엔드가 확인<br>AI 서버는 사용자 권한을 확인하지 않음 |
-| 응답과 로그 | 공급자 오류 원문, API 키와 사용자 입력 원문을 넣지 않음 |
-| 관측 도구 | 구조화한 입력만 허용<br>수집 범위는 관측 규칙에서 정의 ([7-3 관측](7-3-OBSERVABILITY.md)) |
-| 호환 변경 | 필드 추가<br>백엔드는 모르는 필드를 무시 |
-| 비호환 변경 | 필드 삭제, 이름과 타입 및 상태 코드 변경<br>백엔드 대응 후 배포 |
-| 프롬프트 버전 변경 | 응답 형식을 유지<br>`meta.prompt_versions`에 버전 기록 |
+응답
+  text: <생성 결과를 담은 JSON 문자열>
+  usage_metadata:
+    prompt_token_count: 900
+    candidates_token_count: 1200
+    thoughts_token_count: 200
+```
 
-<br>
-
-### 5-8 모델 게이트웨이 계약
-
-호출부는 공급자 SDK를 직접 호출하지 않고 LLM 호출 모듈만 사용한다. LLM 호출 모듈은 모델 이름으로 공급자와 어댑터를 정한다.
-
-- 등록되지 않은 모델은 서버를 시작할 때 오류로 처리한다
-- 공급자별 추론 설정과 허용 인자는 모델 등록부가 관리한다
-
-| LLM 호출 모듈 | 내용 |
-|---|---|
-| 요청 | 시스템 프롬프트, 사용자 프롬프트, 모델 이름, 출력 길이 한도와 시간 제한 |
-| 결과 | 본문, 토큰 수, 실제 모델 이름과 공급자 이름 |
-| 예외 | 시간 초과, 호출량 제한, 요청 거부와 공급자 불가 |
+</details>
 
 <br>
 
-**이미지 생성 모듈**
+#### 2. OpenAI Images API
 
-컴파일 호출부는 이미지 생성 예외를 정해진 이미지 `error`로 바꾼다. ([5-4 계약](#5-4-실패-계약))
+**1. 요청**
 
-인물 이미지 로직 전체에서 예상하지 못한 오류가 발생하면 빈 배열로 바꾼다. 모델 이름, 크기와 화질의 기본값은 AI 실행에서 정한다. ([6-1 AI 실행](6-1-AI-EXECUTION.md))
-
-실제 파일과 함수는 소프트웨어 구현에서 정한다. ([6-2 소프트웨어 구현](6-2-SOFTWARE-IMPLEMENTATION.md))
-
-| 방향 | 내용 |
+| 항목 | API 인자·호출 방식 |
 |---|---|
-| 요청 | 이미지 프롬프트, 크기, 화질과 시도당 시간 제한 |
-| 결과 | WebP 바이너리와 모델 및 공급자 정보 |
-| 예외 | 이미지 생성 예외 발생 |
+| API | `openai` SDK의 `images.generate` |
+| 모델 이름 | `model` |
+| 화질 | `quality` |
+| 이미지 크기 | `size` (`가로x세로`) |
+| 호출·연결 제한 시간 | `timeout` |
+| 이미지 프롬프트 | `prompt` |
+| 출력 형식 | `output_format="webp"` |
+| 장수 | `n=1` |
+
+<br>
+
+**2. 응답**
+
+| 결과 | 출처 |
+|---|---|
+| WebP 이미지 1장 | `data[0].b64_json` (Base64 문자열) |
+| 실제 모델 이름 | 요청에 쓴 이름 |
+
+<details>
+<summary><strong>이미지 요청·응답 구조 예시</strong></summary>
+
+<br>
+
+```text
+요청
+  model: <모델 이름>
+  quality: <생성 화질>
+  size: <가로x세로>
+  timeout: <호출·연결 제한 시간>
+  prompt: <조립된 이미지 프롬프트>
+  output_format: webp
+  n: 1
+
+응답
+  data:
+    - b64_json: <WebP 이미지의 Base64 문자열>
+```
+
+</details>

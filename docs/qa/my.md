@@ -23,6 +23,7 @@
 
 - [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
 - [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
+- [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
@@ -47,7 +48,7 @@
 | MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
 | MY-MENU-03   | P0  | 게스트                                            | 로그인 버튼 탭         | `/login`으로 이동(마이 → 로그인 진입점)                                                                                 | ✅ e2e `my/login-page`                         | US-9-1, FE-SCREEN-008 진입점                 |
 | MY-MENU-04   | P0  | 회원 로그인 상태                                  | `/my` 진입             | 닉네임 표시 + 로그아웃·회원 탈퇴 메뉴 표시. 로그인 버튼 없음                                                            | ✅ e2e `my/my-page`·`my/account-deletion`     | FE-SCREEN-008                                |
-| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 4개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
+| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 알림(알림 설정) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 5개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
 | MY-MENU-06   | P2  | 회원, `me` 응답에 `profileThumbnailBase64` 있음   | 프로필 이미지 확인     | base64 썸네일(`data:image/png;base64,...`)을 세션 이미지보다 우선해 원형으로 렌더                                       | ✅ e2e `my/my-page`                            | 구현(`profile-header`)                       |
 | MY-MENU-07 | P1 | 회원 | 닉네임 아래 영역 확인 | 닉네임 아래 google → kakao 순서로 Chip 표시. Google만 연동이면 점선 "카카오 연동하기", 둘 다 연동이면 Chip 2개만 표시. 연동 실행·오류는 AUTH-LINK 담당 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 계정 연동, KNK-740 |
 | MY-MENU-08   | P2  | 회원, `me` 응답의 `linkedProviders`가 비었거나 없음 | 닉네임 아래 영역 확인  | 연동 Chip 행 자체를 렌더하지 않음(연동 버튼 2개가 잠깐 보이는 오해 방지)                                                | 수동                                           | FE-SCREEN-008 계정 연동, KNK-740             |
@@ -77,6 +78,23 @@
 | MY-ACCOUNT-DELETION-08 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | 탈퇴 요청 없이 `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 
 <a id="my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포"></a>
+
+## MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)
+
+기준: [웹 PWA 푸시](../spec/3-2-web-spec.md#pwa-푸시). E2E 빌드는 Firebase 키를 비워 푸시가 꺼진 상태라 브라우저 권한·토큰 등록·완성 직후 프롬프트는 실기기 수동 검증입니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-NOTIFICATIONS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/notifications` | [웹 접근 조건](../spec/3-2-web-spec.md#라우팅-테이블) |
+| MY-NOTIFICATIONS-02 | P0 | 회원 | 마이 > 알림 > "알림 설정" 탭 | 뒤로가기 헤더 "알림 설정" + (브라우저 알림을 못 받으면) 상태 배너 + 서비스 알림(켜짐)·광고 알림(꺼짐) 스위치 줄(광고 라벨 옆 개인정보 처리방침 외부 링크 아이콘). 야간 줄 없음. 조회 중에는 스위치 자리에 골격 | ✅ e2e `my/notifications` | 웹 PWA 푸시 알림 설정 화면 |
+| MY-NOTIFICATIONS-03 | P0 | 회원, 광고 꺼짐 | 광고 알림 스위치 탭 | `PUT /users/me/push-settings`에 세 값 전체(`marketingPush: true`) 전송 → 처리 결과 다이얼로그(제목 + "전송자: …"·"일시: …"·"처리 내용: 광고 알림 수신 동의 완료" + 전체 폭 확인) → 닫으면 야간 광고 허용 줄 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시, §4-3-5 푸시 수신 동의 |
+| MY-NOTIFICATIONS-04 | P0 | 회원, 광고·야간 켜짐 | 광고 알림 스위치 탭 | 야간도 함께 `false`인 본문 전송, "광고 알림 수신 동의 철회 완료" 통지, 야간 줄 사라짐 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-05 | P1 | 회원 | 서비스 알림 스위치 탭 | 통지 없이 저장. 저장 5xx면 "알림 설정을 저장하지 못했어요" 토스트 + 스위치 원복 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-06 | P1 | 설정 조회 5xx | 진입 | 목록 대신 "알림 설정을 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 스위치 표시 | ✅ e2e `my/notifications` | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-07 | P1 | 푸시 활성 빌드, 권한 `default` | 배너 확인 → "알림 켜기" 탭 | 배너 "브라우저 알림 설정이 꺼져 있어요" + 버튼, 스위치 줄은 비활성. 허용하면 배너가 사라지고 줄이 활성으로 바뀌며 토큰 PUT 발생. 거부하면 "브라우저 알림이 차단되어 있어요" 토스트와 차단 배너. 차단 배너의 "방법 보기"는 사이트 설정 허용 안내 다이얼로그를 연다 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-08 | P1 | iOS Safari 탭(비설치본) | 배너 확인 | 홈 화면 추가 안내 배너, 버튼 없음, 스위치 줄 비활성 | 수동(실기기) | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-09 | P2 | 회원, 광고 켜짐 | 야간 광고 허용 탭 | 야간만 `true`인 본문 전송, "야간 광고 알림 수신 동의 완료" 통지 | 수동 | 웹 PWA 푸시 |
+| MY-NOTIFICATIONS-10 | P1 | 푸시 활성 빌드, 회원, 알림 권한 허용, 오프라인 | 열린 화면에서 토큰 동기화 시도 후 네트워크 연결 복구 | 오프라인에서는 Firebase 토큰 발급을 건너뜀. 복구 후 회원 상태와 권한이 유효하면 토큰 발급과 PUT을 자동 재시도. 복구 전에 로그아웃한 경우 등록하지 않음 | ◐ 단위 `tests/lib/push/messaging.test.ts`(발급 차단과 복구 후 직접 재호출), 이벤트와 실기기 동작은 수동 | [웹 PWA 푸시 토큰 등록](../spec/3-2-web-spec.md#pwa-푸시) |
 
 ## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)
 
@@ -119,6 +137,8 @@
 | MY-CREDITS-33 | P2 | 대기 주문 없음 또는 24시간 지난 기록 | `/my/credits` 진입 | 확인 카드를 그리지 않음 | ✅ e2e `my/credits`(없음)·단위 `pending-credit-order-storage`(만료) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
 | MY-CREDITS-34 | P0 | 대기 주문이 `REFUNDED`(또는 `COMPLETED`·404)로 확정돼 카드가 표시된 상태 | 닫기 없이 새로고침 또는 재진입 | 확인 카드를 다시 그리지 않고 주문 재조회도 없음. 확인 중·60초 초과·조회 오류 상태는 기록이 남아 재진입 시 다시 확인 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 | MY-CREDITS-35 | P1 | 가격 버튼 탭으로 주문 생성 성공 후 결제창으로 이동 | 브라우저 뒤로가기로 문서가 bfcache 복원(`pageshow` persisted) | 가격 버튼의 스피너·비활성이 풀려 다시 주문 가능 | ✅ e2e `my/credits`(이벤트 직접 발생) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
+| MY-CREDITS-37 | P1 | 무료 충전 탭 | 탭 내용을 아래로 당겼다 놓기 | STORY-LIST-30과 같은 표시자로 프로필(잔액·출석 여부)과 정책 수치를 다시 조회 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
+| MY-CREDITS-38 | P1 | 내역 탭, 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 같은 표시자로 내역을 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지. 구매 탭에는 당김 없음 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
@@ -177,7 +197,7 @@
 | ------------ | --- | --------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------- |
 | MY-INFO-01 | P1 | 게스트/회원 | 마이 기타 섹션 "서비스 안내" 메뉴(피드백 위) 탭 | 메뉴 오른쪽에 새 창 아이콘 표시. 원래 `/my` 탭을 유지한 채 새 탭에서 `/about`을 열고, 뒤로가기 없는 마냑 로고 홈 링크 헤더 아래 본문 `h1` "서비스 안내"와 게스트 이용 안내·AI 콘텐츠 안내 등 섹션 표시 | ✅ e2e `my/service-info`·`visual/my-visual` | US-8-4, FE-SCREEN-011 진입점 |
 | MY-INFO-02 | P1 | 페이지 표시됨 | 이프 안내 섹션이 없는지 확인 | "이프 안내" 제목과 이프 수치 고지 문구가 화면에 없어야 함. 수치는 각 사용 지점(STORY-INFO-10·CHAT-INPUT-20·MY-CREDITS-17·MY-MENU-22)이 서버 값으로 표시 | ✅ e2e `my/service-info` | FE-SCREEN-011 콘텐츠 규칙, §3-1-7 이프 정책 수치 표시, KNK-1095 |
-| MY-INFO-03 | P1 | 페이지 표시됨 | 게스트 이용 안내 문구 확인 | 체험 한도 "스토리라인 생성 5회, 스토리 생성 1회, 채팅 5회" + 브라우저 저장 한계 + 최초 로그인 1회 이관 안내 표시 | 수동 | FE-SCREEN-011, §3-1-6 |
+| MY-INFO-03 | P1 | 페이지 표시됨 | 게스트 이용 안내 문구 확인 | FE-SCREEN-011의 게스트 동의 후 체험, 브라우저 저장 한계와 최초 로그인 1회 이관 안내를 표시하고 체험 한도 수치는 복제하지 않음 | ✅ e2e `my/service-info` | FE-SCREEN-011, 웹 사용자 모델 |
 | MY-INFO-05 | P2 | 페이지 표시됨 | 문의 섹션 확인 | 회원 탈퇴 문구·탈퇴 문의 이메일은 표시되지 않고, "피드백" 링크가 `/my/feedback`으로 연결됨 | ✅ e2e `my/service-info` | FE-SCREEN-011, KNK-1068 |
 | MY-INFO-06 | P2 | `/about` 직접 진입 | 헤더의 마냑 로고 탭 | 홈(`/`)으로 이동 | ✅ e2e `my/service-info` | 구현(`HomeLogoHeader`) |
 | MY-INFO-07 | P2 | 게스트/회원 각각 | `/about` 직접 진입 | 라우트 가드 없이 양쪽 모두 동일한 본문 열람 가능 | ◐ e2e `my/service-info`(게스트만) | FE-SCREEN-011 검수 기준 |
@@ -199,6 +219,15 @@
 | MY-NAV-06 | P1 | `/my/feedback`·`/my/invite`·`/my/account-deletion`·`/login` | 각 화면 진입 | 상단 헤더·하단 탭 없이 뒤로가기 헤더만 표시 | 수동 | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-07 | P2 | 하단 안전 영역이 있는 기기(iOS 등) | 하단 탭 확인 | 링크 상하 패딩 16px + `safe-area-inset-bottom` 추가 확보로 탭이 잘리지 않음 | ◐ e2e `smoke/navigation`(패딩만) | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-08 | P2 | 구경로 `/more`·`/more/invite`·`/more/feedback` 진입 | 관찰 | 리다이렉트 없이 Not Found 표시(구경로 shim을 두지 않는 방침) | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+
+## MY-BACKGROUND — 문서 배경과 좌우 여백
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-BACKGROUND-01 | P2 | 모바일 폭, 게스트 또는 회원 | 마이에서 라이트, 다크, 시스템 테마를 전환하고 화면 이동 | 문서와 앱 배경이 같은 테마로 이어지고 가로 스크롤이 없음 | 수동 | [웹 반응형 계약](../spec/3-2-web-spec.md#반응형-모바일-전용) |
+| MY-BACKGROUND-02 | P2 | 앱 셸보다 넓은 데스크톱 화면 | 창 크기를 셸 너비 전후로 바꾸고 테마 전환 및 하단 탭 조작 | 중앙 셸 너비 유지, 좌우 여백만 별도 배경 표시, 배경 장식이 입력을 차단하지 않음 | 수동 | [웹 반응형 계약](../spec/3-2-web-spec.md#반응형-모바일-전용) |
+| MY-BACKGROUND-03 | P2 | iOS Safari와 홈 화면 설치 PWA 실기기 | 첫 진입, 화면 이동, 테마 변경, Safari 도구 막대 표시 전환, PWA 카카오 로그인 복귀 및 키보드 열기와 닫기 후 상하 안전 영역 확인 | 문서 배경이 앱과 이어지고 앱 프레임이 동적 뷰포트 높이를 따름. 하단 빈 공간이나 탭 및 입력 영역 가림이 없음. 브라우저 자체 툴바 효과는 제외 | 수동 | [웹 반응형 계약](../spec/3-2-web-spec.md#반응형-모바일-전용) |
+| MY-BACKGROUND-04 | P2 | 루트 오류 화면, 모바일과 데스크톱 폭 | 라이트 및 다크 테마에서 오류 화면 확인 | 일반 화면과 동일한 문서 배경 및 좌우 여백 규칙과 동적 뷰포트 높이 적용 | 수동 | [웹 반응형 계약](../spec/3-2-web-spec.md#반응형-모바일-전용) |
 
 ## ⚠️ 확인 필요
 
