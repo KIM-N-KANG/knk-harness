@@ -116,7 +116,7 @@ dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내
 | 1. 2c NAT, [KNK-1494](https://kimandkang.atlassian.net/browse/KNK-1494) 일부 | prod network 호출의 `single_nat_gateway=false`, 2c EIP와 NAT 생성, app route table의 AZ별 NAT 연결을 사용합니다. | 서비스 중단 없이 전환하는 목표입니다. 2a NAT를 유지하고 새 NAT가 준비된 뒤 2c 라우트를 전환합니다. 기존 외부 연결은 경로 변경으로 끊길 수 있어 재시도를 검증합니다. | 2c 태스크의 외부 통신을 의존시키기 전에 적용합니다. 두 AZ에서 이미지 pull과 외부 API 연결을 확인합니다. |
 | 2. RDS Multi-AZ, [KNK-1492](https://kimandkang.atlassian.net/browse/KNK-1492) | data 모듈의 `multi_az` 하드코딩을 환경 입력으로 바꾸고 prod에서 활성화합니다. Multi-AZ에서 고정 `availability_zone`을 제거하며 DB와 엔드포인트를 유지하는 변경인지 plan으로 확인합니다. | 무중단 전환을 목표로 하지만 대기본 생성 중 스냅샷과 복제로 I/O 지연이 생길 수 있습니다. DB 교체는 허용하지 않습니다. | 한산한 시간에 진행합니다. `apply_immediately=false`와 pending modification을 확인해 실제 반영 창을 정하고 대기본 준비 완료까지 기다립니다. |
 | 3. 서비스별 desired 2, [KNK-1491](https://kimandkang.atlassian.net/browse/KNK-1491) | prod server와 notification 운영값, AI 서비스의 고정값, PDC 활성 시 개수를 각각 2로 변경합니다. 각 서비스의 두 subnet 지정과 배포 설정을 검증합니다. | DB 연결 수와 외부 API 동시 요청이 증가합니다. 아래 다중 인스턴스 전제 및 실제 AZ 분산을 확인합니다. | NAT와 RDS 검증 후 서비스별로 순차 적용합니다. 앞 서비스가 안정화된 뒤 다음 서비스로 진행합니다. |
-| 4. Redis 복제 그룹, [KNK-1493](https://kimandkang.atlassian.net/browse/KNK-1493) | 기존 cluster를 보존하며 새 replication group, AZ 배치, 자동 장애 조치, snapshot 복원 입력을 추가합니다. `redis_endpoint` 출력과 소비 태스크 정의를 전환하고 노드별 경보 dimension을 갱신합니다. | 토큰과 멱등 상태의 유실, 신구 저장소 동시 쓰기 위험이 있습니다. 기존 TTL과 `volatile-ttl`을 보존하며 아래 이전 절차를 따릅니다. | 복원 리허설로 전환 창을 정한 뒤 저부하 시간에 생성, 앱 전환, 구 클러스터 삭제를 분리 적용합니다. |
+| 4. Redis 복제 그룹, [KNK-1493](https://kimandkang.atlassian.net/browse/KNK-1493) | 기존 노드를 Primary로 편입하고 2c Replica를 추가합니다. 보호, 편입과 state 인계, 앱 주소 전환, HA 활성화를 네 PR로 나눕니다. | 토큰과 멱등 상태의 유실, 신구 저장소 동시 쓰기 위험이 있습니다. 기존 TTL과 `volatile-ttl`을 보존하며 아래 이전 절차를 따릅니다. | 보호와 복구 검증 후 편입하고 notification, server 순서로 주소를 전환합니다. 자동 장애 조치는 마지막에 켜며 기존 노드는 삭제하지 않습니다. |
 | 5. 자동 확장, [KNK-1494](https://kimandkang.atlassian.net/browse/KNK-1494) | server, ai, notification별 `aws_appautoscaling_target`과 목표 추적 policy를 추가하고 최소 2, 최대 4로 둡니다. Terraform과 CD가 자동 조절된 `desired_count`를 덮어쓰지 않게 소유권을 분리합니다. PDC는 제외합니다. | CPU만으로 외부 API 대기나 큐 적체를 설명하지 못합니다. 세 서비스 모두 ALB 요청 지표를 쓰는 구성은 피합니다. 축소 때 처리 중 요청과 메시지 재전달을 검증합니다. | 데이터 계층 전환과 고정 2개 검증 후 적용합니다. 잠정값을 명시한 PR로 시작하고 [KNK-1498](https://kimandkang.atlassian.net/browse/KNK-1498)의 결과로 지표, 임계값과 cooldown을 확정합니다. |
 
 server의 `@Scheduled` 다중 인스턴스 안전성은 출석의 `SET NX`, 프로모션의 조건부 `UPDATE`, 대사와 회수의 행 락, 아웃박스와 검수 폴러의 임대 및 `SKIP LOCKED`를 전제로 확인한 결정입니다. 증설 검수에서는 같은 작업을 두 태스크가 수행해도 보상, 회수, 발송이 중복되지 않는지 재확인합니다. 정책과 템플릿 캐시는 태스크별이므로 갱신 직후 잠시 불일치할 수 있습니다. 전역 캐시 일관성을 증설이 해결한다고 보지 않습니다.
@@ -125,13 +125,24 @@ server의 `@Scheduled` 다중 인스턴스 안전성은 출석의 `SET NX`, 프�
 
 #### Redis 데이터 이전
 
-1. 구 클러스터의 스냅샷 복원 가능 여부, 엔진과 파라미터 호환성, TTL 및 핵심 키의 검증 방법을 리허설합니다. 토큰 원문은 출력하지 않습니다. 복원과 재배포에 필요한 시간으로 쓰기 중지 창을 산정합니다.
-2. 최종 스냅샷 전에 Redis를 쓰는 요청과 백그라운드 작업, 알림 소비를 멈추고 진행 중 쓰기를 소진합니다. 로그인과 토큰 갱신도 쓰기에 포함합니다. 스냅샷 이후 쓰기를 계속하면 그 변경은 복원본에 없으므로 무중단 이전이라고 설명하지 않습니다.
-3. 최종 스냅샷을 생성해 새 복제 그룹으로 복원합니다. 두 노드의 AZ와 상태, Primary endpoint, TTL과 토큰 갱신 및 멱등 기록의 보존을 확인합니다. [ElastiCache 복원 절차](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/backups-restoring.html)를 사용합니다.
-4. 쓰기를 중지한 상태에서 server와 notification의 endpoint 참조를 바꾸고 소비 태스크를 모두 재배포합니다. 구 주소를 쓰는 태스크가 남지 않은 것을 확인한 뒤 쓰기와 소비를 재개합니다. 새 그룹과 구 클러스터에 쓰기가 나뉘는 롤링 전환은 허용하지 않습니다.
-5. 검증과 복구 창이 끝난 뒤 구 클러스터를 별도 plan으로 삭제합니다. 새 그룹 쓰기 재개 전에는 구 주소로 복귀할 수 있지만, 재개 후에는 구 클러스터가 오래된 상태이므로 단순 주소 롤백을 하지 않습니다. 다시 쓰기를 멈추고 최신 데이터의 복원 또는 재이전 절차를 결정합니다.
+기본 경로는 기존 단일 노드를 새 복제 그룹의 Primary로 편입하는 방식입니다. `CreateReplicationGroup`의 `PrimaryClusterId`에 기존 노드를 지정합니다. AWS는 이 편입 작업을 무중단, 무손실인 제자리 전환으로 설명합니다. 이 보장은 이후 비동기 복제의 장애 조치에서 최근 쓰기가 유실되지 않는다는 뜻은 아닙니다. ([AWS 기존 노드 편입 절차](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Replication.CreatingReplGroup.ExistingCluster.html))
 
-리프레시 토큰은 Redis에만 있으므로 전체 유실 시 토큰 갱신이 실패하고 전 사용자 재로그인이 필요합니다. 복제 그룹도 비동기 복제를 사용하므로 장애 조치 때 최근 쓰기가 유실될 가능성은 남습니다. HA와 백업은 서로 대체하지 않습니다. [ElastiCache 자동 장애 조치](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/AutoFailover.html)와 [RDS 전환 시 I/O 영향](https://aws.amazon.com/blogs/database/best-practices-for-converting-a-single-az-amazon-rds-instance-to-a-multi-az-instance/)을 전환 리허설에 반영합니다.
+전환은 다음 네 단계의 PR로 분리합니다. 엔진, 노드 유형, TTL과 `volatile-ttl`은 유지하며 데이터 보존 검증에서 토큰 원문을 출력하지 않습니다.
+
+| 단계 | 변경과 완료 조건 | 롤백 경계 |
+| --- | --- | --- |
+| 1. 보호 | 기존 cluster에 `prevent_destroy`와 자동 백업을 설정하고 복원 리허설을 준비합니다. plan은 기존 노드의 제자리 갱신만 허용합니다. | 엔드포인트와 데이터 소유권을 바꾸지 않습니다. 백업 설정을 되돌리더라도 삭제 보호와 복구 가능한 백업을 유지합니다. |
+| 2. 편입 | 기존 2a 노드를 `PrimaryClusterId`로 편입하고 `CreateCacheCluster`로 2c Replica를 추가합니다. Multi-AZ와 자동 장애 조치는 아직 끕니다. 복제 정상 상태와 두 노드의 AZ를 확인한 뒤 그룹을 import하고 기존 cluster의 Terraform 소유권만 해제합니다. 앱 주소는 유지하고 노드별 경보 dimension을 갱신합니다. | 기존 노드 삭제나 재생성은 허용하지 않습니다. state 인계가 실패하면 앱 주소를 유지한 채 소유권부터 복구합니다. standalone 복귀에 `terraform destroy`를 사용하지 않습니다. |
+| 3. 앱 전환 | notification, server 순서로 Primary endpoint를 사용하도록 재배포합니다. 소비자별 주소 입력을 분리해 순서를 보장하고 토큰 갱신, TTL, 카운터와 멱등 처리를 검증합니다. 모든 실행 태스크에서 구 주소 참조가 사라져야 완료합니다. | 자동 장애 조치를 끈 상태에서 두 주소가 같은 Primary를 가리키는지 검증한 경우에만 앱 주소를 되돌릴 수 있습니다. 장애 조치 후에는 옛 노드 주소로 복귀하지 않습니다. |
+| 4. HA | Replica가 정상이고 모든 쓰기 소비자가 Primary endpoint를 사용하면 Multi-AZ와 자동 장애 조치를 켭니다. 승인된 장애 주입으로 DNS 갱신, 재연결과 최근 쓰기 보존 범위를 검증합니다. | 기능 비활성화는 이전 Primary 복원을 뜻하지 않습니다. 현재 Primary endpoint를 유지하며 데이터와 연결부터 복구합니다. |
+
+AWS provider `5.100.0`에는 기존 노드 편입 인수가 없으므로 2단계는 승인된 일회성 CLI 작업과 Terraform 소유권 인계로 수행합니다. 복제 그룹을 `module.data.aws_elasticache_replication_group.redis[0]`으로 import하고 data 모듈의 기존 `aws_elasticache_cluster.redis` 선언은 `removed` 블록의 `lifecycle { destroy = false }`로 대체합니다. 리소스 종류가 달라 `state mv`로 대신하지 않습니다. 그룹이 두 노드를 관리하도록 설정하고 기존 cluster의 출력과 경보 참조도 함께 제거합니다. 인계 plan에는 import와 관리 해제만 있어야 하며 노드 삭제나 교체가 있으면 중단합니다. ([provider 구현](https://github.com/hashicorp/terraform-provider-aws/blob/v5.100.0/internal/service/elasticache/replication_group.go), [removed 블록](https://developer.hashicorp.com/terraform/language/block/removed))
+
+편입 중에는 기존 노드와 그룹의 Primary endpoint가 같은 데이터에 연결되는지 직접 검증합니다. 그룹을 다시 standalone으로 되돌릴 필요가 있으면 AWS API의 `RetainPrimaryCluster=true`를 사용하는 별도 복구 절차와 state 재인계를 준비합니다. 이 옵션은 최초 2a 노드가 아니라 현재 Primary를 보존합니다. provider의 그룹 삭제는 이 옵션을 지정하지 않으므로 Terraform 삭제를 복귀 수단으로 사용하지 않습니다. ([AWS 그룹 삭제 API](https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_DeleteReplicationGroup.html))
+
+스냅샷 복원은 편입을 사용할 수 없을 때의 대안입니다. 최종 스냅샷 전에 로그인, 토큰 갱신과 폐기, 카운터, 백그라운드 작업, 알림 소비를 포함한 모든 쓰기를 멈추고 진행 중 쓰기를 소진합니다. 새 그룹 복원과 모든 앱 주소 전환을 검증한 뒤 쓰기를 재개합니다. 재개 후 구 클러스터는 오래된 데이터이므로 단순 주소 롤백을 금지합니다. 스냅샷 이후의 쓰기 유실이나 폐기한 세션의 복원을 방지하기 위해 쓰기 중지 창이 필요합니다. ([AWS 백업 복원](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/backups-restoring.html))
+
+리프레시 토큰 전체 유실은 전 사용자 재로그인을 요구하며 카운터와 멱등 기록 유실도 별도로 검증합니다. HA와 백업은 서로 대체하지 않습니다. 복제는 비동기이므로 장애 조치 때 최근 쓰기가 유실될 가능성이 남습니다. ([ElastiCache 자동 장애 조치](https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/AutoFailover.html))
 
 ### 저장소와 자산
 
