@@ -143,7 +143,7 @@ RDB 변경은 [Flyway](../../../manyak-server/src/main/resources/db/migration), 
 | 스토리 | `story_public_snapshots` | `story_id` PK·FK, `snapshot` JSON, 생성·갱신 시각. 마지막 공개 상태의 표시·AI 생성 재료를 보존합니다(V69). |
 | 스토리 | `user_story_ending_reaches` | 사용자·스토리별 도달 엔딩 집계. `ending_name_snapshot` NOT NULL과 `(user_id, story_id, ending_name_snapshot)` 유니크(V71). `ending_id`는 nullable 보조 참조이며 FK 삭제 시 SET NULL(V70)로 도달 행을 보존합니다. |
 | 채팅 | `story_messages.reached_ending_id` | (V41) 엔딩 도달 턴의 ASSISTANT 메시지에 기록(FK nullable 컬럼, `ON DELETE SET NULL`) |
-| 이미지 | `image_presets` | Flyway로 등록하는 이미지 카탈로그입니다. 불변 `image_key`, 유형, 의미 태그, 등록·비활성 시각을 저장합니다. 행은 삭제하지 않으며 확정 시각과 비활성 시각으로 과거 턴의 이미지 목록을 재구성합니다([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
+| 이미지 | `image_presets` | Flyway로 등록하는 이미지 카탈로그입니다. 불변 `image_key`, 유형, 의미 태그, 등록·비활성 시각을 저장합니다. 행은 삭제하지 않습니다. 기존 스토리의 프리셋 표지 키는 비활성과 무관하게 노출에 사용합니다. 확정 시각과 비활성 시각에 따른 과거 턴 이미지 판정은 계획된 배경 기능이며 아직 구현하지 않았습니다([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 이미지 | `story_characters` | 인물 소유 행. `story_id`·`name`과 레거시 `image_url`을 가지며 V76의 이미지 정본은 `story_character_images`입니다. 읽는 코드가 사라진 다음 릴리스에서 레거시 컬럼을 지웁니다. |
 | 이미지 | `story_character_images` | 인물별 이미지 여러 장을 이름·URL·검수 상태·순서와 함께 저장합니다. `(character_id, image_name)`은 유일하며 V76에서 기존 이미지를 `{이름}_기본`으로 옮겼습니다. 채팅 요청과 상세 응답이 이 테이블을 사용합니다([§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)) |
 | 채팅 | `story_message_versions` | 재생성 시 이전 AI 출력·선택지를 보존하는 버전 이력(V37). `message_id` · `version_number`(`(message_id, version_number)` 유니크) · `content` · `choices` · `created_at`, 활성본은 `story_messages`/`story_choices` 제자리 유지([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) |
