@@ -66,6 +66,7 @@
 - [DEP-044. 개발 컴파일 모델 갱신](#dep-044-개발-컴파일-모델-갱신)
 - [DEP-045. DeepSeek 모델 이름 갱신](#dep-045-deepseek-모델-이름-갱신)
 - [DEP-046. 운영 FCM 참조 보완](#dep-046-운영-fcm-참조-보완)
+- [DEP-047. 운영 가용성 이중화](#dep-047-운영-가용성-이중화)
 
 ## 기록 규칙
 
@@ -464,3 +465,13 @@
 - 결정: 운영 server 컨테이너에 FCM 서비스 계정 참조를 추가했다.
 - 근거: 푸시 코드 릴리스와 별도로 필요한 태스크 배선을 보완한다. PR의 apply 예정 기록은 실발송 완료 증거가 아니다.
 - 출처: [Terraform PR #46](https://github.com/KIM-N-KANG/manyak-terraform/pull/46), [병합 커밋 `4c99219`](https://github.com/KIM-N-KANG/manyak-terraform/commit/4c99219701604e2b9ed691580a913bf17d5a65be).
+
+## DEP-047. 운영 가용성 이중화
+
+- 상태: 채택한 계획이며 운영 적용 완료를 뜻하지 않습니다. [KNK-1490](https://kimandkang.atlassian.net/browse/KNK-1490)에서 관리합니다.
+- 맥락: Ver.1~3은 독립 서비스별 단일 실행본을 기준으로 발전했습니다. 초기 EC2와 Compose에서 Fargate로 전환하고 서비스를 분리했지만, RDS Single-AZ, Redis 단일 노드, 2a NAT 한 개를 유지했습니다. MVP 단계에서 이중화를 아직 도입하지 않았고 트래픽 대비 비용도 고려했습니다. 태스크 장애 때 ECS 재기동에 따른 수 분의 중단을 감수하며, 데이터 계층이 있는 2a 장애 때는 AZ 복구까지 중단될 수 있습니다. ECS 서비스에는 처음부터 2a와 2c app subnet을 지정해 재배치는 가능했지만 데이터와 외부 통신의 단일 장애 지점은 남았습니다. 운영 전제는 2a 중심 배치이며, Terraform이 Redis AZ를 고정하지 않으므로 실제 Redis와 태스크의 AZ는 적용 전에 확인합니다.
+- 결정: 2c NAT를 추가해 각 app subnet이 같은 AZ의 NAT를 사용합니다. RDS는 Multi-AZ로 전환합니다. server, ai, notification, PDC의 desired count를 각각 2로 늘리고 ECS의 두 AZ 분산 배치를 확인합니다. Redis는 초기 Primary 2a와 Replica 2c의 복제 그룹으로 교체하고 자동 장애 조치를 켭니다. 장애 조치 뒤 Primary의 AZ는 바뀔 수 있습니다. server, ai, notification에는 Application Auto Scaling 목표 추적을 적용하며 최소 2, 최대 4로 제한합니다. PDC는 2개로 고정합니다. 지표와 임계값은 [KNK-1498 부하 테스트](https://kimandkang.atlassian.net/browse/KNK-1498)로 확정하며 그 전에는 여유 용량을 확보하고 성급한 축소를 피하는 보수적 기본값을 사용합니다. 구체적인 잠정값과 검증 조건은 적용 PR에 명시합니다.
+- 대안: EC2 Auto Scaling group은 Fargate 서비스에 해당하지 않아 채택하지 않습니다. 태스크마다 Redis를 두면 토큰, 카운터, 멱등 기록이 분리되므로 채택하지 않습니다. 분산 추적 뒤로 이중화를 미루는 순서도 채택하지 않습니다. 관측을 확장하기 전에 단일 장애 지점을 줄이는 구조 변경을 우선합니다.
+- 결과: NAT, RDS 대기본, Redis Replica와 추가 태스크의 상시 비용이 증가합니다. Redis 교체는 엔드포인트 변경과 데이터 이전을 동반합니다. 리프레시 토큰이 Redis에만 있어 유실하면 전 사용자 재로그인이 필요하므로 단순 캐시 교체로 취급하지 않습니다. 스냅샷 이후 쓰기 유실과 신구 저장소 동시 사용을 막는 전환 창을 마련합니다. 이중화는 무손실이나 무중단 보장이 아니며 Redis 비동기 복제의 유실 가능성과 연결 재수립 시간은 장애 주입으로 검증합니다.
+- 검증: 태스크 강제 종료, RDS `reboot-db-instance --force-failover`, ElastiCache `test-failover`를 각각 수행하고 CloudWatch, ALB 5xx, 앱 로그와 실제 요청으로 복구를 판정합니다. 절차와 중단 조건은 [이중화 장애 조치 검증](../design/4-deployment.md#이중화-장애-조치-검증계획)을 따릅니다.
+- 관계: DEP-023의 Fargate 운영 기반을 유지하면서 단일 실행본 구성을 확장합니다. [BE-047](2-backend-server-adr.md#be-047)의 알림 책임 분리를 유지하며 도메인 계약은 바꾸지 않습니다. [KNK-1464 분산 추적](https://kimandkang.atlassian.net/browse/KNK-1464)은 이후 단계로 둡니다. 변경 순서와 Terraform 근거는 [이중화 계획](../design/4-deployment.md#이중화-계획)에 기록합니다.
