@@ -194,7 +194,7 @@
 | 쿼리 | 기본값 | 규칙 |
 | --- | --- | --- |
 | `filter` | `all` | `all`(공개 전체) · `original`(마냑 오리지널만). 그 외 값은 400 |
-| `sort` | `latest` | `latest`(등록 최신순) · `likes`(좋아요 많은 순) · `chats`(누적 턴 수 많은 순). 그 외 값은 400 |
+| `sort` | `popular` | `popular`(인기순) · `latest`(등록 최신순) · `likes`(좋아요 많은 순) · `chats`(누적 턴 수 많은 순). 그 외 값은 400 |
 | `limit` | 20 | `[1, 50]`으로 clamp(`coerceIn`): 범위 밖은 400이 아니라 보정. 비수치는 타입 변환 실패로 400 |
 | `cursor` | 없음 | 이전 응답의 `nextCursor`. 형식이 깨졌거나 **정렬 종류가 다르면** 400 |
 
@@ -216,15 +216,17 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 | `sort` | 1차 키 | 2차 키 |
 | --- | --- | --- |
+| `popular` | 인기 점수 DESC | `public_id` DESC |
 | `latest` | `created_at` DESC | `public_id` DESC |
 | `likes` | 좋아요 수 DESC | `public_id` DESC |
 | `chats` | 누적 턴 수 DESC | `public_id` DESC |
 
-- `likes`의 좋아요 수와 `chats`의 누적 턴 수는 컬럼이 아니라 **실시간 집계**입니다. 좋아요 수는 `story_likes` 집계(카드·상세의 `likeCount`와 같은 출처), 누적 턴 수는 미삭제 채팅(`story_chats.deleted_at IS NULL`)의 `current_turn` 합(카드의 `turnCount`와 같은 출처)입니다. 둘 다 정렬과 커서 조건 양쪽에서 같은 상관 서브쿼리를 씁니다. **비정규화 컬럼(`stories.like_count`, 스토리별 누적 턴 수)은 두지 않습니다**: 좋아요 등록·취소와 턴 진행마다 치르는 동기화 비용이 목록 하나의 이득보다 크고, 어긋나면 카드 수치와 정렬 순서가 달라집니다. 목록이 커져 정렬이 느려지면 그때 비정규화나 인덱스를 검토합니다.
+- 인기 점수는 **좋아요 수 × 10 + 누적 턴 수**로 계산합니다. 가중치 10은 서버 내부 값이며 운영 데이터를 보고 API 계약 변경 없이 조정할 수 있습니다. 응답에는 점수 필드를 추가하지 않으며 클라이언트는 점수를 계산하거나 가중치에 의존하지 않습니다. ([결정 근거 BE-053](../adr/2-backend-server-adr.md#be-053))
+- `likes`의 좋아요 수와 `chats`의 누적 턴 수는 컬럼이 아니라 **실시간 집계**입니다. 좋아요 수는 `story_likes` 집계(카드·상세의 `likeCount`와 같은 출처), 누적 턴 수는 미삭제 채팅(`story_chats.deleted_at IS NULL`)의 `current_turn` 합(카드의 `turnCount`와 같은 출처)입니다. 둘 다 정렬과 커서 조건 양쪽에서 같은 상관 서브쿼리를 씁니다. `popular`도 이 집계를 그대로 사용하며 별도 집계는 추가하지 않습니다. `popular`에도 같은 `REPEATABLE_READ`를 적용해 정렬 집계와 카드 집계를 같은 요청의 스냅샷으로 읽습니다. **비정규화 컬럼(`stories.like_count`, 스토리별 누적 턴 수)은 두지 않습니다**: 좋아요 등록·취소와 턴 진행마다 치르는 동기화 비용이 목록 하나의 이득보다 크고, 어긋나면 카드 수치와 정렬 순서가 달라집니다. 목록이 커져 정렬이 느려지면 그때 비정규화나 인덱스를 검토합니다.
 - 2차 키는 내부 PK가 아니라 `public_id`입니다: 커서에 순차 PK를 실으면 외부 노출 식별자 정책([§4-4](#4-4-데이터-모델))을 어깁니다. 랜덤 UUID지만 값이 안정적이라 동률 구간(같은 시각, 같은 좋아요 수)의 순서를 결정적으로 만듭니다.
-- **커서 형식**: `"<정렬 접두>:<정렬값>:<public_id>"`를 Base64URL(패딩 없음)로 감쌉니다. 정렬 접두는 `latest`가 `l`, `likes`가 `k`, `chats`가 `c`이며 **디코드 시 검증**합니다: 정렬이 다른 커서를 넘기면 400입니다(좋아요순 커서의 정렬값은 좋아요 수라 최신순에 넣으면 엉뚱한 시각으로 해석됩니다). 정렬값은 `latest`가 `created_at`의 **epoch nanos**, `likes`가 좋아요 수, `chats`가 누적 턴 수입니다. millis가 아닌 이유는 PostgreSQL `timestamptz`가 마이크로초까지 담기 때문입니다: 밀리초로 자르면 같은 밀리초 안의 뒤쪽 행이 `created_at < 커서`에도 `= 커서`에도 걸리지 않아 페이지 경계에서 사라집니다.
-- offset이 아니라 keyset이라 페이지 사이에 새 스토리가 끼어들어도 중복·누락이 없습니다. `limit + 1`건을 읽어 다음 페이지 유무를 판정합니다.
-- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `likes`·`chats`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다.
+- **커서 형식**: `"<정렬 접두>:<정렬값>:<public_id>"`를 Base64URL(패딩 없음)로 감쌉니다. 정렬 접두는 `popular`가 `s`, `latest`가 `l`, `likes`가 `k`, `chats`가 `c`이며 **디코드 시 검증**합니다: 정렬이 다른 커서를 넘기면 400입니다(좋아요순 커서의 정렬값은 좋아요 수라 최신순에 넣으면 엉뚱한 시각으로 해석됩니다). 정렬값은 `popular`가 인기 점수, `latest`가 `created_at`의 **epoch nanos**, `likes`가 좋아요 수, `chats`가 누적 턴 수입니다. millis가 아닌 이유는 PostgreSQL `timestamptz`가 마이크로초까지 담기 때문입니다: 밀리초로 자르면 같은 밀리초 안의 뒤쪽 행이 `created_at < 커서`에도 `= 커서`에도 걸리지 않아 페이지 경계에서 사라집니다. 인기순 커서의 정렬값은 마지막 카드의 `likeCount × 10 + turnCount`이며 서버 가중치가 바뀌면 같은 가중치를 적용합니다. 옛 좋아요 기반 인기순의 `p` 커서는 400으로 거부합니다.
+- offset이 아니라 keyset이라 페이지 사이에 새 스토리가 끼어들어도 중복·누락이 없습니다. 이 보장은 정렬값이 유지되는 경우에 한합니다. `popular`, `likes`, `chats`는 요청 사이에 집계값이 바뀌면 이어 읽기에서 중복·누락이 생길 수 있습니다. 가중치 변경 전에 받은 인기순 커서도 이어 읽기 위치가 한 번 어긋나 중복·누락이 생길 수 있으며 이를 감수합니다. `limit + 1`건을 읽어 다음 페이지 유무를 판정합니다.
+- 인덱스는 두지 않습니다. 공개 스토리가 늘면 `latest`는 `(status, visibility, deleted_at, created_at DESC, public_id DESC)` 부분 인덱스가, `popular`·`likes`·`chats`는 집계 정렬이라 비정규화 컬럼이나 상위 N개 캐시가 필요해질 수 있습니다.
 
 **인증 배선.** `SecurityConfig`에서 **정확 경로** permitAll이며 `OPTIONAL_AUTH_MATCHERS`에도 등록합니다([§4-5](#4-5-인증과-권한) 선택적 인증). 요청자 신원을 쓰지 않지만, 클라이언트가 자동 첨부한 만료·위조 access 헤더가 리소스 서버 필터에 걸려 401이 나면 로그아웃 상태 화면이 통째로 깨지기 때문입니다(`GET /shares/{shareId}`와 같은 이유).
 
