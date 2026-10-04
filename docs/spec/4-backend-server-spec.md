@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.43 |
+| 버전 | v0.44 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-10-05 |
 | 대상 | 마냑 백엔드 서버 |
@@ -649,9 +649,9 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 ##### 간편 제작 장르 입력 전환
 
-2단계부터 새 `POST /stories/simple/storylines` 요청의 `genreTagIds`는 활성 PREDEFINED GENRE만 허용하고 선택 순서를 유지한다. `customGenreTags` 필드는 호환성을 위해 유지하지만 누락 또는 빈 배열만 허용한다. 값이 한 개라도 있으면 공백이나 정식 이름이어도 조용히 무시하거나 변환하지 않고 400 `CUSTOM_GENRE_NOT_ALLOWED`로 거절한다. 인물의 `customTags`는 계속 허용한다.
+2단계부터 새 `POST /stories/simple/storylines` 요청의 `genreTagIds`는 활성 PREDEFINED GENRE만 허용하고 선택 순서를 유지한다. `customGenreTags` 필드는 호환성을 위해 유지하지만 신규 requestId로 생성할 때는 누락 또는 빈 배열만 허용한다. 신규 요청에 값이 한 개라도 있으면 공백이나 정식 이름이어도 조용히 무시하거나 변환하지 않고 400 `CUSTOM_GENRE_NOT_ALLOWED`로 거절한다. 인물의 `customTags`는 계속 허용한다.
 
-이미 저장된 제작 중 세션의 CUSTOM 장르는 조회, 회수와 `POST /stories/simple` 컴파일에서 보존한다. 새 스토리라인 요청에 기존 커스텀 값을 다시 제출하는 것은 새 입력이므로 2단계 제한을 받는다. 아래 기존 `customGenreTags`의 원소 검증, find-or-create와 AI 전달 설명은 1단계까지의 신규 입력 및 보존된 과거 데이터에 관한 계약이다.
+이미 저장된 제작 중 세션의 CUSTOM 장르는 조회, 회수와 `POST /stories/simple` 컴파일에서 보존한다. 기존 requestId로 배포 전 커스텀 장르 요청을 재시도하면 요청 기록의 소유권·단계를 먼저 확인하고 기존 완료 replay, 오래된 PENDING 회수와 실패 재시도 분기를 따른다. 저장된 세션의 재구성도 허용한다. POST replay·회수의 성공 상태는 기존 201이고 복구 GET은 200이다. 새 requestId로 커스텀 값을 제출하면 AI 호출과 요청 기록 전에 400으로 거절한다. 소유자를 특정할 수 없어 기록 없이 실행하는 요청에도 신규 입력 제한을 적용한다. 아래 기존 `customGenreTags`의 원소 검증, find-or-create와 AI 전달 설명은 1단계까지의 신규 입력 및 보존된 과거 데이터에 관한 계약이다.
 
 <br>
 
@@ -2330,7 +2330,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
 | 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` · `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과는 `IMAGES_TOO_LARGE`와 `이미지 크기나 장수를 줄여 주세요.`([용량 사전 검사](#검수-요청-용량-사전-검사)). 본문 형식 오류, 필드 검증 실패. `GUEST_CANNOT_PUBLISH`는 기존 공개 제한 코드입니다. 일반 제작 등록·PATCH의 미인증 요청은 공개 범위 검사 전에 401로 차단합니다([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
-| 400 | `CUSTOM_GENRE_NOT_ALLOWED` | 2단계부터 비어 있지 않은 `customGenreTags`. `details`에 `{field: "customGenreTags", message: "제공 장르에서 선택해 주세요."}` |
+| 400 | `CUSTOM_GENRE_NOT_ALLOWED` | 2단계부터 신규 requestId의 비어 있지 않은 `customGenreTags`. 기존 기록의 소유권·상태를 확인한 재시도와 회수는 제외. `details`에 `{field: "customGenreTags", message: "제공 장르에서 선택해 주세요."}` |
 | 400 | `INVALID_GENRE` | 2단계 일반 제작과 PATCH에서 허용되지 않는 장르. `details`에 각 무효 원소의 원본 인덱스 `genres[i]`와 `제공 장르에서 선택해 주세요.` 메시지 |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다."): 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
@@ -2456,7 +2456,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 **② 사용자 반응 신호를 Langfuse score로 전송.** 백엔드가 직접 전송하며, 저장·검증·비동기 발행 계약은 아래 `Langfuse 선호 행동 저장과 score 발행` 절이 소유합니다. score 이름·값·분석 의미는 [`6-analytics.md §6-6-12`](6-analytics.md)가 정본입니다.
 
-**직접 입력 장르의 임시 관측 종료 조건.** 1단계까지 사전 정의 장르와 `customGenreTags`를 합친 `genre_tags`를 스토리 제작 트레이스의 `genre:*` 필터용 라벨로 저장하는 임시 정책을 유지한다. 2단계부터 새 스토리라인 요청의 직접 입력을 차단하면서 신규 직접 입력 장르의 관측 예외를 종료한다. 인물의 직접 입력 특징과 채팅 트레이스에는 장르 라벨을 추가하지 않는다. 단, 배포 전 저장된 제작 중 세션의 컴파일에는 보존한 커스텀 장르가 여전히 포함될 수 있으므로 모든 `genre_tags`가 제공 장르라고 가정하지 않는다. 과거 트레이스와 저장된 입력을 삭제하거나 재작성하지 않는다. ([BE-055](../adr/2-backend-server-adr.md#be-055), [AI 관측 계약](5-ai-server-spec.md#5-6-운영과-관측))
+**직접 입력 장르의 임시 관측 종료 조건.** 1단계까지 사전 정의 장르와 `customGenreTags`를 합친 `genre_tags`를 스토리 제작 트레이스의 `genre:*` 필터용 라벨로 저장하는 임시 정책을 유지한다. 2단계부터 신규 requestId의 스토리라인 요청에서 직접 입력을 차단하면서 신규 직접 입력 장르의 관측 예외를 종료한다. 배포 전 요청의 같은 requestId 재시도·복구에는 기존 소유권·상태 검증과 관측 계약을 유지한다. 인물의 직접 입력 특징과 채팅 트레이스에는 장르 라벨을 추가하지 않는다. 단, 배포 전 저장된 제작 중 세션의 컴파일에는 보존한 커스텀 장르가 여전히 포함될 수 있으므로 모든 `genre_tags`가 제공 장르라고 가정하지 않는다. 과거 트레이스와 저장된 입력을 삭제하거나 재작성하지 않는다. ([BE-055](../adr/2-backend-server-adr.md#be-055), [AI 관측 계약](5-ai-server-spec.md#5-6-운영과-관측))
 
 - 클라이언트의 선택지 노출·선택·입력 출처 전달은 [`3-1-client-spec.md §3-1-7`](3-1-client-spec.md)이 소유합니다.
 - 신호 카탈로그·원문 결합·원문 수집 정책과의 관계는 [`6-analytics.md §6-6-12·§6-7`](6-analytics.md)가 소유합니다.
