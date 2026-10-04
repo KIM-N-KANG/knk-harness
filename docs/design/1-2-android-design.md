@@ -130,6 +130,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 카드 옵션·상세 옵션·채팅 메뉴는 `designsystem`의 `ManyakOptionsSheet`·`ManyakOptionItem`으로 그립니다. 시트 열림은 제작·채팅 목록에서 ViewModel의 대상 카드 상태(`optionsTarget`)가, 상세·채팅방에서 화면의 `rememberSaveable`이 들어 구성 변경에서 유지합니다. 삭제 확인·신고 시트는 옵션 시트를 닫은 뒤 엽니다. 채팅방 메뉴의 새 채팅은 `ChatRoomViewModel`이 `ChatRepository`(`ChatStarter`)로 single-flight 생성하고 진행 상태를 소유하며, `app`이 백스택 맨 위 `ChatRoomRoute`를 새 방으로 바꿔 끼웁니다. 내 이프 카드는 `designsystem/credit/CreditBalanceCard`를 마이와 함께 쓰고, 채팅방은 메뉴를 열 때 `UserProfileRepository.refresh()`로 잔액을 다시 읽습니다. 공유하기는 `ChatRepository.createShareLink`가 `DataLayerConfig.webBaseUrl`로 웹 열람 URL을 완성해 돌려주고, 화면이 `common`의 `shareText`(초대와 같은 `ACTION_SEND` 공유 시트)로 보냅니다.
 - 홈은 `HomeRepository.publicStories`로 `GET /stories`를 토큰 없는 클라이언트(`@PlainClient`)로 부릅니다. `HomeViewModel`이 조회 조건(`StoryListQuery`)·커서·다음 페이지 상태를 소유하고, 첫 페이지와 다음 페이지를 한 작업으로 직렬화해 조건을 바꾸면 진행 중인 요청을 취소합니다. 조건을 바꾸면 새 첫 페이지가 올 때까지 보던 목록을 남기고(골격은 목록이 비었을 때만), 응답이 300ms를 넘으면 그 목록을 반투명으로 흐립니다. 페이지를 이을 때 `id` 중복은 먼저 받은 쪽을 남깁니다. 필터·정렬 바는 그리드 위에 겹친 오버레이이고 그리드는 바 높이만큼 위 여백을 비워, 바가 `graphicsLayer` 이동으로 숨고 나타나도 목록 위치가 바뀌지 않습니다. 숨김은 그리드가 실제로 소비한 스크롤을 `NestedScrollConnection`으로 누적해 아래로 8dp면 숨기고 위로 32dp면 다시 보이며, 맨 위 64dp 안에서는 항상 보입니다. 모션은 웹과 같은 곡선·시간(사라짐 150ms 가속, 나타남 300ms 감속)입니다. 그리드 스크롤 상태는 첫 페이지를 받을 때마다 오르는 `firstPageVersion`을 키로 `rememberSaveable`에 두어, 조건 변경·새로고침으로 새 첫 페이지가 오면 맨 위에서 시작하고 구성 변경에서는 위치를 지킵니다. 스크롤 상태를 이어 쓰면 그리드가 첫 카드를 키로 따라가 정렬로 밀려난 카드 위치까지 내려갑니다. ORIGINAL 태그는 `StorySummary.isOriginal`로만 그립니다. 목록 끝 재시도는 이프 내역과 같은 `designsystem`의 `LoadMoreFooter`, 정렬 메뉴는 셀렉트와 같은 `ManyakSelectMenu`를 씁니다.
+- 채팅 목록과 채팅방은 참조 스토리 ID 및 공백이 아닌 제목이 모두 있을 때만 신고와 새 채팅을 허용합니다. 메뉴와 ViewModel이 같은 조건을 사용합니다. 일반 입력의 상황 추가는 커서를 아는 컴포저가 강조 표기를 삽입한 뒤 콜백으로 Intent를 올리고, ViewModel이 분석 이벤트를 기록합니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
 - `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 배경 탭 닫기는 Coil이 알려 준 원본 크기로 Fit 그림 영역을 계산하고 현재 확대·이동을 되돌려 판정하므로, 그림 위 탭으로는 닫지 않습니다(원본 크기를 알기 전에는 그림이 없는 것으로 봅니다). 배경 탭은 떼는 즉시 닫고, 더블 탭의 두 번째 탭 대기는 그림 위 탭에만 겁니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
 - 첫 진입 안내 투어는 `ChatRoomViewModel`이 기기 귀속 `@DeviceDataStore`의 `chat_tour_seen` 키로 노출 판정(턴 0개·스트리밍 아님·200ms 뒤 재확인)과 열람 기록, 분석 이벤트 4종을 소유하고, 지금 스텝(`tourStep`)을 상태로 들어 구성 변경 뒤에도 같은 스텝에서 이어지며 도달 이벤트를 다시 보내지 않습니다. 화면은 `ChatTourTargets`가 컴포저 툴바 버튼의 `boundsInRoot`를 모으고, `ChatTourOverlay`가 대상이 그려진 스텝을 골라 딤 구멍·카드를 배치해 고른 자리를 의도로 올립니다. 오버레이는 `Dialog`가 아니라 같은 컴포지션의 상자라 대상 좌표를 그대로 쓰며, `pointerInput`으로 뒤 조작을, `BackHandler`로 뒤로가기(건너뛰기)를 받고 뒤 화면은 `clearAndSetSemantics`로 보조기술에서 가립니다.
@@ -204,6 +205,12 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 기기 UUID는 DataStore에 지속하며 최초 로그인·API·Amplitude 이벤트 전에 동일 값을 주입합니다. 빈 기기 ID를 전송하지 않습니다. 회원 체험 시드에 사용된 식별자를 정상 흐름에서 되돌릴 수 없으므로 초기 주입 순서를 지킵니다.
 
+### 마이 조회와 초대 안내 실패
+
+`MyViewModel`은 프로필 갱신 중 상태를 보유하고, 캐시가 없는 조회 중에는 `ProfileHeader`가 연동 Chip 골격 두 개를 표시합니다. 응답의 연동 목록이 비어 있거나 조회가 실패하면 연동 버튼을 추측해 만들지 않습니다. 기존 프로필이 있으면 갱신 중에도 그 값을 유지합니다.
+
+`InviteOnboardingRepository.acknowledge()`는 닫기 기록의 저장 성공 여부를 반환합니다. DataStore의 I/O 실패는 false이며 코루틴 취소는 전파합니다. `InviteOnboardingViewModel`은 보상 지급 결과와 닫기 기록 결과를 별도로 처리해 `Redeemed(closeFailed)` 또는 `DismissFailed` Effect로 안내하고, 현재 실행의 dismissed 상태로 시트 재표시와 재제출을 막습니다. 서버 지급과 로컬 기록을 하나의 성공으로 취급하지 않습니다.
+
 ### 이프 정책 캐시
 
 `CreditPolicy`는 앱 Singleton StateFlow로 한 번 조회하고 CompositionLocal로 전달합니다. 고정 수치를 폴백으로 쓰지 않으며 최초 실패는 placeholder, 기존 값이 있으면 그 값을 유지합니다. 화면마다 재요청하지 않습니다.
@@ -275,6 +282,10 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 `designsystem`의 `ImageGenerationLoading`은 비율·접근성 라벨을 받아 테마 배경·테두리와 위치·크기·밝기가 함께 변하는 점 패턴을 그립니다. `studio`의 Completing 표지는 3:4로 사용합니다. 4:3도 같은 컴포넌트로 표현하며 API·폴링 상태를 직접 소유하지 않습니다.
 
 `rememberTextShimmerBrush`는 채팅의 기존 브러시를 공용화한 것으로, `create`의 순환 문구와 `studio`의 완성 제목은 4초 주기, 채팅 대기 문구는 기존 2초·색을 사용합니다. 4초마다 글자 단위로 교차하는 순환 문구는 `designsystem`의 `CyclingPhrases`가 소유하며 스토리라인 생성과 채팅 실시간 이미지 턴의 로딩이 함께 씁니다. 애니메이션은 Compose 수명에 종속되며, 지연 힌트의 시작 시각과 노출 상태는 `rememberSaveable`로 구성 변경을 견딥니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#퍼널)을 따릅니다.
+
+### 인물 입력의 화면 상태
+
+`CreateKeywordUiState`가 인물 ID별 접기 집합과 삭제 확인 대상을 소유합니다. 순수 reducer로 카테고리 이동 및 구성 변경에서 상태를 유지하며, 삭제 확정은 대상 인물과 해당 접기 상태만 제거합니다. 이 상태는 편집 snapshot과 API 요청에 포함하지 않습니다. `create/presentation/component/CollapsibleInputHeader`는 값과 콜백으로 머리 줄을 그립니다. 높이 애니메이션은 인물 입력 영역이 소유하고, 공용 `ManyakDestructiveDialog`에 기능 소유 문자열을 전달해 삭제를 확인합니다.
 
 ### 편집 저장과 복원
 
