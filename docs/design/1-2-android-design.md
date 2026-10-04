@@ -87,6 +87,8 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | `StoryLikeUpdates` | `common` 계약, `home` 구현. 상세의 성공한 좋아요 수를 홈 목록으로 전달 |
 | `StoryDeletion` | `common` 계약, `studio` 구현. 상세 화면의 삭제와 목록 상태를 연결 |
 | `SignupOnboardingWriter` | `common` 계약, `my`의 초대 상태 구현. `auth`가 가입 결과를 전달 |
+| `MemberConsent` | `common` 계약, `legal`의 `ConsentRepositoryImpl` 구현. 서버에서 확인한 필수 동의 완료 상태를 분석 식별과 푸시 등록이 관찰 |
+| `SessionIdAccess` | `network` 포트, `app`이 `AnalyticsIdentity`에 연결. Amplitude의 현재 세션 ID를 조회하며 값이 없으면 헤더 생략 |
 | `SessionTokenAccess` | `network` 포트, `auth`의 `SessionTokenManager` 구현 |
 | `UserProfile`·초대 온보딩 | `my` 저장소가 정본. 같은 DataStore 파일에 여러 인스턴스를 만들지 않음 |
 | `CreditPolicy`, 공유 `StorySummary`·DTO | 기존 공유 타입은 `common`에 유지. 비즈니스 Repository 구현은 옮기지 않음 |
@@ -150,11 +152,13 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·토큰을 가진 기동·계정 연동 성공·마이 노출·출석/초대 성공에서 프로필을 갱신합니다. 마이 재노출 요청은 5초 간격으로 제한합니다. 네트워크 실패는 회원 세션을 유지하며 명시적인 `ACCOUNT_SUSPENDED`만 해당 사유로 중앙 종료합니다. 모든 403을 로그아웃으로 처리하지 않습니다.
 
+`LegalDocumentScreen`의 새 페이지 로드는 같은 호스트의 HTTPS `/terms`, `/privacy`, `/about`만 허용합니다. 외부 HTTP(S)는 `ACTION_VIEW`로 전달하고 브라우저가 없으면 실패 토스트를 표시합니다. 그 외 스킴과 같은 호스트의 문서 외 경로는 차단합니다. 클라이언트 라우팅 링크는 웹 본문에서 제거하며 WebView 경로 검사가 이를 대신하지 않습니다.
+
 ### 약관 동의 게이트
 
-`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트는 `NotificationPermissionRequest(onSettled)`가 끝난 뒤 `LegalConsentSheet(enabled = true)`로 시트를 그리고, ViewModel의 `isSatisfied`로 나머지 안내(초대 코드·광고 재질문)를 잠급니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 완료 판정은 서버 기록 성공 하나이며 로컬 플래그를 두지 않습니다.
+`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트는 `NotificationPermissionRequest(onSettled)`가 끝난 뒤 `LegalConsentSheet(enabled = true)`로 시트를 그리고, ViewModel의 `isSatisfied`로 나머지 안내(초대 코드·광고 재질문)를 잠급니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
 
-ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepository.sessionState`를 보고 회원이 될 때마다 다시 조회하며, 회원이 아니면 상태를 비웁니다. 조회는 세션 수집을 막지 않는 별도 작업으로 돌려 조회 중의 로그아웃·재로그인이 접히지 않게 합니다. `CONSENT_VERSION_MISMATCH`와 기록 응답에 남은 `needsConsent`는 같은 안내로 재조회하고 체크를 비웁니다. 401·403은 세션 종료 흐름이 처리하므로 시트는 재시도만 둡니다.
+ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepository.sessionState`를 보고 회원이 될 때마다 다시 조회하며, 회원이 아니면 상태를 비웁니다. 조회는 세션 수집을 막지 않는 별도 작업으로 돌려 조회 중의 로그아웃·재로그인이 접히지 않게 합니다. `CONSENT_VERSION_MISMATCH`와 기록 응답에 남은 `needsConsent`는 같은 안내로 재조회하고 체크를 비웁니다. 401은 기존 세션 만료 흐름을 따릅니다. 조회 또는 기록의 403은 `FORBIDDEN` 상태에서 이용 제한 안내와 로그아웃 버튼을 표시하며 재시도 버튼을 제공하지 않습니다. 네트워크 오류와 5xx는 재시도를 제공합니다.
 
 시트는 `ManyakBottomSheet(dismissEnabled = false, dismissOnBackPress = !isLocked)`로 끌어내리기·스크림을 막고 뒤로가기만 `signOut`으로 잇습니다. 전문은 백스택 대신 시트 위 `Dialog`에 `LegalDocumentScreen`을 문서별 ViewModel 키로 띄웁니다 — 모달 시트가 아래 화면을 덮어 백스택의 문서가 보이지 않기 때문입니다. 선택 항목인 광고 알림 동의는 체크만 받고 성공 시 `marketingAnswer`로 남기며, 루트가 `MarketingConsentViewModel`에 넘긴 뒤 소비 표시를 보냅니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../adr/1-3-android-adr.md#a-044)를 참조합니다.
 
@@ -165,6 +169,8 @@ ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepositor
 읽기 결과는 없음·사용 가능·손상·일시적 읽기 실패로 나눕니다. 일시 실패는 유한 재시도하고, 손상은 토큰만 지우지 않고 중앙 세션 정리를 거칩니다. 무한 Pending은 허용하지 않습니다.
 
 토큰 쌍, `expiresIn`, `elapsedRealtime`, wall clock, `BOOT_COUNT` 또는 `UNAVAILABLE`을 한 스냅샷으로 저장합니다. 만료 여유는 60초입니다. 같은 부팅에서는 음수가 아닌 경과 시간 둘 중 큰 값으로 판정하고 음수·앵커 누락·부팅 변경은 신뢰하지 않고 재발급합니다. 부팅 식별 불가 환경은 성공한 재발급 뒤 프로세스 내 확인 상태와 새 monotonic 앵커를 사용해 재발급 루프를 막고, 프로세스 재시작 시 다시 확인합니다.
+
+`AnalyticsSessionBinder`는 시작 시 SDK의 이전 사용자 식별을 해제하고 회원 세션, 프로필, `MemberConsent`가 모두 준비된 경우에만 사용자 식별을 붙입니다. `SessionIdInterceptor`는 무인증과 인증 HTTP 클라이언트 양쪽에서 SDK의 현재 세션 ID를 요청마다 읽어 `X-Manyak-Session-Id`를 전송합니다. SDK 미설정 또는 음수 세션 ID는 생략하며 네트워크 모듈이 분석 SDK에 직접 의존하지 않습니다.
 
 ### 재발급과 세션 경합
 
@@ -210,9 +216,11 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 ### 푸시 토큰 등록
 
+회원 세션과 `MemberConsent.isSatisfied`가 모두 참일 때만 최초 등록 및 FCM 토큰 갱신 등록을 실행합니다. 같은 세션 generation에서 성공한 동일 토큰은 반복 등록하지 않으며 새 토큰이나 새 세션은 다시 등록합니다. 토큰 조회 중 동의 상태가 초기화되면 등록 작업을 취소하고 요청 직전에도 상태를 재확인합니다.
+
 `notification`이 FirebaseMessagingService·등록기·토큰 API·권한·수신·표시·수신 동의를 소유합니다. `app`은 google-services 플러그인과 권한 UI·세션 종료 연결을 조립합니다.
 
-앱 수명의 registrar가 회원 전환의 `getToken()`과 `onNewToken()`을 같은 직렬 경로로 처리하고 `platform=ANDROID`로 PUT합니다. 별도 FCM 토큰 영속 저장·재전송 큐는 없으며 네트워크·5xx 실패는 다음 등록 계기에서 재시도합니다.
+앱 수명의 registrar가 필수 동의 확인 후의 `getToken()`과 `onNewToken()`을 같은 직렬 경로로 처리하고 `platform=ANDROID`로 PUT합니다. 별도 FCM 토큰 영속 저장·재전송 큐는 없으며 네트워크·5xx 실패는 다음 등록 계기에서 재시도합니다.
 
 푸시 등록의 403은 generation을 검사하는 `SessionGate.commit` 안에서 `ACCOUNT_SUSPENDED` 종료로 넘깁니다. 공통 Interceptor는 401 재발급만 담당합니다. 로그아웃 barrier와 등록 작업의 순서는 앞 절을 따릅니다.
 
