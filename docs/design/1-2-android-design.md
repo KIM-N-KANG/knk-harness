@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.5 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-03 |
+| 수정일 | 2026-10-04 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -133,7 +133,9 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 첫 진입 안내 투어는 `ChatRoomViewModel`이 기기 귀속 `@DeviceDataStore`의 `chat_tour_seen` 키로 노출 판정(턴 0개·스트리밍 아님·200ms 뒤 재확인)과 열람 기록, 분석 이벤트 4종을 소유하고, 지금 스텝(`tourStep`)을 상태로 들어 구성 변경 뒤에도 같은 스텝에서 이어지며 도달 이벤트를 다시 보내지 않습니다. 화면은 `ChatTourTargets`가 컴포저 툴바 버튼의 `boundsInRoot`를 모으고, `ChatTourOverlay`가 대상이 그려진 스텝을 골라 딤 구멍·카드를 배치해 고른 자리를 의도로 올립니다. 오버레이는 `Dialog`가 아니라 같은 컴포지션의 상자라 대상 좌표를 그대로 쓰며, `pointerInput`으로 뒤 조작을, `BackHandler`로 뒤로가기(건너뛰기)를 받고 뒤 화면은 `clearAndSetSemantics`로 보조기술에서 가립니다.
 - 채팅방 헤더는 `ChatRoomScreen`의 `AnimatedVisibility`로 목록 위에 겹쳐 페이드(200ms)되고 숨김 여부를 `rememberSaveable`로 둡니다. `ChatTranscript`는 헤더 높이(`TopAppBarExpandedHeight`)만큼 목록 위 여백을 두고, 자식이 떼는 이벤트나 이동을 소비하지 않은 탭만 헤더 전환으로 올리며 탭 시작 때 IME가 떠 있었으면 넘깁니다. 스트리밍 앵커의 패드 높이는 위 여백을 뺀 콘텐츠 시작점부터 뷰포트 끝까지로 잽니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다. `CharacterImage`의 허용 경로는 `/characters/generated/`·`/characters/originals/`·`/characters/uploaded/`·`/chat-images/`(실시간 인물 이미지, `chat-images/{chatId}/{turn}-{uuid}.webp`)입니다.
-- 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 화면의 `rememberSaveable`이 들어 구성 변경에서 유지합니다.
+- 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 `ChatRoomViewModel`의 `settingsOpen`이 소유하며 구성 변경에서 유지합니다. 실시간 이미지 미저장 기본값은 false입니다.
+- 실시간 이미지 안내의 기기 누적 횟수는 같은 `@DeviceDataStore`의 정수 키 `chat_completed_turn_count`로 저장합니다. `ChatPreferencesStore.recordCompletedTurn()`이 `edit` 안에서 원자적으로 증가시키고 3에서 멈추며 IO 실패는 null로 돌려줍니다. `ChatRoomViewModel`은 이어쓰기의 정상 `Completed`만 기록하며 재생성, 실패, 중단은 제외합니다. 2를 반환한 완료 순간의 이미지 설정이 false이면 예약을 만들고 입력 잠금이 풀린 뒤 500ms에 `settingsOpen`과 `realtimeImageNudgeOpen`을 함께 올립니다. 그 사이 다음 전송이나 재생성이 시작되면 대기를 취소하고 응답 종료 뒤 다시 기다립니다. 예약 Job과 표시 상태는 ViewModel 수명이며 영속 저장하거나 SavedStateHandle에 넣지 않습니다.
+- `ManyakBottomSheet.onExpanded`로 시트가 펼쳐진 뒤 `RealtimeImageNudge`를 엽니다. 시트의 별도 창 위에 focusable `Popup`을 두고 행과 팝업의 화면 좌표 차이로 하이라이트를 배치합니다. 기존 투어에서 분리한 `ChatSpotlightDim`을 재사용하고 구멍 위의 투명한 Switch 의미 영역이 기존 행의 토글 콜백을 호출합니다. 나머지 시트 의미 정보는 `clearAndSetSemantics`로 가립니다. 실시간 이미지 활성화 콜백은 안내 닫기 의도도 함께 전달합니다. 활성화, 뒤로가기, 딤, 확인은 안내 상태만 닫고 딤과 카드는 퇴장 애니메이션 뒤 제거합니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#모션)을 따릅니다.
 - 채팅 스트리밍 블록은 로딩과 본문을 같은 자리에 두고 첫 조각(글자·이미지)에서 로딩을 페이드로 뺍니다. 로딩이 그려지는 동안 잰 높이를 `rememberSaveable`에 두고 본문이 그만큼 자랄 때까지 최소 높이로 유지해 상단 앵커가 내려앉지 않게 하며, 재생성도 같은 블록을 씁니다. 실시간 이미지를 켠 턴은 `designsystem`의 `CyclingPhrases`와 `ImageGenerationLoading`(4:3, `CharacterImage`와 같은 모양)을, 끈 턴은 기존 시머 한 줄을 보입니다. 대화 최상단의 AI 생성 안내 문구는 목록 항목이라 재생성 앵커 인덱스가 안내·프롤로그 수를 더합니다.
 - 추가 정보의 편집 버튼도 `keepKeyboardOnTap`을 사용하고, `AdditionalInfoRows`는 채팅과 같은 삭제 전 포커스 이동 순서를 적용합니다. 퇴장 중인 입력과 삭제 버튼은 비활성화합니다.
 - 채팅 작성 버튼은 공통 `keepKeyboardOnTap`으로 루트의 바깥 탭 포커스 해제에서 제외합니다. `BlockInputList`는 현재 포커스와 블럭별 `FocusRequester`를 컴포지션 수명에 두고, 삭제할 입력을 비활성화하기 전에 남은 입력으로 포커스를 옮깁니다.
