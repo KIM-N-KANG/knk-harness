@@ -117,7 +117,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 
 ## 1-2-4. 내비게이션과 화면
 
-Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 연결은 `app`의 콜백이며 기능 ViewModel에 back stack을 주입하지 않습니다. 인증·메인 그래프는 별도 back stack이며 세션 상태에 따라 선택합니다. Pending은 어느 그래프도 열지 않고 CleanupFailed는 정리 재시도 화면만 엽니다. 로그인·로그아웃 전환 때 이전 stack을 버리며 로그아웃 처리자가 화면 이동을 별도로 수행하지 않습니다.
+Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 연결은 `app`의 콜백이며 기능 ViewModel에 back stack을 주입하지 않습니다. 인증과 메인 그래프는 별도 back stack이며 세션과 필수 동의 상태에 따라 선택합니다. 인증된 회원도 동의를 확인하기 전에는 로그인 화면과 동의 시트만 구성합니다. 메인 그래프와 외부 진입 목적지 소비는 서버 동의 확인 및 동의 ViewModel의 완료 상태 이후에 시작합니다. Pending은 어느 그래프도 열지 않고 CleanupFailed는 정리 재시도 화면만 엽니다. 로그인·로그아웃 전환 때 이전 stack을 버리며 로그아웃 처리자가 화면 이동을 별도로 수행하지 않습니다.
 
 직렬화 가능한 경로에는 storyId·chatId처럼 복원 가능한 식별자만 담고 목적지에서 데이터를 다시 읽습니다. 경로 값은 생성 시점에 ViewModel에 주입하며 저장 상태에서 경로 키를 다시 해석하지 않습니다. 공용 법적 문서는 두 그래프에서 열 수 있고 진입한 화면으로 돌아갑니다. 메인 탭은 홈·채팅·제작·마이입니다.
 
@@ -150,17 +150,17 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 세션은 `Pending`·`Guest`·회원·`CleanupFailed`로 구분합니다. 회원 여부는 복호화 가능한 토큰 쌍으로 판단하며 `/auth/me` 성공을 로그인 성립 조건으로 삼지 않습니다. 프로필은 `my` 저장소의 단일 정본입니다.
 
-로그인·토큰을 가진 기동·계정 연동 성공·마이 노출·출석/초대 성공에서 프로필을 갱신합니다. 마이 재노출 요청은 5초 간격으로 제한합니다. 네트워크 실패는 회원 세션을 유지하며 명시적인 `ACCOUNT_SUSPENDED`만 해당 사유로 중앙 종료합니다. 모든 403을 로그아웃으로 처리하지 않습니다.
+로그인과 토큰을 가진 기동에서는 서버 필수 동의 확인 뒤 `MemberDataLoader`가 프로필과 회원 체험 잔여를 갱신합니다. 앱 수명에서 회원 세션과 `MemberConsent`를 결합하고 조건이 해제되면 진행 중인 조회를 취소합니다. 계정 연동 성공, 마이 노출, 출석/초대 성공에서도 프로필을 갱신합니다. 마이 재노출 요청은 5초 간격으로 제한합니다. 네트워크 실패는 회원 세션을 유지하며 명시적인 `ACCOUNT_SUSPENDED`만 해당 사유로 중앙 종료합니다. 모든 403을 로그아웃으로 처리하지 않습니다.
 
 `LegalDocumentScreen`의 새 페이지 로드는 같은 호스트의 HTTPS `/terms`, `/privacy`, `/about`만 허용합니다. 외부 HTTP(S)는 `ACTION_VIEW`로 전달하고 브라우저가 없으면 실패 토스트를 표시합니다. 그 외 스킴과 같은 호스트의 문서 외 경로는 차단합니다. 클라이언트 라우팅 링크는 웹 본문에서 제거하며 WebView 경로 검사가 이를 대신하지 않습니다.
 
 ### 약관 동의 게이트
 
-`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트는 `NotificationPermissionRequest(onSettled)`가 끝난 뒤 `LegalConsentSheet(enabled = true)`로 시트를 그리고, ViewModel의 `isSatisfied`로 나머지 안내(초대 코드·광고 재질문)를 잠급니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
+`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트가 `LegalConsentViewModel`을 먼저 만들고 `MemberConsentGate`에서 저장소의 완료 상태와 ViewModel의 `isSatisfied`를 함께 확인합니다. 확인 전에는 로그인 화면 위에 `LegalConsentSheet(enabled = true)`를 표시하고 회원 그래프를 구성하지 않습니다. 조회 중에는 지연 진행 표시와 뒤로가기 로그아웃을 제공하며 `LoginViewModel`이 회원 상태의 새 소셜 로그인을 거부합니다. 완료 후 회원 그래프의 `MemberOverlays`가 알림 권한 요청을 시작하고, 권한 응답 뒤 선택 동의 처리와 초대 코드, 광고 재질문을 순서대로 연결합니다. 동의 ViewModel을 루트 수명에서 유지해 화면 전환 시 선택 동의 답을 잃지 않습니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
 
 ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepository.sessionState`를 보고 회원이 될 때마다 다시 조회하며, 회원이 아니면 상태를 비웁니다. 조회는 세션 수집을 막지 않는 별도 작업으로 돌려 조회 중의 로그아웃·재로그인이 접히지 않게 합니다. `CONSENT_VERSION_MISMATCH`와 기록 응답에 남은 `needsConsent`는 같은 안내로 재조회하고 체크를 비웁니다. 401은 기존 세션 만료 흐름을 따릅니다. 조회 또는 기록의 403은 `FORBIDDEN` 상태에서 이용 제한 안내와 로그아웃 버튼을 표시하며 재시도 버튼을 제공하지 않습니다. 네트워크 오류와 5xx는 재시도를 제공합니다.
 
-시트는 `ManyakBottomSheet(dismissEnabled = false, dismissOnBackPress = !isLocked)`로 끌어내리기·스크림을 막고 뒤로가기만 `signOut`으로 잇습니다. 전문은 백스택 대신 시트 위 `Dialog`에 `LegalDocumentScreen`을 문서별 ViewModel 키로 띄웁니다 — 모달 시트가 아래 화면을 덮어 백스택의 문서가 보이지 않기 때문입니다. 선택 항목인 광고 알림 동의는 체크만 받고 성공 시 `marketingAnswer`로 남기며, 루트가 `MarketingConsentViewModel`에 넘긴 뒤 소비 표시를 보냅니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../adr/1-3-android-adr.md#a-044)를 참조합니다.
+시트는 `ManyakBottomSheet(dismissEnabled = false, dismissOnBackPress = !isLocked)`로 끌어내리기·스크림을 막고 뒤로가기만 `signOut`으로 잇습니다. 전문은 백스택 대신 시트 위 `Dialog`에 `LegalDocumentScreen`을 문서별 ViewModel 키로 띄웁니다 — 모달 시트가 아래 화면을 덮어 백스택의 문서가 보이지 않기 때문입니다. 선택 항목인 광고 알림 동의는 체크만 받고 성공 시 `marketingAnswer`로 남기며, 루트가 알림 권한 응답 뒤 `MarketingConsentViewModel`에 넘긴 뒤 소비 표시를 보냅니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../adr/1-3-android-adr.md#a-044)를 참조합니다.
 
 ### 토큰 저장과 만료 판정
 
