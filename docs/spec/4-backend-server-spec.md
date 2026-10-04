@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.42 |
+| 버전 | v0.43 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-09-27 |
+| 수정일 | 2026-10-05 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
@@ -24,8 +24,10 @@
 - [4-3. API 계약](#4-3-api-계약)
   - [스토리 검수 제출 흐름](#스토리-검수-제출-흐름)
   - [스토리 검수 완료 푸시](#스토리-검수-완료-푸시)
+  - [미동의 회원 서버 게이트](#미동의-회원-서버-게이트)
 - [4-4. 데이터 모델](#4-4-데이터-모델)
 - [4-5. 인증과 권한](#4-5-인증과-권한)
+  - [동의 후 가입 완료 흐름](#동의-후-가입-완료-흐름)
 - [4-6. 오류와 예외 처리](#4-6-오류와-예외-처리)
 - [4-7. 운영과 관측](#4-7-운영과-관측)
 - [4-8. 검수 체크리스트](#4-8-검수-체크리스트)
@@ -101,6 +103,8 @@
 
 ### 엔드포인트 카탈로그
 
+인증 principal이 있는 요청에는 아래 개별 실패 코드 외에 동의 게이트의 403 `CONSENT_REQUIRED`가 적용될 수 있습니다. 허용 목록과 활성화 조건은 별도 계약을 따릅니다. ([미동의 회원 서버 게이트](#미동의-회원-서버-게이트))
+
 `내부` 행은 알림 서비스 분리 계획이며 구현 전입니다. 공개 ALB에서 라우팅하지 않습니다. 검수 제출 흐름의 클라이언트 응답 변경은 서버·웹·앱을 함께 배포합니다.
 
 | 도메인 | 메서드·경로 | 설명 | 성공 | 주요 실패 | 인증 |
@@ -143,6 +147,8 @@
 | 채팅 | `POST /chats/{chatId}/shares` | 채팅 공유 링크 발급(발급 시점 스냅샷) | 201 | 403·404 | 선택 |
 | 채팅 | `GET /shares/{shareId}` | 공유된 채팅 열람(읽기 전용) | 200 | 404 | 불필요 |
 | 피드백 | `POST /feedbacks` | 피드백 등록 | 201 | 400 | 선택 |
+| 인증 | `POST /auth/social/{provider}` (`google`, `kakao`) | 동의 확인 후 로그인 또는 동의 대기 코드 발급 | 200 | 400·401 | 불필요 |
+| 인증 | `POST /auth/social/complete` | 필수 동의 기록과 가입 완료 | 200 | 400·401 | 불필요 |
 | 인증 | `POST /auth/login/google` | Google ID 토큰 로그인 | 200 | 400·401 | 불필요 |
 | 인증 | `POST /auth/login/kakao` | Kakao ID 토큰 로그인 | 200 | 400·401 | 불필요 |
 | 인증 | `GET /auth/me` | 현재 사용자 조회 | 200 | 401 | 필수 |
@@ -521,10 +527,12 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 ### 4-3-5. 인증 API
 
-구현은 완료됐고 MVP 프론트엔드는 호출하지 않습니다. 흐름과 토큰 정책은 [§4-5](#4-5-인증과-권한)에 정의합니다.
+기존 로그인은 웹과 구버전 Android의 호환 경로로 유지합니다. 새 소셜 인증 API는 동의 후 가입 완료를 위한 계약이며 서버 구현 전입니다. 흐름과 토큰 정책은 [§4-5](#4-5-인증과-권한)에 정의합니다.
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
+| `POST /auth/social/{provider}` (`google`, `kakao`) | `{idToken: string, handoffCode?: string}` + 선택 `X-Manyak-Device-Id` 헤더, 인증 불필요 | 200 `SocialAuthResponse` |
+| `POST /auth/social/complete` | `X-Manyak-Consent-Token` 헤더 필수 + `{terms?: string, privacy?: string, age14?: string}`, 선택 `X-Manyak-Device-Id` 헤더, 인증 불필요 | 200 `TokenResponse` |
 | `POST /auth/login/{provider}` (`google` · `kakao`) | `{idToken, handoffCode?}`: provider별 경로만 다르고 요청·응답 본문은 동일합니다([§4-5](#4-5-인증과-권한)). 구 `inviteCode?` 필드는 폐기 완료(KNK-567, [§4-3-7](#4-3-api-계약)). `handoffCode?`는 유효하면 이 호출이 회원 체험 시드(핸드오프의 원본 디바이스 ID를 `X-Manyak-Device-Id` 헤더보다 우선)와 게스트 데이터 이관을 함께 수행([로그인 핸드오프](#로그인-핸드오프--phase-1--구현knk-681684)) | `TokenResponse` |
 | `GET /auth/me` | `Authorization: Bearer {access}` | `{id, nickname, profileImageUrl, profileThumbnailBase64, status, creditBalance, attendedToday, linkedProviders}`: (`creditBalance`·`attendedToday` KNK-498, `profileThumbnailBase64` KNK-388, `linkedProviders` KNK-739) |
 | `POST /auth/token/refresh` | `{refreshToken}` | `TokenResponse` |
@@ -533,6 +541,17 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `POST /auth/links/{provider}` (`google` · `kakao`) | `Authorization: Bearer {access}` + `X-Manyak-Link-Code` 헤더 + `{idToken}` | 201, 본문 없음. 연동 후 상태는 `GET /auth/me`의 `linkedProviders`로 확인합니다 |
 
 `TokenResponse`: `{accessToken, refreshToken, expiresIn, tokenType: "Bearer", isNewUser}`. `expiresIn`은 access 토큰 만료까지 남은 초입니다. `isNewUser`(boolean)는 이번 로그인으로 계정이 새로 생성됐는지(신규 가입 여부)이며 프론트엔드 신규 가입 온보딩(초대 코드 입력 스텝, KNK-567)의 판정 신호입니다: 기존 계정 로그인과 refresh 회전은 항상 false. `status`는 `ACTIVE` · `SUSPENDED` · `DELETED`입니다. 웹에서는 이 응답을 BFF가 가로채 httpOnly 쿠키로 보관하고 `refreshToken`을 JS에 노출하지 않습니다(토큰 세션은 [§4-5](#4-5-인증과-권한) 참조).
+
+**새 소셜 인증 응답.** `SocialAuthResponse`는 `status`에 따라 다음 필드를 반환합니다. 계정 없이도 `CONSENT_REQUIRED` 응답으로 필수 항목과 현행 버전을 받습니다. 두 새 API는 `BEARER_SKIP`이며 자동 첨부된 access 토큰을 무시합니다. 경로에는 공통 prefix `/api/v1`을 붙입니다.
+
+| status | 필드와 타입 | 조건 |
+| --- | --- | --- |
+| `COMPLETED` | `token: TokenResponse` | 살아 있는 기존 회원에게 현행 필수 동의가 모두 있음 |
+| `CONSENT_REQUIRED` | `consentToken: string`, `expiresAt: string`(ISO-8601), `isNewUser: boolean`, `consents: {terms, privacy, age14}` | 신규, tombstone 재가입, 필수 동의 누락 또는 개정 |
+
+`consents`의 각 항목은 `{requiredVersion: string, needsConsent: boolean}`입니다. 신규와 재가입은 세 항목 모두 `needsConsent=true`, `isNewUser=true`입니다. 기존 회원의 재동의는 `isNewUser=false`이며 계정과 콘텐츠를 유지합니다. 대기 응답의 `isNewUser`는 조회 시점의 판정이고, 최종 `TokenResponse.isNewUser`는 이번 완료 요청이 실제로 계정을 생성했는지입니다. 동시 가입의 재조회나 후속 처리 재시도에서 기존 계정을 재사용하면 최종 값은 false입니다. `CONSENT_REQUIRED`에는 정식 토큰이 없고 `COMPLETED`에는 대기 코드가 없습니다.
+
+완료 요청은 현재 필요한 필수 항목을 모두 제출해야 합니다. 이미 현행 동의가 있는 항목은 생략할 수 있지만, 보낸 값은 모두 현행 버전이어야 합니다. 광고 수신 동의는 선택 항목으로 이 요청에 넣지 않으며 기존 푸시 수신 동의 API를 사용합니다. 검증 순서와 재시도 계약은 아래 흐름을 따릅니다. ([동의 후 가입 완료 흐름](#동의-후-가입-완료-흐름))
 
 **연동 상태 조회.** `GET /auth/me` 응답의 `linkedProviders`(string[])가 연동 상태의 정본입니다. 전용 조회 엔드포인트를 두지 않아 마이 페이지가 왕복을 늘리지 않습니다. 값은 **소문자** `google` · `kakao`로 고정하고(프론트엔드 경로·NextAuth provider ID가 소문자라 enum 직렬화를 그대로 쓰면 계약이 달라집니다) 중복 없이 `google` → `kakao` 순으로 정렬합니다. 로그인 경로가 없는 예약 provider(`APPLE` · `NAVER`)는 노출하지 않습니다. 필드 추가는 additive라 기존 웹과 호환되며, 연동 성공 응답에 본문이 없으므로 프론트엔드는 이 호출로 갱신합니다.
 
@@ -767,11 +786,11 @@ dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`
 - **저장.** `user_consents`는 `user_id`(FK `users`) · `doc_type`(`TERMS` · `PRIVACY` · `AGE14`) · `version` · `agreed_at`을 저장하며, PK는 `(user_id, doc_type, version)`입니다. 같은 버전을 다시 보내도 새 행을 만들거나 **기존 `agreed_at`을 갱신하지 않습니다**. 최초 동의 시각을 증빙으로 보존하기 위해 PK 충돌을 무시하는 조건부 삽입을 사용하고, 예외를 잡아 넘기는 방식에 의존하지 않습니다.
 - **원문은 서버에 두지 않습니다.** 정본은 웹의 법적 콘텐츠 소스([웹 설계](../design/1-1-web-design.md#법적-콘텐츠-소스-웹))이고 서버는 **현행 버전만** 설정값으로 압니다: `manyak.legal.terms-version`(현재 `v1.4`, 2026-09-20 시행) · `manyak.legal.privacy-version`(현재 `v1.7`, 2026-09-25 시행). 버전 문자열은 웹 콘텐츠의 `version` 값을 그대로 씁니다. 만 14세 확인은 문서가 아니라 선언이라 버전을 `1`로 고정합니다. 문서를 개정하면 웹 콘텐츠와 이 설정값을 **같은 릴리스에서** 올립니다: 어긋나면 사용자가 보지 않은 버전에 동의한 기록이 생깁니다.
 - **탈퇴 후 보존.** 회원 탈퇴는 soft delete이며 동의 행을 지우지 않습니다. 계약 종료 뒤에도 동의 증빙을 보존하기 위해 FK에 `ON DELETE` 연쇄를 두지 않습니다. 재가입하면 새 `user_id`에 동의를 다시 받으며, 이전 계정의 동의를 승계하지 않습니다.
-- **서버 게이트 없음.** 미동의 회원의 다른 API를 막지 않고, 클라이언트가 `needsConsent`에 따라 이용을 제한합니다. 서버 게이트가 필요해지면 유예기간과 대상 API를 정해 별도로 추가합니다.
-- **로그인 요청과 분리.** 로그인 요청에는 동의를 싣지 않습니다. 로그인 뒤 동의 상태 조회와 기록이라는 한 경로를 사용합니다.
+- **회원 서버 게이트.** 현행 필수 동의가 없는 회원의 API 접근을 서버에서 제한합니다. 활성화 조건과 예외 경로는 아래 허용 목록을 따릅니다. ([미동의 회원 서버 게이트](#미동의-회원-서버-게이트))
+- **가입 완료 전에 동의.** 새 인증 경로는 소셜 신원 검증 후 대기 코드를 발급하고 완료 API에서 동의를 받습니다. 기존 세션과 호환 로그인 경로의 회원은 `GET/POST /users/me/consents`로 재동의합니다. 신규 계정과 필수 동의는 함께 저장하며 재동의 때문에 기존 계정이나 콘텐츠를 삭제하거나 새로 만들지 않습니다.
 - **광고성 정보 수신 동의와 분리.** `users`의 푸시 동의 컬럼과 통합하지 않습니다. 철회 가능한 현재 상태와 철회 없는 버전별 수락 이력은 수명주기가 다릅니다. `PRIVACY` 동의는 개인정보 처리방침 문서의 수락 기록일 뿐, 광고 수신·평가 활용 등 개별 처리 목적의 동의·철회 상태를 대표하지 않습니다.
 
-**동의 API.** 회원 계약은 인증이 필수입니다. 게스트는 아래 [게스트 개인정보 수집 동의](#게스트-개인정보-수집-동의) 계약을 사용합니다. 로그인 직후와 서비스 진입 시 조회하고, 세션 부트스트랩 응답(`GET /auth/me`)에는 싣지 않습니다.
+**동의 API.** 아래 회원 API는 인증이 필수입니다. 계정 생성 전 동의에는 새 소셜 인증 API를 사용합니다. 게스트는 아래 [게스트 개인정보 수집 동의](#게스트-개인정보-수집-동의) 계약을 사용합니다. 로그인 직후와 서비스 진입 시 조회하고, 세션 부트스트랩 응답(`GET /auth/me`)에는 싣지 않습니다.
 
 | 엔드포인트 | 요청 | 응답 |
 | --- | --- | --- |
@@ -782,6 +801,34 @@ dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`
 - **보낸 항목만 기록합니다.** 필드 누락은 미제출이며 철회가 아닙니다. 세 필드가 모두 없으면 400을 반환합니다. 값이 현행 `requiredVersion`과 다르면 400과 `CONSENT_VERSION_MISMATCH`를 반환합니다([§4-6](#4-6-오류와-예외-처리)). 서버 값으로 덮어쓰면 사용자가 보지 않은 개정본에 동의한 기록이 생기고, 임의 문자열을 허용하면 존재하지 않는 문서에 동의한 행이 생깁니다. 클라이언트는 이 오류를 받으면 해당 문서를 다시 표시하며, 값을 바꿔 자동으로 재전송하지 않습니다. 여러 항목을 함께 보내면 모든 값을 검증한 뒤 한 트랜잭션에 저장합니다.
 - **철회 API는 없습니다.** 필수 동의라 철회는 탈퇴입니다(`DELETE /users/me`).
 - **계정 상태.** 조회·기록 모두 사용자 행을 잠근 뒤 상태를 재검사합니다(푸시 수신 동의와 같은 관례). `SUSPENDED` 403, `DELETED`·사용자 없음 401. 잠금 없이는 탈퇴 처리와 경합해 탈퇴 뒤 동의 행이 들어갈 수 있습니다.
+
+<br>
+
+<a id="미동의-회원-서버-게이트"></a>
+
+#### 미동의 회원 서버 게이트
+
+`manyak.auth.consent-gate.enabled=true`이면 인증 principal이 있는 요청마다 `TERMS`, `PRIVACY`, `AGE14`의 현행 버전 행을 확인합니다. 하나라도 없으면 아래 허용 경로를 제외하고 403 `CONSENT_REQUIRED`로 거부합니다. 기존 access 토큰에도 적용하며 `OPTIONAL_AUTH` 경로도 유효 토큰으로 회원이 식별되면 차단합니다. 무인증 요청의 기존 접근 정책은 유지합니다.
+
+허용 목록은 HTTP 메서드와 정확한 경로로 판정하며, 아래 경로에는 `/api/v1` prefix가 붙습니다. 동의 게이트 통과는 인증, 탈퇴, 정지, 소유권 검사 면제를 뜻하지 않습니다.
+
+| 메서드 | 경로 | 허용 목적 |
+| --- | --- | --- |
+| GET, POST | `/users/me/consents` | 동의 상태 조회와 재동의 |
+| GET | `/auth/me` | 로그인 상태와 계정 상태 확인 |
+| DELETE | `/users/me` | 탈퇴 |
+| DELETE | `/users/me/push-tokens` | 로그아웃 시 설치본 토큰 정리 |
+| GET | `/credits/policies` | 공개 이프 정책 조회 |
+| GET | `/credits/products` | 공개 충전 상품 조회 |
+| GET | `/profile-presets` | 프로필 프리셋 목록 조회 |
+| GET | `/stories/simple/tags` | 스토리 제작 태그와 장르 목록 조회 |
+
+`BEARER_SKIP` 경로(새 인증, 기존 로그인, refresh, logout, 핸드오프, 게스트 동의, 웹훅)는 principal이 없어 이 게이트의 대상이 아닙니다. 그 밖의 경로는 공개 조회나 선택적 인증 여부와 관계없이 principal이 있으면 검사합니다. `/stories/simple/tags`가 장르를 포함한 태그 목록을 반환하므로 별도 장르 경로는 추가하지 않습니다.
+
+- 탈퇴 계정 거부 필터와 같은 인증 확정 이후 지점에서 검사하고, 탈퇴 계정의 기존 401을 보존합니다. 필터는 `GlobalExceptionHandler`를 거치지 않으므로 `ApiErrorResponse`를 직접 씁니다.
+- 캐시 없이 요청마다 `user_consents`의 PK 조회 3건 수준으로 판정합니다. 법적 문서 버전 개정은 다음 요청부터 반영합니다.
+- 기본값은 false이며 꺼져 있으면 기존 동작입니다. 운영은 `manyak/prod/app` 시크릿 JSON의 `MANYAK_AUTH_CONSENT_GATE_ENABLED`로 주입합니다. 웹과 Android가 동의 전 회원 기능 요청을 보내지 않는지 확인한 뒤 환경별로 켭니다.
+- 구버전 로그인으로 생성된 미동의 회원도 이 게이트의 대상입니다. 허용 목록으로 상태 확인, 동의, 탈퇴와 로그아웃 정리를 할 수 있으며 기존 동의 시트 흐름으로 복구합니다.
 
 <a id="게스트-개인정보-수집-동의"></a>
 
@@ -799,7 +846,7 @@ dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`
 | `POST /guests/consents` | `{ "guestPrivacy": "<version>" }`, 디바이스 헤더 필수 | 200 갱신 후 상태(GET과 같은 스키마) |
 
 - **동의 판정과 검증.** 서버는 해당 디바이스의 `GUEST_PRIVACY`와 현행 `requiredVersion`에 해당하는 행이 없으면 `needsConsent=true`를 반환합니다. POST의 `guestPrivacy`가 현행 버전과 다르면 400 `CONSENT_VERSION_MISMATCH`를 반환합니다. 클라이언트는 해당 문서를 다시 표시하며 버전만 바꿔 자동 재전송하지 않습니다.
-- **서버 게이트 없음.** 회원과 동일하게 미동의 게스트의 채팅과 제작을 서버가 막지 않습니다. 클라이언트가 `needsConsent`에 따라 동의 시트를 표시합니다.
+- **서버 게이트 없음.** 미동의 게스트의 채팅과 제작을 서버가 막지 않습니다. 클라이언트가 `needsConsent`에 따라 동의 시트를 표시합니다.
 - **이관 없음.** 로그인 후 회원 동의를 다시 받으므로 게스트 동의를 `user_consents`로 이관하지 않습니다. 회원 탈퇴와 무관하게 게스트 기록은 디바이스 단위로 남습니다.
 
 <a id="스토리-완성-푸시--phase-3--구현knk-1115"></a>
@@ -1759,10 +1806,50 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리합니다. 흐름은 provider와 무관하게 동일하고, 아래 검증 파라미터 표만 달라집니다.
 
+**기존 로그인 호환 흐름.** `POST /auth/login/{provider}`는 동작을 바꾸지 않고 유지하는 전환 대상입니다. 종료 시점은 웹과 Android 전환 후 별도로 결정하며 410 응답 등 종료 처리는 이번 범위 밖입니다.
+
 1. 클라이언트가 provider가 발급한 ID 토큰을 `POST /auth/login/{provider}`로 보냅니다. 선택 필드 `inviteCode`(초대 URL 경유 가입의 코드 전달)는 초대 방식 개편으로 폐기했습니다(KNK-567: 초대 보상은 로그인이 아니라 `POST /users/me/invite/redeem`에서 적립, [§4-3-7](#4-3-api-계약)).
 2. 서버가 서명(provider별 JWKS URI 고정), 만료, issuer, audience를 검증합니다. audience에는 해당 provider의 허용 client ID가 하나 이상 있어야 합니다. client ID 목록이 비어 있으면 해당 provider의 모든 토큰을 거부하며 실패 사유와 관계없이 401을 반환합니다.
 3. `(provider, provider_user_id)`로 사용자를 찾거나 새로 만듭니다(find-or-create). 조회는 **살아 있는 연동만**(`deleted_at IS NULL`) 매칭합니다. create는 `REQUIRES_NEW` 독립 트랜잭션이며, 동시 첫 로그인의 유니크 위반은 재조회로 상대 요청이 만든 계정을 재사용합니다(500 대신 정상 로그인). 기존 연동 로그인은 `social_accounts.last_login_at`만 갱신합니다. 매칭되는 행이 tombstone이면 **재가입**으로 분기해 새 계정을 만들고 그 행을 claim합니다(승계 대상·경합 처리는 [§4-3-5](#4-3-api-계약) 재가입 계약). 소셜 provider enum은 GOOGLE·KAKAO 외 APPLE·NAVER를 예약해 둡니다(미사용).
 4. access·refresh 토큰을 발급합니다.
+
+<br>
+
+<a id="동의-후-가입-완료-흐름"></a>
+
+#### 동의 후 가입 완료 흐름
+
+1. 클라이언트가 `POST /auth/social/{provider}`로 ID 토큰을 보냅니다. 서버는 기존 provider 검증 규칙으로 신원을 확인하고 살아 있는 소셜 연동과 현행 필수 동의를 읽습니다. 이 조회는 `lastLoginAt`을 갱신하지 않습니다.
+2. 기존 회원에게 현행 필수 동의가 모두 있으면 아래 로그인 후속 처리를 실행하고 `COMPLETED`와 토큰을 반환합니다. 그 외에는 대기 코드만 Redis에 저장해 `CONSENT_REQUIRED`를 반환합니다. 계정, 소셜 연동, 로그인 시각, 가입 보상, 회원 체험 시드, 핸드오프 소비와 이관, 정식 토큰, 로그인 성공 이벤트는 이 대기 단계에서 만들거나 갱신하지 않습니다.
+3. 클라이언트는 표시한 문서에 사용자가 동의한 버전을 `POST /auth/social/complete`로 제출합니다. 대기 코드는 `X-Manyak-Consent-Token` 헤더로만 받으며 URL, 쿼리, 본문에는 넣지 않습니다. `X-Manyak-Device-Id`도 받을 수 있지만 대기 코드에 저장된 디바이스 값이 우선입니다.
+4. 서버는 코드 조회 → 제출 버전 검사 → 현재 필요한 항목의 누락 검사 순으로 검증합니다. 코드 없음, 만료, 소비됨은 401 `CONSENT_TOKEN_INVALID`이며 소셜 인증부터 다시 시작합니다. 제출한 버전이 현행과 다르면 400 `CONSENT_VERSION_MISMATCH`, 필요한 항목이 빠졌으면 400 `CONSENT_REQUIRED_MISSING`입니다. 두 400은 코드를 소비하지 않습니다. 버전 불일치 시 새 소셜 인증 응답으로 현행 버전을 다시 받고 문서를 표시해 명시 동의를 받으며, 버전만 바꿔 자동 제출하지 않습니다.
+5. 완료 시점에 `(provider, providerUserId)`의 연동과 회원 상태를 다시 확인합니다. 동시 가입으로 살아 있는 연동의 소유자가 달라졌으면 재조회한 회원을 사용하고 필요한 동의를 다시 판정합니다. 클라이언트가 지정한 회원 ID로 귀속하지 않습니다.
+6. 신규와 tombstone 재가입은 계정, 소셜 연동, 필수 동의 행을 한 `REQUIRES_NEW` 생성 트랜잭션에서 저장합니다. 외부 트랜잭션에서 나중에 동의를 저장하는 방식은 허용하지 않습니다. 버전 검증이나 동의 저장이 실패하면 계정 생성과 tombstone 이동도 롤백합니다. 기존 회원은 사용자 행 잠금 후 상태를 재검사하고 동의를 조건부 삽입합니다. 재동의로 계정이나 콘텐츠를 삭제하거나 새 계정을 만들지 않습니다.
+7. 동의 확인과 저장 이후 기존 로그인 후속 처리를 실행하고 200 `TokenResponse`를 반환합니다. 성공했을 때만 대기 코드를 삭제하며 삭제 후 같은 코드를 다시 제출하면 401입니다. 후속 처리 실패로 완료가 실패하면 코드는 TTL 안에서 재시도할 수 있습니다.
+
+**로그인 후속 처리.** 회원 체험 시드 → 가입 보상 → 시드 성공 시 핸드오프 소비와 이관 → 토큰 발급 → 기존 `socialLoginSucceeded` 성공 이벤트 순서를 유지합니다. `social_accounts.last_login_at` 갱신도 동의 확인 이후에만 실행하며 `users`에 로그인 시각 필드를 추가하지 않습니다. 조건부 단일 컬럼 갱신으로 탈퇴 tombstone이나 삭제된 이메일이 되살아나지 않게 합니다. 성공 이벤트는 대기 단계에서는 보내지 않고 로그인 완료 시점에 기존 이름으로 1회 보냅니다.
+
+- 체험 시드 실패는 미완료로 남겨 다음 로그인에서 재시도하고, 원본 디바이스를 잃지 않도록 핸드오프를 소비하지 않습니다. 핸드오프 이관 실패는 기존처럼 로그인 자체를 막지 않고 핸드오프 코드를 미소비로 유지합니다.
+- 유효 핸드오프의 원본 디바이스 ID가 대기 코드에 보관한 디바이스와 완료 요청 헤더보다 우선합니다. 대기 중에도 원본 디바이스 기준을 보존하고, 코드 발급을 핸드오프 소비로 취급하지 않습니다. 재가입 회원은 디바이스를 넘기지 않는 기존 소진 시드 규칙을 유지합니다.
+- 재가입은 기존 tombstone 묶음 이동과 사용자 행 잠금 규칙을 유지하고 정지 상태, `inviterUserId`, `rewardIdentityUserId`, `migrationAttempts`, `rejoinedAt`을 승계 또는 기록합니다. 이전 계정의 동의를 승계하지 않습니다.
+- 동시 가입은 소셜 유니크 제약 위반 후 재조회로 같은 계정을 사용합니다. 동의는 PK 충돌 무시 삽입, 보상은 `signup:{rewardIdentityUserId ?: id}`, 체험 시드는 기존 SETNX와 완료 표식으로 중복을 막습니다. 후속 처리 실패 후 재시도에도 최초 `agreed_at`과 보상 1회를 유지합니다. 소비 전에 코드를 조회한 동시 요청의 토큰 중복 발급은 허용합니다.
+- 정지 회원도 새 소셜 인증과 완료 API에서 로그인할 수 있습니다. 현행 동의가 없으면 `CONSENT_REQUIRED`, 있으면 `COMPLETED`로 진행합니다. 완료 API의 동의 저장은 정지를 이유로 거부하지 않으며, 기존 회원 동의 API의 `SUSPENDED` 403 계약과 구분합니다. 이후 일반 API의 기존 정지 제한은 유지합니다.
+
+**대기 코드와 개인정보.** `SecureRandom` 32바이트를 base64url 무패딩으로 인코딩한 불투명 코드이며 Redis 키는 `social_consent:{sha256(code)}`입니다. TTL은 `manyak.auth.consent-token.ttl`, 기본 10분입니다. 연동 코드 저장소와 같은 방식을 사용하며 공용 저장소 추상화는 요구하지 않습니다.
+
+| 저장 값 | 용도 |
+| --- | --- |
+| `provider`, `providerUserId` | 검증된 소셜 신원 |
+| `email`(nullable) | 가입 완료 시 소셜 행에 저장 |
+| `userId`(기존 회원일 때) | 조회 시점의 내부 회원 참조, 완료 시 재확인 |
+| `deviceId`(nullable, 원문) | 발급 시 유효 핸드오프의 원본 디바이스를 우선하고 없으면 시작 요청 헤더 값을 보관. 대기 중 핸드오프 만료에도 회원 체험 시드의 원본 기준 보존 |
+| `handoffCode`(있을 때) | 동의 후 핸드오프 조회와 소비 |
+
+ID 토큰 원문은 저장하지 않습니다. 원본 디바이스는 기존 핸드오프와 같은 목적으로 TTL 동안만 보관합니다. 대기 코드는 완료 API 전용이며 다른 API의 인증 수단이나 access 토큰으로 받지 않습니다. 코드 원문, ID 토큰, 이메일, 소셜 식별자(`sub`)는 로그, 분석, Sentry에 남기지 않습니다. 대기 단계의 분석에는 회원 식별자를 넣지 않습니다. 유니크 위반 재조회가 실패해도 소셜 식별자를 포함한 원시 DB 예외와 원인 체인이 로그나 Sentry로 전파되지 않도록 안전한 오류로 변환합니다.
+
+**호환과 배포 순서.** 서버에 새 API를 추가하고 동의 게이트는 꺼 둡니다. Android와 웹을 새 API로 전환한 뒤 환경별 게이트를 켭니다. 기존 로그인 종료는 전환 확인 후 후속 티켓에서 결정합니다. 게이트를 꺼도 새 인증 경로의 동의 후 가입 계약은 유지됩니다. 기존 로그인 경로는 전환 기간 동안 동의 전 계정을 만들 수 있으며 게이트가 켜지면 해당 회원의 일반 API 접근을 제한합니다.
+
+선택 이유는 ADR에 기록합니다. ([BE-054](../adr/2-backend-server-adr.md#be-054))
 
 | provider | JWKS URI | issuer | audience | `sub` 범위 |
 | --- | --- | --- | --- | --- |
@@ -1888,7 +1975,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 - 선택적 인증은 카탈로그에서 `선택`인 경로에만 적용합니다. 일반 제작 등록·스토리 PATCH·검수 제출본 API는 인증 필수로 전환하며 간편 제작·채팅·피드백의 기존 익명 허용은 유지합니다.
 - `Authorization: Bearer` 토큰이 유효하면 해당 요청의 생성 리소스에 `user_id`를 귀속합니다. 토큰이 없거나 무효(만료·위조)면 401을 반환하지 않고 익명으로 통과시킵니다. `Bearer` 접두는 대소문자를 무시하고, 접두 뒤가 공백뿐이면 익명 처리하며, 토큰이 유효해도 사용자가 삭제됐으면 익명 처리(`user_id` 미귀속)합니다.
-- 공개 인증 3종(`login/{provider}`·`token/refresh`·`logout`)과 선택적 인증 경로는 리소스 서버의 Bearer resolve 자체를 건너뜁니다: 클라이언트가 자동 첨부한 만료·위조 access 헤더가 401을 유발하지 않고, 선택 경로의 귀속은 별도 optional 필터가 수행합니다.
+- 공개 인증 경로(`social/{provider}`·`social/complete`·`login/{provider}`·`token/refresh`·`logout`)와 선택적 인증 경로는 리소스 서버의 Bearer resolve 자체를 건너뜁니다: 클라이언트가 자동 첨부한 만료·위조 access 헤더가 401을 유발하지 않고, 선택 경로의 귀속은 별도 optional 필터가 수행합니다.
 - 재발급(`POST /auth/token/refresh`)은 무효·만료·이미 회전된 토큰·매핑 사용자 부재를 모두 401로 응답하며, 회전 직후 사용자가 사라진 경우 방금 발급한 토큰을 포함해 family를 폐기하고 401을 반환합니다.
 - 인증을 강제하는 엔드포인트는 [엔드포인트 카탈로그](#엔드포인트-카탈로그)의 인증 열이 `필수`인 경로입니다. 토큰 없음·만료·위조·사용자 삭제 모두 401입니다.
 - **정지 계정(`status = SUSPENDED`) 처리.** 소모·쓰기 요청은 진입부의 `SuspensionGuard.requireActive`가 403으로 차단합니다. 토큰 재발급 중 정지 상태를 확인하면 방금 회전한 토큰을 포함한 family를 폐기하고 403을 반환합니다. 기존 access 토큰의 최대 30분 잔여 시간은 공통 게이트가 차단합니다. 정지 사유는 노출하지 않습니다.
@@ -1906,7 +1993,7 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | 위 두 규칙을 동일 적용: 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403 |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
-| 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 막지 않음(클라이언트 게이트)([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
+| 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 활성화된 [서버 게이트](#미동의-회원-서버-게이트)로 제한([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
 | 스토리 이미지 업로드·삭제 | 인증 필수(미인증 401), 회원 소유자만 허용. 개별 연결 POST 폐지, 등록·PATCH 본문으로 추가. PENDING 중 표지·인물 이미지 삭제 409([§4-3-8](#4-3-api-계약)) |
 | 등록 전 이미지 업로드(`POST /stories/images/presign`) | **회원만**(미인증 401·정지 403). 키가 요청자의 draft prefix 아래인지로 소유를 가르며, 일반 제작 등록이 같은 규칙으로 재검증합니다([§4-3-8](#4-3-api-계약)) |
 | 프로필 수정(`PATCH /users/me`) · 프리셋 목록(`GET /profile-presets`) | 인증 필수(게스트 불가). 수정은 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401([위 프로필 수정](#4-5-인증과-권한)) |
@@ -1967,11 +2054,14 @@ Google과 Kakao 모두 **OIDC ID 토큰 검증** 한 가지 방식으로 처리�
 
 ### 상태 코드 카탈로그
 
-`code`는 HTTP 상태의 표준 이름을 사용합니다. **예외: 402와 초대 코드 입력의 409는 사유 구분을 위해 앱 수준 코드를 씁니다**(`CodedResponseStatusException`이 `code`를 오버라이드: 402와 초대 409 모두 앱 수준 사유 코드 적용).
+`code`는 기본적으로 HTTP 상태의 표준 이름이며, 아래 표의 사유 구분이 필요한 오류는 앱 수준 코드를 사용합니다. 동의 게이트의 필터 응답도 같은 오류 형식과 코드를 사용합니다.
 
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
 | 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` · `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과는 `IMAGES_TOO_LARGE`와 `이미지 크기나 장수를 줄여 주세요.`([용량 사전 검사](#검수-요청-용량-사전-검사)). 본문 형식 오류, 필드 검증 실패. `GUEST_CANNOT_PUBLISH`는 기존 공개 제한 코드입니다. 일반 제작 등록·PATCH의 미인증 요청은 공개 범위 검사 전에 401로 차단합니다([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
+| 400 | `CONSENT_REQUIRED_MISSING` | 새 소셜 인증 완료에 현재 필요한 필수 항목 누락. 대기 코드 미소비 |
+| 401 | `CONSENT_TOKEN_INVALID` | 동의 대기 코드 없음, 만료 또는 소비됨. 소셜 인증부터 다시 시작 |
+| 403 | `CONSENT_REQUIRED` | 동의 게이트 활성화 상태에서 현행 필수 동의 없는 회원이 허용 목록 밖 API 요청 |
 | 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다."): 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
 | 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제. 등록·PATCH의 미인증은 401), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
@@ -2190,6 +2280,13 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 | `MANYAK_LEGAL_TERMS_VERSION` | `manyak.legal.terms-version` | 회원 이용약관의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_PRIVACY_VERSION` | `manyak.legal.privacy-version` | 회원 개인정보 처리방침의 웹 콘텐츠 `version` |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `manyak.legal.guest-privacy-version` | 게스트 개인정보 수집 및 이용 동의의 웹 콘텐츠 `version`과 같은 릴리스에 맞춤 |
+
+새 소셜 인증과 회원 동의 게이트의 설정은 다음과 같습니다. 운영 게이트 값은 기존 `manyak/prod/app` 시크릿 JSON으로 주입합니다.
+
+| 환경 변수 | 설정 키 | 기본값과 동작 |
+| --- | --- | --- |
+| `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `manyak.auth.consent-token.ttl` | `PT10M`, 동의 대기 코드 TTL 10분 |
+| `MANYAK_AUTH_CONSENT_GATE_ENABLED` | `manyak.auth.consent-gate.enabled` | `false`, 웹과 Android 전환 확인 후 환경별 활성화 |
 
 알림 서비스 분리용 설정 중 SQS 어댑터 설정은 구현되어 있습니다. 기본 모드는 `local`이며 dev는 2026-09-27부터 `remote`를 사용하고 prod는 `local`을 유지합니다. 알림의 prod 내부 주소는 Cloud Map 네임스페이스 `manyak-prod.local`의 `http://server.manyak-prod.local:8080`으로 정했습니다. 비밀값은 배포 때 정합니다. 실제 비밀값은 문서에 기록하지 않습니다.
 
