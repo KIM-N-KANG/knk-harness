@@ -130,7 +130,7 @@
 | MY-CREDITS-26 | P0 | 회원 | 가격 버튼 탭 | `POST /users/me/credits/orders`에 그 상품의 `productId`를 실어 보내고 201의 `paymentUrl`로 전체 이동. 요청 중에는 누른 버튼에 스피너, 모든 가격 버튼 비활성 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
 | MY-CREDITS-27 | P1 | 주문 생성이 4xx·5xx·네트워크 오류 | 가격 버튼 탭 | 이동하지 않고 "결제를 시작하지 못했어요" 토스트. 버튼은 다시 활성화되어 재시도 가능 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
 | MY-CREDITS-28 | P1 | 상품 조회가 5xx·네트워크 오류 | 구매 탭 진입 | 목록 자리에 "충전 상품을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시. 조회 중에는 줄 골격 표시 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
-| MY-CREDITS-29 | P0 | 결제창 이동 전 남긴 대기 주문이 있고 주문이 `PENDING`→`COMPLETED` | 결제창에서 `/my/credits`로 복귀 | 잔액 아래 "결제 확인" 카드에 스피너 + "결제를 확인하고 있어요"(2초 간격 조회). `COMPLETED`가 되면 "N 이프가 충전됐어요"(N은 `totalCredits`)로 바뀌고 잔액 상자가 `GET /auth/me` 재조회 값으로 갱신. `COMPLETED` 확정 시점에 대기 주문 기록이 삭제되고 카드는 남음. 닫기(X)로 카드가 사라짐 | ✅ e2e `my/credits` | §3-1-7 결제 결과, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297, KNK-1314 |
+| MY-CREDITS-29 | P0 | 결제창 이동 전 남긴 대기 주문이 있고 주문이 `PENDING`→`COMPLETED` | 결제창에서 복귀 화면을 거쳐 `/my/credits`로 복귀 | 잔액 아래 "결제 확인" 카드에 스피너 + "결제를 확인하고 있어요"(2초 간격 조회). `COMPLETED`가 되면 "N 이프가 충전됐어요"(N은 `totalCredits`)로 바뀌고 잔액 상자가 `GET /auth/me` 재조회 값으로 갱신. `COMPLETED` 확정 시점에 대기 주문 기록이 삭제되고 카드는 남음. 닫기(X)로 카드가 사라짐 | ✅ e2e `my/credits` | §3-1-7 결제 결과, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297, KNK-1314 |
 | MY-CREDITS-30 | P1 | 대기 주문 조회가 404 | 복귀 | "확인할 수 없는 주문이에요" + 닫기. 다시 확인 버튼 없음 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
 | MY-CREDITS-31 | P1 | 대기 주문 조회가 5xx·네트워크 오류 | 복귀 | "결제 확인에 실패했어요"와 "다시 확인". 자동 재조회는 멈추고, 탭하면 처음부터 다시 폴링 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
 | MY-CREDITS-32 | P2 | 주문이 30회(약 60초) 조회 후에도 `PENDING` | 복귀 후 대기 | "아직 결제 확인이 안 됐어요"와 "다시 확인" 표시, 자동 조회 중단 | ✅ 단위 — 웹 `my/credits/utils/credit-order-confirmation` | §3-1-7 결제 결과, KNK-1297 |
@@ -139,6 +139,9 @@
 | MY-CREDITS-35 | P1 | 가격 버튼 탭으로 주문 생성 성공 후 결제창으로 이동 | 브라우저 뒤로가기로 문서가 bfcache 복원(`pageshow` persisted) | 가격 버튼의 스피너·비활성이 풀려 다시 주문 가능 | ✅ e2e `my/credits`(이벤트 직접 발생) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 | MY-CREDITS-37 | P1 | 무료 충전 탭 | 탭 내용을 아래로 당겼다 놓기 | STORY-LIST-30과 같은 표시자로 프로필(잔액·출석 여부)과 정책 수치를 다시 조회 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | MY-CREDITS-38 | P1 | 내역 탭, 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 같은 표시자로 내역을 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지. 구매 탭에는 당김 없음 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
+| MY-CREDITS-39 | P0 | 회원, 마이 → "충전"으로 진입 | 가격 버튼 → 결제창 → 결제 완료 화면의 이동 버튼으로 복귀 → 뒤로가기(앱 바·기기) | 복귀 화면(`/my/credits/return`)이 결제 전 충전 화면까지 되감아 `/my/credits`에 결제 확인 카드가 뜸. 뒤로가기는 결제창이 아니라 `/my`로 감 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
