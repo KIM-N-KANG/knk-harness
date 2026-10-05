@@ -237,7 +237,7 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프로필 대기는 합계 최대 5초이며 일치하는 회원을 확인하지 못하면 폐기합니다. 표시 직전 다시 확인하고 계정 전환을 넘어 알림을 보관하지 않습니다. 로그아웃의 `UserScopedStore` 정리는 표시 알림을 `cancelAll`합니다.
 
-서비스 채널은 HIGH·PRIVATE, 마케팅 채널은 DEFAULT·PUBLIC입니다. foreground·background 모두 시스템 알림을 사용하며 type+target에서 안정된 알림 ID를 만듭니다. `STORY_MODERATION_COMPLETED`의 target은 `submissionId`이며, `APPROVED`, `REJECTED`, `FAILED`만 수신합니다. 이 타입은 서버 `title`과 `body`를 그대로 사용하고 서비스 알림의 공개 버전은 제목 줄만 표시합니다. title이 없으면 표시하지 않고 알 수 없는 type의 진입 목적지는 홈입니다.
+서비스 채널은 HIGH·PRIVATE, 마케팅 채널은 DEFAULT·PUBLIC입니다. foreground·background 모두 시스템 알림을 사용하며 type+target에서 안정된 알림 ID를 만듭니다. `STORY_MODERATION_COMPLETED`의 target은 `submissionId`이며, `APPROVED`, `REJECTED`, `FAILED`만 수신합니다. 이 타입은 서버 `title`과 `body`를 그대로 사용하고 서비스 알림의 공개 버전은 제목 줄만 표시합니다. title이 없으면 표시하지 않고 알 수 없는 type의 진입 목적지는 홈입니다. 검수 결과를 화면에서 확인하는 제출본은 `common`의 `ReviewWatch` 계약으로 알립니다. `create`의 `GeneralReviewWatch`가 결과 조회 중인 제출본과 화면에 보여 준 결과를 프로세스 메모리에만 두고, `PushNotificationTray`가 표시 직전에 이를 물어 걸러 냅니다.
 
 ### 알림 진입과 권한
 
@@ -257,6 +257,22 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ## 1-2-7. 제작과 상태 복원
 
+### 일반 제작과 수정
+
+`create/general`이 폼 entity, 순수 domain 변환, API와 Room data, MVI 화면을 소유합니다. `GeneralStoryForm`의 반복 항목은 로컬 안정 ID와 서버 ID를 구분하며 검수 경로는 제출 시 폼에서 안정 ID로 변환합니다. 수정 baseline은 처음 복원한 폼의 요청 표현을 보관하여 알 수 없는 설정 글과 폼에 없는 서버 인물 및 대표 이미지 외의 이미지를 유지합니다. 부분 수정 검증은 실제 PATCH 필드군에 한정하여 수정하지 않은 기존 값이 저장을 막지 않게 합니다.
+
+`navigation`은 `CreateMethodRoute`, `GeneralCreateRoute(draftId)`, `GeneralSubmissionRoute(submissionId)`, `StoryEditRoute(storyId)`를 등록합니다. `app`이 제작 탭과 상세에서 콜백을 연결하고 일반 제작 승인 후 `ChatStarter` 결과로 상세 위에 채팅을 엽니다. 수정 완료는 기존 상세 또는 제작 탭으로 돌아가 화면 표시 시점에 새 값을 조회합니다.
+
+`GeneralStoryViewModel`은 입력, 검증과 서버 검수 상태를 MVI로 관리합니다. 탭과 펼침 및 크롭 범위는 저장 가능한 화면 상태로 유지하며 폼의 프로세스 복원은 Room 또는 서버 제출본 조회로 처리합니다. 검수 폴링은 화면 STARTED에서 1초 간격, 단조 시계로 60초 상한을 적용합니다. 제출과 접수 기록은 `FunnelScope`에서 완료하고 세션 세대가 바뀐 결과를 반영하지 않습니다. 신규 POST 응답 유실은 자동 재전송하지 않으며 접수 기록만 실패하면 제출 ID를 유지한 채 기록을 재시도합니다. 성공한 등록과 수정은 `CreationProgressAccess.submissionChanges`로 알리고 제작 탭은 STARTED에서 수집해 제출본과 스토리 목록을 갱신합니다. 화면을 먼저 닫고 늦게 받은 접수도 반영하며, 수정 복귀가 이전 조회와 겹치면 그 조회 뒤에 새 조회를 예약합니다.
+
+Room의 `general_story_draft`는 `(ownerId, draftId)` 복합 키, 버전 있는 폼 JSON, 최초 저장 시각과 접수 제출 ID를 둡니다. v4에서 v5로 테이블만 추가하며 기존 간편 제작 테이블은 그대로 유지합니다. 접수하면 JSON을 비우고 제출 ID만 남겨 이후 저장을 거절합니다. 연결 행은 복원된 라우트를 서버 제출본으로 연결하며 카드에서 제외합니다. `CreationProgressRepository`가 기존 간편 제작 실행기에 위임하면서 두 저장소의 초안을 최초 시각순으로 합칩니다.
+
+Photo Picker 입력은 실제 MIME과 크기를 확인한 뒤 샘플링 디코딩 및 EXIF 보정을 거쳐 고정 비율로 자릅니다. `GeneralImageUploader`는 API presign 이후 별도 무인증 OkHttpClient로 PUT하고 성공 결과를 계정별 앱 파일에 보관합니다. 저장 snapshot이 바뀐 뒤 참조가 사라진 이전 파일을 정리하며, 편집 취소는 마지막 저장본이 참조하는 파일을 보존합니다. 객체 키와 파일 참조만 저장하고 Bitmap 또는 임시 접근 권한은 저장 정본으로 사용하지 않습니다.
+
+일반 제작 화면은 간편 제작의 헤더와 임시 저장 버튼, 접는 입력 항목(`CollapsibleInputSection`)과 장르 검색 콤보박스를 함께 씁니다. 웹에만 있는 모션 컴포넌트인 제작 방식 선택 일러스트와 분량 배분 인라인 슬라이더는 `create/general`이 같은 시간과 곡선으로 구현하며, 두 번째 사용처가 생기기 전까지 `designsystem`으로 올리지 않습니다. 이미지 자르기는 바텀 시트의 검은 판 위에 비율 창을 두고 창 밖을 어둡게 남깁니다.
+
+일반 제작의 `GeneralGenreSearch`도 제공 장르 API를 사용합니다. 전체 및 대표 카탈로그를 구분하고 250ms 입력 대기, 요청 후 200ms 지연 로딩과 20개 질의 캐시를 화면 ViewModel 수명에서 사용합니다. 서버 검색 결과를 로컬 부분 문자열 매칭으로 대체하지 않습니다.
+
 ### 제공 장르 검색
 
 `create`의 `StoryCreationRepository.genres(query)`가 공개 카탈로그를 조회하며 `GenreCatalog`는 전체 또는 검색 결과와 대표 장르를 구분합니다. `GenreSearch`는 키워드 ViewModel의 코루틴 수명 안에서 카탈로그와 검색 작업을 관리합니다. 검색어는 서버 상한 30자로 제한하고 입력 변경 후 250ms 대기하며 이전 작업을 취소합니다. 결과 이벤트는 현재 질의와 메뉴 열림 상태가 맞을 때만 반영합니다.
@@ -273,7 +289,7 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ### 제작 카드와 다중 완성 진행
 
-Room DB v4는 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
+Room DB v5는 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
 
 두 테이블은 처음 임시 저장 시각 `createdAt`을 둡니다. `PendingStoryCreationDao.save`는 행이 없을 때만 지금 시각을 쓰고 있으면 기존 값(이전 버전 행의 null 포함)을 유지합니다. 조회는 `createdAt IS NULL, createdAt DESC`(완성 요청은 이어서 `submittedAt DESC`)로 정렬해 제작 탭이 그대로 그립니다.
 
