@@ -84,7 +84,7 @@ graph LR
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 진행 카드가 이동 전에 기록하고 퍼널이 진입 시 한 번 읽어 그 레코드만 복원. 없으면 새 세션 |
 | sessionStorage 게스트 채팅·로그인 초안 | `manyak:guest-chat-ids`의 JSON 배열(이전 버전에서 탭에만 보관한 채팅 ID. 신규 채팅은 localStorage 서재에 저장하며 기존 탭 ID도 자동 이관과 핸드오프에 포함)과 `manyak:chat-login-draft:{chatId}`의 입력 본문(전송 본문과 같은 직렬화, 채팅방 마운트 시 두 컴포저에 되살리고 삭제). [guest-chat-storage](../../../manyak-web/src/features/chats/_shared/utils/guest-chat-storage.ts)·[chat-login-draft-storage](../../../manyak-web/src/features/chats/room/utils/chat-login-draft-storage.ts) |
-| sessionStorage 로그인 진행 표시 | `manyak:pending-login`의 `'1'`. 공통 소셜 로그인 시작 함수가 OAuth로 떠나기 전에 기록하고 동의 게이트가 fail-closed 판정에 읽는다. 동의 완료·로그아웃에서 지운다. [pending-login-storage](../../../manyak-web/src/features/auth/_shared/utils/pending-login-storage.ts) |
+| sessionStorage 로그인 진행 표시 | `manyak:pending-login`의 `'1'`. 공통 소셜 로그인 시작 함수가 OAuth로 떠나기 전에 기록하고 동의 게이트가 가입 대기 조회와 fail-closed 판정에 읽는다. 동의 완료·가입 취소·재로그인 안내·로그아웃에서 지운다. 가입 대기 조회가 404여도 지우지 않는다(팝업 로그인 중인 원래 탭 보호). [pending-login-storage](../../../manyak-web/src/features/auth/_shared/utils/pending-login-storage.ts) |
 | localStorage 결제 대기 주문 | `manyak:pending-credit-order`의 `{orderId, savedAt}`. 그로블 결제창 이동 직전에 기록하고 복귀 폴링에 쓴다(24시간 TTL). 결과 확정·닫기·로그아웃·세션 만료·탈퇴에서 지우며, 확정 뒤 카드 유지는 컴포넌트 상태가 맡는다. [주문 저장소](../../../manyak-web/src/features/my/credits/utils/pending-credit-order-storage.ts) |
 
 편집 테이블은 `KEYWORD_DRAFT`, `STORY_DRAFT`, `STORYLINE_GENERATION`과 일반 제작 임시 저장본 `GENERAL_DRAFT`(폼 전체 스냅숏. 이미지는 객체 키와 원본 `Blob`)를, 완성 테이블은 `STORY_COMPLETION`을 requestId 기본 키로 보관합니다. 초기화는 Effect에서 이관을 마친 뒤 읽기 전용 `useLiveQuery`를 시작합니다. 두 목록은 같은 읽기 트랜잭션으로 조회하고 같은 origin의 Dexie 변경을 구독합니다. 비동기 조회 중 상태, 빈 목록, 오류를 구분합니다.
@@ -287,7 +287,13 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키를 함께 사용합니다. UI 회원 판정은 `useSession().status`, 회원 데이터는 `GET /auth/me`입니다.
 
-로그인은 provider 인증 → 백엔드 로그인 → 회원 조회 검증 → 토큰 쿠키 기록 순서입니다. 회원 검증 전에 쿠키를 확정해 반쪽 세션을 남기지 않습니다. [backend-session.ts](../../../manyak-web/src/lib/auth/backend-session.ts)의 `ensureFreshAccessToken`가 요청 전 access 만료 임박과 refresh 결과를 처리합니다.
+로그인은 provider 인증 → Auth.js `signIn` 콜백의 소셜 인증(`POST /auth/social/{provider}`) → 회원 조회 검증 → 토큰 쿠키 기록 순서입니다. 회원 검증 전에 쿠키를 확정해 반쪽 세션을 남기지 않습니다. [backend-session.ts](../../../manyak-web/src/lib/auth/backend-session.ts)의 `authenticateSocialLogin`이 소셜 인증을, `ensureFreshAccessToken`가 요청 전 access 만료 임박과 refresh 결과를 처리합니다.
+
+- **바로 완료(`COMPLETED`).** `signIn` 콜백이 토큰 쿠키를 쓰고 프로필을 `account` 객체 키의 `WeakMap`에 넣어 같은 콜백의 `jwt` 콜백에 넘깁니다. @auth/core 0.41.2가 두 콜백에 같은 `account`를 넘기는 것을 전제로 하므로 next-auth·@auth/core를 올릴 때 확인합니다.
+- **가입 대기(`CONSENT_REQUIRED`).** 세션과 토큰 쿠키를 만들지 않고 대기 코드·만료 시각·동의 상태를 HttpOnly 쿠키 `manyak_signup_consent`([signup-consent-cookie](../../../manyak-web/src/lib/auth/signup-consent-cookie.ts))에 대기 코드 만료 시각까지 보관합니다. `signIn` 콜백은 Auth.js가 기록한 `callbackUrl` 쿠키 값을 반환해 세션 없이 원래 화면으로 보냅니다. 대기 코드는 쿠키와 서버 사이에서만 다루며 BFF 응답, URL, 로그, 분석에 넣지 않습니다.
+- **가입 완료.** Credentials 프로바이더 `signup-consent`의 `authorize`가 쿠키의 대기 코드를 `X-Manyak-Consent-Token` 헤더로 `POST /auth/social/complete`에 보내고, 회원 조회 검증 뒤 토큰 쿠키를 쓰고 대기 쿠키를 지운 다음 세션을 만듭니다. 실패는 `CredentialsSignin.code`로 `expired`(대기 없음·401), `outdated`(버전 불일치·필수 항목 누락), `retryable`(그 밖)을 돌려주며, 다시 로그인해야 하는 두 경우만 대기 쿠키를 지웁니다.
+- **가입 대기 BFF.** [`/api/auth/signup-consent`](../../../manyak-web/src/app/api/auth/signup-consent/route.ts)의 `GET`은 대기가 있으면 동의 상태와 만료 시각을, 없으면 404를 `no-store`로 응답합니다. `DELETE`는 대기 쿠키를 지웁니다(서버 대기 코드는 TTL로 만료).
+- 소셜 인증 호출 실패는 `signIn` 콜백에서 던져 Auth.js가 `/login?error=AccessDenied`로 돌려보냅니다.
 
 | 상태 | BFF 처리 |
 | --- | --- |
@@ -308,13 +314,13 @@ Auth.js의 `__Secure-` 세션 쿠키와 청크를 삭제할 때는 실행 모드
 
 사용자 계약은 [공통 동의 모델](../spec/3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침)과 [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델)을 따릅니다. 판정은 루트 레이아웃의 [consent-gate](../../../manyak-web/src/features/auth/_shared/components/consent-gate.tsx) 한 곳에서 하고, 결과는 `useMemberAccess()`의 `isMember`(인증 + 필수 동의 완료)·`isGuest`(비로그인 확정)로 하위 트리가 재사용합니다. 프로바이더 밖 기본값은 둘 다 `false`입니다.
 
-- **조회.** `useSession().status`가 `authenticated`일 때만 `GET /users/me/consents`를 사용자 ID를 포함한 키로 `staleTime: Infinity`로 한 번 조회합니다. 갱신은 기록 성공 응답을 `setQueryData`로 반영하거나 시트의 재시도로만 합니다.
-- **단계.** `guest` / `checking`(세션 판정·조회 중, 401 세션 만료 처리 중) / `required`(필요 항목 있음 + 이 탭 로그인 표시 있음) / `stale-login`(필요 항목 있음 + 표시 없음 → `signOutBeforeConsent`가 `signOut({ redirect: false })`로 세션·백엔드 토큰만 비우고 페이지를 다시 불러오지 않아 같은 화면이 그 자리에서 게스트로 바뀜) / `blocked`(`/terms`·`/privacy`에서 필요 항목 있음 → 시트·로그아웃 없이 회원 기능만 잠금) / `satisfied` / `load-error`(네트워크·5xx, 재시도) / `forbidden`(403). `isMember`는 `satisfied`에서만 참입니다.
-- **시트.** [consent-sheet](../../../manyak-web/src/features/auth/_shared/components/consent-sheet.tsx)는 `Drawer`를 `disablePointerDismissal`과 no-op `onOpenChange`로 잠그고, `showSwipeHandle={false}`와 팝업의 `data-base-ui-swipe-ignore` 속성으로 스와이프 제스처 자체를 무시하며, `initialFocus`를 팝업 자신에 둡니다. 동의 없이 나가는 버튼은 없고 403 단계에만 로그아웃 버튼을 두며, 열린 동안 `useCloseOnBack`으로 뒤로가기를 `signOutBeforeConsent`(동의하지 않음)로 연결합니다. 체크 상태는 요구 버전 묶음에 매여 있어 재조회로 버전이 바뀌면 초기화됩니다. 기록 본문은 `buildConsentRequest`가 조회 응답의 `requiredVersion`으로만 만듭니다([consent-status](../../../manyak-web/src/features/auth/_shared/utils/consent-status.ts)).
-- **부수 효과 순서.** `AnalyticsUserSync`·`useAutoMigration`·`InviteOnboardingSheet`와 회원 전용 자동 조회(`/users/me/stories`·`/users/me/chats`·`/auth/me`·`/users/me/invite`)는 `status === 'authenticated'` 대신 `isMember`로 열립니다. 인증 확정 → 동의 조회 → (필요 시 시트·기록) → `satisfied` → 부수 효과 순서입니다.
+- **조회.** `useSession().status`가 `authenticated`일 때만 `GET /users/me/consents`를 사용자 ID를 포함한 키로 `staleTime: Infinity`로 한 번 조회합니다. 갱신은 기록 성공 응답을 `setQueryData`로 반영하거나 시트의 재시도로만 합니다. `unauthenticated`이고 이 탭 로그인 표시가 있으며 법적 문서 경로가 아니면 가입 대기 BFF를 페이지 로드당 한 번(`staleTime: Infinity`, 재시도 없음) 조회합니다. 정산(가입 완료 외 결과)은 쿼리 데이터를 `null`로 비웁니다.
+- **단계.** `guest` / `checking`(세션 판정·조회 중, 401 세션 만료 처리 중) / `required`(필요 항목 있음 + 이 탭 로그인 표시 있음) / `stale-login`(필요 항목 있음 + 표시 없음 → `signOutBeforeConsent`가 `signOut({ redirect: false })`로 세션·백엔드 토큰만 비우고 페이지를 다시 불러오지 않아 같은 화면이 그 자리에서 게스트로 바뀜) / `blocked`(`/terms`·`/privacy`에서 필요 항목 있음 → 시트·로그아웃 없이 회원 기능만 잠금) / `satisfied` / `load-error`(네트워크·5xx, 재시도) / `forbidden`(403) / `signup-required`(세션 없음 + 표시 있음 + 가입 대기에 필요 항목 있음) / `signup-load-error`(가입 대기 조회의 네트워크·5xx, 재시도). 가입 대기를 조회하는 동안은 `checking`, 대기가 없으면 `guest`입니다. `isMember`는 `satisfied`에서만 참입니다.
+- **시트.** [consent-sheet](../../../manyak-web/src/features/auth/_shared/components/consent-sheet.tsx)는 `Drawer`를 `disablePointerDismissal`과 no-op `onOpenChange`로 잠그고, `showSwipeHandle={false}`와 팝업의 `data-base-ui-swipe-ignore` 속성으로 스와이프 제스처 자체를 무시하며, `initialFocus`를 팝업 자신에 둡니다. 동의 없이 나가는 버튼은 없고 403 단계에만 로그아웃 버튼을 두며, 열린 동안 `useCloseOnBack`으로 뒤로가기를 `signOutBeforeConsent`(동의하지 않음)로 연결합니다. 가입 단계는 같은 시트에서 제출을 [signup-consent-client](../../../manyak-web/src/features/auth/_shared/utils/signup-consent-client.ts)의 `signIn('signup-consent', { redirect: false })`로, 뒤로가기를 가입 취소(`DELETE` + 표시 삭제)로 바꾸며 403 단계를 쓰지 않습니다. 결과는 `onSignupSettled`로 게이트에 넘기고, 게이트가 성공이면 광고 동의 답만 스토어에 싣고 만료·약관 갱신이면 토스트와 함께 표시와 대기 조회를 비웁니다. 체크 상태는 요구 버전 묶음에 매여 있어 재조회로 버전이 바뀌면 초기화됩니다. 기록 본문은 `buildConsentRequest`가 조회 응답의 `requiredVersion`으로만 만듭니다([consent-status](../../../manyak-web/src/features/auth/_shared/utils/consent-status.ts)).
+- **부수 효과 순서.** `AnalyticsUserSync`·`useAutoMigration`·`InviteOnboardingSheet`와 회원 전용 자동 조회(`/users/me/stories`·`/users/me/chats`·`/auth/me`·`/users/me/invite`)는 `status === 'authenticated'` 대신 `isMember`로 열립니다. 가입은 가입 대기 → 시트 → 가입 완료(세션 생성) → 동의 조회 → `satisfied` → 부수 효과, 로그인한 세션은 인증 확정 → 동의 조회 → (필요 시 시트·기록) → `satisfied` → 부수 효과 순서입니다.
 - **보호 기능 진입.** 제작과 채팅의 생성 및 전송 요청은 [게스트 동의 시트](#게스트-동의-시트-웹)의 공용 확인 함수를 사용합니다. 회원 필수 동의가 남은 상태는 차단합니다. 채팅방 생성은 게스트에게 열려 있으며 새 ID를 지속 저장소 서재에 추가합니다. `/studio/story/simple`은 `isMember` 또는 `isGuest`이면 즉시 퍼널을 표시하고, 세션 및 회원 동의 판정 전에는 스피너를 표시합니다. 게스트 전용 진입 동의 화면은 두지 않습니다.
 - **복귀 경로.** 로그인 시트는 `readCurrentAppPath()`(pathname + search + hash)를 `resolveLoginCallbackUrl`로 검증해 `redirectTo`로 보냅니다.
-- **한계.** `sessionStorage` 표시는 탭 복원·복제·`noopener` 없는 새 창에서 복사·복원될 수 있어 보안 경계가 아닙니다. 서버는 미동의 회원의 다른 API를 막지 않으므로 이 게이트는 UI·부수 효과를 fail-closed로 잠그는 앱 수준 장치이며, 정본은 항상 동의 조회 API입니다.
+- **한계.** `sessionStorage` 표시는 탭 복원·복제·`noopener` 없는 새 창에서 복사·복원될 수 있어 보안 경계가 아닙니다. 가입 경로는 동의 전에 세션을 만들지 않아 표시가 복사돼도 동의 없이 회원 기능이 열리지 않습니다. 로그인한 세션의 게이트는 UI·부수 효과를 fail-closed로 잠그는 앱 수준 장치이며, 그 정본은 동의 조회 API입니다.
 
 ### 웹 푸시 (웹)
 
@@ -339,11 +345,11 @@ Auth.js의 `__Secure-` 세션 쿠키와 청크를 삭제할 때는 실행 모드
 
 #### 인앱 브라우저의 Google 인증 팝업
 
-[start-google-popup-login](../../../manyak-web/src/features/auth/_shared/utils/start-google-popup-login.ts)은 클릭 중 빈 팝업을 먼저 열고 `signIn('google', { redirect: false })`로 얻은 Google 인가 URL을 그 창에 로드합니다. 코드 교환과 PKCE, state, nonce 검증은 Auth.js가 처리하며 별도 Google SDK나 Credentials provider는 추가하지 않습니다. Auth.js의 단일 Google 트랜잭션 쿠키에 맞춰 문서 안에서 중복 팝업을 막습니다.
+[start-google-popup-login](../../../manyak-web/src/features/auth/_shared/utils/start-google-popup-login.ts)은 클릭 중 빈 팝업을 먼저 열고 `signIn('google', { redirect: false })`로 얻은 Google 인가 URL을 그 창에 로드합니다. 코드 교환과 PKCE, state, nonce 검증은 Auth.js가 처리하며 Google 인증에 별도 SDK나 Credentials provider를 쓰지 않습니다. Auth.js의 단일 Google 트랜잭션 쿠키에 맞춰 문서 안에서 중복 팝업을 막습니다.
 
-성공 후 `/api/auth/popup-complete?attempt=<UUID>`가 원래 창에 완료 여부만 알립니다. 이 Route Handler는 루트 레이아웃을 실행하지 않습니다. 응답은 `no-store`, `no-referrer`, 인라인 스크립트 nonce와 프레임 차단 CSP를 사용합니다. 안내 문구는 [popup-login](../../../manyak-web/src/lib/auth/popup-login.ts)의 `POPUP_LOGIN_COPY`가 소유합니다.
+성공 후 `/api/auth/popup-complete?attempt=<UUID>`가 원래 창에 완료 여부(`authenticated`)와 세션 없이 가입 대기가 남았는지(`consentRequired`)만 알립니다. 이 Route Handler는 루트 레이아웃을 실행하지 않습니다. 응답은 `no-store`, `no-referrer`, 인라인 스크립트 nonce와 프레임 차단 CSP를 사용합니다. 안내 문구는 [popup-login](../../../manyak-web/src/lib/auth/popup-login.ts)의 `POPUP_LOGIN_COPY`가 소유합니다.
 
-원래 창은 `postMessage`의 origin, source와 시도 UUID를 모두 확인합니다. 알림을 자격증명으로 신뢰하지 않고 Auth.js 세션을 재조회한 뒤 생성 API 클라이언트의 `me()` 응답 회원 ID가 일치할 때만 검증된 상대 경로로 전체 이동합니다. 인증 확인용 `/auth/me` 호출은 로그인 완료 검사이며 회원 기능을 허용하는 판정이 아닙니다. `start-social-login`이 팝업을 열기 전에 원래 탭에 기록한 로그인 표시로 동의 절차를 이어갑니다. 이동한 원래 탭의 ConsentGate에서 서버 필수 동의를 확인하고 완료한 뒤에만 온보딩과 자동 이관을 시작합니다.
+원래 창은 `postMessage`의 origin, source와 시도 UUID를 모두 확인합니다. 알림을 자격증명으로 신뢰하지 않고 Auth.js 세션을 재조회한 뒤 생성 API 클라이언트의 `me()` 응답 회원 ID가 일치할 때만 검증된 상대 경로로 전체 이동합니다. 인증 확인용 `/auth/me` 호출은 로그인 완료 검사이며 회원 기능을 허용하는 판정이 아닙니다. `consentRequired`이거나 세션 재확인 때 세션은 없고 가입 대기 BFF가 대기를 돌려주면 회원 조회 없이 같은 상대 경로로 전체 이동합니다. `start-social-login`이 팝업을 열기 전에 원래 탭에 기록한 로그인 표시로 동의 절차를 이어갑니다. 이동한 원래 탭의 ConsentGate가 가입 동의를 받아 세션을 만든 뒤에만 온보딩과 자동 이관을 시작합니다.
 
 창 닫힘과 원래 문서의 focus 또는 visibility 복귀는 세션 재확인의 계기입니다. COOP(Cross-Origin-Opener-Policy)로 창 연결이 끊겨도 `popup.closed`가 true가 될 수 있으므로 미인증 상태를 즉시 취소로 확정하지 않습니다. 실제 닫힘과 참조 단절을 구별할 수 없을 때는 인증 완료 또는 5분 만료까지 기다립니다. OAuth 오류로 `/login?error=…`에 도착하거나 명시적인 실패 메시지를 받으면 팝업을 정리하고 실패를 반환합니다.
 
@@ -381,8 +387,8 @@ COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀
 기존에 발급된 핸드오프는 다음 복구 경로를 유지합니다.
 
 1. 기존 `/login/continue?handoff=…` 링크를 인앱에서 열면 외부 전환 안내를 유지합니다. 외부 랜딩은 코드를 검증해 짧은 httpOnly 쿠키로 옮기고 주소에서 코드만 제거합니다. 함께 전달된 UTM은 유지합니다. `Cache-Control: no-store`와 `Referrer-Policy: no-referrer`를 적용하고, 이관 건수를 보여준 뒤 사용자 클릭으로 로그인을 시작합니다. 성공 수령 시 온보딩 열람도 기록합니다.
-2. BFF는 첫 백엔드 로그인 전에 쿠키를 읽어 `handoffCode`를 로그인 본문에 싣습니다. 핸드오프가 없으면 Amplitude 쿠키의 device ID를 헤더로 전달합니다. 회원 체험 시드가 확정된 뒤 보충하지 않습니다.
-3. 로그인 자체가 시드와 이관을 소비하므로 별도 소비 API를 호출하지 않습니다. 성공 후 검증된 앱 내 상대 callbackPath로 이동하고 [동의 게이트](#동의-게이트-웹)에서 필수 동의를 받은 뒤 이관 결과를 반영합니다. 서버의 이관 1회, 시도 5회 상한을 따릅니다.
+2. BFF는 소셜 인증 전에 쿠키를 읽어 `handoffCode`를 소셜 인증 본문에 싣습니다. 핸드오프가 없으면 Amplitude 쿠키의 device ID를 헤더로 전달합니다. 동의가 남으면 서버가 두 값을 대기 코드에 보관해 가입 완료 때 사용합니다. 회원 체험 시드가 확정된 뒤 보충하지 않습니다.
+3. 로그인 완료(바로 완료 또는 가입 완료)가 시드와 이관을 소비하므로 별도 소비 API를 호출하지 않습니다. 검증된 앱 내 상대 callbackPath로 이동하고 [동의 게이트](#동의-게이트-웹)에서 필수 동의를 받은 뒤 이관 결과를 반영합니다. 서버의 이관 1회, 시도 5회 상한을 따릅니다.
 4. 인앱 복귀 시 이관에 성공한 ID만 제거합니다. 발급 뒤 만든 데이터와 `migrationClosed`로 이관하지 못한 ID는 보존합니다. 새 로그인은 같은 저장소의 [use-auto-migration](../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts)에서 회원 필수 동의 완료 후 기존 게스트 데이터를 이관합니다.
 
 코드·토큰·공유 식별자는 관측 데이터에서 제외합니다. 실패 분기는 [인증 QA](../qa/auth.md)로 확인합니다.
