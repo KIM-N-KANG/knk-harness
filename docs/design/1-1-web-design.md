@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-10-05 |
 | 대상 | manyak-web |
 | 작성 목적 | 웹의 현재 요청·라우팅·인증·관측 구조를 설명합니다. |
 | 기준 코드 | [manyak-web](../../../manyak-web) |
@@ -122,6 +122,15 @@ graph LR
 - sentinel은 `useInView(initialInView: false)`로 관찰합니다. 다음 요청 진행·실패 중에는 자동 요청을 멈추고 실패는 재시도 버튼으로 처리합니다.
 - 받은 항목이 없을 때만 전체 오류를 표시합니다. 다음 페이지 오류는 `isFetchNextPageError`로 목록 아래에 표시해 기존 항목을 유지합니다.
 - `gcTime: 0`으로 이탈 시 페이지를 버리고 재진입 때 첫 페이지부터 읽습니다. 잔액은 별도 `useMe(refetchOnMount: 'always')`를 사용합니다.
+
+### 제공 장르 조회와 선택 (웹)
+
+간편 제작 키워드 단계, 일반 제작·수정 등록 탭의 장르 선택 구조입니다. 계약은 [공통 Spec 장르 검색과 선택](../spec/3-1-client-spec.md#장르-검색과-선택)을 따릅니다.
+
+- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGet2`, 백엔드 operationId가 없어 붙은 이름)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
+- 표시: 공용 [GenreSearchCombobox](../../../manyak-web/src/features/stories/_shared/components/genre-search-combobox.tsx)(shadcn `combobox`, Base UI `multiple`)가 검색 목록을, 기존 `TagChipGrid`가 칩을 그립니다. 칩 순서는 [genre-catalog](../../../manyak-web/src/features/stories/_shared/utils/genre-catalog.ts)의 `getGenreChips`(대표 장르 뒤에 대표 밖 장르)가, 이전 입력의 정식 이름 비교는 `findGenreByName`(공백 제거·소문자)이 정합니다.
+- 간편 제작 상태: [useGenreSelection](../../../manyak-web/src/features/stories/new/hooks/use-genre-selection.ts)이 고른 id·대표 밖 칩 id·이전 직접 입력 장르를 보관합니다. 화면과 요청은 [resolveSimpleGenreSelection](../../../manyak-web/src/features/stories/new/utils/genre-selection.ts)으로 제공 목록에 맞춰 정리한 값을 쓰고, `toggleSimpleGenre`로 장르를 바꿀 때 정리한 값을 상태에 반영합니다. `KEYWORD_DRAFT` 스냅숏은 정리 전 값(`selectedGenreTagIds`, `addedGenreTagIds`, `customGenreTags`)으로 만들어 복원 직후 목록 도착만으로 저장 비교 키가 바뀌지 않게 합니다. 퍼널의 `requestGenerateStorylines`는 새 requestId 요청에서 `customGenreTags`를 빼고 같은 requestId 재시도만 저장한 값을 보냅니다. 선택한 키워드 드로어는 간편 제작 태그와 제공 장르 전체 목록으로 이름을 찾습니다.
+- 일반 제작·수정 상태: [GeneralStoryGenreSelection](../../../manyak-web/src/features/studio/general/utils/genre-selection.ts)에 대표 밖 칩 순서 `addedTagIds`를 둡니다. 새 등록(임시 저장본·반려 제출본)은 `resolveGeneralGenres`로 제공 목록 밖 장르를 정리하고, 수정은 서버가 기존 장르를 유지하므로 정리하지 않고 제공 목록 밖 장르를 칩으로 보입니다. 제출본·수정 폼의 장르 이름은 `toGenreSelection`이 제공 장르 전체 목록과 비교해 폼 선택으로 바꾸며, 진입 화면은 목록을 받은 뒤 폼을 엽니다.
 
 ## 1-1-2. 라우팅·레이아웃·공통 셸
 
@@ -254,7 +263,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 | --- | --- |
 | 기본·서사 서체 | Pretendard / MaruBuri. `.font-maruburi` 한 곳에서 자간 -2%·행간 175%. 본문 16px(28px), 추천 14px(24.5px) |
 | 목록 행 | 가로 16px·세로 8px 패딩, 열 간격 16px, 하단 8px. 제작 표지 128px·3:4, 채팅 표지 48px·3:4·모서리 12px. 옵션 아이콘 위로 1px 보정; 스켈레톤 동일 |
-| 홈·상세 | 표지 3:4. 상세 헤더 56px, 로딩 지연 300ms·펄스 1.4초, Select 모서리 10px, 메타 패딩·행 간격 16px |
+| 홈·상세 | 표지 3:4. 상세 헤더 56px, 로딩 지연 300ms·펄스 1.4초, Select 옵션 모서리 12px, 메타 패딩·행 간격 16px |
 | 제작 FAB·진행 카드 | FAB hover 3% 확대·primary 불투명도 유지. 진행→완성 카드는 같은 자리에서 opacity 200ms ease-out으로 교체. 빠지는 행은 popLayout으로 새 행과 겹쳐 페이드하고 기존 행은 layout="position"으로 필요한 위치 변화만 200ms 보간. 완성 중 제목은 공용 `TextShimmer`에 4초 주기를 지정. 점 격자는 `ImageGeneration`의 `interactive` 옵션을 활성화해 hover·fine pointer 환경에서 포인터를 추적하며, 영역 밖에서는 자동 이동. 동작 줄이기에서 행 교체는 즉시, 위치·확대·장식 모션 중지 |
 | 제작 방식 선택 화면 | 시안(`manyak-marketing/story-create-mode-dialog.html`)을 화면으로 옮긴 것으로 선택지는 `border-border` 테두리·모서리 20px 카드이며, 위쪽은 일러스트가 꽉 채우고 아래쪽 구분선 밑에 제목·설명을 둠. hover 시 카드 배경 `muted`. 카드는 iPhone SE(375×667)에서 스크롤 없이 딱 차는 높이부터 Pixel 10(412×924)에서 위 16px·아래 32px 여백이 남는 높이까지 남는 높이를 반씩 채우고, 더 큰 화면에서는 가운데에 놓임. 일러스트 안쪽 크기는 `min(1cqw, 4/3cqh)` 단위라 카드가 납작해지면 장면 전체가 같은 비율로 줄고 가로 가운데에 놓임. 앱 프레임이 448px라 시안의 데스크톱 가로 배치·화살표는 두지 않음. 일러스트는 시안의 CSS·스크립트를 그대로 옮긴 CSS 모듈([create-story-mode-illustrations.module.css](../../../manyak-web/src/features/studio/story/components/create-story-mode-illustrations.module.css))로 두고, 색·곡률·마루부리 서체와 자간만 `globals.css` 토큰으로 바꿔 다크 모드를 따라감. 일반 제작의 제목·한 줄 소개는 시안의 밑줄 대신 `Input`과 같은 칸(고정 높이, 입력 중 포커스 링)으로 그림. 루프는 [use-illustration-timeline](../../../manyak-web/src/features/studio/story/hooks/use-illustration-timeline.ts)이 시안과 같은 setTimeout 박자로 클래스만 바꾸며, 탭이 가려지면 다음 단계에서 멈추고 언마운트 시 중단함 |
 | 제작 퍼널 로딩 | 스토리라인 생성·스토리 완성은 `StoryGeneratingLoading`을 공유하며 `ReasoningText`의 문구 전환 간격과 쉬머 주기를 각각 4초로 지정. 문구 왼쪽 로더는 `ReasoningText` 기본값(`Loader` dots 14px) |
