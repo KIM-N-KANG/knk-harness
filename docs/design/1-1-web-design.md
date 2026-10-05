@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-09-14 |
+| 수정일 | 2026-10-05 |
 | 대상 | manyak-web |
 | 작성 목적 | 웹의 현재 요청·라우팅·인증·관측 구조를 설명합니다. |
 | 기준 코드 | [manyak-web](../../../manyak-web) |
@@ -122,6 +122,15 @@ graph LR
 - sentinel은 `useInView(initialInView: false)`로 관찰합니다. 다음 요청 진행·실패 중에는 자동 요청을 멈추고 실패는 재시도 버튼으로 처리합니다.
 - 받은 항목이 없을 때만 전체 오류를 표시합니다. 다음 페이지 오류는 `isFetchNextPageError`로 목록 아래에 표시해 기존 항목을 유지합니다.
 - `gcTime: 0`으로 이탈 시 페이지를 버리고 재진입 때 첫 페이지부터 읽습니다. 잔액은 별도 `useMe(refetchOnMount: 'always')`를 사용합니다.
+
+### 제공 장르 조회와 선택 (웹)
+
+간편 제작 키워드 단계, 일반 제작·수정 등록 탭의 장르 선택 구조입니다. 계약은 [공통 Spec 장르 검색과 선택](../spec/3-1-client-spec.md#장르-검색과-선택)을 따릅니다.
+
+- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGet2`, 백엔드 operationId가 없어 붙은 이름)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
+- 표시: 공용 [GenreSearchCombobox](../../../manyak-web/src/features/stories/_shared/components/genre-search-combobox.tsx)(shadcn `combobox`, Base UI `multiple`)가 검색 목록을, 기존 `TagChipGrid`가 칩을 그립니다. 칩 순서는 [genre-catalog](../../../manyak-web/src/features/stories/_shared/utils/genre-catalog.ts)의 `getGenreChips`(대표 장르 뒤에 대표 밖 장르)가, 이전 입력의 정식 이름 비교는 `findGenreByName`(공백 제거·소문자)이 정합니다.
+- 간편 제작 상태: [useGenreSelection](../../../manyak-web/src/features/stories/new/hooks/use-genre-selection.ts)이 고른 id·대표 밖 칩 id·이전 직접 입력 장르를 보관합니다. 화면과 요청은 [resolveSimpleGenreSelection](../../../manyak-web/src/features/stories/new/utils/genre-selection.ts)으로 제공 목록에 맞춰 정리한 값을 쓰고, `toggleSimpleGenre`로 장르를 바꿀 때 정리한 값을 상태에 반영합니다. `KEYWORD_DRAFT` 스냅숏은 정리 전 값(`selectedGenreTagIds`, `addedGenreTagIds`, `customGenreTags`)으로 만들어 복원 직후 목록 도착만으로 저장 비교 키가 바뀌지 않게 합니다. 퍼널의 `requestGenerateStorylines`는 새 requestId 요청에서 `customGenreTags`를 빼고 같은 requestId 재시도만 저장한 값을 보냅니다. 선택한 키워드 드로어는 간편 제작 태그와 제공 장르 전체 목록으로 이름을 찾습니다.
+- 일반 제작·수정 상태: [GeneralStoryGenreSelection](../../../manyak-web/src/features/studio/general/utils/genre-selection.ts)에 대표 밖 칩 순서 `addedTagIds`를 둡니다. 새 등록(임시 저장본·반려 제출본)은 `resolveGeneralGenres`로 제공 목록 밖 장르를 정리하고, 수정은 서버가 기존 장르를 유지하므로 정리하지 않고 제공 목록 밖 장르를 칩으로 보입니다. 제출본·수정 폼의 장르 이름은 `toGenreSelection`이 제공 장르 전체 목록과 비교해 폼 선택으로 바꾸며, 진입 화면은 목록을 받은 뒤 폼을 엽니다.
 
 ## 1-1-2. 라우팅·레이아웃·공통 셸
 

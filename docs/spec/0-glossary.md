@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.14 |
 | 작성일 | 2026-07-05 |
-| 수정일 | 2026-09-09 |
+| 수정일 | 2026-10-05 |
 | 대상 | 마냑 전 레포지토리 (manyak-web · manyak-android · manyak-server · manyak-ai · llm-wiki · knk-harness) |
 | 작성 목적 | 레포지토리 간 용어 불일치를 없애고, 앞으로의 개발에서 통일된 단어 사용 기준을 정의한다. |
 
@@ -67,7 +67,9 @@
 | 프롤로그 | `prologue` | 채팅 시작 시 먼저 보여주는 도입 서사 텍스트 | "채팅 첫 메시지", "도입부 내레이션", first message, greeting |
 | 추천 입력 | `suggested_inputs` | 채팅 시작 화면에서 제안하는 첫 입력 후보 문구(3개). 선택지(§0-3-3)와 다른 개념 | `recommendedInputs`, 선택지를 "추천 입력"으로 부르는 것 |
 | 태그 | `tag`, `tag_id` | 간편 제작에서 선택하거나 직접 추가하는 스토리 속성. `PREDEFINED`(제공)와 `CUSTOM`(직접 추가)으로 나뉨. Phase 1 구현(KNK-717) — 직접 추가 태그의 동일성은 정규화 키(trim → 내부 공백 제거 → lowercase)로 판정하고 표시명은 최초 입력의 trim본 유지([`4-backend-server-spec.md §4-3-2`](4-backend-server-spec.md)) | "키워드"(코드·데이터·이벤트·문서. UI 카피 전환은 별도 논의) |
-| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 구현(KNK-834·858) — 주인공·주변 인물은 특징 태그 묶음이 아니라 인물 단위(이름·성별·특징)로 입력받는다. 직접 추가 태그는 카테고리별 배열이 아니라 장르의 `customGenreTags`와 인물별 `customTags`로 나뉘어 전송된다([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)). Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고 장르·배경을 UI에서 "세계관" 탭으로 묶는 것은 미구현([`4-backend-server-spec.md §4-3-2`](4-backend-server-spec.md)) | `tag_type` |
+| 태그 카테고리 | `category`: `GENRE` · `PROTAGONIST` · `SUPPORTING_CHARACTER` | 태그 분류 3종: 장르 · 주인공 특징 · 주변 인물 특징. Phase 2 구현(KNK-834·858) — 주인공·주변 인물은 특징 태그 묶음이 아니라 인물 단위(이름·성별·특징)로 입력받는다. 직접 추가 태그는 카테고리별 배열이 아니라 인물별 `customTags`로 전송된다. 장르는 제공 장르만 고르며 `customGenreTags`는 제공 장르 전환 전 요청의 호환 필드로만 남는다([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md#장르-검색과-선택)). Phase 2 계획(KNK-621) — `BACKGROUND`(배경)를 추가해 4종으로 확장하고 장르·배경을 UI에서 "세계관" 탭으로 묶는 것은 미구현([`4-backend-server-spec.md §4-3-2`](4-backend-server-spec.md)) | `tag_type` |
+| 제공 장르 | `genres`(`GET /stories/genres`), `genreTagIds` | 서버가 관리하는 활성 장르 목록(KNK-1537). 클라이언트는 직접 입력 대신 이 목록에서 검색해 고르며, id는 장르 태그 id와 같다([`4-backend-server-spec.md` 제공 장르와 검색](4-backend-server-spec.md#genre-catalog)) | — |
+| 대표 장르 | `featuredGenres` | 제공 장르 중 칩으로 먼저 보이는 15개. 검색어와 관계없이 대표 순서로 받는다 | — |
 | 추가 정보 | `additional_infos` | 사용자가 스토리라인에 첨부하는 보강 정보(추천 채택분 포함, 총 13개 상한) | `extra_info` |
 | 추천 추가 정보 | `recommended_infos` | 스토리라인마다 AI가 제안하는 추가 정보 후보 3개 | "추천 질문"(`questions`, 레거시) |
 | 로어북 | `lorebook` | 장르 공용 용어 사전. 트리거 키워드 없는 카탈로그 | world info |
