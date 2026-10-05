@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.5 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-04 |
+| 수정일 | 2026-10-05 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -237,11 +237,11 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프로필 대기는 합계 최대 5초이며 일치하는 회원을 확인하지 못하면 폐기합니다. 표시 직전 다시 확인하고 계정 전환을 넘어 알림을 보관하지 않습니다. 로그아웃의 `UserScopedStore` 정리는 표시 알림을 `cancelAll`합니다.
 
-서비스 채널은 HIGH·PRIVATE, 마케팅 채널은 DEFAULT·PUBLIC입니다. foreground·background 모두 시스템 알림을 사용하며 type+target에서 안정된 알림 ID를 만듭니다. title이 없으면 표시하지 않고 알 수 없는 type의 진입 목적지는 홈입니다.
+서비스 채널은 HIGH·PRIVATE, 마케팅 채널은 DEFAULT·PUBLIC입니다. foreground·background 모두 시스템 알림을 사용하며 type+target에서 안정된 알림 ID를 만듭니다. `STORY_MODERATION_COMPLETED`의 target은 `submissionId`이며, `APPROVED`, `REJECTED`, `FAILED`만 수신합니다. 이 타입은 서버 `title`과 `body`를 그대로 사용하고 서비스 알림의 공개 버전은 제목 줄만 표시합니다. title이 없으면 표시하지 않고 알 수 없는 type의 진입 목적지는 홈입니다.
 
 ### 알림 진입과 권한
 
-`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리는 무시, 무료 탭이 기본)이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
+`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리는 무시, 무료 탭이 기본), `/studio`→제작 탭이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
 
 `onCreate`·`onNewIntent`에서 루트 ViewModel의 pending 값을 SavedStateHandle로 전달합니다. 프로세스 복원 때 최초 Intent를 다시 해석하지 않습니다. 로그인 대기 진입은 회원·프로필 확인 뒤 recipient가 일치할 때만 소비하고 불일치하면 홈으로 보냅니다.
 
@@ -278,6 +278,12 @@ Room DB v4는 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
 v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. destructive migration을 사용하지 않습니다.
+
+### 검수 제출본
+
+`studio`의 `StudioRepository`가 제출본 목록과 삭제를 소유합니다. API 응답에서 CREATE이면서 스토리가 없고 알려진 미승인 상태인 항목만 카드로 변환하며, 표시할 제목과 표지, 등록 시각, 사유 수와 이미지 오류 여부만 화면 모델에 둡니다. 원문과 편집 폼을 로컬에 저장하지 않습니다.
+
+`StudioViewModel`은 제출본 조회와 삭제를 하나의 Mutex로 직렬화해 삭제 전의 늦은 목록 응답이 카드를 되살리지 못하게 합니다. 마지막 성공 목록을 기준으로 제거를 감지하고 내 스토리를 갱신하며, 스토리 조회가 이미 실행 중이면 그 응답 뒤 한 번 더 조회합니다. 실패 시 화면 카드만 숨기고 마지막 검토 중 판정은 유지해 노출 중 다음 주기에서 복구합니다. 반복 조회는 `StudioScreen`의 STARTED 수명이 소유하며 화면 이탈 시 진행 중 폴링 요청도 취소합니다. 옵션과 확인 대상은 기존 ViewModel 상태로 유지하고 최신 목록에서 상태가 달라지거나 사라지면 갱신합니다. 등록 취소와 삭제 선택은 `client_storyList_submissionCard_clicked`에 식별자, 상태, 동작만 기록합니다.
 
 ### 제작 로딩 표현
 
