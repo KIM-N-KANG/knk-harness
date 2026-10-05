@@ -152,6 +152,7 @@
 | CHAT-IMAGE-12 | P0  | 오리지널 스토리 인물 이미지가 `/characters/originals/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch | 스트리밍 중 이미지가 즉시 표시되고 확정 뒤에도 같은 위치에 유지되며, 저장 마커 글자와 URL은 노출되지 않음                                         | ✅ e2e `chats/chat-room` + unit `chat-message-segments` | §3-1-5 인물 이미지 렌더, KNK-1055 |
 | CHAT-IMAGE-13 | P1  | 확정 턴 또는 공유 화면에 인물 이미지 존재      | 이미지 탭 → 뷰어의 이미지 탭 → X·이미지 밖 배경 탭·뒤로가기로 각각 닫기 | 스토리 상세 썸네일과 같은 풀스크린 이미지 뷰어 열림. 뷰어 안 이미지를 탭하면 닫히지 않음. X·배경 탭·뒤로가기로는 페이지 이동 없이 뷰어만 닫히고 채팅방·공유 화면에 머묾 | ◐ e2e `chats/chat-room`·`share/shared-chat`(X 닫기만), 이미지·배경 탭은 `stories/story-detail` 공용 뷰어로 검증 | §3-1-5 인물 이미지 렌더, KNK-1276·1427 |
 | CHAT-IMAGE-14 | P0  | 일반 제작·수정에서 올린 인물 이미지가 `/characters/uploaded/**` URL로 전달됨 | 스트리밍 수신 → 완료·상세 refetch, 스토리 상세 주변 인물 확인 | 채팅에서는 오리지널 이미지와 같이 스트리밍 중 즉시 표시되고 확정 뒤에도 같은 위치에 유지됨. 스토리 상세 주변 인물 카드에도 같은 이미지가 표시됨 | ◐ unit `chat-message-segments`(URL 허용) + e2e `stories/story-detail`(상세 카드), 채팅 화면은 수동 | §3-1-5 인물 이미지 렌더, KNK-1503 |
+| CHAT-IMAGE-15 | P0  | 오리지널 스토리 프롤로그에 `/scenes/originals/**` 장면 이미지 마커가 독립 줄로 있고 다음 줄은 지문 | 채팅방 진입 | 프롤로그 버블의 마커 위치에 "장면 이미지" 이미지가 표시되고 앞뒤 지문이 이어짐. 마커 글자·URL은 노출되지 않음. 탭하면 인물 이미지와 같은 풀스크린 뷰어 | ✅ e2e `chats/chat-room` + unit `chat-message-segments` | §3-1-5 장면 이미지 렌더, KNK-1545 |
 
 ## CHAT-INPUT — 입력창·추천 입력·선택지
 
@@ -253,6 +254,7 @@
 | SHARE-VIEW-10 | P2  | 유효한 공유 링크                     | 브라우저 탭 제목 확인        | 데이터 도착 후 `스토리 제목 - 마냑`. 서버 메타데이터 조회가 실패해도 채팅 화면과 같은 형식으로 맞춰짐   | ✅ e2e `share/shared-chat`   | 구현(`shared-chat-screen`)      |
 | SHARE-VIEW-11 | P1  | 공유 링크로 처음 방문(쿠키 없음)     | CTA "나만의 스토리 만들고 채팅하기" 탭 | 스토리 생성 퍼널(`/studio/story/simple`)로 바로 이동. 이후 홈에 들어가도 온보딩이 뜨지 않음(열람 화면에서 이미 서비스를 봤으므로) | ✅ e2e `share/shared-chat`  | 설계 결정                       |
 | SHARE-VIEW-12 | P1  | SHARE-VIEW-11 직후                   | 생성 퍼널에서 뒤로가기       | 진입 경로와 관계없이 제작(`/studio`) 화면으로 이동                                                                            | 수동                         | 구현(`use-story-create-funnel`), KNK-988 |
+| SHARE-VIEW-13 | P1  | 프롤로그에 장면 이미지 마커가 있는 채팅의 공유 링크 | `/share/[shareId]` 열람, 링크 미리보기 확인 | 프롤로그 버블에 채팅방과 같은 위치로 장면 이미지 표시. 링크 미리보기 설명에는 마커 줄과 URL이 없음 | ✅ e2e `share/shared-chat` + unit `share-description` | §3-1-5 장면 이미지 렌더·링크 미리보기, KNK-1545 |
 
 <a id="chat-regen--응답-재생성-미배포"></a>
 
