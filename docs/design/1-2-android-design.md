@@ -319,7 +319,7 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 
 ### 제작 로딩 표현
 
-로고 마스코트 대기 장면은 시간에서 자세를 계산하는 순수 함수 안무와 그것을 그리기만 하는 Canvas로 나뉘며 API·폴링 상태를 소유하지 않습니다. `designsystem`의 `ManyakMascot`이 눈 모양별 몸을, `mascot` 패키지가 낱동작·막 이음·붓길 해석과 베레모·붓·붓질 그리기를 소유합니다. `chat`의 `RealtimeImageStage`는 이 재료로 실시간 이미지 대기 장면을 그리고, `studio`의 `StoryCompletingStage`는 `ManyakMascot`과 자체 낱동작으로 3:4 완성 중 표지를 그립니다.
+로고 마스코트 대기 장면은 시간에서 자세를 계산하는 순수 함수 안무와 그것을 그리기만 하는 Canvas로 나뉘며 API·폴링 상태를 소유하지 않습니다. `designsystem`의 `ManyakMascot`이 눈 모양별 몸을, `mascot` 패키지가 낱동작·막 이음·붓길 해석과 베레모·붓·붓질 그리기를 소유합니다. `chat`의 `RealtimeImageStage`는 이 재료로 실시간 이미지 대기 장면을, `studio`의 `StoryCompletingStage`는 3:4 완성 중 표지를 그리고, 각 장면만의 낱동작과 소품은 해당 기능 모듈에 둡니다.
 
 `rememberTextShimmerBrush`는 채팅의 기존 브러시를 공용화한 것으로, `create`의 순환 문구와 `studio`의 완성 제목은 4초 주기, 채팅 대기 문구는 기존 2초·색을 사용합니다. 4초마다 글자 단위로 교차하는 순환 문구는 `designsystem`의 `CyclingPhrases`가 소유하며 스토리라인 생성과 채팅 실시간 이미지 턴의 로딩이 함께 씁니다. 애니메이션은 Compose 수명에 종속되며, 지연 힌트의 시작 시각과 노출 상태는 `rememberSaveable`로 구성 변경을 견딥니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#퍼널)을 따릅니다.
 
