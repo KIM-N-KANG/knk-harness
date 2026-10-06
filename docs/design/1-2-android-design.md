@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.5 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-05 |
+| 수정일 | 2026-10-07 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -139,7 +139,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 `ChatRoomViewModel`의 `settingsOpen`이 소유하며 구성 변경에서 유지합니다. 실시간 이미지 미저장 기본값은 false입니다.
 - 실시간 이미지 안내의 기기 누적 횟수는 같은 `@DeviceDataStore`의 정수 키 `chat_completed_turn_count`로 저장합니다. `ChatPreferencesStore.recordCompletedTurn()`이 `edit` 안에서 원자적으로 증가시키고 3에서 멈추며 IO 실패는 null로 돌려줍니다. `ChatRoomViewModel`은 이어쓰기의 정상 `Completed`만 기록하며 재생성, 실패, 중단은 제외합니다. 2를 반환한 완료 순간의 이미지 설정이 false이면 예약을 만들고 입력 잠금이 풀린 뒤 500ms에 `settingsOpen`과 `realtimeImageNudgeOpen`을 함께 올립니다. 그 사이 다음 전송이나 재생성이 시작되면 대기를 취소하고 응답 종료 뒤 다시 기다립니다. 예약 Job과 표시 상태는 ViewModel 수명이며 영속 저장하거나 SavedStateHandle에 넣지 않습니다.
 - `ManyakBottomSheet.onExpanded`로 시트가 펼쳐진 뒤 `RealtimeImageNudge`를 엽니다. 시트의 별도 창 위에 focusable `Popup`을 두고 행과 팝업의 화면 좌표 차이로 하이라이트를 배치합니다. 기존 투어에서 분리한 `ChatSpotlightDim`을 재사용하고 구멍 위의 투명한 Switch 의미 영역이 기존 행의 토글 콜백을 호출합니다. 나머지 시트 의미 정보는 `clearAndSetSemantics`로 가립니다. 실시간 이미지 활성화 콜백은 안내 닫기 의도도 함께 전달합니다. 활성화, 뒤로가기, 딤, 확인은 안내 상태만 닫고 딤과 카드는 퇴장 애니메이션 뒤 제거합니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#모션)을 따릅니다.
-- 채팅 스트리밍 블록은 로딩과 본문을 같은 자리에 두고 첫 조각(글자·이미지)에서 로딩을 페이드로 뺍니다. 로딩이 그려지는 동안 잰 높이를 `rememberSaveable`에 두고 본문이 그만큼 자랄 때까지 최소 높이로 유지해 상단 앵커가 내려앉지 않게 하며, 재생성도 같은 블록을 씁니다. 실시간 이미지를 켠 턴은 `designsystem`의 `CyclingPhrases`와 `ImageGenerationLoading`(4:3, `CharacterImage`와 같은 모양)을, 끈 턴은 기존 시머 한 줄을 보입니다. 대화 최상단의 AI 생성 안내 문구는 목록 항목이라 재생성 앵커 인덱스가 안내·프롤로그 수를 더합니다.
+- 채팅 스트리밍 블록은 로딩과 본문을 같은 자리에 두고 첫 조각(글자·이미지)에서 로딩을 페이드로 뺍니다. 로딩이 그려지는 동안 잰 높이를 `rememberSaveable`에 두고 본문이 그만큼 자랄 때까지 최소 높이로 유지해 상단 앵커가 내려앉지 않게 하며, 재생성도 같은 블록을 씁니다. 실시간 이미지를 켠 턴은 `designsystem`의 `CyclingPhrases`와 `chat`의 `RealtimeImageStage`(4:3, `CharacterImage`와 같은 모서리)를, 끈 턴은 기존 시머 한 줄을 보입니다. 대화 최상단의 AI 생성 안내 문구는 목록 항목이라 재생성 앵커 인덱스가 안내·프롤로그 수를 더합니다.
 - 추가 정보의 편집 버튼도 `keepKeyboardOnTap`을 사용하고, `AdditionalInfoRows`는 채팅과 같은 삭제 전 포커스 이동 순서를 적용합니다. 퇴장 중인 입력과 삭제 버튼은 비활성화합니다.
 - 채팅 작성 버튼은 공통 `keepKeyboardOnTap`으로 루트의 바깥 탭 포커스 해제에서 제외합니다. `BlockInputList`는 현재 포커스와 블럭별 `FocusRequester`를 컴포지션 수명에 두고, 삭제할 입력을 비활성화하기 전에 남은 입력으로 포커스를 옮깁니다.
 - 구성 변경은 Activity 재생성으로 처리합니다. `configChanges`나 화면 방향 고정으로 우회하지 않습니다. 화면 폭을 제한한 스크롤 레이아웃과 상태 복원으로 대응합니다.
@@ -319,7 +319,7 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 
 ### 제작 로딩 표현
 
-`designsystem`의 `ImageGenerationLoading`은 비율·접근성 라벨을 받아 테마 배경·테두리와 위치·크기·밝기가 함께 변하는 점 패턴을 그립니다. `studio`의 Completing 표지는 3:4로 사용합니다. 4:3도 같은 컴포넌트로 표현하며 API·폴링 상태를 직접 소유하지 않습니다.
+로고 마스코트 대기 장면은 시간에서 자세를 계산하는 순수 함수 안무와 그것을 그리기만 하는 Canvas로 나뉘며 API·폴링 상태를 소유하지 않습니다. `designsystem`의 `ManyakMascot`이 눈 모양별 몸을, `mascot` 패키지가 낱동작·막 이음·붓길 해석과 베레모·붓·붓질 그리기를 소유합니다. `chat`의 `RealtimeImageStage`는 이 재료로 실시간 이미지 대기 장면을 그리고, `studio`의 `StoryCompletingStage`는 `ManyakMascot`과 자체 낱동작으로 3:4 완성 중 표지를 그립니다.
 
 `rememberTextShimmerBrush`는 채팅의 기존 브러시를 공용화한 것으로, `create`의 순환 문구와 `studio`의 완성 제목은 4초 주기, 채팅 대기 문구는 기존 2초·색을 사용합니다. 4초마다 글자 단위로 교차하는 순환 문구는 `designsystem`의 `CyclingPhrases`가 소유하며 스토리라인 생성과 채팅 실시간 이미지 턴의 로딩이 함께 씁니다. 애니메이션은 Compose 수명에 종속되며, 지연 힌트의 시작 시각과 노출 상태는 `rememberSaveable`로 구성 변경을 견딥니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#퍼널)을 따릅니다.
 
