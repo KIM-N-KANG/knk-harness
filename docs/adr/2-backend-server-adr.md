@@ -789,12 +789,12 @@
 ## BE-056. 트레이스 수집 경로와 OpenSearch Trace Analytics
 
 - 날짜: 2026-10-06.
-- 상태: 채택. 로컬 수집 파이프라인만 적용([KNK-1551](https://kimandkang.atlassian.net/browse/KNK-1551)). 서버, 알림, AI 계측과 운영 수집은 미적용.
+- 상태: 채택. 로컬 수집 파이프라인([KNK-1551](https://kimandkang.atlassian.net/browse/KNK-1551)), 서버 계측([KNK-1552](https://kimandkang.atlassian.net/browse/KNK-1552), manyak-server #304), 알림 계측([KNK-1553](https://kimandkang.atlassian.net/browse/KNK-1553), manyak-notification #9)을 적용했다. AI 계측과 운영 수집은 미적용이다.
 - 배경: 서비스 사이 상관관계는 `X-Manyak-*` 헤더와 MDC `request_id`뿐이라 서비스 경계를 넘는 지연과 정지 위치를 로그 조합으로 추정한다. 2026-10-06 운영에서 채팅 턴 워커가 AI 호출 기록 전에 멈춘 사건도 어느 구간인지 특정하지 못했다. 로그가 이미 OpenSearch에 모이므로 트레이스도 같은 저장소의 Trace Analytics로 본다.
-- 결정: 계측은 OpenTelemetry 표준(OTLP gRPC, W3C `traceparent`)을 따른다. 로그 경로(Fluent Bit, 운영 FireLens → OpenSearch)는 그대로 두고 트레이스만 Data Prepper 계열 처리기를 거친다. 로컬은 Data Prepper 컨테이너가 `otel_trace_source`로 받아 `otel_traces`(traceGroup 채우기)와 `service_map`(서비스 간 간선)으로 나눠 `otel-v1-apm-span-*`, `otel-v1-apm-service-map`에 쓴다. 운영은 같은 프로세서와 인덱스 유형을 쓰는 OpenSearch Ingestion(OSIS)으로 시작하고, 비용 최적화 단계에서 Fargate Data Prepper 태스크로 교체를 검토한다.
+- 결정: 계측은 OpenTelemetry 표준(OTLP HTTP/protobuf(`/v1/traces`), W3C `traceparent`)을 따른다. Boot 4 OTel 스타터의 기본 전송(okhttp 5)이 테스트의 MockWebServer(okhttp 4)와 충돌하므로 HTTP만 지원하는 JDK HttpClient 전송(`opentelemetry-exporter-sender-jdk`)을 쓴다. 로컬 Data Prepper는 `unframed_requests`로 같은 포트(4317)에서 받는다. 전송량이 작은 5초 배치에서는 성능 차이가 없다. 로그 경로(Fluent Bit, 운영 FireLens → OpenSearch)는 그대로 두고 트레이스만 Data Prepper 계열 처리기를 거친다. 로컬은 Data Prepper 컨테이너가 `otel_trace_source`로 받아 `otel_traces`(traceGroup 채우기)와 `service_map`(서비스 간 간선)으로 나눠 `otel-v1-apm-span-*`, `otel-v1-apm-service-map`에 쓴다. 운영은 같은 프로세서와 인덱스 유형을 쓰는 OpenSearch Ingestion(OSIS)으로 시작한다. 비용 최적화 단계에서 Fargate Data Prepper 태스크로 교체를 검토한다.
 - 대안: Vector로 트레이스까지 처리하는 안은 기각했다. elasticsearch 싱크가 트레이스 이벤트를 받지 않고 traceGroup 채우기와 서비스 맵 생성이 없어 Trace Analytics 화면을 쓸 수 없다(2026-10-05 조사). Tempo 같은 별도 트레이스 저장소는 관측 저장소를 OpenSearch로 모으는 방향과 어긋나 두지 않는다. 운영을 처음부터 Fargate Data Prepper로 두는 안은 태스크 설정, 헬스, 버퍼 관리를 직접 떠안으므로 관리형 OSIS로 먼저 경로를 검증한 뒤 비용(서울 1 OCU 월 약 194달러)과 함께 다시 비교한다.
-- 경계: 메트릭 OTLP(Grafana Cloud) 전송은 이 결정과 별개로 유지한다. 큐 경계는 SQS 메시지 속성의 `traceparent`로 이어 붙인다. 기존 `request_id`와 Langfuse 연결 식별자는 그대로 두고 로그에 `trace_id`, `span_id`를 더한다.
-- 출처: [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464), [KNK-1551](https://kimandkang.atlassian.net/browse/KNK-1551). 로컬 파이프라인은 서버 `opensearch/data-prepper/pipelines.yaml`에서 샘플 스팬과 두 서비스 트레이스로 traceGroup 전파와 서비스 맵 간선을 확인했다.
+- 경계: 메트릭 OTLP(Grafana Cloud) 전송은 이 결정과 별개로 유지한다. 큐 경계는 SQS 메시지 속성의 `traceparent`로 이어 붙인다. 기존 `request_id`와 Langfuse 연결 식별자는 그대로 둔다. 로그의 추적 필드는 Micrometer MDC 키인 `traceId`와 `spanId`이며 Dashboards의 트레이스-로그 연결도 이 이름을 쓴다. 토글은 `MANYAK_TRACING_ENABLED`이며 기본 off다. Boot 4에서는 꺼도 스팬과 로그 `traceId`는 생기고 내보내기와 전파만 꺼진다. 예약 작업, actuator 요청, 요청 바깥 DB와 Redis 호출은 관측 단계에서 거른다.
+- 출처: [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464), [KNK-1551](https://kimandkang.atlassian.net/browse/KNK-1551), [KNK-1552](https://kimandkang.atlassian.net/browse/KNK-1552), [KNK-1553](https://kimandkang.atlassian.net/browse/KNK-1553). 로컬 파이프라인은 서버 `opensearch/data-prepper/pipelines.yaml`에서 샘플 스팬과 두 서비스 트레이스로 traceGroup 전파와 서비스 맵 간선을 확인했다.
 
 ## 복원 범위와 날짜 해석
 
