@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v2.44 |
 | 작성일 | 원문 미기재 |
-| 수정일 | 2026-09-29 |
+| 수정일 | 2026-10-06 |
 | 대상 | manyak-ai 및 평가 연구 시스템 |
 | 작성 목적 | 온라인 AI API와 평가의 입출력·실패·수용 기준을 정의합니다. |
 | 기준 코드 | manyak-ai `dev` 브랜치 `b47fd59a2952`. 운영 배포 여부와 구분합니다. |
@@ -170,7 +170,7 @@ flowchart LR
 
 작품 페이지용 주변 인물 소개는 `character_introductions` 배열로 반환한다. 주인공을 제외한 모든 주변 인물 카드에 대해 최종 `name`과 `description`을 하나씩 포함한다. 입력 인물이 있으면 입력 인원수와 같고, 0명 입력이면 자유 생성한 1~5명 모두를 포함한다. 외형과 이미지는 같은 `name`으로 연결하며, 이미지 생성 실패로 소개 항목을 제거하지 않는다. 소개는 `story_settings.character_setting` 마크다운에 포함하지 않는다.
 
-`description`은 앞뒤 공백 제거 후 공백 포함 1~80자인 문자열이며 CR, LF와 탭을 허용하지 않는다. 누락, 빈값, 타입 오류나 형식 위반은 기존 최대 2회 보완 한도에서 해당 필드만 다시 받는다. 끝내 유효하지 않으면 인물 이미지와 표지를 생성하기 전에 502를 반환한다.
+`description`은 내부 생성 단계에서 앞뒤 공백 제거 후 공백 포함 1~80자인 문자열이며 CR, LF와 탭을 허용하지 않습니다. 누락, 빈값, 타입 오류나 형식 위반은 기존 최대 2회 보완 한도에서 해당 필드만 다시 받습니다. 끝내 유효하지 않으면 인물 이미지와 표지를 생성하기 전에 502를 반환합니다. 응답 조립 시 토큰화 뒤 길이가 초과하는 제한은 아래 이름 토큰 출력 계약을 따릅니다.
 
 인물의 역할, 성격과 주인공과의 초기 관계를 1~2개의 짧은 문장으로 소개하도록 지시한다. 마크다운과 숨겨진 정체, 동기, 반전, 결말은 제외하도록 지시하며, 문장 수와 내용의 의미를 코드로 판정하지 않는다. 소개 분리의 선택 근거는 ADR을 따른다. ([인물 소개 결정](../adr/3-ai-server-adr.md#작품-페이지용-인물-소개를-채팅-설정과-분리))
 
@@ -204,7 +204,13 @@ flowchart LR
 
 요청·응답 예시와 필드 설명: [컴파일 API 명세](#5-9-2-스토리-컴파일).
 
-`story_settings`는 통글 4필드이며, 저장용 장르는 백엔드가 입력 태그로 채웁니다. 엔딩은 해피·노말·배드 각 1개를 생성 지침으로 사용하되 유형 필드는 반환하지 않습니다. 인물 외형 항목은 외형 누락이 있어도 유지하며, 인물 이미지·썸네일의 성공과 실패 구조는 아래 개별 설명을 따릅니다.
+`story_settings`는 필수 기본 주인공 이름 `protagonist_name`과 통글 4필드이며, 저장용 장르는 백엔드가 입력 태그로 채웁니다. 엔딩은 해피·노말·배드 각 1개를 생성 지침으로 사용하되 유형 필드는 반환하지 않습니다. 인물 외형 항목은 외형 누락이 있어도 유지하며, 인물 이미지·썸네일의 성공과 실패 구조는 아래 개별 설명을 따릅니다.
+
+컴파일은 내부 생성 단계에서 실제 주인공 이름을 사용합니다. 입력 이름은 그대로 보존하고 비워 둔 이름은 AI가 두 글자 이상으로 정하도록 지시합니다. 응답 조립 시 이름을 `story_settings.protagonist_name`으로 분리하고 `user_role_setting`의 이름 항목을 제거합니다. 생성 글에 나온 같은 이름은 `{username}`으로 바꿉니다. 대상은 제목, 한 줄 소개, 주요 내용, 스토리 설정 4필드, 시작 설정 3필드, 추천 입력, 주요 사건의 이름·설명·키 문장, 엔딩의 이름·달성 조건·에필로그, 인물 소개입니다. 별도 주변 인물 이름과 외형·이미지 데이터는 바꾸지 않습니다.
+
+이름 바로 뒤의 단독 조사는 `은(는)`, `이(가)`, `을(를)`, `과(와)`, `으로(로)`, `아(야)`, `이랑(랑)` 표기로 통일합니다. 다른 조사와 복합 표현은 이름만 토큰으로 바꿉니다. 실제 플레이 이름과 조사의 치환은 백엔드가 담당합니다. 서버의 필드 수용·치환을 먼저 배포한 뒤 AI #155와 클라이언트를 배포합니다. ([백엔드 이름 토큰 계약](4-backend-server-spec.md#protagonist-name-token))
+
+인물 소개의 80자 상한은 토큰을 포함한 최종 응답 원문 기준입니다. 실제 이름을 토큰으로 바꾸면서 80자를 넘으면 응답 검증에 실패할 수 있습니다. 이름의 부분 문자열도 치환하므로 다른 단어나 인물 이름과의 충돌을 완전히 방지하지 않습니다. 이 두 제한은 AI #155에서 수용합니다.
 
 생성된 제목·소개·플레이 설정·시작 설정·첫 선택지·주요 사건에 누락이 있으면 문제 부분을 모아 최대 2회 보완합니다. 이후에도 필요한 값이 부족하거나 최종 형식이 맞지 않으면 502를 반환합니다. 엔딩·인물 외형도 보완을 시도하되, 끝내 부족하면 엔딩은 빈 배열로 반환하고 외형이 부족한 인물의 이미지 생성은 생략합니다.
 
@@ -336,6 +342,10 @@ flowchart LR
 
 채팅 본문·사건 및 엔딩 판정·선택지는 서로 다른 프롬프트로 호출합니다. 본문과 판정은 `CHAT_MODEL`, 선택지는 `CHAT_CHOICE_MODEL`로 모델을 고르며, 세 호출의 기본 모델은 모두 `deepseek-flash`입니다.
 
+`story_settings.protagonist_name`은 이번 채팅의 실제 주인공 이름인 문자열이며 생략 시 빈 문자열입니다. 백엔드가 기본 주인공 또는 페르소나의 이름과 설명을 선택해 전달합니다. AI는 이름을 추출하거나 페르소나 여부를 판단하지 않고 이름과 `user_role_setting`을 USER 레이어에 그대로 삽입합니다. 백엔드가 다른 스토리 글의 이름 토큰도 치환해 전달하므로 본문은 실제 이름으로 생성합니다. 모르는 요청 필드는 무시합니다. 재생성도 같은 계약입니다. ([백엔드 채팅 계약](4-backend-server-spec.md#4-3-3-채팅과-sse-스트리밍))
+
+페르소나 설명은 주인공 설정 전체를 대체하지만 세계관·인물 설정에 남은 기존 직업이나 성격의 영향까지 제거하지 않습니다. 게시물 검수에서 토큰 자체는 위반 사유가 아니며 기본 주인공 이름 검사는 [AI 후속 작업](#5-3-6-게시물-검수)입니다. 이미지 생성 로직은 변경하지 않으며 인물 이미지는 주변 인물만 생성합니다.
+
 **채팅 본문 생성**
 
 ```mermaid
@@ -388,7 +398,7 @@ flowchart LR
 
 요청·응답 예시와 필드 설명: [채팅 턴 API 명세](#5-9-3-채팅-턴).
 
-`history`·`main_events`·`occurred_main_event_names`·`endings`·`character_images`·`image_slots`는 생략 시 빈 배열, `target_main_event`·`user_source`는 null입니다. 주요 사건은 최대 10개입니다. 엔딩의 최소 턴 충족 여부와 이미 도달했는지는 백엔드가 걸러 전달합니다. `user_source`는 `choice`·`edited_choice`·`typed` 중 알려진 값만 관측하며 잘못된 값으로 턴을 거부하지 않습니다. 이미지 이름은 생략·빈 문자열·null을 허용하고, 이미지 매핑은 채팅 본문 프롬프트에 넣지 않습니다. `generate_child_image`는 기본 false인 호환 필드이며 이미지 생성 여부는 `image_slots`로 결정합니다.
+`history`·`main_events`·`occurred_main_event_names`·`endings`·`character_images`·`image_slots`는 생략 시 빈 배열, `target_main_event`·`user_source`는 null입니다. 주요 사건은 최대 10개입니다. 백엔드는 같은 판정 범위의 사건·엔딩 후보 이름이 유일함을 보장하며 AI는 전달받은 후보 이름을 그대로 반환합니다. 엔딩의 최소 턴 충족 여부와 이미 도달했는지는 백엔드가 걸러 전달합니다. `user_source`는 `choice`·`edited_choice`·`typed` 중 알려진 값만 관측하며 잘못된 값으로 턴을 거부하지 않습니다. 이미지 이름은 생략·빈 문자열·null을 허용하고, 이미지 매핑은 채팅 본문 프롬프트에 넣지 않습니다. `generate_child_image`는 기본 false인 호환 필드이며 이미지 생성 여부는 `image_slots`로 결정합니다.
 
 현재 기준에서는 백엔드가 전체 History를 보내고 오프닝은 `start_settings`로 전달합니다. 최근 10턴 제한·History 오프닝 시드는 AI 내부 설계와의 미해소 차이입니다. 현재 백엔드가 보내는 `summary`는 빈 문자열입니다. AI는 전달된 이력을 자르거나 요약하지 않습니다.
 
@@ -653,7 +663,7 @@ flowchart LR
 
 요청·응답 예시와 필드 설명: [선택지 API 명세](#5-9-4-선택지-생성).
 
-입력은 채팅 턴 재료와 `ai_output`(방금 생성한 본문)입니다. `history`는 이번 턴이 없는 메인 턴 요청과 동일한 스냅샷이어야 합니다. 유효한 요청의 생성 실패도 폴백으로 흡수해 200입니다(스키마 위반은 422).
+입력은 채팅 턴 재료와 `ai_output`(방금 생성한 본문)입니다. 선택지 프롬프트의 주인공 영역에도 `story_settings.protagonist_name`과 `user_role_setting`을 함께 삽입합니다. 이름은 문자열이며 생략 시 빈 문자열입니다. 백엔드가 선택한 이름과 설명을 그대로 쓰고 부족한 선택지를 보완하는 재호출에도 같은 값을 사용합니다. `history`는 이번 턴이 없는 메인 턴 요청과 동일한 스냅샷이어야 합니다. 유효한 요청의 생성 실패도 폴백으로 흡수해 200입니다(스키마 위반은 422).
 
 목표 사건 방향 1개·미완결 비목표 사건 방향 1개·사용자 맥락 방향 1개를 제안합니다. 사건이 없거나 모두 완결되면 서로 다른 행동을 제안하는 규칙으로 대체합니다. 부족한 개수만 최대 2회 더 받고, 그래도 부족하면 중립 행동으로 채우며 초과하면 앞 3개만 남깁니다. 선택지는 이력에 저장하지 않고 사용자가 고른 행동이 다음 `user_input`이 됩니다. 프론트 별도 트리거 전환은 완료됐습니다(기존 A11의 배포 기록).
 
@@ -683,6 +693,8 @@ flowchart LR
 보완 지시 조립: [선택지 생성 서비스](../../../manyak-ai/src/services/chat_choices.py).
 
 ### 5-3-6. 게시물 검수
+
+이름 토큰은 원문 그대로 입력받으며 `{username}` 자체는 위반으로 보지 않습니다. 페르소나 프로필은 검수 대상에 포함하지 않습니다. 기본 주인공 이름은 공개 스토리 글에 들어가므로 검수 대상입니다. 백엔드는 최상위 `protagonist_name`에 토큰 없는 원문 이름을 보내며 이름이 없으면 생략하거나 null을 보냅니다. 현재 AI는 이 새 필드를 모르는 필드로 무시합니다. 실제 이름 검사는 AI 후속 작업이며 반영 전까지 검사되지 않습니다. 후속 구현에서 이름 위반은 `issues[].path: "protagonist_name"`과 `type: "TEXT"`로 반환합니다. 이미지 생성 로직은 변경하지 않습니다.
 
 **승인된 계약이며 실제 연동·모델 품질은 실측하지 않았습니다.** 게시물의 품질이 아니라 금지 내용의 유무와
 게시 가능 여부를 판단합니다. 백엔드가 저장된 게시물의 검수 대상 텍스트와 이미지 URL을 모아
@@ -1389,18 +1401,19 @@ flowchart LR
   "stories": {
     "title": "사라지는 내일의 기록",
     "one_line_intro": "마법 도서관에서 지워진 미래를 추적하는 신입 기록관의 이야기",
-    "description": "신입 기록관 서윤은 마법 도서관에서 다음 날의 기록이 지워지고 있음을 발견한다.\n\n과묵한 사서 도현과 함께 사라진 기록의 출처를 추적하기 시작한다.\n\n지워진 문장이 남긴 푸른 흔적은 출입이 금지된 지하 보관실을 가리킨다.\n\n기록이 사라질 때마다 두 사람이 알고 있던 과거도 조금씩 흔들린다.\n\n원본을 공개하면 진실에 다가갈 수 있지만 도서관이 숨겨 온 비밀과 함께 도현까지 위험에 빠뜨릴 수 있다.\n\n서윤은 누구의 말을 믿고 어떤 기록을 지킬지 선택해야 한다."
+    "description": "신입 기록관 {username}은(는) 마법 도서관에서 다음 날의 기록이 지워지고 있음을 발견한다.\n\n과묵한 사서 도현과 함께 사라진 기록의 출처를 추적하기 시작한다.\n\n지워진 문장이 남긴 푸른 흔적은 출입이 금지된 지하 보관실을 가리킨다.\n\n기록이 사라질 때마다 두 사람이 알고 있던 과거도 조금씩 흔들린다.\n\n원본을 공개하면 진실에 다가갈 수 있지만 도서관이 숨겨 온 비밀과 함께 도현까지 위험에 빠뜨릴 수 있다.\n\n{username}은(는) 누구의 말을 믿고 어떤 기록을 지킬지 선택해야 한다."
   },
   "story_settings": {
+    "protagonist_name": "서윤",
     "world_setting": "# 세계관\n왕립 마법 도서관은 도시의 과거와 미래를 기록한다. 지워진 문장은 원본 가까이에 푸른 잔향을 남긴다.",
-    "character_setting": "# 도현\n과묵한 남성 사서. 기록을 보호하려 하지만 서윤의 조사 능력을 인정한다.",
-    "user_role_setting": "# 주인공\n서윤은 꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
+    "character_setting": "# 도현\n과묵한 남성 사서. 기록을 보호하려 하지만 {username}의 조사 능력을 인정한다.",
+    "user_role_setting": "# 주인공\n꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
     "rule_setting": "# 전개 규칙\n사용자의 선택에 따라 단서를 공개한다.\n# 문체\n차분한 미스터리 분위기를 유지한다."
   },
   "story_start_settings": {
     "name": "폐관 뒤의 도서관",
-    "prologue": "*마지막 종이 울린 뒤, 서윤은 빈 기록장 가장자리에서 푸른 빛을 발견한다.*\n도현: 아직 퇴근하지 않았군요.",
-    "start_situation": "폐관 직후 기록 열람실에서 서윤과 도현이 빛나는 기록장을 살핀다."
+    "prologue": "*마지막 종이 울린 뒤, {username}은(는) 빈 기록장 가장자리에서 푸른 빛을 발견한다.*\n도현: 아직 퇴근하지 않았군요.",
+    "start_situation": "폐관 직후 기록 열람실에서 {username}과(와) 도현이 빛나는 기록장을 살핀다."
   },
   "story_suggested_inputs": [
     "기록장을 빛에 비춰 본다.",
@@ -1429,13 +1442,13 @@ flowchart LR
       "name": "되찾은 기록",
       "min_turns": 8,
       "achievement_condition": "소실 원인을 밝히고 원본을 보존한다.",
-      "epilogue": "서윤의 조사와 선택이 도서관의 기록을 지켜낸 결과를 보여준다."
+      "epilogue": "{username}의 조사와 선택이 도서관의 기록을 지켜낸 결과를 보여준다."
     },
     {
       "name": "남겨진 빈 페이지",
       "min_turns": 6,
       "achievement_condition": "추가 소실은 막았지만 사라진 기록을 복원하지 못한다.",
-      "epilogue": "서윤과 도현이 남은 단서를 정리하며 다음 조사를 준비한다."
+      "epilogue": "{username}과(와) 도현이 남은 단서를 정리하며 다음 조사를 준비한다."
     },
     {
       "name": "사라진 도서관의 기억",
@@ -1501,9 +1514,10 @@ flowchart LR
 | `stories.one_line_intro` | `string` | 한 줄 소개 |
 | `stories.description` | `string` | 상세 화면의 “주요 내용”. 6~8문장 소개문을 생성하도록 지시하며 문장 수는 서버에서 강제 검증하지 않음 |
 | `story_settings` | `object` | 플레이 설정 |
+| `story_settings.protagonist_name` | `string` | 기본 주인공 이름. 컴파일 응답의 필수 필드 |
 | `story_settings.world_setting` | `string` | 세계관 통글 |
 | `story_settings.character_setting` | `string` | 주변 인물 설정 통글 |
-| `story_settings.user_role_setting` | `string` | 주인공 설정 통글 |
+| `story_settings.user_role_setting` | `string` | 이름 항목을 뺀 주인공 설명 통글 |
 | `story_settings.rule_setting` | `string` | 전개 규칙·문체·분량 배분 통글 |
 | `story_start_settings` | `object` | 시작 설정 |
 | `story_start_settings.name` | `string` | 시작 설정 이름 |
@@ -1521,7 +1535,7 @@ flowchart LR
 | `story_endings[].epilogue` | `string` | 에필로그 연출 방향 |
 | `character_introductions` | `object[]` | 필수 배열. 주인공 제외, 주변 인물 전원 1~5명. 이미지 성공 여부와 무관하게 포함 |
 | `character_introductions[].name` | `string` | 입력값 보존과 보완을 마친 최종 인물 이름. 외형, 이미지와 연결하는 기준 |
-| `character_introductions[].description` | `string` | 작품 페이지용 짧은 소개. 앞뒤 공백 제거 후 공백 포함 1~80자, CR/LF/탭 불가. 채팅용 인물 마크다운에는 미포함 |
+| `character_introductions[].description` | `string` | 작품 페이지용 짧은 소개. 앞뒤 공백 제거 후 토큰 포함 원문 1~80자, CR/LF/탭 불가. 백엔드가 실제 이름으로 치환한 뒤에는 길이를 재검사하지 않음. 채팅용 인물 마크다운에는 미포함 |
 | `character_appearances` | `object[]` | 주변 인물 외형; 입력이 있으면 입력 인원수와 같고, 0명 입력이면 1~5명 |
 | `character_appearances[].name` | `string` | 인물 이름 |
 | `character_appearances[].gender` | `string` | 성별 |
@@ -1560,9 +1574,10 @@ flowchart LR
 {
   "genre": "판타지, 미스터리",
   "story_settings": {
+    "protagonist_name": "서윤",
     "world_setting": "# 세계관\n왕립 마법 도서관은 도시의 과거와 미래를 기록한다. 지워진 문장은 원본 가까이에 푸른 잔향을 남긴다.",
     "character_setting": "# 도현\n과묵한 남성 사서. 기록을 보호하려 하지만 서윤의 조사 능력을 인정한다.",
-    "user_role_setting": "# 주인공\n서윤은 꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
+    "user_role_setting": "# 주인공\n꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
     "rule_setting": "# 전개 규칙\n사용자의 선택에 따라 단서를 공개한다.\n# 문체\n차분한 미스터리 분위기를 유지한다."
   },
   "start_settings": {
@@ -1640,9 +1655,10 @@ flowchart LR
 | --- | --- | --- |
 | `genre` | `string` | 장르 |
 | `story_settings` | `object` | 플레이 설정 |
+| `story_settings.protagonist_name` | `string` | 이번 채팅의 실제 주인공 이름. 생략 시 빈 문자열 |
 | `story_settings.world_setting` | `string` | 세계관 통글 |
 | `story_settings.character_setting` | `string` | 주변 인물 설정 통글 |
-| `story_settings.user_role_setting` | `string` | 주인공 설정 통글 |
+| `story_settings.user_role_setting` | `string` | 백엔드가 선택한 주인공 설명. 페르소나면 스냅샷 설명 전체 |
 | `story_settings.rule_setting` | `string` | 전개 규칙·문체·분량 배분 통글 |
 | `start_settings` | `object` | 시작 설정 |
 | `start_settings.name` | `string` | 시작 설정 이름 |
@@ -1803,9 +1819,10 @@ data: {"code":"LLM_ERROR","message":"LLM 응답 시간이 초과되었습니다.
 {
   "genre": "판타지, 미스터리",
   "story_settings": {
+    "protagonist_name": "서윤",
     "world_setting": "# 세계관\n왕립 마법 도서관은 도시의 과거와 미래를 기록한다. 지워진 문장은 원본 가까이에 푸른 잔향을 남긴다.",
     "character_setting": "# 도현\n과묵한 남성 사서. 기록을 보호하려 하지만 서윤의 조사 능력을 인정한다.",
-    "user_role_setting": "# 주인공\n서윤은 꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
+    "user_role_setting": "# 주인공\n꼼꼼한 여성 신입 기록관이며 기록 소실 사건을 조사한다.",
     "rule_setting": "# 전개 규칙\n사용자의 선택에 따라 단서를 공개한다.\n# 문체\n차분한 미스터리 분위기를 유지한다."
   },
   "start_settings": {
@@ -1884,9 +1901,10 @@ data: {"code":"LLM_ERROR","message":"LLM 응답 시간이 초과되었습니다.
 | --- | --- | --- |
 | `genre` | `string` | 장르 |
 | `story_settings` | `object` | 플레이 설정 |
+| `story_settings.protagonist_name` | `string` | 이번 채팅의 실제 주인공 이름. 생략 시 빈 문자열 |
 | `story_settings.world_setting` | `string` | 세계관 통글 |
 | `story_settings.character_setting` | `string` | 주변 인물 설정 통글 |
-| `story_settings.user_role_setting` | `string` | 주인공 설정 통글 |
+| `story_settings.user_role_setting` | `string` | 백엔드가 선택한 주인공 설명. 페르소나면 스냅샷 설명 전체 |
 | `story_settings.rule_setting` | `string` | 전개 규칙·문체·분량 배분 통글 |
 | `start_settings` | `object` | 시작 설정 |
 | `start_settings.name` | `string` | 시작 설정 이름 |
@@ -1977,11 +1995,13 @@ Request body는 없습니다. LLM을 호출하지 않으며, Response body(200)�
 
 ### 5-9-6. 게시물 검수
 
-[동작과 검수 기준](#5-3-6-게시물-검수). 승인된 입력·응답 계약이며 `dev`에 반영됐습니다.
+[동작과 검수 기준](#5-3-6-게시물-검수). 기존 입력·응답 계약은 `dev`에 반영됐습니다. 새 `protagonist_name` 필드의 실제 검사는 승인된 후속 계약이며 아직 반영되지 않았습니다.
 
 **입력**
 
-게시물 구조의 camelCase 필드명을 유지합니다. 백엔드가 부분 수정 요청이 아니라 저장된 전체
+기존 게시물 구조의 camelCase 필드명을 유지하되 기본 주인공 이름은 최상위 `protagonist_name`으로 전달합니다. 이 선택 필드는 토큰 없는 원문 이름인 문자열이며 이름이 없으면 생략하거나 null을 보냅니다. 현재 AI는 필드를 무시하므로 아래 예시에 이름이 있어도 후속 구현 전에는 검사하지 않습니다.
+
+백엔드가 부분 수정 요청이 아니라 저장된 전체
 검수 대상을 전달합니다. 내용 필드는 생략하거나 `null`·빈 문자열·빈 배열로 보낼 수 있습니다.
 필수 여부·텍스트 길이·배열 개수는
 [백엔드 게시물 계약](4-backend-server-spec.md)에 따라 백엔드가 저장 시점에 검사하며, AI 서버는
@@ -2001,6 +2021,7 @@ Request body는 없습니다. LLM을 호출하지 않으며, Response body(200)�
 {
   "submissionId": "00000000-0000-4000-8000-000000000001",
   "title": "게시글 제목",
+  "protagonist_name": "서윤",
   "oneLineIntro": "한 줄 소개",
   "description": "상세 소개",
   "genres": [
@@ -2065,7 +2086,7 @@ HTTP 상태는 승인·거절·실행 실패 모두 200입니다.
 | --- | --- | --- |
 | `decision` | `string` | `APPROVED` 또는 `REJECTED`. `NEEDS_REVIEW`는 사용하지 않습니다. |
 | `issues` | `array<object>` | 확인된 내용 위반 전체. 이미지 오류가 함께 있어도 보존합니다. 확인된 위반이 없으면 빈 배열입니다. |
-| `issues[].path` | `string` | 실제 입력 필드 경로. 배열 인덱스는 0부터 시작합니다. |
+| `issues[].path` | `string` | 실제 입력 필드 경로. 배열 인덱스는 0부터 시작합니다. 기본 이름 검사 후속 구현은 문자열로 전달된 `protagonist_name`도 반환할 수 있습니다. |
 | `issues[].type` | `string` | `TEXT` 또는 `IMAGE`. 서버가 검증된 경로로 결정합니다. |
 | `issues[].rule` | `string` | [7개 검수 기준](#5-3-6-게시물-검수) 중 해당 코드 |
 | `issues[].reason` | `string` | 위반 근거를 한국어로 설명합니다. 원문·개인정보·이미지 URL·위험 행위 방법을 재출력하지 않습니다. |
