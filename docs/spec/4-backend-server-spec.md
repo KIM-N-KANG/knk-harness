@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.47 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-10-05 |
+| 수정일 | 2026-10-06 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
@@ -22,6 +22,8 @@
 - [4-1. 문서 목적·범위와 관련 문서](#4-1-문서-목적범위와-관련-문서)
 - [4-2. 기술 환경과 아키텍처](#4-2-기술-환경과-아키텍처)
 - [4-3. API 계약](#4-3-api-계약)
+  - [페르소나 관리](#persona-management)
+  - [기본 주인공 이름과 이름 토큰](#protagonist-name-token)
   - [제공 장르와 검색](#genre-catalog)
   - [장르 입력 검증](#genre-validation)
   - [스토리 검수 제출 흐름](#스토리-검수-제출-흐름)
@@ -90,6 +92,51 @@
 - 배치 조회는 배열이 커질 수 있어 `POST` 본문으로 ID 목록을 받습니다. 상한은 100개(중복 포함 배열 길이 기준)이며, 중복 ID는 각 ID당 1건만 반환합니다.
 - 요청 검증 실패는 400과 `ApiErrorResponse.details`로 응답합니다([§4-6](#4-6-오류와-예외-처리)).
 
+<br>
+
+<a id="protagonist-name-token"></a>
+
+#### 기본 주인공 이름과 이름 토큰
+
+스토리에 기본 주인공 이름 `protagonistName`을 별도로 저장합니다. 일반 제작의 등록·수정에서 선택 입력이며 값을 보내면 앞뒤 공백을 제거한 1~30자여야 합니다. 컴파일 수신에도 같은 30자 상한을 적용합니다. 허용 문자는 기존 인물 이름 입력과 같습니다. 인물 이름에는 별도 문자 종류 제한이 없으므로 닉네임의 한글·영문·숫자 제한을 적용하지 않습니다. 기존 스토리의 이름은 null로 두고 본문에서 추출하거나 백필하지 않습니다.
+
+스토리 원문에는 주인공 자리를 `{username}`으로 저장합니다. 백엔드의 공통 치환기가 읽기 권한에 맞는 라이브 또는 공개 스냅샷을 고른 뒤 아래 필드의 토큰을 치환합니다. 채팅 안에서는 페르소나 스냅샷 이름을 우선하고 없으면 해당 스토리 버전의 기본 주인공 이름을 사용합니다. 채팅 밖에서는 기본 주인공 이름을 사용합니다. 스토리 원문과 공개 스냅샷에는 치환 결과를 덮어쓰지 않습니다.
+
+| 대상 | 일반 제작·수정 필드 | 저장 위치 |
+| --- | --- | --- |
+| 스토리 제목과 소개 | `title`, `oneLineIntro`, `description` | `stories.title`, `one_line_intro`, `description` |
+| 스토리 설정 | `storySettings.worldSetting`, `characterSetting`, `userRoleSetting`, `ruleSetting` | `story_settings.world_setting`, `character_setting`, `user_role_setting`, `rule_setting` |
+| 시작 설정 | `startSettings[].name`, `startSituation`, `prologue` | `story_start_settings.name`, `start_situation`, `prologue` |
+| 추천 입력 | `startSettings[].suggestedInputs[]` | `story_suggested_inputs.input_text` |
+| 주요 사건 | `mainEvents[].name`, `description`, `keySentence` | `story_main_events.name`, `description`, `key_sentence` |
+| 엔딩 | `startSettings[].endings[].name`, `requirement.achievementCondition`, `epilogue` | `story_endings.name`, `achievement_condition`, `epilogue` |
+| 인물 소개 | `characters[].description` | `story_characters.description` |
+
+기본 주인공 이름 자체와 주변 인물의 별도 이름 필드 및 외형·이미지 데이터는 치환 대상이 아닙니다. 장르와 로어북은 이 스토리의 주인공 글에 포함하지 않습니다. 위 필드를 반환하는 목록·검색·상세·채팅·공유와 AI 채팅 요청에 같은 치환기를 적용합니다. 도달 기록의 이름 응답은 [기록별 표시 기준](#event-ending-name-records)을 따릅니다. 저장된 사용자 입력과 AI 출력은 다시 치환하지 않습니다.
+
+| 토큰 뒤 조사 표기 | 받침 있음 | 받침 없음 |
+| --- | --- | --- |
+| `{username}이(가)` | 이 | 가 |
+| `{username}은(는)` | 은 | 는 |
+| `{username}을(를)` | 을 | 를 |
+| `{username}과(와)` | 과 | 와 |
+| `{username}아(야)` | 아 | 야 |
+| `{username}(으)로` 또는 `{username}으로(로)` | 으로 | 로 |
+| `{username}이랑(랑)` | 이랑 | 랑 |
+
+`으로(로)`와 `이랑(랑)`은 AI #155의 출력 표기입니다. `(으)로`와 `으로(로)`는 받침이 ㄹ일 때도 `로`를 고릅니다. 조사 선택은 이름 끝의 한글 음절 받침을 기준으로 합니다. 마지막 글자가 한글 음절이 아니면 받침 없는 형태를 사용하며 발음을 추정하지 않습니다. 토큰만 있으면 이름만 치환하고 다른 중괄호와 조사 표기는 그대로 둡니다. 이름으로 삽입한 문자열을 다시 토큰으로 해석하지 않습니다.
+
+- **원문 왕복 예외:** 소유자의 수정 폼과 검수 제출본 회수는 토큰 원문을 반환합니다. 일반 제작·수정·재제출 입력도 원문을 받습니다. 게시물 검수에는 같은 원문을 보내며 AI는 `{username}` 자체를 위반으로 보지 않습니다. 페르소나는 검수에 보내지 않습니다.
+- **저장 검증:** 일반 제작 등록·수정의 `protagonistName`은 선택입니다. 등록에서 생략·null이면 이름을 null로 저장하고 PATCH에서 생략·null이면 기존 이름을 유지합니다. 등록·수정의 저장 결과 텍스트 필드에 `{username}`이나 그 조사 표기가 있는데 기본 주인공 이름이 없으면 제출 전에 400 `BAD_REQUEST`입니다. PATCH는 기존 값에 반영한 전체 결과로 검사합니다. 빈 이름과 이름 길이 위반도 400입니다. 토큰이 없는 기존 스토리는 이름 null을 유지한 채 수정할 수 있습니다.
+- **길이:** 글 길이는 토큰과 조사 표기를 포함한 저장 원문 기준으로 검사합니다. 인물 소개는 일반 제작·수정의 150자 상한과 AI 컴파일의 80자 상한 모두 원문 기준이며 실제 이름으로 치환한 뒤에는 다시 검사하거나 자르지 않습니다. AI #155는 실제 이름을 토큰으로 바꾸면서 AI 컴파일 소개가 80자를 넘으면 컴파일 응답 검증에 실패할 수 있으며 이 제한은 유지합니다.
+- **원문 절단:** 서버가 토큰 대상 글을 길이 상한으로 자를 때 `{username}`과 바로 뒤의 지원 조사 표기를 한 단위로 취급합니다. 조사 표기가 없으면 토큰 자체가 한 단위입니다. 절단 경계가 단위 안에 걸리면 그 단위를 통째로 빼고 그 직전까지의 원문만 저장합니다. 단위를 글자 수 1로 세거나 상한 밖의 뒷글을 이어 붙이지 않습니다. 절단 뒤 결과로 기존 이름 중복 검사를 합니다. 일반 제작·수정의 길이 초과 400 검증을 자동 절단으로 바꾸지는 않습니다.
+- **기존 스토리:** 토큰은 새 스토리부터 사용합니다. 기존 글에 남은 실제 이름을 찾아 바꾸지 않으므로 페르소나를 골라도 글 속 원래 이름이 남을 수 있습니다. 기본 주인공 이름 없이 새로 만든 스토리도 같은 규칙을 적용합니다.
+- **배포:** 서버의 이름 필드 수용과 토큰 치환을 먼저 배포한 뒤 AI #155와 클라이언트를 순서대로 배포합니다. AI를 먼저 배포하면 컴파일 결과의 토큰이 그대로 사용자에게 노출됩니다. 구버전 AI의 모르는 요청 필드 무시와 컴파일 이름 필드 누락 수용으로 서버 선배포를 지원합니다. 일반 제작의 기본 주인공 이름을 선택으로 두어 토큰을 쓰지 않는 구버전 웹·앱도 이름 필드 없이 등록할 수 있습니다.
+
+결정 근거는 [BE-057](../adr/2-backend-server-adr.md#be-057)에 기록합니다.
+
+<br>
+
 ### 요청·응답 헤더
 
 프론트엔드가 주입하는 식별 헤더와 백엔드의 처리 규칙입니다. 값의 정책 기준은 [`6-analytics.md §6-6-2`](6-analytics.md)입니다.
@@ -111,6 +158,10 @@
 
 | 도메인 | 메서드·경로 | 설명 | 성공 | 주요 실패 | 인증 |
 | --- | --- | --- | --- | --- | --- |
+| 페르소나 | `GET /users/me/personas` | 내 페르소나 목록 | 200 | 401 | 필수 |
+| 페르소나 | `POST /users/me/personas` | 페르소나 등록 | 201 | 400, 401, 409 | 필수 |
+| 페르소나 | `PATCH /users/me/personas/{personaId}` | 내 페르소나 수정 | 200 | 400, 401, 404 | 필수 |
+| 페르소나 | `DELETE /users/me/personas/{personaId}` | 내 페르소나 삭제 | 204 | 401, 404 | 필수 |
 | 스토리 | `GET /stories` | 공개 스토리 목록(커서 페이지네이션, `?filter`·`?sort`·`?limit`·`?cursor`) | 200 | 400 | 불필요 |
 | 스토리 | `GET /stories/originals` | 마냑 오리지널(공식 계정 소유 공개 스토리) 카드 목록, 등록순. 공식 계정 미설정 환경은 빈 배열. **폐기 예정**: `GET /stories?filter=original`이 대체하며 클라이언트 전환까지만 유지 | 200 | 없음 | 불필요 |
 | 스토리 | `GET /stories/search` | 공개 스토리 검색(질의 `q`, OpenSearch nori) | 200 | 400·503 | 불필요 |
@@ -140,7 +191,7 @@
 | 간편 제작 | `GET /stories/simple/creation-requests/{requestId}` | 생성 요청 복구 조회(연결 유실 후 결과 되찾기) | 200 | 404 | 선택 |
 | 간편 제작 | `PUT /stories/simple/storylines/{storylineId}/rating` | 스토리라인 평가 설정 | 200 | 400·403·404 | 선택 |
 | 간편 제작 | `DELETE /stories/simple/storylines/{storylineId}/rating` | 스토리라인 평가 취소(멱등) | 204 | 403·404 | 선택 |
-| 채팅 | `POST /chats` | 채팅 생성(플레이 시작) | 201 | 400·403·404 | 선택 |
+| 채팅 | `POST /chats` | 채팅 생성(플레이 시작) | 201 | 400·401·403·404 | 선택. 페르소나 선택은 회원만 |
 | 채팅 | `POST /chats/batch` | 공개 ID 목록으로 채팅 카드 조회 | 200 | 400 | 선택 |
 | 채팅 | `GET /chats/{chatId}` | 채팅 상세(턴 이력) 조회 | 200 | 403·404 | 선택 |
 | 채팅 | `DELETE /chats/{chatId}` | 채팅 소프트 삭제 | 204 | 403·404 | 선택 |
@@ -257,7 +308,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `thumbnailUrlSm` | string·null | 썸네일 축소 변형(`_sm`) 서빙 URL: 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
 
-**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드(`isOriginal` 제외)에 다음을 더합니다.
+**`GET /stories/{storyId}`**: 상세 응답(`StoryDetailResponse`)은 목록 필드(`isOriginal` 제외)에 다음을 더합니다. 목록과 상세의 스토리 글은 기본 주인공 이름으로 치환한 결과입니다. ([이름 토큰 계약](#protagonist-name-token))
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
@@ -737,7 +788,8 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - 존재하지 않는 `simpleCreationId`, 또는 그 진행에 속하지 않거나 존재하지 않는 `storylineId`는 404입니다(카탈로그의 404 발생 조건).
 - 소유자가 있는 진행은 같은 회원만 완료할 수 있습니다(타인·익명 403). 익명 진행을 회원이 완료하면 스토리와 진행이 그 회원에게 귀속됩니다(claim).
 - 409는 AI 호출 전 사전 검사와, 저장 트랜잭션 안의 세션 행 비관적 락(`findByIdForUpdate`) 후 상태 재판정의 이중 구조로 판정합니다(동시 완료 경합 차단).
-- 저장 트랜잭션은 선택 스토리라인 표시 → 스토리 → 스토리 설정 → 시작 설정 → 추천 입력 → 로어북 → 주요 사건 → 엔딩 → 세션 완료 순으로 처리합니다. 추천 입력과 로어북의 순서는 1부터, 주요 사건은 0부터, 시작 설정별 엔딩은 1부터 기록합니다. 제목은 100자, 한 줄 소개는 255자로 잘라 저장합니다. 장르는 GENRE 태그명을 `", "`로 연결하고 `visibility`는 PRIVATE, `status`는 PUBLISHED로 고정합니다.
+- 저장 트랜잭션은 선택 스토리라인 표시 → 스토리 → 스토리 설정 → 시작 설정 → 추천 입력 → 로어북 → 주요 사건 → 엔딩 → 세션 완료 순으로 처리합니다. 추천 입력과 로어북의 순서는 1부터, 주요 사건은 0부터, 시작 설정별 엔딩은 1부터 기록합니다. 제목은 100자와 한 줄 소개는 255자까지 [원문 절단 규칙](#protagonist-name-token)에 따라 잘라 저장합니다. 주요 사건·엔딩 이름도 100자까지 같은 규칙으로 자른 뒤 중복을 검사합니다. 장르는 GENRE 태그명을 `", "`로 연결하고 `visibility`는 PRIVATE, `status`는 PUBLISHED로 고정합니다.
+- 컴파일 응답의 필수 `story_settings.protagonist_name`을 `stories.protagonist_name`으로 저장합니다. 구버전 AI가 필드를 생략하면 null로 저장합니다. `user_role_setting`은 이름 항목을 뺀 주인공 설명입니다. 다른 생성 글은 AI가 이름을 토큰으로 바꾼 원문 그대로 저장하고 클라이언트 반환 시에만 치환합니다. 간편 제작 요청 필드는 변경하지 않습니다. 기본 주인공 이름은 trim 후 1~30자로 검증하며 일반 제작·수정과 같은 상한을 적용합니다. ([이름 토큰 계약](#protagonist-name-token), [AI 컴파일 계약](5-ai-server-spec.md#5-9-2-스토리-컴파일))
 - AI 요청의 `additional_info`는 `additionalInfos`를 개행(`\n`)으로 결합한 단일 문자열입니다.
 - AI 호출 실패(응답 본문이 빈 경우 포함)는 502입니다. 컴파일 산출물 검증: 주요 사건·엔딩의 **이름이 중복되면** 사용자 입력이 아니라 불완전 AI 응답으로 보아 502로 저장을 롤백합니다. **엔딩은 빈 배열이어도 정상**이며(AI의 엔딩 폴백: 엔딩 0개로 저장), 주요 사건 개수(3~5)·엔딩 개수(0 또는 3)·폴백 계약의 정본은 [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md)입니다.
 
@@ -752,12 +804,17 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 ### 4-3-3. 채팅과 SSE 스트리밍
 
-**`POST /chats`**: 요청 `{storyId: string, startSettingId?: string}`. 스토리가 없거나 읽을 수 없으면 404입니다([§4-3-1](#4-3-api-계약)). 게스트 스토리는 익명 요청만 채팅을 만들 수 있고 회원 요청은 403입니다([§4-5](#4-5-인증과-권한)). `startSettingId`를 생략하면 첫 시작 설정을 사용하고, 잘못된 값은 404입니다. 시작 설정이 없으면 `prologue`와 `suggestedInputs`를 빈 값으로 반환합니다. 응답(201):
+**`POST /chats`**: 요청 `{storyId: string, startSettingId?: string, personaId?: string}`. 스토리가 없거나 읽을 수 없으면 404입니다([§4-3-1](#4-3-api-계약)). 게스트 스토리는 익명 요청만 채팅을 만들 수 있고 회원 요청은 403입니다([§4-5](#4-5-인증과-권한)). `startSettingId`를 생략하면 첫 시작 설정을 사용하고, 잘못된 값은 404입니다. 시작 설정이 없으면 `prologue`와 `suggestedInputs`를 빈 값으로 반환합니다.
+
+`personaId`는 내 페르소나의 공개 UUID이며 생략·null이면 기본 주인공으로 시작합니다. 게스트가 null이 아닌 `personaId`를 보내면 스토리·페르소나 조회 전에 401 `UNAUTHORIZED`로 거절합니다. 회원이 보낸 ID가 UUID 형식이 아니거나 없거나 삭제됐거나 다른 회원의 것이면 모두 404 `NOT_FOUND`입니다. 선택한 페르소나의 이름과 설명을 채팅 생성 시 한 쌍의 스냅샷으로 저장합니다. 생성과 원본 수정·삭제가 겹쳐도 같은 시점의 이름과 설명을 함께 복사합니다. 이후 원본 페르소나를 수정·삭제해도 이 채팅에는 반영하지 않으며 진행 중 페르소나 변경 API는 제공하지 않습니다.
+
+응답(201) `CreateChatResponse`:
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `id` | string | 채팅 공개 식별자(UUID) |
 | `storyId` | string | 스토리 공개 식별자 |
+| `persona` | object·null | 선택한 페르소나의 스냅샷 `{name: string}`. 기본 주인공이면 null. 설명과 원본 페르소나 ID는 싣지 않음 |
 | `prologue` | string | 시작 설정의 프롤로그 |
 | `suggestedInputs` | string[] | 추천 입력(첫 입력 후보) |
 | `createdAt` | string | 생성 시각 |
@@ -770,13 +827,20 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 | --- | --- | --- |
 | `id` | string | 채팅 공개 식별자(UUID) |
 | `storyId` · `storyTitle` | string | 참조 스토리 |
+| `persona` | object·null | 채팅 시작 시 페르소나 스냅샷 `{name: string}`. 선택하지 않았으면 null |
 | `lastStoryPreview` | string | 마지막 ASSISTANT 출력 **전문**: 서버는 자르지 않으며 표시 절단은 프론트엔드 소유. 완료 턴이 없는 채팅(생성 직후)은 빈 문자열. 채팅당 최신 1건만 뽑는 단일 배치 쿼리로 조회(N+1 방지) |
 | `turnCount` | number | 완료된 턴 수: 매번 세지 않고 턴 저장과 원자적으로 증가하는 비정규화 카운터(`story_chats.current_turn`)를 반환 |
 | `updatedAt` | string | 최근 활동 시각 |
 | `reachedEndings` | string[] | 이 채팅에서 도달한 엔딩 **이름** 목록(채팅당 최대 1개, 도달 전 빈 배열: [§4-3-10](#4-3-api-계약)) |
 | `thumbnailUrlSm` | string·null | 참조 스토리 썸네일의 축소 변형(`_sm`) 서빙 URL: 카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 
-**`GET /chats/{chatId}`**: 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, prologue, turns[], suggestedInputs}`. 채팅 상세는 플레이 기록이므로 소유권 규칙을 적용합니다: 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 조회할 수 있고 위반은 403입니다([§4-5](#4-5-인증과-권한)). `turns[]`는 USER 직후 ASSISTANT 메시지를 짝지어 구성하며 짝 없는 USER·SYSTEM 메시지는 턴에서 제외합니다. `suggestedInputs`는 턴이 0개일 때만 채우고 진행 턴이 있으면 빈 배열입니다(다음 행동은 마지막 턴 `choices`가 안내).
+**`GET /chats/{chatId}`**: 응답(`ChatDetailResponse`): `{id, storyId, storyTitle, persona, prologue, turns[], suggestedInputs}`. 채팅 상세는 플레이 기록이므로 소유권 규칙을 적용합니다: 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 조회할 수 있고 위반은 403입니다([§4-5](#4-5-인증과-권한)). `turns[]`는 USER 직후 ASSISTANT 메시지를 짝지어 구성하며 짝 없는 USER·SYSTEM 메시지는 턴에서 제외합니다. `suggestedInputs`는 턴이 0개일 때만 채우고 진행 턴이 있으면 빈 배열입니다(다음 행동은 마지막 턴 `choices`가 안내).
+
+생성·상세의 `prologue`와 `suggestedInputs`는 이번 채팅의 이름으로 치환합니다. 상세의 `persona`는 생성 응답과 같은 스냅샷 객체입니다. 배치와 내 채팅 목록의 `ChatSummaryResponse`에도 같은 `persona`를 싣습니다. ([이름 토큰 계약](#protagonist-name-token))
+
+**AI 요청의 주인공 조립**
+
+턴과 재생성 및 선택지는 같은 요청 조립을 사용합니다. `story_settings.protagonist_name`은 페르소나 스냅샷 이름 또는 읽기 가능한 스토리의 기본 주인공 이름이며 둘 다 없으면 빈 문자열입니다. `story_settings.user_role_setting`은 페르소나를 선택했으면 스냅샷 설명으로 통째로 대체합니다. 선택하지 않았으면 스토리의 주인공 설정을 이름 토큰 계약에 따라 치환합니다. 나머지 스토리 글도 같은 이름으로 치환한 뒤 AI에 전달합니다. 페르소나 설명은 비공개 채팅 입력과 같은 위치의 자유 텍스트이며 검수하지 않습니다. 세계관이나 주변 인물 설정에 남은 직업·성격까지 재작성하지 않습니다. 인물 이미지 생성 대상은 주변 인물로 유지합니다.
 
 **턴 항목**
 
@@ -968,6 +1032,27 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - **저장·보안.** Redis `login_handoff:{codeHash}`에 TTL 30분으로 저장하며, 키는 코드 원문이 아니라 SHA-256 해시입니다. 코드는 128비트 이상 무작위 값이고 생성 응답에 1회만 노출합니다. 존재하지 않는 코드와 만료된 코드는 동일하게 404로 응답해 열거 오라클을 만들지 않습니다(만료 상태는 별도 enum 없이 404). 분석에는 코드와 별개의 `handoffId`만 사용하고([`6-analytics.md §6-4-2-12`](6-analytics.md)), 코드 원문은 로그·분석 이벤트·Sentry에 남기지 않습니다.
 
 [결정 근거 BE-005](../adr/2-backend-server-adr.md#be-005)
+
+<br>
+
+<a id="persona-management"></a>
+
+#### 페르소나 관리
+
+회원은 계정에 페르소나를 최대 10개 저장하고 채팅 시작 시 선택할 수 있습니다. 아래 경로는 공통 `/api/v1` prefix를 사용합니다. 모든 요청은 인증 필수이며 게스트는 401 `UNAUTHORIZED`입니다. 회원은 자신의 페르소나만 접근할 수 있습니다. 개별 ID의 형식 오류와 미존재 및 타인 소유는 동일한 404 `NOT_FOUND`로 응답합니다.
+
+| 메서드·경로 | 요청 | 성공 응답 |
+| --- | --- | --- |
+| `GET /users/me/personas` | 없음 | 200 페르소나 배열. 없으면 빈 배열. 생성 최신순이며 동률은 내부 PK 내림차순 |
+| `POST /users/me/personas` | `{name: string, description: string}` 모두 필수 | 201 생성한 페르소나 |
+| `PATCH /users/me/personas/{personaId}` | `{name?: string, description?: string}` | 200 수정한 페르소나 |
+| `DELETE /users/me/personas/{personaId}` | 없음 | 204 본문 없음. 이미 삭제됐으면 404 |
+
+페르소나 응답은 `{id, name, description, createdAt, updatedAt}`입니다. `id`는 `public_id` UUID이며 시각은 공통 ISO 8601 UTC 문자열입니다. 이름과 설명은 앞뒤 공백을 제거해 저장하며 각각 1~20자와 1~1,000자입니다. 공백뿐이거나 길이를 벗어나면 400 `BAD_REQUEST`와 필드별 `details`를 반환합니다. 이름의 문자 규칙은 [기본 주인공 이름](#protagonist-name-token)과 같습니다. PATCH의 생략·null은 유지이며 반영할 필드가 없으면 400입니다. 설명은 게시물 검수를 거치지 않습니다.
+
+삭제되지 않은 페르소나 10개가 있으면 등록을 409 `CONFLICT`로 거절합니다. 회원 단위로 개수 검사와 저장을 직렬화해 동시 등록도 10개를 넘지 않게 합니다. 같은 이름의 페르소나를 구분하는 기준은 공개 UUID입니다. 삭제는 소프트 삭제이며 목록과 신규 채팅 선택에서 제외합니다. 채팅은 원본을 재조회하지 않고 시작 시 스냅샷을 사용합니다. ([채팅 계약](#4-3-3-채팅과-sse-스트리밍))
+
+<br>
 
 <a id="내-콘텐츠-목록--phase-1--구현"></a>
 
@@ -1630,7 +1715,8 @@ graph TD
 | --- | --- | --- |
 | `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
 | `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열. 2단계부터 [장르 입력 검증](#genre-validation)으로 정식 이름을 확정하고 입력 순서를 보존해 `stories.genre`에 쉼표 결합 저장한다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
-| `storySettings` | 4필드 모두 필수 | 단일 마크다운 문자열: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 프론트엔드가 섹션별 입력을 조합 |
+| `protagonistName` | 선택이며 값이 있으면 trim 후 1~30자 | 기본 주인공 이름. 문자 규칙과 토큰 저장 검증은 [이름 토큰 계약](#protagonist-name-token) 참조 |
+| `storySettings` | 4필드 모두 필수 | 단일 마크다운 문자열: `worldSetting` · `characterSetting` · `userRoleSetting` · `ruleSetting`. 프론트엔드가 섹션별 입력을 조합. `userRoleSetting`에는 이름을 뺀 설명을 입력 |
 | `startSettings` | 최소 1개(상한 없음) | 시작 설정 배열(복수화). 각 항목 `{name, prologue, startSituation, suggestedInputs, endings}`: `name`(100자)·`prologue`·`startSituation` 필수, `suggestedInputs`는 정확히 3개(각 NotBlank), `endings`는 이 시작 설정의 엔딩 0~10개. 채팅 시작 시 선택은 `POST /chats`의 `startSettingId`([§4-3-3](#4-3-api-계약)). 빈 배열은 400 |
 | ↳ `startSettings[].endings` | 시작 설정당 0~10개 | 엔딩 `{name, requirement{minTurns, achievementCondition}, epilogue}`: 타입 없이 이름으로 식별(이름은 시작 설정 내 유니크, 중복 400). `name` 100자, `minTurns` ≥ 0, `achievementCondition`·`epilogue` NotBlank. 도달 판정 계약은 [§4-3-10](#4-3-api-계약) |
 | `mainEvents` | 최대 10개, 선택 | 주요 사건 `{name, description, keySentence}`(스토리 범위): `name` 100자, `description`·`keySentence` NotBlank, 이름은 스토리 내 유니크. 채팅 런타임 의미는 [§4-3-10](#4-3-api-계약) |
@@ -1672,7 +1758,9 @@ graph TD
 
 **`GET /stories/{storyId}/edit`**: 수정 폼 전용 조회입니다. 응답에 `thumbnailUrl`·`thumbnailModerationStatus`·`characters[]`(`{id, name, description, images: [{id, imageName, imageUrl, moderationStatus}]}`)를 더합니다. 소유자 화면은 최신 제출본이 `PENDING`·`REJECTED`·`FAILED`이면 라이브에 해당 제출본을 반영한 폼 값과 `submission: {submissionId, status, issues, errorCode, imageErrors}`를 받습니다. 반려·실패 입력을 라이브 값으로 덮어 지우지 않습니다([검수 제출본 API](#검수-제출본-api)). `characters[].description`은 인물 `id` 기준으로 라이브 행의 소개를 싣습니다. 제출본을 반영할 때 기존 인물의 소개가 생략·null이면 라이브 소개를 유지하고, 소개를 보냈으면 아래 PATCH의 정규화·삭제 규칙을 적용한 값을 보여 줍니다. 새 인물은 보낸 소개를 같은 규칙으로 반영하며 생략·null이면 null입니다. 이름을 바꿔도 같은 `id`의 소개가 따라갑니다. 새 이미지의 id null·objectKey·미리보기 URL과 항상 존재하는 submission 필드는 [검수 제출본 API](#검수-제출본-api)를 따릅니다. 이미지별 상태는 제출본 판정 상태를 대신하지 않습니다. 사용자 표시용 상세 조회는 설정 문자열 4개와 편집 초안 필드를 반환하지 않습니다.
 
-응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings[]`: 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다: 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
+응답 200: 일반 제작 요청과 같은 편집 가능 필드 전체(`title`, `oneLineIntro`, `description`, `protagonistName`, `genres`, `storySettings`, `startSettings[]`: 각 시작 설정에 `id`·`suggestedInputs`·`endings` 포함, `mainEvents`). 현행 `story_endings` 레거시 구조는 이 응답에서 새 구조로 노출하지 않습니다: 레거시 행은 자동 변환 없이 비활성 보존합니다([§4-3-10](#4-3-api-계약)). 따라서 새 엔딩을 등록하기 전까지 기존 스토리는 시작 설정의 `endings`가 빈 배열일 수 있습니다.
+
+수정 폼의 `protagonistName`은 string·null이며 본문은 토큰 원문입니다. PATCH에서 `protagonistName`을 생략하거나 null로 보내면 기존 이름을 유지합니다. 빈 문자열·공백만인 이름은 400이며 나머지 검증과 저장 원문 기준은 [이름 토큰 계약](#protagonist-name-token)을 따릅니다.
 
 **`PATCH /stories/{storyId}`**: 부분 갱신입니다. 보낸 필드만 교체하고 나머지는 유지합니다. 수정 가능 필드는 일반 제작 요청과 동일 전체이며, **간편 제작으로 만든 스토리도 같은 계약으로 수정**할 수 있습니다(제작 방식 무관: US-4-5의 "아쉬운 설정 고치기"가 주 사용처).
 
@@ -1680,7 +1768,7 @@ graph TD
 - `visibility`만 담은 PATCH는 검수 없이 즉시 반영하고 200 편집 폼을 반환합니다. 다른 필드를 섞으면 전체를 검수 제출본으로 접수하며 공개 범위도 승인 때 반영합니다. `PENDING` 제출본이 있으면 공개 범위 단독 PATCH도 409입니다. 수정 폼 응답은 `visibility`를 포함합니다.
 - 승인 후 진행 중 채팅 반영은 기존 계약을 유지합니다. 승인 전에는 제출본이 채팅 입력에 반영되지 않습니다. 백엔드는 채팅 턴을 만들 때 독자의 읽기 권한에 따라 최신 스토리 또는 공개 스냅샷을 AI 서버에 전달합니다. 최신 스토리를 읽을 권한이 있는 채팅은 다음 턴부터 새 설정을 사용합니다. 이미 저장된 지난 턴은 다시 쓰지 않습니다. 공개 스토리를 타인이 플레이할 때는 현재 읽기 권한과 공개 스냅샷 정책을 적용합니다. 비공개 개작은 해당 독자의 AI 입력에 노출하지 않습니다.
 - 검수 대상 PATCH는 202 `{submissionId, status: "PENDING"}`으로 응답하며 기존 200 완성 폼 응답을 대체합니다. 검증 실패 400, 미인증 401, 권한 위반 403, 없는 스토리 404, 검수 중 쓰기 409입니다. 아래 컬렉션 동기화·저장 규칙은 승인 후 적용합니다. 요청 유효성 검증은 제출 시점에 수행합니다.
-- 부분 갱신은 전송한 필드만 검증합니다. DTO가 nullable이므로 `null`은 미전송과 같아 기존 값을 유지합니다. `title`·`oneLineIntro`에 빈 문자열이나 공백만 보내면 400입니다. `genres`는 1~8개, 각 30자로 검증하고 2단계부터 [장르 입력 검증](#genre-validation)을 적용한 뒤 `", "`로 연결해 교체한다. `mainEvents`는 전송하면 전체를 교체하고 빈 배열이면 모두 삭제합니다.
+- 부분 갱신은 전송한 필드만 검증합니다. 단 이름 토큰과 기본 주인공 이름의 관계는 기존 값에 PATCH를 반영한 전체 결과로 검증합니다. DTO가 nullable이므로 `null`은 미전송과 같아 기존 값을 유지합니다. `title`·`oneLineIntro`에 빈 문자열이나 공백만 보내면 400입니다. `genres`는 1~8개, 각 30자로 검증하고 2단계부터 [장르 입력 검증](#genre-validation)을 적용한 뒤 `", "`로 연결해 교체한다. `mainEvents`는 전송하면 전체를 교체하고 빈 배열이면 모두 삭제합니다.
 - **`startSettings` 동기화.** 보내면 최소 1개(빈 배열 400)이며 컬렉션 전체를 동기화합니다: 각 항목의 `id`(시작 설정 공개 식별자)가 기존과 일치하면 **행 identity를 보존한 채 in-place 갱신**(진행 중 채팅의 `start_setting_id` 참조 유지), `id`가 없으면 신규 추가, 요청에서 빠진 기존 시작 설정은 자식(추천 입력·엔딩)과 함께 삭제(그 설정을 참조하던 채팅은 FK `ON DELETE SET NULL`로 해제)합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`는 모두 400입니다(조용한 무시·silent wipe 금지). 각 시작 설정의 `suggestedInputs`(정확히 3개)·`endings`는 보낸 값으로 전체 교체하며, `endings` 교체 시 레거시 행(`enabled=false`)도 함께 삭제됩니다: 새 엔딩이 `(start_setting_id, sort_order)` 유니크 제약에서 레거시 행과 충돌하지 않게 하기 위해서입니다.
 - **`characters` 동기화.** 보내면 컬렉션 전체를 동기화합니다(빈 배열이면 인물을 모두 삭제): 항목의 `id`(인물 공개 식별자)가 기존과 일치하면 **개명**(행 identity 보존), `id`가 없으면 신규 추가, 요청에서 빠진 기존 인물은 그 인물의 이미지와 함께 삭제합니다. 존재하지 않거나 이 스토리 소속이 아닌 `id`, 요청 내 중복 `id`, 이름 중복은 모두 400입니다. 인물을 만들 수 있는 경로가 컴파일과 제작 등록뿐이면 등록 때 인물을 넣지 않은 스토리는 인물 이미지를 영영 붙일 수 없어, 수정에 인물 쓰기 경로를 둡니다.
   - **인물 소개는 선택적으로 갱신합니다.** `description`을 생략하거나 null로 보내면 같은 `id`의 기존 소개를 유지하고 새 인물이면 null로 저장합니다. 소개 없이 인물 목록을 보내는 구버전 웹·앱도 기존 소개를 지우지 않습니다. 빈 문자열·공백만 보내면 소개를 삭제해 null로 저장합니다. 그 외 값은 앞뒤 공백을 제거해 저장합니다. 입력의 CR·LF·탭 금지와 제거 후 공백 포함 150자 이하 규칙을 어기면 400입니다. 소개 변경은 다른 필드처럼 검수 승인 뒤 라이브에 반영합니다.
@@ -1740,7 +1828,7 @@ V87은 `story_submissions`, V88은 이미지 오류 저장, V89는 재시도·�
 1. 일반 제작 등록·PATCH·제출본 API의 미인증 요청은 401입니다. PATCH·제출본 PUT의 필드 검증 순서는 인증 → 소유권·존재 → 검수 중·상태 409 → 입력 검증 400입니다. 두 컨트롤러는 `@Valid` 선검증 없이 서비스에서 검증합니다. 타인 스토리 PATCH는 403, 타인·미존재 제출본 PUT은 404이며 UPDATE 종류의 PUT도 409입니다. JSON 파싱·타입 변환 실패는 서비스 진입 전 400일 수 있습니다.
 2. 기존 필수값·길이·개수·인물 및 시작 설정 식별자·인물 소개 형식(앞뒤 공백 제거 후 공백 포함 150자 이하, 입력의 CR·LF·탭 금지)·이미지 형식·업로드 prefix·S3 HEAD 검증을 제출 시점에 수행합니다. 제출 전 검증은 기존 오류 코드를 유지하며 일반 검증 실패는 400, 이미지 이름 중복은 409로 거절하고 AI를 호출하지 않습니다.
 3. CREATE는 요청 전체, UPDATE는 현재 라이브에 PATCH의 부분 갱신·컬렉션 동기화 규칙을 다시 적용한 전체 결과로 검수 입력을 조립합니다. 재제출 검증도 같은 기준으로 수행하며 그 사이 삭제된 기존 이미지 id는 이전 input_form에 있던 ID에 한해 재제출 검증에서 제외합니다. 임의의 다른 이미지 ID는 400입니다. 제출 폼은 새 이미지의 원본 객체 키·미리보기 URL과 유지되는 이미지를 포함합니다. 실제 검수 호출 직전에는 아래 불변 복사본 URL로 교체합니다.
-4. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`, `characters[n].description`을 포함하며 공개 설정·최소 턴 수·중첩 ID·제출본 처리 상태는 AI 입력에서 제외합니다. 관측 식별자는 예외로 최상위 `submissionId`에 제출본 public UUID를 항상 넣고, UPDATE에서만 `storyId`에 스토리 public UUID를 넣습니다. 두 필드는 검수 대상이 아니며 issues.path·image_errors.path 검증에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
+4. 이름 토큰은 치환하지 않은 원문으로 전달하며 페르소나는 검수 입력에 포함하지 않습니다. AI [§5-9-6 게시물 검수](5-ai-server-spec.md#5-9-6-게시물-검수)의 camelCase 구조로 `POST /api/v1/moderation/story`에 전달합니다. `thumbnailUrl`과 인물별 `imageUrl`, `characters[n].description`을 포함하며 공개 설정·최소 턴 수·중첩 ID·제출본 처리 상태는 AI 입력에서 제외합니다. 관측 식별자는 예외로 최상위 `submissionId`에 제출본 public UUID를 항상 넣고, UPDATE에서만 `storyId`에 스토리 public UUID를 넣습니다. 두 필드는 검수 대상이 아니며 issues.path·image_errors.path 검증에서 제외합니다. 객체 키·이미지 검수 상태·sortOrder도 재귀적으로 제외합니다. 제외한 값도 제출본에는 보관하며 실제 AI 호출은 저장된 input_form에서 입력을 조립합니다.
 
 새 업로드 표지·인물 이미지는 AI 호출 직전 서버가 S3 CopyObject로 `{thumbnails|characters}/uploaded/moderated/{uuid}.{ext}`에 복사합니다. 기존 라이브의 `{id}` 이미지 참조는 복사하지 않습니다. 복사는 DB 트랜잭션 밖에서 수행하고, 각 복사 완료 뒤 짧은 트랜잭션에서 PENDING·attempt를 확인해 image_copies에 원본→복사본 키를 기록합니다. 저장된 input_form은 원본 identity를 보존하고 AI로 보낼 사본만 복사본 URL로 바꿉니다. AI 입력과 승인 라이브 저장은 같은 복사본 URL을 사용하며 매핑이 없으면 원본으로 폴백하지 않습니다.
 
@@ -2059,21 +2147,49 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 - `main_events[]`: 스토리의 주요 사건 전체(이름 · 설명 · `key_sentence`).
 - `target_main_event`: 현재 목표 사건 상태 `{name, progress_turns}` 또는 null. 직전 턴 `completed` 메타를 저장해 두었다가 되돌려 보냅니다.
 - `occurred_main_event_names[]`: 이 채팅에서 이미 완결된(거쳐온) 주요 사건 이름.
-- `endings[]`: 도달 후보 엔딩. **`min_turns`를 충족한 엔딩만** 싣고, 이 채팅이 이미 엔딩에 도달했다면(`story_chats.reached_ending_id` 존재) 빈 배열을 실어 재판정을 차단합니다(도달 인정은 채팅당 최초 1회).
+- `endings[]`: 도달 후보 엔딩. **`min_turns`를 충족한 엔딩만** 싣고, 이 채팅이 이미 엔딩에 도달했다면(`story_chats.reached_ending_id` 또는 `reached_ending_name_snapshot` 존재) 빈 배열을 실어 재판정을 차단합니다(도달 인정은 채팅당 최초 1회).
+
+주요 사건·엔딩 이름은 해당 채팅 이름으로 치환합니다. 사건은 스토리 범위와 엔딩은 선택한 시작 설정 범위에서 각각 AI에 보내는 후보 이름이 유일하도록 보장합니다. ([이름 토큰 계약](#protagonist-name-token))
+
+- 후보 배열 순서에서 같은 치환 이름의 첫 후보는 그대로 쓰고 두 번째부터 ` (2)`와 ` (3)` 순으로 구분 표시를 붙입니다. 붙인 이름이 다른 후보의 치환 이름이나 이미 배정한 AI 전달 이름과 같으면 번호를 올려 유일해질 때까지 반복합니다. 아직 처리하지 않은 후보의 치환 이름도 충돌 검사에 포함합니다.
+- 예를 들어 `{username}의 귀환`과 `민우의 귀환`은 채팅 이름이 `민우`이면 첫 후보를 `민우의 귀환`으로 보내고 두 번째를 `민우의 귀환 (2)`로 보냅니다. 다른 후보에 이미 `민우의 귀환 (2)`가 있으면 두 번째 후보의 구분 표시를 `(3)` 이상으로 올립니다.
+- 대응표는 `AI에 보낸 이름 → 후보의 토큰 원문 이름과 후보 ID`입니다. `target_main_event.name`과 `occurred_main_event_names[]`에도 같은 사건 대응표의 AI 전달 이름을 사용합니다. 턴과 재생성 및 선택지 요청에 같은 규칙을 적용합니다.
+- AI가 돌려준 이름은 AI에 보낸 문자열 그대로 대응표에서 찾습니다. 첫 후보를 임의로 선택하거나 같은 키로 Map을 덮어쓰지 않습니다. 구분 표시는 AI 요청에서만 사용하고 저장값이나 사용자 표시값에 넣지 않습니다.
+- 후보를 찾은 뒤에는 기존처럼 토큰 원문 이름으로 같은 스토리 또는 시작 설정의 라이브 행을 다시 찾아 연결합니다. 공개 스냅샷의 후보 ID를 현재 FK로 직접 저장하지 않습니다. 재연결할 행이 없으면 FK 없이 이름 스냅샷 기록을 남깁니다. 기존 공개 스냅샷의 기록 복원 계약을 유지하는 규칙입니다.
 
 AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMainEventName`)는 턴 저장 트랜잭션에서 반영합니다([AI Spec §5-3-4](5-ai-server-spec.md)).
 
-- 엔딩 이름을 해당 시작 설정의 엔딩으로 해석해 `reached_ending_id`에 저장합니다.
+- 대응표로 복원한 토큰 원문 이름을 해당 시작 설정의 라이브 엔딩에 재연결합니다. 연결되면 `reached_ending_id`와 이름 스냅샷을 저장하고 연결할 행이 없으면 이름 스냅샷만 저장합니다.
 - 이미 도달했거나 `min_turns`를 채우지 못했으면 무시합니다.
 - 재생성은 판정 메타를 반영하지 않습니다. 직전 상태로 요청하되 사건 완료·목표·엔딩을 다시 쓰지 않습니다.
 - 엔딩 도달 뒤에는 채팅 상태가 `ENDED`이므로 재생성을 409로 차단합니다.
+
+<br>
+
+<a id="event-ending-name-records"></a>
+
+#### 사건·엔딩 이름의 저장과 표시
+
+사건·엔딩의 식별과 메시지·채팅의 이름 스냅샷 및 사용자별 도달 집계는 모두 토큰 원문 이름으로 저장합니다. AI 전달용 구분 표시와 실제 플레이 이름을 저장하지 않습니다. 같은 회원이 서로 다른 페르소나로 같은 엔딩에 도달해도 사용자·스토리·토큰 원문 이름 기준으로 하나의 집계에 묶습니다.
+
+| 표시 응답 | 치환에 쓰는 이름 |
+| --- | --- |
+| SSE `completed.reachedEnding` | 해당 채팅의 이름 |
+| 채팅 상세 `turns[].reachedEnding` | 해당 채팅의 이름 |
+| 공유 `turns[].reachedEnding` | 공유 원본 채팅의 이름 |
+| 채팅 카드 `reachedEndings` | 읽는 스토리 버전의 기본 주인공 이름 |
+| 스토리 상세 `reachedEndings` | 읽는 스토리 버전의 기본 주인공 이름 |
+
+자식 행이 삭제되거나 교체되어 이름 스냅샷으로 복원할 때도 같은 표시 기준을 적용합니다. 라이브 행과 공개 스냅샷의 읽기 권한은 기존 규칙을 유지합니다. 토큰 원문 이름은 저장 상한 100자 안에 있어야 합니다. 일반 제작·수정은 원문 길이를 검증하고 컴파일은 [원문 절단 규칙](#protagonist-name-token)을 적용한 뒤 저장하므로 100자 이름 스냅샷 컬럼에도 같은 원문을 보존할 수 있습니다. 표시 때 길이가 늘어나도 이를 이름 스냅샷에 다시 저장하지 않습니다.
+
+<br>
 
 #### 엔딩 도달 기록: 이원화
 
 도달 이벤트는 채팅 턴에 기록하고, 스토리 상세 표시는 사용자+스토리 단위로 집계합니다(팀 결정).
 
 - **턴 기록**: 도달 턴의 ASSISTANT 메시지에 `reached_ending_id`를 저장하고, SSE `completed`에 `reachedEnding`(엔딩 **이름**·null)으로 싣습니다([§4-3-3](#4-3-api-계약)). 채팅 상세 턴 항목(`GET /chats/{chatId}`)에도 같은 이름 필드로 노출합니다( KNK-527).
-- **채팅 가드**: `story_chats.reached_ending_id`에 최초 도달 엔딩을 기록합니다. 값이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(US-6-14).
+- **채팅 가드**: `story_chats.reached_ending_id`와 토큰 원문 이름 스냅샷에 최초 도달을 기록합니다. FK가 없더라도 `reached_ending_name_snapshot`이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(US-6-14).
 - **사용자+스토리 집계**: 회원 도달 시(게스트=`user_id` NULL은 집계하지 않음) `user_story_ending_reaches`에 `(user_id, story_id, ending_name_snapshot)` 유니크로 기록합니다(중복 도달은 무시). 집계는 별도 독립 트랜잭션(`REQUIRES_NEW`)에서 수행하고 유니크 위반은 멱등 흡수해 턴 저장을 롤백하지 않습니다. `GET /stories/{storyId}` 응답의 `reachedEndings`(엔딩 **이름** 배열, `string[]`)는 이 집계가 소스이며(`sort_order` 순), 게스트 요청은 빈 배열입니다: 서버에 게스트 식별 수단이 없기 때문입니다(마이그레이션과 동일 근거, [§4-3-5](#4-3-api-계약)).
 - **게스트 표시 경로**: 채팅 카드(`ChatSummaryResponse`)에 `reachedEndings`(엔딩 **이름** 배열, `string[]`)를 싣습니다([§4-3-3](#4-3-api-계약)). 게스트의 스토리 상세 "본 엔딩" 표시는 프론트엔드가 로컬 서재 채팅의 이 값을 스토리별로 합산해 구성합니다([`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)). 기기 종속 한계는 게스트 서재와 동일하게 수용합니다.
 - **이관 백필**: `POST /auth/migrate`로 채팅이 이관되면 그 채팅의 도달 기록을 `user_story_ending_reaches`에 함께 upsert합니다(게스트 시절 도달의 집계 유실 방지).
@@ -2103,6 +2219,8 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 - **응답(200)**: `{id, storyId, storyTitle, prologue, turns[]}`. `turns[]`는 채팅 상세(`ChatDetailResponse`)의 턴 구성 규칙과 동일하되 커트라인 이하 턴만 포함하며, 턴 항목은 `{userInput, aiOutput, reachedEnding, createdAt}`입니다: `choices`·`suggestedInputs`는 열람에 불필요해 싣지 않습니다. 공유 턴에는 `characterImages`를 추가하지 않고, 저장된 `[[URL]]` 마커가 든 `aiOutput`을 그대로 반환합니다. 공유 화면은 저장 마커를 숨기지만 매핑 실패로 남은 `[character:이름]` 태그는 본문 그대로 표시합니다. 원본 `chatId`는 응답에 싣지 않습니다(채팅 식별자 비노출 유지).
 
+공유 응답에는 `persona` 객체와 페르소나 프로필을 싣지 않습니다. 저장된 채팅 본문은 그대로 반환하고 프롤로그는 공유 원본 채팅의 이름으로 치환합니다. 턴의 `reachedEnding`은 [기록별 표시 기준](#event-ending-name-records)을 따릅니다. 프롤로그의 읽기 권한과 공개 스냅샷 선택은 위 규칙을 유지합니다. ([이름 토큰 계약](#protagonist-name-token))
+
 [결정 근거 BE-021](../adr/2-backend-server-adr.md#be-021)
 
 ---
@@ -2112,7 +2230,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 ### 식별자 정책
 
 - **외부 노출 식별자는 공개 UUID(`public_id`)만 사용합니다.** 내부 Long PK는 FK·조인 전용이며 API 응답, 로그, 분석 프로퍼티에 싣지 않습니다([`0-glossary.md §0-4`](0-glossary.md)). 순번 PK 노출로 인한 IDOR을 차단하는 장치입니다.
-- 공개 식별자를 쓰는 리소스: 스토리(`story_id`), 채팅(`chat_id`), 사용자(`public_id`).
+- 공개 식별자를 쓰는 리소스: 스토리(`story_id`), 채팅(`chat_id`), 사용자(`public_id`)와 페르소나(`public_id`).
 - 간편 제작 진행 ID(`simpleCreationId`: 제품 분석 개념 `analytics_creation_id`)와 태그·스토리라인 ID는 Long을 그대로 노출합니다. 생성 퍼널의 임시 리소스로 소유 개념이 없기 때문입니다.
 - `/stories/genres`의 장르 ID도 기존 태그 Long PK를 사용한다. 공개 카탈로그에 한정한 예외이며 개인 리소스의 UUID와 소유권 규칙은 유지한다. ([제공 장르와 검색](#genre-catalog))
 - 공개 UUID는 무작위(v4)로 생성합니다. `user_id`가 NULL인 리소스는 식별자 비공개성이 사실상 유일한 보호이므로([§4-5](#4-5-인증과-권한)), 추측·열거가 가능한 순차·시간 기반 식별자를 쓰지 않습니다.
@@ -2131,11 +2249,33 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 `story_characters`에는 인물 소개를 저장하는 `description TEXT NULL` 컬럼을 추가합니다(V90). 기존 스토리는 백필하지 않고 null을 유지합니다. 컴파일 수신과 상세 반환 규칙은 [인물 목록](#4-3-api-계약)을 따릅니다.
 
+<br>
+
+#### 페르소나와 기본 주인공 이름의 저장 계약
+
+| 테이블 | 컬럼·제약 | 의미 |
+| --- | --- | --- |
+| `stories` | `protagonist_name TEXT NULL` | 기본 주인공 이름. 기존 행은 null. 일반 제작·수정과 컴파일 수신은 trim 후 1~30자로 검증 |
+| `user_personas` | `id` 내부 PK, `public_id` UUID UNIQUE NOT NULL, `user_id` FK NOT NULL | 회원별 페르소나. 외부에는 `public_id`만 노출 |
+| `user_personas` | `name TEXT NOT NULL`, `description TEXT NOT NULL` | trim 후 이름 1~20자와 설명 1~1,000자 |
+| `user_personas` | `created_at`, `updated_at`, `deleted_at` | 생성·수정 시각과 nullable 소프트 삭제 시각. 계정당 활성 행 최대 10개 |
+| `story_chats` | `persona_name_snapshot TEXT NULL`, `persona_description_snapshot TEXT NULL` | 선택 시 이름·설명을 함께 저장. 미선택과 기존 채팅은 둘 다 null |
+
+채팅의 페르소나 스냅샷은 둘 다 null이거나 둘 다 값이 있도록 제약합니다. 원본 페르소나 FK로 설명을 대신하지 않습니다. 페르소나 수정·삭제와 스토리 수정은 저장된 페르소나 스냅샷을 바꾸지 않습니다. 참조가 끊겼을 때 사용하는 기존 `story_prologue_snapshot`은 생성 시 이번 채팅의 이름으로 치환한 글을 저장합니다.
+
+`story_submissions.payload`와 `input_form`에는 `protagonistName`과 토큰 원문을 보관합니다. 승인 때 기본 주인공 이름과 글을 함께 반영합니다. 공개 스냅샷에도 해당 버전의 기본 주인공 이름과 토큰 원문을 함께 보존하며 이전 스냅샷에 이름 필드가 없으면 null로 읽습니다. 페르소나 프로필은 공개 스냅샷에 포함하지 않습니다.
+
+<br>
+
+이름 스냅샷에는 토큰 원문 이름을 보존합니다. 100자 컬럼과 사건 이름 목록의 저장·표시 경계는 [사건·엔딩 이름 계약](#event-ending-name-records)을 따릅니다.
+
+<br>
+
 ### 공개 스냅샷과 과거 기록 복원
 
 현재 스냅샷은 `story_public_snapshots`의 스토리당 한 행에 JSON으로 보존합니다(V69). 스토리가 미삭제·`PUBLISHED`·`PUBLIC`인 상태로 저장될 때 자식 교체가 끝난 동일 트랜잭션에서 갱신합니다. 비공개·초안·삭제 상태의 개작은 이 스냅샷을 덮어쓰지 않습니다.
 
-- 보존 대상은 제목·표지 키와 생성 URL·장르·스토리 설정·시작 설정·프롤로그·추천 입력·활성 엔딩·주요 사건입니다. 행이 없으면 마지막 공개 버전을 알 수 없다는 뜻입니다. V69 백필에서 이미 비공개·초안·삭제였던 과거 데이터는 임의로 현재 값을 공개본으로 만들지 않습니다.
+- 보존 대상은 제목·표지 키와 생성 URL·장르·기본 주인공 이름·스토리 설정·시작 설정·프롤로그·추천 입력·활성 엔딩·주요 사건입니다. 행이 없으면 마지막 공개 버전을 알 수 없다는 뜻입니다. V69 백필에서 이미 비공개·초안·삭제였던 과거 데이터는 임의로 현재 값을 공개본으로 만들지 않습니다.
 - 서재·채팅 상세·공유·이용내역은 해당 요청자의 현재 메타데이터 읽기 권한을 기준으로 최신 값과 마지막 공개본을 선택합니다. AI 턴 입력은 턴을 진행하는 사람의 권한을 사용합니다. 공유 링크 소지는 비공개 스토리의 최신 개작을 읽을 권한이 아닙니다.
 - 인물 소개(`story_characters.description`)는 공개 스냅샷에 넣지 않습니다. 스토리 상세는 읽기 권한을 확인한 라이브 행을 사용합니다. 인물 소개는 채팅 턴 조립에 쓰지 않으며 채팅 AI 요청에도 싣지 않습니다. AI의 채팅용 인물 마크다운에도 포함하지 않습니다.
 - AI 입력의 최신 값 분기는 선택한 시작 설정과 그 엔딩만 읽는 부분 캡처를 사용합니다. 마지막 공개본 분기도 같은 자료형으로 조립해 두 경로의 필드 누락을 줄입니다.
@@ -2351,6 +2491,7 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 | 소유 리소스(`user_id` NOT NULL): 턴 진행·재생성·수정 폼 조회(`GET /stories/{storyId}/edit`) | 요청자 `user_id`와 일치할 때만 허용. 불일치·미인증이면 `403` |
 | NULL 리소스(`user_id` NULL): 턴 진행·재생성·수정 폼 조회·NULL 스토리로 채팅 생성(`POST /chats`)·채팅 상세 조회(`GET /chats/{chatId}`) | 익명(게스트) 요청만 허용. 인증된 회원은 `403`(공통 판정 `isOwnerAccessAllowed`) |
 | `DELETE /stories/{storyId}` · `DELETE /chats/{chatId}` | 위 두 규칙을 동일 적용: 소유자만 삭제, NULL 리소스는 게스트만. 위반은 403 |
+| 페르소나 관리와 채팅 생성의 `personaId` | 회원만 허용. 게스트 401이며 타인·미존재·삭제 페르소나는 404. [페르소나 관리](#persona-management) 참조 |
 | 디바이스 푸시 토큰(`PUT·DELETE /users/me/push-tokens`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 요청자 소유 토큰만 삭제(남의 토큰은 0건 204)([§4-3-5](#4-3-api-계약)) |
 | 푸시 수신 동의(`GET·PUT /users/me/push-settings`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED`는 **조회도** 403, `DELETED` 401([§4-3-5](#4-3-api-계약)) |
 | 약관 동의(`GET·POST /users/me/consents`) | 인증 필수(게스트 불가). 사용자 행 잠금 후 상태 재검사: `SUSPENDED` 403, `DELETED` 401. 미동의 회원의 다른 API는 활성화된 [서버 게이트](#미동의-회원-서버-게이트)로 제한([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
@@ -2425,13 +2566,13 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 | 400 | `CONSENT_REQUIRED_MISSING` | 새 소셜 인증 완료에 현재 필요한 필수 항목 누락. 대기 코드 미소비 |
 | 401 | `CONSENT_TOKEN_INVALID` | 동의 대기 코드 없음, 만료 또는 소비됨. 소셜 인증부터 다시 시작 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트 활성화 상태에서 현행 필수 동의 없는 회원이 허용 목록 밖 API 요청 |
-| 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음 |
+| 401 | `UNAUTHORIZED` | (인증 필수 경로) 토큰 없음·만료·위조, 사용자 없음. 게스트의 페르소나 API 요청과 `personaId` 지정 채팅 생성 포함 |
 | 402 | `INSUFFICIENT_CREDIT` · `GUEST_TRIAL_LIMIT_EXCEEDED` | 이프 잔액 부족(회원)은 `INSUFFICIENT_CREDIT`("이프가 부족합니다."), 체험 한도 소진(게스트)은 `GUEST_TRIAL_LIMIT_EXCEEDED`("게스트 체험 한도를 모두 사용했습니다."): 같은 402를 바디 `code`로 구분([§4-3-7](#4-3-api-계약)) |
-| 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(변경=턴 진행·수정, 삭제. 등록·PATCH의 미인증은 401), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
-| 404 | `NOT_FOUND` | 리소스 없음·이미 삭제됨·읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
+| 403 | `FORBIDDEN` | 소유자가 있는 리소스에 대한 타인·익명의 변경·삭제 시도(타인 페르소나는 404. 변경=턴 진행·수정, 삭제. 등록·PATCH의 미인증은 401), 인증된 회원의 NULL 소유 리소스 접근(플레이·변경·삭제·채팅 생성·채팅 상세 조회), 정지 계정의 소모·쓰기 요청: [§4-5](#4-5-인증과-권한) |
+| 404 | `NOT_FOUND` | 타인 소유 페르소나, 리소스 없음, 이미 삭제됨, 읽기 가시성 위반([§4-3-1](#4-3-api-계약)), 매핑되지 않은 경로(전용 핸들러로 처리해 catch-all 500·Sentry 노이즈로 떨어지지 않음) |
 | 405 | `METHOD_NOT_ALLOWED` | 지원하지 않는 HTTP 메서드. 응답에 `Allow` 헤더 포함 |
 | 406 | `NOT_ACCEPTABLE` | Accept 협상 실패 |
-| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `INVITE_INVITER_NEWER` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지·초대자가 나중 가입([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
+| 409 | `CONFLICT` · `INVITE_SELF_CODE` · `INVITE_ALREADY_REDEEMED` · `INVITE_INVITER_WITHDRAWN` · `INVITE_INVITER_UNAVAILABLE` · `INVITE_INVITER_NEWER` · `SOCIAL_ACCOUNT_WITHDRAWN` · `NICKNAME_TAKEN` | 페르소나 10개 상한, 이미 생성한 간편 제작 진행의 재생성, 마지막 턴이 아닌 `turnId`의 재생성([§4-3-9](#4-3-api-계약)), 자기 초대 코드·재제출·초대자 탈퇴·정지·초대자가 나중 가입([§4-3-7](#4-3-api-계약)), 탈퇴 계정 소셜 연동, 중복 닉네임([§4-5](#4-5-인증과-권한)) |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | 지원하지 않는 Content-Type |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 서버 오류 |
 | 502 | `BAD_GATEWAY` | AI 서버 호출 실패(스토리라인 생성·컴파일·선택지 생성 트리거: [§4-3-3](#4-3-api-계약)) |
@@ -2717,6 +2858,17 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | US-10-6 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
+
+- 기본 주인공 이름 21~30자의 컴파일 저장과 일반 제작·수정 폼 왕복이 통과하고 30자를 넘는 입력은 거절되어야 합니다. 페르소나 이름의 상한은 20자로 유지합니다.
+- 같은 판정 범위에서 치환 이름이 겹치면 두 번째부터 AI 전달 이름에 구분 표시가 붙어야 합니다. 기존 `(2)` 이름과의 재충돌도 유일해질 때까지 번호를 올려야 합니다. 반환 문자열의 정확한 대응과 목표·완결 사건 이름의 일치를 확인하며 구분 표시가 DB·사용자 응답에 남지 않아야 합니다.
+- 제목 100자와 한 줄 소개 255자 및 사건·엔딩 이름 100자의 절단 경계가 토큰 안이나 조사 표기 안에 걸리면 해당 단위를 통째로 제외해야 합니다. 단위 끝이 경계와 정확히 일치하면 보존하고 최종 절단 결과의 이름 중복도 기존 규칙으로 거절해야 합니다.
+- 공개 스냅샷의 후보 ID와 현재 라이브 ID가 다르면 토큰 원문 이름으로 재연결해야 합니다. 자식 삭제로 재연결할 행이 없어도 이름 스냅샷으로 기록·복원하며 엔딩 재도달을 차단해야 합니다.
+- 같은 회원이 서로 다른 페르소나로 같은 엔딩에 도달해도 집계는 하나여야 합니다. SSE·상세·공유 턴은 각 채팅 이름으로 표시하고 카드·스토리 상세는 읽는 스토리 버전의 기본 이름으로 표시해야 합니다. 자식 삭제 뒤 이름 스냅샷 폴백에서도 같은 결과와 100자 원문 저장 상한을 확인합니다.
+
+- 페르소나는 회원만 CRUD할 수 있고 게스트의 API 요청과 `personaId` 지정 채팅 생성은 401이어야 합니다. 타인·미존재·삭제 ID는 404이며 동시 등록도 계정당 10개 상한을 지켜야 합니다.
+- 미선택 채팅은 기본 주인공을 사용하고 선택 채팅은 이름·설명 전체를 스냅샷으로 고정해야 합니다. 원본 수정·삭제 뒤에도 생성·상세·배치·내 채팅 목록의 `persona.name`과 AI 턴·재생성·선택지 요청이 일치해야 합니다.
+- 토큰 허용 필드 전체와 받침 유무 및 ㄹ 받침의 조사 치환을 확인합니다. AI 출력 표기 `으로(로)`와 `이랑(랑)`도 포함합니다. 수정 폼·검수는 원문을 유지하고 공유는 프로필 없이 채팅 이름으로 치환한 프롤로그와 저장 본문을 반환해야 합니다.
+- 이름 없는 토큰 저장은 400이어야 하며 무토큰 스토리는 이름 필드 없이 등록·수정할 수 있어야 합니다. 인물 소개는 토큰 포함 원문 기준으로 일반 제작·수정 150자와 AI 컴파일 80자를 검사하고 표시 길이는 재검사하지 않아야 합니다. 구버전 AI의 이름 필드 누락과 구버전 공개 스냅샷의 누락 필드를 수용해야 합니다.
 
 - KNK-1537 1단계는 게스트 조회, 질의 누락과 공백의 197개 전체 순서, 대표 15개 순서와 ID 일치, 30자 경계와 초과 400, 빈 검색 결과, 초성, 공백과 영문 대소문자, 별칭, 순위와 중복 제거를 검증한다. `/simple/tags`는 장르만 대표 15개이고 인물 특징은 기존과 같아야 한다.
 - 마이그레이션은 실 PostgreSQL에서 개명 ID와 FK 보존, 비활성 충돌, 재실행 안전성, CUSTOM과 인물 특징 불변, 로어북 문자열 동기화를 검증한다. 기존 스토리 문자열과 제출본은 바뀌지 않아야 한다.
