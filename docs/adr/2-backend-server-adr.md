@@ -75,6 +75,7 @@
 - [BE-055. 제공 장르 197개와 검색 전환](#be-055)
 - [BE-056. 트레이스 수집 경로와 OpenSearch Trace Analytics](#be-056)
 - [BE-057. 페르소나 스냅샷과 서버의 이름 토큰 치환](#be-057)
+- [BE-058. 부하 테스트용 운영 복제 임시 환경](#be-058)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -814,6 +815,20 @@
 - 후속 결정(2026-10-06): BE-057의 이행 절에서 구버전 AI의 이름 누락을 null로 수용하는 범위는 생성 글에도 이름 토큰이 없는 경우로 한정합니다. 생성 글에 `{username}`이 있는데 이름이 없거나 null 또는 trim 후 빈 값이면 기존 컴파일 응답 검증 실패 경로의 502와 저장 롤백 및 전액 환불·체험 카운터 복원을 적용합니다. 일반 제작·수정 입력의 400 계약은 유지합니다. 기본 주인공 이름은 공개 글에 들어가므로 검수 대상이며 서버는 토큰 없는 원문 이름을 `protagonist_name`으로 보내고 없으면 생략하거나 null을 보냅니다. 현재 AI는 이 필드를 무시하므로 실제 검사는 AI 후속 작업이며 그 전까지 검사되지 않습니다. 후속 구현은 이름 위반의 `issues[].path`로 `protagonist_name`을 반환할 수 있습니다. 토큰 자체는 위반 사유가 아니며 페르소나 설명은 계속 검수하지 않습니다.
 - 관련 계약: [페르소나 관리](../spec/4-backend-server-spec.md#persona-management), [이름 토큰](../spec/4-backend-server-spec.md#protagonist-name-token), [채팅](../spec/4-backend-server-spec.md#4-3-3-채팅과-sse-스트리밍).
 - 출처: KNK-1482 사용자 확정 계약. ([KNK-1477](https://kimandkang.atlassian.net/browse/KNK-1477), [KNK-1482](https://kimandkang.atlassian.net/browse/KNK-1482), [manyak-ai #155](https://github.com/KIM-N-KANG/manyak-ai/pull/155))
+
+<br>
+
+<a id="be-058"></a>
+
+## BE-058. 부하 테스트용 운영 복제 임시 환경
+
+- 날짜: 2026-10-07.
+- 상태: 채택. 사용자 승인된 부하 테스트 환경 결정이다.
+- 배경: 운영 RDS와 Redis는 t3.micro라 직접 부하를 주면 CPU 크레딧 소진으로 실사용자에게 영향을 줄 수 있다. dev는 1 vCPU와 3 GB의 태스크 하나에 PostgreSQL, Redis, 앱 세 개가 함께 있어 운영 성능의 근거로 삼을 수 없다. 멘토는 t3 DB로 부하 테스트하지 말고 운영과 같은 사양의 스테이징에서 k6로 개선 전후를 검증하라고 조언했다. 운영에서 부하를 발생시키지 않고 같은 구성의 한계와 변경 효과를 비교할 임시 환경이 필요하다.
+- 결정: `manyak-terraform`의 `terraform/envs/loadtest`에 운영과 같은 공용 모듈, 사양과 오토스케일링을 사용하는 임시 환경을 둔다. 운영 RDS 스냅샷을 복원하되 별도 state와 데이터 리소스를 사용하고 측정 후 destroy한다. 검색 인덱스, 로그와 트레이스가 운영 데이터와 섞이지 않고 운영 검색에 부하를 주지 않도록 전용 임시 OpenSearch 도메인을 둔다. FCM, 결제, 소셜 로그인, Slack, Sentry, Langfuse, Amplitude, Grafana와 Google Forms 외부 연동을 차단한다. 앱은 0태스크로 준비하고 정리 SQL로 실사용자의 FCM 토큰, 예약 캠페인, outbox와 대기 작업을 정리한 뒤 기동한다. AI 호출은 서버 채팅 스텁으로 건너뛰지 않고 OpenAI 호환 가짜 LLM을 거친다. 가짜 LLM의 지연은 운영 트레이스 실측에 맞춰 스트림 7.5초와 판정 2.9초로 설정한다. k6는 같은 VPC의 Fargate 일회성 태스크에서 실행한다. Terraform 코드는 `manyak-terraform`에, 가짜 LLM과 k6 코드는 `manyak-server/loadtest/`에 둔다.
+- 대안과 기각 이유: 운영 직접 부하는 CPU 크레딧 소진과 실사용자 영향 때문에 기각한다. dev를 운영처럼 개조하는 안은 팀 공용 환경을 바꾸고 영구 비용을 늘리므로 기각한다. 운영 OpenSearch 공유는 운영 검색에 영향을 주고 고정된 트레이스 서비스 이름 때문에 운영과 테스트 데이터가 섞이므로 기각한다. 서버 채팅 스텁은 AI 호출 구간을 건너뛰어 그 구간을 포함한 지연을 측정할 수 없으므로 기각한다. 공용 모듈 복사는 2,500줄 이상을 중복 관리해야 하므로 기각하며 기존 모듈 재사용과 loadtest 전용 수동 정리 절차를 선택한다.
+- 경계: internal HTTP ALB를 사용해 Cloudflare와 TLS 구간이 없고 실제 LLM 대신 mock을 쓰며 FCM 발송은 꺼진다. 복원 직후의 캐시와 t3 CPU 크레딧 상태가 측정에 영향을 주고 실사용자 트래픽도 없다. 임시 OpenSearch는 운영과 로그 부하가 다르다. 따라서 이 환경에서는 서버 쪽 지연과 처리 한계, 개선 전후 차이를 재고 사용자 체감 전체 시간은 운영 트레이스로 확인한다. 임시 환경도 t3 사양의 한계를 없애는 것은 아니므로 캐시와 크레딧 상태를 함께 해석한다. 정리 SQL은 발송과 대기 작업의 부작용을 막기 위한 것이며 복원 데이터 전체의 개인정보 비식별화를 뜻하지 않는다. 결정 당시 비용 추정은 시간당 약 0.5달러에 OpenSearch 하루 약 2달러를 더한 수준이며 측정 후 삭제하는 임시 운영을 전제로 한다.
+- 출처: 사용자 승인 결정과 멘토 조언을 정리한 [KNK-1498](https://kimandkang.atlassian.net/browse/KNK-1498), [KNK-1594](https://kimandkang.atlassian.net/browse/KNK-1594), [KNK-1595](https://kimandkang.atlassian.net/browse/KNK-1595), [KNK-1596](https://kimandkang.atlassian.net/browse/KNK-1596). 구현 근거는 [manyak-terraform #92](https://github.com/KIM-N-KANG/manyak-terraform/pull/92), [manyak-server #315](https://github.com/KIM-N-KANG/manyak-server/pull/315), [manyak-server #316](https://github.com/KIM-N-KANG/manyak-server/pull/316)이다.
 
 ## 복원 범위와 날짜 해석
 
