@@ -12,6 +12,7 @@
 |---|---|---|---|
 | 단위 | 입력 검증, 프롬프트 조립, 본문 변환, 판정 보정, 이미지 처리와 선택지 보완 | 가짜 SDK 출력과 예외, HTTP 응답으로 대체 | 로컬, CI |
 | API | HTTP 상태, SSE 순서와 필드, 메타, 대기와 취소 | 서비스 함수나 SDK 대체, ASGI 클라이언트 사용 | 로컬, CI |
+| 저장 이미지 선택 | 후보 구성, TypeSafe 요청과 응답 검사, 대체 이미지와 순차 전송 | 가짜 HTTP 응답 또는 선택 함수로 대체 | 로컬, CI |
 | 이미지 경로 통합 | 본문 수신부터 기본 이미지 선택, 편집, 업로드와 SSE 연결 | SDK 또는 HTTP 전송 대체 | 로컬, CI |
 | 실제 모델 통합 | 본문 서비스와 채팅 턴 HTTP, 선택지 HTTP | 실제 텍스트 공급자 호출 | 수동 실행<br>`RUN_LIVE_TESTS=1` 필요 |
 | 컴파일과 채팅 연결 | 컴파일 출력의 채팅 프롬프트 반영 | 저장된 명세 사용, 외부 호출 없음 | 로컬, CI |
@@ -75,11 +76,12 @@ PR에 대상 커밋, 실행 명령, 모델과 설정, 통과·실패·건너뜀 
 
 | 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
 |---|---|---|---|
-| 대상 없음 | 주요 사건과 엔딩 후보 모두 없음 | 모델 호출 없이 판정 3필드 `null` | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
+| 대상 없음 | 주요 사건과 엔딩 후보 모두 없음 | 모델 호출 없이 `targetMainEvent`, `occurredMainEventName`, `endingName` 모두 `null` | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
 | 입력과 호출 인자 | 사건과 엔딩 후보, 이미지 마커가 있는 본문 | 판정 입력에서 마커 제거<br>본문 모델 사용, JSON 모드, 출력 256토큰과 제한 시간 전달 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
 | 정상 결과와 이름 보정 | 유효한 판정, 목록 밖 이름, 음수 진행 턴 수 | 유효한 값 유지<br>유효하지 않은 필드만 `null` | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
 | 사건 상태 일관성 | 이전에 완결된 사건을 재보고, 목표와 이번 완결 사건이 같음 | 이미 완결된 사건을 목표나 완결 사건으로 다시 반환하지 않음<br>이번에 완결된 목표는 해제 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
-| 호출과 출력 실패 | 모델 오류, 빈 응답, 잘못된 JSON, 객체가 아닌 출력 | 예상한 실패를 기록하고 판정 3필드 `null`<br>내부 코드 결함은 빈 판정으로 숨기지 않음 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
+| 판정 내부 예외 | 서비스 내부 코드 오류 | 예외 전파, 빈 판정으로 변환하지 않음 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
+| 호출과 출력 실패 | 공급자 시간 초과를 포함한 모델 오류, 빈 응답, 잘못된 JSON, 객체가 아닌 출력 | 예상한 실패를 기록하고 `targetMainEvent`, `occurredMainEventName`, `endingName` 모두 `null`<br>내부 코드 결함은 빈 판정으로 숨기지 않음 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
 | 남은 시간 소진 | 기존 목표가 있는 요청, 남은 시간 0 | 모델 호출 안 함<br>목표와 진행 턴 수 유지, 완결 사건과 엔딩은 `null`<br>완료 이벤트에도 같은 상태 반영 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py), [test_chat_api](../../../../manyak-ai/tests/test_chat_api.py) |
 | 자체 대기 시간 초과 | 판정 호출을 한도보다 오래 지연 | 진행 중 호출 취소<br>기존 목표와 진행 턴 수 유지<br>시간 초과 기록 한 번 | [test_chat_judgement](../../../../manyak-ai/tests/unit/test_chat_judgement.py) |
 | 시간 배정과 ping | 본문 생성 지연, 느린 판정과 즉시 끝나는 판정 | 본문 경과 시간과 완료 여유를 빼서 판정 시간 배정<br>최대 60초<br>대기 중 ping, 즉시 완료 시 불필요한 ping 없음 | [test_chat_api](../../../../manyak-ai/tests/test_chat_api.py) |
@@ -92,7 +94,7 @@ PR에 대상 커밋, 실행 명령, 모델과 설정, 통과·실패·건너뜀 
 |---|---|---|---|
 | 슬롯 검증과 생성 조건 | 슬롯 생략, 2개 슬롯, 빈 키, 허용하지 않는 URL 형식<br>호환용 플래그만 전달 | 슬롯 없으면 생성 안 함<br>개수와 형식 위반은 422<br>검증 오류 응답에서 입력 원문과 서명 URL 제외 | [test_chat_turn_schema](../../../../manyak-ai/tests/unit/test_chat_turn_schema.py), [test_chat_api](../../../../manyak-ai/tests/test_chat_api.py) |
 | 기본 이미지와 대상 선정 | 이미지 목록 순서 변경, 기본 이미지 없는 첫 화자, 별칭 충돌 | 기본 이미지가 있는 첫 화자 선택<br>모호한 별칭 제외, 대상 없으면 생성 생략 | [test_child_image_input](../../../../manyak-ai/tests/unit/test_child_image_input.py) |
-| 대화 입력 구성 | 오프닝, 짝 없는 메시지, 이전 대화 여러 턴과 이미지 마커 | 최근 완전한 대화 최대 2턴을 시간순 반영<br>현재 입력 한 번 포함, 이미지 마커 제거<br>원본 이력 유지 | [test_child_image_input](../../../../manyak-ai/tests/unit/test_child_image_input.py) |
+| 대화 입력 구성 | 오프닝, 짝 없는 메시지, 이전 대화 여러 턴과 이미지 마커 | 최근 완전한 대화 최대 2턴을 시간순 반영<br>현재 본문은 대상 인물의 첫 대사 줄 끝까지 사용<br>현재 입력 한 번 포함, 이미지 마커 제거<br>원본 이력 유지 | [test_child_image_input](../../../../manyak-ai/tests/unit/test_child_image_input.py) |
 | 프롬프트 조립 | 짧은 이력과 템플릿 자리표시자가 포함된 시험 입력 | 대화 순서와 인용 형식 유지<br>삽입된 입력을 다시 템플릿으로 해석하지 않음 | [test_child_image_generation](../../../../manyak-ai/tests/unit/test_child_image_generation.py) |
 | 다운로드 검증 | 허용하지 않는 호스트, HTTP, 사용자 정보나 다른 포트<br>리다이렉트, 404, 지원하지 않는 형식과 크기 초과 | 허용되지 않은 주소는 연결 전 거부<br>리다이렉트 따르지 않음<br>다운로드 실패 후 모델 호출 없음 | [test_child_image_generation](../../../../manyak-ai/tests/unit/test_child_image_generation.py) |
 | 편집 호출과 결과 | PNG, JPEG, WebP 기본 이미지<br>성공, 400, 429, 500, 시간 초과, 깨진 Base64와 빈 데이터 | 참조 이미지를 `images.edit`에 전달<br>WebP 결과 또는 고정 오류 코드<br>SDK 재시도 없이 1회, 공급자 원문 제외 | [test_child_image_generation](../../../../manyak-ai/tests/unit/test_child_image_generation.py) |
@@ -121,10 +123,22 @@ PR에 대상 커밋, 실행 명령, 모델과 설정, 통과·실패·건너뜀 
 
 <br>
 
-### 7-2-6 공통 오류 처리
+### 7-2-6 저장 이미지 선택
 
 | 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
 |---|---|---|---|
+| 저장 이미지 후보 | 대사하지 않은 인물, 빈 필드, 인물별 후보 0·1·2·256개 | 화자와 유효 후보만 사용<br>단일 후보는 바로 선택, 2~255개 후보의 질문만 한 번에 호출 | [test_chat_image_selection](../../../../manyak-ai/tests/unit/test_chat_image_selection.py) |
+| 저장 이미지 입력과 선택 | 여러 화자, 최근 대화와 이미지 마커 | 최근 완전한 2턴과 이번 본문 전체 전달<br>후보의 URL 필드와 바이너리 제외, 선택 ID를 원본 이미지에 연결 | [test_chat_image_selection](../../../../manyak-ai/tests/unit/test_chat_image_selection.py) |
+| 저장 이미지 선택 실패 | 키 누락, HTTP 실패, 잘못된 응답, 시간 초과 | 재호출 없이 단일 후보 유지<br>나머지는 기본 이미지, 없으면 첫 이미지 | [test_chat_image_selection](../../../../manyak-ai/tests/unit/test_chat_image_selection.py), [test_chat_selected_images](../../../../manyak-ai/tests/unit/test_chat_selected_images.py) |
+| 저장 이미지 순차 전송 | 여러 인물과 반복 대사, 선택 지연, 본문 오류와 연결 종료 | 선택 후 인물별 첫 대사 앞에 이미지 표시<br>본문 최대 5자·0.06초 간격, 저장 결과와 일치<br>대기 중 ping, 본문 오류 시 선택 생략, 취소 시 스트림 정리 | [test_chat_selected_images](../../../../manyak-ai/tests/unit/test_chat_selected_images.py), [test_chat_api](../../../../manyak-ai/tests/test_chat_api.py) |
+
+<br>
+
+### 7-2-7 공통 오류 처리
+
+| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+|---|---|---|---|
+| TypeSafe 어댑터 | 요청 형식, 모델·질문·후보·확률 오류, 1MB 초과 응답, 취소 | 단발 HTTP 호출, 응답 검증<br>답변 하나가 잘못돼도 호출 결과 전체 거부<br>공통 오류 변환, 원문 기록 제외, 취소 전파 | [test_llm_typesafe_api](../../../../manyak-ai/tests/unit/test_llm_typesafe_api.py) |
 | 공급자 오류 분류 | 시간 초과, 호출량 제한, 요청 거부와 연결 실패 | 공통 `LlmError` 하위 예외로 변환<br>시간 초과를 연결 오류보다 먼저 구분 | [test_llm_openai_sdk](../../../../manyak-ai/tests/unit/test_llm_openai_sdk.py) |
 | 설정 오류 | 미등록 모델, 누락된 키와 잘못된 호출 설정 | 시작 검사 또는 호출 전 오류<br>공급자 오류와 별도 분류 | [test_llm_registry](../../../../manyak-ai/tests/unit/test_llm_registry.py), [test_llm_openai_sdk](../../../../manyak-ai/tests/unit/test_llm_openai_sdk.py) |
 | 스트림 종료와 취소 | 소비자 중도 이탈, 정상 종료, 모델 오류와 요청 취소 | 모델 스트림 닫음<br>취소를 `LLM_ERROR`로 보고하지 않음<br>정리 실패가 원래 실패를 덮지 않음 | [test_chat_llm](../../../../manyak-ai/tests/unit/test_chat_llm.py), [test_llm_openai_sdk](../../../../manyak-ai/tests/unit/test_llm_openai_sdk.py) |
@@ -135,21 +149,7 @@ PR에 대상 커밋, 실행 명령, 모델과 설정, 통과·실패·건너뜀 
 
 <br>
 
-**명세와 구현의 차이**
-
-| 항목 | 명세상 확인할 결과 | 현재 상태 |
-|---|---|---|
-| 본문 완성 검사 | 빈 본문과 미완성 결과를 실패로 종료하고 후속 작업 생략 | 검사 미구현 |
-| 판정 공급자 시간 초과 | 기존 목표와 진행 턴 수 유지 | 현재 구현은 `LlmTimeout`에 판정 3필드 `null`<br>자체 대기 시간 초과의 목표 유지 테스트와 구분 |
-| 판정 내부 예외 뒤 본문 전달 | 판정 실패에도 완성된 본문 전달 | 기존 단위 테스트는 코드 결함의 예외 전파를 검사<br>현재 라우터에서는 SSE 중단 가능 |
-| 이미지 입력 전체 본문 | 이번 본문 전체를 이미지 모델 입력으로 사용 | 기존 단위·API 테스트는 첫 대사까지 자르는 현재 구현을 검사 |
-| 채팅 턴 전체 120초 | 본문, 판정과 이미지 처리를 포함한 상한 준수 | 이미지 미요청 본문에 전체 시간 제한 없음<br>부분 시간 계산 테스트만으로 전체 상한 보장 불가 |
-| 실제 SDK 재시도 시간 | 서비스 복구와 SDK 재시도의 합산 한도 확인 | 텍스트는 재시도 설정값 전달 검사<br>실시간 이미지 편집은 가짜 HTTP에서 재시도 없음까지 검사 |
-| 중복 요청과 완료 전달 실패 후 복구 | 백엔드 저장·재요청 절차와 결과 정합성 확인 | AI 서버의 상태 격리 테스트로 중복 방지·복구를 검증할 수 없음<br>백엔드 포함 테스트는 이 문서 범위 밖 |
-
-<br>
-
-### 7-2-7 통합 테스트
+### 7-2-8 통합 테스트
 
 | 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
 |---|---|---|---|

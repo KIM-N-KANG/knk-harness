@@ -17,6 +17,9 @@
 | 본문 생성과 이미지 표시 | `src/services/chat_llm.py` | 텍스트 스트림, 화자 파싱, 이미지 이벤트와 저장 마커 |
 | 이미지 마커 제거 | `src/services/chat_image_markers.py` | 본문, 판정, 선택지와 이미지 입력 공통 |
 | 사건과 엔딩 판정 | `src/services/chat_judgement.py` | 판정 호출과 결과 검증 |
+| 저장 이미지 선택 | `src/services/chat_image_selection.py` | 화자별 후보 구성과 Jev 선택 |
+| 저장 이미지 전송 | `src/services/chat_selected_images.py` | 본문 수집, 선택 이미지 연결과 순차 전송 |
+| TypeSafe 어댑터 | `src/services/llm/typesafe_api.py` | 선택형 질문의 HTTP 호출과 응답 검증 |
 | 실시간 이미지 연결 | `src/services/chat_child_image.py` | 본문 수집, 이미지 생성과 업로드, 이벤트 재구성 |
 | 이미지 입력과 프롬프트 | `src/services/image/child_input.py`, `child_prompt.py` | 부모 이미지와 장면 선택, 프롬프트 조립 |
 | 이미지 생성과 업로드 | `src/services/image/generate_child.py`, `upload_child.py` | 부모 이미지 다운로드, 생성, 업로드 |
@@ -38,12 +41,13 @@ flowchart LR
     A -->|ChatTurnRequest| B["<b>assemble</b><br/>메시지 조립"]
     B -->|"list[dict]"| C["<b>stream_chat_turn</b><br/>본문 생성과 화자 파싱"]
     C -.->|"image_slots 있음, dict"| D["<b>stream_with_child_image</b><br/>이미지 연결 (선택)"]
-    C -->|"image_slots 없음, dict"| E["<b>_event_stream</b><br/>이벤트 변환과 판정 대기"]
+    C -->|"image_slots 없음, dict"| S["<b>stream_with_selected_images</b><br/>저장 이미지 선택과 전송"]
+    S --> E["<b>_event_stream</b><br/>이벤트 변환과 판정 대기"]
     D -.->|dict| E
     E -->|"이벤트 이름, dict"| F["<b>_sse</b><br/>SSE 직렬화"]
     F -->|str| O[" "]
     classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
-    class A,B,C,D,E,F code
+    class A,B,C,D,E,F,S code
     style I fill:none,stroke:none
     style O fill:none,stroke:none
 ```
@@ -127,8 +131,8 @@ flowchart LR
 | 2 | `_event_stream` | 요청 → 관측 문맥 | 생성기 내부에서 요청 관측 시작 |
 | 3 | `assemble` | 요청 → 메시지 목록 | 레이어, 이력, 사용자 입력, 메모리와 PHI 조립 |
 | 4 | `stream_chat_turn` | 공통 스트림 → 내부 이벤트 | 텍스트 누적, 화자 파싱, 이미지 이벤트와 저장 마커 구성 |
-| 5 | `_event_stream` | 본문 완료 → 판정 작업 | 본문 완료 시 판정 시작. 이미지 슬롯이 있으면 이미지 모듈의 콜백으로 시작 |
-| 6 | `stream_with_child_image` | 내부 이벤트 → 재구성한 이벤트 | 이미지 슬롯이 있는 요청의 생성과 업로드 연결 |
+| 5 | `_event_stream` | 본문 완료 → 판정 작업 | 두 이미지 경로의 본문 완료 콜백으로 판정 시작 |
+| 6 | `stream_with_child_image` 또는 `stream_with_selected_images` | 내부 이벤트 → 재구성한 이벤트 | 슬롯이 있으면 생성과 업로드, 없으면 저장 이미지 선택과 순차 전송 |
 | 7 | `_event_stream` | 내부 이벤트와 판정 → 이벤트 모델 | 판정 대기 중 ping 전송, 본문과 판정 사용량 합산 |
 | 8 | `_sse` | 모델의 `dict` → SSE | 외부 필드 별칭을 적용한 데이터 직렬화 |
 
@@ -498,13 +502,113 @@ flowchart LR
 
 <br>
 
-### 6-2-6 공통 구현 규칙
+### 6-2-6 저장 이미지 선택
+
+**처리 흐름**
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
+flowchart LR
+    A["<b>stream_with_selected_images</b><br/>본문 수집과 판정 시작"] --> B["<b>select_images</b><br/>화자와 후보 구성"]
+    B --> C["<b>llm.evaluate</b><br/>TypeSafe 호출과 검증"]
+    C --> D["<b>_prepare</b><br/>선택 또는 대체 이미지 매핑"]
+    D --> E["<b>render_chat_images</b><br/>이벤트와 저장 마커 구성"]
+    E --> F["<b>stream_with_selected_images</b><br/>순차 전송"]
+    class A,B,C,D,E,F code
+    classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
+```
+
+<br>
+
+**데이터 처리 흐름**
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
+flowchart LR
+    I["<b>입력</b><br/>ChatTurnRequest와 완료 본문"] --> Q["<b>선택 질문</b><br/>EvaluationRequest<br/>ChoiceQuestion"]
+    Q --> M["<b>선택형 모델 호출</b>"]
+    M --> R["<b>응답</b><br/>EvaluationResult<br/>ChoiceAnswer"]
+    R --> S["<b>선택 결과</b><br/>ImageSelectionResult"]
+    S --> O["<b>출력</b><br/>이미지와 본문 이벤트<br/>저장 본문과 표시 이미지 목록"]
+    class I,Q,R,S,O data
+    class M task
+    classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
+```
+
+<br>
+
+**1. 구현 위치와 역할**
+
+| 구성 요소 | 구현 위치 (`manyak-ai` 기준) | 역할 |
+|---|---|---|
+| 선택 서비스 | `src/services/chat_image_selection.py` | 화자별 후보, 질문과 선택 결과 구성 |
+| 전송 서비스 | `src/services/chat_selected_images.py` | 본문 수집, 대체 이미지 적용과 순차 전송 |
+| 공통 선택 호출 | `src/services/llm/typesafe_api.py` | HTTP 호출과 응답 검사 |
+| 이미지 표시 | `src/services/chat_llm.py` | 화자 식별, 이미지 이벤트와 저장 마커 구성 |
+
+<br>
+
+**2. 데이터 모델**
+
+| 모델 | 주요 필드 | 의미 |
+|---|---|---|
+| `EvaluationRequest` | `model`, `state`, `questions`, `timeout` | 모델, 대화 맥락, 인물별 질문과 제한 시간 |
+| `ChoiceQuestion` | `instructions`, `criteria` | 선택 지시와 후보 ID별 이미지 이름 |
+| `ChoiceAnswer` | `choice`, `probabilities`, `confidence` | 선택 ID, 후보별 확률과 신뢰도 |
+| `EvaluationResult` | `answers`, `model`, `provider`, `usage` | 검증한 답변과 호출 정보 |
+| `ImageSelectionResult` | `images`, `usage` | 선택된 원본 `CharacterImageMapping` 목록과 사용량 |
+
+<br>
+
+**3. 함수 인터페이스**
+
+| 함수 | 입력 | 출력 | 실행 방식 |
+|---|---|---|---|
+| `speaking_character_names` | 본문, `list[CharacterImageMapping]` | `list[str]` | 동기 |
+| `select_images` | 이미지 목록, 이력, 사용자 입력, 본문, 제한 시간 | `ImageSelectionResult` | 비동기 |
+| `llm.evaluate` | `EvaluationRequest` | `EvaluationResult` | 비동기 |
+| `_prepare` | 내부 이벤트, 요청, 본문 완료 콜백 | 완료 데이터와 전송 이벤트 목록 | 비동기 |
+| `stream_with_selected_images` | 내부 이벤트, 요청, 본문 완료 콜백 | `AsyncIterator[dict]` | 비동기 생성기 |
+
+<br>
+
+**4. 처리 순서와 데이터 변환**
+
+| 순서 | 담당 | 처리 |
+|---|---|---|
+| 1 | `_prepare` | 본문 수집, 이미지 마커 제거, 완료 콜백으로 판정 시작 |
+| 2 | `select_images` | 화자별 후보 분류, 단일 후보 선택과 복수 후보 질문 구성 |
+| 3 | `llm.evaluate` | TypeSafe 단발 호출과 검증, 선택 ID 반환 |
+| 4 | `select_images` | 선택 ID를 원본 이미지 매핑으로 변환 |
+| 5 | `_prepare` | 선택 결과가 없는 인물에 대체 이미지 적용 |
+| 6 | `render_chat_images` | 같은 매핑으로 이벤트, 저장 본문과 표시 목록 구성 |
+| 7 | `stream_with_selected_images` | 본문을 나눠 전송하고 완료 데이터 반환 |
+
+<br>
+
+**5. 구현 규칙과 의존성**
+
+| 대상 | 적용 규칙 |
+|---|---|
+| 상태 | 요청과 이력을 수정하지 않고 호출별 후보와 선택 결과를 구성한다. |
+| 별칭 | 전체 인물 이름 목록을 유지해 이미지 선택 전후의 별칭 충돌 판정이 달라지지 않게 한다. |
+| 경계 | 선택 서비스는 원본 매핑을 반환하고 전송 서비스가 대체 이미지와 표시 순서를 정한다. |
+| 취소 | `_collect`와 `_pings_until_done`을 재사용해 스트림과 대기 작업을 정리한다. |
+| 테스트 대체 | 선택은 `llm.evaluate`, 전송은 `select_images`, 어댑터는 HTTP 전송을 대체한다. |
+
+<br>
+
+### 6-2-7 공통 구현 규칙
 
 | 대상 | 규칙 |
 |---|---|
 | 역할 분리 | 라우터는 요청 문맥, 비동기 작업과 외부 출력을 관리한다. 서비스는 입력 조립, 모델 실행과 결과 변환을 담당한다. |
 | 이름과 타입 | 함수와 변수는 `snake_case`, 클래스는 `PascalCase`를 사용한다. 입력과 반환 타입을 명시한다. |
-| 모델 호출 | 텍스트는 `llm.complete`와 `llm.stream`, 이미지는 `generate_image`를 사용한다. 공급자 SDK와 클라이언트 생성은 공통 어댑터에 둔다. |
+| 모델 호출 | 텍스트는 `llm.complete`와 `llm.stream`, 저장 이미지 선택은 `llm.evaluate`, 이미지는 `generate_image`를 사용한다. 공급자 SDK와 클라이언트 생성은 공통 어댑터에 둔다. |
 | 설정 | `src/core/config.py`의 `settings`를 사용한다. 서비스에서 환경 변수를 직접 읽거나 비밀값을 하드코딩하지 않는다. |
 | 비동기 | 외부 호출을 기다리는 함수는 비동기로, 입력 조립과 결과 검사는 동기로 작성한다. 취소를 일반 실패로 숨기지 않는다. |
 | 호출 한도 | 호출마다 제한 시간을 지정한다. 보완은 정해진 횟수와 시간 안에서 수행한다. |
@@ -551,6 +655,6 @@ flowchart LR
 |---|---|
 | Python, FastAPI, Pydantic | Python 3.11 이상. FastAPI 라우터와 Pydantic 모델로 외부 입출력 검증 |
 | 공급자 SDK | `src/services/llm/`과 `src/services/image/`의 어댑터에서 사용. 클라이언트 생성과 재사용은 어댑터가 관리 |
-| HTTPX | 부모 이미지 다운로드와 생성 이미지 업로드 |
+| HTTPX | 부모 이미지 다운로드, 생성 이미지 업로드와 TypeSafe 선택 호출 |
 | 관측 도구 | `src/core/`에서 요청 문맥과 공통 관측 함수 제공. 라우터는 생성기 안에서 관측 문맥을 열고 하위 호출에 전달 |
 | 버전 관리 | `pyproject.toml`에서 의존성 범위 관리. 공통 어댑터 변경 시 채팅과 스토리 호출 테스트를 함께 확인 |

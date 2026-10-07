@@ -14,6 +14,7 @@
 |---|---|---|
 | 본문과 판정, 선택지의 모델 입력과 출력 | Langfuse 요청 추적과 하위 호출 | 프롬프트, 모델 출력, 사용량과 호출 시간 |
 | 본문·판정·선택지 호출 오류 | Sentry | `request_id`, `feature`, `error_code`, 모델과 스택 |
+| 저장 이미지 선택 | Langfuse `LLM 판정`, 선택 실패 로그 | 모델, 질문 수, 사용량과 오류 타입 |
 | 이미지 생성과 기본 이미지 대체 | Langfuse `child_image` metadata와 이미지 호출 | 작업 상태, 사유, 소요 시간, 기본 이미지 대체 여부 |
 | 다운로드·생성·업로드 지연 | 인프라 추적 | HTTP 요청 아래의 `llm.stream`, `llm.complete`, `image.download`, `image.generate`, `image.upload` |
 | 요청 간 연결과 내부 경고 | JSON 로그 | `request_id`, 추적 활성 시 `traceId`와 `spanId`, 오류와 대체 결과 경고 |
@@ -39,11 +40,12 @@
 | 채팅 턴 요청 | SSE 생성기 실행부터 종료까지<br>`채팅 턴` | 슬롯을 제외한 요청 입력, 연결 식별자, 프롬프트 버전, `retry_count=0`<br>유효한 `user_source`가 있으면 metadata에도 포함 | `src/api/v1/chat.py`의 `_event_stream` |
 | 선택지 요청 | API 실행부터 반환까지<br>`채팅 선택지` | `user_source`와 슬롯을 제외한 입력, 연결 식별자, `NEXT_ACTIONS` 버전<br>반환 전 실제 `retry_count` 반영 | `src/api/v1/chat.py`의 `chat_choices` |
 | 텍스트 호출 | 본문, 판정, 선택지 최초 생성과 보완 호출마다 | OpenAI SDK 자동 계측의 프롬프트, 출력, 모델, 사용량과 시간 | `src/core/langfuse.py`의 `init_langfuse`, `src/services/llm/openai_sdk.py` |
+| 저장 이미지 선택 호출 | TypeSafe 호출마다<br>`LLM 판정` | 모델, 질문 수, 제한 시간, 재시도 0, 사용량과 응답 수<br>호출 input과 output에 대화·이미지 이름·선택 원문 제외 | `src/services/llm/typesafe_api.py` |
 | 이미지 편집 호출 | 모델 호출마다<br>`이미지 생성:자식` | 프롬프트, 모델, 크기, 화질, 형식<br>사용량과 결과 바이트 수 | `src/services/image/openai_api.py`, `src/core/langfuse.py`의 `observe_generation` |
 | 이미지 전체 결과 | 이미지 슬롯이 있는 턴의 종료 시 `child_image` 기록<br>슬롯이 없으면 기록 안 함 | 상태, 사유, 작업 시간, 기본 이미지 대체 여부와 이미지 프롬프트 버전 | `src/services/chat_child_image.py`, 라우터의 `finally` |
 | 호출 오류 | 실패한 본문·판정·선택지 시도마다 | 기능, 공급자, 모델, 오류 분류, 프롬프트 버전, 보완 횟수와 소요 시간 | `src/core/sentry.py`의 `capture_ai_exception` |
 | 인프라 요청과 작업 | HTTP 요청과 각 모델·이미지 작업의 시작과 종료 | 경로 템플릿, HTTP 상태, 공급자, 모델, 작업 종류, 상태와 예외 타입 | `src/core/tracing.py`, 각 공급자 어댑터와 이미지 다운로드·업로드 함수 |
-| 로그 | 오류, 판정값 무효화, 선택지 대체와 관측 실패 시 | 시각, 서비스, 로그 수준, 메시지, 식별자와 예외 스택 | `src/core/json_logging.py`, 각 서비스 모듈 |
+| 로그 | 오류, 판정값 무효화, 저장 이미지 선택 실패, 선택지 대체와 관측 실패 시 | 시각, 서비스, 로그 수준, 메시지, 식별자와 예외 스택 | `src/core/json_logging.py`, 각 서비스 모듈 |
 
 <br>
 
@@ -55,7 +57,7 @@
 | 공급자와 모델 | 본문 또는 선택지의 실제 값 | 하위 호출 모델 | Sentry와 인프라 작업 속성 |
 | 프롬프트 버전 | 채팅과 선택지의 계약 키 | 요청 metadata, 이미지 버전은 `child_image.prompt_version` | 명시 캡처의 `ai.prompt_versions` |
 | 보완 횟수 | 채팅 0, 선택지 0~2 | 요청 `retry_count` | 명시 캡처의 `ai.retry_count` |
-| 토큰 | 채팅은 본문·판정 합계<br>선택지는 최초·보완 합계<br>이미지 제외 | 텍스트·이미지 호출별 사용량 | Sentry 오류 컨텍스트와 인프라 스팬에는 없음 |
+| 토큰 | 채팅은 본문·판정 합계<br>선택지는 최초·보완 합계<br>저장 이미지 선택·이미지 생성 제외 | 호출별 사용량 | Sentry 오류 컨텍스트와 인프라 스팬에는 없음 |
 | 시간 | 없음 | 관측 시작·종료, `child_image.duration_ms` | Sentry `ai.latency_ms`, 인프라 스팬 시간 |
 | 오류 | 없음 | 호출 오류 수준과 이미지 결과 사유 | Sentry `error_code`, 인프라 `error.type` |
 | 입력 출처 | 없음 | 채팅 요청 metadata의 `user_source` | 선택지 metadata에는 없음 |
@@ -84,6 +86,7 @@
 | 판정 | Sentry `feature=chat_response`<br>`prompt_versions`의 `JUDGEMENT`와 스택으로 구분 |
 | 선택지 | Sentry `feature=choice_generation` |
 | 이미지 | Langfuse `child_image`, 이미지·인프라 호출 기록 |
+| 저장 이미지 선택 | Langfuse `LLM 판정`, 예외 타입만 남기는 선택 실패 경고 로그 |
 
 | 오류나 현상 | 기록 | 확인 대상 |
 |---|---|---|
@@ -114,7 +117,7 @@
 | 처리 시간 | 채팅 턴·선택지 각각의 중앙값과 백분위, 단계별 소요 시간 | Langfuse와 인프라 추적<br>첫 토큰 지연과 사용자 수신 완료 시간은 별도 계측 없음 |
 | 본문 재생성률 | 재생성 턴 / 전체 턴 | `is_regenerated`가 있는 채팅 요청<br>선택지 요청을 분모에 중복 포함하지 않음 |
 | 선택지 사용률 | `choice` 또는 `edited_choice` 입력 / 전체 사용자 입력 | 채팅 `user_source`<br>누락·무효 값을 직접 입력으로 단정하지 않음 |
-| 턴당 생성 비용 | 본문·판정·선택지·이미지와 재호출 비용 합 | 호출별 사용량과 모델 단가<br>두 요청 추적을 턴 식별자로 연결, 재생성은 별도 건 |
+| 턴당 생성 비용 | 본문·판정·선택지·저장 이미지 선택·이미지 생성과 재호출 비용 합 | 호출별 사용량과 모델 단가<br>두 요청 추적을 턴 식별자로 연결, 재생성은 별도 건 |
 
 <br>
 

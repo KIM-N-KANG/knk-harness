@@ -51,7 +51,7 @@
 | `endings[].epilogue` | `string` | 필수 | 엔딩 연출 방향 |
 | `character_images` | `object[]` | 선택 | 저장된 인물 이미지 목록<br>기본값 `[]` |
 | `character_images[].name` | `string` | 필수 | 인물의 정식 이름 |
-| `character_images[].image_name` | `string / null` | 선택 | 이미지 이름, 기본 이미지는 `인물이름_기본`<br>생략과 `null`은 빈 문자열 |
+| `character_images[].image_name` | `string / null` | 선택 | 장면 선택에 사용하는 이미지 이름, 기본 이미지는 `인물이름_기본`<br>생략과 `null`은 빈 문자열 |
 | `character_images[].image_url` | `string` | 필수 | 이미지 URL |
 | `image_slots` | `object[]` | 선택 | 실시간 이미지 업로드 슬롯 최대 1개<br>기본값 `[]`, 비어 있으면 생성하지 않음 |
 | `image_slots[].key` | `string` | 필수 | 저장 객체 키<br>빈 문자열과 공백만 있는 값은 허용하지 않음 |
@@ -77,7 +77,7 @@
 | `completed` | 아래 완료 필드 | `object` | 정상 종료 |
 | `error` | `code`, `message` | `string` | 실패 코드와 메시지 ([5-4 실패 계약](#5-4-실패-계약)) |
 
-`character_image`는 해당 인물의 첫 대사 앞에 온다. 실시간 이미지를 요청한 턴은 이미지 처리 후 본문을 전달한다. `started`, `chatId`, `turnId`는 백엔드가 부착한다.
+`character_image`는 해당 인물의 첫 대사 앞에 온다. 본문 완성과 이미지 처리를 기다리는 동안 `ping`을 보내고, 이후 이미지와 본문을 순서대로 전달한다. 슬롯이 없으면 저장 이미지 선택, 있으면 실시간 이미지 생성을 수행한다. `started`, `chatId`, `turnId`는 백엔드가 부착한다.
 
 <br>
 
@@ -90,7 +90,7 @@
 | `characterImages` | `object[]` | 본문에 연결한 이미지, 표시 순서<br>인물마다 최대 1개, 빈 배열 허용 |
 | `characterImages[].name` | `string` | 인물의 정식 이름 |
 | `characterImages[].imageName` | `string` | 요청의 이미지 이름<br>실시간 이미지 성공 시 `인물이름_실시간_UUID` |
-| `characterImages[].imageUrl` | `string` | 기본 이미지 URL 또는 슬롯의 `public_url` |
+| `characterImages[].imageUrl` | `string` | 선택한 저장 이미지 URL 또는 슬롯의 `public_url` |
 | `targetMainEvent` | `object / null` | 다음 턴의 목표 사건<br>없거나 이번 턴에 완결됐으면 `null` |
 | `targetMainEvent.name` | `string` | 미완결 주요 사건 이름 |
 | `targetMainEvent.progressTurns` | `integer` | 진행 턴 수, 0 이상 |
@@ -150,13 +150,37 @@
 
 ```text
 event: token
-data: {"text":"*기록장 가장자리에 푸른 흔적이 떠오른다.*\n"}
+data: {"text":"*기록장 "}
+
+event: token
+data: {"text":"가장자리에"}
+
+event: token
+data: {"text":" 푸른 흔"}
+
+event: token
+data: {"text":"적이 떠오"}
+
+event: token
+data: {"text":"른다.*\n"}
 
 event: character_image
 data: {"name":"도윤","imageName":"도윤_기본","imageUrl":"https://images.example.com/doyun.webp"}
 
 event: token
-data: {"text":"도윤: 지하 보관실로 이어지는 흔적이군요."}
+data: {"text":"도윤: 지"}
+
+event: token
+data: {"text":"하 보관실"}
+
+event: token
+data: {"text":"로 이어지"}
+
+event: token
+data: {"text":"는 흔적이"}
+
+event: token
+data: {"text":"군요."}
 
 event: ping
 data: {}
@@ -322,7 +346,7 @@ data: {}
 | `model` | `model` | `string` | 실제 본문 또는 선택지 모델 이름 |
 | `provider` | `provider` | `string` | 모델 공급자 |
 | `promptVersions` | `prompt_versions` | `map<string, integer>` | 템플릿별 버전<br>채팅: `CORE`, `SAFETY`, `STORY`, `CHARACTER`, `USER`, `MEMORY`, `JUDGEMENT`<br>선택지: `NEXT_ACTIONS` |
-| `inputTokenCount` | `input_token_count` | `integer / null` | 입력 토큰 합계<br>채팅은 본문과 판정, 선택지는 최초 생성과 보완 호출<br>이미지 제외, 알 수 없으면 `null` |
+| `inputTokenCount` | `input_token_count` | `integer / null` | 입력 토큰 합계<br>채팅은 본문과 판정, 선택지는 최초 생성과 보완 호출<br>저장 이미지 선택과 이미지 생성 제외, 알 수 없으면 `null` |
 | `outputTokenCount` | `output_token_count` | `integer / null` | 같은 집계 범위의 출력 토큰 합계<br>알 수 없으면 `null` |
 | `retryCount` | `retry_count` | `integer` | 보완 호출 횟수, SDK 재시도 제외<br>채팅은 0, 선택지는 0~2 |
 
@@ -431,3 +455,18 @@ data: {}
 ```
 
 </details>
+
+<br>
+
+**3. TypeSafe 이미지 선택 API**
+
+| 항목 | 계약 |
+|---|---|
+| 호출 | `POST {TYPESAFE_API_URL}/v1/systemone`, Bearer 인증<br>[TypeSafe 어댑터](../../../../manyak-ai/src/services/llm/typesafe_api.py) |
+| `model` | `JEV_MODEL` |
+| `state` | 최근 대화 최대 2턴과 이번 사용자 입력, 완성된 본문<br>이미지 마커 제거, 후보의 URL 필드와 바이너리는 전송하지 않음 |
+| `questions` | 인물별 선택 질문을 한 요청으로 전달<br>`type="choice"`, `instructions`, `criteria`로 구성 |
+| `criteria` | 후보 ID와 이미지 이름의 매핑, 질문당 2~255개 |
+| 응답 | `model`, `answers`, `usage`<br>`answers`는 질문 ID별 `type="choice"`, `choice`, `probabilities`, `confidence` |
+| 사용량 | `usage.input_tokens`, `usage.output_tokens`<br>채팅 완료 `meta`에는 합산하지 않음 |
+| 응답 검사 | 모델, 질문과 후보 ID 일치<br>확률은 0~1, 합은 1에서 오차 0.010001 이내<br>선택 후보가 최고 확률이며 신뢰도는 0~1<br>하나라도 위반하면 해당 호출의 선택 결과 전체를 거부 |
