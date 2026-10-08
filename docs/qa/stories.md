@@ -12,7 +12,7 @@
 | 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003), 스토리 수정 `/stories/[id]/edit`(FE-SCREEN-009) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts`, `manyak-web/e2e/stories/story-persona.spec.ts` |
 
 ## 읽는 순서
 
@@ -134,6 +134,10 @@
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
 | STORY-DETAIL-26 | P1 | 현재 공개 상태의 오리지널 상세를 서버가 조회할 수 있음 | JavaScript를 끄고 상세 HTML과 메타데이터 확인 | HTML에 공개 본문과 단일 h1이 포함되고 제목, description, canonical, Open Graph 및 Twitter가 해당 작품을 가리킴. 숨겨진 설정과 개인화 데이터는 HTML과 RSC 페이로드에 없음 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행), 이미지 폴백은 단위 테스트 | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 | STORY-DETAIL-27 | P1 | 사용자 스토리, 오리지널 판정 실패, 상세 404 또는 503, 공개 목록 캐시와 다른 현재 비공개 상태 | 첫 HTML의 robots 확인 후 클라이언트 조회 성공 | `noindex, nofollow`이고 서버에서 비공개 본문을 노출하지 않음. 인증된 클라이언트 조회로 정상 본문을 복구할 수 있음. robots.txt는 상세 수집을 허용 | ✅ e2e `seo/crawler-indexing`(미도달), `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행) | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
+| STORY-DETAIL-52 | P0 | 동의를 마친 회원, 내 페르소나 1개 이상 | 채팅 시작 상황의 페르소나 정보 버튼 탭 → Select 펼치기 → 페르소나 선택 → "새 채팅 시작하기" | 상황 이름 위에 "페르소나" 소제목과 정보 버튼이 있고 안내 팝오버가 열림. 기본값은 "기본 주인공". 목록은 기본 주인공, 내 페르소나, 더하기 아이콘의 "페르소나 생성하기" 순서. 고른 페르소나가 Select에 표시되고 `POST /chats`에 그 `personaId`가 실림 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-53 | P0 | 동의를 마친 회원 | 페르소나를 바꾸지 않고 "새 채팅 시작하기" | `POST /chats`의 `personaId`가 없거나 null(기본 주인공) | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-54 | P1 | 게스트 | 페르소나 Select 펼치기 → "페르소나 생성하기" | 페르소나 목록 API를 부르지 않고 기본 주인공만 표시. 상세에 머문 채 로그인 필요 시트가 열리고, 닫으면 선택은 기본 주인공 그대로 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-55 | P1 | 회원, 내 페르소나 10개 | "페르소나 생성하기" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
 
 ### 좋아요
 

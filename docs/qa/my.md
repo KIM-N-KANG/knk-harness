@@ -6,13 +6,13 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-09-16 |
+| 수정일 | 2026-10-08 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
-| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 생성 `/my/personas/new`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
 ## 읽는 순서
 
@@ -25,6 +25,7 @@
 - [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
 - [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
+- [MY-PERSONA — 페르소나 생성 `/my/personas/new` (FE-SCREEN-008, KNK-1469)](#my-persona--페르소나-생성-mypersonasnew-fe-screen-008-knk-1469)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
@@ -143,6 +144,18 @@
 | MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
+
+## MY-PERSONA — 페르소나 생성 `/my/personas/new` (FE-SCREEN-008, KNK-1469)
+
+기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지), [웹 URL](../spec/3-2-web-spec.md).
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-PERSONA-01 | P0 | 동의를 마친 회원, 스토리 상세 | 페르소나 Select의 "페르소나 생성하기" → 이름·성별·특징 입력 → "생성하기" | `/my/personas/new`의 "페르소나 생성" 화면이 열림. `POST /users/me/personas`에 앞뒤 공백을 뺀 `name`과 `# 주인공`, `## 성별`, 성별 값, 특징을 줄바꿈으로 이은 `description`이 실림. "페르소나를 생성했어요" 토스트 후 상세로 돌아오고 Select 목록에 새 페르소나가 보임 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-02 | P1 | 회원, 생성 화면 | 아무것도 입력하지 않고 "생성하기" → 이름 입력 → 성별 선택 | 요청 없이 기본 정보 아래 "이름을 입력해 주세요", 특징 아래 "특징을 입력해 주세요"가 표시됨. 이름을 입력하면 "성별을 선택해 주세요"로 바뀌고 성별을 고르면 안내 문구로 돌아옴 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-03 | P1 | 회원, 생성 요청이 409(10개 초과) 또는 5xx | 입력 후 "생성하기" | 409는 "페르소나는 10개까지 만들 수 있어요", 그 밖은 "페르소나를 생성하지 못했어요" 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `stories/story-persona`(409) | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-04 | P1 | 게스트 | `/my/personas/new` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
+| MY-PERSONA-05 | P2 | 회원, 생성 화면 | 이름 20자, 특징 500자를 넘겨 입력 시도. 생성 요청 중 화면 관찰 | 각 상한에서 입력이 막히고 카운터가 `20 / 20`, `500 / 500`. 요청 중에는 입력이 잠기고 버튼 크기를 유지한 스피너("페르소나 생성 중")가 보임 | 수동 | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 

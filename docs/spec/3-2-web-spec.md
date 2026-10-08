@@ -143,6 +143,7 @@
 | 스토리 상세·채팅방 | `/stories/[id]`·`/chats/[id]` | 서버 권한 판정 |
 | 로그인·로그인 이어가기 | `/login`·`/login/continue` | 인증 진입 |
 | 친구 초대·이프 충전·회원 탈퇴 | `/my/invite`·`/my/credits`·`/my/account-deletion` | 회원 |
+| 페르소나 생성 | `/my/personas/new` | 회원. 게스트는 로그인 화면으로 보냄 |
 | 이프 충전 결제 복귀 | `/my/credits/return` | 그로블 결제창 복귀 전용. 화면 없이 결제 전 충전 화면으로 되감거나 `/my/credits`로 바꿔 끼움([유료 충전](#유료-충전)) |
 | 피드백·서비스 안내 | `/my/feedback`·`/about` | 게스트·회원 |
 | 약관·개인정보처리방침 | `/terms`·`/privacy` | 로그인 전에도 허용 |
