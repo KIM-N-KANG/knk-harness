@@ -276,6 +276,12 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_personaCreate_viewed`                            |
 | P1 `Phase 3 · 구현` | client | `client_personaCreate_form_submitted`                    |
 | P1 `Phase 3 · 구현` | client | `client_personaCreate_completed`                         |
+| P1 `Phase 3 · 구현` | client | `client_personaList_viewed`                              |
+| P1 `Phase 3 · 구현` | client | `client_personaList_createButton_clicked`                |
+| P1 `Phase 3 · 구현` | client | `client_personaList_persona_deleted`                     |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_viewed`                              |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_form_submitted`                      |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -683,18 +689,24 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | 시작 설정 선택                         | 웹 미구현(앱 전용 UX)                    | 도입 시 `client_storyDetail_startSetting_selected`                                                       |
 | `client_storyList_viewed`의 `section`  | 미전송                                  | 선택 프로퍼티이므로 웹은 유지. `/studio` 진입을 따로 보려면 `created`로 발화                            |
 
-#### 6-4-2-17. 페르소나 생성 — `Phase 3 · 구현`(KNK-1469)
+#### 6-4-2-17. 페르소나 생성과 관리 — `Phase 3 · 구현`(KNK-1469)
 
-페르소나 생성 화면([`3-1-client-spec.md` FE-SCREEN-008 페르소나 생성](3-1-client-spec.md#fe-screen-008-로그인마이-페이지))의 이벤트입니다. 진입은 스토리 상세의 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가 담당합니다.
+페르소나 생성과 관리 화면([`3-1-client-spec.md` FE-SCREEN-008](3-1-client-spec.md#fe-screen-008-로그인마이-페이지))의 이벤트입니다. 스토리 상세에서의 생성 진입은 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가, 관리 목록에서의 생성 진입은 `client_personaList_createButton_clicked`가 담당합니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_personaCreate_viewed` | P1 | 페르소나 생성 화면 진입 | 없음 |
 | `client_personaCreate_form_submitted` | P1 | "생성하기"를 눌러 입력 검증을 통과하고 생성 요청을 보낼 때 | 없음 |
 | `client_personaCreate_completed` | P1 | 생성 응답 201을 받았을 때 | 없음 |
+| `client_personaList_viewed` | P1 | 페르소나 관리 목록 진입 | 없음 |
+| `client_personaList_createButton_clicked` | P1 | 목록의 "페르소나 추가" 클릭(10개 상한으로 이동하지 않아도 발생) | 없음 |
+| `client_personaList_persona_deleted` | P1 | 삭제 확인 뒤 삭제 응답 204를 받았을 때 | 없음 |
+| `client_personaEdit_viewed` | P1 | 페르소나 수정 화면 진입 | 없음 |
+| `client_personaEdit_form_submitted` | P1 | "저장하기"를 눌러 입력 검증을 통과하고 수정 요청을 보낼 때 | 없음 |
+| `client_personaEdit_completed` | P1 | 수정 응답 200을 받았을 때 | 없음 |
 
 - 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
-- 페르소나 생성에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
+- 페르소나 생성과 수정에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
 - 페르소나 사용률은 `client_storyDetail_chatStartButton_clicked`의 `persona_type = persona` 비율로 봅니다.
 
 ### 6-4-3. impression 수집 기준
