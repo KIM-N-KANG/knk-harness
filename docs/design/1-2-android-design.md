@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.5 |
+| 버전 | v0.6 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-07 |
+| 수정일 | 2026-10-09 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -83,6 +83,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | 계약·상태 | 소유자와 소비 방식 |
 | --- | --- |
 | `ChatStarter` | `common` 계약, `chat` 구현. 다른 기능의 채팅 시작 요청을 연결 |
+| `PersonaAccess` | `common` 계약, `my`의 `PersonaRepositoryImpl` 구현. 상세가 내 페르소나 목록과 상세에서 만든 페르소나의 미리 선택을 관찰하고 다시 읽기와 미리 선택 지우기만 호출. 생성, 수정, 삭제는 마이가 소유 |
 | `CreationProgressAccess` | `common` 계약, `create` 구현. 제작 요약 관찰·폐기·새로고침만 노출 |
 | `StoryLikeUpdates` | `common` 계약, `home` 구현. 상세의 성공한 좋아요 수를 홈 목록으로 전달 |
 | `StoryDeletion` | `common` 계약, `studio` 구현. 상세 화면의 삭제와 목록 상태를 연결 |
@@ -125,6 +126,8 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 - 홈 카드·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를, 제작 `MyStoryCard`의 메타는 좋아요 수·턴 수·제작일을 그립니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 성공한 수는 `common`의 `StoryLikeUpdates`로 `HomeRepositoryImpl`에 전달합니다. 저장소의 replay 없는 `SharedFlow`를 `HomeViewModel`이 자신의 수명 동안 수집해 같은 카드만 갱신하며, 조회 중 수신한 변경은 해당 응답에 합쳐 늦은 응답의 덮어쓰기를 막습니다. 새 조회가 시작되면 임시 합산 값을 비워 서버 값을 다시 정본으로 씁니다.
 - 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
+- 상세의 페르소나 셀렉트는 `StoryPersonaControl`이 소유합니다. 내 페르소나 목록과 상세에서 만든 페르소나(`CreatedPersona`)는 `PersonaAccess`의 메모리 StateFlow를 관찰하고, 직접 고른 값은 컨트롤 안의 장부에 둬 고른 직후의 채팅 시작이 이벤트 채널보다 앞선 값을 읽습니다. 화면이 보일 때마다 목록을 다시 읽고, 목록에 없는 선택은 기본 주인공으로 돌아갑니다. "페르소나 생성하기"는 `ManyakSelectField`의 동작 항목(`ManyakSelectAction`)이며 `app`이 `PersonaCreateRoute(originStoryId)`를 쌓습니다. 생성에 성공하면 저장소가 그 스토리의 미리 선택을 남기고, 다른 주인공을 고르거나 채팅을 시작하면 지웁니다. 채팅을 시작할 때 고른 주인공은 직접 고른 값으로 굳혀, 백스택에 남은 상세가 채팅방에서 돌아왔을 때 같은 선택을 보입니다. 하단 CTA는 라벨 아래 `labelTiny` 한 줄로 고른 페르소나와 시작 상황을 요약하며, 두 줄이 하트 버튼과 같은 48dp 안에 들도록 버튼의 세로 안쪽 여백을 걷습니다.
+- 마이의 페르소나 관리(`MyPersonasRoute`), 생성(`PersonaCreateRoute`), 수정(`PersonaEditRoute(personaId)`)은 `my/persona`가 소유합니다. 목록 ViewModel은 저장소 목록을 관찰하고 진입 때 다시 읽으며, 옵션 시트와 삭제 확인의 대상을 `optionsTarget`, `deleteTarget`으로 둡니다. 줄은 채팅 카드, 내 스토리 카드와 같이 줄 전체가 펼치기이고 이름 줄 오른쪽 더보기와 길게 누르기가 같은 옵션 시트를 엽니다. 줄 펼침은 화면의 `rememberSaveable`입니다. 생성과 수정은 같은 `PersonaFormViewModel`이고 소개 글(`# 주인공`, `## 성별`, 성별 값, 특징)의 조립과 분해는 `my/persona/domain`의 순수 함수입니다. 저장소는 성공한 변경을 응답으로 먼저 목록에 반영한 뒤 서버 목록을 다시 읽어, 다시 읽기가 실패해도 상세가 새 페르소나를 미리 선택할 수 있습니다. 회원 귀속 메모리라 `UserScopedStore`로 로그아웃 정리에 참여합니다.
 - 표지 없는 상세 히어로와 홈, 제작, 채팅 카드는 공용 `StoryCover`에서 초안과 같은 `ic_manyak_symbol`, `backgroundNeutral`, `textDisabled`를 사용합니다. 상세 헤더는 표지 유무와 무관하게 히어로 위에서 투명하게 시작해 스크롤에 따라 surface로 전환합니다. 표지가 없으면 아이콘은 처음부터 text 색을 사용하고, 별도 헤더 그라데이션은 두지 않습니다.
 - 상세 하단은 `StoryFooterBackground`가 목록의 메타 정보 위치로 전환 진행률을 계산합니다. CTA와 페이드는 메타 정보가 보이기 시작할 때부터 surface에서 backgroundNeutral로 전환하고, 200ms 애니메이션으로 진행률을 따라가며 스크롤 끝에서 메타 정보와 같은 배경색이 됩니다. 상세 색상과 모션 규격은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
@@ -134,7 +137,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
 - `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 배경 탭 닫기는 Coil이 알려 준 원본 크기로 Fit 그림 영역을 계산하고 현재 확대·이동을 되돌려 판정하므로, 그림 위 탭으로는 닫지 않습니다(원본 크기를 알기 전에는 그림이 없는 것으로 봅니다). 배경 탭은 떼는 즉시 닫고, 더블 탭의 두 번째 탭 대기는 그림 위 탭에만 겁니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
 - 첫 진입 안내 투어는 `ChatRoomViewModel`이 기기 귀속 `@DeviceDataStore`의 `chat_tour_seen` 키로 노출 판정(턴 0개·스트리밍 아님·200ms 뒤 재확인)과 열람 기록, 분석 이벤트 4종을 소유하고, 지금 스텝(`tourStep`)을 상태로 들어 구성 변경 뒤에도 같은 스텝에서 이어지며 도달 이벤트를 다시 보내지 않습니다. 화면은 `ChatTourTargets`가 컴포저 툴바 버튼의 `boundsInRoot`를 모으고, `ChatTourOverlay`가 대상이 그려진 스텝을 골라 딤 구멍·카드를 배치해 고른 자리를 의도로 올립니다. 오버레이는 `Dialog`가 아니라 같은 컴포지션의 상자라 대상 좌표를 그대로 쓰며, `pointerInput`으로 뒤 조작을, `BackHandler`로 뒤로가기(건너뛰기)를 받고 뒤 화면은 `clearAndSetSemantics`로 보조기술에서 가립니다.
-- 채팅방 헤더는 `ChatRoomScreen`의 `AnimatedVisibility`로 목록 위에 겹쳐 페이드(200ms)되고 숨김 여부를 `rememberSaveable`로 둡니다. `ChatTranscript`는 헤더 높이(`TopAppBarExpandedHeight`)만큼 목록 위 여백을 두고, 자식이 떼는 이벤트나 이동을 소비하지 않은 탭만 헤더 전환으로 올리며 탭 시작 때 IME가 떠 있었으면 넘깁니다. 스트리밍 앵커의 패드 높이는 위 여백을 뺀 콘텐츠 시작점부터 뷰포트 끝까지로 잽니다.
+- 채팅방 헤더는 `ChatRoomScreen`의 `AnimatedVisibility`로 목록 위에 겹쳐 페이드(200ms)되고 숨김 여부를 `rememberSaveable`로 둡니다. 페르소나로 시작한 채팅은 상세 응답의 `persona.name`을 제목 아래 보조 줄로 그립니다. `ChatTranscript`는 헤더 높이(`TopAppBarExpandedHeight`)만큼 목록 위 여백을 두고, 자식이 떼는 이벤트나 이동을 소비하지 않은 탭만 헤더 전환으로 올리며 탭 시작 때 IME가 떠 있었으면 넘깁니다. 스트리밍 앵커의 패드 높이는 위 여백을 뺀 콘텐츠 시작점부터 뷰포트 끝까지로 잽니다.
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다. `CharacterImage`의 허용 경로는 `/characters/generated/`·`/characters/originals/`·`/characters/uploaded/`·`/chat-images/`(실시간 인물 이미지, `chat-images/{chatId}/{turn}-{uuid}.webp`)·`/scenes/originals/`(오리지널 장면 이미지)입니다. 이미지 마커 파서 `parsePassageSegments`와 조각 타입 `PassageSegment`는 `designsystem`의 `text` 패키지에 두고 채팅 AI 출력·프롤로그와 스토리 상세의 상황 설명이 함께 씁니다. 장면 경로 마커는 대사 라벨 없이 `SceneImage`가 되고 `CharacterImage`는 이름 없이 "장면 이미지 크게 보기"를 버튼 이름으로 씁니다. 상세의 장면 이미지 탭은 뷰어만 열고 인물 이미지 클릭 이벤트를 남기지 않습니다.
 - 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 `ChatRoomViewModel`의 `settingsOpen`이 소유하며 구성 변경에서 유지합니다. 실시간 이미지 미저장 기본값은 false입니다.
 - 실시간 이미지 안내의 기기 누적 횟수는 같은 `@DeviceDataStore`의 정수 키 `chat_completed_turn_count`로 저장합니다. `ChatPreferencesStore.recordCompletedTurn()`이 `edit` 안에서 원자적으로 증가시키고 3에서 멈추며 IO 실패는 null로 돌려줍니다. `ChatRoomViewModel`은 이어쓰기의 정상 `Completed`만 기록하며 재생성, 실패, 중단은 제외합니다. 2를 반환한 완료 순간의 이미지 설정이 false이면 예약을 만들고 입력 잠금이 풀린 뒤 500ms에 `settingsOpen`과 `realtimeImageNudgeOpen`을 함께 올립니다. 그 사이 다음 전송이나 재생성이 시작되면 대기를 취소하고 응답 종료 뒤 다시 기다립니다. 예약 Job과 표시 상태는 ViewModel 수명이며 영속 저장하거나 SavedStateHandle에 넣지 않습니다.
@@ -192,7 +195,7 @@ ViewModel은 액티비티 수명이라 준비 플래그 대신 `SessionRepositor
 1. generation·단계·새 device ID 후보를 journal에 원자적으로 기록하고 barrier를 닫습니다. 인증 작업을 cancel/join합니다. journal 기록 실패 시 파괴적 정리를 시작하지 않습니다.
 2. 메모리에 보관한 토큰으로 서버 로그아웃을 best effort로 시도합니다.
 3. 토큰과 만료 앵커를 삭제합니다.
-4. `UserScopedStore`의 프로필·초대·표시 알림을 정리합니다. 제작 두 테이블은 삭제하지 않고 ownerId로 격리합니다.
+4. `UserScopedStore`의 프로필·초대·표시 알림과 페르소나 목록을 정리합니다. 제작 두 테이블은 삭제하지 않고 ownerId로 격리합니다.
 5. Google `clearCredentialState`와 Kakao 로컬 상태를 모두 정리합니다. Google 정리 실패는 완료를 막으며 Kakao는 원격 오류와 로컬 정리 결과를 구분합니다.
 6. 분석 사용자·Crashlytics 사용자 정보를 해제하고 journal에 고정된 새 device ID를 저장·SDK에 주입합니다.
 7. journal을 삭제한 뒤 Guest와 인증 그래프를 공개합니다.
@@ -264,6 +267,8 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 `create/general`이 폼 entity, 순수 domain 변환, API와 Room data, MVI 화면을 소유합니다. `GeneralStoryForm`의 반복 항목은 로컬 안정 ID와 서버 ID를 구분하며 검수 경로는 제출 시 폼에서 안정 ID로 변환합니다. 수정 baseline은 처음 복원한 폼의 요청 표현을 보관하여 알 수 없는 설정 글과 폼에 없는 서버 인물 및 대표 이미지 외의 이미지를 유지합니다. 부분 수정 검증은 실제 PATCH 필드군에 한정하여 수정하지 않은 기존 값이 저장을 막지 않게 합니다.
 
 `navigation`은 `CreateMethodRoute`, `GeneralCreateRoute(draftId)`, `GeneralSubmissionRoute(submissionId)`, `StoryEditRoute(storyId)`를 등록합니다. `app`이 제작 탭과 상세에서 콜백을 연결하고 일반 제작 승인 후 `ChatStarter` 결과로 상세 위에 채팅을 엽니다. 수정 완료는 기존 상세 또는 제작 탭으로 돌아가 화면 표시 시점에 새 값을 조회합니다.
+
+기본 주인공 이름은 `protagonistName`으로 따로 보내고 `userRoleSetting`에는 넣지 않습니다. 수정 폼과 반려 제출본은 `protagonistName`에서 이름을 읽고, 이전 글 맨 앞의 `## 호칭` 절은 특징 본문 맨 앞에 남깁니다. 수정 PATCH는 이름이 바뀌었고 비어 있지 않을 때만 이름을 싣습니다. 이름은 선택 입력이며, 이름을 뺀 글에 `{username}`이 있는데 이름이 비면 이름 칸에 `NAME_TOKEN_NEEDS_NAME` 오류를 두고, 이 오류는 수정에서 바뀐 필드와 상관없이 검사합니다.
 
 `GeneralStoryViewModel`은 입력, 검증과 서버 검수 상태를 MVI로 관리합니다. 탭과 펼침 및 크롭 범위는 저장 가능한 화면 상태로 유지하며 폼의 프로세스 복원은 Room 또는 서버 제출본 조회로 처리합니다. 검수 폴링은 화면 STARTED에서 1초 간격, 단조 시계로 60초 상한을 적용합니다. 제출과 접수 기록은 `FunnelScope`에서 완료하고 세션 세대가 바뀐 결과를 반영하지 않습니다. 신규 POST 응답 유실은 자동 재전송하지 않으며 접수 기록만 실패하면 제출 ID를 유지한 채 기록을 재시도합니다. 성공한 등록과 수정은 `CreationProgressAccess.submissionChanges`로 알리고 제작 탭은 STARTED에서 수집해 제출본과 스토리 목록을 갱신합니다. 화면을 먼저 닫고 늦게 받은 접수도 반영하며, 수정 복귀가 이전 조회와 겹치면 그 조회 뒤에 새 조회를 예약합니다.
 
