@@ -173,6 +173,7 @@ Sentry 일일 보고는 `daily-sentry-report` 스킬에 정의되어 있다. ([d
 | 기본 이미지 URL | 요청의 `character_images`에 포함되므로 Langfuse input에는 남음<br>모든 URL이 제거되는 것은 아님 |
 | 이미지 프롬프트 | Langfuse 이미지 generation input에 기록<br>부모 이미지 바이너리는 전달하지 않음 |
 | 생성 이미지 바이너리 | 관측 제외<br>Langfuse 출력은 형식과 바이트 수만 기록 |
+| 이미지 결과 `child_image` | URL, 이미지 데이터와 인물 이름 제외 |
 | Sentry 요청·지역변수 | `before_send`에서 요청 제거, `include_local_variables=False`, `send_default_pii=False` |
 | 인프라 추적 | 등록 경로 템플릿과 허용된 기술 속성만 전송<br>본문, URL, 헤더, 예외 메시지, 이벤트와 링크 제외 |
 | 로그 | 구조화된 식별자와 메시지·스택 기록<br>JSON 포매터 자체에는 원문을 제거하는 공통 정제 기능 없음 |
