@@ -151,7 +151,7 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| MY-PERSONA-01 | P0 | 동의를 마친 회원, 스토리 상세 | 페르소나 Select의 "페르소나 생성하기" → 이름·성별·특징 입력 → "생성하기" | `/my/personas/new`의 "페르소나 생성" 화면이 열림. `POST /users/me/personas`에 앞뒤 공백을 뺀 `name`과 `# 주인공`, `## 성별`, 성별 값, 특징을 줄바꿈으로 이은 `description`이 실림. "페르소나를 생성했어요" 토스트 후 상세로 돌아오고 Select 목록에 새 페르소나가 보임 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-01 | P0 | 동의를 마친 회원, 스토리 상세 | 페르소나 Select의 "페르소나 생성하기" → 이름·성별·특징 입력 → "생성하기" | `/my/personas/new`의 "페르소나 생성" 화면이 열림. `POST /users/me/personas`에 앞뒤 공백을 뺀 `name`과 `# 주인공`, `## 성별`, 성별 값, 특징을 줄바꿈으로 이은 `description`이 실림. "페르소나를 생성했어요" 토스트 후 상세로 돌아오고 페르소나 Select에 새 페르소나가 선택되어 있음 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
 | MY-PERSONA-02 | P1 | 회원, 생성 화면 | 아무것도 입력하지 않고 "생성하기" → 이름 입력 → 성별 선택 | 요청 없이 기본 정보 아래 "이름을 입력해 주세요", 특징 아래 "특징을 입력해 주세요"가 표시됨. 이름을 입력하면 "성별을 선택해 주세요"로 바뀌고 성별을 고르면 안내 문구로 돌아옴 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
 | MY-PERSONA-03 | P1 | 회원, 생성 요청이 409(10개 초과) 또는 5xx | 입력 후 "생성하기" | 409는 "페르소나는 10개까지 만들 수 있어요", 그 밖은 "페르소나를 생성하지 못했어요" 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `stories/story-persona`(409) | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
 | MY-PERSONA-04 | P1 | 게스트 | `/my/personas/new` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
