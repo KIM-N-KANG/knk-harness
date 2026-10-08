@@ -12,7 +12,7 @@
 | 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003), 스토리 수정 `/stories/[id]/edit`(FE-SCREEN-009) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts`, `manyak-web/e2e/stories/story-persona.spec.ts` |
 
 ## 읽는 순서
 
@@ -134,6 +134,11 @@
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
 | STORY-DETAIL-26 | P1 | 현재 공개 상태의 오리지널 상세를 서버가 조회할 수 있음 | JavaScript를 끄고 상세 HTML과 메타데이터 확인 | HTML에 공개 본문과 단일 h1이 포함되고 제목, description, canonical, Open Graph 및 Twitter가 해당 작품을 가리킴. 숨겨진 설정과 개인화 데이터는 HTML과 RSC 페이로드에 없음 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행), 이미지 폴백은 단위 테스트 | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 | STORY-DETAIL-27 | P1 | 사용자 스토리, 오리지널 판정 실패, 상세 404 또는 503, 공개 목록 캐시와 다른 현재 비공개 상태 | 첫 HTML의 robots 확인 후 클라이언트 조회 성공 | `noindex, nofollow`이고 서버에서 비공개 본문을 노출하지 않음. 인증된 클라이언트 조회로 정상 본문을 복구할 수 있음. robots.txt는 상세 수집을 허용 | ✅ e2e `seo/crawler-indexing`(미도달), `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행) | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
+| STORY-DETAIL-52 | P0 | 동의를 마친 회원, 내 페르소나 1개 이상 | 채팅 시작 상황의 페르소나 정보 버튼 탭 → Select 펼치기 → 페르소나 선택 → "새 채팅 시작하기" | 상황 이름 위에 "페르소나" 소제목과 정보 버튼이 있고 안내 팝오버가 열림. 기본값은 "기본". 목록은 "기본", 내 페르소나, 더하기 아이콘의 "페르소나 생성하기" 순서. 고른 페르소나가 Select에 표시되고 `POST /chats`에 그 `personaId`가 실림 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-53 | P0 | 동의를 마친 회원 | 페르소나를 바꾸지 않고 "새 채팅 시작하기" | `POST /chats`의 `personaId`가 없거나 null(기본 주인공) | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-54 | P1 | 게스트 | 페르소나 Select 펼치기 → "페르소나 생성하기" | 페르소나 목록 API를 부르지 않고 기본 주인공만 표시. 상세에 머문 채 로그인 필요 시트가 열리고, 닫으면 선택은 기본 주인공 그대로 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-55 | P1 | 회원, 내 페르소나 10개 | "페르소나 생성하기" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-56 | P1 | 회원, 내 페르소나 있음, 시작 상황 이름이 10자를 넘는 설정 포함 | 상세 진입 → 페르소나와 시작 상황 바꾸기 | "새 채팅 시작하기" 아래 11px 옅은 색 줄이 "기본 페르소나 · {상황 이름}"에서 고른 값에 맞춰 "{이름} 페르소나 · {상황 이름}"으로 바뀜. 페르소나 이름은 5자, 상황 이름은 10자 뒤에 말줄임표, 버튼 높이는 하트 버튼과 같음 | ✅ e2e `stories/story-persona`(문구), 높이와 색은 수동 | §3-1-3 FE-SCREEN-003 페르소나 선택, KNK-1469 |
 
 ### 좋아요
 
@@ -359,6 +364,7 @@
 | STORY-GENERAL-28 | P1  | 회원, 필수 항목을 모두 채움, 검수 대기 중 | 등록하기 → 닫기(X) → 나가기 → 제작 탭 확인 / (별도) 반려 뒤 입력 수정 → 닫기(X) | 닫기는 [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)의 제출본 안내(고친 것이 없으면 "등록을 요청한 내용은 제작 탭에서 확인할 수 있어요", 고쳤으면 "지금 나가면 등록을 요청한 뒤에 고친 내용은 사라져요"). 나가면 검토 중 토스트가 닫히고 제작 탭에 일반 초안 카드가 남지 않음 | ◐ e2e `stories/story-general-create`(검토 중 이탈), 반려 뒤 수정 문구는 수동(단위 테스트 `draft-exit-warning`) | FE-SCREEN-009 |
 | STORY-GENERAL-29 | P1 | 회원, 스토리 프로필 탭 | 이미지 추가 → 파일 선택 → 자르기 시트에서 이미지 끌기·확대 슬라이더 조작 → 닫기 / (별도) 시트를 아래로 끌어 닫기 | 시트 안에서 이미지를 끌어도 시트가 닫히지 않음. "닫기"를 누르거나 시트를 내려 닫으면 업로드 요청 없이 기존 커버 이미지 유지([웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름)) | ◐ e2e `stories/story-general-create`(닫기) | FE-SCREEN-009, KNK-1504 |
 | STORY-GENERAL-30 | P2 | 데스크톱 마우스, 탭 줄·시작 상황 칩 줄이 화면 폭을 넘음 | 탭 위에서 마우스로 짧게 끌었다가 놓기 → 탭을 그냥 클릭 / 시작 상황 칩 줄에서 같은 조작 | 끄는 동안 줄이 가로로 움직이고, 놓은 자리의 탭·칩은 선택되지 않음. 그냥 클릭하면 해당 탭·칩이 선택됨 | ◐ e2e `stories/story-general-create`(탭 줄) | [웹 반응형](../spec/3-2-web-spec.md#반응형-모바일-전용), KNK-1523 |
+| STORY-GENERAL-31 | P0 | 회원, 필수 항목을 모두 채움 | 주인공 이름을 비운 채 프롤로그 등 글에 `{username}`을 넣고 등록하기 → 주인공 이름 입력 → 다시 등록하기 | 처음에는 요청 없이 주인공(나) 탭으로 옮겨 이름 칸에 "{username}을 쓰려면 이름을 입력해 주세요"를 표시. 이름을 넣으면 등록 요청에 `protagonistName`이 실리고 `userRoleSetting`에는 이름이 들어가지 않음. `{username}`이 없으면 이름을 비워도 등록됨 | ✅ e2e `stories/story-general-create`(토큰 오류·요청), 이름 없는 등록은 unit | FE-SCREEN-009, [이름 토큰](../spec/4-backend-server-spec.md#protagonist-name-token), KNK-1469 |
 
 
 ## STORY-EDIT — 스토리 수정 `/stories/[id]/edit`
@@ -385,6 +391,7 @@
 | STORY-EDIT-16 | P1 | STORY-EDIT-01, 인물 소개가 있는 주변 인물 | 주변 인물 탭 → 인물 소개 확인 → 고쳐 저장하기 → 승인 / (별도) 인물 소개를 지워 저장하기 → 승인 | 인물 소개 칸이 그 인물의 현재 소개로 채워짐. 고치면 PATCH에 `characters`만 실리고 그 인물의 `description`에 새 소개가 실림(폼에 없는 서버 인물은 소개 없이 실림). 지우면 빈 문자열로 보내 승인 뒤 상세에서 그 인물의 소개가 사라짐 | ◐ e2e `stories/story-edit`(채움·고친 소개 전송), 지우기는 단위 테스트 `edit-form` | FE-SCREEN-009, KNK-1514 |
 | STORY-EDIT-17 | P1 | STORY-EDIT-01, 표지와 이미지가 있는 주변 인물 | 표지 삭제 → 주변 인물 탭에서 이미지 삭제 → 저장하기 → 승인 / (별도) 표지만 삭제 → 저장하기 | 표지 삭제 API(`DELETE /stories/{storyId}/thumbnail`)를 한 번 부르고, PATCH에는 그 인물의 대표 이미지를 뺀 `characters`만 실림. 표지만 지우면 PATCH와 검토 중 토스트 없이 "스토리를 수정했어요"와 함께 상세로 돌아가고 상세 히어로가 기본 심벌로 바뀜 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
 | STORY-EDIT-18 | P1 | STORY-EDIT-01, 제공 목록에 없는 장르가 저장된 스토리 | 등록 탭 확인 → 검색으로 장르 추가 → 저장 | 저장된 장르가 고른 칩으로 보이고 재선택 안내는 없음. 저장하면 기존 장르를 그대로 두고 추가한 장르와 함께 `genres`로 보냄. 장르를 고치지 않으면 `genres`를 보내지 않음 | ✅ e2e `stories/story-edit` | §3-1-4 장르 검색과 선택, KNK-1542 |
+| STORY-EDIT-19 | P0 | 회원 소유 스토리, 수정 폼 `protagonistName` 있음 / 이전 글 맨 앞에 `## 호칭` 절이 있고 `protagonistName` null | 수정 화면 진입 → 주인공(나) 탭 확인 → 이름 변경 후 저장 | 이름 칸은 `protagonistName`을 표시하고 바꾼 이름만 PATCH `protagonistName`으로 보냄. 이름을 비우면 싣지 않음(서버는 기존 이름 유지). 이전 글의 호칭 절은 특징 본문 맨 앞에 남고 성별 절만 칸으로 옮겨짐 | unit `edit-form`·`character-settings` | FE-SCREEN-009, KNK-1469 |
 
 ## STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`
 
