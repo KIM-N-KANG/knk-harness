@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.34 |
+| 버전 | v0.35 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-05 |
+| 수정일 | 2026-10-08 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -271,6 +271,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
 | P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked`                    |
 | P1 `Phase 1 · 구현` | client | `client_account_linkAccountButton_clicked`               |
+| P1 `Phase 3 · 구현` | client | `client_storyDetail_persona_selected`                    |
+| P1 `Phase 3 · 구현` | client | `client_storyDetail_personaCreateButton_clicked`         |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_viewed`                            |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_form_submitted`                    |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_completed`                         |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -388,9 +393,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                       | 우선순위 | 발생 시점                            | 고유 프로퍼티             |
 | -------------------------------------------- | -------- | ------------------------------------ | ------------------------- |
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
+| `client_storyDetail_persona_selected` | P1 | 페르소나 Select에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
+| `client_storyDetail_personaCreateButton_clicked` | P1 | 페르소나 Select의 "페르소나 생성하기" 클릭(게스트·10개 상한으로 이동하지 않아도 발생) | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 | `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
+
+`persona_type`은 채팅을 시작하거나 고른 주인공의 종류로 `default`(기본 주인공)·`persona`(내 페르소나) 중 하나입니다(KNK-1469). 페르소나의 이름·소개는 사용자가 자유 입력한 값이라 어떤 이벤트에도 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). Android는 `persona_type`을 KNK-1473에서 같은 값으로 보냅니다.
 
 스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
 
@@ -673,6 +682,20 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | 신고                                   | ~~웹 미구현~~ → 구현(KNK-1186)          | `client_report_*` 3개를 같은 이름으로 발화 중                                                          |
 | 시작 설정 선택                         | 웹 미구현(앱 전용 UX)                    | 도입 시 `client_storyDetail_startSetting_selected`                                                       |
 | `client_storyList_viewed`의 `section`  | 미전송                                  | 선택 프로퍼티이므로 웹은 유지. `/studio` 진입을 따로 보려면 `created`로 발화                            |
+
+#### 6-4-2-17. 페르소나 생성 — `Phase 3 · 구현`(KNK-1469)
+
+페르소나 생성 화면([`3-1-client-spec.md` FE-SCREEN-008 페르소나 생성](3-1-client-spec.md#fe-screen-008-로그인마이-페이지))의 이벤트입니다. 진입은 스토리 상세의 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가 담당합니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_personaCreate_viewed` | P1 | 페르소나 생성 화면 진입 | 없음 |
+| `client_personaCreate_form_submitted` | P1 | "생성하기"를 눌러 입력 검증을 통과하고 생성 요청을 보낼 때 | 없음 |
+| `client_personaCreate_completed` | P1 | 생성 응답 201을 받았을 때 | 없음 |
+
+- 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+- 페르소나 생성에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
+- 페르소나 사용률은 `client_storyDetail_chatStartButton_clicked`의 `persona_type = persona` 비율로 봅니다.
 
 ### 6-4-3. impression 수집 기준
 
