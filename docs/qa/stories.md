@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-10-05 |
+| 수정일 | 2026-10-08 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 스토리 목록·제작·상세의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003), 스토리 수정 `/stories/[id]/edit`(FE-SCREEN-009) |
@@ -89,6 +89,8 @@
 | STORY-LIST-40 | P2 | 회원, 공백 없이 긴 제목·한 줄 소개, 서른 글자 직접 추가 장르의 내 스토리 카드와 진행 카드 | 제작 탭 카드 확인 | 글이 카드 폭 안에서 줄바꿈돼 옆으로 잘리지 않고 두 줄을 넘으면 말줄임표로 끝남. 긴 장르 배지는 "+N" 자리를 남기고 말줄임 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-013 |
 | STORY-LIST-41 | P2 | 공백 없는 긴 영문·숫자 제목의 홈 카드 | 홈 카드 확인 | 제목이 카드 폭 안에서 한 줄 말줄임으로 끝나고 옆으로 잘리지 않음 | ✅ e2e `stories/story-list` | §3-1-3 FE-SCREEN-001 |
 | STORY-LIST-42 | P2 | 데스크톱 마우스, 필터 칩 줄이 화면 폭을 넘는 좁은 창 | 필터 칩 위에서 마우스로 끌었다가 놓기 → 칩을 그냥 클릭 | 끄는 동안 칩 줄이 가로로 움직이고, 놓은 자리의 칩은 선택되지 않음. 그냥 클릭하면 필터가 바뀜 | 수동 | [웹 반응형](../spec/3-2-web-spec.md#반응형-모바일-전용), KNK-1523 |
+| STORY-LIST-43 | P1 | 공개 스토리가 있는 홈 | 크롤러 User-Agent로 첫 HTML 확인 후 카드 선택 | 홈 description과 canonical이 웹 계약과 같고 상세 링크 안에 작품 제목이 실제 텍스트로 있음. 카드 전체로 상세 진입 가능 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행), `stories/story-list`(클릭) | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
+
 
 ## STORY-DETAIL — 스토리 상세 `/stories/[id]`
 
@@ -130,8 +132,8 @@
 | STORY-DETAIL-48 | P1  | 회원, 내가 만든 스토리(`isOwner`) / 내가 만들지 않은 스토리 | 본문 맨 아래 메타 블록 확인 | 내가 만든 스토리는 생성일 행 아래에 "공개 범위" 행이 오고 값은 `visibility`에 따라 "공개"·"비공개". 내가 만들지 않은 스토리에는 행이 없음 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003 |
 | STORY-DETAIL-49 | P1  | 오리지널 스토리 시작 상황에 장면 이미지 마커 포함 | 상세의 상황 설명 확인 → 다른 시작 상황 선택 | 상황 설명의 마커 위치에 "장면 이미지"가 표시되고 앞뒤 글이 이어짐. 마커 글자·URL은 노출되지 않음. 선택을 바꾸면 그 설정의 이미지로 교체 | ✅ e2e `stories/story-detail` | §3-1-3, §3-1-5 장면 이미지 렌더, KNK-1545 |
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | §3-1-3 FE-SCREEN-003, KNK-1079 |
-| STORY-DETAIL-26 | P1  | 오리지널 목록에 포함된 스토리 ID | 페이지 소스의 `<head>` 확인                        | robots `noindex` 없음. 제목 `스토리 제목 - 마냑`, description = 한 줄 소개, canonical `/stories/{id}`, 오픈그래프 이미지 = 상세 썸네일(없으면 브랜드 이미지). `/sitemap.xml`에 해당 URL 포함 | 수동 | KNK-1183, [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md) 색인 범위, 구현(`generateMetadata`) |
-| STORY-DETAIL-27 | P1  | 사용자 생성 스토리 ID 또는 백엔드 미도달 | 페이지 소스의 robots 메타 확인                     | `noindex, nofollow`. 제목은 서버에서 넣지 않고 클라이언트가 데이터를 받은 뒤 덮어씀. robots.txt는 `/stories/`를 막지 않음 | ✅ e2e `seo/crawler-indexing`(미도달) | KNK-1183, [`3-2-web-spec.md §3-2-4`](../spec/3-2-web-spec.md) 색인 범위 |
+| STORY-DETAIL-26 | P1 | 현재 공개 상태의 오리지널 상세를 서버가 조회할 수 있음 | JavaScript를 끄고 상세 HTML과 메타데이터 확인 | HTML에 공개 본문과 단일 h1이 포함되고 제목, description, canonical, Open Graph 및 Twitter가 해당 작품을 가리킴. 숨겨진 설정과 개인화 데이터는 HTML과 RSC 페이로드에 없음 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행), 이미지 폴백은 단위 테스트 | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
+| STORY-DETAIL-27 | P1 | 사용자 스토리, 오리지널 판정 실패, 상세 404 또는 503, 공개 목록 캐시와 다른 현재 비공개 상태 | 첫 HTML의 robots 확인 후 클라이언트 조회 성공 | `noindex, nofollow`이고 서버에서 비공개 본문을 노출하지 않음. 인증된 클라이언트 조회로 정상 본문을 복구할 수 있음. robots.txt는 상세 수집을 허용 | ✅ e2e `seo/crawler-indexing`(미도달), `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행) | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 
 ### 좋아요
 
@@ -150,6 +152,7 @@
 | STORY-DETAIL-42 | P1 | 제작자·생성일이 있는 상세, 라이트·다크 테마 | 끝부분까지 스크롤 → 최하단 → 화면 높이 변경 → 위로 스크롤 | 메타 블록이 나타나기 전부터 CTA 배경이 중간색을 거쳐 부드럽게 메타 블록과 같은 색이 되고 위로 가면 기본색으로 복원. 크기 변경에도 재계산하며 CTA 위치·크기는 스크롤로 변하지 않음. 메타 정보가 없으면 끝에서도 기본색 유지 | ✅ e2e `stories/story-detail-footer`·`visual/stories-visual` | FE-SCREEN-003 웹 하단 CTA 배경, KNK-1207 |
 | STORY-DETAIL-41 | P1 | 탄성 스크롤 지원 브라우저, 라이트·다크 테마 | 상세 최하단에서 더 아래로 당김 → 위로 복귀 | 메타 블록과 CTA 사이에 드러난 빈 영역도 CTA와 같은 색. 일반 본문 배경은 유지하고 최상단으로 복귀하면 스크롤 배경도 기본색 | ◐ e2e `stories/story-detail-footer`(배경색 분리·복원), 네이티브 탄성 동작 수동 | FE-SCREEN-003 웹 하단 CTA 배경, KNK-1207 |
 | STORY-DETAIL-50 | P2 | `characters`에 이름 있는 인물이 1명 | 주변 인물 확인 | 인물 선택 줄 없이 그 인물의 이미지 카드, 이름, 소개만 표시 | ✅ e2e `stories/story-detail` | §3-1-3 FE-SCREEN-003, KNK-1548 |
+| STORY-DETAIL-51 | P0 | 서버 공개 초기 본문 있음, 회원 상세 응답 지연 후 `isLiked: true` | 상세 열기 후 브라우저 조회 완료 대기 | 공개 본문이 유지되고 권한 확인 전에는 좋아요가 없으며 채팅 시작은 비활성. 응답 뒤 좋아요 취소 버튼이 눌린 상태로 표시되고 시작 가능 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행) | [웹 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 
 ## STORY-KEYWORD — 생성 퍼널 1단계: 키워드 선택
 
