@@ -201,6 +201,7 @@
 | STORY-LINE-10 | P2  | 스토리라인 표시됨             | 하단 액션 위 "선택한 키워드 보기" 탭 | 위·좌·우 여백 없이 앱 프레임 전체 폭을 채우는 높이 40px의 테두리 없는 각진 중립색 버튼으로 표시되고, "다시 만들기"·"선택하기" 행과는 8px 간격. 라벨은 보조 전경색. 누르면 하단 드로어가 열려 앱과 같은 배치로 [§3-1-4 선택 UI](../spec/3-1-client-spec.md)의 제목·설명을 왼쪽 정렬로 두고(사이 8px), 32px 아래에 카테고리 라벨과 선택 칩(높이 40px, primary 테두리·옅은 primary 배경, 칩 사이 8px)을 표시하며 그룹 사이는 24px | ✅ e2e `visual/stories-visual` | §3-1-4 선택 UI, 구현(`selected-tags-drawer`)     |
 | STORY-LINE-11 | P2  | 스토리라인 표시됨             | "다시 만들기"를 연속 2회 탭 후 각 요청 본문 확인(개발자 도구 네트워크 탭) | 매 요청이 새 `requestId`를 받고, `parentCreationId`가 **바로 직전** 요청의 `requestId`를 가리킨다(체인). 최초 생성은 `null`이고, 3번째 요청의 부모는 2번째이지 최초가 아니다. 화면 동작에는 영향이 없다 | ✅ e2e `stories/story-create` | §3-1-7, KNK-757·KNK-755 |
 | STORY-LINE-12 | P0  | 생성 요청이 HTTP 실패 후 서버에서는 `PENDING` | "다시 만들기" 탭, 재POST가 409 | 실패한 요청의 `requestId`를 재사용하고 409를 오류로 끝내지 않으며 3초 복구 폴링으로 결과를 표시 | ✅ e2e `stories/story-create-recovery` | §3-1-4 재시도 멱등·409, KNK-994 |
+| STORY-LINE-13 | P1  | 선택한 키워드 드로어 열림 | 기기·브라우저 뒤로가기 | 드로어만 닫히고 퍼널에 남으며 나가기 다이얼로그는 뜨지 않음 | ✅ e2e `stories/story-create` | §3-1-2 오버레이와 뒤로가기, 웹 Spec 화면 전환 규칙, KNK-1613 |
 
 ## STORY-INFO — 생성 퍼널 3단계: 추가 정보
 
@@ -392,6 +393,7 @@
 | STORY-EDIT-17 | P1 | STORY-EDIT-01, 표지와 이미지가 있는 주변 인물 | 표지 삭제 → 주변 인물 탭에서 이미지 삭제 → 저장하기 → 승인 / (별도) 표지만 삭제 → 저장하기 | 표지 삭제 API(`DELETE /stories/{storyId}/thumbnail`)를 한 번 부르고, PATCH에는 그 인물의 대표 이미지를 뺀 `characters`만 실림. 표지만 지우면 PATCH와 검토 중 토스트 없이 "스토리를 수정했어요"와 함께 상세로 돌아가고 상세 히어로가 기본 심벌로 바뀜 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
 | STORY-EDIT-18 | P1 | STORY-EDIT-01, 제공 목록에 없는 장르가 저장된 스토리 | 등록 탭 확인 → 검색으로 장르 추가 → 저장 | 저장된 장르가 고른 칩으로 보이고 재선택 안내는 없음. 저장하면 기존 장르를 그대로 두고 추가한 장르와 함께 `genres`로 보냄. 장르를 고치지 않으면 `genres`를 보내지 않음 | ✅ e2e `stories/story-edit` | §3-1-4 장르 검색과 선택, KNK-1542 |
 | STORY-EDIT-19 | P0 | 회원 소유 스토리, 수정 폼 `protagonistName` 있음 / 이전 글 맨 앞에 `## 호칭` 절이 있고 `protagonistName` null | 수정 화면 진입 → 주인공(나) 탭 확인 → 이름 변경 후 저장 | 이름 칸은 `protagonistName`을 표시하고 바꾼 이름만 PATCH `protagonistName`으로 보냄. 이름을 비우면 싣지 않음(서버는 기존 이름 유지). 이전 글의 호칭 절은 특징 본문 맨 앞에 남고 성별 절만 칸으로 옮겨짐 | unit `edit-form`·`character-settings` | FE-SCREEN-009, KNK-1469 |
+| STORY-EDIT-20 | P1 | 제작 탭 카드 옵션 시트 → 수정하기로 수정 화면 진입 | 기기·브라우저 뒤로가기 | 한 번에 제작 탭으로 돌아감(시트 더미가 남지 않음) | ✅ e2e `stories/story-edit` | 웹 Spec 화면 전환 규칙, KNK-1613 |
 
 ## STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`
 
