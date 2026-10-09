@@ -201,7 +201,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 메인 헤더는 현재 섹션을 표시하며 홈만 로고와 스크린 리더용 `h1` "홈"을 사용합니다. 홈·채팅·제작의 로그인 버튼은 세션이 게스트로 확정된 뒤 표시하고 마이 헤더에는 두지 않습니다. 하단 4탭의 라벨·경로는 웹 Spec을 따릅니다.
 
-일반 하위 화면의 `BackHeader`는 고정 제목과 뒤로가기만 담당합니다. `fallbackHref`가 있으면 상세 헤더와 같은 앱 안 이동 판정으로 바로 진입일 때만 그 화면으로 교체합니다. 로그인은 홈, 마이 하위 화면은 마이 탭, 페르소나 생성은 페르소나 관리를 지정하고, 이프 충전은 결제 복귀 되감기 때문에 지정하지 않습니다.
+일반 하위 화면의 `BackHeader`는 고정 제목과 뒤로가기만 담당합니다. `fallbackHref`가 있으면 상세 헤더와 같은 앱 안 이동 판정으로 바로 진입일 때만 그 화면으로 교체합니다. 로그인은 홈, 마이 하위 화면은 마이 탭, 페르소나 생성은 페르소나 관리를 지정합니다. 이프 충전은 결제 복귀 되감기 뒤 다른 문서의 기록으로 돌아가야 하므로 `fallbackWhen="no-history"`로 아래 기록이 전혀 없을 때(`hasHistoryBelow`가 거짓)만 마이 탭으로 교체합니다. 없는 경로 화면은 [go-back-button](../../../manyak-web/src/components/common/go-back-button.tsx)이 `hasHistoryBelow`를 `useSyncExternalStore`로 읽어 같은 사이트의 이전 기록이 있을 때만 "이전 화면으로"를 보입니다(없는 경로는 Next가 전체 이동으로 열어 늘 새 문서)(문구는 [not-found 상수](../../../manyak-web/src/constants/not-found.ts)).
 
 상세 헤더는 히어로 위 absolute입니다. 스크롤 비율로 배경·전경색을 보간하고 본문 `h1`이 가려지면 제목을 표시합니다. 실제 DOM 마운트를 effect 의존성에 포함해 지연 스켈레톤 뒤에도 listener·IntersectionObserver를 연결합니다.
 

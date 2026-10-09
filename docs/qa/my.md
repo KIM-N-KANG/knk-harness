@@ -143,6 +143,7 @@
 | MY-CREDITS-39 | P0 | 회원, 마이 → "충전"으로 진입 | 가격 버튼 → 결제창 → 결제 완료 화면의 이동 버튼으로 복귀 → 뒤로가기(앱 바·기기) | 복귀 화면(`/my/credits/return`)이 결제 전 충전 화면까지 되감아 `/my/credits`에 결제 확인 카드가 뜸. 뒤로가기는 결제창이 아니라 `/my`로 감 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-42 | P1 | 회원, 알림·주소로 `/my/credits` 바로 진입(아래 기록 없음) | 뒤로가기 헤더 탭 | `/my`로 교체 이동. 결제 복귀 되감기 뒤(MY-CREDITS-39)에는 그대로 결제 전 화면으로 뒤로가기 | ✅ e2e `my/credits` | 웹 Spec 화면 전환 규칙, KNK-1613 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 
 ## MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)
@@ -242,6 +243,7 @@
 | MY-NAV-07 | P2 | 하단 안전 영역이 있는 기기(iOS 등) | 하단 탭 확인 | 링크 상하 패딩 16px + `safe-area-inset-bottom` 추가 확보로 탭이 잘리지 않음 | ◐ e2e `smoke/navigation`(패딩만) | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-08 | P2 | 구경로 `/more`·`/more/invite`·`/more/feedback` 진입 | 관찰 | 리다이렉트 없이 Not Found 표시(구경로 shim을 두지 않는 방침) | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-NAV-09 | P1 | iOS Safari 실기기, 회원 또는 게스트 | 아무 화면을 새로고침한 뒤 하단 탭으로 다른 화면에 이동 → 입력 칸(예: 마이 > 피드백 본문)을 탭 → 두 손가락으로 벌림 | 입력 칸에 포커스해도 화면이 확대되지 않고, 두 손가락으로 벌리면 확대됨. Android Chrome에서도 두 손가락 확대가 됨 | ◐ e2e `smoke/ios-input-zoom-lock`(viewport 값만) | [웹 모바일 검수](../spec/3-2-web-spec.md#모바일-검수-기준), [웹 레이아웃](../design/1-1-web-design.md#레이아웃-구조), KNK-1605 |
+| MY-NAV-10 | P2 | 없는 경로 | 새 탭·외부 링크로 바로 진입 / 사이트 안에서 이동해 진입 | "페이지를 찾을 수 없어요"와 홈 링크. 같은 사이트의 이전 기록이 있을 때만 "이전 화면으로" 버튼이 함께 보이고 누르면 이전 화면으로 돌아감 | ✅ e2e `smoke/navigation` | 웹 Spec 라우팅 FE-SCREEN-999, KNK-1613 |
 
 ## MY-BACKGROUND — 문서 배경과 좌우 여백
 
