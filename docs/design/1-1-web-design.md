@@ -82,6 +82,7 @@ graph LR
 | localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
 | IndexedDB 제작 | Dexie DB `manyak-creation`의 `pendingCreations`, `storyCompletions`, `metadata`. [DB 정의](../../../manyak-web/src/features/stories/_shared/utils/creation-db.ts), [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts) |
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
+| sessionStorage 채팅 열기 의도 | `manyak:pending-chat-open`의 `{storyId, chatId, at}`. 일반 제작 승인이 상세로 바꾸기 직전에 기록하고 상세가 마운트될 때 한 번 읽어 지운 뒤 채팅방을 연다. 30초가 지나면 무시 |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 진행 카드가 이동 전에 기록하고 퍼널이 진입 시 한 번 읽어 그 레코드만 복원. 없으면 새 세션 |
 | sessionStorage 게스트 채팅·로그인 초안 | `manyak:guest-chat-ids`의 JSON 배열(이전 버전에서 탭에만 보관한 채팅 ID. 신규 채팅은 localStorage 서재에 저장하며 기존 탭 ID도 자동 이관과 핸드오프에 포함)과 `manyak:chat-login-draft:{chatId}`의 입력 본문(전송 본문과 같은 직렬화, 채팅방 마운트 시 두 컴포저에 되살리고 삭제). [guest-chat-storage](../../../manyak-web/src/features/chats/_shared/utils/guest-chat-storage.ts)·[chat-login-draft-storage](../../../manyak-web/src/features/chats/room/utils/chat-login-draft-storage.ts) |
 | sessionStorage 로그인 진행 표시 | `manyak:pending-login`의 `'1'`. 공통 소셜 로그인 시작 함수가 OAuth로 떠나기 전에 기록하고 동의 게이트가 가입 대기 조회와 fail-closed 판정에 읽는다. 동의 완료·가입 취소·재로그인 안내·로그아웃, 히스토리 이동으로 다시 불러온 문서, OAuth 오류로 열린 로그인 화면에서 지운다. 가입 대기 조회가 404여도 지우지 않는다(팝업 로그인 중인 원래 탭 보호). [pending-login-storage](../../../manyak-web/src/features/auth/_shared/utils/pending-login-storage.ts) |
@@ -159,7 +160,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | 이동 | 구현 |
 | --- | --- |
 | 카드 → 상세, 제작 → 퍼널 | `Link`; 초안이 있으면 먼저 재개 확인 |
-| 상세 → 새 채팅 | `push`. 채팅방 메뉴의 새 채팅은 `replace`, 일반 제작 승인은 폼 자리를 상세로 `replace`한 뒤 `push` |
+| 상세 → 새 채팅 | `push`. 채팅방 메뉴의 새 채팅은 `replace`. 일반 제작 승인은 [pending-chat-open](../../../manyak-web/src/features/stories/_shared/utils/pending-chat-open.ts)에 열기 의도를 남기고 폼 자리를 상세로 `replace`만 하며, 상세가 마운트되면 의도를 읽어 채팅방을 `push`(두 이동을 연달아 부르면 Next가 앞의 이동을 버리므로 주소 폴링 대신 마운트를 기준으로 함) |
 | 상세 헤더 뒤로 | [in-app-navigation-tracker](../../../manyak-web/src/components/providers/in-app-navigation-tracker.tsx)의 `hasInAppNavigation`이 Navigation API `entries()`에서 더미 칸을 뺀 현재 화면 바로 아래 기록이 같은 문서(클라이언트 이동)인지 봅니다([in-app-navigation](../../../manyak-web/src/lib/in-app-navigation.ts)). 교체 이동은 인덱스를 늘리지 않아 바로 진입으로 남습니다. API가 없는 브라우저는 문서를 연 뒤 `history.length`가 늘었는지(더미 제외)로만 봅니다. 있으면 `back()`, 없으면(공유·외부 링크·알림으로 바로 진입) `replace('/')` |
 | 완성 제출 → 제작 | 저장 성공 뒤 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭; 직접 복구·저장 실패 예외는 웹 Spec |
 | 채팅 헤더 뒤로 | 상세 헤더와 같은 판정으로 `back()`, 바로 진입이면 `replace('/chats')` |
