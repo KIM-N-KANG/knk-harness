@@ -363,9 +363,9 @@ Auth.js의 `__Secure-` 세션 쿠키와 청크를 삭제할 때는 실행 모드
 - 현재 계정 연동은 같은 탭에서 두 단계 인증을 이어갑니다. 원래 회원 세션을 보존하며 연동 완료를 확인하는 팝업은 지원하지 않아 인앱 진입을 제한합니다. 로그인 팝업에서 회원 세션을 확인하는 것만으로는 계정 연동 성공을 판정할 수 없습니다. 이 제한을 Google 인증이 모든 인앱에서 불가능하다는 뜻으로 해석하지 않습니다.
 - 동의·연동 실패의 사용자 결과는 [공통 계정 계약](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지)을 따릅니다.
 
-#### 인앱 브라우저의 Google 인증 팝업
+#### 소셜 로그인 인증 팝업
 
-[start-google-popup-login](../../../manyak-web/src/features/auth/_shared/utils/start-google-popup-login.ts)은 클릭 중 빈 팝업을 먼저 열고 `signIn('google', { redirect: false })`로 얻은 Google 인가 URL을 그 창에 로드합니다. 코드 교환과 PKCE, state, nonce 검증은 Auth.js가 처리하며 Google 인증에 별도 SDK나 Credentials provider를 쓰지 않습니다. Auth.js의 단일 Google 트랜잭션 쿠키에 맞춰 문서 안에서 중복 팝업을 막습니다.
+[start-popup-login](../../../manyak-web/src/features/auth/_shared/utils/start-popup-login.ts)은 클릭 중 빈 팝업을 먼저 열고 `signIn(provider, { redirect: false })`로 얻은 인가 URL을 그 창에 로드합니다. 공급자별 허용 호스트(`accounts.google.com`, `kauth.kakao.com`)가 아니면 보내지 않습니다. [start-social-login](../../../manyak-web/src/features/auth/_shared/utils/start-social-login.ts)은 인앱의 Kakao만 같은 탭에서 시작하고 나머지는 팝업을 먼저 시도하며, 일반 브라우저에서 팝업이 차단(`blocked`)되면 같은 탭 `signIn`으로 폴백합니다. 성공 복귀는 `location.replace`로 로그인 화면 칸을 복귀 화면으로 바꿉니다. 코드 교환과 PKCE, state, nonce 검증은 Auth.js가 처리하며 Google 인증에 별도 SDK나 Credentials provider를 쓰지 않습니다. Auth.js의 단일 Google 트랜잭션 쿠키에 맞춰 문서 안에서 중복 팝업을 막습니다.
 
 성공 후 `/api/auth/popup-complete?attempt=<UUID>`가 원래 창에 완료 여부(`authenticated`)와 세션 없이 가입 대기가 남았는지(`consentRequired`)만 알립니다. 이 Route Handler는 루트 레이아웃을 실행하지 않습니다. 응답은 `no-store`, `no-referrer`, 인라인 스크립트 nonce와 프레임 차단 CSP를 사용합니다. 안내 문구는 [popup-login](../../../manyak-web/src/lib/auth/popup-login.ts)의 `POPUP_LOGIN_COPY`가 소유합니다.
 
