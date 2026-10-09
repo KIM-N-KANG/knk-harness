@@ -160,11 +160,11 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | --- | --- |
 | 카드 → 상세, 제작 → 퍼널 | `Link`; 초안이 있으면 먼저 재개 확인 |
 | 상세 → 새 채팅 | `push`. 채팅방 메뉴의 새 채팅은 `replace`, 일반 제작 승인은 폼 자리를 상세로 `replace`한 뒤 `push` |
-| 상세 헤더 뒤로 | 루트 [in-app-navigation-tracker](../../../manyak-web/src/components/providers/in-app-navigation-tracker.tsx)가 첫 진입 경로에서 벗어난 클라이언트 이동을 기록합니다. 기록이 있으면 `back()`, 없으면(공유·외부 링크로 바로 진입) `replace('/')`. 인앱·자동화 브라우저가 빈 첫 기록을 남겨 `history.length`로는 판정하지 않습니다 |
+| 상세 헤더 뒤로 | [in-app-navigation-tracker](../../../manyak-web/src/components/providers/in-app-navigation-tracker.tsx)의 `hasInAppNavigation`이 Navigation API `entries()`에서 더미 칸을 뺀 현재 화면 바로 아래 기록이 같은 문서(클라이언트 이동)인지 봅니다([in-app-navigation](../../../manyak-web/src/lib/in-app-navigation.ts)). 교체 이동은 인덱스를 늘리지 않아 바로 진입으로 남습니다. API가 없는 브라우저는 문서를 연 뒤 `history.length`가 늘었는지(더미 제외)로만 봅니다. 있으면 `back()`, 없으면(공유·외부 링크·알림으로 바로 진입) `replace('/')` |
 | 완성 제출 → 제작 | 저장 성공 뒤 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭; 직접 복구·저장 실패 예외는 웹 Spec |
 | 채팅 헤더 뒤로 | 상세 헤더와 같은 판정으로 `back()`, 바로 진입이면 `replace('/chats')` |
 | 스토리·채팅 삭제 성공 | [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 각각 제작 탭·채팅 탭. Navigation API `entries()`에서 가장 가까운 아래 탭 기록을 찾아 `history.go`로 되돌아가고, 다른 탭이면 이어서 `push`, 찾지 못하거나 그 기록이 이전 문서에 있으면 `replace`; 목록 삭제는 현재 화면 유지 |
-| 하단 탭 | `Link replace`, 정확한 pathname 일치로 `aria-current="page"` |
+| 하단 탭 | `Link replace scroll={false}`, 정확한 pathname 일치로 `aria-current="page"`. `(main)` 레이아웃이 [use-scroll-restoration](../../../manyak-web/src/hooks/use-scroll-restoration.ts)으로 탭별 스크롤 위치를 경로 키로 기억했다가 돌아올 때 되돌립니다(문서 단위 Map, 내용이 짧으면 ResizeObserver로 최대 2초 재시도) |
 | 퍼널 X·브라우저 back | 예약 저장 flush와 더미 기록 정리 후 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭 |
 | 온보딩 완료 | 열람 저장 후 목적지로 `replace` |
 | 마이 → 서비스 안내·법적 문서 | 새 탭 |
