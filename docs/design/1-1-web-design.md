@@ -159,13 +159,13 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | 이동 | 구현 |
 | --- | --- |
 | 카드 → 상세, 제작 → 퍼널 | `Link`; 초안이 있으면 먼저 재개 확인 |
-| 상세 → 새 채팅 | `replace` |
+| 상세 → 새 채팅 | `push`. 채팅방 메뉴의 새 채팅은 `replace`, 일반 제작 승인은 폼 자리를 상세로 `replace`한 뒤 `push` |
 | 상세 헤더 뒤로 | 루트 [in-app-navigation-tracker](../../../manyak-web/src/components/providers/in-app-navigation-tracker.tsx)가 첫 진입 경로에서 벗어난 클라이언트 이동을 기록합니다. 기록이 있으면 `back()`, 없으면(공유·외부 링크로 바로 진입) `replace('/')`. 인앱·자동화 브라우저가 빈 첫 기록을 남겨 `history.length`로는 판정하지 않습니다 |
-| 완성 제출 → 제작 | 저장 성공 뒤 `replace('/studio')`; 직접 복구·저장 실패 예외는 웹 Spec |
-| 채팅 헤더 뒤로 | `push('/chats')` |
-| 스토리·채팅 삭제 성공 | 각각 `replace('/studio')`·`replace('/chats')`; 목록 삭제는 현재 화면 유지 |
+| 완성 제출 → 제작 | 저장 성공 뒤 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭; 직접 복구·저장 실패 예외는 웹 Spec |
+| 채팅 헤더 뒤로 | 상세 헤더와 같은 판정으로 `back()`, 바로 진입이면 `replace('/chats')` |
+| 스토리·채팅 삭제 성공 | [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 각각 제작 탭·채팅 탭. Navigation API `entries()`에서 가장 가까운 아래 탭 기록을 찾아 `history.go`로 되돌아가고, 다른 탭이면 이어서 `push`, 찾지 못하거나 그 기록이 이전 문서에 있으면 `replace`; 목록 삭제는 현재 화면 유지 |
 | 하단 탭 | `Link replace`, 정확한 pathname 일치로 `aria-current="page"` |
-| 퍼널 X·브라우저 back | 예약 저장 flush 후 `replace('/studio')` |
+| 퍼널 X·브라우저 back | 예약 저장 flush와 더미 기록 정리 후 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭 |
 | 온보딩 완료 | 열람 저장 후 목적지로 `replace` |
 | 마이 → 서비스 안내·법적 문서 | 새 탭 |
 
@@ -197,7 +197,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 메인 헤더는 현재 섹션을 표시하며 홈만 로고와 스크린 리더용 `h1` "홈"을 사용합니다. 홈·채팅·제작의 로그인 버튼은 세션이 게스트로 확정된 뒤 표시하고 마이 헤더에는 두지 않습니다. 하단 4탭의 라벨·경로는 웹 Spec을 따릅니다.
 
-일반 하위 화면의 `BackHeader`는 고정 제목과 뒤로가기만 담당합니다. 로그인 화면은 직접 진입 시 홈으로 돌아가는 `fallbackHref`를 지정합니다.
+일반 하위 화면의 `BackHeader`는 고정 제목과 뒤로가기만 담당합니다. `fallbackHref`가 있으면 상세 헤더와 같은 앱 안 이동 판정으로 바로 진입일 때만 그 화면으로 교체합니다. 로그인은 홈, 마이 하위 화면은 마이 탭, 페르소나 생성은 페르소나 관리를 지정하고, 이프 충전은 결제 복귀 되감기 때문에 지정하지 않습니다.
 
 상세 헤더는 히어로 위 absolute입니다. 스크롤 비율로 배경·전경색을 보간하고 본문 `h1`이 가려지면 제목을 표시합니다. 실제 DOM 마운트를 effect 의존성에 포함해 지연 스켈레톤 뒤에도 listener·IntersectionObserver를 연결합니다.
 
