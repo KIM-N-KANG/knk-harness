@@ -354,7 +354,7 @@ data: {}
 
 ### 5-6 외부 모델 API 계약
 
-**1. 텍스트 Chat Completions API**
+**1. OpenAI Text API**
 
 | 요청 항목 | API 인자와 호출 방식 |
 |---|---|
@@ -382,6 +382,8 @@ data: {}
 
 <br>
 
+**1) 요청**
+
 ```text
 본문 요청
   model: gpt-6-luna
@@ -395,7 +397,13 @@ data: {}
     include_usage: true
   reasoning_effort: none
   timeout: <호출 제한 시간, 초>
+```
 
+<br>
+
+**2) 응답**
+
+```text
 본문 응답 조각
   choices:
     - delta:
@@ -438,20 +446,26 @@ data: {}
 
 <br>
 
-```text
-요청
-  model: <모델 이름>
-  image: <기본 이미지 파일>
-  prompt: <조립된 이미지 프롬프트>
-  quality: <생성 화질>
-  size: <가로x세로>
-  timeout: <호출 제한 시간>
-  output_format: webp
-  n: 1
+**1) 요청**
 
-응답
-  data:
-    - b64_json: <WebP 이미지의 Base64 문자열>
+```text
+model: <모델 이름>
+image: <기본 이미지 파일>
+prompt: <조립된 이미지 프롬프트>
+quality: <생성 화질>
+size: <가로x세로>
+timeout: <호출 제한 시간>
+output_format: webp
+n: 1
+```
+
+<br>
+
+**2) 응답**
+
+```text
+data:
+  - b64_json: <WebP 이미지의 Base64 문자열>
 ```
 
 </details>
@@ -462,7 +476,7 @@ data: {}
 
 | 항목 | 계약 |
 |---|---|
-| 호출 | `POST {TYPESAFE_API_URL}/v1/systemone`, Bearer 인증<br>[TypeSafe 어댑터](../../../../manyak-ai/src/services/llm/typesafe_api.py) |
+| API | `POST {TYPESAFE_API_URL}/v1/systemone` |
 | `model` | `JEV_MODEL` |
 | `state` | 최근 대화 최대 2턴과 이번 사용자 입력, 완성된 본문<br>이미지 마커 제거, 후보의 URL 필드와 바이너리는 전송하지 않음 |
 | `questions` | 인물별 선택 질문을 한 요청으로 전달<br>`type="choice"`, `instructions`, `criteria`로 구성 |
@@ -470,3 +484,67 @@ data: {}
 | 응답 | `model`, `answers`, `usage`<br>`answers`는 질문 ID별 `type="choice"`, `choice`, `probabilities`, `confidence` |
 | 사용량 | `usage.input_tokens`, `usage.output_tokens`<br>채팅 완료 `meta`에는 합산하지 않음 |
 | 응답 검사 | 모델, 질문과 후보 ID 일치<br>확률은 0~1, 합은 1에서 오차 0.010001 이내<br>선택 후보가 최고 확률이며 신뢰도는 0~1<br>하나라도 위반하면 해당 호출의 선택 결과 전체를 거부 |
+
+<details>
+<summary><b>이미지 선택 요청·응답 구조 예시</b></summary>
+
+<br>
+
+**1) 요청**
+
+```json
+{
+  "model": "<JEV_MODEL 값>",
+  "state": {
+    "recent_turns": [
+      {
+        "user": "<이전 사용자 입력>",
+        "assistant": "<이전 본문>"
+      }
+    ],
+    "current_turn": {
+      "user": "<이번 사용자 입력>",
+      "assistant": "<이번 본문>"
+    }
+  },
+  "questions": {
+    "1": {
+      "type": "choice",
+      "instructions": "<인물 이름을 채운 이미지 선택 지시>",
+      "criteria": {
+        "1": "도윤_기본",
+        "2": "도윤_미소"
+      }
+    }
+  }
+}
+```
+
+<br>
+
+**2) 응답**
+
+```json
+{
+  "model": "<요청과 같은 JEV_MODEL 값>",
+  "answers": {
+    "1": {
+      "type": "choice",
+      "choice": "2",
+      "probabilities": {
+        "1": 0.2,
+        "2": 0.8
+      },
+      "confidence": 0.8
+    }
+  },
+  "usage": {
+    "input_tokens": 300,
+    "output_tokens": 20
+  }
+}
+```
+
+확률, 신뢰도와 토큰 수는 구조 설명을 위한 예시 값이다.
+
+</details>
