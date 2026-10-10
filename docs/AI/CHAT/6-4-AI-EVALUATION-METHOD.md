@@ -61,24 +61,24 @@
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 308, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 268, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "대화 길이 (%)"
-    x-axis ["3~5턴", " ", "6~19턴", "  ", "20턴 이상"]
+    x-axis ["3~5턴", "6~19턴", "20턴 이상"]
     y-axis 0 --> 100
-    bar [50, 0, 30, 0, 20]
+    bar [50, 30, 20]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 244, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 212, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "유저 (%)"
-    x-axis ["게스트", " ", "회원"]
+    x-axis ["게스트", "회원"]
     y-axis 0 --> 100
-    bar [48, 0, 52]
+    bar [48, 52]
 ```
 
 </td>
@@ -87,24 +87,24 @@ xychart-beta
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 244, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 212, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "스토리 종류 (%)"
-    x-axis ["오리지널", " ", "간편 제작"]
+    x-axis ["오리지널", "간편 제작"]
     y-axis 0 --> 100
-    bar [38, 0, 62]
+    bar [38, 62]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 308, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 268, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 방식 (%)"
-    x-axis ["선택지", " ", "직접 입력", "  ", "선택지 수정"]
+    x-axis ["선택지", "직접 입력", "선택지 수정"]
     y-axis 0 --> 100
-    bar [60, 0, 38, 0, 2]
+    bar [60, 38, 2]
 ```
 
 </td>
@@ -113,24 +113,24 @@ xychart-beta
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 244, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 156, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "리텐션 (%)"
-    x-axis ["D7 재방문", " ", "재방문 없음"]
+    x-axis ["재방문 없음"]
     y-axis 0 --> 100
-    bar [0, 0, 100]
+    bar [100]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 372, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 324, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "마지막 입력 길이 (%)"
-    x-axis ["1~20자", " ", "21~50자", "  ", "51~100자", "   ", "101자+"]
+    x-axis ["1~20자", "21~50자", "51~100자", "101자+"]
     y-axis 0 --> 100
-    bar [12, 0, 20, 0, 57, 0, 12]
+    bar [12, 20, 57, 12]
 ```
 
 </td>
@@ -139,24 +139,24 @@ xychart-beta
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 280, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 228, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta horizontal
     title "대표 장르 (%)"
-    x-axis ["로맨스", " ", "탈출물", "  ", "현대 판타지", "   ", "로맨스 판타지", "    ", "군대 로맨스", "     ", "학원", "      ", "기타"]
+    x-axis ["로맨스", "탈출물", "현대 판타지", "로맨스 판타지", "군대 로맨스", "학원", "기타"]
     y-axis 0 --> 100
-    bar [33, 0, 27, 0, 8, 0, 7, 0, 7, 0, 3, 0, 15]
+    bar [33, 27, 8, 7, 7, 3, 15]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 250, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 204, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta horizontal
     title "스토리 묶음 (%)"
-    x-axis ["간편 제작", " ", "0호선", "  ", "그건 반칙이지 말입니다", "   ", "나만 기억하는 멸망", "    ", "백룸: 미귀환", "     ", "대공님, 계약 위반입니다"]
+    x-axis ["간편 제작", "0호선", "그건 반칙이지 말입니다", "나만 기억하는 멸망", "백룸: 미귀환", "대공님, 계약 위반입니다"]
     y-axis 0 --> 100
-    bar [62, 0, 25, 0, 7, 0, 3, 0, 2, 0, 2]
+    bar [62, 25, 7, 3, 2, 2]
 ```
 
 </td>
@@ -165,24 +165,24 @@ xychart-beta horizontal
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 308, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 268, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 방식 · 3~5턴 (%)"
-    x-axis ["선택지", " ", "직접 입력", "  ", "선택지 수정"]
+    x-axis ["선택지", "직접 입력", "선택지 수정"]
     y-axis 0 --> 100
-    bar [33, 0, 63, 0, 3]
+    bar [33, 63, 3]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 308, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 212, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 방식 · 6~19턴 (%)"
-    x-axis ["선택지", " ", "직접 입력", "  ", "선택지 수정"]
+    x-axis ["선택지", "직접 입력"]
     y-axis 0 --> 100
-    bar [89, 0, 11, 0, 0]
+    bar [89, 11]
 ```
 
 </td>
@@ -191,24 +191,24 @@ xychart-beta
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 308, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 212, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 방식 · 20턴 이상 (%)"
-    x-axis ["선택지", " ", "직접 입력", "  ", "선택지 수정"]
+    x-axis ["선택지", "직접 입력"]
     y-axis 0 --> 100
-    bar [83, 0, 17, 0, 0]
+    bar [83, 17]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 372, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 324, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 길이 · 직접 입력 (%)"
-    x-axis ["1~20자", " ", "21~50자", "  ", "51~100자", "   ", "101자+"]
+    x-axis ["1~20자", "21~50자", "51~100자", "101자+"]
     y-axis 0 --> 100
-    bar [30, 0, 26, 0, 35, 0, 9]
+    bar [30, 26, 35, 9]
 ```
 
 </td>
@@ -217,24 +217,24 @@ xychart-beta
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 372, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 268, "height": 240, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta
     title "입력 길이 · 선택지 (%)"
-    x-axis ["1~20자", " ", "21~50자", "  ", "51~100자", "   ", "101자+"]
+    x-axis ["21~50자", "51~100자", "101자+"]
     y-axis 0 --> 100
-    bar [0, 0, 17, 0, 69, 0, 14]
+    bar [17, 69, 14]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 280, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 204, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta horizontal
     title "장르 · 3~5턴 (%)"
-    x-axis ["로맨스", " ", "탈출물", "  ", "현대 판타지", "   ", "로맨스 판타지", "    ", "군대 로맨스", "     ", "학원", "      ", "기타"]
+    x-axis ["로맨스", "탈출물", "현대 판타지", "로맨스 판타지", "군대 로맨스", "기타"]
     y-axis 0 --> 100
-    bar [37, 0, 13, 0, 13, 0, 7, 0, 13, 0, 0, 0, 17]
+    bar [37, 13, 13, 7, 13, 17]
 ```
 
 </td>
@@ -243,24 +243,24 @@ xychart-beta horizontal
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 280, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 180, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta horizontal
     title "장르 · 6~19턴 (%)"
-    x-axis ["로맨스", " ", "탈출물", "  ", "현대 판타지", "   ", "로맨스 판타지", "    ", "군대 로맨스", "     ", "학원", "      ", "기타"]
+    x-axis ["로맨스", "탈출물", "현대 판타지", "학원", "기타"]
     y-axis 0 --> 100
-    bar [28, 0, 50, 0, 6, 0, 0, 0, 0, 0, 6, 0, 11]
+    bar [28, 50, 6, 6, 11]
 ```
 
 </td>
 <td>
 
 ```mermaid
-%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 280, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
+%%{init: {"theme": "base", "xyChart": {"width": 400, "height": 180, "titleFontSize": 13, "xAxis": {"labelFontSize": 12}, "yAxis": {"labelFontSize": 11, "showTitle": false}}, "themeVariables": {"xyChart": {"backgroundColor": "#FFFFFF", "titleColor": "#253C2C", "xAxisLabelColor": "#253C2C", "xAxisLineColor": "#9BA99E", "xAxisTickColor": "#9BA99E", "yAxisLabelColor": "#253C2C", "yAxisLineColor": "#9BA99E", "yAxisTickColor": "#9BA99E", "plotColorPalette": "#1F3A5F"}}}}%%
 xychart-beta horizontal
     title "장르 · 20턴 이상 (%)"
-    x-axis ["로맨스", " ", "탈출물", "  ", "현대 판타지", "   ", "로맨스 판타지", "    ", "군대 로맨스", "     ", "학원", "      ", "기타"]
+    x-axis ["로맨스", "탈출물", "로맨스 판타지", "학원", "기타"]
     y-axis 0 --> 100
-    bar [33, 0, 25, 0, 0, 0, 17, 0, 0, 0, 8, 0, 17]
+    bar [33, 25, 17, 8, 17]
 ```
 
 </td>
