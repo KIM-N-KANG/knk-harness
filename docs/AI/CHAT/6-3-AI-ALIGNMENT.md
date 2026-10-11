@@ -6,14 +6,14 @@
 
 ### 6-3-1 채팅 응답 생성
 
-기반 모델과 추론 강도(effort), 프롬프트의 configuration별로 채팅 응답의 성능, 응답 시간과 비용을 비교해 운영에 사용할 configuration을 선택한다.
+프롬프트 1개를 고정하고, 기반 모델과 추론 강도(effort)의 configuration별로 채팅 응답의 성능, 응답 시간과 비용을 비교해 운영에 사용할 configuration을 선택한다.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
 flowchart LR
-    TR["<b>train 데이터</b>"] -.->|"프롬프트 후보 검토 시"| PC["<b>후보 프롬프트 작성</b>"]
-    P["<b>프롬프트</b><br/>운영 프롬프트<br/>후보 프롬프트 (검토 시)"] --> CF
-    PC --> P
+    GD["<b>prompting guide</b><br/>OpenAI, Anthropic"] --> P
+    TR["<b>train 데이터</b>"] -.->|"사례 확인"| P
+    P["<b>범용 프롬프트 1개</b>"] --> CF
     M["<b>기반 모델</b>"] --> CF
     E["<b>추론 강도</b>"] --> CF
     CF["<b>configuration 목록</b>"] --> EV["<b>평가</b><br/>6-4"]
@@ -25,7 +25,7 @@ flowchart LR
     classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class TR,TE,R data
     class EV task
-    class P,M,E,CF,PC,A code
+    class GD,P,M,E,CF,A code
 ```
 
 <br>
@@ -35,7 +35,7 @@ flowchart LR
 | 항목 | 비교 범위 |
 |---|---|
 | 기반 모델 | 아래 후보 모델 목록 |
-| 프롬프트 | 1. 모델 비교는 운영 프롬프트 1개<br> 2. 프롬프트 후보 검토는 운영 프롬프트와 후보 프롬프트 N개 |
+| 프롬프트 | 범용 프롬프트 1개로 고정<br>grid search 중에는 바꾸지 않음 |
 | 추론 강도 | `none`, `low`, `medium`, `high`, `xhigh` 중 해당 모델이 지원하는 값 |
 | 데이터 | test 데이터 1개만 사용 |
 
@@ -53,7 +53,7 @@ flowchart LR
 
 **2. 평가 순서**
 
-1. 비교할 프롬프트 버전, 기반 모델과 지원하는 effort로 configuration을 구성한다.
+1. 고정한 프롬프트에서 기반 모델과 지원하는 effort로 configuration을 구성한다.
 2. 각 configuration으로 채팅 응답을 생성하고 채점한다. configuration별 실제 호출 모델 ID와 호출 설정을 기록한다. ([6-4 AI 평가 방법](6-4-AI-EVALUATION-METHOD.md))
 3. configuration별 설정과 성능, 시간, 비용을 표와 그래프로 비교한다. ([6-6 AI 성능 보고](6-6-AI-PERFORMANCE-REPORT.md))
 
@@ -73,7 +73,7 @@ flowchart LR
 
 **4. 개선 방법**
 
-프롬프트 후보는 train 사례를 보고 작성하고, 후보 프롬프트의 configuration을 운영 프롬프트의 configuration과 함께 test로 평가한다.
+프롬프트는 OpenAI와 Anthropic의 prompting guide와 train 사례를 참고해 특정 모델에 맞추지 않은 범용 프롬프트로 작성한다. 프롬프트를 바꾸면 새 버전으로 grid search를 다시 한다.
 
 | 문제 | 개선 방법 |
 |---|---|
