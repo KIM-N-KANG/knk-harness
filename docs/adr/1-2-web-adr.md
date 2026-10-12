@@ -429,6 +429,6 @@
 - 결정일: 2026-10-12, 기록 확정 상태: Accepted
 - 근거: [앱 안내 배너](../spec/3-2-web-spec.md#앱-안내-배너), [앱 안내 배너 구조](../design/1-1-web-design.md#앱-안내-배너-웹), [KNK-1630](https://kimandkang.atlassian.net/browse/KNK-1630)
 - **맥락:** 모바일 웹 방문자를 Android 앱과 iOS 홈 화면 설치본으로 안내하는 배너가 필요했습니다. 노출은 브라우저 종류, 홈 화면 설치본 여부, 접속 회차에 따라 달라지고, Android 앱에는 외부 링크를 받는 intent-filter와 App Links가 없었습니다.
-- **결정:** 노출은 클라이언트에서 UA와 브라우저 저장소로 판정합니다. Android 앱 열기는 App Links 대신 `package=app.manyak`를 명시한 `intent://` 링크로 하고, 앱은 autoVerify 없는 `https://manyak.app` intent-filter로 받습니다. 어트리뷰션 SDK의 스마트 배너는 쓰지 않습니다.
-- **이유:** 서버 판정은 홈을 매 요청 동적 렌더로 바꾸면서도 접속 회차와 설치본 여부를 알 수 없어 결국 클라이언트 판정이 섞입니다. 패키지를 명시한 intent는 도메인 검증 없이 설치 여부에 따라 앱 또는 플레이스토어로 가고, autoVerify가 없어 다른 앱의 일반 링크를 앱이 가로채지 않습니다. SDK는 비용, 웹과 앱 양쪽 도입, 처리방침 개정이 필요합니다.
+- **결정:** 노출은 클라이언트에서 UA와 브라우저 저장소로 판정합니다. Android 앱 열기는 App Links 대신 `package=app.manyak`를 명시한 `intent://` 링크로 하고, 앱은 전용 스킴 `manyak://manyak.app` intent-filter로 받습니다. 어트리뷰션 SDK의 스마트 배너는 쓰지 않습니다.
+- **이유:** 서버 판정은 홈을 매 요청 동적 렌더로 바꾸면서도 접속 회차와 설치본 여부를 알 수 없어 결국 클라이언트 판정이 섞입니다. 패키지를 명시한 intent는 도메인 검증 없이 설치 여부에 따라 앱 또는 플레이스토어로 갑니다. 받는 쪽을 검증되지 않은 https 필터로 두면 Android 11 이하(minSdk 24)에서 다른 앱의 manyak.app 링크마다 앱 선택창이 떠서, https 링크와 겹치지 않는 전용 스킴을 씁니다. SDK는 비용, 웹과 앱 양쪽 도입, 처리방침 개정이 필요합니다.
 - **주요 영향:** 배너는 하이드레이션 뒤 나타납니다. 앱이 열렸는지 플레이스토어로 갔는지 웹에서 구분할 수 없어 설치는 Play Console과 referrer로 봅니다. App Links와 설치 뒤 목적지 복원은 후속(KNK-927, 디퍼드 딥링크)입니다.
