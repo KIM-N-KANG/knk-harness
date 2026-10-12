@@ -76,6 +76,7 @@
 - [BE-056. 트레이스 수집 경로와 OpenSearch Trace Analytics](#be-056)
 - [BE-057. 페르소나 스냅샷과 서버의 이름 토큰 치환](#be-057)
 - [BE-058. 부하 테스트용 운영 복제 임시 환경](#be-058)
+- [BE-059. 화풍 카탈로그의 서버 DB 관리](#be-059)
 - [복원 범위와 날짜 해석](#복원-범위와-날짜-해석)
 
 ## 기록 규칙
@@ -829,6 +830,21 @@
 - 대안과 기각 이유: 운영 직접 부하는 CPU 크레딧 소진과 실사용자 영향 때문에 기각한다. dev를 운영처럼 개조하는 안은 팀 공용 환경을 바꾸고 영구 비용을 늘리므로 기각한다. 운영 OpenSearch 공유는 운영 검색에 영향을 주고 고정된 트레이스 서비스 이름 때문에 운영과 테스트 데이터가 섞이므로 기각한다. 서버 채팅 스텁은 AI 호출 구간을 건너뛰어 그 구간을 포함한 지연을 측정할 수 없으므로 기각한다. 공용 모듈 복사는 2,500줄 이상을 중복 관리해야 하므로 기각하며 기존 모듈 재사용과 loadtest 전용 수동 정리 절차를 선택한다.
 - 경계: internal HTTP ALB를 사용해 Cloudflare와 TLS 구간이 없고 실제 LLM 대신 mock을 쓰며 FCM 발송은 꺼진다. 복원 직후의 캐시와 t3 CPU 크레딧 상태가 측정에 영향을 주고 실사용자 트래픽도 없다. 임시 OpenSearch는 운영과 로그 부하가 다르다. 따라서 이 환경에서는 서버 쪽 지연과 처리 한계, 개선 전후 차이를 재고 사용자 체감 전체 시간은 운영 트레이스로 확인한다. 임시 환경도 t3 사양의 한계를 없애는 것은 아니므로 캐시와 크레딧 상태를 함께 해석한다. 정리 SQL은 발송과 대기 작업의 부작용을 막기 위한 것이며 복원 데이터 전체의 개인정보 비식별화를 뜻하지 않는다. 결정 당시 비용 추정은 시간당 약 0.5달러에 OpenSearch 하루 약 2달러를 더한 수준이며 측정 후 삭제하는 임시 운영을 전제로 한다.
 - 출처: 사용자 승인 결정과 멘토 조언을 정리한 [KNK-1498](https://kimandkang.atlassian.net/browse/KNK-1498), [KNK-1594](https://kimandkang.atlassian.net/browse/KNK-1594), [KNK-1595](https://kimandkang.atlassian.net/browse/KNK-1595), [KNK-1596](https://kimandkang.atlassian.net/browse/KNK-1596). 구현 근거는 [manyak-terraform #92](https://github.com/KIM-N-KANG/manyak-terraform/pull/92), [manyak-server #315](https://github.com/KIM-N-KANG/manyak-server/pull/315), [manyak-server #316](https://github.com/KIM-N-KANG/manyak-server/pull/316)이다.
+
+<a id="be-059"></a>
+
+## BE-059. 화풍 카탈로그의 서버 DB 관리
+
+- 날짜: 2026-10-12.
+- 상태: 채택한 목표 계약. 서버 미구현.
+- 배경: 간편 제작에서 인물 이미지와 표지의 화풍을 고르게 한다. 그릴 수 있는 화풍과 화면에 노출할 화풍의 관리 책임을 나눠 표시 문구와 순서를 배포 없이 바꿀 수 있어야 한다.
+- 결정: 서버 DB의 `art_styles`를 카탈로그 정본으로 둔다. `code`를 AI 계약값인 varchar PK로 쓰고 `name`, `description`, `preview_image_url`, `sort_order`, `is_active`를 둔다. 미리보기 URL은 null을 허용한다. 초기 11개를 모두 활성으로 시드하고 인증 선택 조회에서 활성 행만 정렬해 반환한다. 공개 목록의 코드는 개인 리소스 접근 권한을 부여하지 않으므로 장르 카탈로그와 같은 UUID 원칙의 카탈로그 예외로 둔다.
+- 역할과 운영: AI는 그릴 수 있는 화풍의 프롬프트 블록을 소유한다. 서버는 무엇을 어떤 순서·이름으로 노출할지 정한다. 추가는 AI 배포 후 행을 활성화하고 제거는 삭제 대신 비활성화한다. 이름·설명·순서는 SQL로 바꾸며 서버 배포가 필요하지 않다.
+- 대안과 기각 이유: 서버 enum은 이름·순서·숨김을 바꿀 때마다 서버 배포가 필요하므로 기각한다. AI가 목록을 제공하는 안은 거의 바뀌지 않는 목록 때문에 AI 장애가 제작 화면을 깨뜨리므로 기각한다. 표시 문구와 CDN 이미지는 무상태 AI가 소유할 데이터가 아니며 숨기기에도 AI 배포가 필요하다.
+- 선택과 호환: 간편 제작의 선택 필드 `artStyle`은 누락·null이면 `ANIME`이고 활성 코드만 허용한다. AI `art_style`로 그대로 전달한다. 구버전 AI는 모르는 필드를 무시하고 `ANIME`으로 그리므로 필드 호환에 따른 서버·AI 배포 순서 제약은 없다. 신규 화풍 활성화는 AI 지원 배포 뒤에 한다.
+- 범위와 영향: `NONE`은 인물 이미지와 표지 생성을 생략하며 기존 제작가는 유지한다. [KNK-1257](https://kimandkang.atlassian.net/browse/KNK-1257)의 이미지 끄기 요청은 이 선택에 흡수한다. 서버는 `thumbnail_image.error=skipped`를 기존 표지 실패 경로로 수용한다. 선택 화풍은 스토리에 저장하지 않으며 필요해지면 `stories` 컬럼 추가를 별도로 정한다. 일반 제작은 범위 밖이다. [BE-052](#be-052)의 새 스토리 프리셋 자동 연결 제거와 표지 없는 저장 계약은 유지한다. 과거 ADR의 ID와 본문은 보존한다.
+- 관련 계약: [제공 화풍과 선택](../spec/4-backend-server-spec.md#art-style-catalog), [화풍 저장 계약](../spec/4-backend-server-spec.md#art-style-storage), [AI 컴파일](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일).
+- 출처: [KNK-1481](https://kimandkang.atlassian.net/browse/KNK-1481)의 2026-10-12 사용자 확정 결정.
 
 ## 복원 범위와 날짜 해석
 

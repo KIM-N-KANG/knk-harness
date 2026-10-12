@@ -25,6 +25,7 @@
   - [페르소나 관리](#persona-management)
   - [기본 주인공 이름과 이름 토큰](#protagonist-name-token)
   - [제공 장르와 검색](#genre-catalog)
+  - [제공 화풍과 선택](#art-style-catalog)
   - [장르 입력 검증](#genre-validation)
   - [스토리 검수 제출 흐름](#스토리-검수-제출-흐름)
   - [스토리 검수 완료 푸시](#스토리-검수-완료-푸시)
@@ -185,6 +186,7 @@
 | 스토리 | `DELETE /stories/{storyId}/like` | 스토리 좋아요 취소(멱등) | 204 | 401·403·404 | 필수 |
 | 스토리 | `POST /stories/{storyId}/reports` | 스토리 신고 등록 | 201 | 400·401·403·404 | 필수 |
 | 스토리 | `GET /stories/genres` | 제공 장르 조회와 검색(1단계) | 200 | 400 | 선택 |
+| 간편 제작 | `GET /stories/art-styles` | 제공 화풍 목록 조회 | 200 | 없음 | 선택 |
 | 간편 제작 | `GET /stories/simple/tags` | 제공 태그 목록 조회 | 200 | 없음 | 불필요 |
 | 간편 제작 | `POST /stories/simple/storylines` | 스토리라인 3개 생성(AI 호출) | 201 | 400·402·409·502 | 선택 |
 | 간편 제작 | `POST /stories/simple` | 최종 스토리 생성(AI 호출) | 201 | 400·402·403·404·409·502 | 선택 |
@@ -377,6 +379,41 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 ### 4-3-2. 간편 제작
 
 간편 제작 퍼널(키워드 선택 → 스토리라인 선택 → 추가 정보 → 완료)의 서버 계약입니다. 화면 흐름은 [`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)가 정의합니다.
+
+<br>
+
+<a id="art-style-catalog"></a>
+
+#### 제공 화풍과 선택
+
+[KNK-1481](https://kimandkang.atlassian.net/browse/KNK-1481)의 목표 계약이다. 화풍 카탈로그와 간편 제작의 `artStyle` 선택은 서버 미구현이다. 서버는 노출할 화풍의 이름·설명·순서를 관리하고 AI는 그릴 수 있는 화풍의 프롬프트 블록을 관리한다. ([결정 근거 BE-059](../adr/2-backend-server-adr.md#be-059))
+
+**`GET /stories/art-styles`**는 공통 `/api/v1` prefix를 적용한 `GET /api/v1/stories/art-styles`이다. 인증 선택이며 게스트도 사용한다. `art_styles`의 활성 행만 `sort_order` 오름차순으로 정렬한 배열을 200으로 반환한다. 개인 리소스 접근 권한을 부여하지 않는 공개 카탈로그이므로 문자열 `code`를 식별자로 쓰는 것은 장르 카탈로그와 같은 UUID 원칙의 카탈로그 예외다.
+
+| 항목 필드 | 타입 | 계약 |
+| --- | --- | --- |
+| `code` | string | AI 컴파일의 `art_style` 계약값 |
+| `name` | string | 표시 이름 |
+| `description` | string | 화풍 설명 |
+| `previewImageUrl` | string 또는 null | 미리보기 이미지 URL. 초기 시드는 모두 null |
+
+초기 시드 11개는 모두 활성이다. 아래 순서를 `sort_order` 1~11로 저장한다.
+
+| 순서 | code | 이름 | 설명 |
+| --- | --- | --- | --- |
+| 1 | `ANIME` | 애니메이션 | 깔끔한 선과 선명한 색의 일본 애니메이션 그림체 |
+| 2 | `SEMI_REAL` | 반실사 | 실제 사람에 가까운 얼굴, 차분한 색감의 그림체 |
+| 3 | `LIGHT_NOVEL` | 라노벨 | 반짝이는 눈과 섬세한 묘사의 라이트노벨 삽화 |
+| 4 | `CINEMATIC` | 시네마틱 | 강한 명암과 극적인 역광의 웹소설 표지 느낌 |
+| 5 | `WEBTOON` | 웹툰 | 평면 채색의 한국 로맨스 웹툰 그림체 |
+| 6 | `SHOJO` | 순정 | 펜 선화에 옅은 채색을 얹은 순정만화 컬러 원고 |
+| 7 | `MOE` | 모에 | 파스텔 톤의 귀엽고 사랑스러운 그림체 |
+| 8 | `RETRO` | 레트로 | 1990년대 TV 애니메이션 셀화 느낌 |
+| 9 | `OIL_PAINTING` | 유화 | 붓 터치가 살아 있는 고전 유화 초상화 |
+| 10 | `INK_WASH` | 수묵 | 흑백 먹 번짐의 동양화 |
+| 11 | `NONE` | 없음 | 인물 이미지를 만들지 않아요 |
+
+신규 화풍은 AI 배포 후 행을 활성화한다. 제거는 행 삭제 대신 `is_active=false`로 숨긴다. 이름·설명·순서는 SQL로 변경하며 서버 배포가 필요하지 않다. 저장 컬럼은 [화풍 카탈로그 저장 계약](#art-style-storage)을 따른다.
 
 <br>
 
@@ -773,6 +810,13 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 | `simpleCreationId` | ≥ 1 | 간편 제작 진행 ID |
 | `storylineId` | ≥ 1 | 선택한 스토리라인 ID |
 | `additionalInfos` | 최대 13개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
+| `artStyle` | string. 선택·null 허용 | 누락·null이면 `ANIME`. `art_styles`의 활성 `code`가 아니면 400 |
+
+`artStyle`은 [제공 화풍과 선택](#art-style-catalog)의 목표 계약이다. 기본값 적용과 활성 코드 검증을 마친 값을 AI 컴파일 요청의 `art_style`로 그대로 전달한다. `NONE`을 선택해도 차감액은 기존 스토리 제작가를 유지한다. 이미지 끄기 요청 [KNK-1257](https://kimandkang.atlassian.net/browse/KNK-1257)은 이 선택에 흡수한다.
+
+`NONE`이면 AI는 인물 이미지와 표지를 만들지 않는다. `character_images`는 빈 배열이고 `thumbnail_image.image_base64`는 null이며 `thumbnail_image.error`는 `skipped`다. 서버는 별도 분기 없이 기존 표지 실패 경로로 표지 없이 저장한다. 인물 소개와 외형은 유지한다. ([AI 컴파일 계약](5-ai-server-spec.md#5-3-3-스토리-컴파일), [썸네일 저장과 노출 규칙](#썸네일-저장과-노출-규칙))
+
+선택한 화풍은 이번 범위에서 스토리에 저장하지 않는다. 영속화가 필요해지면 `stories` 컬럼 추가를 별도로 정한다. 일반 제작 `POST /stories/general`은 이번 범위 밖이다. 구버전 AI는 모르는 요청 필드를 무시하므로 `art_style`을 보내도 `ANIME`으로 그린다. 필드 호환을 위한 서버·AI 배포 순서 제약은 없으며 신규 화풍 행 활성화는 AI 지원 배포 뒤에 한다.
 
 **응답(201, `SimpleStoryCreateResponse`)**
 
@@ -789,7 +833,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - 소유자가 있는 진행은 같은 회원만 완료할 수 있습니다(타인·익명 403). 익명 진행을 회원이 완료하면 스토리와 진행이 그 회원에게 귀속됩니다(claim).
 - 409는 AI 호출 전 사전 검사와, 저장 트랜잭션 안의 세션 행 비관적 락(`findByIdForUpdate`) 후 상태 재판정의 이중 구조로 판정합니다(동시 완료 경합 차단).
 - 저장 트랜잭션은 선택 스토리라인 표시 → 스토리 → 스토리 설정 → 시작 설정 → 추천 입력 → 로어북 → 주요 사건 → 엔딩 → 세션 완료 순으로 처리합니다. 추천 입력과 로어북의 순서는 1부터, 주요 사건은 0부터, 시작 설정별 엔딩은 1부터 기록합니다. 제목은 100자와 한 줄 소개는 255자까지 [원문 절단 규칙](#protagonist-name-token)에 따라 잘라 저장합니다. 주요 사건·엔딩 이름도 100자까지 같은 규칙으로 자른 뒤 중복을 검사합니다. 장르는 GENRE 태그명을 `", "`로 연결하고 `visibility`는 PRIVATE, `status`는 PUBLISHED로 고정합니다.
-- 컴파일 응답의 필수 `story_settings.protagonist_name`을 `stories.protagonist_name`으로 저장합니다. 이름도 토큰도 없는 구버전 AI 응답은 이름 null로 저장합니다. 생성 글에 `{username}`이 있는데 이름이 없거나 null 또는 trim 후 빈 값이면 기존 컴파일 산출물 검증 실패와 같은 경로로 502를 반환하고 저장을 롤백합니다. 이 경우에도 §4-3-7의 컴파일 실패 정책에 따라 전액 환불하고 사용한 체험 카운터를 복원합니다. `user_role_setting`은 이름 항목을 뺀 주인공 설명입니다. 다른 생성 글은 AI가 이름을 토큰으로 바꾼 원문 그대로 저장하고 클라이언트 반환 시에만 치환합니다. 간편 제작 요청 필드는 변경하지 않습니다. 기본 주인공 이름은 trim 후 1~30자로 검증하며 일반 제작·수정과 같은 상한을 적용합니다. ([이름 토큰 계약](#protagonist-name-token), [AI 컴파일 계약](5-ai-server-spec.md#5-9-2-스토리-컴파일))
+- 컴파일 응답의 필수 `story_settings.protagonist_name`을 `stories.protagonist_name`으로 저장합니다. 이름도 토큰도 없는 구버전 AI 응답은 이름 null로 저장합니다. 생성 글에 `{username}`이 있는데 이름이 없거나 null 또는 trim 후 빈 값이면 기존 컴파일 산출물 검증 실패와 같은 경로로 502를 반환하고 저장을 롤백합니다. 이 경우에도 §4-3-7의 컴파일 실패 정책에 따라 전액 환불하고 사용한 체험 카운터를 복원합니다. `user_role_setting`은 이름 항목을 뺀 주인공 설명입니다. 다른 생성 글은 AI가 이름을 토큰으로 바꾼 원문 그대로 저장하고 클라이언트 반환 시에만 치환합니다. 주인공 이름을 위한 간편 제작 요청 필드는 추가하지 않습니다. 기본 주인공 이름은 trim 후 1~30자로 검증하며 일반 제작·수정과 같은 상한을 적용합니다. ([이름 토큰 계약](#protagonist-name-token), [AI 컴파일 계약](5-ai-server-spec.md#5-9-2-스토리-컴파일))
 - AI 요청의 `additional_info`는 `additionalInfos`를 개행(`\n`)으로 결합한 단일 문자열입니다.
 - AI 호출 실패(응답 본문이 빈 경우 포함)는 502입니다. 컴파일 산출물 검증: 주요 사건·엔딩의 **이름이 중복되면** 사용자 입력이 아니라 불완전 AI 응답으로 보아 502로 저장을 롤백합니다. **엔딩은 빈 배열이어도 정상**이며(AI의 엔딩 폴백: 엔딩 0개로 저장), 주요 사건 개수(3~5)·엔딩 개수(0 또는 3)·폴백 계약의 정본은 [`5-ai-server-spec.md §5-3-3`](5-ai-server-spec.md)입니다.
 
@@ -2251,6 +2295,21 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 <br>
 
+<a id="art-style-storage"></a>
+
+#### 화풍 카탈로그 저장 계약
+
+서버 미구현 목표 테이블 `art_styles`의 컬럼은 다음과 같다. 초기 시드와 활성화 운영은 [제공 화풍과 선택](#art-style-catalog)을 따른다.
+
+| 컬럼 | 계약 |
+| --- | --- |
+| `code` | PK. varchar. AI 컴파일의 화풍 계약값 |
+| `name` | 표시 이름 |
+| `description` | 화풍 설명 |
+| `preview_image_url` | 미리보기 이미지 URL. null 허용 |
+| `sort_order` | 노출 순서 |
+| `is_active` | 노출 및 간편 제작 선택 허용 여부 |
+
 #### 페르소나와 기본 주인공 이름의 저장 계약
 
 | 테이블 | 컬럼·제약 | 의미 |
@@ -2858,6 +2917,10 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | US-10-6 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
+
+- 화풍 목록은 게스트도 조회할 수 있고 초기 11개가 정해진 순서·이름·설명과 null 미리보기 URL로 반환되어야 한다. 비활성 행은 제외하고 SQL로 바꾼 표시 정보와 순서가 반영되어야 한다.
+- 간편 제작의 `artStyle` 누락·null은 `ANIME`으로 전달하고 활성 코드는 AI `art_style`에 그대로 전달해야 한다. 미등록·비활성 코드와 빈 문자열은 400이어야 한다. 선택값은 스토리에 저장하지 않아야 한다.
+- `NONE`은 기존 제작가를 유지하고 인물 이미지 빈 배열과 `thumbnail_image.error=skipped`를 수용해 표지 없이 저장해야 한다. 인물 소개와 외형 및 스토리 본체는 유지해야 한다. 구버전 AI가 추가 필드를 무시해 `ANIME`으로 그리는 호환 경로도 확인한다.
 
 - 기본 주인공 이름 21~30자의 컴파일 저장과 일반 제작·수정 폼 왕복이 통과하고 30자를 넘는 입력은 거절되어야 합니다. 페르소나 이름의 상한은 20자로 유지합니다.
 - 같은 판정 범위에서 치환 이름이 겹치면 두 번째부터 AI 전달 이름에 구분 표시가 붙어야 합니다. 기존 `(2)` 이름과의 재충돌도 유일해질 때까지 번호를 올려야 합니다. 반환 문자열의 정확한 대응과 목표·완결 사건 이름의 일치를 확인하며 구분 표시가 DB·사용자 응답에 남지 않아야 합니다.
