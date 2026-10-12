@@ -163,6 +163,10 @@ flowchart LR
 
 선택한 줄거리를 플레이 설정으로 확장합니다. 생성된 인물 외형은 아래 이미지 생성의 입력으로 이어집니다.
 
+요청의 선택 필드 `art_style`은 `ANIME`·`SEMI_REAL`·`LIGHT_NOVEL`·`CINEMATIC`·`WEBTOON`·`SHOJO`·`MOE`·`RETRO`·`OIL_PAINTING`·`INK_WASH`·`NONE` 중 하나다. 미전달·null이면 `ANIME`이며 계약 밖 값은 422다. 인물 이미지와 표지는 같은 화풍으로 생성한다. 표시 이름과 노출 순서는 [백엔드 화풍 카탈로그](4-backend-server-spec.md#art-style-catalog)가 정한다.
+
+`NONE`이면 인물 이미지·표지 호출을 모두 생략한다. 컴파일 본체와 인물 소개·외형은 유지하며 `character_images`는 빈 배열로 반환한다. 필수 객체 `thumbnail_image`는 `image_name="썸네일_기본"`과 `content_type="image/webp"`를 유지하고 `image_base64=null`과 `error="skipped"`를 반환한다. `skipped`는 생성 실패가 아니라 의도적인 생략이다. 서버는 기존 표지 실패 경로와 같이 표지 없이 저장한다.
+
 상세 화면의 “주요 내용”은 응답의 `stories.description`입니다. 주인공의 상황·핵심 갈등·선택에 따른
 위험이나 기대를 보여주는 소개문을 6~8문장으로 작성하도록 지시합니다. 한 줄 소개를 반복하거나
 세계관 설정만 나열하지 않고 결말은 밝히지 않습니다. 세계관 본문은 `story_settings.world_setting`이
@@ -195,7 +199,7 @@ flowchart LR
     I --> P
     P --> M
     M --> V["세부 설정 JSON 검증·필요 시 보완"]
-    V --> A["검증된 인물 외형·장르<br/>→ 인물 이미지·표지 생성"]
+    V --> A["검증된 인물 외형·장르·화풍<br/>→ 인물 이미지·표지 생성<br/>NONE이면 생성 생략"]
     A --> R["통글 변환·API 응답 조립"]
     R --> O
 ```
@@ -245,7 +249,8 @@ flowchart LR
     V -->|"필수 설정·인물 이름과 소개·주요 사건 미충족"| E["502"]
     V -->|"필수 조건 충족"| R["불완전 엔딩은 빈 배열<br/>최종 설정 스키마 검증"]
     R -->|형식 위반| E
-    R -->|통과| P["인물 이미지와 표지 동시 생성<br/>외형 누락 인물은 실패 항목"]
+    R -->|"통과 · NONE 이외"| P["인물 이미지와 표지 동시 생성<br/>외형 누락 인물은 실패 항목"]
+    R -->|"통과 · NONE"| W
     P --> W["통글 변환·API 응답 조립"]
     W --> O["컴파일 출력<br/>200: 설정과 이미지별 결과<br/>이미지 실패도 스토리 본체 유지"]
 ```
@@ -278,6 +283,8 @@ flowchart LR
 보완 지시 조립: [컴파일 프롬프트 조립](../../../manyak-ai/src/services/prompt.py).
 
 #### 이미지 생성 공통 사항
+
+아래 생성 경로는 `art_style`이 `NONE`이 아닐 때 적용한다.
 
 인물 이미지와 썸네일은 컴파일 내부에서 `IMAGE_MODEL`(기본 `gpt-image-2.5-flare`)로 생성하며 별도의 외부 요청 API는 없습니다. 최대 6건을 동시에 호출하고 모두 끝난 뒤 컴파일 응답에 담습니다. 컴파일이 없는 일반 제작에는 이 생성이 없습니다.
 
@@ -1342,6 +1349,7 @@ flowchart LR
 
 ```json
 {
+  "art_style": "SEMI_REAL",
   "selected_storyline": "신입 기록관 서윤은 마법 도서관에서 다음 날의 기록이 지워지고 있음을 발견한다. 과묵한 사서 도현과 함께 사라진 기록의 출처를 추적한다.",
   "additional_info": "지워진 기록은 지하 보관실에 흔적으로 남는다.",
   "genre_tags": [
@@ -1380,6 +1388,7 @@ flowchart LR
 | 필드 | 타입 | 설명 | 필수 여부 |
 | --- | --- | --- | --- |
 | `selected_storyline` | `string` | 선택한 줄거리 | O |
+| `art_style` | `string / null` | [화풍 11개 계약값](#5-3-3-스토리-컴파일). 생략·null이면 `ANIME`. 계약 밖 값은 422. 인물 이미지와 표지에 함께 적용 | X |
 | `additional_info` | `string` | 확정한 추가 설정; 기본 빈 문자열 | X |
 | `genre_tags` | `string[]` | 장르 태그 | O |
 | `protagonist` | `object` | 주인공 | O |
@@ -1545,7 +1554,7 @@ flowchart LR
 | `character_appearances[].hair` | `string` | 머리 |
 | `character_appearances[].outfit` | `string` | 의상 |
 | `character_appearances[].visual_identity` | `string` | 식별 가능한 외형 특징 |
-| `character_images` | `object[]` | 생성 이미지; 최대 5개 |
+| `character_images` | `object[]` | 생성 이미지; 최대 5개. `art_style=NONE`이면 빈 배열 |
 | `character_images[].name` | `string` | 인물 이름 |
 | `character_images[].image_name` | `string` | 인물이름_기본 |
 | `character_images[].image_base64` | `string / null` | 이미지 데이터; 실패 시 null |
@@ -1555,7 +1564,7 @@ flowchart LR
 | `thumbnail_image.image_name` | `string` | 썸네일_기본 |
 | `thumbnail_image.image_base64` | `string / null` | 이미지 데이터; 실패 시 null |
 | `thumbnail_image.content_type` | `string` | 이미지 형식(image/webp) |
-| `thumbnail_image.error` | `string / null` | 실패 사유; 성공 시 null |
+| `thumbnail_image.error` | `string / null` | 실패 시 `timeout`·`rate_limited`·`rejected`·`generation_failed`. `art_style=NONE`으로 생략하면 `skipped`. 성공 시 null |
 | `meta` | `object` | 호출 기록 |
 | `meta.model` | `string` | 실제 호출 모델 |
 | `meta.prompt_versions` | `map<string, integer>` | 프롬프트 이름별 버전 |
