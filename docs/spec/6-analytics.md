@@ -282,6 +282,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_viewed`                              |
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_form_submitted`                      |
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
+| P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
+| P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -310,6 +312,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2                  | client | `client_terms_viewed`                                    |
 | P2                  | client | `client_privacy_viewed`                                  |
 | P2 `계획`           | client | `client_serviceInfo_viewed`                              |
+| P2 `Phase 3 · 구현` | client | `client_appBanner_closeButton_clicked`                   |
+| P2 `Phase 3 · 구현` | client | `client_appBanner_escapeGuide_shown`                     |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -708,6 +712,20 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 - 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 - 페르소나 생성과 수정에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
 - 페르소나 사용률은 `client_storyDetail_chatStartButton_clicked`의 `persona_type = persona` 비율로 봅니다.
+
+#### 6-4-2-18. 앱 안내 배너 — `Phase 3 · 구현`(KNK-1631)
+
+[앱 안내 배너](3-2-web-spec.md#앱-안내-배너)의 이벤트입니다. 여러 화면에 걸친 전역 동작이므로 screenName 자리에 `appBanner`를 씁니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_appBanner_shown` | P1 | 배너 표시. 페이지 로드당 1회이며 클라이언트 이동으로는 다시 보내지 않음 | `variant` (string, 필수: `android_inapp` / `android_browser` / `ios_inapp` / `ios_browser`), `destination` (string, Android 변형만: `story` / `home`), `story_id` (string, 스토리 상세일 때만) |
+| `client_appBanner_actionButton_clicked` | P1 | 배너 버튼 클릭 | `client_appBanner_shown`과 같음 |
+| `client_appBanner_closeButton_clicked` | P2 | 닫기(X) 클릭 | `variant` |
+| `client_appBanner_escapeGuide_shown` | P2 | iOS 인앱에서 외부 전환 1.5초 뒤에도 화면이 그대로라 안내 시트를 열 때 | 없음 |
+
+- `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표입니다.
+- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 설치는 Play Console과 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)로 봅니다.
 
 ### 6-4-3. impression 수집 기준
 
