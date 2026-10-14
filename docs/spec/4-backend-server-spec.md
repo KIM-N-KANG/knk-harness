@@ -2283,7 +2283,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 4-3-12. 스토리 제작 임시 저장
 
-서버 미구현 목표 계약이다. 일반 제작과 간편 제작의 작성 중 입력을 회원별 초안으로 보관한다. 공통 `/api/v1` prefix를 사용하며 네 API 모두 회원 전용이다. 미인증은 401 `UNAUTHORIZED`, 정지 회원은 조회를 포함해 403 `FORBIDDEN`으로 거절한다. 기존 draft presign의 인증 규칙을 따른다.
+서버 [PR #320](https://github.com/KIM-N-KANG/manyak-server/pull/320)(KNK-1641, `14d5bd6`)으로 dev에 구현된 계약이다. 일반 제작과 간편 제작의 작성 중 입력을 회원별 초안으로 보관한다. 공통 `/api/v1` prefix를 사용하며 네 API 모두 회원 전용이다. 미인증은 401 `UNAUTHORIZED`, 정지 회원은 조회를 포함해 403 `FORBIDDEN`으로 거절한다. 기존 draft presign의 인증 규칙을 따른다.
 
 회원당 초안은 최대 5개다. 6번째 신규 생성은 400 `DRAFT_LIMIT_EXCEEDED`이며 기존 초안 갱신은 허용한다. 회원 단위로 개수 검사와 신규 저장을 직렬화해 동시 생성에도 5개를 넘지 않게 한다. 오래된 초안을 자동 삭제하지 않는다. 게스트 초안은 로컬에 유지하며 이 API의 대상이 아니다. 참조되지 않는 draft 이미지 정리는 별도 티켓의 범위다.
 
@@ -2420,7 +2420,7 @@ payload 검증은 다음 세 가지로 제한한다. 서버는 payload 내부의
 
 #### 스토리 초안 저장 계약
 
-서버 미구현 목표 테이블 `story_drafts`다. API의 정책과 수명은 [스토리 제작 임시 저장](#story-drafts)을 따른다.
+서버 dev에 구현된 `story_drafts` 테이블이다. API의 정책과 수명은 [스토리 제작 임시 저장](#story-drafts)을 따른다.
 
 | 컬럼 | 계약 |
 | --- | --- |
