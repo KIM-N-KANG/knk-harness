@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.47 |
+| 버전 | v0.48 |
 | 작성일 | 2026-07-03 |
 | 수정일 | 2026-10-14 |
 | 대상 | 마냑 백엔드 서버 |
@@ -27,6 +27,7 @@
   - [제공 장르와 검색](#genre-catalog)
   - [제공 화풍과 선택](#art-style-catalog)
   - [장르 입력 검증](#genre-validation)
+  - [스토리 제작 임시 저장](#story-drafts)
   - [스토리 검수 제출 흐름](#스토리-검수-제출-흐름)
   - [스토리 검수 완료 푸시](#스토리-검수-완료-푸시)
   - [미동의 회원 서버 게이트](#미동의-회원-서버-게이트)
@@ -163,6 +164,10 @@
 | 페르소나 | `POST /users/me/personas` | 페르소나 등록 | 201 | 400, 401, 409 | 필수 |
 | 페르소나 | `PATCH /users/me/personas/{personaId}` | 내 페르소나 수정 | 200 | 400, 401, 404 | 필수 |
 | 페르소나 | `DELETE /users/me/personas/{personaId}` | 내 페르소나 삭제 | 204 | 401, 404 | 필수 |
+| 스토리 초안 | `GET /users/me/story-drafts` | 초안과 진행 중 생성 요청 카드 목록 | 200 | 401, 403 | 필수 |
+| 스토리 초안 | `GET /users/me/story-drafts/{draftId}` | 내 초안 상세와 생성 결과 복구 조회 | 200 | 401, 403, 404 | 필수 |
+| 스토리 초안 | `PUT /users/me/story-drafts/{draftId}` | 내 초안 멱등 upsert | 200 | 400, 401, 403, 404, 409 | 필수 |
+| 스토리 초안 | `DELETE /users/me/story-drafts/{draftId}` | 내 초안 멱등 삭제 | 204 | 401, 403 | 필수 |
 | 스토리 | `GET /stories` | 공개 스토리 목록(커서 페이지네이션, `?filter`·`?sort`·`?limit`·`?cursor`) | 200 | 400 | 불필요 |
 | 스토리 | `GET /stories/originals` | 마냑 오리지널(공식 계정 소유 공개 스토리) 카드 목록, 등록순. 공식 계정 미설정 환경은 빈 배열. **폐기 예정**: `GET /stories?filter=original`이 대체하며 클라이언트 전환까지만 유지 | 200 | 없음 | 불필요 |
 | 스토리 | `GET /stories/search` | 공개 스토리 검색(질의 `q`, OpenSearch nori) | 200 | 400·503 | 불필요 |
@@ -807,6 +812,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
 | `requestId` | UUID, 필수 | 클라이언트 생성 요청 ID: 복구 조회·멱등 키(아래 KNK-623 블록). 누락 시 400 |
+| `draftId` | UUID, 선택 | 접수 시 삭제할 내 초안. 삭제와 접수의 트랜잭션 규칙은 [스토리 제작 임시 저장](#story-drafts) 참조 |
 | `simpleCreationId` | ≥ 1 | 간편 제작 진행 ID |
 | `storylineId` | ≥ 1 | 선택한 스토리라인 ID |
 | `additionalInfos` | 최대 13개, 각 ≤ 100자 | 추가 정보(추천 채택분 포함 합산) |
@@ -1741,7 +1747,7 @@ graph TD
 
 일반 제작은 제작 폼에 스토리 구성 항목을 직접 입력하는 제작 방식입니다([`0-glossary.md §0-3-2`](0-glossary.md)). 일반 제작은 AI 컴파일을 하지 않지만 게시물 검수 API는 호출합니다. 등록·수정 요청을 검수 제출본으로 보관하고 통과한 경우에만 라이브 스토리에 반영합니다. 일반 제작 등록의 이프 소모·체험 한도 카운트 없음은 유지하며 게스트 등록은 401로 차단합니다.
 
-등록 입력은 엔딩·주요 사건을 포함한 전체를 `POST /stories/general` 본문 한 번으로 제출합니다. 부분 저장용 별도 저작 API는 없습니다(로어북 연결은 간편 제작 컴파일 전용, [§4-3-6](#4-3-api-계약)). 접수 시에는 제출본만 만들고 승인 후 스토리를 생성합니다. 반려·실패한 신규 등록의 재제출은 [검수 제출본 API](#검수-제출본-api)를 사용합니다.
+등록 입력은 엔딩·주요 사건을 포함한 전체를 `POST /stories/general` 본문 한 번으로 제출합니다. 작성 중 입력의 임시 저장은 [스토리 제작 임시 저장](#story-drafts)을 사용합니다. 라이브 스토리의 부분 저장용 별도 저작 API는 없습니다(로어북 연결은 간편 제작 컴파일 전용, [§4-3-6](#4-3-api-계약)). 접수 시에는 제출본만 만들고 승인 후 스토리를 생성합니다. 반려·실패한 신규 등록의 재제출은 [검수 제출본 API](#검수-제출본-api)를 사용합니다.
 
 [결정 근거 BE-013](../adr/2-backend-server-adr.md#be-013)
 
@@ -1753,10 +1759,11 @@ graph TD
 
 #### 일반 제작 등록
 
-`POST /stories/general`은 인증 필수이며 미인증은 401입니다. 작성 중 유실 방지는 클라이언트 로컬 자동 보관이 담당하고, 제출한 입력은 서버의 검수 제출본에 보존합니다.
+`POST /stories/general`은 인증 필수이며 미인증은 401입니다. 작성 중 입력은 [스토리 제작 임시 저장](#story-drafts)에 보관하고, 제출한 입력은 서버의 검수 제출본에 보존합니다.
 
 | 요청 필드 | 제약 | 설명 |
 | --- | --- | --- |
+| `draftId` | UUID, 선택 | 접수 시 삭제할 내 초안. 삭제와 접수의 트랜잭션 규칙은 [스토리 제작 임시 저장](#story-drafts) 참조 |
 | `title` · `oneLineIntro` · `description` | 100자 · 255자 · 제한 없음(TEXT) | 기본 정보. `description`만 선택 |
 | `genres` | 1~8개, 각 30자 이내 | 장르 태그 문자열 배열. 2단계부터 [장르 입력 검증](#genre-validation)으로 정식 이름을 확정하고 입력 순서를 보존해 `stories.genre`에 쉼표 결합 저장한다. 상한은 `stories.genre` VARCHAR(255) 오버플로우 방지 |
 | `protagonistName` | 선택이며 값이 있으면 trim 후 1~30자 | 기본 주인공 이름. 문자 규칙과 토큰 저장 검증은 [이름 토큰 계약](#protagonist-name-token) 참조 |
@@ -2269,11 +2276,103 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ---
 
+<br>
+
+<a id="story-drafts"></a>
+
+### 4-3-12. 스토리 제작 임시 저장
+
+서버 미구현 목표 계약이다. 일반 제작과 간편 제작의 작성 중 입력을 회원별 초안으로 보관한다. 공통 `/api/v1` prefix를 사용하며 네 API 모두 회원 전용이다. 미인증은 401 `UNAUTHORIZED`, 정지 회원은 조회를 포함해 403 `FORBIDDEN`으로 거절한다. 기존 draft presign의 인증 규칙을 따른다.
+
+회원당 초안은 최대 5개다. 6번째 신규 생성은 400 `DRAFT_LIMIT_EXCEEDED`이며 기존 초안 갱신은 허용한다. 회원 단위로 개수 검사와 신규 저장을 직렬화해 동시 생성에도 5개를 넘지 않게 한다. 오래된 초안을 자동 삭제하지 않는다. 게스트 초안은 로컬에 유지하며 이 API의 대상이 아니다. 참조되지 않는 draft 이미지 정리는 별도 티켓의 범위다.
+
+#### 제작 탭 카드 목록
+
+`GET /users/me/story-drafts`는 아래 항목을 합친 배열을 `createdAt` 내림차순으로 반환한다. 없으면 빈 배열이며 개수가 작아 페이지네이션을 두지 않는다.
+
+| kind | 포함 조건 | 항목 필드 |
+| --- | --- | --- |
+| `DRAFT` | 요청자 소유 초안 | `kind`, `draftId`, `mode`, `stage`, `title`, `oneLineIntro`, `thumbnailUrl`, `version`, `createdAt`, `updatedAt`. `payload`는 제외 |
+| `CREATION_REQUEST` | 요청자 소유 `story_creation_requests` 중 `PENDING`이며 회수 기준을 넘기지 않은 요청 | `kind`, `requestId`, `stage`(`STORYLINE_GENERATION` 또는 `STORY_COMPLETION`), `createdAt` |
+
+생성 요청의 회수 기준은 기존 `manyak.story.pending-reclaim-after-seconds`(기본 300초)를 사용한다. 기존 회수 판정과 같이 `updated_at` 기준으로 유효한 PENDING만 포함하며 회수 가능해진 요청은 제외한다. 생성 중 카드와 완성 중 카드를 함께 조회한다. 생성 요청의 `createdAt`은 요청 행의 최초 생성 시각이다. ([생성 요청 복구](#4-3-2-간편-제작))
+
+<br>
+
+#### 초안 상세
+
+`GET /users/me/story-drafts/{draftId}`는 아래 객체를 반환한다. 미존재와 타인 소유는 404 `NOT_FOUND`다.
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `draftId` | string(UUID) | 클라이언트가 만든 초안 ID |
+| `mode` | string | `SIMPLE` 또는 `GENERAL` |
+| `stage` | string | `GENERAL_DRAFT`, `KEYWORD_DRAFT`, `STORY_DRAFT` |
+| `title`, `oneLineIntro`, `thumbnailUrl` | string 또는 null | 목록과 동일한 요약. 저장된 요약이 없으면 null |
+| `version` | integer | 1부터 시작하는 저장 버전 |
+| `createdAt`, `updatedAt` | string | ISO 8601 UTC 시각 |
+| `schemaVersion` | integer | 클라이언트 payload 스키마 버전 |
+| `payload` | object | 저장된 입력 객체 |
+| `generationRequestId` | string(UUID) 또는 null | 연결한 스토리라인 생성 요청 ID |
+| `imageUrls` | object | payload에서 찾은 draft objectKey를 키로, 읽기 URL을 값으로 하는 맵. 없으면 빈 객체 |
+| `generation` | object 또는 null | `STORY_DRAFT`이고 `generationRequestId`가 있으면 기존 복구 조회와 같은 `{stage, status, result}`. `result`는 COMPLETED일 때 원 POST 응답 스키마이며 그 외 null. 연결 조건이 아니면 null |
+
+`generation`은 기존 `GET /stories/simple/creation-requests/{requestId}`의 소유권과 복구 응답 규칙을 따른다. 스토리라인 결과 원문을 payload에 복사할 필요가 없다.
+
+<br>
+
+#### 초안 저장
+
+`PUT /users/me/story-drafts/{draftId}`는 전체 교체 방식의 멱등 upsert다. 성공은 신규와 갱신 모두 200 `{draftId, version, createdAt, updatedAt}`다. 타인의 draftId는 존재를 노출하지 않고 404다.
+
+| 요청 필드 | 타입과 필수 여부 | 설명 |
+| --- | --- | --- |
+| `mode` | string, 필수 | `GENERAL`은 `GENERAL_DRAFT`만, `SIMPLE`은 `KEYWORD_DRAFT`와 `STORY_DRAFT`만 허용. 불일치 400 |
+| `stage` | string, 필수 | 초안 단계 |
+| `schemaVersion` | integer, 필수 | 서버는 payload 스키마를 해석하지 않음 |
+| `payload` | object, 필수 | 작성 중 입력 |
+| `baseVersion` | integer 또는 null, 선택 | 클라이언트가 기준으로 삼은 서버 버전. 신규는 null 또는 누락 |
+| `title`, `oneLineIntro` | string 또는 null, 선택 | 목록용 요약 |
+| `thumbnailObjectKey` | string 또는 null, 선택 | 목록용 표지 객체 키 |
+| `generationRequestId` | string(UUID) 또는 null, 선택 | 요청자 소유의 `STORYLINE_GENERATION` 생성 요청. 아니면 400 |
+
+`generationRequestId`와 요약 필드를 payload 밖 최상위에 두어 서버가 payload의 의미를 해석하지 않고도 목록과 상세를 만든다. 요약의 필수 여부와 길이 등 등록 입력 검증은 등록 API가 담당한다. 선택 필드의 누락과 null은 저장값 없음으로 취급하며 전체 교체 때 이전 값을 유지하지 않는다.
+
+| 조건 | 동작 |
+| --- | --- |
+| 내 기존 초안과 같은 내용 재전송 | baseVersion 검사 없이 현재 상태 200. version과 시각 유지 |
+| 신규 ID이며 baseVersion null 또는 누락 | version 1로 생성. createdAt과 updatedAt 기록 |
+| 내 기존 초안과 내용이 다르고 baseVersion이 현재 version과 같음 | 전체 덮어쓰기, version + 1. createdAt 고정, updatedAt만 갱신 |
+| 내용이 다르고 baseVersion 불일치. 신규 생성 의도지만 이미 있는 ID 포함 | 409 `DRAFT_VERSION_CONFLICT`. 현재 version과 updatedAt을 details에 포함 |
+
+같은 내용은 `mode`, `stage`, `schemaVersion`, `payload`, 요약 필드와 `generationRequestId`의 저장값을 비교한다. `baseVersion`은 비교에서 제외한다. JSON 객체 키 순서와 표현 공백은 비교에 영향을 주지 않으며 배열 순서는 유지한다. 동일 내용 재전송은 keepalive와 네트워크 재시도에 대응한다. 같은 ID의 상태 판정과 저장을 원자적으로 수행한다.
+
+충돌 details는 기존 `{field, message}[]` 형식을 유지해 `[{field: "version", message: "현재 버전의 정수 문자열"}, {field: "updatedAt", message: "현재 수정 시각의 ISO 8601 UTC 문자열"}]`로 반환한다. ([오류 응답 계약](#오류-응답-계약))
+
+payload 검증은 다음 세 가지로 제한한다. 서버는 payload 내부의 필수 항목과 글자 수를 검증하지 않는다.
+
+1. JSON 객체만 허용한다. 배열, 문자열, 숫자와 null 등은 400이다.
+2. payload 직렬화 UTF-8 크기가 64KB(65,536바이트)를 초과하면 400 `DRAFT_PAYLOAD_TOO_LARGE`다. 64KB는 웹 keepalive PUT 상한에 맞춘 값이다.
+3. `thumbnailObjectKey`와 payload 안의 모든 문자열 값 중 `thumbnails/uploaded/` 또는 `characters/uploaded/`로 시작하는 값은 각각 요청자의 `thumbnails/uploaded/drafts/{userPublicId}/` 또는 `characters/uploaded/drafts/{userPublicId}/` 아래여야 한다. 중첩 객체와 배열도 검사하며 위반은 400이다. 객체 존재 HEAD는 검사하지 않아 업로드 직후와 업로드 실패 상태도 저장할 수 있다.
+
+`thumbnailUrl`은 thumbnailObjectKey의 읽기 URL이다. `imageUrls`는 payload에서 찾은 draft 키의 읽기 URL 맵이다. 기존 서버 `StoryImageAccess.resolveDraftUploadedUrl`의 요청자 draft prefix와 서빙 URL 규칙을 따른다. URL은 설정된 이미지 base URL의 끝 `/`를 제거한 뒤 `/`와 objectKey를 연결한다. 기존 메서드가 수행하는 HEAD, 객체 크기와 Content-Type 검증은 초안 저장과 조회에서 수행하지 않는다. 등록 API의 이미지 검증은 유지한다. ([등록 전 이미지 업로드](#스토리-이미지-업로드))
+
+<br>
+
+#### 초안 삭제와 등록 접수
+
+`DELETE /users/me/story-drafts/{draftId}`는 요청자 소유 초안을 물리 삭제하고 본문 없는 204를 반환한다. 이미 없거나 타인 것이어도 204다. 등록 트랜잭션의 삭제와 웹 DELETE가 겹쳐도 안전하며 타인 초안의 존재도 노출하지 않는다.
+
+`POST /stories/general`과 완성 요청 `POST /stories/simple`은 선택 필드 `draftId`를 받는다. 일반 제작의 202 제출 접수와 간편 제작 완성의 생성 요청 행 기록 시 같은 트랜잭션에서 요청자 소유의 해당 초안을 삭제한다. 없거나 타인의 초안이면 조용히 넘어가 등록을 실패시키지 않는다. 웹은 별도로 DELETE하지 않아도 된다. 승인 또는 AI 생성 완료까지 삭제를 미루지 않는다.
+
+<br>
+
 ## 4-4. 데이터 모델
 
 ### 식별자 정책
 
 - **외부 노출 식별자는 공개 UUID(`public_id`)만 사용합니다.** 내부 Long PK는 FK·조인 전용이며 API 응답, 로그, 분석 프로퍼티에 싣지 않습니다([`0-glossary.md §0-4`](0-glossary.md)). 순번 PK 노출로 인한 IDOR을 차단하는 장치입니다.
+- 스토리 초안은 클라이언트 UUID `story_drafts.id`를 외부에 노출한다. 순차 PK가 아니므로 별도 `public_id`가 필요 없다. ([초안 저장 계약](#story-draft-storage))
 - 공개 식별자를 쓰는 리소스: 스토리(`story_id`), 채팅(`chat_id`), 사용자(`public_id`)와 페르소나(`public_id`).
 - 간편 제작 진행 ID(`simpleCreationId`: 제품 분석 개념 `analytics_creation_id`)와 태그·스토리라인 ID는 Long을 그대로 노출합니다. 생성 퍼널의 임시 리소스로 소유 개념이 없기 때문입니다.
 - `/stories/genres`의 장르 ID도 기존 태그 Long PK를 사용한다. 공개 카탈로그에 한정한 예외이며 개인 리소스의 UUID와 소유권 규칙은 유지한다. ([제공 장르와 검색](#genre-catalog))
@@ -2282,7 +2381,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 ### 삭제 정책
 
 - 스토리와 채팅은 `deleted_at` 기록으로 소프트 삭제합니다. 삭제된 리소스는 상세 조회에서 404, 배치 조회에서 제외됩니다.
-- 삭제 API는 이미 삭제된 리소스에 404를 반환합니다. 클라이언트는 404를 "이미 삭제됨"으로 해석합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)).
+- 스토리와 채팅 삭제 API는 이미 삭제된 리소스에 404를 반환합니다. 클라이언트는 404를 "이미 삭제됨"으로 해석합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)).
 - 회원 탈퇴는 `users.status`를 `DELETED`로 두는 소프트 삭제이며, 소셜 연동(`social_accounts`)도 `deleted_at` tombstone으로 남깁니다(행 삭제 금지: 삭제하면 같은 소셜 계정의 재가입이 1회성 혜택을 리셋합니다, [§4-3-5](#4-3-api-계약)).
 
 ### 테이블·저장소 구성
@@ -2309,6 +2408,29 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 | `preview_image_url` | 미리보기 이미지 URL. null 허용 |
 | `sort_order` | 노출 순서 |
 | `is_active` | 노출 및 간편 제작 선택 허용 여부 |
+
+<br>
+
+<a id="story-draft-storage"></a>
+
+#### 스토리 초안 저장 계약
+
+서버 미구현 목표 테이블 `story_drafts`다. API의 정책과 수명은 [스토리 제작 임시 저장](#story-drafts)을 따른다.
+
+| 컬럼 | 계약 |
+| --- | --- |
+| `id` | UUID PK. 클라이언트 draftId |
+| `user_id` | NOT NULL, users FK. 회원 전용 |
+| `mode` | NOT NULL. `SIMPLE` 또는 `GENERAL` |
+| `stage` | NOT NULL. `GENERAL_DRAFT`, `KEYWORD_DRAFT`, `STORY_DRAFT`. mode와 단계의 조합은 API 계약 참조 |
+| `schema_version` | int NOT NULL. 클라이언트 스키마 버전 |
+| `payload` | jsonb NOT NULL. JSON 객체 |
+| `title`, `one_line_intro`, `thumbnail_object_key` | TEXT NULL. 목록용 요약 |
+| `generation_request_id` | UUID NULL. 요청자 소유 STORYLINE_GENERATION 생성 요청 참조 |
+| `version` | int NOT NULL. 1부터 시작 |
+| `created_at`, `updated_at` | NOT NULL. 최초 저장 시각과 최근 내용 변경 시각 |
+
+<br>
 
 #### 페르소나와 기본 주인공 이름의 저장 계약
 
@@ -2609,7 +2731,8 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 ```
 
 - 2단계 장르 입력 검증은 도메인 검증에서도 위와 같은 `details`를 채운다. 최상위 400 검증 메시지는 유지하며 반환 원소는 원본 요청 인덱스 순서로 정렬한다.
-- `details`는 필드 검증 실패에만 포함하며 항목 구조는 `{field, message}` 2필드입니다. 필드 검증은 `field=필드명`, 클래스 수준(global) 검증은 `field=객체명`, 쿼리 파라미터 위반은 `field=propertyPath`를 넣습니다. 본문 JSON 파싱 실패는 `details` 빈 배열의 400입니다.
+- 초안 버전 충돌은 현재 version과 updatedAt을 같은 details 항목 형식으로 반환하는 예외다. ([초안 저장](#초안-저장))
+- `details`는 필드 검증 실패와 초안 버전 충돌에 포함하며 항목 구조는 `{field, message}` 2필드입니다. 필드 검증은 `field=필드명`, 클래스 수준(global) 검증은 `field=객체명`, 쿼리 파라미터 위반은 `field=propertyPath`를 넣습니다. 본문 JSON 파싱 실패는 `details` 빈 배열의 400입니다.
 - 고정 사용자 메시지: 400 검증 실패는 "요청 값이 올바르지 않습니다.", 500은 "서버 오류가 발생했습니다."
 - `message`에 스택트레이스나 내부 구현 정보를 싣지 않습니다.
 
@@ -2620,6 +2743,9 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 | 상태 | code | 발생 상황 |
 | --- | --- | --- |
 | 400 | `BAD_REQUEST` · `GUEST_CANNOT_PUBLISH` · `NIGHT_PUSH_REQUIRES_MARKETING` · `UPLOAD_NOT_FOUND` · `CONSENT_VERSION_MISMATCH` · `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과는 `IMAGES_TOO_LARGE`와 `이미지 크기나 장수를 줄여 주세요.`([용량 사전 검사](#검수-요청-용량-사전-검사)). 본문 형식 오류, 필드 검증 실패. `GUEST_CANNOT_PUBLISH`는 기존 공개 제한 코드입니다. 일반 제작 등록·PATCH의 미인증 요청은 공개 범위 검사 전에 401로 차단합니다([§4-3-8](#4-3-api-계약)). 광고 동의 없이 야간 광고만 켜는 요청은 `NIGHT_PUSH_REQUIRES_MARKETING`([§4-3-5](#4-3-api-계약)). presign 뒤 PUT이 끝나지 않은 객체 키 연결은 `UPLOAD_NOT_FOUND`([§4-3-8](#4-3-api-계약)). 약관 동의 버전이 현행과 다르면 `CONSENT_VERSION_MISMATCH`([약관·개인정보 처리방침 동의](#약관개인정보-처리방침-동의)) |
+| 400 | `DRAFT_PAYLOAD_TOO_LARGE` | 초안 payload 직렬화 UTF-8 크기가 65,536바이트 초과 |
+| 400 | `DRAFT_LIMIT_EXCEEDED` | 회원의 6번째 신규 초안 생성. 기존 초안 갱신 제외 |
+| 409 | `DRAFT_VERSION_CONFLICT` | 초안 내용이 다르고 baseVersion 불일치. details에 현재 version과 updatedAt |
 | 400 | `CUSTOM_GENRE_NOT_ALLOWED` | 2단계부터 신규 requestId의 비어 있지 않은 `customGenreTags`. 기존 기록의 소유권·상태를 확인한 재시도와 회수는 제외. `details`에 `{field: "customGenreTags", message: "제공 장르에서 선택해 주세요."}` |
 | 400 | `INVALID_GENRE` | 2단계 일반 제작과 PATCH에서 허용되지 않는 장르. `details`에 각 무효 원소의 원본 인덱스 `genres[i]`와 `제공 장르에서 선택해 주세요.` 메시지 |
 | 400 | `CONSENT_REQUIRED_MISSING` | 새 소셜 인증 완료에 현재 필요한 필수 항목 누락. 대기 코드 미소비 |
@@ -2917,6 +3043,13 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | US-10-6 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
+
+- 스토리 초안 네 API는 미인증 401과 정지 회원 403이어야 한다. 미존재 또는 타인 초안의 상세 조회는 404, 신규 ID의 PUT은 생성되며 타인 ID의 PUT은 404, DELETE는 204이며 타인 데이터가 바뀌지 않아야 한다.
+- 같은 내용의 PUT은 오래된 baseVersion이나 null로 재전송해도 200이며 version과 시각이 바뀌지 않아야 한다. 다른 내용의 정상 갱신은 version + 1과 createdAt 보존, baseVersion 불일치는 409 `DRAFT_VERSION_CONFLICT`와 현재 version·updatedAt이어야 한다.
+- payload 객체 형식과 65,536바이트 경계 허용, 초과 400 `DRAFT_PAYLOAD_TOO_LARGE`, mode·stage 불일치 400을 검증한다. 중첩 객체·배열의 남의 draft prefix와 잘못된 generationRequestId는 400이어야 한다. 객체가 없어도 HEAD 없이 초안을 저장하고 이미지 URL 맵을 반환해야 한다.
+- 6번째 신규 초안은 400 `DRAFT_LIMIT_EXCEEDED`이며 5개 상태의 갱신은 허용해야 한다. 서로 다른 ID의 동시 신규 생성에도 5개 상한이 유지돼야 한다.
+- 일반 제작 202 접수와 간편 제작 완성 요청 행 기록 시 해당 초안을 같은 트랜잭션에서 삭제해야 한다. 없거나 타인의 draftId는 등록을 실패시키지 않고, 웹 DELETE와 겹쳐도 204여야 한다.
+- 목록은 초안과 요청자 소유의 회수 전 PENDING 생성·완성 요청을 합쳐 createdAt 내림차순으로 반환해야 한다. 타인·COMPLETED·FAILED·회수 가능한 요청과 payload는 제외하며 상세는 연결한 생성 요청의 복구 응답과 동일한 generation을 반환해야 한다.
 
 - 화풍 목록은 게스트도 조회할 수 있고 초기 11개가 정해진 순서·이름·설명과 null 미리보기 URL로 반환되어야 한다. 비활성 행은 제외하고 SQL로 바꾼 표시 정보와 순서가 반영되어야 한다.
 - 간편 제작의 `artStyle` 누락·null은 `ANIME`으로 전달하고 활성 코드는 AI `art_style`에 그대로 전달해야 한다. 미등록·비활성 코드와 빈 문자열은 400이어야 한다. 선택값은 스토리에 저장하지 않아야 한다.
