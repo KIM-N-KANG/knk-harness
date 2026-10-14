@@ -184,7 +184,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 문서의 `html`과 `body`는 `globals.css`에서 `bg-background`를 사용합니다. `body`의 절대 위치 가상 요소 두 개가 `--container-md`를 넘는 좌우 여백만 `bg-border`로 칠하고 포인터 입력은 통과시킵니다. 앱 프레임의 `max-w-md`와 같은 너비 토큰을 사용하며, 화면 폭이 그 이하이면 여백 너비는 0입니다. 루트 오류 화면도 같은 전역 스타일을 공유합니다.
 
-- 상세·피드백·공유는 `scroll-fade-b`; 온보딩은 본문 안에 시작 버튼·푸터를 두며 하단 페이드·고정 CTA를 두지 않습니다.
+- 상세·피드백·공유는 `scroll-fade-b`; 온보딩은 기능 소개마다 갤러리와 함께 붙는 섹션 버튼을 두고 본문 끝에 푸터를 두며, 하단 페이드와 고정 CTA를 두지 않습니다.
 - 제작 단계 푸터의 키워드·비용 행은 공용 상단 슬롯을 씁니다. 텍스트 입력 포커스가 있고 `VisualViewport`(대체 `innerHeight`)가 기준보다 120px 이상 줄면 푸터를 숨기고 복원 시 다시 표시합니다. 포커스만으로 숨기지 않습니다.
 - Drawer는 앱 프레임에 포털하고 투어는 `body`에 포털합니다. 투어 카드 좌표는 앱 프레임 폭·하이라이트 변을 기준으로 제한하며 세로 가용 공간을 `max-height`로 설정합니다. 채팅방 헤더는 flex 형제가 아니라 스크롤 영역 위 `absolute` 오버레이입니다. 탭으로 숨기고 나타날 때 스크롤 영역 높이가 바뀌면 읽던 위치가 튀기 때문입니다. 높이는 화면 루트의 `--chat-header-height` 하나로 정하고 헤더 `h-`와 메시지 목록 `pt-`가 같은 변수를 씁니다(목록 위 여백은 메시지 스크롤러의 시작 정렬 기준에도 반영됩니다). 탭 판정은 [header-toggle-tap](../../../manyak-web/src/features/chats/room/utils/header-toggle-tap.ts)이 조작 요소와 텍스트 선택을 걸러 내고, 포인터가 눌릴 때 입력 요소에 포커스가 있었으면(키보드 닫기 탭) 전환하지 않으며 투어 중에는 항상 표시합니다. 숨긴 헤더는 `invisible`로 접근·포커스 대상에서도 제외하고 200ms 페이드이며, 데스크톱 스크롤바 트랙 위쪽 끝은 헤더에 가려집니다. 공유 열람은 헤더·CTA를 in-flow로 항상 고정합니다.
 
@@ -196,7 +196,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용, 네이티브 터치 리스너만 두고 마우스·펜 포인터 경로는 없음)이며 이프 충전의 무료 충전·내역 탭도 같은 컴포넌트가 스크롤러입니다. 새로고침이 끝나도 표시자는 마스코트 애니메이션 주기 경계(최소 한 주기)까지 기다린 뒤 닫아, 회전이 중간에 끊기거나 되감기지 않게 합니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 두고 네이티브 터치 리스너를 연결하지 않습니다. 활성 화면으로 돌아오면 리스너를 다시 연결합니다. 비활성화 시 진행 중인 당김은 복원하되 이미 시작한 새로고침은 완료까지 유지합니다. 스크롤 상태(`MainScrollProvider`)는 홈과 제작에서만 컴포넌트의 `onScroll`로 받습니다. 홈 필터 바는 컴포넌트의 `header` 슬롯으로 넘겨 당김에 밀리지 않는 스크롤러의 첫 자식(sticky)으로 두고, 표시자는 그 아래 콘텐츠 상자의 맨 위에 나타납니다. 홈은 필터 바의 스크롤 방향을, 제작은 FAB 축소 여부만 계산하며 탭 전환 시 유지되는 스크롤러의 실제 위치와 표시 상태를 동기화합니다.
 
-온보딩 스크린샷과 앱 안내 배너의 홈 화면 추가 안내는 공용 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(82% 폭 카드, 점 표시)을 씁니다. 가로 스크롤 영역(`overflow-x-auto` + `scrollbar-none`)의 마우스 드래그는 [use-drag-scroll](../../../manyak-web/src/hooks/use-drag-scroll.ts)이 반환한 포인터 핸들러를 스크롤 컨테이너에 펼쳐 처리합니다. `pointerType`이 `mouse`인 주 버튼만 다루고 터치·펜은 네이티브 스크롤에 맡깁니다. 5px 이상 움직여야 드래그로 보고, 그 뒤의 클릭은 캡처 단계에서 한 번 막습니다. 스냅 컨테이너는 드래그 중 `scroll-snap-type`을 끄고, 놓으면 스크롤 범위 안에서 가장 가까운 `snap-start` 지점으로 부드럽게 이동한 뒤 그 지점에 도착한 `scrollend`에서 스냅을 되돌립니다(놓치면 최대 1초 뒤). 바로 되돌리면 브라우저가 순간 이동으로 스냅하고, WebKit은 이동 중에 되돌리면 맞추지 않은 채 멈출 수 있기 때문입니다. 커서는 `pointerenter`마다 넘침을 재서 컨테이너에 `data-drag-scrollable`(`grab`)을 두고, 드래그 중에는 문서 루트의 `data-drag-scrolling`으로 모든 요소에 `grabbing`을 적용합니다(`globals.css`). 루트에 두는 이유는 포인터가 영역 밖으로 나가도 커서를 유지하기 위해서입니다.
+앱 안내 배너의 홈 화면 추가 안내는 공용 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(82% 폭 카드, 점 표시)을 씁니다. 가로 스크롤 영역(`overflow-x-auto` + `scrollbar-none`)의 마우스 드래그는 [use-drag-scroll](../../../manyak-web/src/hooks/use-drag-scroll.ts)이 반환한 포인터 핸들러를 스크롤 컨테이너에 펼쳐 처리합니다. `pointerType`이 `mouse`인 주 버튼만 다루고 터치·펜은 네이티브 스크롤에 맡깁니다. 5px 이상 움직여야 드래그로 보고, 그 뒤의 클릭은 캡처 단계에서 한 번 막습니다. 스냅 컨테이너는 드래그 중 `scroll-snap-type`을 끄고, 놓으면 스크롤 범위 안에서 가장 가까운 `snap-start` 지점으로 부드럽게 이동한 뒤 그 지점에 도착한 `scrollend`에서 스냅을 되돌립니다(놓치면 최대 1초 뒤). 바로 되돌리면 브라우저가 순간 이동으로 스냅하고, WebKit은 이동 중에 되돌리면 맞추지 않은 채 멈출 수 있기 때문입니다. 커서는 `pointerenter`마다 넘침을 재서 컨테이너에 `data-drag-scrollable`(`grab`)을 두고, 드래그 중에는 문서 루트의 `data-drag-scrolling`으로 모든 요소에 `grabbing`을 적용합니다(`globals.css`). 루트에 두는 이유는 포인터가 영역 밖으로 나가도 커서를 유지하기 위해서입니다.
 
 ### 앱 안내 배너 (웹)
 
@@ -263,7 +263,15 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### 온보딩 소개 이미지 (웹)
 
-[온보딩 상수](../../../manyak-web/src/features/onboarding/constants.ts)의 `ONBOARDING_SECTIONS`가 문구·순서·이미지 경로를 관리하고, 문구 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다. `public/onboarding/*-light.webp`·`*-dark.webp`는 1082×2402 원본을 무손실 변환한 WebP입니다. `onboarding-landing.tsx`의 `SceneCard`는 `next/image` 두 장 중 `next-themes`가 적용한 `.dark` 클래스에 맞는 한 장만 CSS로 표시합니다. 별도 테마 상태나 마운트 대기 없이 첫 표시·테마 전환을 처리하며, 숨긴 이미지는 접근성 트리에서도 제외됩니다.
+[온보딩 상수](../../../manyak-web/src/features/onboarding/constants.ts)의 `ONBOARDING_FEATURES`가 기능 소개 제목과 카드 문구, 카드별 이미지 경로와 자를 위치(`cropTop`)를 관리하고, 문구 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다.
+
+- **스크롤 구간 크기**: 화면 셸의 `main` 스크롤 영역을 `container-type: size`로 두고, 첫 화면은 `130cqh`(붙는 카드는 `100cqh`), 갤러리 구간은 헤더를 뺀 붙는 영역 높이에 카드 사이마다 `80cqh`를 더한 높이로 잡습니다. 기능 소개 하나에 카드를 3장씩만 두어 한 갤러리에 붙어 있는 시간이 길어지지 않게 합니다. 카드 폭은 스크롤 영역 폭의 80%와 높이에서 캡션 자리를 뺀 값에 맞춘 3:4 박스 중 작은 쪽이고, 카드 사이 간격은 폭의 3%입니다. 그래서 화면이 낮은 기기에서도 카드와 캡션이 한 화면에 들어가고, 갤러리 위아래 빈 공간이 섹션 간격 역할을 합니다. 뷰포트 단위 대신 스크롤 영역 크기를 쓰므로 앱 안내 배너가 있어도 맞습니다.
+- **헤더**: `onboarding-header`는 로고만 둔 `absolute` 오버레이이며 높이는 화면 루트의 `--onboarding-header-height` 하나로 정합니다. 갤러리의 붙는 영역은 같은 변수만큼 아래(`top`)에서 붙고 그만큼 높이를 줄입니다. 첫 화면 구간이 맨 위에서 스크롤 영역 위로 완전히 지나갈 때까지의 진행률을 헤더 투명도에 직접 묶고(95%에서 완전히 보임), 투명도가 0이면 `visibility: hidden`으로 포커스 대상에서도 뺍니다. 범위 기반 `useTransform`은 motion이 브라우저 스크롤 타임라인으로 넘기며 범위 밖에서 값을 유지하지 않아, 함수 기반 변환을 씁니다.
+- **첫 화면**: `onboarding-hero`가 motion `useScroll`로 첫 화면 구간의 진행률을 받아 카드 여백(사방 32px에서 0)과 모서리(28px에서 0)에 직접 묶습니다. 제목과 설명 글자 크기는 카드 안쪽 폭에 맞춰 줄어들어, 제목은 320px 폭까지 두 줄, 설명은 360px 폭까지 한 줄을 유지합니다. 이미지 5장(`hero-1`~`hero-5.webp`, Android `bg_login_*` 원본)은 모두 겹쳐 두고, 새 장만 위에서 투명도로 나타나게 해 전환 중 밝기가 출렁이지 않게 합니다. 바로 아래 장은 불투명하게 유지합니다.
+- **갤러리 위치**: `onboarding-feature`가 갤러리 구간 진행률을 [onboarding-gallery](../../../manyak-web/src/features/onboarding/utils/onboarding-gallery.ts)의 `getGalleryPosition`으로 카드 위치(소수)로 바꿉니다. 카드 사이 구간의 앞뒤 20%는 카드가 가운데에 멈춰 있고 나머지에서만 넘어가, 스크롤을 멈춘 자리가 대부분 카드 한 장의 가운데가 됩니다. 각 카드는 카드 순번과 이 값의 차이를 `getSlideMotionStyle`에 넘겨 받은 `transform`, 투명도, 캡션 투명도에 직접 묶여 움직이고, 가장 가까운 카드에 `aria-current="step"`을 둡니다. 섹션 데이터의 `motion`이 전환 방식(`gallery`, `deck`, `stack`)을 정하며, 겹치는 `deck`은 앞 카드가, `stack`은 뒤 카드가 위에 오도록 `z-index`를 줍니다. 카드가 움직이는 갤러리 칸은 넘치는 부분을 잘라, 올라오는 `stack` 카드가 아래 점과 버튼을 덮지 않게 합니다. 칸 위에는 겹친 카드가 비칠 여백을 두고, 카드 칸 높이는 캡션 자리까지 고정합니다. `stack`의 다음 카드는 칸 아래에 잘려 기다리므로, 바로 다음 카드만 지연 로딩 대신 미리 불러와 올라올 때 빈 화면이 보이지 않게 합니다.
+- **잘라 보이기**: 카드 안 화면 칸은 위쪽만 둥근 패널이며 아래로 박스를 넘쳐 잘립니다. 스크린샷을 칸 폭에 맞춘 뒤 `cropTop / 원본 높이`만큼 `translateY`로 올려 필요한 부분이 보이게 하며, 원본 높이의 약 70%가 보입니다.
+- **줄바꿈**: 화면 루트에 `word-break: keep-all`(`break-keep`)을 두어 한국어 문구가 어절 중간에서 끊기지 않게 하고, 가운데 정렬 설명과 카드 설명은 `text-wrap: balance`로 줄 길이를 고르게 맞춥니다. 서비스 용어(이미지 스타일, 썸네일 이미지, 오리지널 스토리, 새 채팅 시작하기)처럼 한 덩어리로 읽혀야 하는 말은 상수 문구에서 `\u00a0`으로 붙입니다.
+- **테마별 원본**: `public/onboarding/*-light.webp`와 `*-dark.webp`는 786×1704 원본입니다. 제작과 채팅 화면은 PNG를 무손실과 품질 90 손실 변환 중 작은 쪽으로, 오리지널 스토리 화면은 받은 WebP를 그대로 저장했습니다. 카드마다 `next/image` 두 장 중 `next-themes`가 적용한 `.dark` 클래스에 맞는 한 장만 CSS로 표시합니다. 별도 테마 상태나 마운트 대기 없이 첫 표시와 테마 전환을 처리하며, 숨긴 이미지는 접근성 트리에서도 빠지고 내려받지 않습니다. 화면 밖 카드는 가장자리가 보이기 시작할 때 지연 로딩됩니다.
 
 ### 온보딩 진입 게이트 (웹)
 

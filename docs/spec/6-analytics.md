@@ -323,13 +323,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 #### 6-4-2-1. 온보딩
 
-첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 시작 버튼은 헤더와 본문 끝 두 곳에 있어 `source`로 구분하고, "둘러보기"는 홈으로 이탈합니다(KNK-1185).
+첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 간편 제작으로 가는 버튼과 홈으로 가는 버튼은 기능 소개 섹션 아래에만 있고, `section`으로 어느 섹션인지 남깁니다. `source`는 헤더(`header`)와 본문 끝(`bottom`) 버튼이 있던 이전 기록과 같은 축으로 비교하려고 `section` 값으로 유지합니다(KNK-1185, KNK-1644).
 
 | 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
 | `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
-| `client_onboarding_createButton_clicked` | P1       | "바로 시작하기" 버튼 클릭 | `source` (string, 필수: `header` / `bottom`, KNK-1185) |
-| `client_onboarding_browseButton_clicked` | P1       | 헤더 "둘러보기" 탭(홈으로 이탈. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | 없음          |
+| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기, 스토리라인과 이미지 스타일, 스토리 완성 섹션 아래 버튼 클릭 | `source` (string, 필수: `section`), `section` (string, 필수: `create` / `storyline` / `complete`). 헤더 버튼(`header`)과 본문 끝 버튼(`bottom`)은 KNK-1644에서 섹션 버튼으로 바뀌며 사라짐 |
+| `client_onboarding_browseButton_clicked` | P1       | 채팅, 오리지널 스토리 섹션 아래 버튼 탭(홈으로 이탈. 헤더 "둘러보기"는 KNK-1644에서 사라짐. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | `source` (string, 필수: `section`), `section` (string, 필수: `chat` / `originals`, KNK-1644) |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
 
