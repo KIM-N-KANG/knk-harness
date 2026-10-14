@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.48 |
+| 버전 | v0.49 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-10-14 |
+| 수정일 | 2026-10-15 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
@@ -1127,6 +1127,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 - **soft delete**: `users.status`를 `DELETED`로 전환하고 `deleted_at`을 기록합니다(행 물리 삭제 없음: FK·집계·스토리 작성자 참조를 보존). 탈퇴 계정의 refresh 토큰은 즉시 전부 폐기합니다(Redis `rt:user:{userId}`의 family 전체: [§4-5](#4-5-인증과-권한) 토큰 정책). 이후 만료 전 access 토큰이 남아도 선택적 인증이 삭제 사용자를 익명 처리하고 인증 필수 경로는 401이므로([§4-5](#4-5-인증과-권한)) 계정으로는 더 행위할 수 없습니다.
 - **개인정보 파기(2026-08-30 팀 결정)**: 닉네임을 `탈퇴한 사용자`로 익명화하고, 프로필 이미지 URL·썸네일을 제거하며, 소셜 연동의 `email`을 NULL로 지웁니다.
+- **검수 제출본과 초안 파기**: 탈퇴 트랜잭션에서 해당 회원의 검수 제출본과 `story_drafts`의 초안을 함께 물리 삭제합니다. 초안은 미등록 자유 입력이므로 보존할 근거가 없습니다.
 - **소셜 연동은 tombstone으로 보존**: `social_accounts` 행을 물리 삭제하지 않고 `deleted_at`만 기록합니다. `provider_user_id`는 남깁니다: 제공자 없이는 누구인지 알 수 없는 pseudonymous 식별자이고, 재가입 판정의 유일한 키입니다. 로그인 조회는 `deleted_at IS NULL`만 매칭하므로 tombstone으로는 로그인되지 않습니다.
 - **탈퇴자 소유 스토리는 공개 상태를 유지합니다**(팀 결정). 작성자 표기에는 익명화된 닉네임이 그대로 반영됩니다.
 - **탈퇴는 사용자 행을 비관적 락으로 잡고 진행합니다.** `users`에는 낙관적 버전이 없어, 잠그지 않으면 탈퇴가 읽은 스냅샷이 뒤늦게 전 컬럼 UPDATE로 나가면서 그 사이 커밋된 갱신을 되돌립니다. 초대 코드 제출과 탈퇴가 겹치면 방금 기록된 `inviter_user_id`가 NULL로 덮여 **재가입 계정이 초대 자격을 되찾는** 경로가 됩니다(`rejoined_at`·`reward_identity_user_id`·이관 카운터 등 그 행의 모든 동시 갱신이 같은 위험을 공유합니다). 초대 코드 발급·제출이 이미 같은 방식으로 잠그므로 서로 직렬화됩니다.
@@ -1976,7 +1977,7 @@ POST 일반 제작·검수 대상 PATCH·CREATE PUT 재제출의 입력 검증 �
 | --- | --- |
 | `GET /stories/submissions/{submissionId}` | 200 제출본 상세. 화면 재진입 때 현재 상태와 입력을 복원 |
 | `GET /stories/submissions` | 200 내 미승인 제출본 배열. PENDING·REJECTED·FAILED를 조회하고 APPROVED는 제외 |
-| `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 입력 검증 뒤 같은 submissionId의 payload를 덮어쓰고 issues·image_errors·error_code·판정 시각·복사 매핑과 재시도·보류 필드를 초기화한 뒤 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
+| `PUT /stories/submissions/{submissionId}` | CREATE의 REJECTED·FAILED만 재제출. 본문은 일반 제작 등록과 동일. 선택 필드 `draftId`는 202 접수 트랜잭션에서 [초안 삭제 규칙](#초안-삭제와-등록-접수)에 따라 처리. 입력 검증 뒤 같은 submissionId의 payload를 덮어쓰고 issues·image_errors·error_code·판정 시각·복사 매핑과 재시도·보류 필드를 초기화한 뒤 PENDING으로 되돌리고 202 `{submissionId, status}` 반환 |
 | `DELETE /stories/submissions/{submissionId}` | APPROVED가 아닌 PENDING·REJECTED·FAILED 제출본을 물리 삭제, 204. APPROVED는 409. 중복 CREATE 정리와 UPDATE 취소에 같은 경로 사용 |
 
 상세와 목록 항목은 `{submissionId, storyId, kind, payload, status, issues, imageErrors, errorCode, createdAt, updatedAt, decidedAt}`을 사용합니다. 응답 payload는 DB 원본 요청이 아니라 현재 라이브에 제출 입력을 합성한 복원 폼이며 새 이미지 미리보기를 포함하고 응답 전용 submission 필드는 제외합니다. CREATE는 제출 입력에서 폼을 복원합니다. APPROVED 상세는 현재 라이브를 다시 합성하지 않고 저장된 input_form을 반환하므로 승인 이후 발급된 자식 ID로 교체하지 않습니다. 내부 attempt·dispatched_at·input_form·image_copies·retry_count·next_attempt_at·held_at·hold_reason은 별도 응답 필드로 노출하지 않습니다. `storyId`는 외부 공개 UUID이며 승인 전 CREATE에서는 null입니다. issues는 AI의 필드 구조를 유지하되 path를 응답 폼 기준으로 재매핑하고 대상이 사라진 항목은 응답에서 제외합니다. `error_code`는 클라이언트 camelCase인 `errorCode`로, AI의 `image_errors: [{path, error_code}]`는 `imageErrors: [{path, errorCode}]`로 전달합니다. imageErrors는 오류가 없으면 빈 배열이며 issues와 같은 원본 identity 기반 재매핑·삭제 대상 제외 규칙을 사용합니다.
@@ -2020,7 +2021,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 | `DELETE /stories/{storyId}/characters/{characterId}/images/{imageId}` | 없음 | 204: 없어도 204 |
 
 - **클라이언트가 S3에 직접 올립니다(presigned PUT).** 서버를 거치지 않는 이유는 파일이 서버 메모리·대역폭을 지날 이유가 없기 때문입니다. presign은 `Content-Type`과 `Content-Length`를 서명에 고정하므로 클라이언트는 요청한 값 그대로 PUT해야 합니다. 객체 키는 서버가 정합니다: `thumbnails/uploaded/{storyPublicId}/{uuid}.{ext}` · `characters/uploaded/{storyPublicId}/{uuid}.{ext}`. 표지가 `thumbnails/` 아래인 이유는 웹이 원격 이미지를 `cdn.manyak.app/thumbnails/**`만 허용하기 때문입니다([§4-3-9](#4-3-api-계약)). 만료 10분.
-- **등록 전 업로드는 draft 키를 씁니다.** 일반 제작은 폼 제출 한 번으로 이미지까지 등록하는데 그 시점에는 스토리가 없습니다([§4-3-8 일반 제작 등록](#4-3-api-계약)). 그래서 `POST /stories/images/presign`은 스토리 대신 **요청자**를 소유 스코프로 삼아 `thumbnails/uploaded/drafts/{userPublicId}/{uuid}.{ext}` · `characters/uploaded/drafts/{userPublicId}/{uuid}.{ext}`를 발급합니다. 인증 필수(미인증 401·정지 403)이며 형식·크기·만료 규칙은 스토리 스코프 발급과 같습니다. 등록 요청은 키가 **요청자의** draft prefix 아래인지 먼저 확인한 뒤 같은 `HEAD` 검증을 거칩니다(남의 draft 키는 400). 원본 객체는 draft 경로에 남깁니다. 일반 제작·수정의 승인 라이브에는 원본 대신 검수 직전 만든 moderated 복사본 URL을 저장합니다. presign 업로드 경로와 CORS 범위는 유지합니다. 서버 복사에는 원본 GetObject와 복사본 PutObject 권한이 필요하며 배포 환경에서 확인해야 합니다.
+- **등록 전 업로드는 draft 키를 씁니다.** 일반 제작은 폼 제출 한 번으로 이미지까지 등록하는데 그 시점에는 스토리가 없습니다([§4-3-8 일반 제작 등록](#4-3-api-계약)). 그래서 `POST /stories/images/presign`은 스토리 대신 **요청자**를 소유 스코프로 삼아 `thumbnails/uploaded/drafts/{userPublicId}/{uuid}.{ext}` · `characters/uploaded/drafts/{userPublicId}/{uuid}.{ext}`를 발급합니다. 인증 필수(미인증 401·정지 403)이며 형식·크기·만료 규칙은 스토리 스코프 발급과 같습니다. 등록 요청도 `.`·`..`·빈 세그먼트, 백슬래시, `%`, `?`·`#`가 있는 키는 prefix 확인 전에 400으로 거절합니다. 등록 요청은 키가 **요청자의** draft prefix 아래인지 먼저 확인한 뒤 같은 `HEAD` 검증을 거칩니다(남의 draft 키는 400). 원본 객체는 draft 경로에 남깁니다. 일반 제작·수정의 승인 라이브에는 원본 대신 검수 직전 만든 moderated 복사본 URL을 저장합니다. presign 업로드 경로와 CORS 범위는 유지합니다. 서버 복사에는 원본 GetObject와 복사본 PutObject 권한이 필요하며 배포 환경에서 확인해야 합니다.
 - 등록·PATCH 제출 시 기존 이미지 검증을 수행하고, 검증 실패는 검수 전에 거절합니다. `thumbnailObjectKey`·`objectKey`는 이 스토리의 업로드 prefix **또는 요청자의 draft prefix** 아래여야 하고(남의 스토리·남의 draft·프리셋 키는 400: 제작·수정 화면이 같은 업로드 컴포넌트를 써도 막히지 않게 둘 다 받습니다), 서버가 `HEAD`로 객체 존재·`Content-Length`(5MB 이하)·`Content-Type`(3종)을 확인합니다. 객체가 없으면 400이고 바디 `code`는 `UPLOAD_NOT_FOUND`(클라이언트가 PUT 완료 뒤 다시 부르면 됨). 픽셀 크기·비율은 검증하지 않습니다: 변환 없이 원본을 저장하므로 비율 크롭(표지 3:4)은 클라이언트 몫입니다.
 - **인물 이미지 이름은 필수이며 형식을 강제합니다.** `{인물이름}_{접미}`: 접미는 1~20자 한글·영문·숫자, 같은 인물 안에서 유일(위반 400, 중복 409 `CONFLICT`). 접미는 표정·상황·감정입니다(`세린_기본`, `세린_웃음`, `세린_분노`). 컴파일이 만든 첫 장은 `{인물이름}_기본`입니다. AI가 대사 문맥으로 여러 장 중 하나를 고르는 것은 AI 서버 몫이며, 그 전까지 AI는 같은 이름의 마지막 항목 한 장만 씁니다. **인물당 상한 10장.**
 - **채팅 요청에는 인물별 전부를 실어 보냅니다.** 채팅 요청 `character_images[]`는 `story_character_images` 전체를 `{name, image_name, image_url}`로 싣습니다(같은 `name`의 항목이 여러 개: [§4-3-9](#4-3-api-계약) 채팅 인물 이미지 전달). 상세 응답 `characters[].imageUrl`은 `_기본` 이미지, 없으면 첫 장입니다.
@@ -2282,7 +2283,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 4-3-12. 스토리 제작 임시 저장
 
-서버 미구현 목표 계약이다. 일반 제작과 간편 제작의 작성 중 입력을 회원별 초안으로 보관한다. 공통 `/api/v1` prefix를 사용하며 네 API 모두 회원 전용이다. 미인증은 401 `UNAUTHORIZED`, 정지 회원은 조회를 포함해 403 `FORBIDDEN`으로 거절한다. 기존 draft presign의 인증 규칙을 따른다.
+서버 [PR #320](https://github.com/KIM-N-KANG/manyak-server/pull/320)(KNK-1641, `14d5bd6`)으로 dev에 구현된 계약이다. 일반 제작과 간편 제작의 작성 중 입력을 회원별 초안으로 보관한다. 공통 `/api/v1` prefix를 사용하며 네 API 모두 회원 전용이다. 미인증은 401 `UNAUTHORIZED`, 정지 회원은 조회를 포함해 403 `FORBIDDEN`으로 거절한다. 기존 draft presign의 인증 규칙을 따른다.
 
 회원당 초안은 최대 5개다. 6번째 신규 생성은 400 `DRAFT_LIMIT_EXCEEDED`이며 기존 초안 갱신은 허용한다. 회원 단위로 개수 검사와 신규 저장을 직렬화해 동시 생성에도 5개를 넘지 않게 한다. 오래된 초안을 자동 삭제하지 않는다. 게스트 초안은 로컬에 유지하며 이 API의 대상이 아니다. 참조되지 않는 draft 이미지 정리는 별도 티켓의 범위다.
 
@@ -2325,6 +2326,8 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 `PUT /users/me/story-drafts/{draftId}`는 전체 교체 방식의 멱등 upsert다. 성공은 신규와 갱신 모두 200 `{draftId, version, createdAt, updatedAt}`다. 타인의 draftId는 존재를 노출하지 않고 404다.
 
+초안 응답의 `createdAt`·`updatedAt`은 DB 저장 정밀도인 마이크로초로 잘라 저장·응답하며 첫 응답과 재조회 값이 같아야 한다.
+
 | 요청 필드 | 타입과 필수 여부 | 설명 |
 | --- | --- | --- |
 | `mode` | string, 필수 | `GENERAL`은 `GENERAL_DRAFT`만, `SIMPLE`은 `KEYWORD_DRAFT`와 `STORY_DRAFT`만 허용. 불일치 400 |
@@ -2353,7 +2356,7 @@ payload 검증은 다음 세 가지로 제한한다. 서버는 payload 내부의
 
 1. JSON 객체만 허용한다. 배열, 문자열, 숫자와 null 등은 400이다.
 2. payload 직렬화 UTF-8 크기가 64KB(65,536바이트)를 초과하면 400 `DRAFT_PAYLOAD_TOO_LARGE`다. 64KB는 웹 keepalive PUT 상한에 맞춘 값이다.
-3. `thumbnailObjectKey`와 payload 안의 모든 문자열 값 중 `thumbnails/uploaded/` 또는 `characters/uploaded/`로 시작하는 값은 각각 요청자의 `thumbnails/uploaded/drafts/{userPublicId}/` 또는 `characters/uploaded/drafts/{userPublicId}/` 아래여야 한다. 중첩 객체와 배열도 검사하며 위반은 400이다. 객체 존재 HEAD는 검사하지 않아 업로드 직후와 업로드 실패 상태도 저장할 수 있다.
+3. `thumbnailObjectKey`와 payload 안의 모든 문자열 값 중 `thumbnails/uploaded/` 또는 `characters/uploaded/`로 시작하는 값은 각각 요청자의 `thumbnails/uploaded/drafts/{userPublicId}/` 또는 `characters/uploaded/drafts/{userPublicId}/` 아래여야 한다. 업로드 경로로 시작하는 값 전체는 presign이 발급하는 `{thumbnails|characters}/uploaded/drafts/{userPublicId}/{uuid}.{jpg|png|webp}` 형태와 일치해야 하며 UUID는 소문자 정규 형태여야 한다. `.`·`..`·빈 세그먼트, 백슬래시, `%` 인코딩, `?`·`#`가 있으면 400이다. 경로 정규화로 타인의 prefix를 가리키는 우회를 막기 위한 검증이다. 중첩 객체와 배열도 검사하며 위반은 400이다. 객체 존재 HEAD는 검사하지 않아 업로드 직후와 업로드 실패 상태도 저장할 수 있다.
 
 `thumbnailUrl`은 thumbnailObjectKey의 읽기 URL이다. `imageUrls`는 payload에서 찾은 draft 키의 읽기 URL 맵이다. 기존 서버 `StoryImageAccess.resolveDraftUploadedUrl`의 요청자 draft prefix와 서빙 URL 규칙을 따른다. URL은 설정된 이미지 base URL의 끝 `/`를 제거한 뒤 `/`와 objectKey를 연결한다. 기존 메서드가 수행하는 HEAD, 객체 크기와 Content-Type 검증은 초안 저장과 조회에서 수행하지 않는다. 등록 API의 이미지 검증은 유지한다. ([등록 전 이미지 업로드](#스토리-이미지-업로드))
 
@@ -2363,7 +2366,9 @@ payload 검증은 다음 세 가지로 제한한다. 서버는 payload 내부의
 
 `DELETE /users/me/story-drafts/{draftId}`는 요청자 소유 초안을 물리 삭제하고 본문 없는 204를 반환한다. 이미 없거나 타인 것이어도 204다. 등록 트랜잭션의 삭제와 웹 DELETE가 겹쳐도 안전하며 타인 초안의 존재도 노출하지 않는다.
 
-`POST /stories/general`과 완성 요청 `POST /stories/simple`은 선택 필드 `draftId`를 받는다. 일반 제작의 202 제출 접수와 간편 제작 완성의 생성 요청 행 기록 시 같은 트랜잭션에서 요청자 소유의 해당 초안을 삭제한다. 없거나 타인의 초안이면 조용히 넘어가 등록을 실패시키지 않는다. 웹은 별도로 DELETE하지 않아도 된다. 승인 또는 AI 생성 완료까지 삭제를 미루지 않는다.
+`POST /stories/general`과 완성 요청 `POST /stories/simple`은 선택 필드 `draftId`를 받는다. 일반 제작의 202 제출 접수와 간편 제작 완성의 생성 요청 행 기록 시 같은 트랜잭션에서 요청자 소유의 해당 초안을 삭제한다. `PUT /stories/submissions/{submissionId}` 재제출도 본문이 일반 제작 등록과 같으며 선택 필드 `draftId`를 받는다. 재제출의 202 접수 트랜잭션에서도 같은 규칙으로 요청자 소유의 해당 초안을 삭제한다. 없거나 타인의 초안이면 조용히 넘어가 등록을 실패시키지 않는다. 웹은 별도로 DELETE하지 않아도 된다. 승인 또는 AI 생성 완료까지 삭제를 미루지 않는다.
+
+회원 탈퇴 시 해당 회원의 초안은 검수 제출본과 함께 물리 삭제한다. ([회원 탈퇴](#회원-탈퇴))
 
 <br>
 
@@ -2415,7 +2420,7 @@ payload 검증은 다음 세 가지로 제한한다. 서버는 payload 내부의
 
 #### 스토리 초안 저장 계약
 
-서버 미구현 목표 테이블 `story_drafts`다. API의 정책과 수명은 [스토리 제작 임시 저장](#story-drafts)을 따른다.
+서버 dev에 구현된 `story_drafts` 테이블이다. API의 정책과 수명은 [스토리 제작 임시 저장](#story-drafts)을 따른다.
 
 | 컬럼 | 계약 |
 | --- | --- |
@@ -3049,6 +3054,9 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 - payload 객체 형식과 65,536바이트 경계 허용, 초과 400 `DRAFT_PAYLOAD_TOO_LARGE`, mode·stage 불일치 400을 검증한다. 중첩 객체·배열의 남의 draft prefix와 잘못된 generationRequestId는 400이어야 한다. 객체가 없어도 HEAD 없이 초안을 저장하고 이미지 URL 맵을 반환해야 한다.
 - 6번째 신규 초안은 400 `DRAFT_LIMIT_EXCEEDED`이며 5개 상태의 갱신은 허용해야 한다. 서로 다른 ID의 동시 신규 생성에도 5개 상한이 유지돼야 한다.
 - 일반 제작 202 접수와 간편 제작 완성 요청 행 기록 시 해당 초안을 같은 트랜잭션에서 삭제해야 한다. 없거나 타인의 draftId는 등록을 실패시키지 않고, 웹 DELETE와 겹쳐도 204여야 한다.
+- 회원 탈퇴 후 해당 회원의 초안은 없어야 하며 타인 초안은 유지돼야 한다.
+- 초안 저장의 업로드 키는 presign 발급 형태 전체와 일치해야 한다. 초안 저장과 등록 요청에서 `.`·`..`·빈 세그먼트, 백슬래시, `%`, `?`·`#`가 있는 경로 변형 키는 400이어야 한다.
+- `PUT /stories/submissions/{submissionId}` 재제출의 202 접수 트랜잭션에서 요청자 소유의 해당 초안을 삭제해야 한다. 없거나 타인의 `draftId`는 재제출을 실패시키지 않고 타인 초안은 유지돼야 한다.
 - 목록은 초안과 요청자 소유의 회수 전 PENDING 생성·완성 요청을 합쳐 createdAt 내림차순으로 반환해야 한다. 타인·COMPLETED·FAILED·회수 가능한 요청과 payload는 제외하며 상세는 연결한 생성 요청의 복구 응답과 동일한 generation을 반환해야 한다.
 
 - 화풍 목록은 게스트도 조회할 수 있고 초기 11개가 정해진 순서·이름·설명과 null 미리보기 URL로 반환되어야 한다. 비활성 행은 제외하고 SQL로 바꾼 표시 정보와 순서가 반영되어야 한다.
