@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.6 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-13 |
+| 수정일 | 2026-10-14 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -124,7 +124,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
-- 홈 카드·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를, 제작 `MyStoryCard`의 메타는 좋아요 수·턴 수·제작일을 그립니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 성공한 수는 `common`의 `StoryLikeUpdates`로 `HomeRepositoryImpl`에 전달합니다. 저장소의 replay 없는 `SharedFlow`를 `HomeViewModel`이 자신의 수명 동안 수집해 같은 카드만 갱신하며, 조회 중 수신한 변경은 해당 응답에 합쳐 늦은 응답의 덮어쓰기를 막습니다. 새 조회가 시작되면 임시 합산 값을 비워 서버 값을 다시 정본으로 씁니다.
+- 홈 카드·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를, 제작 `MyStoryCard`의 메타는 좋아요 수·턴 수·제작일을 그립니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 표지 위 겹침 요소는 상세 히어로 배지를 포함해 `StoryCover`가 `CoverOverlayScope.backdrop`으로 넘기는 흐림 원천을 `coverBackdrop`으로 잘라 깝니다([A-073](../adr/1-3-android-adr.md#a-073-표지-위-뱃지에-웹과-같은-배경-흐림을-graphicslayer로-적용하기)). 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 성공한 수는 `common`의 `StoryLikeUpdates`로 `HomeRepositoryImpl`에 전달합니다. 저장소의 replay 없는 `SharedFlow`를 `HomeViewModel`이 자신의 수명 동안 수집해 같은 카드만 갱신하며, 조회 중 수신한 변경은 해당 응답에 합쳐 늦은 응답의 덮어쓰기를 막습니다. 새 조회가 시작되면 임시 합산 값을 비워 서버 값을 다시 정본으로 씁니다.
 - 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
 - 상세의 페르소나 셀렉트는 `StoryPersonaControl`이 소유합니다. 내 페르소나 목록과 상세에서 만든 페르소나(`CreatedPersona`)는 `PersonaAccess`의 메모리 StateFlow를 관찰하고, 직접 고른 값은 컨트롤 안의 장부에 둬 고른 직후의 채팅 시작이 이벤트 채널보다 앞선 값을 읽습니다. 화면이 보일 때마다 목록을 다시 읽고, 목록에 없는 선택은 기본 주인공으로 돌아갑니다. "페르소나 생성하기"는 `ManyakSelectField`의 동작 항목(`ManyakSelectAction`)이며 `app`이 `PersonaCreateRoute(originStoryId)`를 쌓습니다. 생성에 성공하면 저장소가 그 스토리의 미리 선택을 남기고, 다른 주인공을 고르거나 채팅을 시작하면 지웁니다. 채팅을 시작할 때 고른 주인공은 직접 고른 값으로 굳혀, 백스택에 남은 상세가 채팅방에서 돌아왔을 때 같은 선택을 보입니다. 하단 CTA는 라벨 아래 `labelTiny` 한 줄로 고른 페르소나와 시작 상황을 요약하며, 두 줄이 하트 버튼과 같은 48dp 안에 들도록 버튼의 세로 안쪽 여백을 걷습니다.
 - 마이의 페르소나 관리(`MyPersonasRoute`), 생성(`PersonaCreateRoute`), 수정(`PersonaEditRoute(personaId)`)은 `my/persona`가 소유합니다. 목록 ViewModel은 저장소 목록을 관찰하고 진입 때 다시 읽으며, 옵션 시트와 삭제 확인의 대상을 `optionsTarget`, `deleteTarget`으로 둡니다. 줄은 채팅 카드, 내 스토리 카드와 같이 줄 전체가 펼치기이고 이름 줄 오른쪽 더보기와 길게 누르기가 같은 옵션 시트를 엽니다. 줄 펼침은 화면의 `rememberSaveable`입니다. 생성과 수정은 같은 `PersonaFormViewModel`이고 소개 글(`# 주인공`, `## 성별`, 성별 값, 특징)의 조립과 분해는 `my/persona/domain`의 순수 함수입니다. 저장소는 성공한 변경을 응답으로 먼저 목록에 반영한 뒤 서버 목록을 다시 읽어, 다시 읽기가 실패해도 상세가 새 페르소나를 미리 선택할 수 있습니다. 회원 귀속 메모리라 `UserScopedStore`로 로그아웃 정리에 참여합니다.
@@ -333,6 +333,12 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 ### 인물 입력의 화면 상태
 
 `CreateKeywordUiState`가 인물 ID별 접기 집합과 삭제 확인 대상을 소유합니다. 순수 reducer로 카테고리 이동 및 구성 변경에서 상태를 유지하며, 삭제 확정은 대상 인물과 해당 접기 상태만 제거합니다. 이 상태는 편집 snapshot과 API 요청에 포함하지 않습니다. `create/presentation/component/CollapsibleInputHeader`는 값과 콜백으로 머리 줄을 그립니다. 높이 애니메이션은 인물 입력 영역이 소유하고, 공용 `ManyakDestructiveDialog`에 기능 소유 문자열을 전달해 삭제를 확인합니다.
+
+### 화풍 선택
+
+`CreateAdditionalInfoViewModel`이 화면에 들어올 때 토큰 없는 `SimpleStoryApi`로 `GET stories/art-styles`를 받아 `artStyles`(받기 전과 실패는 null)와 `artStylesFailed`로 둡니다. 조회는 Job 하나로 묶어 다시 시도 연타가 요청을 겹치지 않게 하고, 복원 스냅숏이 늦게 와도 먼저 받은 목록을 덮지 않습니다. 고른 code는 `selectedArtStyle`, 미선택 완성의 푸터 안내는 `showArtStyleRequired`가 들며, 화풍을 고르면 안내를 내립니다. 화풍은 진행 미러에 함께 실려 임시 저장되고, "다시 선택하기"와 스토리라인 재생성 결과는 화풍을 지우지 않습니다. 저장 형식과 requestId 재사용은 [A-072](../adr/1-3-android-adr.md#a-072-간편-제작-화풍을-기존-초안-json에-더하고-스토리라인을-다시-만들어도-남기기)를 참조합니다.
+
+그리드는 스크롤 목록 안이라 지연 그리드 대신 세 칸씩 나눈 줄로 그립니다. 칸은 `StoryCover`(미리보기가 없으면 기본 심벌) 위에 표지 뱃지와 같은 흐린 바탕(`coverBackdrop`)으로 이름을 얹고, `selectable`(RadioButton 역할)과 화풍 이름 하나만 읽히는 시맨틱을 둡니다. 고른 칸은 `designsystem`의 `selectionRing`으로 표지 바깥에 brand 테두리를 둘러 자리가 흔들리지 않게 하며, 스토리 상세 인물 썸네일이 같은 수식어를 씁니다.
 
 ### 편집 저장과 복원
 

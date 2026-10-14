@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.47 |
 | 작성일 | 2026-07-03 |
-| 수정일 | 2026-10-06 |
+| 수정일 | 2026-10-14 |
 | 대상 | 마냑 백엔드 서버 |
 | 작성 목적 | 백엔드 API, 데이터 모델, 오류 처리, 운영 기준을 정의합니다. |
 | 기준 코드 | `manyak-server` dev `d4fe174`, Kotlin 2.2.21·Spring Boot 4.0.6·Java 21, Flyway V81 |
@@ -386,7 +386,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 #### 제공 화풍과 선택
 
-[KNK-1481](https://kimandkang.atlassian.net/browse/KNK-1481)의 목표 계약이다. 화풍 카탈로그와 간편 제작의 `artStyle` 선택은 서버 미구현이다. 서버는 노출할 화풍의 이름·설명·순서를 관리하고 AI는 그릴 수 있는 화풍의 프롬프트 블록을 관리한다. ([결정 근거 BE-059](../adr/2-backend-server-adr.md#be-059))
+[KNK-1481](https://kimandkang.atlassian.net/browse/KNK-1481)의 계약이다. 서버는 노출할 화풍의 이름·설명·순서를 관리하고 AI는 그릴 수 있는 화풍의 프롬프트 블록을 관리한다. ([결정 근거 BE-059](../adr/2-backend-server-adr.md#be-059))
 
 **`GET /stories/art-styles`**는 공통 `/api/v1` prefix를 적용한 `GET /api/v1/stories/art-styles`이다. 인증 선택이며 게스트도 사용한다. `art_styles`의 활성 행만 `sort_order` 오름차순으로 정렬한 배열을 200으로 반환한다. 개인 리소스 접근 권한을 부여하지 않는 공개 카탈로그이므로 문자열 `code`를 식별자로 쓰는 것은 장르 카탈로그와 같은 UUID 원칙의 카탈로그 예외다.
 
