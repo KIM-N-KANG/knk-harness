@@ -2651,18 +2651,24 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 | 항목 | 값 |
 | --- | --- |
 | access 토큰 | JWT(HS256 대칭키 고정: alg 다운그레이드 차단), TTL 30분, 클레임 `sub`(사용자 `public_id`) · `iss`(`manyak`) · `iat` · `exp`. 검증 시 issuer 일치 요구 |
-| refresh 토큰 | 불투명 랜덤 문자열(`SecureRandom` 256bit, base64url 무패딩), TTL 14일. 저장소에는 원문이 아니라 SHA-256 해시만 키로 저장 |
-| 저장소 구조 | Redis 3키: `rt:fam:{familyId}`(현재 토큰 해시) · `rt:tok:{tokenHash}`(과거 토큰 포함 family 매핑) · `rt:user:{userId}`(family 집합). 모두 refresh TTL 적용, 회전 시 TTL 재설정, 회전·폐기는 Lua 스크립트로 원자 실행. `familyId`는 UUID |
-| 재발급 | refresh는 1회용. 재발급 시 새 쌍을 발급하고 이전 값을 즉시 폐기(회전) |
-| 재사용 탐지 | 이미 회전된 refresh가 다시 오면 같은 토큰 계열(family) 전체를 폐기 |
+| refresh 토큰 | 불투명 랜덤 문자열(`SecureRandom` 256bit · base64url 무패딩). TTL 14일. 평소에는 원문이 아니라 SHA-256 해시만 저장하며 재사용 유예 키에만 새 refresh 원문을 유예 시간 동안 보관 |
+| 저장소 구조 | Redis `rt:fam:{familyId}`(현재 토큰 해시) · `rt:tok:{tokenHash}`(과거 토큰 포함 family 매핑) · `rt:user:{userId}`(family 집합)은 refresh TTL 적용. 정상 회전 시 TTL 재설정. `rt:grace:{tokenHash}`는 제시 토큰의 SHA-256 해시를 키로 이번 회전에서 발급한 새 refresh 원문을 저장하며 TTL은 재사용 유예 시간. 회전·유예 판정·폐기는 Lua 스크립트로 원자 실행. `familyId`는 UUID |
+| 재발급 | refresh는 1회용. 정상 재발급 시 새 access·refresh 쌍을 발급하고 이전 토큰을 즉시 회전 처리. 회전된 토큰의 재사용 유예 응답은 아래 조건을 만족할 때만 허용 |
+| 재사용 유예 | 설정 `manyak.auth.jwt.refresh-reuse-grace`는 Duration이며 기본 10초. 0이면 유예를 끔. 이미 회전된 토큰이 다시 오면 Lua 스크립트 안에서 family가 존재하고 `rt:grace:{제시 토큰 해시}`가 살아 있으며 보관된 원문의 해시가 family의 현재 토큰 해시와 같은지 원자적으로 판정. 모두 만족하면 family와 family TTL을 바꾸지 않고 보관된 같은 refresh 원문과 새 access를 200으로 반환 |
+| 재사용 탐지 | 이미 회전된 refresh가 유예 조건을 만족하지 않으면 같은 토큰 계열(family) 전체를 폐기하고 401. 유예가 만료됐거나 현재 토큰이 한 번 더 회전된 경우도 포함 |
+| 재사용 로그 | 유예 응답은 구조화 로그 `event_name=refresh_reuse_grace_applied`로 기록하며 사용자 식별자는 `public_id` 사용. 유예 조건 밖의 재사용 탐지 WARN 유지 |
 | 로그아웃 | 제시 토큰이 속한 **family 전체**를 폐기(과거 토큰 제시도 동일: 동시 회전으로 발급된 새 토큰까지 무효화). 이미 폐기된 토큰도 204(멱등). 공개 경로라 자동 첨부된 만료 access 헤더로 막히지 않음 |
+
+재사용 유예 동안 새 refresh 원문이 Redis에 남습니다. 기본 보관 시간은 최대 10초이며 설정한 유예 시간이 지나면 삭제됩니다. 유예 안에 과거 토큰을 가진 요청자는 현재 토큰을 받을 수 있습니다. 해당 과거 토큰은 회전 직전까지 유효했으므로 탈취자는 유예 없이도 회전할 수 있었습니다. 유예 밖의 재사용 탐지는 유지합니다. 로그아웃·탈퇴·정지로 family가 폐기되면 유예 키가 남아 있어도 family 조회에서 실패해 401을 반환합니다.
+
+`POST /auth/token/refresh`의 요청·응답 형식은 유지하며 클라이언트 동반 배포는 필요하지 않습니다. 같은 refresh 원문을 반환하는 이유와 보안상 수용 범위는 [BE-060](../adr/2-backend-server-adr.md#be-060)에 기록합니다.
 
 ### 선택적 인증
 
 - 선택적 인증은 카탈로그에서 `선택`인 경로에만 적용합니다. 일반 제작 등록·스토리 PATCH·검수 제출본 API는 인증 필수로 전환하며 간편 제작·채팅·피드백의 기존 익명 허용은 유지합니다.
 - `Authorization: Bearer` 토큰이 유효하면 해당 요청의 생성 리소스에 `user_id`를 귀속합니다. 토큰이 없거나 무효(만료·위조)면 401을 반환하지 않고 익명으로 통과시킵니다. `Bearer` 접두는 대소문자를 무시하고, 접두 뒤가 공백뿐이면 익명 처리하며, 토큰이 유효해도 사용자가 삭제됐으면 익명 처리(`user_id` 미귀속)합니다.
 - 공개 인증 경로(`social/{provider}`·`social/complete`·`login/{provider}`·`token/refresh`·`logout`)와 선택적 인증 경로는 리소스 서버의 Bearer resolve 자체를 건너뜁니다: 클라이언트가 자동 첨부한 만료·위조 access 헤더가 401을 유발하지 않고, 선택 경로의 귀속은 별도 optional 필터가 수행합니다.
-- 재발급(`POST /auth/token/refresh`)은 무효·만료·이미 회전된 토큰·매핑 사용자 부재를 모두 401로 응답하며, 회전 직후 사용자가 사라진 경우 방금 발급한 토큰을 포함해 family를 폐기하고 401을 반환합니다.
+- 재발급(`POST /auth/token/refresh`)은 무효·만료·유예 조건을 만족하지 않는 이미 회전된 토큰·매핑 사용자 부재를 모두 401로 응답합니다. 정상 회전과 유예 응답 모두 계정 상태를 검사합니다. 사용자가 없거나 탈퇴 상태이면 새 토큰을 포함해 family를 폐기하고 401을 반환합니다. 정지 상태이면 family를 폐기하고 403을 반환합니다.
 - 인증을 강제하는 엔드포인트는 [엔드포인트 카탈로그](#엔드포인트-카탈로그)의 인증 열이 `필수`인 경로입니다. 토큰 없음·만료·위조·사용자 삭제 모두 401입니다.
 - **정지 계정(`status = SUSPENDED`) 처리.** 소모·쓰기 요청은 진입부의 `SuspensionGuard.requireActive`가 403으로 차단합니다. 토큰 재발급 중 정지 상태를 확인하면 방금 회전한 토큰을 포함한 family를 폐기하고 403을 반환합니다. 기존 access 토큰의 최대 30분 잔여 시간은 공통 게이트가 차단합니다. 정지 사유는 노출하지 않습니다.
 
