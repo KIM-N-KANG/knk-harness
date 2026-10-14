@@ -2652,7 +2652,7 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 | --- | --- |
 | access 토큰 | JWT(HS256 대칭키 고정: alg 다운그레이드 차단), TTL 30분, 클레임 `sub`(사용자 `public_id`) · `iss`(`manyak`) · `iat` · `exp`. 검증 시 issuer 일치 요구 |
 | refresh 토큰 | 불투명 랜덤 문자열(`SecureRandom` 256bit · base64url 무패딩). TTL 14일. 평소에는 원문이 아니라 SHA-256 해시만 저장하며 재사용 유예 키에만 새 refresh 원문을 유예 시간 동안 보관 |
-| 저장소 구조 | Redis `rt:fam:{familyId}`(현재 토큰 해시) · `rt:tok:{tokenHash}`(과거 토큰 포함 family 매핑) · `rt:user:{userId}`(family 집합)은 refresh TTL 적용. 정상 회전 시 TTL 재설정. `rt:grace:{tokenHash}`는 제시 토큰의 SHA-256 해시를 키로 이번 회전에서 발급한 새 refresh 원문을 저장하며 TTL은 재사용 유예 시간. 회전·유예 판정·폐기는 Lua 스크립트로 원자 실행. `familyId`는 UUID |
+| 저장소 구조 | Redis `rt:fam:{familyId}`(현재 토큰 해시) · `rt:tok:{tokenHash}`(과거 토큰 포함 family 매핑) · `rt:user:{userId}`(family 집합)은 refresh TTL 적용. 정상 회전 시 TTL 재설정. `rt:grace:{tokenHash}`는 제시 토큰의 SHA-256 해시를 키로 이번 회전에서 발급한 새 refresh 원문을 저장하며 TTL은 재사용 유예 시간. 정상 회전으로 grace 키를 만들 때 이전 토큰의 `rt:tok` 매핑 남은 TTL이 유예 시간보다 짧으면 유예 시간까지 늘리며 줄이지 않음. 회전·유예 판정·폐기는 Lua 스크립트로 원자 실행. `familyId`는 UUID |
 | 재발급 | refresh는 1회용. 정상 재발급 시 새 access·refresh 쌍을 발급하고 이전 토큰을 즉시 회전 처리. 회전된 토큰의 재사용 유예 응답은 아래 조건을 만족할 때만 허용 |
 | 재사용 유예 | 설정 `manyak.auth.jwt.refresh-reuse-grace`는 Duration이며 기본 10초. 0이면 유예를 끔. 이미 회전된 토큰이 다시 오면 Lua 스크립트 안에서 family가 존재하고 `rt:grace:{제시 토큰 해시}`가 살아 있으며 보관된 원문의 해시가 family의 현재 토큰 해시와 같은지 원자적으로 판정. 모두 만족하면 family와 family TTL을 바꾸지 않고 보관된 같은 refresh 원문과 새 access를 200으로 반환 |
 | 재사용 탐지 | 이미 회전된 refresh가 유예 조건을 만족하지 않으면 같은 토큰 계열(family) 전체를 폐기하고 401. 유예가 만료됐거나 현재 토큰이 한 번 더 회전된 경우도 포함 |
