@@ -319,7 +319,7 @@
 | STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
 | STORY-GATE-05 | — | (폐기, KNK-1355) 채팅 빈 상태의 "스토리 만들기" CTA를 없애 진입 경로가 사라짐. 제작 진입은 STORY-GATE-01·02로 검증 | — | — | — | — |
 | STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | US-9-13 |
-| STORY-GATE-07 | P1 | 게스트, 온보딩 "바로 시작하기" / 공유 열람 CTA | 각각 탭 | 모두 동의 시트 없이 제작 입력 화면으로 이동. 공유 CTA도 온보딩 열람 처리 | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |
+| STORY-GATE-07 | P1 | 게스트, 온보딩 스토리 만들기 섹션 버튼 / 공유 열람 CTA | 각각 탭 | 모두 동의 시트 없이 제작 입력 화면으로 이동. 공유 CTA도 온보딩 열람 처리 | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |
 | STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
 
 ## STORY-LIMIT — 회원 이프 게이팅
