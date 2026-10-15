@@ -2,7 +2,7 @@
 
 이 문서는 CHAT 도메인이 관리하는 PostgreSQL 테이블의 컬럼, 제약, 인덱스와 데이터 수명을 정한다.
 
-다른 도메인의 테이블은 이 도메인이 참조하거나 기록하는 컬럼만 적는다.
+다른 도메인의 테이블에서는 CHAT 도메인이 참조하거나 기록하는 컬럼만 설명한다.
 
 입력값의 검증 규칙은 보안에, 저장과 교체의 처리 순서는 처리 흐름에 있다. ([5-1-4 입력 검증](5-1-SECURITY.md#5-1-4-입력-검증), [4-1-12 턴 저장과 판정 반영](4-1-PIPELINES.md#4-1-12-턴-저장과-판정-반영))
 
@@ -12,11 +12,11 @@
 
 | 규칙 | 내용 |
 |---|---|
-| 식별자 | 내부 PK는 `bigint` 자동 증가<br>외부에 노출하는 리소스는 `public_id uuid`를 따로 두고 API는 이 값만 사용: 채팅, 공유<br>턴 ID는 AI 응답 메시지의 `bigint` PK를 그대로 노출 |
+| 식별자 | 내부 PK는 `bigint` 자동 증가<br>채팅과 공유는 외부 노출용으로 `public_id uuid`를 따로 둠<br>API는 이 값만 사용<br>턴 ID는 AI 응답 메시지의 `bigint` PK를 그대로 노출 |
 | 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>갱신하는 테이블에는 `updated_at`이 있음<br>아래 표에서는 생략 |
 | 삭제 | 채팅 삭제 시 `story_chats.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 채팅의 삭제 여부로 제외 |
 | FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제 |
-| 순서 | 메시지는 채팅 안에서 `message_order` 1부터<br>선택지는 메시지 안에서 `choice_order` 1부터 |
+| 순서 | 메시지는 채팅 안에서 `message_order`를 1부터 부여<br>선택지는 메시지 안에서 `choice_order`를 1부터 부여 |
 | 글 | 메시지 본문은 AI 응답 원문을 이미지 마커와 함께 보존<br>프롤로그 스냅샷은 플레이 이름으로 치환한 값 |
 | 이름 스냅샷 | 도달 엔딩과 거쳐온 사건은 FK와 별도로 토큰 원문 이름을 보관<br>원본 행이 교체돼도 기록이 남음 |
 
@@ -149,7 +149,7 @@ erDiagram
 | `role` | varchar(16) | NOT NULL | `USER`, `ASSISTANT`, `SYSTEM` |
 | `content` | text | NOT NULL | AI 응답은 재생성으로 교체됨 |
 | `message_order` | integer | NOT NULL, UNIQUE `(chat_id, message_order)` | |
-| `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 |
+| `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
 
 <br>
@@ -180,7 +180,7 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `message_id` | bigint | NOT NULL, FK `story_messages.id` | |
-| `version_number` | integer | NOT NULL, UNIQUE `(message_id, version_number)` | 1부터, 보관 순서 |
+| `version_number` | integer | NOT NULL, UNIQUE `(message_id, version_number)` | 보관 순서에 따라 1부터 부여 |
 | `content` | text | NOT NULL | 교체 직전 AI 응답 |
 | `choices` | text | NOT NULL | 교체 직전 선택지의 JSON 배열 |
 
@@ -243,7 +243,7 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `user_id` | bigint | NOT NULL, FK `users.id` | 회원만 |
+| `user_id` | bigint | NOT NULL, FK `users.id` | 회원만 기록 |
 | `story_id` | bigint | NOT NULL, FK `stories.id` | |
 | `ending_name_snapshot` | varchar(100) | NOT NULL, UNIQUE `(user_id, story_id, ending_name_snapshot)` | 집계 식별자 |
 | `ending_id` | bigint | FK `story_endings.id` | 도달 시점에 찾은 행<br>교체되면 비워짐 |

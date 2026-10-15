@@ -18,7 +18,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 문자 수 | UTF-16 코드 유닛 기준 |
 | 식별자 | 채팅, 스토리, 시작 설정, 페르소나, 공유는 UUID 공개 식별자<br>턴은 정수 ID |
 | SSE | `Content-Type: text/event-stream;charset=UTF-8`<br>프레임은 `event: 이름`, `data: JSON`, 빈 줄<br>heartbeat 없음, 재개 스트림 없음 |
-| 이미지 마커 | AI 응답 본문의 대사 줄 위 별도 줄에 `[[URL]]`과 빈 줄<br>클라이언트는 마커 줄을 글자로 표시하지 않고 이미지로 그림 |
+| 이미지 마커 | AI 응답 본문의 대사 줄 위 별도 줄에 `[[URL]]`과 빈 줄<br>클라이언트는 마커 줄 대신 해당 위치에 이미지를 표시 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
 <br>
@@ -119,7 +119,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|---|---|
 | `storyId` | `string` | 필수 | 스토리 공개 식별자 |
 | `startSettingId` | `string` | 선택 | 시작 설정 공개 식별자<br>생략하면 스토리의 첫 시작 설정 |
-| `personaId` | `string` | 선택 | 내 페르소나 공개 식별자<br>생략과 `null`은 기본 주인공 |
+| `personaId` | `string` | 선택 | 내 페르소나 공개 식별자<br>생략하거나 `null`이면 기본 주인공 사용 |
 
 <br>
 
@@ -213,14 +213,14 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 **2. 응답**
 
-응답은 카드 배열이다. 갱신 시각 내림차순이며 클라이언트는 이 순서를 유지한다.
+응답은 카드 배열이다. 갱신 시각 내림차순으로 정렬한다. 클라이언트는 이 순서를 유지한다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `[].id` | `string` | 채팅 공개 식별자 |
 | `[].storyId` | `string` | |
 | `[].storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
-| `[].thumbnailUrlSm` | `string / null` | 스토리 표지의 축소 변형 URL<br>생성이나 업로드 표지는 원본 URL<br>표지가 없으면 `null` |
+| `[].thumbnailUrlSm` | `string / null` | 스토리 표지의 축소 변형 URL<br>생성하거나 업로드한 표지는 원본 URL<br>표지가 없으면 `null` |
 | `[].lastStoryPreview` | `string` | 마지막 AI 응답 전문<br>서버가 자르지 않음<br>턴이 없으면 빈 문자열 |
 | `[].turnCount` | `integer` | 완료된 턴 수 |
 | `[].reachedEndings` | `string[]` | 도달한 엔딩 이름<br>채팅당 최대 1개, 도달 전 빈 배열 |
@@ -287,7 +287,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
 | `persona` | `object / null` | 생성 응답과 같은 스냅샷 |
 | `prologue` | `string` | 플레이 이름으로 치환 |
-| `turns` | `object[]` | 완료된 턴, 순서대로 |
+| `turns` | `object[]` | 완료된 턴을 순서대로 제공 |
 | `turns[].id` | `integer` | 턴 ID |
 | `turns[].userInput` | `string` | |
 | `turns[].aiOutput` | `string` | 활성본 전문<br>이미지 마커 포함 |
@@ -385,7 +385,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|---|---|
 | `userInput` | `string` | 필수 | 공백만 있으면 안 되고 3,000자 이하 |
 | `userSource` | `string` | 선택 | `choice`, `edited_choice`, `typed`<br>AI에 그대로 전달하고 생략하면 전달하지 않음 |
-| `sourceTurnId` | `integer` | 선택 | 고른 선택지가 달린 직전 턴의 ID<br>값이 낡았거나 다른 채팅의 턴이면 기록만 생략 |
+| `sourceTurnId` | `integer` | 선택 | 고른 선택지가 속한 직전 턴의 ID<br>현재 마지막 턴이 아니거나 다른 채팅의 턴이면 기록만 생략 |
 | `choiceOrder` | `integer` | 선택 | 고른 선택지의 순번, 1부터<br>`turns[].choices` 인덱스 + 1<br>범위 밖은 기록만 생략 |
 | `realtimeImage` | `boolean` | 선택 | 실시간 이미지 생성 여부, 기본값 `true` |
 
@@ -393,7 +393,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 **2. 이벤트**
 
-순서는 `started`, `token` 반복, `completed` 또는 `error`다. `character_image`는 `token` 사이에 끼어들 수 있다.
+순서는 `started`, `token` 반복, `completed` 또는 `error`다. `character_image`는 `token` 사이에 전송될 수 있다.
 
 | 이벤트 | 필드명 | 타입 | 의미 |
 |---|---|---|---|
@@ -409,7 +409,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `error` | `code` | `string` | AI 서버가 보낸 코드 또는 `AI_STREAM_FAILED` |
 | `error` | `message` | `string` | AI 서버가 보낸 문구 또는 고정 문구 |
 
-`completed`와 `error` 없이 스트림이 끝나면 결과 불명이다. 클라이언트는 상세를 다시 조회해 서버 상태에 맞춘다.
+`completed`와 `error` 없이 스트림이 끝나면 결과를 알 수 없다. 클라이언트는 상세를 다시 조회해 서버 상태에 맞춘다.
 
 <br>
 
@@ -574,7 +574,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 인증 | 선택 |
 | 성공 | 200 |
 
-요청 본문은 없다. 무료이며 체험 한도를 소모하지 않는다. 이미 선택지가 있으면 AI를 부르지 않고 저장된 값을 반환한다. 클라이언트는 응답 본문이 아니라 상세 재조회의 `turns[].choices`로 표시한다.
+요청 본문은 없다. 무료이며 체험 한도를 소모하지 않는다. 이미 선택지가 있으면 AI를 호출하지 않고 저장된 값을 반환한다. 클라이언트는 응답 본문이 아니라 상세 재조회의 `turns[].choices`로 표시한다.
 
 **1. 응답**
 
@@ -670,7 +670,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 항목 | 값 |
 |---|---|
 | 요청 | `GET /shares/{shareId}` |
-| 인증 | 불필요<br>토큰이 있으면 그 요청자로 스토리 읽기 권한 판정 |
+| 인증 | 불필요<br>토큰이 있으면 토큰으로 식별한 요청자의 스토리 읽기 권한 판정 |
 | 성공 | 200 |
 
 **1. 응답**
@@ -681,7 +681,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | `storyId` | `string` | |
 | `storyTitle` | `string` | 열람자가 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
 | `prologue` | `string` | 공유 원본 채팅의 이름으로 치환 |
-| `turns` | `object[]` | 발급 시점 턴 수까지<br>범위 안 턴의 재생성 결과는 반영 |
+| `turns` | `object[]` | 발급 시점 턴 수까지<br>공유 범위에 포함된 턴의 재생성 결과는 반영 |
 | `turns[].userInput` | `string` | |
 | `turns[].aiOutput` | `string` | 활성본 전문<br>이미지 마커 포함 |
 | `turns[].reachedEnding` | `string / null` | |
@@ -789,7 +789,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 | 도메인 | CHAT이 제공하는 것 | CHAT이 사용하는 것 |
 |---|---|---|
-| STORY | 미삭제 채팅의 누적 턴 수<br>회원 엔딩 도달 집계 행 | 읽기 판정과 현재 표시 판정, 공개본 재료, 시작 설정과 추천 입력, 엔딩, 주요 사건, 인물 이미지, 표지 URL, 기본 주인공 이름, 토큰 치환, 간편 제작 생성 요청 ID |
-| ACCOUNT | 회원의 내 채팅 목록 조회 메서드와 카드 구조<br>게스트 이관 시 채팅 소유권 클레임과 도달 집계 보정 | 계정 상태, 페르소나 스냅샷 |
+| STORY | 미삭제 채팅의 누적 턴 수<br>회원 엔딩 도달 집계 행 | 읽기 판정과 현재 표시 판정, 공개본 데이터, 시작 설정과 추천 입력, 엔딩, 주요 사건, 인물 이미지, 표지 URL, 기본 주인공 이름, 토큰 치환, 간편 제작 생성 요청 ID |
+| ACCOUNT | 회원의 내 채팅 목록 조회 메서드와 카드 구조<br>게스트 이관 시 채팅 소유권 이전과 도달 집계 보정 | 계정 상태, 페르소나 스냅샷 |
 | PAYMENT | 턴과 이미지의 차감, 환불, 체험 예약과 복원 요청 | 지갑 일괄 차감, 환불, 체험 카운터 `chat_turn`과 `chat_image`, 정책값 `chat_turn_cost`와 `chat_image_cost` |
 | AI 서버 | 턴 요청, 선택지 요청 | 본문 스트림, 판정, 인물 이미지 이벤트, 선택지 |
