@@ -31,7 +31,7 @@
 4-2-QUALITY.md
 5-1-VERIFICATION.md
 5-2-DEPLOYMENT.md
-CLAUDE.md
+AGENTS.md
 DECISIONS.md
 ```
 
@@ -55,7 +55,7 @@ DECISIONS.md
 | `4-2-QUALITY.md` | 접근성, 인증 상태 처리, 성능, 분석 이벤트 |
 | `5-1-VERIFICATION.md` | 테스트 항목, 실행 명령과 통과 증거, 린트. 항목이 있는 것과 실행해 통과한 것을 구분한다 |
 | `5-2-DEPLOYMENT.md` | 빌드와 배포 경로, 환경 변수, 배포 조건, 되돌리기 |
-| `CLAUDE.md` | 문서의 역할, 읽는 순서, 작업별 참조, 명세와 코드의 대응. 명세 본문을 복사하지 않는다 |
+| `AGENTS.md` | 문서의 역할, 읽는 순서, 작업별 참조, 명세와 코드의 대응. 명세 본문을 복사하지 않는다 |
 | `DECISIONS.md` | 결정의 날짜, 배경, 채택한 선택, 대안, 영향과 재검토 조건 |
 
 <br>
