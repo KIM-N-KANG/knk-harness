@@ -16,7 +16,6 @@
 | 시각 | `timestamp with time zone`<br>회원, 소셜 연동, 페르소나에 `created_at`과 `updated_at`이 있고 기본값은 `now()`<br>아래 표에서는 생략 |
 | 삭제 | 회원과 페르소나는 `deleted_at` 기록<br>소셜 연동은 `deleted_at`으로 묘비 표시<br>물리 삭제 경로 없음 |
 | FK | 소셜 연동은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>초대자 참조는 초대자 삭제 시 비움(`ON DELETE SET NULL`)<br>동의와 페르소나는 연쇄 없음 |
-| 상태 | `status`는 `ACTIVE`, `SUSPENDED`, `DELETED`<br>제공자는 `GOOGLE`, `KAKAO`, `APPLE`, `NAVER`<br>CHECK 제약 |
 
 <br>
 
@@ -66,103 +65,109 @@ erDiagram
 
 <br>
 
-### 3-2-3 users
+### 3-2-3 회원
+
+**`users`**
 
 회원 1명이 1행이다. 푸시 수신 동의 컬럼 `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at`은 NOTIFICATION 도메인이 정한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `public_id` | `uuid` | NOT NULL, UNIQUE, 기본값 생성 | 외부 식별자, 접근 토큰의 주체 |
-| `nickname` | `varchar(50)` | NOT NULL | 표시 이름<br>탈퇴하면 `탈퇴한 사용자` |
-| `profile_image_url` | `text` | | 프리셋 원본 이미지 URL<br>매핑이 없거나 탈퇴하면 NULL |
-| `profile_thumbnail_base64` | `text` | | 48×48 인라인 썸네일 |
-| `status` | `varchar(20)` | NOT NULL, 기본값 `ACTIVE`, CHECK | |
-| `deleted_at` | `timestamptz` | | 탈퇴 시각 |
-| `invite_code` | `varchar(16)` | UNIQUE | 처음 조회 때 발급하는 8자 초대 코드<br>탈퇴해도 유지 |
-| `inviter_user_id` | `bigint` | FK users, SET NULL | 제출한 초대 코드의 소유자<br>값이 있으면 제출 자격 소진 |
-| `migrated_at` | `timestamptz` | | 이관에 처음 성공한 시각<br>값이 있으면 이관 닫힘 |
-| `migration_attempts` | `integer` | NOT NULL, 기본값 0 | 이관 시도 누계 |
-| `member_trial_seeded_at` | `timestamptz` | | 게스트 체험 사용량을 회원으로 옮긴 시각 |
-| `rejoined_at` | `timestamptz` | | 묘비 재사용으로 만든 계정의 생성 시각 |
-| `reward_identity_user_id` | `bigint` | | 보상 신원<br>NULL이면 자기 자신, 재가입 계정은 최초 계정의 `id` |
-| `withdrawn_from_status` | `varchar(20)` | | 탈퇴 직전 상태<br>재가입 계정의 정지 승계 근거 |
+| `id` | bigint | PK | |
+| `public_id` | uuid | NOT NULL, UNIQUE, 기본 `gen_random_uuid()` | 접근 토큰의 주체 |
+| `nickname` | varchar(50) | NOT NULL | 탈퇴하면 `탈퇴한 사용자` |
+| `profile_image_url` | text | | 프리셋 원본 이미지 URL<br>대응 이미지가 없거나 탈퇴하면 `NULL` |
+| `profile_thumbnail_base64` | text | | 48×48 인라인 썸네일 |
+| `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `SUSPENDED` `DELETED` | |
+| `deleted_at` | timestamptz | | 탈퇴 시각 |
+| `invite_code` | varchar(16) | UNIQUE | 처음 조회 때 발급하는 8자 초대 코드<br>탈퇴해도 유지 |
+| `inviter_user_id` | bigint | FK `users.id` SET NULL | 제출한 초대 코드의 소유자<br>값이 있으면 제출 자격 소진 |
+| `migrated_at` | timestamptz | | 이관에 처음 성공한 시각<br>값이 있으면 이관 닫힘 |
+| `migration_attempts` | integer | NOT NULL, 기본 0 | 이관 시도 누계 |
+| `member_trial_seeded_at` | timestamptz | | 게스트 체험 사용량을 회원으로 옮긴 시각 |
+| `rejoined_at` | timestamptz | | 묘비 재사용으로 만든 계정의 생성 시각 |
+| `reward_identity_user_id` | bigint | | 보상 신원<br>`NULL`이면 자기 자신, 재가입 계정은 최초 계정의 `id` |
+| `withdrawn_from_status` | varchar(20) | | 탈퇴 직전 상태 |
 
-| 인덱스 | 정의 |
+| 인덱스 | 컬럼 |
 |---|---|
-| `uq_users_nickname_key` | `replace(lower(nickname), ' ', '')`에 유니크, `deleted_at IS NULL`인 행만 |
+| `uq_users_nickname_key` | `replace(lower(nickname), ' ', '')` UNIQUE WHERE `deleted_at IS NULL` |
 
 <br>
 
-### 3-2-4 social_accounts
+### 3-2-4 소셜 연동
+
+**`social_accounts`**
 
 회원과 소셜 제공자 계정의 연결 1건이 1행이다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `user_id` | `bigint` | NOT NULL, FK users, CASCADE | |
-| `provider` | `varchar(20)` | NOT NULL, CHECK | |
-| `provider_user_id` | `varchar(255)` | NOT NULL | 제공자가 발급한 사용자 식별자 |
-| `email` | `varchar(255)` | | 저장만 하고 읽지 않음<br>탈퇴 시 NULL |
-| `connected_at` | `timestamptz` | NOT NULL | 연동 시각 |
-| `last_login_at` | `timestamptz` | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 NULL |
-| `deleted_at` | `timestamptz` | | 묘비 시각<br>NULL이면 살아 있는 연동 |
+| `id` | bigint | PK | |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | |
+| `provider` | varchar(20) | NOT NULL, CHECK `GOOGLE` `KAKAO` `APPLE` `NAVER`, UNIQUE `(provider, provider_user_id)`, UNIQUE `(user_id, provider)` | |
+| `provider_user_id` | varchar(255) | NOT NULL | 제공자가 발급한 사용자 식별자 |
+| `email` | varchar(255) | | 저장만 하고 읽지 않음<br>탈퇴 시 `NULL` |
+| `connected_at` | timestamptz | NOT NULL | 연동 시각 |
+| `last_login_at` | timestamptz | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 `NULL` |
+| `deleted_at` | timestamptz | | 묘비 시각<br>`NULL`이면 살아 있는 연동 |
 
-| 제약과 인덱스 | 정의 |
+| 인덱스 | 컬럼 |
 |---|---|
-| `uq_social_accounts_provider_user` | `(provider, provider_user_id)` 유니크<br>묘비 포함 |
-| `uq_social_accounts_user_provider` | `(user_id, provider)` 유니크<br>한 회원에 같은 제공자는 하나 |
-| `idx_social_accounts_user` | `(user_id)` |
+| `idx_social_accounts_user` | `user_id` |
 
 <br>
 
-### 3-2-5 user_consents
+### 3-2-5 동의
+
+**`user_consents`**
 
 회원의 문서 버전별 동의 1건이 1행이다. 추가만 하며 갱신하거나 삭제하지 않는다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `user_id` | `bigint` | PK, FK users | 연쇄 없음 |
-| `doc_type` | `varchar(20)` | PK, CHECK | `TERMS`, `PRIVACY`, `AGE14` |
-| `version` | `varchar(20)` | PK | 동의한 문서 버전<br>`AGE14`는 `1` 고정 |
-| `agreed_at` | `timestamptz` | NOT NULL, 기본값 `now()` | 최초 동의 시각 |
+| `user_id` | bigint | PK, FK `users.id` | |
+| `doc_type` | varchar(20) | PK, CHECK `TERMS` `PRIVACY` `AGE14` | |
+| `version` | varchar(20) | PK | 동의한 문서 버전<br>`AGE14`는 `1` 고정 |
+| `agreed_at` | timestamptz | NOT NULL, 기본 `now()` | 최초 동의 시각 |
 
 <br>
 
-### 3-2-6 guest_consents
+**`guest_consents`**
 
 기기 해시별 게스트 문서 동의 1건이 1행이다. 추가만 하며 갱신하거나 삭제하지 않는다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `device_id_hash` | `varchar(64)` | PK | 디바이스 ID의 pepper 해시<br>원문은 저장하지 않음 |
-| `doc_type` | `varchar(20)` | PK, CHECK | `GUEST_PRIVACY` |
-| `version` | `varchar(20)` | PK | |
-| `agreed_at` | `timestamptz` | NOT NULL, 기본값 `now()` | 최초 동의 시각 |
+| `device_id_hash` | varchar(64) | PK | 디바이스 ID의 pepper 해시 |
+| `doc_type` | varchar(20) | PK, CHECK `GUEST_PRIVACY` | |
+| `version` | varchar(20) | PK | |
+| `agreed_at` | timestamptz | NOT NULL, 기본 `now()` | 최초 동의 시각 |
 
 <br>
 
-### 3-2-7 user_personas
+### 3-2-6 페르소나
+
+**`user_personas`**
 
 회원이 저장한 페르소나 1개가 1행이다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `public_id` | `uuid` | NOT NULL, UNIQUE | 외부 식별자 |
-| `user_id` | `bigint` | NOT NULL, FK users | 연쇄 없음 |
-| `name` | `text` | NOT NULL, CHECK 길이 1~20 | 앞뒤 공백 제거 후 저장 |
-| `description` | `text` | NOT NULL, CHECK 길이 1~1000 | 앞뒤 공백 제거 후 저장 |
-| `deleted_at` | `timestamptz` | | |
+| `id` | bigint | PK | |
+| `public_id` | uuid | NOT NULL, UNIQUE | |
+| `user_id` | bigint | NOT NULL, FK `users.id` | |
+| `name` | text | NOT NULL, CHECK 1~20자 | 앞뒤 공백 제거 후 저장 |
+| `description` | text | NOT NULL, CHECK 1~1,000자 | 앞뒤 공백 제거 후 저장 |
+| `deleted_at` | timestamptz | | |
 
-| 인덱스 | 정의 |
+| 인덱스 | 컬럼 |
 |---|---|
-| `idx_user_personas_active_user_created` | `(user_id, created_at DESC, id DESC)`, `deleted_at IS NULL`인 행만<br>목록 정렬과 개수 검사 |
+| `idx_user_personas_active_user_created` | `(user_id, created_at DESC, id DESC)` WHERE `deleted_at IS NULL` |
 
 <br>
 
-### 3-2-8 다른 도메인 테이블의 참조 컬럼
+### 3-2-7 다른 도메인 테이블의 참조 컬럼
 
 | 테이블 | 컬럼 | ACCOUNT가 하는 일 |
 |---|---|---|
@@ -177,7 +182,7 @@ erDiagram
 
 <br>
 
-### 3-2-9 Redis 키
+### 3-2-8 Redis 키
 
 값에 코드 원문을 저장하지 않는다. 키의 해시는 SHA-256 해시를 base64url로 표현한 값이다.
 
@@ -194,7 +199,7 @@ erDiagram
 
 <br>
 
-### 3-2-10 데이터 수명
+### 3-2-9 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
