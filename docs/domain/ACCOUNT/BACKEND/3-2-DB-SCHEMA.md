@@ -110,7 +110,7 @@ erDiagram
 | `email` | varchar(255) | | 저장만 하고 읽지 않음<br>탈퇴 시 `NULL` |
 | `connected_at` | timestamptz | NOT NULL | 연동 시각 |
 | `last_login_at` | timestamptz | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 `NULL` |
-| `deleted_at` | timestamptz | | 묘비 시각<br>`NULL`이면 살아 있는 연동 |
+| `deleted_at` | timestamptz | | 묘비 시각<br>`NULL`이면 활성 연동 |
 
 | 인덱스 | 컬럼 |
 |---|---|
