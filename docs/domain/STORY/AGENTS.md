@@ -2,7 +2,7 @@
 
 스토리 탐색, 간편·일반 제작, 상세, 공개와 공유, 검색, 오리지널 스토리를 다룬다. 검색은 스토리에서만 쓰므로 별도 도메인으로 두지 않는다.
 
-세트별 명세는 하위 폴더에 두고, 각 세트의 문서 역할과 읽는 순서는 그 폴더의 `CLAUDE.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
+세트별 명세는 하위 폴더에 두고, 각 세트의 문서 역할과 읽는 순서는 그 폴더의 `AGENTS.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
 
 <br>
 
@@ -11,7 +11,7 @@
 | 세트 | 다루는 것 | 상태 |
 |---|---|---|
 | `AI/` | 스토리라인 생성, 컴파일, 인물 이미지와 썸네일 생성 | 미작성 |
-| `BACKEND/` | 스토리 저장과 조회, 제작 흐름, 공개 스냅샷, 검색 색인, AI 서버 호출 | 미작성 |
+| `BACKEND/` | 스토리 저장과 조회, 제작 흐름, 초안, 공개 스냅샷, 검색 색인, AI 서버 호출 | 작성 완료. [BACKEND/AGENTS.md](BACKEND/AGENTS.md) |
 | `WEB/` | 제작 퍼널, 목록과 상세 화면, 편집 초안 보존 | 미작성 |
 | `ANDROID/` | 제작 퍼널, 목록과 상세 화면, 편집 초안 보존 | 미작성 |
 
@@ -22,7 +22,7 @@
 
 ### 2. 이관 원본
 
-아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 이관이 끝날 때까지 기존 문서가 기준이다.
+아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 세트가 작성 완료되면 그 세트가 기준이고, 나머지는 이관이 끝날 때까지 기존 문서가 기준이다.
 
 - `docs/spec/2-user-stories.md 2-2~2-4`
 - `docs/spec/3-1-client-spec.md 3-1-3, 3-1-4`
