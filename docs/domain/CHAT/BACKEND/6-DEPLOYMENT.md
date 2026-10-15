@@ -89,8 +89,8 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL` | 빈 값 | 운영 Secrets Manager | |
-| `MANYAK_GOOGLE_FORM_FEEDBACK_ID` | 빈 값 | 운영 설정 파일 | 비어 있으면 폼 전달 생략 |
-| `MANYAK_GOOGLE_FORM_FEEDBACK_BODY_ENTRY` | 설정 파일 값 | 주입 없음 | 폼 항목 ID<br>폼을 바꾸면 함께 갱신 |
+| `MANYAK_GOOGLE_FORM_FEEDBACK_ID` | 빈 값, 운영 설정 파일은 실제 폼 ID | 주입 없음 | 비어 있으면 폼 전달 생략 |
+| `MANYAK_GOOGLE_FORM_FEEDBACK_BODY_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_EMAIL_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_PLATFORM_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_APP_VERSION_ENTRY` | 설정 파일의 폼 항목 ID | 주입 없음 | 폼을 바꾸면 함께 갱신 |
 
 <br>
 
