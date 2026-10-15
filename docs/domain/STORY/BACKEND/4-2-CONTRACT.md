@@ -1,6 +1,6 @@
 # 4-2 계약
 
-이 문서는 STORY 도메인 백엔드와 클라이언트, 다른 도메인 사이의 계약을 정한다. 엔드포인트별 요청 필드, 성공과 실패 응답 필드 및 예시, 도메인 경계를 다룬다.
+이 문서는 STORY 도메인 백엔드와 클라이언트, 다른 도메인 사이의 계약을 정한다. 엔드포인트별 요청 필드, 성공과 실패 응답의 필드와 예시, 도메인 경계를 다룬다.
 
 AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 읽기와 소유 판정의 보안 관점은 보안에 있다. ([4-1-12 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-12-간편-제작-스토리라인-생성), [4-1-13 간편 제작 완성](4-1-PIPELINES.md#4-1-13-간편-제작-완성), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-2 소유권과 읽기 판정](5-1-SECURITY.md#5-1-2-소유권과-읽기-판정))
 
@@ -53,7 +53,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 완성 | 회원 소유 진행은 해당 회원만<br>게스트 진행은 요청자의 신원으로 귀속되며 디바이스 소유권 검사는 하지 않음 |
 | 평가 | 회원 소유 진행은 해당 회원만<br>소유자 없는 진행은 요청자 제한 없음 |
 | 복구 조회 | 회원 요청 기록은 회원 ID, 게스트 요청 기록은 디바이스 해시로 소유권 판정 |
-| 초안 | 회원 전용, 소유 회원만<br>타인의 초안은 없는 것으로 응답, 정지 계정은 조회도 거절 |
+| 초안 | 회원 전용, 소유 회원만<br>타인의 초안은 없는 것으로 응답<br>정지 계정은 조회도 거절 |
 
 <br>
 
@@ -163,7 +163,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `title` | `string` | 기본 주인공 이름으로 치환한 제목 |
 | `oneLineIntro` | `string` | 기본 주인공 이름으로 치환한 한 줄 소개<br>없으면 빈 문자열 |
 | `genres` | `string[]` | 저장한 장르 표기 목록 |
-| `author` | `object / null` | `id`, `nickname`, `profileImageUrl`<br>`id`는 항상 `null`, 게스트 스토리는 `author`가 `null` |
+| `author` | `object / null` | `id`, `nickname`, `profileImageUrl`<br>`id`는 항상 `null`<br>게스트 스토리는 `author`가 `null` |
 | `turnCount` | `integer` | 미삭제 채팅의 완료 턴 합 |
 | `likeCount` | `integer` | 좋아요 수 |
 | `status` | `string` | `DRAFT` 또는 `PUBLISHED`<br>현재 만들어지는 스토리는 모두 `PUBLISHED` |
@@ -301,7 +301,7 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 |---|---|---|---|
 | `q` | `string` | 필수 | 검색어, 2~100자 |
 | `limit` | `integer` | 선택 | 목록과 같음 |
-| `cursor` | `string` | 선택 | 이전 검색 응답의 `nextCursor`, 같은 `q`를 함께 보냄 |
+| `cursor` | `string` | 선택 | 이전 검색 응답의 `nextCursor`<br>같은 `q`를 함께 보냄 |
 
 <br>
 
@@ -346,7 +346,7 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 | 인증 | 선택 |
 | 성공 | 200 |
 
-페이지네이션이 없다. 검색어를 별칭으로 입력해도 반환 이름과 ID는 정식 장르이며 같은 배열에는 한 번만 포함된다.
+페이지네이션이 없다. 검색어를 별칭으로 입력해도 정식 장르의 이름과 ID를 반환한다. 같은 배열에는 한 번만 포함한다.
 
 **1. 쿼리**
 
@@ -360,7 +360,7 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 
 | 응답 필드명 | 타입 | 의미 |
 |---|---|---|
-| `genres` | `object[]` | 활성 제공 장르 중 검색 결과<br>검색어 없으면 197개를 카탈로그 순으로, 결과 없으면 `[]` |
+| `genres` | `object[]` | 활성 제공 장르 중 검색 결과<br>검색어가 없으면 197개를 카탈로그 순으로 반환<br>결과가 없으면 `[]` |
 | `featuredGenres` | `object[]` | 검색어와 결과 유무에 관계없이 대표 15개를 대표 순서로 |
 | `genres[].id`, `featuredGenres[].id` | `integer` | 태그 ID<br>같은 장르는 두 배열에서 같은 ID이며 스토리라인 생성의 `genreTagIds`와 같음 |
 | `genres[].name`, `featuredGenres[].name` | `string` | 정식 표시명 |
@@ -506,7 +506,7 @@ GET /stories/genres?query=로판
 
 **2. 응답**
 
-카드 배열이며 요청 순서를 유지한다. 존재하지 않거나 읽을 수 없는 스토리, 형식이 잘못된 식별자는 오류 없이 제외한다.
+요청 순서를 유지한 카드 배열이다. 존재하지 않거나 읽을 수 없는 스토리, 형식이 잘못된 식별자는 오류 없이 제외한다.
 
 <br>
 
@@ -590,7 +590,7 @@ GET /stories/genres?query=로판
 
 **1. 응답**
 
-카드 필드에서 `isOriginal`과 `thumbnailUrlSm`을 빼고 다음을 더한다. 텍스트 필드는 이름 토큰을 기본 주인공 이름으로 치환해 반환한다.
+카드 필드에서 `isOriginal`과 `thumbnailUrlSm`을 빼고 다음 필드를 더한다. 텍스트 필드는 이름 토큰을 기본 주인공 이름으로 치환해 반환한다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -717,7 +717,7 @@ Authorization: Bearer <accessToken>
 | 인증 | 선택 |
 | 성공 | 204, 본문 없음 |
 
-요청 본문은 없다. 삭제한 스토리는 모든 조회에서 빠지며 되돌릴 수 없다.
+요청 본문은 없다. 삭제한 스토리는 모든 조회에서 제외한다. 삭제는 되돌릴 수 없다.
 
 **1. 실패 응답**
 
@@ -756,7 +756,7 @@ Authorization: Bearer <accessToken>
 | 인증 | 불필요 |
 | 성공 | 200 |
 
-활성 제공 태그를 카테고리, 노출 순서로 반환한다. `GENRE`는 대표 15개만 대표 순서로 반환하며 전체 장르는 제공 장르 조회를 쓴다.
+활성 제공 태그를 카테고리, 노출 순서로 반환한다. `GENRE`는 대표 15개만 대표 순서로 반환한다. 전체 장르는 제공 장르 조회를 쓴다.
 
 **1. 응답**
 
@@ -798,7 +798,7 @@ Authorization: Bearer <accessToken>
 | 인증 | 선택 |
 | 성공 | 200 |
 
-활성 화풍을 노출 순서로 반환한다. 식별자는 문자열 `code`이며 간편 제작 완성 요청의 `artStyle`과 AI 컴파일 요청의 `art_style`에 그대로 쓴다.
+활성 화풍을 노출 순서로 반환한다. 식별자는 문자열 `code`다. 간편 제작 완성 요청의 `artStyle`과 AI 컴파일 요청의 `art_style`에 그대로 쓴다.
 
 **1. 응답**
 
@@ -807,7 +807,7 @@ Authorization: Bearer <accessToken>
 | `[].code` | `string` | 화풍 코드 |
 | `[].name` | `string` | 표시 이름 |
 | `[].description` | `string` | 설명 |
-| `[].previewImageUrl` | `string / null` | 미리보기 이미지, 초기 시드는 `null` |
+| `[].previewImageUrl` | `string / null` | 미리보기 이미지<br>초기 시드는 `null` |
 
 <br>
 
@@ -861,7 +861,7 @@ Authorization: Bearer <accessToken>
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `requestId` | `string` | 필수 | 클라이언트가 생성한 UUID<br>같은 값으로 다시 보내면 완료된 요청은 같은 응답, 진행 중이면 409, 실패한 요청은 재실행 |
+| `requestId` | `string` | 필수 | 클라이언트가 생성한 UUID<br>같은 값으로 다시 보내면 완료된 요청은 같은 응답 반환<br>진행 중이면 409<br>실패한 요청은 재실행 |
 | `genreTagIds` | `integer[]` | 선택 | 제공 장르 태그 ID 최대 20개, 각 1 이상<br>선택 순서 유지, 기본값 `[]` |
 | `customGenreTags` | `string[]` | 선택 | 누락 또는 빈 배열만 허용<br>값이 하나라도 있으면 거절 |
 | `protagonist` | `object` | 필수 | 주인공 인물 객체 |
@@ -880,7 +880,7 @@ Authorization: Bearer <accessToken>
 | `name` | `string` | 선택 | 30자 이하<br>비우면 AI가 정함 |
 | `gender` | `string` | 선택 | `MALE` 또는 `FEMALE`<br>비우면 AI가 정함 |
 | `featureTagIds` | `integer[]` | 선택 | 제공 특징 태그 ID, 기본값 `[]` |
-| `customTags` | `string[]` | 선택 | 직접 입력 특징, 각 30자 이하, 기본값 `[]`<br>`featureTagIds`와 합쳐 최대 3개, 개수는 중복 제거 전 기준 |
+| `customTags` | `string[]` | 선택 | 직접 입력 특징, 각 30자 이하, 기본값 `[]`<br>`featureTagIds`와 합쳐 최대 3개<br>개수는 중복 제거 전 기준 |
 
 <br>
 
@@ -890,7 +890,7 @@ Authorization: Bearer <accessToken>
 |---|---|---|
 | `simpleCreationId` | `integer` | 간편 제작 진행 ID<br>스토리 완성 요청에 사용 |
 | `selectedTags.genreTags` | `object[]` | 저장된 제공 장르, `id`, `name`, `category` |
-| `selectedTags.protagonist` | `object` | `name`, `gender`, `features[]`<br>`features`는 `id`, `name`, `category`이며 직접 입력 특징은 `id` 없이 이름만 |
+| `selectedTags.protagonist` | `object` | `name`, `gender`, `features[]`<br>`features`는 `id`, `name`, `category`<br>직접 입력 특징은 `id` 없이 이름만 |
 | `selectedTags.supportingCharacters` | `object[]` | 주인공과 같은 구조 |
 | `storylines` | `object[]` | 정확히 3개 |
 | `storylines[].id` | `integer` | 스토리라인 ID<br>스토리 완성과 평가에 사용 |
@@ -1013,8 +1013,8 @@ Authorization: Bearer <accessToken>
 | `requestId` | `string` | 필수 | 클라이언트가 생성한 UUID<br>스토리라인 생성과 다른 값<br>재요청 규칙은 스토리라인 생성과 같음 |
 | `simpleCreationId` | `integer` | 필수 | 스토리라인 생성 응답의 진행 ID |
 | `storylineId` | `integer` | 필수 | 선택한 스토리라인 ID |
-| `additionalInfos` | `string[]` | 선택 | 추가 정보 최대 13개, 항목당 100자<br>추천 정보를 고른 것과 직접 입력한 것을 합쳐 보냄, 기본값 `[]` |
-| `artStyle` | `string` | 선택 | 활성 화풍 코드, 기본값 `ANIME`<br>빈 문자열은 기본값으로 보지 않고 거절<br>`NONE`이면 인물 이미지와 표지를 만들지 않으며 차감액은 같음 |
+| `additionalInfos` | `string[]` | 선택 | 추가 정보 최대 13개, 항목당 100자<br>선택한 추천 정보와 직접 입력한 정보를 합쳐 보냄<br>기본값 `[]` |
+| `artStyle` | `string` | 선택 | 활성 화풍 코드, 기본값 `ANIME`<br>빈 문자열은 기본값으로 보지 않고 거절<br>`NONE`이면 인물 이미지와 표지를 만들지 않음<br>차감액은 같음 |
 | `isRegenerated` | `boolean` | 선택 | AI 호출 헤더로 그대로 전달 |
 | `draftId` | `string` | 선택 | 접수 시 삭제할 내 초안<br>회원 요청만 처리하고 없거나 타인의 초안이면 무시 |
 
@@ -1129,7 +1129,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 인증 | 선택 |
 | 성공 | 200 |
 
-스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회하고, `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
+스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회한다. `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
 
 **1. 응답**
 
@@ -1214,7 +1214,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 성공 | `PUT` 200 |
 | 성공 | `DELETE` 204, 본문 없음 |
 
-후보당 한 행이며 새 값으로 덮어쓴다. `DELETE`는 평가가 없어도 성공한다.
+후보당 한 행을 두고 새 값으로 덮어쓴다. `DELETE`는 평가가 없어도 성공한다.
 
 **1. `PUT` 요청 본문**
 
@@ -1294,7 +1294,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | `oneLineIntro` | `string` | 필수 | 255자 이하, 토큰 원문 |
 | `description` | `string` | 선택 | 주요 내용 |
 | `protagonistName` | `string` | 선택 | 기본 주인공 이름, 앞뒤 공백 제거 후 1~30자<br>저장할 본문에 `{username}`이 있는데 없으면 거절 |
-| `genres` | `string[]` | 필수 | 활성 제공 장르의 정식 이름 1~8개, 각 30자 이하<br>정규화 키가 같은 표기는 정식 이름으로 변환, 별칭과 비활성 장르는 거절<br>입력 순서 보존, 중복은 처음 위치만 유지 |
+| `genres` | `string[]` | 필수 | 활성 제공 장르의 정식 이름 1~8개, 각 30자 이하<br>정규화 키가 같은 표기는 정식 이름으로 변환<br>별칭과 비활성 장르는 거절<br>입력 순서 보존<br>중복은 처음 위치만 유지 |
 | `storySettings` | `object` | 필수 | 통글 4필드 |
 | `storySettings.worldSetting` | `string` | 필수 | 세계관 |
 | `storySettings.characterSetting` | `string` | 필수 | 등장인물 |
@@ -1310,7 +1310,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | `startSettings[].endings[].name` | `string` | 필수 | 엔딩 이름, 100자 이하 |
 | `startSettings[].endings[].requirement` | `object` | 필수 | `minTurns`(0 이상 정수)와 `achievementCondition`(자연어, 필수) |
 | `startSettings[].endings[].epilogue` | `string` | 필수 | 엔딩 연출 방향 |
-| `mainEvents` | `object[]` | 선택 | 최대 10개, 기본값 `[]`<br>배열 순서가 표시 순서, 이름은 스토리 안에서 유일 |
+| `mainEvents` | `object[]` | 선택 | 최대 10개, 기본값 `[]`<br>배열 순서가 표시 순서<br>이름은 스토리 안에서 유일 |
 | `mainEvents[].name` | `string` | 필수 | 사건 이름, 100자 이하 |
 | `mainEvents[].description` | `string` | 필수 | 사건 설명 |
 | `mainEvents[].keySentence` | `string` | 필수 | 관련성 판단 문장 |
@@ -1319,7 +1319,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | `characters` | `object[]` | 선택 | 최대 6명, 기본값 `[]`<br>이름은 스토리 안에서 유일 |
 | `characters[].id` | `string` | 선택 | 등록에서 값이 있으면 거절 |
 | `characters[].name` | `string` | 필수 | 인물 이름, 100자 이하 |
-| `characters[].description` | `string` | 선택 | 생략, `null`, 빈 문자열, 공백만 있는 문자열은 `null` 저장<br>그 외는 앞뒤 공백 제거 후 1~150자, CR, LF, 탭이 있으면 거절 |
+| `characters[].description` | `string` | 선택 | 생략, `null`, 빈 문자열, 공백만 있는 문자열은 `null` 저장<br>그 외는 앞뒤 공백 제거 후 1~150자<br>CR, LF, 탭이 있으면 거절 |
 | `characters[].images` | `object[]` | 선택 | 인물당 최대 10장, 배열 순서가 표시 순서 |
 | `characters[].images[].objectKey` | `string` | 필수 | draft presign으로 올린 객체 키 |
 | `characters[].images[].imageName` | `string` | 필수 | `{인물이름}_{접미}`, 접미사는 한글, 영문, 숫자로 구성된 1~20자<br>같은 인물 안에서 유일 |
@@ -1344,7 +1344,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 |---|---|---|
 | 400 | `BAD_REQUEST` | 검증 실패, 토큰이 있는데 기본 주인공 이름 없음, 인물 소개 형식 위반<br>임시 업로드 접두어 범위를 벗어난 객체 키, 지원하지 않는 형식, 5MB 초과 |
 | 400 | `INVALID_GENRE` | 허용되지 않는 장르, `details`에 무효 원소의 `genres[i]` |
-| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음, 업로드를 마친 뒤 다시 보냄 |
+| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음<br>업로드를 마친 뒤 다시 보냄 |
 | 400 | `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과 |
 | 409 | `CONFLICT` | 같은 인물 안의 이미지 이름 중복 |
 
@@ -1449,7 +1449,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings`, `mainEvents`, `visibility`, `protagonistName` | 등록 요청과 같음 | 현재 스토리 또는 미승인 제출본을 반영한 값<br>`startSettings`와 `mainEvents`는 상세 응답 구조, `storySettings`는 비어 있으면 각 필드가 `null` |
+| `title`, `oneLineIntro`, `description`, `genres`, `storySettings`, `startSettings`, `mainEvents`, `visibility`, `protagonistName` | 등록 요청과 같음 | 현재 스토리 또는 미승인 제출본을 반영한 값<br>`startSettings`와 `mainEvents`는 상세 응답 구조<br>`storySettings`는 비어 있으면 각 필드가 `null` |
 | `thumbnailUrl` | `string / null` | 현재 표지 |
 | `thumbnailModerationStatus` | `string` | `APPROVED`, `PENDING`, `REJECTED` |
 | `characters` | `object[]` | 인물과 이미지 관리용 |
@@ -1556,22 +1556,22 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 성공 | 공개 범위 단독이면 200 수정 폼 |
 | 성공 | 그 외는 202, 등록 응답과 같은 `submissionId`, `status` |
 
-등록 요청의 모든 필드를 선택적으로 보내며 보낸 필드만 변경한다. `null`은 미전송과 같다. 검수로 접수된 수정의 결과는 수정 폼 응답의 `submission` 또는 제출본 조회로 확인한다.
+등록 요청의 모든 필드는 선택적으로 보낼 수 있다. 보낸 필드만 변경한다. `null`은 미전송과 같다. 검수로 접수된 수정의 결과는 수정 폼 응답의 `submission` 또는 제출본 조회로 확인한다.
 
 **1. 요청 본문**
 
 | 필드명 | 규칙 |
 |---|---|
 | `visibility` | 이 필드만 보내면 즉시 반영하고 200 수정 폼 반환<br>다른 필드와 함께 보내면 검수 접수 |
-| `protagonistName` | 생략과 `null`은 유지, 빈 문자열과 공백만 있는 문자열은 거절<br>토큰과 이름의 관계는 기존 값에 요청을 반영한 전체 결과로 검증 |
-| `genres` | 활성 제공 장르이거나 해당 스토리에 이미 반영된 장르만 허용<br>기존 장르는 저장 표기 유지, 제거한 커스텀 장르는 다시 추가 불가 |
+| `protagonistName` | 생략과 `null`은 유지<br>빈 문자열과 공백만 있는 문자열은 거절<br>토큰과 이름의 관계는 기존 값에 요청을 반영한 전체 결과로 검증 |
+| `genres` | 활성 제공 장르이거나 해당 스토리에 이미 반영된 장르만 허용<br>기존 장르는 저장 표기 유지<br>제거한 커스텀 장르는 다시 추가 불가 |
 | `startSettings` | 보내면 전체 교체, 1개 이상<br>`id`가 기존 항목과 일치하면 해당 행을 갱신<br>`id`가 없으면 추가하고 요청에서 빠진 기존 항목은 삭제 |
 | `startSettings[].id`, `characters[].id` | 없는 `id`, 다른 스토리의 `id`, 중복 `id`는 거절 |
-| `mainEvents` | 보내면 전체 교체, 빈 배열은 모두 삭제 |
+| `mainEvents` | 보내면 전체 교체<br>빈 배열은 모두 삭제 |
 | `thumbnailObjectKey` | 보내면 표지 교체<br>삭제는 `DELETE /stories/{storyId}/thumbnail` |
-| `characters` | 보내면 전체 교체, 빈 배열은 모두 삭제<br>`id`가 기존 인물과 일치하면 이름을 변경<br>`id`가 없으면 추가하고 요청에서 빠진 기존 인물은 이미지와 함께 삭제 |
-| `characters[].description` | 생략과 `null`은 유지, 빈 문자열과 공백만 있는 문자열은 삭제<br>그 외는 등록과 같은 규칙 |
-| `characters[].images` | 생략은 유지, 빈 배열은 모두 삭제<br>항목은 기존 유지 `{id}` 또는 신규 `{objectKey, imageName}` 중 하나<br>기존 유지에서 `imageName`을 생략하면 접두를 현재 인물 이름으로 맞춘 이름 |
+| `characters` | 보내면 전체 교체<br>빈 배열은 모두 삭제<br>`id`가 기존 인물과 일치하면 이름을 변경<br>`id`가 없으면 추가하고 요청에서 빠진 기존 인물은 이미지와 함께 삭제 |
+| `characters[].description` | 생략과 `null`은 유지<br>빈 문자열과 공백만 있는 문자열은 삭제<br>그 외는 등록과 같은 규칙 |
+| `characters[].images` | 생략은 유지<br>빈 배열은 모두 삭제<br>항목은 기존 유지 `{id}` 또는 신규 `{objectKey, imageName}` 중 하나<br>기존 유지에서 `imageName`을 생략하면 접두를 현재 인물 이름으로 맞춘 이름 |
 | `storySettings` | 보내면 네 필드 전체 교체, 없던 스토리는 생성 |
 
 <br>
@@ -1583,7 +1583,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 400 | `BAD_REQUEST` | 등록과 같은 검증 실패<br>인물 이름 변경으로 생성된 이미지 이름이 120자 초과 |
 | 400 | `INVALID_GENRE` | 허용되지 않는 장르 |
 | 400 | `GUEST_CANNOT_PUBLISH` | 소유자 없는 스토리에 `PUBLIC` 지정 |
-| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음, 업로드를 마친 뒤 다시 보냄 |
+| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음<br>업로드를 마친 뒤 다시 보냄 |
 | 400 | `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과 |
 | 403 | `FORBIDDEN` | 소유자가 아닌 요청 |
 | 404 | `NOT_FOUND` | 부재, 삭제, 형식 오류 |
@@ -2111,7 +2111,7 @@ Content-Length: 204800
 | 인증 | 필수 |
 | 성공 | 200, 신규와 갱신 모두 |
 
-전체 교체 방식이며 같은 내용을 다시 보내면 버전과 시각이 바뀌지 않는다. `draftId`는 클라이언트가 만든 UUID다.
+전체 교체 방식이다. 같은 내용을 다시 보내면 버전과 시각이 바뀌지 않는다. `draftId`는 클라이언트가 만든 UUID다.
 
 **1. 요청 본문**
 
@@ -2119,8 +2119,8 @@ Content-Length: 204800
 |---|---|---|---|
 | `mode` | `string` | 필수 | `GENERAL`은 `GENERAL_DRAFT`만, `SIMPLE`은 `KEYWORD_DRAFT`와 `STORY_DRAFT`만 허용 |
 | `stage` | `string` | 필수 | 초안 단계 |
-| `schemaVersion` | `integer` | 필수 | 클라이언트 payload 스키마 버전, 서버는 해석하지 않음 |
-| `payload` | `object` | 필수 | 작성 중 입력, JSON 객체만 허용<br>직렬화 크기 64KB 이하<br>안의 문자열 중 업로드 경로로 시작하는 값은 요청자의 임시 업로드 키 형식이어야 함 |
+| `schemaVersion` | `integer` | 필수 | 클라이언트 payload 스키마 버전<br>서버는 해석하지 않음 |
+| `payload` | `object` | 필수 | 작성 중 입력<br>JSON 객체만 허용<br>직렬화 크기 64KB 이하<br>안의 문자열 중 업로드 경로로 시작하는 값은 요청자의 임시 업로드 키 형식이어야 함 |
 | `baseVersion` | `integer` | 선택 | 클라이언트가 기준으로 삼은 서버 버전<br>신규는 생략하거나 `null` |
 | `title` | `string` | 선택 | 목록용 요약 |
 | `oneLineIntro` | `string` | 선택 | 목록용 요약 |
@@ -2134,7 +2134,7 @@ Content-Length: 204800
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `draftId` | `string` | |
-| `version` | `integer` | 신규는 1, 갱신은 이전 값 +1, 같은 내용이면 유지 |
+| `version` | `integer` | 신규는 1<br>갱신은 이전 값 +1<br>같은 내용이면 유지 |
 | `createdAt` | `string` | 갱신해도 유지 |
 | `updatedAt` | `string` | 갱신 시각 |
 

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 대상은 스토리 조회, 제공 장르, 간편 제작, 일반 제작 등록과 수정, 이미지, 좋아요와 신고, 삭제, 검색이다.
+STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 스토리 조회, 제공 장르, 간편 제작, 일반 제작 등록과 수정, 이미지, 좋아요와 신고, 삭제, 검색을 다룬다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -10,20 +10,20 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 | 문서 | 정하는 것 | 상태 |
 |---|---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 초안 |
-| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, AI 서버와의 역할 분담, 제품 제약, 데이터 보존 | 초안 |
-| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 초안 |
-| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 데이터 수명 | 초안 |
-| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 초안 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 엔드포인트별 처리 흐름, AI 호출, 색인, 이름 토큰 치환 | 초안 |
-| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 다른 도메인과의 계약 | 초안 |
-| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 소유권, 계정 상태와 동의, 입력과 업로드 검증, 개인정보 | 초안 |
-| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 멱등, 잠금, 유니크 위반 처리, 집계 | 초안 |
-| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 초안 |
-| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, AI 헤더, 호출 기록, 로그, 지표, 트레이스, 알림, 분석 이벤트 | 초안 |
-| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 | 초안 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 초안 |
-| [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 초안 |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 작성 완료 |
+| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, AI 서버와의 역할 분담, 제품 제약, 데이터 보존 | 작성 완료 |
+| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 작성 완료 |
+| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 데이터 수명 | 작성 완료 |
+| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 작성 완료 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 엔드포인트별 처리 흐름, AI 호출, 색인, 이름 토큰 치환 | 작성 완료 |
+| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 다른 도메인과의 계약 | 작성 완료 |
+| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 소유권, 계정 상태와 동의, 입력과 업로드 검증, 개인정보 | 작성 완료 |
+| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 멱등, 잠금, 유니크 위반 처리, 집계 | 작성 완료 |
+| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 작성 완료 |
+| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, AI 헤더, 호출 기록, 로그, 지표, 트레이스, 알림, 분석 이벤트 | 작성 완료 |
+| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 | 작성 완료 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 작성 완료 |
+| [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 작성 완료 |
 
 - 처음에는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추려고 앞 단계를 임의로 바꾸지 않는다.
@@ -53,7 +53,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 ### 3. 명세와 코드의 대응
 
-코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. `story/submission/*`은 접수와 조회만 이 세트에 속하고 판정과 재시도는 MODERATION 세트에 속한다.
+코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. `story/submission/*`의 접수와 조회는 이 세트에 속한다. 판정과 재시도는 MODERATION 세트에 속한다.
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
@@ -91,5 +91,5 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 - 명세의 작성, 수정, 검토를 서브에이전트에 맡기지 않는다.
 - 실제 비밀값, 사용자 입력 원문, 생성 결과 원문을 문서에 넣지 않는다.
-- 코드와 설정에서 확인할 수 없는 정책, 필드, 계약을 추측해 적지 않는다. 결정되지 않은 것은 미정, 확인하지 못한 것은 미확인으로 구분한다.
+- 코드와 설정에서 확인할 수 없는 정책, 필드, 계약을 추측해 적지 않는다. 결정되지 않은 것은 미정으로, 확인하지 못한 것은 미확인으로 구분한다.
 - 절의 제목이나 위치를 바꾸면 이 문서와 다른 문서의 링크도 고친다.

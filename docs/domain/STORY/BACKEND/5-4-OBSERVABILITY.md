@@ -44,7 +44,7 @@ flowchart LR
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만<br>같은 요청의 `api_request_failed` 로그에 실림 |
-| `traceId`, `spanId` | 현재 스팬 | 트레이스 전송이 비활성화되어도 생성되어 로그에 붙음 |
+| `traceId`, `spanId` | 현재 스팬 | 트레이스 전송이 비활성화되어도 생성해 로그에 포함 |
 
 | 식별자 | 기록 위치 | 연결 대상 |
 |---|---|---|
@@ -89,7 +89,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 ### 5-4-5 구조화 로그 이벤트
 
-구조화 로그는 `event_name`을 맨 앞에 둔 JSON을 INFO로 남기며 이벤트 이름은 snake_case다. `prod`, `dev`, `jsonlog` 프로파일만 JSON이고 그 외는 콘솔 패턴이다. JSON에는 `service=manyak-server`가 붙고 MDC 값은 인코더가 최상위 필드로 싣는다.
+구조화 로그는 `event_name`을 맨 앞에 둔 JSON을 INFO로 남긴다. 이벤트 이름은 snake_case다. `prod`, `dev`, `jsonlog` 프로파일만 JSON이다. 그 외는 콘솔 패턴이다. JSON에는 `service=manyak-server`가 붙는다. MDC 값은 인코더가 최상위 필드로 싣는다.
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
@@ -130,7 +130,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 생성 이미지 | 로그 `*_upload_failed`, `*_budget_exhausted`, `*_cleanup_*`<br>스토리는 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음 |
 | 검색 색인 | WARN 평문 로그<br>요청 실패로 이어지지 않음 |
 
-`ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이며 100자로 자른다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. 예외는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다.
+`ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이다. 100자로 잘라 기록한다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. 예외는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다.
 
 <br>
 
@@ -195,8 +195,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 사용자 입력 원문, 프롬프트, AI 응답 본문 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>원문은 AI 서버의 Langfuse에서 관리 |
 | 생성 이미지 | base64와 URL을 로그에 싣지 않음<br>객체 키는 S3 보상 삭제에만 사용 |
 | 검색어 | 로그와 Sentry에 구조화 필드로 싣지 않음 |
-| Sentry 이벤트 | 5xx를 전부 캡처, 기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
-| JDBC 스팬 | placeholder SQL만 수집, 바인딩 값 제외 |
+| Sentry 이벤트 | 5xx를 전부 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| JDBC 스팬 | placeholder SQL만 수집<br>바인딩 값 제외 |
 | 로그 `message` | 예외 메시지와 스택트레이스는 그대로 기록 |
 
 <br>
@@ -210,7 +210,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 응답 `meta` 반영, 지표 기록, AI 호출 로그 기록 실패 | 무시하고 호출 결과 유지 |
 | 완성 지표 기록 실패 | 무시하고 응답 또는 원래 예외 유지 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
-| OTLP 트레이스와 지표 전송 실패 | SDK 배치 전송, 실패분은 유실 |
+| OTLP 트레이스와 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Amplitude 전송 실패 | 비동기 호출 뒤 WARN 로그만 남기고 재시도 없음 |
 | 이미지 보상 삭제 실패 | 로그만 남기고 원래 예외 유지 |
 | 미수집과 누락 | 수집 비활성화, 표본 제외, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 요청이 없었다고 판단하지 않음 |
@@ -221,7 +221,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 **서버 이벤트**
 
-Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가 있는 환경만 전송한다. 스토리 완성에는 서버 이벤트가 없으며 클라이언트가 스토리 ID 확정 시점에 `client_storyCreate_completed`를 보낸다.
+Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가 있는 환경만 전송한다. 스토리 완성에는 서버 이벤트가 없다. 클라이언트가 스토리 ID 확정 시점에 `client_storyCreate_completed`를 보낸다.
 
 | 이벤트 | 시점 | 프로퍼티 |
 |---|---|---|
@@ -241,7 +241,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 
 <br>
 
-Amplitude HTTP V2 배치 페이로드 1건이다. 예시 값은 형식만 맞춘 가상 값이다. 회원 이벤트도 요청에 실제 디바이스 해시가 있으면 `device_id`와 `device_id_hash`를 함께 싣고, 게스트는 해시가 없어도 `device_id`를 `unknown`으로 채운다.
+Amplitude HTTP V2 배치 페이로드 1건이다. 예시 값은 형식만 맞춘 가상 값이다. 회원 이벤트도 요청에 실제 디바이스 해시가 있으면 `device_id`와 `device_id_hash`를 함께 싣는다. 게스트는 해시가 없어도 `device_id`를 `unknown`으로 채운다.
 
 ```json
 {

@@ -13,7 +13,7 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>외부에 노출하는 리소스는 `public_id uuid`를 따로 두고 API는 이 값만 사용: 스토리, 시작 설정, 인물, 인물 이미지<br>간편 제작 진행, 태그, 스토리라인, 추천 정보는 임시 리소스라 `bigint` ID를 그대로 노출<br>화풍은 공개 카탈로그라 문자열 `code`를 식별자로 노출 |
-| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있고 기본값 `now()`, 갱신하는 테이블에는 `updated_at`이 있음<br>아래 표에서는 생략 |
+| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>갱신하는 테이블에는 `updated_at`이 있음<br>아래 표에서는 생략 |
 | 삭제 | 스토리 삭제 시 `stories.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 스토리의 삭제 여부로 제외 |
 | FK | 스토리를 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정이나 도달 기록이 참조하는 엔딩을 삭제해도 채팅과 도달 기록은 유지<br>외래 키 값만 비움(`ON DELETE SET NULL`) |
 | 순서 | `smallint sort_order`<br>추천 입력, 엔딩, 로어북, 스토리라인, 추천 정보는 1부터, 주요 사건은 0부터 |
@@ -24,7 +24,7 @@
 
 ### 3-2-2 관계도
 
-관계도는 데이터 묶음별 소유 관계를 보여준다. 각 상자에는 식별과 연결에 쓰는 컬럼만 표시하며 전체 컬럼은 아래 표에서 정의한다. 다른 도메인의 테이블은 관계 라벨에 도메인을 적고 컬럼을 생략한다.
+관계도는 데이터 묶음별 소유 관계를 보여준다. 각 상자에는 식별과 연결에 쓰는 컬럼만 표시한다. 전체 컬럼은 아래 표에서 정의한다. 다른 도메인의 테이블은 관계 라벨에 도메인을 적고 컬럼을 생략한다.
 
 **1. 스토리**
 
@@ -166,7 +166,7 @@ erDiagram
 
 **3. 생성 요청, 초안, 카탈로그**
 
-생성 요청과 간편 제작 진행은 외래 키 없이 요청 ID 값으로 연결한다. 이 관계는 점선으로 표시한다. 초안은 생성 요청을 외래 키로 선택 참조한다.
+생성 요청과 간편 제작 진행은 외래 키 없이 요청 ID 값으로 연결한다. 요청 ID로 연결한 관계는 점선으로 표시한다. 초안은 생성 요청을 외래 키로 선택적으로 참조한다.
 
 ```mermaid
 erDiagram
@@ -229,7 +229,7 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE, 기본 `gen_random_uuid()` | |
-| `user_id` | bigint | | 게스트 제작은 NULL, 이관 시 채움 |
+| `user_id` | bigint | | 게스트 제작은 NULL<br>이관 시 채움 |
 | `title` | varchar(100) | NOT NULL | |
 | `one_line_intro` | varchar(255) | | |
 | `description` | text | | |
@@ -421,9 +421,9 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `story_id` | bigint | PK이자 FK CASCADE | |
-| `snapshot` | jsonb | NOT NULL | 마지막 공개 시점의 스토리 내용, 인물 소개 제외 |
+| `snapshot` | jsonb | NOT NULL | 마지막 공개 시점의 스토리 내용<br>인물 소개 제외 |
 
-스냅샷 안의 사건, 엔딩, 인물은 현재 스토리의 해당 행과 이름으로 연결하고 시작 설정만 `id`로 연결한다.
+스냅샷 안의 사건, 엔딩, 인물은 이름으로 현재 스토리의 해당 행과 연결한다. 시작 설정만 `id`로 연결한다.
 
 <br>
 
@@ -601,7 +601,7 @@ FK를 두지 않는다. 간편 제작 진행과 스토리는 `request_id` 값으
 | `code` | varchar(50) | PK | AI 컴파일의 화풍 계약값 |
 | `name` | varchar(30) | NOT NULL | |
 | `description` | text | NOT NULL | |
-| `preview_image_url` | text | | 미리보기 이미지, 초기 시드는 NULL |
+| `preview_image_url` | text | | 미리보기 이미지<br>초기 시드는 NULL |
 | `sort_order` | integer | NOT NULL, CHECK `>= 1` | |
 | `is_active` | boolean | NOT NULL, 기본 true | |
 
@@ -611,8 +611,8 @@ FK를 두지 않는다. 간편 제작 진행과 스토리는 `request_id` 값으
 
 | 데이터 | 삭제 |
 |---|---|
-| 스토리와 하위 데이터 | `deleted_at` 기록, 물리 삭제 없음 |
-| 인물 이미지 행 | 승인된 수정과 삭제 API로 삭제, S3 객체는 남김 |
+| 스토리와 하위 데이터 | `deleted_at` 기록<br>물리 삭제 없음 |
+| 인물 이미지 행 | 승인된 수정과 삭제 API로 삭제<br>S3 객체는 보존 |
 | 공개 스냅샷 | 스토리 CASCADE |
 | 간편 제작 진행, 생성 요청 | 삭제 없음 |
 | 초안 | 등록이나 완성 접수, 삭제 API, 회원 탈퇴 시 물리 삭제 |
