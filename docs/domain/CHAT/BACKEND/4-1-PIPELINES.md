@@ -497,7 +497,7 @@ AI에 보낸 후보에서 원문 이름, 최소 턴 재확인`"]
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
-    A{"`**realtimeImage이고
+    A{"`**실시간 이미지 켬이고
 저장소 설정됨**`"} -->|아니오| Z["`**업로드 위치 없음**`"]
     A -->|예| B["`**이미지 체험 예약**
 회원 또는 디바이스 카운터
