@@ -312,6 +312,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `turnCount` | number | 누적 사용자 입력 턴 수: 스토리의 모든 미삭제 채팅 `current_turn` 합(목록은 배치 집계로 N+1 방지). 이전 와이어 필드 `chatCount`(채팅 수)를 대체 |
 | `likeCount` | number | 좋아요 수. `story_likes` 실 집계입니다([아래 스토리 좋아요](#4-3-api-계약)). 목록은 배치 집계로 채워 N+1을 막습니다 |
 | `status` | enum | `DRAFT` · `PUBLISHED` |
+| `visibility` | enum | 공개 범위(`PUBLIC` · `PRIVATE`). 상세 응답과 같은 값. 공개 목록(`GET /stories`)·검색은 노출 조건상 항상 `PUBLIC` |
 | `thumbnailUrlSm` | string·null | 썸네일 축소 변형(`_sm`) 서빙 URL: 목록·카드 렌더용. 연결된 썸네일이 없으면 null([§4-3-9](#4-3-api-계약) 반응형 변형) |
 | `createdAt` | string | 생성 시각 |
 
@@ -331,7 +332,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 | `isLiked` | boolean | 요청 회원이 이 스토리에 좋아요를 눌렀는지([아래 스토리 좋아요](#4-3-api-계약)). 게스트·미인증은 false |
 | `characters` | object[] | 등장인물 `{name, imageUrl, description}`: `story_characters`([§4-4](#4-4-데이터-모델))를 저장순(컴파일 응답 순서)으로 싣습니다. 이미지 생성에 실패한 인물도 포함하고 그 `imageUrl`은 null입니다(이미지 실패가 스토리를 막지 않는 계약과 같은 취지: [§4-3-9](#4-3-api-계약)). `description`은 string·null인 인물 소개입니다. 소개 도입 이전 스토리·소개 없는 컴파일·소개를 보내지 않고 일반 제작이나 수정으로 추가한 인물은 null입니다. 인물 행이 없는 스토리(컴파일 경로 이전·인물을 싣지 않은 일반 제작)는 빈 배열입니다 |
 
-- `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다.
+- 상세 응답의 `status`·`visibility`·`lorebooks`·`startSettings[].endings`는 MVP 프론트엔드가 사용하지 않습니다. 제작탭 목록은 카드 응답의 `visibility`로 공개 여부를 표시합니다.
 - **인물 목록**: 상세의 `characters[]`에는 이름·이미지·인물 소개를 싣고 공개 식별자와 외형 필드는 제외합니다. 기존 `isReadableBy(userId)` 읽기 게이트를 적용한 뒤 라이브 인물 행에서 조회합니다. 라이브는 검수 승인 뒤에만 바뀝니다. 수정 폼의 `StoryEditCharacterResponse`는 `id`·`name`·`description`(string·null)·`images[]`를 반환합니다. 스토리 소유자는 일반 제작·수정(PATCH) 요청의 선택 필드 `description`으로 인물 소개를 입력할 수 있습니다. 소개 변경도 검수 제출본으로 접수하며 승인 뒤 라이브에 반영합니다. 수정에서 이름만 바꿔도 같은 인물 행의 소개는 유지합니다. 입력·수정 폼 규칙은 [스토리 수정](#스토리-수정)을 따릅니다. 저장은 V90의 `story_characters.description` 컬럼을 재사용하며 추가 마이그레이션은 없습니다.
 
 **`DELETE /stories/{storyId}`**: 소프트 삭제 후 204. 존재하지 않거나 이미 삭제된 ID는 404를 반환하며, 프론트엔드는 404를 무음 성공으로 처리합니다([웹 사용자 모델](3-2-web-spec.md#웹-사용자-모델)). 소유권 규칙([§4-5](#4-5-인증과-권한))을 적용합니다: 소유 스토리는 소유자만, `user_id`가 NULL인 스토리는 익명(게스트) 요청만 삭제할 수 있고 위반은 403입니다. 404 판정(형식 오류·순차 정수·부재·이미 삭제: 모두 동일 404로 존재 여부 비노출)을 403보다 먼저 적용하고, 삭제는 스토리 행 비관적 쓰기 락으로 처리해 소유권 검사와 `deleted_at` 기록 사이에 이관 클레임이 끼어드는 경쟁을 차단합니다(KNK-69: 채팅 삭제 동일).
