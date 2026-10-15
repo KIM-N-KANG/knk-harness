@@ -82,7 +82,7 @@ erDiagram
 | `invite_code` | `varchar(16)` | UNIQUE | 처음 조회 때 발급하는 8자 초대 코드<br>탈퇴해도 유지 |
 | `inviter_user_id` | `bigint` | FK users, SET NULL | 제출한 초대 코드의 소유자<br>값이 있으면 제출 자격 소진 |
 | `migrated_at` | `timestamptz` | | 이관에 처음 성공한 시각<br>값이 있으면 이관 닫힘 |
-| `migration_attempts` | `integer` | NOT NULL, 기본값 0 | 이관 시도 누계<br>재가입 시 승계 |
+| `migration_attempts` | `integer` | NOT NULL, 기본값 0 | 이관 시도 누계 |
 | `member_trial_seeded_at` | `timestamptz` | | 게스트 체험 사용량을 회원으로 옮긴 시각 |
 | `rejoined_at` | `timestamptz` | | 묘비 재사용으로 만든 계정의 생성 시각 |
 | `reward_identity_user_id` | `bigint` | | 보상 신원<br>NULL이면 자기 자신, 재가입 계정은 최초 계정의 `id` |
@@ -101,17 +101,17 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | `bigint` | PK | |
-| `user_id` | `bigint` | NOT NULL, FK users, CASCADE | 재가입과 묘비 재사용 시 새 소유자로 갱신 |
+| `user_id` | `bigint` | NOT NULL, FK users, CASCADE | |
 | `provider` | `varchar(20)` | NOT NULL, CHECK | |
 | `provider_user_id` | `varchar(255)` | NOT NULL | 제공자가 발급한 사용자 식별자 |
 | `email` | `varchar(255)` | | 저장만 하고 읽지 않음<br>탈퇴 시 NULL |
-| `connected_at` | `timestamptz` | NOT NULL | 연동 시각<br>묘비 재사용 시 갱신 |
+| `connected_at` | `timestamptz` | NOT NULL | 연동 시각 |
 | `last_login_at` | `timestamptz` | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 NULL |
 | `deleted_at` | `timestamptz` | | 묘비 시각<br>NULL이면 살아 있는 연동 |
 
 | 제약과 인덱스 | 정의 |
 |---|---|
-| `uq_social_accounts_provider_user` | `(provider, provider_user_id)` 유니크<br>묘비를 포함하므로 같은 소셜 계정의 재가입은 이 행을 재사용해야 함 |
+| `uq_social_accounts_provider_user` | `(provider, provider_user_id)` 유니크<br>묘비 포함 |
 | `uq_social_accounts_user_provider` | `(user_id, provider)` 유니크<br>한 회원에 같은 제공자는 하나 |
 | `idx_social_accounts_user` | `(user_id)` |
 
@@ -173,7 +173,7 @@ erDiagram
 | `story_drafts` | `user_id` | 탈퇴 시 해당 회원의 행 삭제 |
 | `story_submissions` | `user_id` | 탈퇴 시 해당 회원의 행 삭제 |
 | `device_push_tokens` | `user_id` | 탈퇴 시 해당 회원의 행 삭제 |
-| `credit_transactions` | `idempotency_key` | 가입 보상 `signup:{보상 신원}`<br>초대 보상 `invite:{초대자 신원}:{제출자 신원}:{수혜자 신원}`<br>출석 보상의 신원도 ACCOUNT가 제공 |
+| `credit_transactions` | `idempotency_key` | 가입, 초대, 출석 보상의 멱등 키에 쓸 보상 신원 제공 |
 
 <br>
 
@@ -184,7 +184,7 @@ erDiagram
 | 키 | 값 | 삭제 |
 |---|---|---|
 | `rt:fam:{familyId}` | `{userId}:{현재 갱신 토큰 해시}` | 갱신 토큰 수명 만료, 로그아웃, 재사용 탐지, 탈퇴와 정지 판정 |
-| `rt:tok:{갱신 토큰 해시}` | `familyId`<br>과거 토큰도 유지 | 갱신 토큰 수명 만료<br>유예보다 짧게 남으면 유예 길이까지 연장 |
+| `rt:tok:{갱신 토큰 해시}` | `familyId`<br>과거 토큰도 유지 | 갱신 토큰 수명 만료 |
 | `rt:grace:{제시한 토큰 해시}` | `{새 토큰 해시}:{새 토큰 원문}` | 유예 만료 |
 | `rt:user:{userId}` | `familyId` 집합 | 갱신 토큰 수명 만료, 탈퇴 |
 | `login_handoff:{코드 해시}` | 핸드오프 JSON<br>소비 뒤에는 기기 식별자를 비움 | 핸드오프 수명 만료<br>소비 뒤에는 결과 보관 수명 만료 |
@@ -202,5 +202,3 @@ erDiagram
 | 소셜 연동 | 삭제하지 않음<br>탈퇴는 묘비화와 이메일 삭제 |
 | 회원 동의, 게스트 동의 | 삭제하지 않음 |
 | 페르소나 | 삭제하지 않음<br>삭제 요청은 `deleted_at` 기록 |
-| 프로필 프리셋 썸네일 | 기동 시 생성하는 메모리 값 |
-| Redis 키 | 위 표의 삭제 조건 |
