@@ -105,7 +105,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 턴 저장 | 저장 확정 직후<br>`user_message_saved`, `ai_response_saved` | `chat_id`, `story_id`, `turn_number`<br>`message_length_bucket`, `ai_call_log_id` |
 | 재생성 저장 | 교체 확정 직후<br>`ai_response_regenerated` | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id` |
 | 스트림 실패 | AI 스트림 오류나 저장 오류<br>`ai_stream_failed` | `chat_id`, `story_id`, `ai_call_log_id`, `sentry_event_id` |
-| 스트림 전체 상한 | 120초 초과<br>`chat_turn_timeout` | `chat_id`, `worker_state`(`PENDING`, `RUNNING`, `CANCELLED`) |
+| 스트림 전체 상한 | 120초 초과<br>`chat_turn_timeout` | `chat_id`, `worker_state`(`PENDING`, `RUNNING`, `SAVING`, `CANCELLED`, `FINISHED`) |
 | 실행기 거부 | 백그라운드 작업 제출 실패<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |

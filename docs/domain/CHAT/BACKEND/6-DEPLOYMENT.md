@@ -180,7 +180,7 @@
 | 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
 | 턴 실패 | `manyak.chat.turn.result`의 `failure` 비율 | 배포 전과 같은 수준 |
 | 환불 | `manyak.chat.turn.refund`의 `failure` | 0 |
-| AI 호출 | `ai_call_logs`의 `STARTED` 잔존, `turn_number IS NULL`인 `SUCCEEDED` | 호출 중 중단 없음 |
+| AI 호출 | `ai_call_logs`의 `STARTED` 잔존, `turn_number IS NULL`인 `SUCCEEDED` | `STARTED` 장기 잔존 없음<br>`turn_number`가 없는 `SUCCEEDED`는 저장 전 취소, 저장 실패, 저장 후 관측 실패 중 어느 경로인지 확인 |
 | 실시간 이미지 | 새 턴 본문의 `chat-images/` 마커 | 업로드 위치 발급과 업로드 성공 |
 | 스트림 | 이어쓰기 호출의 `started`부터 `completed`까지 | 이벤트 순서와 한글 인코딩 정상 |
 
