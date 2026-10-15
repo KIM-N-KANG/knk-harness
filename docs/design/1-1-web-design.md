@@ -49,7 +49,7 @@ graph LR
     BFF -->|서버 전용 API_BASE_URL| API[백엔드]
 ```
 
-브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다.
+브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)).
 
 ### SSE 클라이언트 구현 (웹)
 
@@ -131,7 +131,7 @@ graph LR
 
 간편 제작 키워드 단계, 일반 제작·수정 등록 탭의 장르 선택 구조입니다. 계약은 [공통 Spec 장르 검색과 선택](../spec/3-1-client-spec.md#장르-검색과-선택)을 따릅니다.
 
-- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGet2`, 백엔드 operationId가 없어 붙은 이름)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
+- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGetStoriesGenres`)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
 - 표시: 공용 [GenreSearchCombobox](../../../manyak-web/src/features/stories/_shared/components/genre-search-combobox.tsx)(shadcn `combobox`, Base UI `multiple`)가 검색 목록을, 기존 `TagChipGrid`가 칩을 그립니다. 칩 순서는 [genre-catalog](../../../manyak-web/src/features/stories/_shared/utils/genre-catalog.ts)의 `getGenreChips`(대표 장르 뒤에 대표 밖 장르)가, 이전 입력의 정식 이름 비교는 `findGenreByName`(공백 제거·소문자)이 정합니다.
 - 간편 제작 상태: [useGenreSelection](../../../manyak-web/src/features/stories/new/hooks/use-genre-selection.ts)이 고른 id·대표 밖 칩 id·이전 직접 입력 장르를 보관합니다. 화면과 요청은 [resolveSimpleGenreSelection](../../../manyak-web/src/features/stories/new/utils/genre-selection.ts)으로 제공 목록에 맞춰 정리한 값을 쓰고, `toggleSimpleGenre`로 장르를 바꿀 때 정리한 값을 상태에 반영합니다. `KEYWORD_DRAFT` 스냅숏은 정리 전 값(`selectedGenreTagIds`, `addedGenreTagIds`, `customGenreTags`)으로 만들어 복원 직후 목록 도착만으로 저장 비교 키가 바뀌지 않게 합니다. 퍼널의 `requestGenerateStorylines`는 새 requestId 요청에서 `customGenreTags`를 빼고 같은 requestId 재시도만 저장한 값을 보냅니다. 선택한 키워드 드로어는 간편 제작 태그와 제공 장르 전체 목록으로 이름을 찾습니다.
 - 일반 제작·수정 상태: [GeneralStoryGenreSelection](../../../manyak-web/src/features/studio/general/utils/genre-selection.ts)에 대표 밖 칩 순서 `addedTagIds`를 둡니다. 새 등록(임시 저장본·반려 제출본)은 `resolveGeneralGenres`로 제공 목록 밖 장르를 정리하고, 수정은 서버가 기존 장르를 유지하므로 정리하지 않고 제공 목록 밖 장르를 칩으로 보입니다. 제출본·수정 폼의 장르 이름은 `toGenreSelection`이 제공 장르 전체 목록과 비교해 폼 선택으로 바꾸며, 진입 화면은 목록을 받은 뒤 폼을 엽니다.
@@ -259,7 +259,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 기존 Drawer를 앱 프레임에 표시합니다. 프로바이더가 히스토리 레이어 매니저의 `close` 레이어를 직접 열고(`closeOnBack={false}`로 래퍼 레이어는 끔) 뒤로가기는 대기 동작을 취소하며, 동의·거절은 `leaveLayers`로 시트 더미를 먼저 소비한 뒤 대기 중인 생성이나 전송 요청을 재개합니다. 제작 퍼널 가드보다 위 레이어라 뒤로가기는 동의 시트만 닫습니다. `useGuestConsentOpen`은 투어 자동 노출 판정에 열린 상태를 전달합니다. 제작 진입점은 동의를 요청하지 않으며 `use-story-create-funnel`의 생성 핸들러가 입력 검증 뒤 공용 확인 함수를 호출합니다. [문구 상수](../../../manyak-web/src/features/auth/_shared/constants/guest-consent.ts)와 [상세 내용](../../../manyak-web/src/features/legal/content/guest-consent-content.ts)이 안내를 소유하며 사용자 계약은 [웹 Spec](../spec/3-2-web-spec.md#게스트-이용-동의)을 따릅니다.
 
-[GuestConsentSheet](../../../manyak-web/src/features/auth/_shared/components/guest-consent-sheet.tsx)가 생성된 `useGetConsents1`과 `useRecordConsents1`을 호출합니다. 동작별 시트 마운트마다 조회하며 사용하지 않는 조회 캐시는 즉시 제거하고 포커스 복귀 시 자동 재조회는 하지 않습니다. [응답 검증](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-status.ts)은 비어 있지 않은 `requiredVersion`과 boolean `needsConsent`가 모두 있을 때만 유효한 상태로 처리합니다. 이미 동의했다면 Drawer를 표시하지 않고 대기 요청을 재개합니다. 저장 완료는 전송한 버전과 응답 버전의 일치 및 `needsConsent: false`로 확인합니다. 버전 충돌 시 상세를 열고 재조회하되 자동 제출하지 않습니다. 취소와 언마운트 뒤 응답은 원래 동작을 재개하지 않습니다.
+[GuestConsentSheet](../../../manyak-web/src/features/auth/_shared/components/guest-consent-sheet.tsx)가 생성된 `useGetGuestsConsents`와 `usePostGuestsConsents`를 호출합니다. 동작별 시트 마운트마다 조회하며 사용하지 않는 조회 캐시는 즉시 제거하고 포커스 복귀 시 자동 재조회는 하지 않습니다. [응답 검증](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-status.ts)은 비어 있지 않은 `requiredVersion`과 boolean `needsConsent`가 모두 있을 때만 유효한 상태로 처리합니다. 이미 동의했다면 Drawer를 표시하지 않고 대기 요청을 재개합니다. 저장 완료는 전송한 버전과 응답 버전의 일치 및 `needsConsent: false`로 확인합니다. 버전 충돌 시 상세를 열고 재조회하되 자동 제출하지 않습니다. 취소와 언마운트 뒤 응답은 원래 동작을 재개하지 않습니다.
 
 `X-Manyak-Device-Id`는 공통 mutator의 기존 분석 식별자 헤더를 재사용합니다. 동의 전용 식별자를 만들지 않습니다. production에서는 Amplitude SDK 또는 기존 식별자 쿠키, development에서는 기존 개발용 폴백을 사용합니다. 식별자 누락으로 서버가 오류를 반환하면 조회 오류로 차단합니다. 기존 `manyak:guest-consent` 로컬 기록과 메모리 폴백은 더 이상 읽거나 쓰지 않습니다. 서버 API는 `guestPrivacy`만 기록하며 회원 동의로 이관하거나 다른 게스트 API의 요청을 차단하지 않습니다.
 
