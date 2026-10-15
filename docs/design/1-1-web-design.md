@@ -315,6 +315,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 | --- | --- |
 | `/api/auth/[...nextauth]` | OAuth 시작·콜백·세션, 연동 전용 `link-*` 포함 |
 | `/api/auth/handoff-session` | 코드 검증 후 httpOnly 쿠키 이전. 무효·만료 404, 코드 원문 미반환 |
+| `/api/auth/session-refresh` | 브라우저 재발급 게이트의 단일 재발급 지점. 만료 2분 전부터 재발급하고 204, 확정 만료는 401·만료 헤더, 일시 실패는 503 |
 
 ### BFF 프록시
 
@@ -326,7 +327,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### 토큰 세션 (BFF)
 
-NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키를 함께 사용합니다. UI 회원 판정은 `useSession().status`, 회원 데이터는 `GET /auth/me`입니다.
+NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키를 함께 사용합니다. access 만료 시각 쿠키 `manyak_session_expires_at`은 자격증명이 아니어서 브라우저 재발급 게이트가 읽도록 httpOnly를 끕니다. UI 회원 판정은 `useSession().status`, 회원 데이터는 `GET /auth/me`입니다.
 
 로그인은 provider 인증 → Auth.js `signIn` 콜백의 소셜 인증(`POST /auth/social/{provider}`) → 회원 조회 검증 → 토큰 쿠키 기록 순서입니다. 회원 검증 전에 쿠키를 확정해 반쪽 세션을 남기지 않습니다. [backend-session.ts](../../../manyak-web/src/lib/auth/backend-session.ts)의 `authenticateSocialLogin`이 소셜 인증을, `ensureFreshAccessToken`가 요청 전 access 만료 임박과 refresh 결과를 처리합니다.
 
@@ -344,6 +345,8 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 | 토큰·세션 모두 없음 | 게스트 요청 |
 | access 없이 refresh만 남음 | 재발급 시도 |
 | 회원 요청에 백엔드가 401 응답 | 만료 전 access를 백엔드가 거절한 경우(다른 기기 탈퇴·로그아웃으로 family 폐기, 서버 키 회전 등). 강제 재발급 1회 후 새 access를 받았으면 버퍼링한 본문으로 같은 요청을 한 번 재시도한다. 재발급 4xx면 위 만료 처리(쿠키 정리, 401·만료 헤더). 일시 실패로 같은 access가 돌아오면 재시도 없이 백엔드 401을 그대로 통과시킨다. 게스트 요청의 401은 손대지 않는다 |
+
+**브라우저 재발급 게이트.** refresh 토큰은 1회용이라 같은 토큰을 두 번 회전하면 백엔드가 재사용으로 판정합니다. BFF의 [refresh-dedup](../../../manyak-web/src/lib/auth/refresh-dedup.ts)은 한 인스턴스 안의 재발급만 묶으므로, 화면이 열릴 때 몰린 요청이 여러 함수 인스턴스로 흩어지면 각자 재발급합니다. 그래서 버스트를 만드는 브라우저가 먼저 한 번 재발급합니다. [session-refresh-gate](../../../manyak-web/src/lib/auth/session-refresh-gate.ts)는 `customFetch`·`customInstance`·채팅 SSE 요청 직전에 만료 시각 쿠키를 읽고, 만료 2분 전 이내면 `POST /api/auth/session-refresh` 하나를 보내 그동안 들어온 요청이 같은 결과를 기다리게 합니다. 프록시의 선제 재발급(1분 전)보다 넓은 창이라 게이트가 먼저 회전하고, 뒤 요청은 새 쿠키로 프록시를 그대로 지나갑니다. 한 만료 시각에는 한 번만 시도해, 기기 시계가 앞서 서버가 아직 이르다고 보거나 일시 실패해도 같은 값으로 다시 부르지 않고 프록시 재발급에 맡깁니다. 확정 만료면 능동 로그아웃을 알리고 기다리던 요청을 401로 거절해 게스트로 보내지 않습니다. 만료 시각 쿠키가 없는 게스트는 호출하지 않습니다. 탭 사이 동시 재발급과 게이트를 거치지 않은 진행 중 요청은 백엔드의 직전 refresh 유예(10초)가 받습니다([W-034](../adr/1-2-web-adr.md#w-034)).
 
 로그아웃은 서버 실패에도 로컬 정리를 끝냅니다. 탈퇴는 204 이후 정리합니다. 토큰은 브라우저 JS·로그에 노출하지 않습니다. 명시적 로그아웃·탈퇴·세션 만료 로그아웃의 브라우저 측 정리(이 기기의 푸시 토큰 서버 삭제·폐기, 분석 사용자 초기화, 탭 로그인 표시, 제작 복구·완성 요청·결제 확인 레코드)는 [clear-local-member-state](../../../manyak-web/src/features/auth/_shared/utils/clear-local-member-state.ts) 한 곳이 소유하고 세 호출처가 공유합니다. 필수 동의 전 로그아웃(`signOutBeforeConsent`)은 회원 데이터를 연 적이 없어 이 정리를 쓰지 않습니다.
 
