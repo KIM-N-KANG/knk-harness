@@ -32,7 +32,7 @@
 | 403 | `SOCIAL_TOKEN_INVALID` | 연동할 제공자의 신원 증명 검증 실패 |
 | 409 | `SOCIAL_ACCOUNT_LINKED_TO_OTHER_USER` | 다른 회원에게 연동된 소셜 계정 |
 | 409 | `PROVIDER_ALREADY_LINKED` | 이미 연동된 소셜 계정이거나 제공자 |
-| 409 | `SOCIAL_ACCOUNT_WITHDRAWN` | 탈퇴 계정의 묘비 소셜 계정 |
+| 409 | `SOCIAL_ACCOUNT_WITHDRAWN` | 탈퇴 계정의 탈퇴 연동인 소셜 계정 |
 | 409 | `NICKNAME_TAKEN` | 정규화 기준 닉네임 중복 |
 | 409 | `INVITE_ALREADY_REDEEMED` | 초대 코드를 이미 제출한 계정 |
 | 409 | `INVITE_SELF_CODE` | 자기 초대 코드 |
