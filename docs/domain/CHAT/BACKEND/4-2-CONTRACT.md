@@ -25,7 +25,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 **2. 인증 수준**
 
-모든 엔드포인트가 `선택`이다. 인증 필수 경로는 없다.
+모든 엔드포인트의 인증 수준은 `선택`이다. 인증 필수 경로는 없다.
 
 | 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
 |---|---|---|
@@ -220,7 +220,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|---|
 | `[].id` | `string` | 채팅 공개 식별자 |
 | `[].storyId` | `string` | |
-| `[].storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
+| `[].storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본의 제목 |
 | `[].thumbnailUrlSm` | `string / null` | 스토리 표지의 축소 변형 URL<br>생성하거나 업로드한 표지는 원본 URL<br>표지가 없으면 `null` |
 | `[].lastStoryPreview` | `string` | 마지막 AI 응답 전문<br>서버가 자르지 않음<br>턴이 없으면 빈 문자열 |
 | `[].turnCount` | `integer` | 완료된 턴 수 |
@@ -285,7 +285,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|---|
 | `id` | `string` | |
 | `storyId` | `string` | |
-| `storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
+| `storyTitle` | `string` | 읽을 수 있으면 현재 제목, 아니면 마지막 공개본의 제목 |
 | `persona` | `object / null` | 생성 응답과 같은 스냅샷 |
 | `prologue` | `string` | 플레이 이름으로 치환 |
 | `turns` | `object[]` | 완료된 턴을 순서대로 제공 |
@@ -303,7 +303,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 403 | `FORBIDDEN` | 소유자가 아님<br>회원의 소유자 없는 채팅 조회 |
+| 403 | `FORBIDDEN` | 소유자가 아님<br>회원이 소유자 없는 채팅을 조회 |
 | 404 | `NOT_FOUND` | 없거나 삭제됨, 형식 오류 |
 
 <details>
@@ -498,7 +498,7 @@ data: {"code":"AI_STREAM_FAILED","message":"AI 응답 생성 중 오류가 발�
 | 인증 | 선택 |
 | 성공 | 200, SSE |
 
-마지막 턴의 AI 응답을 같은 입력으로 다시 생성해 교체한다. 과금, 체험, 이벤트는 이어쓰기와 같다. `completed`의 `turnId`는 교체한 턴의 ID로 변하지 않는다.
+마지막 턴의 AI 응답을 같은 입력으로 다시 생성해 교체한다. 과금, 체험, 이벤트는 이어쓰기와 같다. `completed`의 `turnId`는 교체한 턴의 ID를 그대로 유지한다.
 
 **1. 요청 본문**
 
@@ -680,7 +680,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 |---|---|---|
 | `id` | `string` | 열람 토큰 |
 | `storyId` | `string` | |
-| `storyTitle` | `string` | 열람자가 읽을 수 있으면 현재 제목, 아니면 마지막 공개본 |
+| `storyTitle` | `string` | 열람자가 읽을 수 있으면 현재 제목, 아니면 마지막 공개본의 제목 |
 | `prologue` | `string` | 공유 원본 채팅의 이름으로 치환 |
 | `turns` | `object[]` | 발급 시점 턴 수까지<br>공유 범위에 포함된 턴의 재생성 결과는 반영 |
 | `turns[].userInput` | `string` | |

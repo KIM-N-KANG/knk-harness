@@ -95,7 +95,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 ### 5-4-5 구조화 로그 이벤트
 
-구조화 로그는 `event_name`을 맨 앞에 둔 JSON을 INFO로 남긴다. 이벤트 이름은 snake_case다. `prod`, `dev`, `jsonlog` 프로파일만 JSON이다. 그 외는 콘솔 패턴이다. JSON에는 `service=manyak-server`가 붙는다. MDC 값은 인코더가 최상위 필드로 싣는다.
+구조화 로그는 `event_name`을 맨 앞에 둔 JSON 형식으로 INFO 수준에 기록한다. 이벤트 이름은 snake_case다. `prod`, `dev`, `jsonlog` 프로파일만 JSON이다. 그 외는 콘솔 패턴이다. JSON에는 `service=manyak-server`가 붙는다. MDC 값은 인코더가 최상위 필드로 싣는다.
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
@@ -154,7 +154,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 기준 | 내용 |
 |---|---|
-| `success` | 턴이 저장까지 확정된 호출 |
+| `success` | 턴 저장이 확정된 호출 |
 | `failure` | 저장에 도달하지 못하고 끝난 호출<br>AI 실패, 시간 초과, 저장 오류, 실행기 거부 |
 | `rejected` | 스트림을 열기 전의 4xx 거부<br>잔액 부족, 한도 소진, 디바이스 헤더 누락<br>알림은 `failure`만 사용 |
 | `cancelled` | 큐에서 시작 전 취소된 호출 |
@@ -229,7 +229,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 **서버 이벤트**
 
-Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가 있는 환경만 전송한다. 재생성은 별도 이벤트 없이 `is_regenerated`로 구분한다. 엔딩 도달은 `ending_id`로 구분한다.
+Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가 있는 환경에서만 전송한다. 재생성은 별도 이벤트 없이 `is_regenerated`로 구분한다. 엔딩 도달은 `ending_id`로 구분한다.
 
 | 이벤트 | 시점 | 프로퍼티 |
 |---|---|---|
@@ -246,4 +246,4 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>AI 오류 코드에 따라 변환 |
 
-저장 성공 뒤의 전송 실패는 이미 성공 이벤트를 발행했으므로 실패 이벤트를 발행하지 않는다.
+저장 성공 뒤 전송에 실패해도 이미 성공 이벤트를 발행했으므로 실패 이벤트를 발행하지 않는다.

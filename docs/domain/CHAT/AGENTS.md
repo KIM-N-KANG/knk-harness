@@ -2,7 +2,7 @@
 
 채팅 목록, 채팅 플레이, SSE 스트리밍, 선택지, 실시간 인물 이미지, 엔딩, 응답 피드백을 다룬다.
 
-세트별 명세는 하위 폴더에 두고, 각 세트의 문서 역할과 읽는 순서는 그 폴더의 `AGENTS.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
+세트별 명세는 하위 폴더에 두고, 각 세트의 문서 역할과 읽는 순서는 해당 폴더의 `AGENTS.md`에 정리한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
 
 <br>
 
@@ -16,7 +16,7 @@
 | `ANDROID/` | 채팅 화면, 스트리밍 수신, 선택지와 이미지 표시 | 미작성 |
 
 - 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다. 기존 ADR 항목은 이관하면서 옮긴다.
-- 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.
+- 세트 사이에 같은 사실을 두 번 정하지 않는다. 다른 세트는 계약을 정한 쪽(BACKEND의 계약 문서)을 기준으로 삼는다.
 
 <br>
 
