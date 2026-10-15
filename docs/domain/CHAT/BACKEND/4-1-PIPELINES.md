@@ -157,21 +157,25 @@ flowchart LR
 스토리 데이터를 한 스냅샷에서 읽기
 *채팅 서비스*`"]
     B --> C["`**과금과 한도**
-턴 체험 또는 선차감, 이미지 체험 또는 비용
+턴 체험 또는 선차감
 *PAYMENT*`"]
-    C --> D["`**업로드 위치 발급**
+    C --> R{"`**실시간 이미지 켬**`"}
+    R -->|예| D["`**이미지 체험 또는 비용, 업로드 위치 발급**
 presigned PUT 1개
-*실시간 이미지*`"]
+*PAYMENT, 실시간 이미지*`"]
+    R -->|아니오| E
     D --> E["`**백그라운드 작업 제출**
 전용 실행기
 *스트림 실행기*`"]
     E --> F["`**AI 호출**
 token, character_image 중계
 *AI 호출*`"]
-    F --> G["`**이미지 검증**
+    F --> G{"`**업로드 위치 발급함**`"}
+    G -->|예| G2["`**이미지 검증**
 발급 URL 대조, 객체 확인
 *실시간 이미지*`"]
-    G --> H["`**턴 저장**
+    G -->|아니오| H
+    G2 --> H["`**턴 저장**
 채팅 잠금, 메시지, 판정 반영
 *턴 저장*`"]
     H --> I["`**completed 전송**
@@ -180,8 +184,8 @@ token, character_image 중계
 환불과 복원`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
-    class A,B,C,E,H,I,J comp
-    class D,F,G task
+    class A,B,C,R,E,G,H,I,J comp
+    class D,F,G2 task
 ```
 
 - 요청 진입 시각을 기록한다. 선택 기록의 세대 판정 기준이다.
