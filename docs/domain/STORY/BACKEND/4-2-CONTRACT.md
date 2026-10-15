@@ -167,6 +167,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `turnCount` | `integer` | 미삭제 채팅의 완료 턴 합 |
 | `likeCount` | `integer` | 좋아요 수 |
 | `status` | `string` | `DRAFT` 또는 `PUBLISHED`<br>현재 만들어지는 스토리는 모두 `PUBLISHED` |
+| `visibility` | `string` | `PUBLIC` 또는 `PRIVATE` |
 | `createdAt` | `string` | 생성 시각 |
 
 <br>
@@ -213,6 +214,7 @@ GET /stories?sort=popular&limit=2
       "turnCount": 96,
       "likeCount": 41,
       "status": "PUBLISHED",
+      "visibility": "PUBLIC",
       "createdAt": "2026-05-28T09:30:00Z"
     },
     {
@@ -233,6 +235,7 @@ GET /stories?sort=popular&limit=2
       "turnCount": 128,
       "likeCount": 32,
       "status": "PUBLISHED",
+      "visibility": "PUBLIC",
       "createdAt": "2026-06-10T12:00:00Z"
     }
   ],
@@ -551,6 +554,7 @@ GET /stories/genres?query=로판
     "turnCount": 128,
     "likeCount": 32,
     "status": "PUBLISHED",
+    "visibility": "PRIVATE",
     "createdAt": "2026-06-10T12:00:00Z"
   }
 ]
@@ -599,7 +603,6 @@ GET /stories/genres?query=로판
 | `hashtags` | `string[]` | 항상 빈 배열 |
 | `isOwner` | `boolean` | 요청 회원이 소유자인지<br>게스트는 `false` |
 | `isLiked` | `boolean` | 요청 회원의 좋아요 여부<br>게스트는 `false` |
-| `visibility` | `string` | `PUBLIC` 또는 `PRIVATE` |
 | `startSettings` | `object[]` | 등록 순서의 시작 설정 |
 | `startSettings[].id` | `string` | 시작 설정 공개 식별자<br>`POST /chats`의 `startSettingId` |
 | `startSettings[].name` | `string` | 시작 장면 이름 |
