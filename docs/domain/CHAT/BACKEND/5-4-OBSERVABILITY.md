@@ -108,6 +108,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 스트림 전체 상한 | 120초 초과<br>`chat_turn_timeout` | `chat_id`, `worker_state`(`PENDING`, `RUNNING`, `CANCELLED`) |
 | 실행기 거부 | 백그라운드 작업 제출 실패<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | `chat_pk`, `idempotency_key`, `error` |
+| AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 Grafana가 Slack으로 알림<br>턴 본문과 선택지 호출이 모두 포함됨 |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
 | 피드백 전달 실패 | WARN과 Sentry 메시지 | 예외 클래스 이름만 |
@@ -188,7 +189,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 항목 | 기준 |
 |---|---|
-| 환불 실패 | `manyak.chat.turn.refund`의 `failure` 증가가 0보다 크면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 |
+| 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
 
