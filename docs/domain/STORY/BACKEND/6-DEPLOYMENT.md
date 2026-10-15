@@ -45,7 +45,7 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 안정화 후 `latest` |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포 시 `latest` 승격<br>실패하면 이전 digest로 복원 |
 | 상태 검사 | 배포 완료, 서버와 AI 컨테이너 정상, health `UP` | 동일 |
 
 <br>
@@ -71,6 +71,8 @@
 |---|---|---|---|
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 주입 없음 | 프리셋 이미지 키를 URL로 조합할 때만 사용 |
 | `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 개발과 운영 태스크 환경 변수, assets 버킷과 CDN 주소 | 버킷과 base URL이 둘 다 있어야 활성화<br>이름은 인물 이미지용이지만 표지와 업로드도 같이 사용 |
+| `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 주입 없음 | 비어 있으면 AWS 기본 S3 주소 |
+| `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
 
 <br>
 
@@ -113,7 +115,7 @@
 
 | 확인 항목 | 기준 | 자동 여부와 한계 |
 |---|---|---|
-| 와이어 계약 변경 | 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>운영은 같은 서비스를 두 레포가 갱신하므로 순서를 워크플로가 보장하지 않음 |
+| 와이어 계약 변경 | 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>개발은 같은 태스크를 두 레포가 갱신하므로 순서를 워크플로가 보장하지 않음<br>운영은 서버와 AI가 별도 서비스라 순서를 수동으로 맞춤|
 | S3 경로 권한과 CORS | Terraform apply가 서버 배포보다 먼저<br>늦으면 저장소가 업로드를 거부하고 새 스토리의 표지는 `null` | 수동 적용<br>서버 배포 워크플로는 Terraform 상태를 검사하지 않음 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행<br>롤링 중 구버전 SELECT 실패 방지 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교가 CI 자동 |
@@ -127,7 +129,7 @@
 | 변경 대상 | 변경 위치와 적용 | 확인 조건 |
 |---|---|---|
 | 공식 계정 | 환경별 태스크 정의 값 변경 후 Terraform apply | 해당 환경 DB에 그 public_id의 사용자 존재<br>오리지널 목록 응답 |
-| PENDING 회수 기준 | 코드 기본값 변경 후 이미지 재빌드 | 컴파일 읽기 제한 시간보다 길게 유지 |
+| PENDING 회수 기준 | 설정 속성 변경 후 새 태스크 | 컴파일 읽기 제한 시간보다 길게 유지 |
 | 완성 소모 이프 | 운영 중 조정은 `credit_policies`의 `story_creation_cost` 오버라이드, 스냅샷 갱신 주기 60초<br>기본값 변경은 코드 수정 후 재빌드 | 최소값 1 이상<br>정책 반영 뒤 완성 요청의 차감량 |
 | 검색 재색인 | 해당 환경의 Terraform 변수 `search_reindex_on_startup=true`로 apply 후 `false`로 되돌림 | 기동 로그에 재색인 실패 WARN 없음<br>검색 결과에 기존 스토리 포함 |
 | 화풍 카탈로그 | `art_styles` 행을 SQL로 추가하거나 비활성화<br>이름, 설명, 순서 변경<br>신규 화풍은 AI가 지원을 배포한 뒤 활성화 | 화풍 목록 응답<br>`ANIME`은 기본값이라 비활성화하지 않음 |

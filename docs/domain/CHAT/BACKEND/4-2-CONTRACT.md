@@ -589,6 +589,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 | 상태 | `code` | 조건 |
 |---|---|---|
+| 400 | `BAD_REQUEST` | `turnId`가 정수가 아님 |
 | 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨<br>턴이 없음 |
 | 409 | `CONFLICT` | `turnId`가 마지막 턴이 아님<br>저장 시점에 본문이 재생성됨 |

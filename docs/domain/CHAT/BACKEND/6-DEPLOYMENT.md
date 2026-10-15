@@ -42,7 +42,7 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 안정화 후 `latest` |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포 시 `latest` 승격<br>실패하면 이전 digest로 복원 |
 | 상태 검사 | 배포 완료, 서버와 AI 컨테이너 정상, health `UP` | 동일 |
 
 <br>
@@ -70,6 +70,8 @@
 |---|---|---|---|
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 주입 없음 | 프리셋 표지 키를 URL로 조합할 때만 사용 |
 | `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 개발과 운영 태스크 환경 변수, assets 버킷과 CDN 주소 | 버킷과 이미지 제공 기본 URL이 둘 다 있어야 실시간 이미지 활성화 |
+| `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 주입 없음 | 비어 있으면 AWS 기본 S3 주소 |
+| `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
 
 <br>
 
@@ -109,7 +111,7 @@
 
 | 확인 항목 | 기준 | 자동 여부와 한계 |
 |---|---|---|
-| 와이어 계약 변경 | SSE 이벤트나 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>운영은 같은 서비스를 두 레포가 갱신하므로 워크플로가 배포 순서를 보장하지 않음 |
+| 와이어 계약 변경 | SSE 이벤트나 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>개발은 같은 태스크를 두 레포가 갱신하므로 순서를 워크플로가 보장하지 않음<br>운영은 서버와 AI가 별도 서비스라 순서를 수동으로 맞춤|
 | S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
