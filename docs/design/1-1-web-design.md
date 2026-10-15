@@ -49,7 +49,7 @@ graph LR
     BFF -->|서버 전용 API_BASE_URL| API[백엔드]
 ```
 
-브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다.
+브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)).
 
 ### SSE 클라이언트 구현 (웹)
 
@@ -109,6 +109,8 @@ graph LR
 
 [query-client.ts](../../../manyak-web/src/lib/query-client.ts): `retry: false`, `staleTime: 60초`, `refetchOnWindowFocus: false`, `throwOnError: false`. 화면이 오류 상태·명시적 재시도를 처리합니다.
 
+채팅 턴 완료([chat-room.tsx](../../../manyak-web/src/features/chats/room/components/chat-room.tsx))는 채팅 목록 쿼리(회원 `getGetMyChatsQueryKey()`, 게스트 `chats-batch`)를 `refetchType: 'all'`로 무효화합니다. 기본 무효화는 구독 중인 쿼리만 다시 받는데 채팅방에 있는 동안 목록은 구독자가 없어 낡음 표시만 남고, 돌아온 순간 옛 순서가 먼저 그려진 뒤 재조회 응답으로 순서가 바뀝니다. 채팅방에 있는 동안 미리 받아 두면 돌아왔을 때 방금 대화한 채팅이 이미 맨 위에 있습니다. 목록 재조회가 선택지 생성을 늦추지 않도록 결과를 기다리지 않습니다.
+
 ### 이프 정책 수치 패칭 (웹)
 
 [useCreditPolicy](../../../manyak-web/src/hooks/use-credit-policy.ts)는 생성 훅의 200 본문을 반환하고 미수신·실패에는 `undefined`를 반환합니다. 기본 staleTime을 사용합니다. `formatCreditAmount`는 미수신 값에 `000`, 화면은 `animate-pulse`를 적용합니다. 토스트·공유 제목은 `useCreditPolicySnapshot`으로 이벤트 시점의 캐시를 읽으며 캐시 도착을 보장하지는 않습니다. 표시 계약·남은 확인은 [공통 Spec](../spec/3-1-client-spec.md#이프-정책-수치-표시)을 따릅니다.
@@ -129,7 +131,7 @@ graph LR
 
 간편 제작 키워드 단계, 일반 제작·수정 등록 탭의 장르 선택 구조입니다. 계약은 [공통 Spec 장르 검색과 선택](../spec/3-1-client-spec.md#장르-검색과-선택)을 따릅니다.
 
-- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGet2`, 백엔드 operationId가 없어 붙은 이름)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
+- 조회: [useGenreCatalog](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-catalog.ts)가 `GET /stories/genres` 생성 훅(`useGetStoriesGenres`)을 감싸 전체 목록과 대표 장르를 제공합니다. [useGenreSearch](../../../manyak-web/src/features/stories/_shared/hooks/use-genre-search.ts)는 입력을 멈추고 200ms 뒤 검색어별 쿼리로 바꾸고, `keepPreviousData`로 이전 결과를 유지하며 `useDelayedLoading`으로 200ms 이상 걸린 요청에만 로딩 문구를 보입니다. 빈 검색어는 전체 목록 쿼리와 같은 키를 써 바로 그립니다. 결과 재사용은 앱 공통 쿼리 캐시(위 기본 옵션)를 따릅니다.
 - 표시: 공용 [GenreSearchCombobox](../../../manyak-web/src/features/stories/_shared/components/genre-search-combobox.tsx)(shadcn `combobox`, Base UI `multiple`)가 검색 목록을, 기존 `TagChipGrid`가 칩을 그립니다. 칩 순서는 [genre-catalog](../../../manyak-web/src/features/stories/_shared/utils/genre-catalog.ts)의 `getGenreChips`(대표 장르 뒤에 대표 밖 장르)가, 이전 입력의 정식 이름 비교는 `findGenreByName`(공백 제거·소문자)이 정합니다.
 - 간편 제작 상태: [useGenreSelection](../../../manyak-web/src/features/stories/new/hooks/use-genre-selection.ts)이 고른 id·대표 밖 칩 id·이전 직접 입력 장르를 보관합니다. 화면과 요청은 [resolveSimpleGenreSelection](../../../manyak-web/src/features/stories/new/utils/genre-selection.ts)으로 제공 목록에 맞춰 정리한 값을 쓰고, `toggleSimpleGenre`로 장르를 바꿀 때 정리한 값을 상태에 반영합니다. `KEYWORD_DRAFT` 스냅숏은 정리 전 값(`selectedGenreTagIds`, `addedGenreTagIds`, `customGenreTags`)으로 만들어 복원 직후 목록 도착만으로 저장 비교 키가 바뀌지 않게 합니다. 퍼널의 `requestGenerateStorylines`는 새 requestId 요청에서 `customGenreTags`를 빼고 같은 requestId 재시도만 저장한 값을 보냅니다. 선택한 키워드 드로어는 간편 제작 태그와 제공 장르 전체 목록으로 이름을 찾습니다.
 - 일반 제작·수정 상태: [GeneralStoryGenreSelection](../../../manyak-web/src/features/studio/general/utils/genre-selection.ts)에 대표 밖 칩 순서 `addedTagIds`를 둡니다. 새 등록(임시 저장본·반려 제출본)은 `resolveGeneralGenres`로 제공 목록 밖 장르를 정리하고, 수정은 서버가 기존 장르를 유지하므로 정리하지 않고 제공 목록 밖 장르를 칩으로 보입니다. 제출본·수정 폼의 장르 이름은 `toGenreSelection`이 제공 장르 전체 목록과 비교해 폼 선택으로 바꾸며, 진입 화면은 목록을 받은 뒤 폼을 엽니다.
@@ -229,7 +231,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 - `StoryDetailCta`가 CTA 행 왼쪽에 `Button variant="ghost" size="icon-lg"`와 `heart-outline-icon`·`heart-filled-icon`(`currentColor`, 선택 `text-destructive`)을 두고 `aria-pressed`·`aria-busy`로 상태를 전달합니다. 게스트 탭은 `isLikeLoginOpen`으로 `LoginRequiredSheet`를 엽니다. 상세는 내 스토리로 판정된 때만 버튼을 빼고, 공개 초기값만 있는 동안(`isLoading`)과 세션 확인 중에는 비활성화합니다.
 - [use-story-like](../../../manyak-web/src/features/stories/detail/hooks/use-story-like.ts)가 진행 중 상세 조회를 취소하고 캐시 스냅샷을 보관한 뒤 `isLiked`와 `likeCount`를 즉시 바꿉니다. 생성 훅의 등록 또는 취소 요청이 실패하면 스냅샷을 복원하고, 204 성공이면 상세와 공개 목록(`GET /stories` 접두 키) 쿼리를 무효화합니다. 조회 취소부터 요청 완료까지 ref로 중복 호출을 막고 버튼을 비활성화합니다.
-- `StoryLikeCount`는 `StoryTurnCount`와 같은 배지로 턴 수 왼쪽에 둡니다. 제작 카드는 하단 메타에 하트·좋아요 수 → 턴 수 → 제작일 순입니다. 두 지표 모두 [format-count](../../../manyak-web/src/lib/format-count.ts)의 `formatCompactCount`로 축약합니다.
+- `StoryLikeCount`는 `StoryTurnCount`와 같은 배지로 턴 수 왼쪽에 둡니다. 제작 카드는 홈 카드와 같은 `sm` 배지를 표지 우하단에 두되 표지가 128px이라 넘치면 배지 단위로 줄바꿈하고, 하단 메타는 공개 범위(공개 `CircleUnlock01Icon`, 비공개 `CircleLock01Icon`, 문구는 [story-visibility](../../../manyak-web/src/features/stories/_shared/constants/story-visibility.ts)) → 제작일 순입니다. 두 지표 모두 [format-count](../../../manyak-web/src/lib/format-count.ts)의 `formatCompactCount`로 축약합니다.
 
 ### 스토리 상세 CTA 배경 연결 (웹)
 
@@ -257,7 +259,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 기존 Drawer를 앱 프레임에 표시합니다. 프로바이더가 히스토리 레이어 매니저의 `close` 레이어를 직접 열고(`closeOnBack={false}`로 래퍼 레이어는 끔) 뒤로가기는 대기 동작을 취소하며, 동의·거절은 `leaveLayers`로 시트 더미를 먼저 소비한 뒤 대기 중인 생성이나 전송 요청을 재개합니다. 제작 퍼널 가드보다 위 레이어라 뒤로가기는 동의 시트만 닫습니다. `useGuestConsentOpen`은 투어 자동 노출 판정에 열린 상태를 전달합니다. 제작 진입점은 동의를 요청하지 않으며 `use-story-create-funnel`의 생성 핸들러가 입력 검증 뒤 공용 확인 함수를 호출합니다. [문구 상수](../../../manyak-web/src/features/auth/_shared/constants/guest-consent.ts)와 [상세 내용](../../../manyak-web/src/features/legal/content/guest-consent-content.ts)이 안내를 소유하며 사용자 계약은 [웹 Spec](../spec/3-2-web-spec.md#게스트-이용-동의)을 따릅니다.
 
-[GuestConsentSheet](../../../manyak-web/src/features/auth/_shared/components/guest-consent-sheet.tsx)가 생성된 `useGetConsents1`과 `useRecordConsents1`을 호출합니다. 동작별 시트 마운트마다 조회하며 사용하지 않는 조회 캐시는 즉시 제거하고 포커스 복귀 시 자동 재조회는 하지 않습니다. [응답 검증](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-status.ts)은 비어 있지 않은 `requiredVersion`과 boolean `needsConsent`가 모두 있을 때만 유효한 상태로 처리합니다. 이미 동의했다면 Drawer를 표시하지 않고 대기 요청을 재개합니다. 저장 완료는 전송한 버전과 응답 버전의 일치 및 `needsConsent: false`로 확인합니다. 버전 충돌 시 상세를 열고 재조회하되 자동 제출하지 않습니다. 취소와 언마운트 뒤 응답은 원래 동작을 재개하지 않습니다.
+[GuestConsentSheet](../../../manyak-web/src/features/auth/_shared/components/guest-consent-sheet.tsx)가 생성된 `useGetGuestsConsents`와 `usePostGuestsConsents`를 호출합니다. 동작별 시트 마운트마다 조회하며 사용하지 않는 조회 캐시는 즉시 제거하고 포커스 복귀 시 자동 재조회는 하지 않습니다. [응답 검증](../../../manyak-web/src/features/auth/_shared/utils/guest-consent-status.ts)은 비어 있지 않은 `requiredVersion`과 boolean `needsConsent`가 모두 있을 때만 유효한 상태로 처리합니다. 이미 동의했다면 Drawer를 표시하지 않고 대기 요청을 재개합니다. 저장 완료는 전송한 버전과 응답 버전의 일치 및 `needsConsent: false`로 확인합니다. 버전 충돌 시 상세를 열고 재조회하되 자동 제출하지 않습니다. 취소와 언마운트 뒤 응답은 원래 동작을 재개하지 않습니다.
 
 `X-Manyak-Device-Id`는 공통 mutator의 기존 분석 식별자 헤더를 재사용합니다. 동의 전용 식별자를 만들지 않습니다. production에서는 Amplitude SDK 또는 기존 식별자 쿠키, development에서는 기존 개발용 폴백을 사용합니다. 식별자 누락으로 서버가 오류를 반환하면 조회 오류로 차단합니다. 기존 `manyak:guest-consent` 로컬 기록과 메모리 폴백은 더 이상 읽거나 쓰지 않습니다. 서버 API는 `guestPrivacy`만 기록하며 회원 동의로 이관하거나 다른 게스트 API의 요청을 차단하지 않습니다.
 
@@ -266,11 +268,12 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 [온보딩 상수](../../../manyak-web/src/features/onboarding/constants.ts)의 `ONBOARDING_FEATURES`가 기능 소개 제목과 카드 문구, 카드별 이미지 경로와 자를 위치(`cropTop`)를 관리하고, 문구 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다.
 
 - **스크롤 구간 크기**: 화면 셸의 `main` 스크롤 영역을 `container-type: size`로 두고, 첫 화면은 `130cqh`(붙는 카드는 `100cqh`), 갤러리 구간은 헤더를 뺀 붙는 영역 높이에 카드 사이마다 `80cqh`를 더한 높이로 잡습니다. 기능 소개 하나에 카드를 3장씩만 두어 한 갤러리에 붙어 있는 시간이 길어지지 않게 합니다. 카드 폭은 스크롤 영역 폭의 80%와 높이에서 캡션 자리를 뺀 값에 맞춘 3:4 박스 중 작은 쪽이고, 카드 사이 간격은 폭의 3%입니다. 그래서 화면이 낮은 기기에서도 카드와 캡션이 한 화면에 들어가고, 갤러리 위아래 빈 공간이 섹션 간격 역할을 합니다. 뷰포트 단위 대신 스크롤 영역 크기를 쓰므로 앱 안내 배너가 있어도 맞습니다.
+- **휠 스크롤**: [use-smooth-scroll](../../../manyak-web/src/hooks/use-smooth-scroll.ts)이 게이트 통과 뒤 `main`에 Lenis를 붙입니다. 위치를 `main`의 `scrollTop`으로 움직여 motion `useScroll`과 로고·스크롤 신호의 네이티브 `scrollTo`가 그대로 동작합니다. 터치는 Lenis가 가로채지 않아 기기 관성을 쓰고, 모션 감소 설정이면 Lenis가 보간을 끕니다. 콘텐츠를 감싼 단일 요소가 없어 `naiveDimensions`로 끝 위치를 매번 `main`에서 읽습니다.
 - **헤더**: `onboarding-header`는 로고만 둔 `absolute` 오버레이이며 높이는 화면 루트의 `--onboarding-header-height` 하나로 정합니다. 갤러리의 붙는 영역은 같은 변수만큼 아래(`top`)에서 붙고 그만큼 높이를 줄입니다. 첫 화면 구간이 맨 위에서 스크롤 영역 위로 완전히 지나갈 때까지의 진행률을 헤더 투명도에 직접 묶고(95%에서 완전히 보임), 투명도가 0이면 `visibility: hidden`으로 포커스 대상에서도 뺍니다. 범위 기반 `useTransform`은 motion이 브라우저 스크롤 타임라인으로 넘기며 범위 밖에서 값을 유지하지 않아, 함수 기반 변환을 씁니다.
 - **첫 화면**: `onboarding-hero`가 motion `useScroll`로 첫 화면 구간의 진행률을 받아 카드 여백(사방 32px에서 0)과 모서리(28px에서 0)에 직접 묶습니다. 제목과 설명 글자 크기는 카드 안쪽 폭에 맞춰 줄어들어, 제목은 320px 폭까지 두 줄, 설명은 360px 폭까지 한 줄을 유지합니다. 이미지 5장(`hero-1`~`hero-5.webp`, Android `bg_login_*` 원본)은 모두 겹쳐 두고, 새 장만 위에서 투명도로 나타나게 해 전환 중 밝기가 출렁이지 않게 합니다. 바로 아래 장은 불투명하게 유지합니다.
 - **갤러리 위치**: `onboarding-feature`가 갤러리 구간 진행률을 [onboarding-gallery](../../../manyak-web/src/features/onboarding/utils/onboarding-gallery.ts)의 `getGalleryPosition`으로 카드 위치(소수)로 바꿉니다. 카드 사이 구간의 앞뒤 20%는 카드가 가운데에 멈춰 있고 나머지에서만 넘어가, 스크롤을 멈춘 자리가 대부분 카드 한 장의 가운데가 됩니다. 각 카드는 카드 순번과 이 값의 차이를 `getSlideMotionStyle`에 넘겨 받은 `transform`, 투명도, 캡션 투명도에 직접 묶여 움직이고, 가장 가까운 카드에 `aria-current="step"`을 둡니다. 섹션 데이터의 `motion`이 전환 방식(`gallery`, `deck`, `stack`)을 정하며, 겹치는 `deck`은 앞 카드가, `stack`은 뒤 카드가 위에 오도록 `z-index`를 줍니다. 카드가 움직이는 갤러리 칸은 넘치는 부분을 잘라, 올라오는 `stack` 카드가 아래 점과 버튼을 덮지 않게 합니다. 칸 위에는 겹친 카드가 비칠 여백을 두고, 카드 칸 높이는 캡션 자리까지 고정합니다. `stack`의 다음 카드는 칸 아래에 잘려 기다리므로, 바로 다음 카드만 지연 로딩 대신 미리 불러와 올라올 때 빈 화면이 보이지 않게 합니다.
 - **잘라 보이기**: 카드 안 화면 칸은 위쪽만 둥근 패널이며 아래로 박스를 넘쳐 잘립니다. 스크린샷을 칸 폭에 맞춘 뒤 `cropTop / 원본 높이`만큼 `translateY`로 올려 필요한 부분이 보이게 하며, 원본 높이의 약 70%가 보입니다.
-- **줄바꿈**: 화면 루트에 `word-break: keep-all`(`break-keep`)을 두어 한국어 문구가 어절 중간에서 끊기지 않게 하고, 가운데 정렬 설명과 카드 설명은 `text-wrap: balance`로 줄 길이를 고르게 맞춥니다. 서비스 용어(이미지 스타일, 썸네일 이미지, 오리지널 스토리, 새 채팅 시작하기)처럼 한 덩어리로 읽혀야 하는 말은 상수 문구에서 `\u00a0`으로 붙입니다.
+- **줄바꿈**: 어절 단위 줄바꿈은 앱 전역 기본 규칙([웹 표현 값](#웹-표현-값)의 줄바꿈)을 따르고, 가운데 정렬 설명과 카드 설명은 `text-wrap: balance`로 줄 길이를 고르게 맞춥니다. 서비스 용어(이미지 스타일, 썸네일 이미지, 오리지널 스토리, 새 채팅 시작하기)처럼 한 덩어리로 읽혀야 하는 말은 상수 문구에서 `\u00a0`으로 붙입니다.
 - **테마별 원본**: `public/onboarding/*-light.webp`와 `*-dark.webp`는 786×1704 원본입니다. 제작과 채팅 화면은 PNG를 무손실과 품질 90 손실 변환 중 작은 쪽으로, 오리지널 스토리 화면은 받은 WebP를 그대로 저장했습니다. 카드마다 `next/image` 두 장 중 `next-themes`가 적용한 `.dark` 클래스에 맞는 한 장만 CSS로 표시합니다. 별도 테마 상태나 마운트 대기 없이 첫 표시와 테마 전환을 처리하며, 숨긴 이미지는 접근성 트리에서도 빠지고 내려받지 않습니다. 화면 밖 카드는 가장자리가 보이기 시작할 때 지연 로딩됩니다.
 
 ### 온보딩 진입 게이트 (웹)
@@ -294,8 +297,10 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 | 영역 | 표현 |
 | --- | --- |
 | 기본·서사 서체 | Pretendard / MaruBuri. `.font-maruburi` 한 곳에서 자간 -2%·행간 175%. 본문 16px(28px), 추천 14px(24.5px) |
-| 목록 행 | 가로 16px·세로 8px 패딩, 열 간격 16px, 하단 8px. 제작 표지 128px·3:4, 채팅 표지 48px·3:4·모서리 12px. 옵션 아이콘 위로 1px 보정; 스켈레톤 동일 |
-| 홈·상세 | 표지 3:4. 상세 헤더 56px, 로딩 지연 300ms·펄스 1.4초, Select 옵션 모서리 12px, 메타 패딩·행 간격 16px |
+| 줄바꿈 | [globals.css](../../../manyak-web/src/app/globals.css) 기본 규칙 한 곳에서 정합니다. `body`에 `word-break: keep-all`(어절 중간에서 끊지 않음)과 `overflow-wrap: break-word`(한 줄보다 긴 어절만 넘칠 때 끊음), `p`와 `li`에 `text-wrap-style: pretty`, `h1`~`h3`에 `balance`를 둡니다. 단축 속성 `text-wrap`은 부모의 `nowrap`을 덮어쓰므로 longhand를 씁니다. 스트리밍하는 채팅 본문(`ChatMessageContent`)은 `pretty`가 글이 붙을 때마다 위쪽 줄까지 다시 배치해 어절이 오가므로 `auto`로 되돌립니다. 컴포넌트에 `break-keep`이나 `wrap-break-word`를 다시 붙이지 않고, 띄어쓰기 없는 긴 글이 flex 자식 폭을 밀어낼 때만 `min-w-0`이나 `wrap-anywhere`를 씁니다 |
+| 목록 행 | 가로 16px·세로 8px 패딩, 열 간격 16px, 하단 8px. 홈·채팅·제작(진행·제출본 포함) 카드 제목은 16px·500으로 Android와 같음. 표지 옆 글 영역은 채팅 카드 위아래 2px, 제작 카드 위아래 4px(스켈레톤 동일) 제작 표지 128px·3:4, 채팅 표지 56px·3:4·모서리 12px. 채팅 카드 글 영역은 표지 높이까지 늘어나 제목과 미리보기는 위에, 메타 줄은 표지 아랫변에 맞춰 두고 미리보기와 최소 8px을 띄움(Android와 같음, 스켈레톤 동일). 옵션 아이콘 위로 1px 보정; 스켈레톤 동일 |
+| 채팅 목록 재정렬 | 목록이 보이는 동안 순서가 바뀌면(다른 기기에서 이어 대화한 뒤 당겨서 새로고침, 턴 완료 전에 나온 경우 등) 행이 `layout="position"`으로 새 자리까지 `SPRING_LAYOUT`(stiffness 360·damping 32·mass 0.6, 약 0.3초 감속) 스프링으로 미끄러진다. 행은 배경색을 칠하고 위 행일수록 앞에 쌓아(`z-index`를 행 수에서 순번을 뺀 값, 목록에 `isolate`) 위로 오르는 카드가 내려가는 카드를 덮고 지나가며 글자가 겹치지 않는다. 생기거나 빠지는 행은 `popLayout`으로 opacity 200ms ease-out 페이드. 첫 표시는 모션 없이 그린다. 동작 줄이기에서는 위치 변화와 페이드 없이 즉시 교체. Android와 같은 움직임 |
+| 홈·상세 | 표지 3:4. 홈 카드 표지 아래 제목·작성자 좌우 4px(스켈레톤 동일). 상세 헤더 56px, 로딩 지연 300ms·펄스 1.4초, Select 옵션 모서리 12px, 메타 패딩·행 간격 16px |
 | 제작 FAB·진행 카드 | FAB hover 3% 확대·primary 불투명도 유지. 진행→완성 카드는 같은 자리에서 opacity 200ms ease-out으로 교체. 빠지는 행은 popLayout으로 새 행과 겹쳐 페이드하고 기존 행은 layout="position"으로 필요한 위치 변화만 200ms 보간. 완성 중 제목은 공용 `TextShimmer`에 4초 주기를 지정. 완성 중 표지는 공용 `MascotStage`(`components/common/mascot-stage`)가 캔버스에 그린다. 안무(`story-completing-choreography`)는 시간에서 마스코트 자세를 계산하는 순수 함수로 Android와 같은 값이고, 키워드·스토리라인·에너지 드링크·타자·인물화·뛰어다니기·벽 점프 막과 쉼 막으로 한 바퀴 37.71초다. 인물화는 이젤 위 세로 캔버스(표지 폭 0.6)의 84칸 격자 SVG path 붓길을 붓털 끝으로 따라 그리고, 베레모·붓 그리기와 붓길 해석·붓질은 채팅 실시간 이미지 로딩과 공용 모듈을 쓴다. 캔·번개·물음표·Z·어지러운 별은 표지 그리기가 마스코트 자세에 붙여 그린다. 낱동작·막 실행기(`lib/mascot/mascot-choreography`)와 마스코트·그림자·바탕 점 그리기(`lib/mascot/draw-mascot`)는 채팅 실시간 이미지 로딩과 함께 쓴다. 바탕 점은 `--foreground-tertiary` 25% 불투명도다. 그리기(`draw-story-completing-stage`)는 테마 토큰을 한 점 캔버스로 sRGB로 읽어 섞는다. 소품 묶음은 별도 캔버스에 불투명하게 그린 뒤 투명도를 한 번에 입힌다. hover·fine pointer 환경에서는 마스코트 눈이 표지 위 포인터를 바라본다. 동작 줄이기에서 행 교체는 즉시, 위치·확대·장식 모션 중지 |
 | 제작 방식 선택 화면 | 시안(`manyak-marketing/story-create-mode-dialog.html`)을 화면으로 옮긴 것으로 선택지는 `border-border` 테두리·모서리 20px 카드이며, 위쪽은 일러스트가 꽉 채우고 아래쪽 구분선 밑에 제목·설명을 둠. hover 시 카드 배경 `muted`. 카드는 iPhone SE(375×667)에서 스크롤 없이 딱 차는 높이부터 Pixel 10(412×924)에서 위 16px·아래 32px 여백이 남는 높이까지 남는 높이를 반씩 채우고, 더 큰 화면에서는 가운데에 놓임. 일러스트 안쪽 크기는 `min(1cqw, 4/3cqh)` 단위라 카드가 납작해지면 장면 전체가 같은 비율로 줄고 가로 가운데에 놓임. 앱 프레임이 448px라 시안의 데스크톱 가로 배치·화살표는 두지 않음. 일러스트는 시안의 CSS·스크립트를 그대로 옮긴 CSS 모듈([create-story-mode-illustrations.module.css](../../../manyak-web/src/features/studio/story/components/create-story-mode-illustrations.module.css))로 두고, 색·곡률·마루부리 서체와 자간만 `globals.css` 토큰으로 바꿔 다크 모드를 따라감. 일반 제작의 제목·한 줄 소개는 시안의 밑줄 대신 `Input`과 같은 칸(고정 높이, 입력 중 포커스 링)으로 그림. 루프는 [use-illustration-timeline](../../../manyak-web/src/features/studio/story/hooks/use-illustration-timeline.ts)이 시안과 같은 setTimeout 박자로 클래스만 바꾸며, 탭이 가려지면 다음 단계에서 멈추고 언마운트 시 중단함 |
 | 제작 퍼널 로딩 | 스토리라인 생성·스토리 완성은 `StoryGeneratingLoading`을 공유하며 `ReasoningText`의 문구 전환 간격과 쉬머 주기를 각각 4초로 지정. 문구 왼쪽 로더는 `ReasoningText` 기본값(`Loader` dots 14px) |
@@ -315,6 +320,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 | --- | --- |
 | `/api/auth/[...nextauth]` | OAuth 시작·콜백·세션, 연동 전용 `link-*` 포함 |
 | `/api/auth/handoff-session` | 코드 검증 후 httpOnly 쿠키 이전. 무효·만료 404, 코드 원문 미반환 |
+| `/api/auth/session-refresh` | 브라우저 재발급 게이트의 단일 재발급 지점. 만료 2분 전부터 재발급하고 204, 확정 만료는 401·만료 헤더, 일시 실패는 503 |
 
 ### BFF 프록시
 
@@ -326,7 +332,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### 토큰 세션 (BFF)
 
-NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키를 함께 사용합니다. UI 회원 판정은 `useSession().status`, 회원 데이터는 `GET /auth/me`입니다.
+NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키를 함께 사용합니다. access 만료 시각 쿠키 `manyak_session_expires_at`은 자격증명이 아니어서 브라우저 재발급 게이트가 읽도록 httpOnly를 끕니다. UI 회원 판정은 `useSession().status`, 회원 데이터는 `GET /auth/me`입니다.
 
 로그인은 provider 인증 → Auth.js `signIn` 콜백의 소셜 인증(`POST /auth/social/{provider}`) → 회원 조회 검증 → 토큰 쿠키 기록 순서입니다. 회원 검증 전에 쿠키를 확정해 반쪽 세션을 남기지 않습니다. [backend-session.ts](../../../manyak-web/src/lib/auth/backend-session.ts)의 `authenticateSocialLogin`이 소셜 인증을, `ensureFreshAccessToken`가 요청 전 access 만료 임박과 refresh 결과를 처리합니다.
 
@@ -344,6 +350,8 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 | 토큰·세션 모두 없음 | 게스트 요청 |
 | access 없이 refresh만 남음 | 재발급 시도 |
 | 회원 요청에 백엔드가 401 응답 | 만료 전 access를 백엔드가 거절한 경우(다른 기기 탈퇴·로그아웃으로 family 폐기, 서버 키 회전 등). 강제 재발급 1회 후 새 access를 받았으면 버퍼링한 본문으로 같은 요청을 한 번 재시도한다. 재발급 4xx면 위 만료 처리(쿠키 정리, 401·만료 헤더). 일시 실패로 같은 access가 돌아오면 재시도 없이 백엔드 401을 그대로 통과시킨다. 게스트 요청의 401은 손대지 않는다 |
+
+**브라우저 재발급 게이트.** refresh 토큰은 1회용이라 같은 토큰을 두 번 회전하면 백엔드가 재사용으로 판정합니다. BFF의 [refresh-dedup](../../../manyak-web/src/lib/auth/refresh-dedup.ts)은 한 인스턴스 안의 재발급만 묶으므로, 화면이 열릴 때 몰린 요청이 여러 함수 인스턴스로 흩어지면 각자 재발급합니다. 그래서 버스트를 만드는 브라우저가 먼저 한 번 재발급합니다. [session-refresh-gate](../../../manyak-web/src/lib/auth/session-refresh-gate.ts)는 `customFetch`·`customInstance`·채팅 SSE 요청 직전에 만료 시각 쿠키를 읽고, 만료 2분 전 이내면 `POST /api/auth/session-refresh` 하나를 보내 그동안 들어온 요청이 같은 결과를 기다리게 합니다. 프록시의 선제 재발급(1분 전)보다 넓은 창이라 게이트가 먼저 회전하고, 뒤 요청은 새 쿠키로 프록시를 그대로 지나갑니다. 한 만료 시각에는 한 번만 시도해, 기기 시계가 앞서 서버가 아직 이르다고 보거나 일시 실패해도 같은 값으로 다시 부르지 않고 프록시 재발급에 맡깁니다. 확정 만료면 능동 로그아웃을 알리고 기다리던 요청을 401로 거절해 게스트로 보내지 않습니다. 만료 시각 쿠키가 없는 게스트는 호출하지 않습니다. 탭 사이 동시 재발급과 게이트를 거치지 않은 진행 중 요청은 백엔드의 직전 refresh 유예(10초)가 받습니다([W-034](../adr/1-2-web-adr.md#w-034)).
 
 로그아웃은 서버 실패에도 로컬 정리를 끝냅니다. 탈퇴는 204 이후 정리합니다. 토큰은 브라우저 JS·로그에 노출하지 않습니다. 명시적 로그아웃·탈퇴·세션 만료 로그아웃의 브라우저 측 정리(이 기기의 푸시 토큰 서버 삭제·폐기, 분석 사용자 초기화, 탭 로그인 표시, 제작 복구·완성 요청·결제 확인 레코드)는 [clear-local-member-state](../../../manyak-web/src/features/auth/_shared/utils/clear-local-member-state.ts) 한 곳이 소유하고 세 호출처가 공유합니다. 필수 동의 전 로그아웃(`signOutBeforeConsent`)은 회원 데이터를 연 적이 없어 이 정리를 쓰지 않습니다.
 
