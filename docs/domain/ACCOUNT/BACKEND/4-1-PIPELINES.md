@@ -262,8 +262,6 @@ Redis 스크립트`"]
 
 ### 4-1-9 핸드오프
 
-웹은 인앱 브라우저에서도 그 자리에서 로그인하므로 새 핸드오프를 만들지 않는다. 이 흐름은 외부 브라우저 전환 링크를 이미 받은 사용자의 복구를 위해 유지한다.
-
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
