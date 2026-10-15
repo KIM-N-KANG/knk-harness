@@ -280,13 +280,13 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 | 인증 | 불필요 |
 | 성공 | 200 |
 
-폐기 예정이며 `GET /stories?filter=original`이 대체한다. 쿼리와 응답은 공개 목록에서 `filter`를 뺀 것과 같다.
+폐기 예정이며 `GET /stories?filter=original`이 대체한다. 쿼리가 없고 응답은 공개 목록 카드의 배열이며 페이지네이션이 없다.
 
 **1. 실패 응답**
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 공개 목록과 같음 |
+| 400 | `BAD_REQUEST` | 없음 |
 
 <br>
 
@@ -1585,7 +1585,6 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 |---|---|---|
 | 400 | `BAD_REQUEST` | 등록과 같은 검증 실패<br>인물 이름 변경으로 생성된 이미지 이름이 120자 초과 |
 | 400 | `INVALID_GENRE` | 허용되지 않는 장르 |
-| 400 | `GUEST_CANNOT_PUBLISH` | 소유자 없는 스토리에 `PUBLIC` 지정 |
 | 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음<br>업로드를 마친 뒤 다시 보냄 |
 | 400 | `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과 |
 | 403 | `FORBIDDEN` | 소유자가 아닌 요청 |

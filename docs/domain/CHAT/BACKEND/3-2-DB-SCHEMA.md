@@ -13,7 +13,7 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>채팅과 공유는 외부 노출용으로 `public_id uuid`를 따로 둠<br>채팅과 공유를 식별하는 API는 공개 식별자만 사용<br>턴 ID는 AI 응답 메시지의 `bigint` PK를 그대로 노출 |
-| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>갱신하는 테이블에는 `updated_at`이 있음<br>아래 표에서는 생략 |
+| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>`updated_at`은 채팅에만 있음<br>아래 표에서는 생략 |
 | 삭제 | 채팅 삭제 시 `story_chats.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 채팅의 삭제 여부로 제외 |
 | FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제 |
 | 순서 | 메시지는 채팅 안에서 `message_order`를 1부터 부여<br>선택지는 메시지 안에서 `choice_order`를 1부터 부여 |
@@ -30,7 +30,7 @@
 
 ```mermaid
 erDiagram
-    users |o--o{ story_chats : "ACCOUNT, 소유"
+    users |o--o{ story_chats : "ACCOUNT, 소유, FK 없음"
     stories ||--o{ story_chats : "STORY"
     story_start_settings |o--o{ story_chats : "STORY, 시작 설정"
     story_chats ||--o{ story_messages : "메시지"

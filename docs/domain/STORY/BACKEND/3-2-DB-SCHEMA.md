@@ -13,7 +13,7 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>외부에 노출하는 리소스는 `public_id uuid`를 따로 두고 API는 이 값만 사용: 스토리, 시작 설정, 인물, 인물 이미지<br>간편 제작 진행, 태그, 스토리라인, 추천 정보는 임시 리소스라 `bigint` ID를 그대로 노출<br>화풍은 공개 카탈로그라 문자열 `code`를 식별자로 노출 |
-| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>갱신하는 테이블에는 `updated_at`이 있음<br>아래 표에서는 생략 |
+| 시각 | `timestamp with time zone`<br>카탈로그 연결 테이블과 장르 별칭을 제외한 모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>`updated_at`은 스토리, 설정, 간편 제작 진행, 생성 요청, 제출본, 초안처럼 갱신하는 테이블에만 있음<br>아래 표에서는 생략 |
 | 삭제 | 스토리 삭제 시 `stories.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 스토리의 삭제 여부로 제외 |
 | FK | 스토리를 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정이나 도달 기록이 참조하는 엔딩을 삭제해도 채팅과 도달 기록은 유지<br>외래 키 값만 비움(`ON DELETE SET NULL`) |
 | 순서 | `smallint sort_order`<br>추천 입력, 엔딩, 로어북, 스토리라인, 추천 정보는 1부터, 주요 사건은 0부터 |
@@ -30,7 +30,7 @@
 
 ```mermaid
 erDiagram
-    users |o--o{ stories : "ACCOUNT, 소유"
+    users |o--o{ stories : "ACCOUNT, 소유, FK 없음"
     stories ||--|| story_settings : "설정"
     stories ||--o{ story_start_settings : "시작 설정"
     story_start_settings ||--|{ story_suggested_inputs : "추천 입력 3개"
@@ -119,7 +119,7 @@ erDiagram
 
 ```mermaid
 erDiagram
-    users |o--o{ story_creation_sessions : "ACCOUNT, 소유"
+    users |o--o{ story_creation_sessions : "ACCOUNT, 소유, FK 없음"
     story_creation_sessions |o--o| stories : "완성 시"
     story_creation_sessions ||--|{ story_creation_characters : "입력 인물"
     story_creation_sessions ||--o{ story_creation_session_tags : "선택 태그"
@@ -291,10 +291,10 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `start_setting_id` | bigint | NOT NULL, FK CASCADE | |
-| `name` | varchar(100) | NOT NULL | 시작 설정 안에서 유일 |
-| `min_turns` | integer | NOT NULL | |
-| `achievement_condition` | text | NOT NULL | |
-| `epilogue` | text | NOT NULL | 도달 시 출력 가이드 |
+| `name` | varchar(100) | | 시작 설정 안에서 유일<br>레거시 행은 `NULL` |
+| `min_turns` | integer | | 레거시 행은 `NULL` |
+| `achievement_condition` | text | | 레거시 행은 `NULL` |
+| `epilogue` | text | | 도달 시 출력 가이드<br>레거시 행은 `NULL` |
 | `sort_order` | smallint | NOT NULL, UNIQUE `(start_setting_id, sort_order)` | |
 | `enabled` | boolean | NOT NULL | 레거시 행은 `false`로 비활성화해 보존 |
 | `title` | | | 사용하지 않음 |

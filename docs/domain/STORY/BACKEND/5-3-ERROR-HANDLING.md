@@ -12,7 +12,7 @@
 |---|---|
 | `code` | HTTP 상태 이름이 기본<br>사유를 구분해야 하는 곳만 앱 코드 |
 | `message` | 사용자 안내 문구<br>스택트레이스와 내부 구현 정보는 포함하지 않음<br>500은 고정 안내 문구 사용 |
-| `details` | 필드 검증 실패에만 채움<br>서비스에서 판정한 400은 `details` 없이 `message`에 사유<br>장르 검증의 `INVALID_GENRE`는 예외로 원본 인덱스별 `details` 포함 |
+| `details` | 필드 검증 실패에 채움<br>서비스에서 판정한 400도 필드가 특정되면 `details`에 그 필드<br>직접 입력 장르는 `customGenreTags`, 기본 주인공 이름은 `protagonistName`, 장르는 원본 인덱스별 `genres[i]` |
 | 비동기 검수 | 반려와 실패는 접수 응답 202를 나중에 오류로 바꾸지 않으며 제출본 상태로 조회 |
 | 초안 버전 충돌 | `details`를 현재 상태 전달에 사용<br>`field`는 `version`과 `updatedAt` |
 
@@ -26,7 +26,6 @@
 |---|---|---|
 | 400 | `CUSTOM_GENRE_NOT_ALLOWED` | 새 `requestId`의 스토리라인 요청에 `customGenreTags` 값 존재 |
 | 400 | `INVALID_GENRE` | 일반 제작과 수정에서 허용되지 않는 장르<br>`details`에 무효 원소의 `genres[i]` |
-| 400 | `GUEST_CANNOT_PUBLISH` | 소유자 없는 스토리에 `PUBLIC` 지정 |
 | 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음 |
 | 400 | `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과 |
 | 402 | `INSUFFICIENT_CREDIT` | 회원의 이프 부족, 완성 경로 |

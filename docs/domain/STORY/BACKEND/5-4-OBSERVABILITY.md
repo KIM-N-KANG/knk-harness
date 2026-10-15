@@ -103,7 +103,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 생성 이미지 업로드 실패 | 디코딩 또는 업로드 실패<br>`character_image_upload_failed`, `thumbnail_image_upload_failed` | `story_public_id`, `error_type`(예외 클래스 이름)<br>AI가 `error`를 포함해 반환한 이미지는 로그 없이 제외 |
 | 이미지 단계 제한 시간 소진 | 남은 시간이 없어 건너뛸 때<br>`character_image_budget_exhausted`, `thumbnail_image_budget_exhausted` | `story_public_id`, `stage`(`upload`, `cleanup`) |
 | 보상 삭제 생략과 실패 | `generated_image_cleanup_skipped`<br>`character_image_cleanup_failed`, `thumbnail_image_cleanup_failed` | `story_public_id`, `reason`(`story_exists`, `lookup_failed`), `error_type`<br>`lookup_failed`는 고아 객체 가능 |
-| 검색 색인과 재색인 실패 | 커밋 후 리스너, 기동 시 재색인과 인덱스 초기화 | 예외 클래스 이름만 WARN<br>평문 로그 |
+| 검색 색인과 재색인 실패 | 커밋 후 리스너, 기동 시 재색인과 인덱스 초기화 | 스토리 내부 ID와 예외 클래스 이름을 WARN<br>평문 로그 |
 
 <details>
 <summary><b>예시: 완성 성공 로그 1줄</b></summary>
