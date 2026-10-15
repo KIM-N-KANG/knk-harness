@@ -115,20 +115,20 @@ erDiagram
 | `user_id` | bigint | | 게스트 채팅은 `NULL`<br>이관 시 채워짐 |
 | `story_id` | bigint | NOT NULL, FK `stories.id` | |
 | `start_setting_id` | bigint | FK `story_start_settings.id` SET NULL | |
-| `persona_name_snapshot` | text | | 시작 시 선택한 페르소나 이름 |
-| `persona_description_snapshot` | text | | 시작 시 선택한 페르소나 설명 |
+| `persona_name_snapshot` | text | CHECK 1~20자<br>설명과 함께 있거나 함께 없음 | 시작 시 선택한 페르소나 이름 |
+| `persona_description_snapshot` | text | CHECK 1~1,000자 | 시작 시 선택한 페르소나 설명 |
 | `creation_id` | uuid | | 간편 제작 스토리의 스토리라인 생성 요청 ID<br>일반 제작 스토리는 `NULL` |
-| `story_prologue_snapshot` | text | | 시작 시점의 프롤로그<br>시작 설정 참조가 끊겼을 때 표시 |
+| `story_prologue_snapshot` | text | | 시작 시점의 프롤로그<br>읽을 수 없는 스토리에서 시작 설정 참조가 끊겼을 때 표시 |
 | `title` | varchar(100) | | 사용하지 않음 |
 | `summary` | text | | 사용하지 않음 |
-| `current_turn` | integer | NOT NULL, 기본 0 | 완료된 턴 수 |
-| `regenerated_count` | integer | NOT NULL, 기본 0 | 재생성 완료 횟수 |
+| `current_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 완료된 턴 수 |
+| `regenerated_count` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 재생성 완료 횟수 |
 | `target_main_event_id` | bigint | FK `story_main_events.id` SET NULL | 목표 사건 |
 | `target_progress_turns` | integer | NOT NULL, 기본 0 | 목표 사건 진행 턴 수 |
 | `occurred_main_event_names_snapshot` | jsonb | | 거쳐온 사건 이름 배열 |
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 최초 도달 엔딩 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 시점의 엔딩 이름 |
-| `status` | varchar(20) | NOT NULL, 기본 `ACTIVE` | `ACTIVE`, `ENDED` |
+| `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `ENDED` | |
 | `deleted_at` | timestamptz | | |
 
 | 인덱스 | 컬럼 |
@@ -146,9 +146,9 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | 턴 ID는 AI 응답 행의 값 |
 | `chat_id` | bigint | NOT NULL, FK `story_chats.id` | |
-| `role` | varchar(16) | NOT NULL | `USER`, `ASSISTANT`, `SYSTEM` |
+| `role` | varchar(16) | NOT NULL, CHECK `USER` `ASSISTANT` `SYSTEM` | |
 | `content` | text | NOT NULL | AI 응답은 재생성으로 교체됨 |
-| `message_order` | integer | NOT NULL, UNIQUE `(chat_id, message_order)` | |
+| `message_order` | integer | NOT NULL, CHECK `> 0`, UNIQUE `(chat_id, message_order)` | |
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
 
@@ -162,7 +162,7 @@ erDiagram
 | `chat_id` | bigint | NOT NULL, FK `story_chats.id` | |
 | `message_id` | bigint | NOT NULL, FK `story_messages.id` | AI 응답 메시지 |
 | `choice_text` | text | NOT NULL | |
-| `choice_order` | smallint | NOT NULL, UNIQUE `(message_id, choice_order)` | |
+| `choice_order` | smallint | NOT NULL, CHECK `> 0`, UNIQUE `(message_id, choice_order)` | |
 | `is_selected` | boolean | NOT NULL, 기본 `false` | 다음 턴 저장 시 기록 |
 | `selected_at` | timestamptz | | |
 | `is_edited` | boolean | | `NULL`은 선택 기록 없음<br>`false`는 그대로 보냄, `true`는 고쳐 보냄 |
@@ -225,9 +225,9 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `user_id` | bigint | | 회원이면 기록 |
-| `body` | text | NOT NULL | |
+| `body` | text | NOT NULL, CHECK 공백만은 불가 | |
 | `email` | varchar(320) | | |
-| `platform` | varchar(20) | | `IOS`, `ANDROID`, `WEB` |
+| `platform` | varchar(20) | CHECK `IOS` `ANDROID` `WEB` | |
 | `app_version` | varchar(50) | | |
 | `user_agent` | varchar(512) | | 요청 헤더 원문을 512자로 잘라 저장 |
 

@@ -99,7 +99,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>SSE는 스트림이 닫힐 때 |
+| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>SSE는 요청 디스패치가 끝나는 시점이라 스트림 전체 시간이 아님 |
 | AI 호출 | 호출 직전 `ai_call_started`, 종료 시 `ai_call_completed` | `feature`, `ai_call_log_id`<br>종료 시 `outcome`(`success`, `failure`), `duration_ms` |
 | 채팅 생성 | 저장 후<br>`chat_started` | `story_id`, `chat_id` |
 | 턴 저장 | 저장 확정 직후<br>`user_message_saved`, `ai_response_saved` | `chat_id`, `story_id`, `turn_number`<br>`message_length_bucket`, `ai_call_log_id` |
@@ -107,7 +107,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 스트림 실패 | AI 스트림 오류나 저장 오류<br>`ai_stream_failed` | `chat_id`, `story_id`, `ai_call_log_id`, `sentry_event_id` |
 | 스트림 전체 상한 | 120초 초과<br>`chat_turn_timeout` | `chat_id`, `worker_state`(`PENDING`, `RUNNING`, `CANCELLED`) |
 | 실행기 거부 | 백그라운드 작업 제출 실패<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
-| 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | `chat_pk`, `idempotency_key`, `error` |
+| 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
 | 피드백 전달 실패 | WARN과 Sentry 메시지 | 예외 클래스 이름만 |
@@ -188,7 +188,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 항목 | 기준 |
 |---|---|
-| 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 |
+| 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 <br>이미지 환불과 이미지 체험 복원 실패는 지표에 없어 알림 대상이 아님 |
 | AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 Grafana가 Slack으로 알림<br>턴 본문과 선택지 호출이 모두 포함됨 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
@@ -204,7 +204,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 사용자 입력 원문, 프롬프트, AI 응답 본문 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>입력은 길이 구간만 기록<br>원문은 AI 서버의 Langfuse에서 관리 |
 | 선택지 원문 | 로그에 싣지 않음 |
 | 실시간 이미지 | URL과 바이너리를 로그에 싣지 않음 |
-| 공유 토큰 | 로그, Sentry, 분석 이벤트에 싣지 않음 |
+| 공유 토큰 | 분석 이벤트에 싣지 않음<br>요청 로그의 `endpoint`와 Sentry의 경로에는 열람 요청 경로가 그대로 남음 |
 | 피드백 본문, 이메일 | 로그에 싣지 않음<br>Slack과 Google Form에는 본문과 메타 전달 |
 | Sentry 이벤트 | 5xx와 스트림 실패를 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 | JDBC 스팬 | placeholder SQL만 수집<br>바인딩 값 제외 |
@@ -217,7 +217,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 |---|---|
 | `ai_call_logs` `STARTED` 적재 실패 | 예외가 전파되어 AI 호출을 시작하지 않음<br>환불 처리 |
 | `ai_call_logs` 전이 저장 실패 | 예외가 전파됨<br>성공한 AI 호출도 스트림 실패로 끝남 |
-| 턴 번호 사후 반영, 응답 `meta` 반영, 지표 기록 실패 | 무시하고 호출 결과 유지 |
+| 응답 `meta` 반영, 지표 기록 실패 | 무시하고 호출 결과 유지 |
+| 턴 번호 사후 반영 실패 | 예외가 전파됨<br>저장된 턴은 유지되고 스트림은 `error`로 끝남 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
 | OTLP 트레이스와 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Amplitude 전송 실패 | 비동기 호출 뒤 WARN 로그만 남기고 재시도 없음 |

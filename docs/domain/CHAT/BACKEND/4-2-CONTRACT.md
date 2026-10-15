@@ -39,7 +39,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|---|---|
 | `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그와 AI 호출 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
-| `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
+| `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별<br>Amplitude 연결에는 정수 문자열이어야 함 | 선택 |
 | `X-Manyak-Device-Id` | 문자열 | 게스트의 턴과 이미지 체험 한도 집계<br>AI 서버에는 해시로 전달 | 게스트 이어쓰기와 재생성은 필수 |
 | `User-Agent` | 문자열 | 피드백에 함께 저장 | 선택 |
 
@@ -224,7 +224,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `[].thumbnailUrlSm` | `string / null` | 스토리 표지의 축소 변형 URL<br>생성하거나 업로드한 표지는 원본 URL<br>표지가 없으면 `null` |
 | `[].lastStoryPreview` | `string` | 마지막 AI 응답 전문<br>서버가 자르지 않음<br>턴이 없으면 빈 문자열 |
 | `[].turnCount` | `integer` | 완료된 턴 수 |
-| `[].reachedEndings` | `string[]` | 도달한 엔딩 이름<br>채팅당 최대 1개, 도달 전 빈 배열 |
+| `[].reachedEndings` | `string[]` | 도달한 엔딩 이름<br>채팅당 최대 1개, 도달 전 빈 배열<br>기본 주인공 이름으로 치환해 상세와 완료 이벤트의 플레이 이름 표기와 다를 수 있음 |
 | `[].updatedAt` | `string` | 마지막 진행 시각 |
 | `[].persona` | `object / null` | 채팅 시작 시 페르소나 스냅샷 `{name}` |
 
@@ -378,7 +378,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 인증 | 선택 |
 | 성공 | 200, SSE |
 
-회원은 턴마다 이프를 선차감하고 게스트는 체험 횟수를 예약한다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다.
+회원은 턴 체험 잔여가 있으면 무료이고 없으면 턴마다 이프를 선차감한다. 게스트는 체험 횟수를 예약한다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다. 같은 입력을 다시 보내면 새 턴이 되어 다시 과금한다. 엔딩에 도달한 채팅도 이어쓰기와 선택지 생성은 할 수 있다.
 
 **1. 요청 본문**
 
@@ -388,7 +388,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `userSource` | `string` | 선택 | `choice`, `edited_choice`, `typed`<br>AI에 그대로 전달하고 생략하면 전달하지 않음 |
 | `sourceTurnId` | `integer` | 선택 | 고른 선택지가 속한 직전 턴의 ID<br>현재 마지막 턴이 아니거나 다른 채팅의 턴이면 기록만 생략 |
 | `choiceOrder` | `integer` | 선택 | 고른 선택지의 순번, 1부터<br>`turns[].choices` 인덱스 + 1<br>범위 밖은 기록만 생략 |
-| `realtimeImage` | `boolean` | 선택 | 실시간 이미지 생성 여부, 기본값 `true` |
+| `realtimeImage` | `boolean` | 선택 | 실시간 이미지 생성 여부, 기본값 `true`<br>`true`라도 저장소 미설정이나 게스트의 이미지 체험 소진이면 생성 없이 진행<br>회원은 이미지 체험을 다 쓰면 이미지 비용을 턴 비용과 합산해 차감 |
 
 <br>
 
@@ -401,16 +401,16 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `started` | `chatId` | `string` | 스트림 시작 |
 | `token` | `text` | `string` | AI 본문 조각 |
 | `character_image` | `name` | `string` | 인물 이름 |
-| `character_image` | `imageUrl` | `string` | 인물 이미지 URL<br>같은 인물이 다시 말해도 매번 전송 |
+| `character_image` | `imageUrl` | `string` | 인물 이미지 URL<br>한 턴에서 인물마다 첫 대사 앞에 한 번 |
 | `completed` | `chatId` | `string` | |
 | `completed` | `turnId` | `integer` | 저장된 턴 ID |
-| `completed` | `aiOutput` | `string` | 저장된 본문 전체<br>이미지 마커 포함 |
+| `completed` | `aiOutput` | `string` | 저장된 본문 전체<br>이미지 마커 포함<br>검증으로 토큰 누적분과 달라질 수 있어 클라이언트는 이 값으로 교체 |
 | `completed` | `choices` | `string[]` | 항상 빈 배열<br>선택지는 별도 요청으로 생성 |
 | `completed` | `reachedEnding` | `string / null` | 이번 턴이 도달 턴이면 엔딩 이름 |
 | `error` | `code` | `string` | AI 서버가 보낸 코드 또는 `AI_STREAM_FAILED` |
 | `error` | `message` | `string` | AI 서버가 보낸 문구 또는 고정 문구 |
 
-`completed`와 `error` 없이 스트림이 끝나면 결과를 알 수 없다. 클라이언트는 상세를 다시 조회해 서버 상태에 맞춘다.
+`completed`와 `error` 없이 스트림이 끝나면 결과를 알 수 없다. 클라이언트는 상세를 다시 조회해 서버 상태에 맞춘다. `error`를 받아도 저장된 턴이 있을 수 있으므로 다시 보내기 전에 상세를 확인한다.
 
 <br>
 
@@ -737,9 +737,9 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `body` | `string` | 필수 | 공백만 있으면 안 되고 2,000자 이하 |
-| `email` | `string` | 선택 | 이메일 형식, 320자 이하<br>공백은 저장하지 않음 |
+| `email` | `string` | 선택 | 이메일 형식, 320자 이하<br>비어 있으면 저장하지 않음 |
 | `platform` | `string` | 선택 | `IOS`, `ANDROID`, `WEB` |
-| `appVersion` | `string` | 선택 | 50자 이하<br>공백은 저장하지 않음 |
+| `appVersion` | `string` | 선택 | 50자 이하<br>비어 있으면 저장하지 않음 |
 
 <br>
 
