@@ -45,7 +45,7 @@
 
 | `meta` 필드명 | 타입 | 처리 |
 |---|---|---|
-| `model`, `provider` | `string` | 실제 모델과 공급자<br>채팅 스텁은 `meta`를 보내지 않아 기록되지 않음 |
+| `model`, `provider` | `string` | 실제 모델과 공급자<br>스텁 환경은 둘 다 `stub` |
 | `promptVersions` | `map<string, integer>` | 템플릿별 버전 |
 | `inputTokenCount`, `outputTokenCount` | `integer / null` | 이미지 호출을 제외한 토큰 합계 |
 | `retryCount` | `integer` | AI 내부 보완 호출 횟수 |
