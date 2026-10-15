@@ -24,7 +24,7 @@
 |---|---|
 | 서명 | 제공자의 공개 키 집합으로 검증 |
 | 발급자 | Google은 `https://accounts.google.com`과 `accounts.google.com`, Kakao는 `https://kauth.kakao.com` |
-| 대상 | 허용 client ID 목록 중 하나를 포함<br>목록이 비면 전부 거절 |
+| 대상 | 허용 client ID 목록 중 하나를 포함 |
 | 인가 대상 | 대상이 여러 개면 `azp`가 있어야 하고 허용 목록에 있어야 함<br>대상이 하나이고 `azp`가 없으면 통과 |
 | 만료 | 만료된 증명은 거절 |
 | 결과 | 제공자 쪽 식별자, 이메일, 발급 시각<br>이름과 사진은 받아도 쓰지 않음 |
