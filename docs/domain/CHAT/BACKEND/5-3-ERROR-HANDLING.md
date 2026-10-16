@@ -48,6 +48,7 @@
 | AI 스트림 오류 | AI 호출 구성 요소<br>AI 연결 실패, 이벤트 간 시간 초과, `completed` 없는 종료 | `AI_STREAM_FAILED`로 분류하고 Sentry 전송 |
 | 저장 오류 | 턴 저장의 DB 오류 | `AI_STREAM_FAILED`로 분류 |
 | 생성 중 키 획득 오류 | Redis 오류 | 과금 전에 503 `SERVICE_UNAVAILABLE`로 거절 |
+| 상세 조회의 생성 중 상태 읽기 오류 | Redis 생성 중 키 읽기 오류 또는 저장된 값 해석 실패 | 대화 기록 조회를 부가 정보 오류로 막지 않도록 상세는 200으로 정상 응답하고 `generatingTurn`만 `null`로 반환<br>`chat_generation_read_failed` 로그 기록<br>Redis 장애 중 새 이어쓰기와 재생성은 생성 중 키 획득 단계에서 503 `SERVICE_UNAVAILABLE`로 거절<br>Redis 복구 직후 키가 사라졌어도 [5-2-6 저장 시 재확인](5-2-CONCURRENCY.md#5-2-6-생성-중-키와-저장-시-재확인)으로 같은 위치의 중복 저장 방지 |
 | 이벤트 기록 오류 | 생성 도중 Redis Streams 기록 실패 | 생성과 저장 계속<br>연결된 클라이언트는 상세 재조회로 복구 |
 | 시작 상태 불일치 | 채팅 행 잠금 안의 마지막 턴 재확인 | `CHAT_TURN_STALE`로 결과 폐기하고 환불 |
 | 선택지 AI 오류 | AI 호출 구성 요소 | 502로 변환<br>본문과 판정은 이미 저장됨 |
