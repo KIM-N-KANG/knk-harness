@@ -15,7 +15,7 @@
 | 의존 대상 | 내용 | ACCOUNT 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 회원, 소셜 연동, 동의, 페르소나 테이블 |
-| Redis | ElastiCache 비클러스터 | 세션 계열, 핸드오프, 동의 대기 코드, 링크 코드<br>체험 카운터는 PAYMENT 경유 |
+| Redis | ElastiCache 비클러스터 | 세션, 핸드오프, 동의 대기 코드, 링크 코드<br>체험 카운터는 PAYMENT 경유 |
 | Google, Kakao | 공개 키 집합 | 신원 증명 서명 검증 |
 | 프로필 프리셋 자산 | 서버 이미지에 포함된 정적 파일 | 가입 배정, 프리셋 목록, 무인증 제공 |
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, 제공자 client ID, 디바이스 pepper |

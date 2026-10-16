@@ -62,7 +62,7 @@ Fluent Bit`"]
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms` |
 | 회전 유예 적용 | 유예 재응답<br>`refresh_reuse_grace_applied` | `user_public_id` |
-| 재사용 탐지 | 유예 밖 재사용<br>평문 WARN | 회원 내부 ID, 계열 폐기 사실 |
+| 재사용 탐지 | 유예 밖 재사용<br>평문 WARN | 회원 내부 ID, 세션 폐기 사실 |
 | 핸드오프 소비 실패 | 이관 예외<br>평문 WARN | `handoffId`, 예외 |
 | 핸드오프 조회 폴백 | Redis 장애<br>평문 WARN | 예외 |
 | 핸드오프 결과 저장 재시도 | Redis 장애<br>평문 WARN | 시도 횟수, 예외 |
