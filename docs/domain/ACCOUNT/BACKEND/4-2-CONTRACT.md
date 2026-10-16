@@ -329,7 +329,7 @@ X-Manyak-Consent-Token: <opaque-code>
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `idToken` 누락, 본문 파싱 실패 |
-| 401 | `UNAUTHORIZED` | ID 토큰 검증 실패, 지원하지 않는 제공자 |
+| 401 | `UNAUTHORIZED` | ID 토큰 검증 실패 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1131,7 +1131,7 @@ Content-Type: application/json
 | `privacy` | `object` | 개인정보 처리방침 동의 상태 |
 | `age14` | `object` | 만 14세 이상 확인 동의 상태, `requiredVersion`은 `1` |
 
-실패는 공통 실패뿐이다. 정지 계정은 조회도 403이다.
+실패는 공통 실패뿐이다.
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1253,7 +1253,7 @@ Content-Type: application/json
 | 인증 | 필수 |
 | 성공 | 204, 본문 없음 |
 
-실패는 공통 실패뿐이다. 정지 계정도 204다. 탈퇴 뒤 같은 접근 토큰의 모든 요청은 401이다.
+실패는 공통 실패뿐이다.
 
 <br>
 
