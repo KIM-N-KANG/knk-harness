@@ -21,11 +21,11 @@ Fluent Bit`"]
     F --> CW["`**CloudWatch**
 안전망`"]
     S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
-    N -->|OTLP 트레이스| DP
+    N -.->|OTLP 트레이스, 설정 시| DP
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| G["`**Grafana Cloud**`"]
-    N -->|OTLP 지표| G
+    N -.->|OTLP 지표, 설정 시| G
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
@@ -69,7 +69,7 @@ Fluent Bit`"]
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
+| 서버의 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`, `skipped` |
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
@@ -127,9 +127,9 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
 | 전송 주기 | 60초 간격 |
-| 사전 등록 | 발송과 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
+| 사전 등록 | 발송과 아웃박스 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계<br>소비 결과 카운터는 첫 처리에 생성 |
 
 <br>
 
@@ -137,7 +137,7 @@ Fluent Bit`"]
 
 | 항목 | 내용 |
 |---|---|
-| 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
+| 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성<br>알림 서비스는 어느 환경에도 켜지 않음 |
 | 서버 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬<br>릴레이는 큐 메시지 속성에 추적 헤더를 실음 |
 | 알림 서비스 스팬 | 큐 수신, 자격 조회 HTTP, FCM 호출<br>메시지 속성의 추적 헤더로 서버 스팬에 이어 붙임 |
 | 제외 | 스케줄 실행 자체, actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB와 Redis 관측은 노이즈 필터가 제외 |
