@@ -16,7 +16,7 @@
 
 잔액을 바꾸는 모든 연산은 지갑 행에 비관적 쓰기 잠금을 건 뒤 원장, 로트, 잔액을 한 트랜잭션에 기록한다. 잠금 순서는 환불 표식, 주문, 지갑, 로트 순이다.
 
-흐름도에서 결제 제공자, Redis, 다른 도메인을 호출하는 단계는 주황색이다.
+흐름도에서 Redis, AI 서버, 다른 도메인을 호출하는 단계는 주황색이다.
 
 <br>
 
@@ -47,8 +47,7 @@ EXPIRE 행`"]
 적립 여부와 잔액`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
-    class A,C,D,E,F,G,H,Y,Z comp
-    class B task
+    class A,B,C,D,E,F,G,H,Y,Z comp
 ```
 
 - 로트의 만료 시각은 사유로 정한다. 구매는 적립 시점부터 5년, 그 외 보상과 환불은 30일이다.
@@ -268,8 +267,8 @@ ACCOUNT`"]
 적립 여부, 이번 금액, 잔액`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
-    class A,C,E comp
-    class B,D task
+    class A,C,D,E comp
+    class B task
 ```
 
 - 멱등 키는 `attendance:{보상 신원}:{KST 날짜}`다. 오늘 이미 받았으면 적립 없이 금액 0으로 응답한다.
@@ -380,8 +379,7 @@ flowchart LR
     C -->|그 외| N["`**무시**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
-    class A,B,C,E,F,G,I,K,L,N comp
-    class D,H,J,M task
+    class A,B,C,D,E,F,G,H,I,J,K,L,M,N comp
 ```
 
 | 단계 | 처리 |
