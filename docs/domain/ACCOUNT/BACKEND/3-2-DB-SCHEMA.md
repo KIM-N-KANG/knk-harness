@@ -172,7 +172,7 @@ erDiagram
 | 테이블 | 컬럼 | ACCOUNT가 하는 일 |
 |---|---|---|
 | `stories` | `user_id` | 이관 시 NULL인 행에 요청자 설정<br>닉네임 변경 시 소유 스토리의 재색인 요청<br>내 스토리 목록 조회 |
-| `story_creation_sessions` | `user_id` | 스토리 이관 시 연결된 간편 제작 세션의 소유자도 요청자로 설정 |
+| `story_creation_sessions` | `user_id` | 스토리 이관 시 연결된 간편 제작 진행의 소유자도 요청자로 설정 |
 | `story_chats` | `user_id`, `reached_ending_id`, `reached_ending_name_snapshot` | 이관 시 NULL인 행에 요청자 설정<br>도달 엔딩이 있으면 집계 보정<br>내 채팅 목록 조회 |
 | `user_story_ending_reaches` | 전체 | 이관한 채팅의 도달 엔딩을 회원 집계에 최초 1회 삽입 |
 | `story_drafts` | `user_id` | 탈퇴 시 해당 회원의 행 삭제 |
@@ -184,7 +184,7 @@ erDiagram
 
 ### 3-2-8 Redis 키
 
-값에 코드 원문을 저장하지 않는다. 키의 해시는 SHA-256 해시를 base64url로 표현한 값이다. `familyId`는 세션 식별자다.
+값에 자기 코드의 원문을 저장하지 않는다. 동의 대기 값에는 완료 시 소비할 핸드오프 코드 원문이 대기 수명 동안 들어 있다. 키의 해시는 SHA-256 해시를 base64url로 표현한 값이다. `familyId`는 세션 식별자다.
 
 | 키 | 값 | 삭제 |
 |---|---|---|
