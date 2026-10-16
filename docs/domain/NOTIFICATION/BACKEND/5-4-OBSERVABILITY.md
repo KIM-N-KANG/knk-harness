@@ -11,21 +11,21 @@
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
-    S["`**서버**
+    subgraph U["NOTIFICATION"]
+        direction TB
+        S["`**서버**
 NOTIFICATION 패키지`"]
-    N["`**알림 서비스**`"]
-    S -->|표준 출력 JSON| F["`**FireLens**
+        N["`**알림 서비스**`"]
+    end
+    U -->|표준 출력 JSON| F["`**FireLens**
 Fluent Bit`"]
-    N -->|표준 출력 JSON| F
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
 안전망`"]
     S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
-    N -.->|OTLP 트레이스, 설정 시| DP
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| G["`**Grafana Cloud**`"]
-    N -.->|OTLP 지표, 설정 시| G
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
@@ -33,6 +33,7 @@ Fluent Bit`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S,N comp
     class F,OS,CW,DP,OD,G,SE,SL,Q,SNS ext
+    style U fill:#FAFAFA,stroke:#AAAAAA
 ```
 
 <br>
