@@ -1444,7 +1444,25 @@ Content-Type: application/json
 
 **2. 응답**
 
-스토리 카드 구조는 STORY 도메인의 일괄 조회와 같다. ([STORY 4-2-7 일괄 조회](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-7-일괄-조회)) 생성 시각이 최신인 순으로 정렬한다. 삭제된 스토리는 제외한다.
+요청 회원이 소유한 스토리 카드 배열이다. 생성 시각 내림차순으로 정렬한다. 생성 시각이 같으면 내부 ID 내림차순으로 정렬한다. 삭제된 스토리는 제외한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `[].id` | `string` | 스토리 공개 식별자 |
+| `[].isOriginal` | `boolean` | 공식 계정 소유 여부 |
+| `[].thumbnailUrlSm` | `string / null` | 카드용 표지<br>승인된 생성 또는 업로드 표지의 원본 URL, 없으면 `null`<br>과거 프리셋 키가 남아 있는 기존 스토리만 해당 키의 `_sm` 변형 |
+| `[].title` | `string` | 기본 주인공 이름으로 치환한 제목 |
+| `[].oneLineIntro` | `string` | 기본 주인공 이름으로 치환한 한 줄 소개<br>없으면 빈 문자열 |
+| `[].genres` | `string[]` | 저장한 장르 표기 목록 |
+| `[].author` | `object` | 요청 회원의 프로필 |
+| `[].author.id` | `null` | 항상 `null` |
+| `[].author.nickname` | `string` | |
+| `[].author.profileImageUrl` | `string / null` | |
+| `[].turnCount` | `integer` | 이 스토리로 진행한 채팅 중 삭제되지 않은 채팅의 완료 턴 수 합계 |
+| `[].likeCount` | `integer` | 좋아요 수 |
+| `[].status` | `string` | `DRAFT`, `PUBLISHED` |
+| `[].visibility` | `string` | `PUBLIC`, `PRIVATE` |
+| `[].createdAt` | `string` | 생성 시각 |
 
 <br>
 
@@ -1453,6 +1471,45 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/users/me/stories?limit=20
+Authorization: Bearer <access>
+```
+
+**2) 200 Response body**
+
+```json
+[
+  {
+    "id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+    "isOriginal": false,
+    "thumbnailUrlSm": "https://cdn.example.com/thumbnails/generated/3f2504e0-4f89-41d3-9a0c-0305e82c3301/cover.webp",
+    "title": "사라지는 내일의 기록",
+    "oneLineIntro": "마법 도서관에서 지워진 미래를 추적하는 신입 기록관 서린의 이야기",
+    "genres": ["판타지", "미스터리"],
+    "author": {
+      "id": null,
+      "nickname": "몽환적인이야기꾼",
+      "profileImageUrl": "https://api.manyak.app/profile-presets/%EC%9D%B4%EC%95%BC%EA%B8%B0%EA%BE%BC.png"
+    },
+    "turnCount": 128,
+    "likeCount": 32,
+    "status": "PUBLISHED",
+    "visibility": "PRIVATE",
+    "createdAt": "2026-10-10T12:00:00Z"
+  }
+]
+```
+
+</details>
 
 <br>
 
@@ -1474,7 +1531,20 @@ Content-Type: application/json
 
 **2. 응답**
 
-채팅 카드 구조는 CHAT 도메인의 일괄 조회와 같다. ([CHAT 4-2-3 일괄 조회](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-3-일괄-조회)) 최근 활동순으로 정렬한다. 삭제된 채팅은 제외한다.
+요청 회원이 소유한 채팅 카드 배열이다. 갱신 시각 내림차순으로 정렬한다. 갱신 시각이 같으면 내부 ID 내림차순으로 정렬한다. 삭제된 채팅은 제외한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `[].id` | `string` | 채팅 공개 식별자 |
+| `[].storyId` | `string` | 스토리 공개 식별자 |
+| `[].storyTitle` | `string` | 요청 회원이 스토리를 읽을 수 있으면 현재 제목, 아니면 마지막 공개본의 제목 |
+| `[].thumbnailUrlSm` | `string / null` | 스토리 표지의 축소 변형 URL<br>생성하거나 업로드한 표지는 원본 URL<br>표지가 없으면 `null` |
+| `[].lastStoryPreview` | `string` | 마지막 AI 응답 전문<br>서버가 자르지 않음<br>턴이 없으면 빈 문자열 |
+| `[].turnCount` | `integer` | 완료된 턴 수 |
+| `[].reachedEndings` | `string[]` | 도달한 엔딩 이름<br>채팅당 최대 1개, 도달 전에는 빈 배열<br>기본 주인공 이름으로 치환하므로 채팅 상세의 플레이 이름 표기와 다를 수 있음 |
+| `[].updatedAt` | `string` | 마지막 진행 시각 |
+| `[].persona` | `object / null` | 채팅 시작 시 고른 페르소나<br>고르지 않았으면 `null` |
+| `[].persona.name` | `string` | 페르소나 이름 스냅샷 |
 
 <br>
 
@@ -1483,6 +1553,38 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/users/me/chats
+Authorization: Bearer <access>
+```
+
+**2) 200 Response body**
+
+```json
+[
+  {
+    "id": "7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d",
+    "storyId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+    "storyTitle": "사라지는 내일의 기록",
+    "thumbnailUrlSm": "https://cdn.example.com/thumbnails/generated/3f2504e0-4f89-41d3-9a0c-0305e82c3301/cover.webp",
+    "lastStoryPreview": "서린은 마지막 서가 앞에서 걸음을 멈췄다.",
+    "turnCount": 12,
+    "reachedEndings": [],
+    "updatedAt": "2026-10-16T01:00:00Z",
+    "persona": { "name": "은하" }
+  }
+]
+```
+
+</details>
 
 <br>
 
