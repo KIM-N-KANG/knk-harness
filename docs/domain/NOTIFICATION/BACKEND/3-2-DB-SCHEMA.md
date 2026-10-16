@@ -26,13 +26,6 @@
 ```mermaid
 erDiagram
     users ||--o{ device_push_tokens : "ACCOUNT, 기기"
-    users {
-        bigint id PK
-        uuid public_id
-        boolean service_push_enabled
-        timestamptz marketing_push_agreed_at
-        timestamptz marketing_push_night_agreed_at
-    }
     device_push_tokens {
         bigint id PK
         bigint user_id FK
@@ -100,7 +93,7 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
-| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>현재 `attendance_reminder` 하나 |
+| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder` 하나 |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
@@ -125,7 +118,7 @@ erDiagram
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
-| `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | 취소는 선점 전에만 가능 |
+| `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | |
 | `target_count` | integer | | 조회된 대상 수 |
 | `sent_count` | integer | | 발송기를 호출한 수 |
 | `skipped_count` | integer | | 발송 직전 재확인에서 제외된 수 |
@@ -152,7 +145,6 @@ erDiagram
 | `status` | varchar(16) | NOT NULL, 기본 `PENDING`, CHECK `PENDING` `PUBLISHED` `FAILED` | |
 | `attempts` | integer | NOT NULL, 기본 0 | 발행 실패 횟수<br>관찰용이며 포기 판정에 쓰지 않음 |
 | `next_attempt_at` | timestamptz | NOT NULL | 다음 선점 가능 시각<br>선점 중에는 임대 만료 시각 |
-| `created_at` | timestamptz | NOT NULL | 포기 판정의 기준 |
 | `published_at` | timestamptz | | |
 
 | 인덱스 | 컬럼 |
@@ -165,18 +157,22 @@ erDiagram
 
 | 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
 |---|---|---|
-| `users` | `status`, `public_id`, `reward_identity_user_id` | 발송 자격 판정, 수신자 식별자, 출석 미수령 판정 |
+| `users` | `status` | 발송 자격 판정 |
+| `users` | `public_id` | 수신자 식별자 |
+| `users` | `reward_identity_user_id` | 출석 미수령 판정 |
 | `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
 
 <br>
 
 ### 3-2-9 Redis 키
 
-| 키 | 값 | 소유 | 삭제 |
-|---|---|---|---|
-| `push:attendance-reminder:{KST 날짜}` | `1` | 서버 | 24시간 |
-| `notification:processed:{메시지 식별자}` | 처리 중이면 소유자 값, 완료면 `done` | 알림 서비스 | 처리 중 2분, 완료 7일 |
-| `notification:sent:{메시지 식별자}` | 성공한 토큰의 SHA-256 해시 집합 | 알림 서비스 | 7일 |
+`push:` 키는 서버가 쓴다. `notification:` 키는 알림 서비스가 쓴다.
+
+| 키 | 값 | 삭제 |
+|---|---|---|
+| `push:attendance-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
+| `notification:processed:{메시지 식별자}` | 처리 중이면 소유자 값, 완료면 `done` | 처리 중 선점 수명 만료<br>완료 후 멱등 기록 수명 만료 |
+| `notification:sent:{메시지 식별자}` | 성공한 토큰의 SHA-256 해시 집합 | 멱등 기록 수명 만료 |
 
 <br>
 
@@ -184,9 +180,8 @@ erDiagram
 
 | 큐 | 내용 | 설정 |
 |---|---|---|
-| `push-requested` | 발송 요청 | SQS 표준 큐, 가시성 60초, 수신 5회 초과 시 실패 메시지 큐로 이동 |
-| `push-requested-dlq` | 재전달 상한을 넘긴 메시지 | 보존 14일 |
-| `push.requested`, `.retry`, `.dlq` | 로컬 Kafka 토픽 | 로컬 프로파일 전용 |
+| `push-requested` | 발송 요청 | SQS 표준 큐<br>수신 상한을 넘기면 실패 메시지 큐로 이동 |
+| `push-requested-dlq` | 재전달 상한을 넘긴 메시지 | 보존 기간 만료 시 삭제 |
 
 <br>
 
@@ -197,6 +192,3 @@ erDiagram
 | 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
 | 수신 동의 | 없음<br>철회는 값을 비움 |
 | 문구 템플릿, 캠페인, 아웃박스 | 없음 |
-| 출석 회차 선점 키 | 24시간 |
-| 멱등 기록 | 처리 중 2분, 완료 7일 |
-| 실패 메시지 | 14일 |

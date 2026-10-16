@@ -39,7 +39,7 @@ Fluent Bit`"]
 
 ### 5-4-2 상관관계 식별자
 
-서버의 상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 알림 서비스는 큐 메시지와 내부 API 헤더에서 같은 값을 받아 MDC에 기록한다.
+서버의 상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 서버의 로그와 Sentry는 같은 식별자 값을 사용한다. 알림 서비스는 큐 메시지와 내부 API 헤더에서 같은 값을 받아 MDC에 기록한다.
 
 | MDC 필드 | 값 | 규칙 |
 |---|---|---|
@@ -51,9 +51,10 @@ Fluent Bit`"]
 
 | 식별자 | 기록 위치 | 연결 대상 |
 |---|---|---|
+| `request_id` | 로그 MDC, Sentry 태그 | 한 요청의 로그 |
 | `request_id`, `session_id` | 큐 메시지 본문, 소비자 MDC, 자격 조회 헤더 | 발행 원인 요청과 소비 처리 |
 | 추적 헤더 | 큐 메시지 속성 | 서버 스팬과 소비자 스팬 |
-| 메시지 식별자 | 아웃박스 경고, 소비 결과 로그, 실패 큐 경고 | 발송 요청 1건 |
+| 메시지 식별자 | 아웃박스 경고, 소비 결과 로그 | 발송 요청 1건 |
 | 회원 내부 ID | 서버 발송 실패 WARN, 회차 로그 | 회원 |
 | 회원 공개 식별자 | 알림 서비스 발송 실패 WARN | 회원 |
 | 캠페인 공개 식별자 | 프로모션 회차 로그 | 캠페인 |
@@ -64,11 +65,11 @@ Fluent Bit`"]
 
 ### 5-4-3 구조화 로그 이벤트
 
-구조화 로그는 `event_name`을 맨 앞에 둔 JSON 형식으로 INFO 수준에 기록한다. 이벤트 이름은 snake_case다. 서버와 알림 서비스 모두 `prod`, `dev`, `jsonlog` 프로파일에서만 JSON 형식을 쓴다. 인코더는 MDC 값을 최상위 필드에 기록한다.
+구조화 로그는 `event_name`을 맨 앞에 둔 JSON 형식으로 INFO 수준에 기록한다. 이벤트 이름은 snake_case다. 서버와 알림 서비스 모두 `prod`, `dev`, `jsonlog` 프로파일에서만 JSON 형식을 쓴다. 그 외에는 콘솔 패턴을 쓴다. JSON의 `service`는 서버가 `manyak-server`, 알림 서비스가 `manyak-notification`이다. 인코더는 MDC 값을 최상위 필드에 기록한다.
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 `error_code` |
+| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`, `skipped` |
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
@@ -77,20 +78,19 @@ Fluent Bit`"]
 | 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자, 예외 클래스 |
 | FCM 발송 실패 | 서버와 알림 서비스<br>평문 WARN | 회원 식별자, 토큰 앞 12자, 오류 코드, 예외 클래스 |
 | 무효 토큰 정리 | 서버와 알림 서비스<br>평문 INFO | 회원 식별자, 토큰 앞 12자 |
-| 아웃박스 포기 | 24시간 경과<br>평문 WARN | 메시지 식별자 |
+| 아웃박스 포기 | 포기 시각 경과<br>평문 WARN | 메시지 식별자 |
 | 아웃박스 결과 기록 실패 | DB 장애<br>평문 WARN | 메시지 식별자, 예외 |
 | 문구 템플릿 적재 실패 | 갱신 실패<br>평문 WARN `push_template_load_failed` | 예외 |
 | 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 결과, 사유 |
 | 큐 소비 재시도 | 예외<br>평문 WARN | 메시지 식별자, 예외 클래스 |
 | 자격 조회 실패 | 알림 서비스<br>평문 WARN | 회원 공개 식별자, 예외 클래스 |
-| 실패 메시지 수신 | 로컬 Kafka만<br>평문 WARN | 메시지 식별자 또는 본문 오류 |
 
 <details>
 <summary><b>예시: 출석 회차 로그 1줄</b></summary>
 
 <br>
 
-예시에는 가상 값을 사용했다. 로그 프레임워크가 붙이는 필드는 생략했다.
+예시에는 가상 값을 썼다. 로그 프레임워크가 붙이는 필드는 생략했다.
 
 ```json
 {"@timestamp":"2026-10-16T00:00:12.345Z","message":"event_name=attendance_reminder_sent, targets=1240, sent=1231, skipped=9","level":"INFO","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"attendance_reminder_sent","targets":1240,"sent":1231,"skipped":9,"service":"manyak-server"}
@@ -105,12 +105,12 @@ Fluent Bit`"]
 | 기능 | 오류 조회 위치 |
 |---|---|
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
-| 완성과 검수 알림 | 원격 모드는 아웃박스 지표와 소비 지표<br>로컬 모드는 발송 실패 WARN |
-| 출석 리마인드 | 회차 로그의 `sent`와 `skipped`, 선점 실패 로그 |
+| 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
+| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `sent`와 `skipped`, 선점 실패 로그 |
 | 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그 |
-| 큐 중계 | 아웃박스 지표의 `retry`와 `abandoned`, 포기 WARN |
-| 큐 소비 | 소비 지표의 `retry`와 `discard`, 실패 큐 경보 |
-| FCM | 발송 지표의 `failure`와 `unregistered`, 발송 실패 WARN |
+| 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
+| 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 큐 경보 |
+| FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |
 | 자격 조회 | 알림 서비스의 자격 조회 실패 WARN, 요청 로그의 내부 경로 상태 |
 
 <br>
@@ -121,8 +121,8 @@ Fluent Bit`"]
 |---|---|---|
 | `manyak.push.send.result` | Counter<br>`outcome` = `success`, `unregistered`, `failure` | FCM 발송 결과<br>서버와 알림 서비스가 각자 기록 |
 | `manyak.push.outbox.result` | Counter<br>`outcome` = `published`, `retry`, `abandoned` | 릴레이 발행 결과 |
-| `manyak.push.consume.result` | Counter<br>`outcome` = `success`, `retry`, `discard`, `dlq` | 큐 소비 결과<br>`dlq`는 로컬 Kafka만 증가 |
-| `fcm.send` | Observation<br>`platform`, `outcome` | 알림 서비스의 FCM 호출 스팬과 소요 시간 |
+| `manyak.push.consume.result` | Counter<br>`outcome` = `success`, `retry`, `discard`, `dlq` | 큐 소비 결과 |
+| `fcm.send` | 관측 스팬<br>`platform` = `android`, `web`<br>`outcome` = `success`, `unregistered`, `failure` | 알림 서비스의 FCM 호출 스팬과 소요 시간 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 회원 API와 내부 API의 요청률과 오류율 |
 
 | 항목 | 기준과 제한 |
@@ -138,9 +138,9 @@ Fluent Bit`"]
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
-| 서버 스팬 | HTTP 요청 아래에 JDBC, Redis 스팬<br>릴레이는 큐 메시지 속성에 추적 헤더를 실음 |
+| 서버 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬<br>릴레이는 큐 메시지 속성에 추적 헤더를 실음 |
 | 알림 서비스 스팬 | 큐 수신, 자격 조회 HTTP, FCM 호출<br>메시지 속성의 추적 헤더로 서버 스팬에 이어 붙임 |
-| 제외 | actuator 요청, Spring Security 내부 관측, 스케줄 실행 자체, 요청 밖 루트 Redis 관측 |
+| 제외 | 스케줄 실행 자체, actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB와 Redis 관측은 노이즈 필터가 제외 |
 
 <br>
 
@@ -150,8 +150,8 @@ Fluent Bit`"]
 |---|---|
 | 실패 메시지 큐 | 가시 메시지가 1건이라도 있으면 SNS 이메일<br>개발과 운영 모두 |
 | 본 큐 적체 | 경보 없음 |
-| 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약<br>알림 서비스는 Sentry에 보내지 않음 |
-| NOTIFICATION에서 수집하는 오류 | 서버의 예상하지 못한 예외<br>발송 실패, 회차 실패, 소비 재전달은 Sentry에 없음 |
+| 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
+| NOTIFICATION에서 수집하는 오류 | 서버의 500 예상하지 못한 예외<br>4xx 거절, 발송 실패, 회차 실패, 소비 재전달, 알림 서비스의 오류는 Sentry에 없어 보고에 포함되지 않음 |
 | 지표 기반 알림 | NOTIFICATION 전용 규칙 없음 |
 
 <br>
@@ -168,6 +168,7 @@ Fluent Bit`"]
 | 기기 식별자 | 해시만 |
 | 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 큐에는 본문으로 보존 |
 | 회원 식별자 | 서버 로그는 내부 ID, 알림 서비스 로그는 공개 식별자 |
+| Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 서버의 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
 
 <br>
@@ -177,7 +178,8 @@ Fluent Bit`"]
 | 상황 | 처리 |
 |---|---|
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
-| 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>기록이 없으면 회차가 선점되지 않았음을 뜻함 |
+| Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
+| 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>기록이 없으면 회차가 선점되지 않았음을 의미 |
 | 소비 지표의 `dlq` | SQS 환경에서는 증가하지 않음<br>실패 큐 도착은 큐 경보로 확인 |
 | 미수집과 누락 | 수집 비활성화, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 발송이 없었다고 판단하지 않음 |
 
@@ -185,4 +187,4 @@ Fluent Bit`"]
 
 ### 5-4-9 분석 이벤트
 
-NOTIFICATION에는 서버 분석 이벤트가 없다. 발송은 지표와 회차 로그로, 수신과 탭은 클라이언트 이벤트로 확인한다.
+NOTIFICATION에는 서버 이벤트가 없다. 발송은 지표와 회차 로그로, 수신과 탭은 클라이언트 이벤트로 확인한다.

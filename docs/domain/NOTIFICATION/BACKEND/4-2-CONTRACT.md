@@ -26,7 +26,7 @@
 | 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
 |---|---|---|
 | `필수` | 거절 | 회원으로 처리 |
-| `내부` | 공유 시크릿 헤더로 인증<br>시크릿이 설정되지 않은 환경은 경로 없음으로 응답 | 회원 토큰을 읽지 않음 |
+| `내부` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>공유 시크릿 헤더로 인증 |
 
 <br>
 
@@ -34,10 +34,10 @@
 
 | 요청 헤더 | 값 형식 | 쓰임 | 필수 |
 |---|---|---|---|
-| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 회원 API는 필수 |
-| `X-Manyak-Internal-Secret` | 문자열 | 서버와 알림 서비스 사이의 인증 | 내부 API는 필수 |
+| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 생성하고 응답 헤더로 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
+| `X-Manyak-Internal-Secret` | 문자열 | 서버와 알림 서비스 사이의 인증 | 내부 API는 필수 |
 | `X-Manyak-Device-Id-Hash` | 문자열 | 알림 서비스가 서버에 전달하는 기기 해시 | 선택 |
 
 <br>
@@ -46,14 +46,13 @@
 
 | 요청 | 정지 계정 | 탈퇴 계정 |
 |---|---|---|
-| 토큰 등록, 토큰 삭제 | 403 | 401 |
-| 수신 동의 조회, 수신 동의 변경 | 403 | 401 |
+| 토큰 등록, 토큰 삭제, 수신 동의 조회, 수신 동의 변경 | 403 | 401 |
 
 <br>
 
 **5. 공통 실패 응답**
 
-실패 응답은 모두 같은 형식이다.
+실패 응답은 모두 같은 형식이다. 알림 발송의 502는 예외이며 해당 절에서 정한다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -73,9 +72,9 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 401 | `UNAUTHORIZED` | 회원 API의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>내부 API의 시크릿 누락 또는 불일치 |
+| 401 | `UNAUTHORIZED` | 인증 필수 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>내부 API의 시크릿 누락 또는 불일치 |
 | 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403 |
-| 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청<br>토큰 삭제는 허용 목록에 있음 |
+| 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 404 | `NOT_FOUND` | 내부 API의 시크릿 미설정 환경 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
 
@@ -111,7 +110,7 @@
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 PUT /api/v1/users/me/push-tokens
@@ -121,11 +120,11 @@ Content-Type: application/json
 { "token": "dEv1cE:APA91bExampleToken-0123456789", "platform": "ANDROID" }
 ```
 
-2) 204 Response
+**2) 204 Response**
 
 본문 없음
 
-3) 400 Response body
+**3) 400 Response body**
 
 ```json
 {
@@ -171,7 +170,7 @@ Content-Type: application/json
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 DELETE /api/v1/users/me/push-tokens
@@ -181,9 +180,22 @@ Content-Type: application/json
 { "token": "dEv1cE:APA91bExampleToken-0123456789" }
 ```
 
-2) 204 Response
+**2) 204 Response**
 
 본문 없음
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T01:23:45.678Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "요청 값이 올바르지 않습니다.",
+  "path": "/api/v1/users/me/push-tokens",
+  "details": [{ "field": "token", "message": "must not be blank" }]
+}
+```
 
 </details>
 
@@ -216,14 +228,14 @@ Content-Type: application/json
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 GET /api/v1/users/me/push-settings
 Authorization: Bearer {accessToken}
 ```
 
-2) 200 Response body
+**2) 200 Response body**
 
 ```json
 { "servicePush": true, "marketingPush": true, "marketingNightPush": false }
@@ -239,7 +251,7 @@ Authorization: Bearer {accessToken}
 |---|---|
 | 요청 | `PUT /users/me/push-settings` |
 | 인증 | 필수 |
-| 성공 | 200 |
+| 성공 | 200, 수신 동의 조회와 같은 응답 |
 
 **1. 본문**
 
@@ -253,13 +265,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-**2. 응답**
-
-수신 동의 조회와 같은 구조로 변경한 상태를 반환한다.
-
-<br>
-
-**3. 실패 응답**
+**2. 실패 응답**
 
 | 상태 | `code` | 조건 |
 |---|---|---|
@@ -271,7 +277,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 PUT /api/v1/users/me/push-settings
@@ -281,13 +287,13 @@ Content-Type: application/json
 { "servicePush": true, "marketingPush": true, "marketingNightPush": true }
 ```
 
-2) 200 Response body
+**2) 200 Response body**
 
 ```json
 { "servicePush": true, "marketingPush": true, "marketingNightPush": true }
 ```
 
-3) 400 Response body
+**3) 400 Response body**
 
 ```json
 {
@@ -334,6 +340,15 @@ Content-Type: application/json
 | `tokens[].token` | `string` | FCM 등록 토큰 |
 | `tokens[].platform` | `string` | `ANDROID`, `WEB` |
 
+| `reason` | 의미 |
+|---|---|
+| `OK` | 발송 가능 |
+| `USER_NOT_FOUND` | 없는 회원 |
+| `NOT_ACTIVE` | 정지 또는 탈퇴 계정 |
+| `SERVICE_PUSH_DISABLED` | 서비스 알림 꺼짐 |
+| `MARKETING_NOT_AGREED` | 광고 알림 미동의<br>야간 시각이면 야간 광고 알림 미동의 포함 |
+| `NO_TOKENS` | 등록된 토큰 없음 |
+
 <br>
 
 **3. 실패 응답**
@@ -347,14 +362,14 @@ Content-Type: application/json
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 GET /internal/users/3f2504e0-4f89-41d3-9a0c-0305e82c3301/push-eligibility?kind=MARKETING&at=2026-10-16T00:00:00Z
 X-Manyak-Internal-Secret: {sharedSecret}
 ```
 
-2) 200 Response body, 허용
+**2) 200 Response body, 허용**
 
 ```json
 {
@@ -364,10 +379,23 @@ X-Manyak-Internal-Secret: {sharedSecret}
 }
 ```
 
-3) 200 Response body, 거절
+**3) 200 Response body, 거절**
 
 ```json
 { "allowed": false, "reason": "MARKETING_NOT_AGREED", "tokens": [] }
+```
+
+**4) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T01:23:45.678Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "kind는 필수입니다.",
+  "path": "/internal/users/3f2504e0-4f89-41d3-9a0c-0305e82c3301/push-eligibility",
+  "details": []
+}
 ```
 
 </details>
@@ -405,7 +433,7 @@ X-Manyak-Internal-Secret: {sharedSecret}
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 DELETE /internal/push-tokens
@@ -415,9 +443,22 @@ Content-Type: application/json
 { "token": "dEv1cE:APA91bExampleToken-0123456789" }
 ```
 
-2) 204 Response
+**2) 204 Response**
 
 본문 없음
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T01:23:45.678Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "요청 값이 올바르지 않습니다.",
+  "path": "/internal/push-tokens",
+  "details": [{ "field": "token", "message": "must not be blank" }]
+}
+```
 
 </details>
 
@@ -425,7 +466,7 @@ Content-Type: application/json
 
 ### 4-2-8 알림 발송
 
-알림 서비스가 제공한다. 큐 전환 전의 검증 경로이며 서비스 경로에서는 호출하지 않는다.
+알림 서비스가 제공한다. 큐를 거치지 않는 수동 검증용 경로이며 서비스 경로에서는 호출하지 않는다.
 
 | 항목 | 값 |
 |---|---|
@@ -440,7 +481,7 @@ Content-Type: application/json
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
 | `type` | `string` | 필수 | 시나리오 식별자 |
-| `data` | `object` | 필수 | 푸시 데이터<br>값은 문자열 |
+| `data` | `object` | 필수 | 푸시 데이터 |
 | `expiresAt` | `string` | 선택 | 발송 가능 기한<br>생략하면 만료 없음 |
 
 <br>
@@ -472,14 +513,14 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류 |
-| 502 | `BAD_GATEWAY` | 자격 조회 실패<br>본문은 `FAILED`와 `ELIGIBILITY_UNAVAILABLE` |
+| 502 | 공통 형식 아님 | 자격 조회 실패<br>본문은 응답과 같은 구조이며 `outcome`은 `FAILED`, `reason`은 `ELIGIBILITY_UNAVAILABLE` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
 
 <br>
 
-1) Request
+**1) Request**
 
 ```http
 POST /internal/notifications
@@ -499,10 +540,16 @@ Content-Type: application/json
 }
 ```
 
-2) 200 Response body
+**2) 200 Response body**
 
 ```json
 { "outcome": "SENT", "reason": "OK", "sent": 2, "unregistered": 0, "failed": 0 }
+```
+
+**3) 502 Response body**
+
+```json
+{ "outcome": "FAILED", "reason": "ELIGIBILITY_UNAVAILABLE", "sent": 0, "unregistered": 0, "failed": 0 }
 ```
 
 </details>
@@ -513,16 +560,16 @@ Content-Type: application/json
 
 서버가 발행하고 알림 서비스가 소비한다. 아웃박스 본문과 큐 메시지 본문이 같다.
 
-**1. 필드**
+**1. 본문**
 
-| 필드명 | 타입 | 필수 | 의미 |
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에도 바뀌지 않음 |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
 | `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
-| `data` | `object` | 필수 | 푸시 데이터<br>값은 문자열이며 동의와 토큰을 담지 않음 |
-| `expiresAt` | `string` | 선택 | 발송 가능 기한 |
+| `data` | `object` | 필수 | 푸시 데이터<br>동의와 토큰을 담지 않음 |
+| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>생략하면 만료 없음 |
 | `requestId` | `string` | 필수 | 발행 원인의 요청 ID<br>없으면 `unknown` |
 | `sessionId` | `string` | 필수 | 발행 원인의 세션 ID<br>없으면 `unknown` |
 | `schemaVersion` | `integer` | 필수 | `1` |
@@ -535,16 +582,14 @@ Content-Type: application/json
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
 - 추적 헤더는 본문이 아니라 큐의 메시지 속성에 싣는다.
-- 출석 리마인드와 프로모션은 현재 서버 안 발송기가 보내므로 큐에 발행하지 않는다. 식별자 규칙은 전환에 대비해 정해 둔다.
-
-<br>
-
-**2. 예시**
+- 출석 리마인드와 프로모션은 서버 안 발송기가 보내며 큐에 발행하지 않는다. 소비자는 네 시나리오를 모두 검증한다.
 
 <details>
 <summary><b>메시지 예시</b></summary>
 
 <br>
+
+**1) `STORY_COMPLETED` 메시지**
 
 ```json
 {
@@ -572,26 +617,38 @@ Content-Type: application/json
 
 기기에 도착하는 FCM 메시지의 데이터다. 클라이언트는 `type`으로 시나리오를 판정하고 `recipientId`를 현재 회원과 대조한다.
 
-**1. 공통 키**
+**1. 공통 필드**
 
-| 키 | 의미 |
-|---|---|
-| `type` | 시나리오 식별자 |
-| `recipientId` | 수신 회원 공개 식별자<br>발송기가 항상 덧붙이며 시나리오 값보다 우선 |
-| `deepLink` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로를 붙임<br>없는 시나리오도 있음 |
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `type` | `string` | 시나리오 식별자 |
+| `recipientId` | `string` | 수신 회원 공개 식별자<br>발송기가 항상 덧붙이며 시나리오 값보다 우선 |
+| `deepLink` | `string` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로를 붙임<br>없는 시나리오도 있음 |
 
 <br>
 
-**2. 시나리오별 키**
+**2. 시나리오별 필드**
 
-| `type` | 키 | 의미 |
-|---|---|---|
-| `STORY_COMPLETED` | `storyId`, `title`, `deepLink` | 스토리 공개 식별자, 스토리 제목, `/stories/{storyId}` |
-| `STORY_MODERATION_COMPLETED` | `submissionId`, `status`, `storyId`, `deepLink`, `title`, `body` | 제출본 식별자, `APPROVED` `REJECTED` `FAILED`, 스토리 공개 식별자(있을 때만), `/studio`, 결과별 문구 |
-| `ATTENDANCE_REMINDER` | `date`, `title`, `body`, `deepLink` | KST 날짜, 광고 표기가 붙은 템플릿 제목, 템플릿 본문, `/my/credits?tab=free` |
-| `PROMOTION` | `campaignId`, `title`, `body` | 캠페인 공개 식별자, 광고 표기가 붙은 제목, 본문 |
+| `type` | 필드명 | 타입 | 의미 |
+|---|---|---|---|
+| `STORY_COMPLETED` | `storyId` | `string` | 스토리 공개 식별자 |
+| `STORY_COMPLETED` | `title` | `string` | 스토리 제목 |
+| `STORY_COMPLETED` | `deepLink` | `string` | `/stories/{storyId}` |
+| `STORY_MODERATION_COMPLETED` | `submissionId` | `string` | 제출본 식별자 |
+| `STORY_MODERATION_COMPLETED` | `status` | `string` | `APPROVED`, `REJECTED`, `FAILED` |
+| `STORY_MODERATION_COMPLETED` | `storyId` | `string` | 스토리 공개 식별자<br>있을 때만 |
+| `STORY_MODERATION_COMPLETED` | `deepLink` | `string` | `/studio` |
+| `STORY_MODERATION_COMPLETED` | `title` | `string` | 결과별 제목 |
+| `STORY_MODERATION_COMPLETED` | `body` | `string` | 결과별 본문 |
+| `ATTENDANCE_REMINDER` | `date` | `string` | KST 날짜 |
+| `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
+| `ATTENDANCE_REMINDER` | `body` | `string` | 템플릿 본문 |
+| `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
+| `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
+| `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
+| `PROMOTION` | `body` | `string` | 본문 |
 
-| 검수 결과 | `title` | `body` |
+| `status` | `title` | `body` |
 |---|---|---|
 | `APPROVED` | 검수를 통과했어요 | 「{스토리 제목}」의 등록이 완료됐어요. 지금 확인해 보세요. |
 | `REJECTED` | 검수에서 반려됐어요 | 「{스토리 제목}」의 내용을 수정해 다시 제출해 주세요. |
@@ -610,6 +667,8 @@ Content-Type: application/json
 <summary><b>푸시 데이터 예시</b></summary>
 
 <br>
+
+**1) `ATTENDANCE_REMINDER` 푸시 데이터**
 
 ```json
 {
@@ -630,8 +689,8 @@ Content-Type: application/json
 
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|
-| STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트(회원, 요청 ID, 스토리 공개 식별자, 제목) |
-| MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트(회원, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목) |
+| STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트 |
+| MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
 | PAYMENT | 없음 | 출석 보상 멱등 키의 존재 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
@@ -640,6 +699,6 @@ Content-Type: application/json
 
 | 연산 | 입력 | 결과 |
 |---|---|---|
-| 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 뒤 발송 |
-| 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 뒤 발송 |
+| 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
+| 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
