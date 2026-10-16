@@ -17,7 +17,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 시각 | ISO 8601 UTC 문자열 |
 | 문자 수 | UTF-16 코드 유닛 기준 |
 | 식별자 | 채팅, 스토리, 시작 설정, 페르소나, 공유는 UUID 공개 식별자<br>턴은 정수 ID |
-| SSE | `Content-Type: text/event-stream;charset=UTF-8`<br>프레임은 `event: 이름`, `data: JSON`, 빈 줄<br>heartbeat 없음, 재개 스트림 없음 |
+| SSE | `Content-Type: text/event-stream;charset=UTF-8`<br>프레임은 `event: 이름`, `data: JSON`, 빈 줄<br>heartbeat 없음<br>처음 연결과 재연결 모두 생성 이벤트를 처음부터 수신 |
 | 이미지 마커 | AI 응답 본문의 대사 줄 위 별도 줄에 `[[URL]]`과 빈 줄<br>클라이언트는 마커 줄 대신 해당 위치에 이미지를 표시 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
@@ -50,7 +50,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 요청 | 허용 |
 |---|---|
 | 채팅 생성 | 읽을 수 있는 스토리<br>소유자 없는 스토리는 익명 요청만 |
-| 상세, 삭제, 이어쓰기, 재생성, 선택지, 공유 발급 | 회원 소유 채팅은 소유자만<br>소유자 없는 채팅은 익명 요청만<br>위반은 403 |
+| 상세, 생성 스트림 재연결, 삭제, 이어쓰기, 재생성, 선택지, 공유 발급 | 회원 소유 채팅은 소유자만<br>소유자 없는 채팅은 익명 요청만<br>위반은 403 |
 | 일괄 조회 | 열람할 수 없는 채팅은 제외 |
 | 공유 열람 | 토큰을 아는 누구나<br>회원이면 스토리 읽기 권한 판정에만 회원 정보 사용 |
 | 페르소나 지정 | 회원만<br>본인 페르소나만 |
@@ -295,6 +295,12 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `turns[].choices` | `string[]` | 저장된 선택지<br>아직 생성하지 않았으면 빈 배열 |
 | `turns[].reachedEnding` | `string / null` | 이 턴이 도달 턴이면 엔딩 이름 |
 | `turns[].createdAt` | `string` | |
+| `generatingTurn` | `object / null` | 생성 중 키가 있을 때만 객체<br>없으면 `null` |
+| `generatingTurn.type` | `string` | `CONTINUE`(이어쓰기) 또는 `REGENERATE`(재생성) |
+| `generatingTurn.userInput` | `string` | 생성 중인 사용자 입력 |
+| `generatingTurn.startedAt` | `string` | 요청 접수 시각<br>ISO 8601 UTC 문자열 |
+| `generatingTurn.targetTurnId` | `integer / null` | 재생성 대상의 `turns[].id`<br>이어쓰기는 `null`로 항상 포함 |
+| `generatingTurn.generationId` | `string` | 생성 ID<br>UUID 문자열 |
 | `suggestedInputs` | `string[]` | 턴이 없을 때만 추천 입력<br>턴이 있으면 빈 배열 |
 
 <br>
@@ -311,7 +317,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 <br>
 
-**1) 200 Response body**
+**1) 200 Response body: 생성 중인 턴 없음**
 
 ```json
 {
@@ -330,13 +336,50 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
       "createdAt": "2026-06-12T12:05:00Z"
     }
   ],
-  "suggestedInputs": []
+  "suggestedInputs": [],
+  "generatingTurn": null
 }
 ```
 
 <br>
 
-**2) 403 Response body**
+**2) 200 Response body: 이어쓰기 생성 중**
+
+```json
+{
+  "id": "7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d",
+  "storyId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "storyTitle": "호아킨 아카데미의 무속성 신입생",
+  "persona": null,
+  "prologue": "마법 세계에서 당신은 호아킨 아카데미의 1학년으로 입학했다.",
+  "turns": [
+    {
+      "id": 1201,
+      "userInput": "검사장을 둘러본다.",
+      "aiOutput": "*검사장은 한순간 숨소리조차 사라진 듯 조용해졌다.*\n[[https://cdn.example.com/characters/generated/3f2504e0/9b1c.webp]]\n\n교관: 다음, 앞으로.",
+      "choices": [
+        "단상 앞으로 나선다.",
+        "주변 학생들의 반응을 살핀다.",
+        "조용히 자리를 벗어난다."
+      ],
+      "reachedEnding": null,
+      "createdAt": "2026-06-12T12:05:00Z"
+    }
+  ],
+  "suggestedInputs": [],
+  "generatingTurn": {
+    "type": "CONTINUE",
+    "userInput": "단상 앞으로 나선다.",
+    "startedAt": "2026-06-12T12:06:00Z",
+    "targetTurnId": null,
+    "generationId": "5e7b9a10-2c34-4d56-8e90-123456789abc"
+  }
+}
+```
+
+<br>
+
+**3) 403 Response body**
 
 ```json
 {
@@ -378,13 +421,14 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 인증 | 선택 |
 | 성공 | 200, SSE |
 
-회원은 턴 체험 잔여가 있으면 무료이고 없으면 턴마다 이프를 선차감한다. 게스트는 체험 횟수를 예약한다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다. 같은 입력을 다시 보내면 새 턴이 되어 다시 과금한다. 엔딩에 도달한 채팅도 이어쓰기와 선택지 생성은 할 수 있다.
+회원은 턴 체험 잔여가 있으면 무료이고 없으면 턴마다 이프를 선차감한다. 게스트는 체험 횟수를 예약한다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다. 생성 중 재전송은 거절한다. 생성이 끝난 뒤 같은 입력을 다시 보내면 마지막 턴 검사를 거쳐 새 턴으로 과금한다. 연결이 끊겨도 생성과 저장을 계속한다. 엔딩에 도달한 채팅도 이어쓰기와 선택지 생성은 할 수 있다.
 
 **1. 요청 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `userInput` | `string` | 필수 | 공백만 있으면 안 되고 3,000자 이하 |
+| `lastTurnId` | `integer / null` | 선택 | 클라이언트가 본 마지막 턴의 `turns[].id`<br>첫 턴은 명시적 `null`<br>생략하면 마지막 턴 비교를 건너뛰어 구버전 앱 허용<br>명시적 `null`은 서버에도 완료된 턴이 없을 때만 일치<br>선택 기록용 `sourceTurnId`와 별개 |
 | `userSource` | `string` | 선택 | `choice`, `edited_choice`, `typed`<br>AI에 그대로 전달하고 생략하면 전달하지 않음 |
 | `sourceTurnId` | `integer` | 선택 | 고른 선택지가 속한 직전 턴의 ID<br>현재 마지막 턴이 아니거나 다른 채팅의 턴이면 기록만 생략 |
 | `choiceOrder` | `integer` | 선택 | 고른 선택지의 순번, 1부터<br>`turns[].choices` 인덱스 + 1<br>범위 밖은 기록만 생략 |
@@ -399,6 +443,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 이벤트 | 필드명 | 타입 | 의미 |
 |---|---|---|---|
 | `started` | `chatId` | `string` | 스트림 시작 |
+| `started` | `generationId` | `string` | 생성 ID<br>UUID 문자열<br>같은 화면에서 연결 종료 후 재연결할 때 사용 |
 | `token` | `text` | `string` | AI 본문 조각 |
 | `character_image` | `name` | `string` | 인물 이름 |
 | `character_image` | `imageUrl` | `string` | 인물 이미지 URL<br>한 턴에서 인물마다 첫 대사 앞에 한 번 |
@@ -407,10 +452,12 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `completed` | `aiOutput` | `string` | 저장된 본문 전체<br>이미지 마커 포함<br>검증으로 토큰 누적분과 달라질 수 있어 클라이언트는 이 값으로 교체 |
 | `completed` | `choices` | `string[]` | 항상 빈 배열<br>선택지는 별도 요청으로 생성 |
 | `completed` | `reachedEnding` | `string / null` | 이번 턴이 도달 턴이면 엔딩 이름 |
-| `error` | `code` | `string` | AI 서버가 보낸 코드 또는 `AI_STREAM_FAILED` |
+| `error` | `code` | `string` | AI 서버가 보낸 코드 또는 `AI_STREAM_FAILED`<br>저장 시 마지막 턴 불일치는 `CHAT_TURN_STALE` |
 | `error` | `message` | `string` | AI 서버가 보낸 문구 또는 고정 문구 |
 
-`completed`와 `error` 없이 스트림이 끝나면 결과를 알 수 없다. 클라이언트는 상세를 다시 조회해 서버 상태에 맞춘다. `error`를 받아도 저장된 턴이 있을 수 있으므로 다시 보내기 전에 상세를 확인한다.
+처음 연결인 이어쓰기와 재생성 POST는 자기 생성의 스트림을 기다리며 404로 판정하지 않는다. 큐 대기 중 아직 이벤트가 없어도 기다린다. 생성 작업이 기록한 이벤트를 Redis Streams에서 처음부터 읽고 이후 이벤트를 이어서 받는다. 재연결도 같은 이벤트 순서와 본문을 사용한다. 클라이언트는 누적 본문을 비운 뒤 처음부터 다시 구성하고 `completed.aiOutput`으로 확정한다. 재연결은 생성이나 과금을 다시 시작하지 않는다.
+
+`started.generationId`를 받은 클라이언트는 같은 화면에서 연결이 끊겨도 해당 생성으로 바로 재연결한다. 재진입한 클라이언트는 상세의 `generatingTurn.generationId`로 재연결한다. `completed`와 `error` 없이 스트림이 끝나면 상세를 다시 조회한다. 이어쓰기는 생성 중 키가 사라졌는데 새 턴이 없으면 실패로 안내한다. 재생성은 턴 ID와 턴 수가 유지된다. 1단계(KNK-1677)에서는 이탈 중 재생성의 성공과 실패를 상세만으로 구분하지 못한다. 2단계는 클라이언트가 생성 ID를 받아 보관한 경우(`started` 또는 생성 중 상세에서 수신)에만 보관된 스트림의 `completed` 또는 `error`로 재생성의 성공과 실패를 구분한다. `started` 전에 이탈하고 생성이 끝난 뒤 돌아와 생성 ID를 모르면 1단계와 같은 한계가 남는다. `error`를 받아도 저장된 턴이 있을 수 있으므로 다시 보내기 전에 상세를 확인한다.
 
 <br>
 
@@ -423,6 +470,9 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트의 턴 체험 소진 |
 | 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨, 형식 오류 |
+| 409 | `CHAT_TURN_IN_PROGRESS` | 같은 채팅의 이어쓰기나 재생성이 생성 중 |
+| 503 | `SERVICE_UNAVAILABLE` | Redis 오류로 생성 중 키를 획득하지 못함<br>과금 없음 |
+| 409 | `CHAT_TURN_STALE` | 제공한 `lastTurnId`가 서버의 마지막 턴과 불일치 |
 
 <details>
 <summary><b>이어쓰기 요청·응답 예시</b></summary>
@@ -436,6 +486,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
   "userInput": "단상 앞으로 나선다.",
   "userSource": "choice",
   "sourceTurnId": 1201,
+  "lastTurnId": 1201,
   "choiceOrder": 1,
   "realtimeImage": true
 }
@@ -447,7 +498,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 ```text
 event: started
-data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d"}
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","generationId":"5e7b9a10-2c34-4d56-8e90-123456789abc"}
 
 event: token
 data: {"text":"*단상 위 "}
@@ -518,9 +569,12 @@ data: {"code":"AI_STREAM_FAILED","message":"AI 응답 생성 중 오류가 발�
 | 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트의 턴 체험 소진 |
 | 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨<br>턴이 없음 |
-| 409 | `CONFLICT` | 엔딩에 도달한 채팅<br>`turnId`가 마지막 턴이 아님 |
+| 409 | `CHAT_TURN_IN_PROGRESS` | 같은 채팅의 이어쓰기나 재생성이 생성 중 |
+| 503 | `SERVICE_UNAVAILABLE` | Redis 오류로 생성 중 키를 획득하지 못함<br>과금 없음 |
+| 409 | `CHAT_TURN_STALE` | `turnId`가 마지막 턴이 아님 |
+| 409 | `CHAT_ENDED` | 엔딩에 도달한 채팅 |
 
-스트림을 연 뒤 저장 시점에 마지막 턴이 바뀌었으면 `error` 이벤트로 끝난다.
+스트림을 연 뒤 저장 시점에 마지막 턴이 바뀌었으면 `CHAT_TURN_STALE`의 `error` 이벤트로 끝나고 환불한다.
 
 <details>
 <summary><b>재생성 요청·응답 예시</b></summary>
@@ -539,7 +593,7 @@ data: {"code":"AI_STREAM_FAILED","message":"AI 응답 생성 중 오류가 발�
 
 ```text
 event: started
-data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d"}
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","generationId":"5e7b9a10-2c34-4d56-8e90-123456789abc"}
 
 event: token
 data: {"text":"*검사장의 공기가 "}
@@ -556,7 +610,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 {
   "timestamp": "2026-06-12T12:00:00Z",
   "status": 409,
-  "code": "CONFLICT",
+  "code": "CHAT_TURN_STALE",
   "message": "마지막 턴이 아니거나 이미 변경되었습니다.",
   "path": "/api/v1/chats/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/turns/regenerate/stream",
   "details": []
@@ -575,7 +629,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 인증 | 선택 |
 | 성공 | 200 |
 
-요청 본문은 없다. 무료이며 체험 한도를 소모하지 않는다. 이미 선택지가 있으면 AI를 호출하지 않고 저장된 값을 반환한다. 클라이언트는 응답 본문이 아니라 상세 재조회의 `turns[].choices`로 표시한다.
+요청 본문은 없다. 무료이며 체험 한도를 소모하지 않는다. 이어쓰기와 재생성의 생성 중 키를 사용하지 않는다. 이미 선택지가 있으면 AI를 호출하지 않고 저장된 값을 반환한다. 클라이언트는 응답 본문이 아니라 상세 재조회의 `turns[].choices`로 표시한다.
 
 **1. 응답**
 
@@ -592,7 +646,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 400 | `BAD_REQUEST` | `turnId`가 정수가 아님 |
 | 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨<br>턴이 없음 |
-| 409 | `CONFLICT` | `turnId`가 마지막 턴이 아님<br>저장 시점에 본문이 재생성됨 |
+| 409 | `CHAT_TURN_STALE` | `turnId`가 마지막 턴이 아님<br>저장 시점에 마지막 턴이 바뀌거나 본문이 재생성됨 |
 | 502 | `BAD_GATEWAY` | AI 선택지 생성 실패<br>클라이언트가 재시도 |
 
 <details>
@@ -795,3 +849,76 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | ACCOUNT | 회원의 내 채팅 목록 조회 메서드와 카드 구조<br>게스트 이관 시 채팅 소유권 이전과 도달 집계 보정 | 계정 상태, 페르소나 스냅샷 |
 | PAYMENT | 턴과 이미지의 차감, 환불, 체험 예약과 복원 요청 | 지갑 일괄 차감, 환불, 체험 카운터 `chat_turn`과 `chat_image`, 정책값 `chat_turn_cost`와 `chat_image_cost` |
 | AI 서버 | 턴 요청, 선택지 요청 | 본문 스트림, 판정, 인물 이미지 이벤트, 선택지 |
+
+<br>
+
+### 4-2-13 생성 스트림 재연결
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /chats/{chatId}/generations/{generationId}/stream` |
+| 인증 | 선택<br>채팅 상세와 같은 접근 게이트 |
+| 성공 | 200, SSE |
+
+**1. 요청 경로**
+
+| 필드명 | 타입 | 필수 | 의미 |
+|---|---|---|---|
+| `chatId` | `string` | 필수 | 채팅 공개 식별자 |
+| `generationId` | `string` | 필수 | 생성 ID인 UUID 문자열<br>`started.generationId` 또는 상세의 `generatingTurn.generationId` |
+
+요청 본문은 없다. 생성 중 키가 사라져도 보관 중인 해당 생성의 스트림은 읽을 수 있다.
+
+<br>
+
+**2. 이벤트**
+
+이어쓰기의 SSE 이벤트 계약을 사용한다. 보관 중인 이벤트는 생성의 첫 이벤트부터 재생한 뒤 새 이벤트를 이어서 전송한다. 상세 조회 직후 재연결했을 때 큐 대기 등으로 아직 스트림이 없어도 생성 중 키가 해당 생성 ID를 담고 있으면 스트림을 기다린다.
+
+수신 연결은 종료 이벤트(`completed`, `error`)를 받으면 닫는다. 읽기 대기는 코드 상수인 5초 단위로 끊어 확인한다. 생성 중 키가 더 이상 해당 생성 ID를 담고 있지 않은데 종료 이벤트가 없으면 종료 이벤트 없이 연결을 닫는다. 기록 실패, 서버 강제 종료, 스트림 만료도 같은 조건을 적용한다. 클라이언트는 종료 이벤트 없이 닫힌 연결을 상세 재조회로 처리한다.
+
+끝난 스트림의 보관 기간은 종료 후 5분이다. 저장 진입 뒤 저장이 길어져 생성 시 TTL 150초로 스트림이 먼저 만료되면 재생할 이벤트가 없다. TTL 연장 장치는 두지 않는다. 수신 연결은 위 종료 조건으로 닫히고 클라이언트는 상세 재조회로 복구한다. 턴과 과금은 DB의 저장 결과가 기준이므로 스트림 만료의 영향을 받지 않는다. 스트림 부재로 404를 받으면 상세를 다시 조회한다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 403 | `FORBIDDEN` | 채팅 상세 조회 권한 없음 |
+| 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨 또는 형식 오류<br>해당 채팅의 생성 스트림이 없고 생성 중 키도 해당 생성 ID를 담고 있지 않음(만료 또는 잘못된 생성 ID) |
+
+<details>
+<summary><b>재연결 응답 예시</b></summary>
+
+<br>
+
+**1) 200 Response stream**
+
+```text
+event: started
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","generationId":"5e7b9a10-2c34-4d56-8e90-123456789abc"}
+
+event: token
+data: {"text":"*검사장의 공기가 "}
+
+event: completed
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":"*검사장의 공기가 무겁게 가라앉는다.*","choices":[],"reachedEnding":null}
+```
+
+<br>
+
+**2) 404 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T12:00:00Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "요청한 리소스를 찾을 수 없습니다.",
+  "path": "/api/v1/chats/{chatId}/generations/{generationId}/stream",
+  "details": []
+}
+```
+
+</details>

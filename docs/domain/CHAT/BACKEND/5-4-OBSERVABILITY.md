@@ -105,7 +105,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 턴 저장 | 저장 확정 직후<br>`user_message_saved`, `ai_response_saved` | `chat_id`, `story_id`, `turn_number`<br>`message_length_bucket`, `ai_call_log_id` |
 | 재생성 저장 | 교체 확정 직후<br>`ai_response_regenerated` | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id` |
 | 스트림 실패 | AI 스트림 오류나 저장 오류<br>`ai_stream_failed` | `chat_id`, `story_id`, `ai_call_log_id`, `sentry_event_id` |
-| 스트림 전체 상한 | 120초 초과<br>`chat_turn_timeout` | `chat_id`, `worker_state`(`PENDING`, `RUNNING`, `SAVING`, `CANCELLED`, `FINISHED`) |
+| 생성 마감 | 연결과 무관한 생성 마감 도달<br>`chat_turn_timeout` | `chat_id`와 `worker_state`<br>`PENDING`, `RUNNING`, `SAVING`, `CANCELLED`, `FINISHED` 유지<br>`CANCELLED`는 생성 마감으로 종료<br>연결 종료로는 상태 전이 없음 |
 | 실행기 거부 | 백그라운드 작업 제출 실패<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
@@ -142,22 +142,23 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 ### 5-4-7 지표
 
+연결 종료 자체는 턴 결과를 만들지 않는다. 이탈 후에도 저장되면 `success`다. 저장 진입 전에 생성 마감을 넘기거나 저장 전에 실패하면 `failure`다. 저장에 먼저 진입했다면 마감이 지나도 저장 결과로 집계한다. 연결 종료로 인한 `cancelled` 결과는 더 이상 기록하지 않는다. 기존 `cancelled` 값은 과거 조회용으로 유지한다.
+
 지표 태그에는 값의 종류가 제한된 enum만 사용한다.
 
 | 지표 | 종류와 태그 | 의미 |
 |---|---|---|
-| `manyak.chat.turn.result` | Counter<br>`outcome`(`success`, `failure`, `rejected`, `cancelled`) | 이어쓰기와 재생성의 결과 분포 |
+| `manyak.chat.turn.result` | Counter<br>`outcome`(`success`, `failure`, `rejected`) | 이어쓰기와 재생성의 결과 분포<br>기존 `cancelled`는 과거 조회용 |
 | `manyak.chat.turn.refund` | Counter<br>`outcome`(`success`, `failure`) | 환불과 복원 결과<br>기동 시 두 시계열을 0으로 등록 |
 | `manyak.ai.call.duration` | Timer<br>`feature`, `outcome`(`success`, `failure`) | AI 호출 지연과 실패율<br>본문은 스트림 전체 시간을 측정 |
-| `chat.turn.queue` | 관측 스팬<br>`outcome`(`cancelled`) | 백그라운드 작업 제출부터 시작까지의 대기 시간 |
+| `chat.turn.queue` | 관측 스팬<br>기존 `outcome=cancelled`는 과거 조회용으로 유지<br>생성 마감 초과는 `failure`로 집계 | 백그라운드 작업 제출부터 시작까지의 대기 시간 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 요청률, 오류율, 응답 시간 |
 
 | 기준 | 내용 |
 |---|---|
 | `success` | 턴 저장이 확정된 호출 |
-| `failure` | 저장에 도달하지 못하고 끝난 호출<br>AI 실패, 시간 초과, 저장 오류, 실행기 거부 |
-| `rejected` | 스트림을 열기 전의 4xx 거부<br>잔액 부족, 한도 소진, 디바이스 헤더 누락<br>알림은 `failure`만 사용 |
-| `cancelled` | 큐에서 시작 전 취소된 호출 |
+| `failure` | 저장에 도달하지 못하고 끝난 호출<br>AI 실패, 생성 마감 초과, 저장 오류, 시작 상태 불일치, 실행기 거부, Redis 오류로 생성 중 키 획득 실패<br>키 획득 실패는 과금이 없어도 채팅 생성 전체를 막는 장애이므로 `failure` 알림 대상 |
+| `rejected` | 스트림을 열기 전의 4xx 거부<br>잔액 부족, 한도 소진, 디바이스 헤더 누락, 생성 중, 마지막 턴 불일치, 엔딩 도달 재생성<br>알림은 `failure`만 사용 |
 | 환불 `failure` | 선차감을 되돌리지 못한 호출<br>관측 지표가 아니라 정산 정확성 신호 |
 
 <br>
