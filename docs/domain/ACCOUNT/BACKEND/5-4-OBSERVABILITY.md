@@ -150,7 +150,6 @@ ACCOUNT 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 H
 | 요청 경로 | 요청 로그 `endpoint`와 Sentry breadcrumb에 남음<br>코드가 헤더로만 오가므로 경로에 비밀값이 없음 |
 | Sentry 요청 필드 | 소셜 인증과 동의 완료 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |
 | Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
-| 인증 경로 본문 파싱 실패 | 경로, 예외 종류, 요청 ID만 DEBUG |
 
 <br>
 
