@@ -65,7 +65,7 @@
 | `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `PT10M` | 주입 없음 | |
 | `MANYAK_AUTH_CONSENT_GATE_ENABLED` | `false` | 주입 없음 | 미동의 회원 서버 게이트 |
 
-발급자, 접근 토큰과 갱신 토큰 수명, 회전 유예, 핸드오프와 링크 코드 수명, 재인증 허용 범위는 설정 파일의 고정값이다. 해당 환경 변수는 없다.
+발급자, 접근 토큰과 갱신 토큰 수명, 회전 유예, 재인증 허용 범위는 설정 파일의 고정값이다. 핸드오프와 링크 코드 수명은 코드 기본값이다. 해당 환경 변수는 없다.
 
 <br>
 
@@ -84,7 +84,8 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_ASSET_BASE_URL` | `https://api.manyak.app` | 주입 없음 | 프리셋 이미지 URL의 앞부분<br>저장된 URL은 전체 값이라 변경해도 기존 회원은 그대로 |
-| `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 빈 값 | 운영 Secrets Manager | 디바이스 해시 pepper<br>바꾸면 게스트 동의와 체험 카운터의 키가 달라짐 |
+| `MANYAK_ANALYTICS_DEVICE_ID_PEPPER` | 빈 값 | 주입 없음 | 디바이스 해시 pepper<br>없으면 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` 값을 씀<br>바꾸면 게스트 동의와 체험 카운터의 키가 달라짐 |
+| `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 빈 값 | 운영 Secrets Manager | 위 변수가 없을 때의 pepper |
 
 <br>
 
@@ -95,6 +96,7 @@
 | `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` | `false` | 운영 Terraform 변수 | |
 | `MANYAK_AMPLITUDE_API_KEY` | 빈 값 | 운영 Secrets Manager | 비어 있으면 발행 생략 |
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL과 인증 헤더는 Secrets Manager | Grafana Cloud로 전송 |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
 
@@ -123,7 +125,7 @@
 | 제공자 client ID | Secrets Manager 값 변경 후 새 태스크 시작 | 각 플랫폼의 로그인 성공 |
 | 동의 게이트 | 환경 변수 추가 후 새 태스크 시작 | 미동의 회원의 허용 목록 밖 요청 거절 |
 | 법적 문서 버전 | 환경 변수 또는 설정 파일 변경 후 새 태스크 시작 | 회원 동의 조회의 `requiredVersion`, 재동의 유도 |
-| 토큰과 코드 수명 | 설정 파일 변경 후 재빌드 | 회전 유예를 0으로 두면 동시 회전이 재사용 탐지로 바뀜 |
+| 토큰과 코드 수명 | 설정 파일 또는 코드 기본값 변경 후 재빌드 | 회전 유예를 0으로 두면 동시 회전이 재사용 탐지로 바뀜 |
 | 프리셋 이미지 | 정적 자산과 명사 풀을 함께 변경 후 재빌드 | 기동 로그의 적재 수가 명사 수와 같음 |
 | 가입과 초대 보상액, 월 상한 | PAYMENT 정책값 | 세션 조회와 초대 조회의 응답 값 |
 | 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |

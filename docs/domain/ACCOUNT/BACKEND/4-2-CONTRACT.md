@@ -68,7 +68,7 @@
 | `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
 | `message` | `string` | 사용자 안내 문구 |
 | `path` | `string` | 요청 경로 |
-| `details` | `object[]` | 필드 검증 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+| `details` | `object[]` | 선언적 필드 검증과 쿼리 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
 
 | `details[].field` 규칙 | 값 |
 |---|---|
@@ -243,7 +243,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 | `privacy` | `string` | 조건부 | 동의한 개인정보 처리방침 버전 |
 | `age14` | `string` | 조건부 | 만 14세 이상 확인 버전, `1` |
 
-대기 응답에서 `needsConsent`가 `true`였던 항목은 필수다. 이미 현행 동의가 있는 항목은 생략할 수 있다. 보낸 값은 모두 현행 버전이어야 한다. `null`은 생략과 같다. 대기 중에 계정이 탈퇴했거나 문서가 개정되면 필요한 항목과 버전이 달라지므로 항목 누락이나 버전 불일치로 거절되고, 클라이언트는 소셜 인증부터 다시 시작해 현행 항목을 받는다.
+완료 시점에 현행 동의가 없는 항목이 필수다. 대기 응답 이후 다른 요청이 같은 계정에 동의를 기록했으면 그 항목은 생략할 수 있다. 보낸 값은 모두 현행 버전이어야 한다. `null`은 생략과 같다. 대기 중에 계정이 탈퇴했거나 문서가 개정되면 필요한 항목과 버전이 달라지므로 항목 누락이나 버전 불일치로 거절되고, 클라이언트는 소셜 인증부터 다시 시작해 현행 항목을 받는다.
 
 <br>
 
@@ -503,7 +503,7 @@ Content-Type: application/json
 |---|---|---|---|
 | `storyIds` | `string[]` | 선택 | 이관할 스토리 공개 식별자, 최대 100개, 기본값 빈 배열 |
 | `chatIds` | `string[]` | 선택 | 이관할 채팅 공개 식별자, 최대 100개, 기본값 빈 배열 |
-| `callbackPath` | `string` | 필수 | 로그인 후 복귀할 앱 내 상대 경로<br>`/`로 시작하고 `//`와 `/\`로 시작하지 않으며 제어 문자 없이 512자 이내 |
+| `callbackPath` | `string` | 필수 | 로그인 후 복귀할 앱 내 상대 경로<br>`/`로 시작하고 `//`와 `/\`로 시작하지 않으며 ASCII 제어 문자 없이 512자 이내 |
 | `sourceApp` | `string` | 필수 | `kakaotalk`, `instagram`, `threads` |
 
 <br>
@@ -731,7 +731,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `provider` | 경로 | 필수 | 연동할 제공자 `google`, `kakao` |
+| `provider` | 경로 | 필수 | 연동할 제공자 `google`, `kakao`<br>대소문자는 구분하지 않음 |
 | `idToken` | `string` | 필수 | 연동할 제공자가 발급한 ID 토큰 |
 
 연동 후 상태는 세션 조회의 `linkedProviders`로 확인한다.

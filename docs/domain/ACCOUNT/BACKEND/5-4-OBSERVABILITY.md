@@ -60,7 +60,7 @@ Fluent Bit`"]
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms` |
+| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 회전 유예 적용 | 유예 재응답<br>`refresh_reuse_grace_applied` | `user_public_id` |
 | 재사용 탐지 | 유예 밖 재사용<br>평문 WARN | 회원 내부 ID, 세션 폐기 사실 |
 | 핸드오프 소비 실패 | 이관 예외<br>평문 WARN | `handoffId`, 예외 |
@@ -189,8 +189,10 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원이면 공개 식별자<br>로그인 실패와 동의 대기는 없음 |
-| `device_id` | 게스트면 디바이스 해시 |
-| `session_id`, `request_id`, `is_logged_in` | 요청 문맥 |
+| `device_id` | 디바이스 해시<br>회원 이벤트에도 해시가 있으면 싣고 없으면 `unknown` |
+| `device_id_hash` | 이벤트 프로퍼티에도 같은 해시 |
+| `session_id` | 정수 문자열일 때만 실음 |
+| `request_id`, `is_logged_in` | 요청 문맥 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>검증 실패는 `validation`, 공개 키 조회와 연결 실패는 `network`, 검증 통과 뒤 저장 실패는 `server` |
 | `is_rejoined` | 이번 로그인에서 끊긴 연동을 재사용해 재가입 계정을 만들었으면 `true` |
@@ -200,6 +202,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `reason` | 초대 코드 제출 거절 사유<br>`invalid_format`, `not_found`, `self_code`, `already_redeemed`, `inviter_withdrawn`, `inviter_unavailable`, `inviter_newer` |
 
 - 로그인 성공 이벤트는 소셜 인증 완료, 동의 완료, 호환 로그인에서 요청당 1회다. 동의 대기 단계에서는 발행하지 않는다.
+- 실패 이벤트는 서비스 판정 단계에 도달한 요청만 집계한다. 요청 형식 검증과 인증 단계에서 거절된 요청은 집계하지 않는다.
 - 이관 카운트의 합은 제출 총수와 같다. 제출 배열이 둘 다 비면 발행하지 않는다.
 - 연동 실패의 `error_type`은 3가지 값만 쓴다. 같은 회원과 타 회원의 충돌을 구분하면 특정 소셜 계정의 가입 여부를 알려주는 신호가 된다.
 - 탈퇴와 초대 제출 이벤트는 트랜잭션 커밋 후에 발행한다. 거절 이벤트는 자격 판정에서 거절할 때 발행한다.

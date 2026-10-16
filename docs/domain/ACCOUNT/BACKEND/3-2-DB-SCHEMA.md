@@ -108,7 +108,7 @@ erDiagram
 | `provider` | varchar(20) | NOT NULL, CHECK `GOOGLE` `KAKAO` `APPLE` `NAVER`, UNIQUE `(provider, provider_user_id)`, UNIQUE `(user_id, provider)` | |
 | `provider_user_id` | varchar(255) | NOT NULL | 제공자가 발급한 사용자 식별자 |
 | `email` | varchar(255) | | 저장만 하고 읽지 않음<br>탈퇴 시 `NULL` |
-| `connected_at` | timestamptz | NOT NULL | 연동 시각 |
+| `connected_at` | timestamptz | NOT NULL, 기본 `now()` | 연동 시각 |
 | `last_login_at` | timestamptz | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 `NULL` |
 | `deleted_at` | timestamptz | | 연동이 끊긴 시각<br>`NULL`이면 활성 연동 |
 
