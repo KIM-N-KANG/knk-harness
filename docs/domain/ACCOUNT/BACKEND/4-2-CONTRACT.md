@@ -886,8 +886,8 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `nickname` | `string` | 조건부 | 새 닉네임<br>`null`은 생략과 같음 |
-| `profileImagePreset` | `string` | 조건부 | 프리셋 키<br>`null`은 생략과 같음 |
+| `nickname` | `string` | 조건부 | 새 닉네임 |
+| `profileImagePreset` | `string` | 조건부 | 프리셋 키 |
 
 둘 중 하나는 있어야 한다. 보낸 필드만 반영한다.
 
@@ -1083,8 +1083,8 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `name` | `string` | 조건부 | 앞뒤 공백 제거 후 1~20자<br>`null`은 유지 |
-| `description` | `string` | 조건부 | 앞뒤 공백 제거 후 1~1,000자<br>`null`은 유지 |
+| `name` | `string` | 조건부 | 앞뒤 공백 제거 후 1~20자 |
+| `description` | `string` | 조건부 | 앞뒤 공백 제거 후 1~1,000자 |
 
 둘 중 하나는 있어야 한다.
 
