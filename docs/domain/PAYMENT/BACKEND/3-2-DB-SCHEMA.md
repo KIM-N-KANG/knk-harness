@@ -106,16 +106,16 @@ erDiagram
 
 | `reason` | 부호 | 의미 |
 |---|---|---|
-| `SIGNUP_REWARD` | 양수 | 가입 보상 |
-| `INVITE_REWARD` | 양수 | 초대 보상, 초대자와 제출자 각각 |
-| `ATTENDANCE_REWARD` | 양수 | 출석 보상 |
-| `PURCHASE` | 양수 | 구매 적립 |
-| `REFUND` | 양수 | 선차감의 환불 |
-| `STORY_CREATION` | 음수 | 간편 제작 소모 |
-| `CHAT_TURN` | 음수 | 채팅 턴 소모, 재생성 포함 |
-| `CHAT_IMAGE` | 음수 | 채팅 이미지 소모 |
-| `EXPIRE` | 음수 | 로트 만료 회수 |
-| `PURCHASE_REVERSAL` | 음수 | 결제 환불 회수 |
+| `SIGNUP_REWARD` | `+` | 가입 보상 |
+| `INVITE_REWARD` | `+` | 초대 보상, 초대자와 제출자 각각 |
+| `ATTENDANCE_REWARD` | `+` | 출석 보상 |
+| `PURCHASE` | `+` | 구매 적립 |
+| `REFUND` | `+` | 선차감의 환불 |
+| `STORY_CREATION` | `-` | 간편 제작 소모 |
+| `CHAT_TURN` | `-` | 채팅 턴 소모, 재생성 포함 |
+| `CHAT_IMAGE` | `-` | 채팅 이미지 소모 |
+| `EXPIRE` | `-` | 로트 만료 회수 |
+| `PURCHASE_REVERSAL` | `-` | 결제 환불 회수 |
 
 | `ref_type` | `ref_id` | 쓰는 행 |
 |---|---|---|
