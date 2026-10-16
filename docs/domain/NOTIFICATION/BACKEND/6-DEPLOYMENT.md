@@ -67,7 +67,7 @@
 | `MANYAK_PUSH_MODE` | `local` | 개발과 운영 Terraform 변수, 둘 다 `remote` | `local`은 서버가 직접 발송<br>`remote`는 큐로 알림 서비스에 넘김 |
 | `MANYAK_PUSH_QUEUE_URL` | 빈 값 | 개발과 운영 Terraform | 원격 모드 필수 |
 | `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
-| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | 개발과 운영 Secrets Manager | 출석과 프로모션 발송에 필요<br>완성과 검수는 원격 모드에서 쓰지 않음 |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | 개발과 운영 Secrets Manager | 로컬 모드 롤백에만 필요 |
 | `MANYAK_INTERNAL_SHARED_SECRET` | 빈 값 | 개발과 운영 Secrets Manager | 알림 서비스와 같은 값 |
 | `MANYAK_PUSH_WEB_BASE_URL` | `https://manyak.app` | 주입 없음 | 딥링크 앞부분 |
 | `MANYAK_PUSH_WEB_ICON_URL` | `https://manyak.app/icons/icon-192.png` | 주입 없음 | |
@@ -169,8 +169,8 @@
 | 롤링 교체 중 큐 소비 | 처리 중 메시지는 가시성 시간이 지나면 재전달<br>선점 수명이 지나면 새 소비자가 처리 |
 | 알림 서비스 중단 | 큐에 적체되고 서버는 영향 없음<br>재기동 뒤 소비 |
 | 서버 중단 | 알림 서비스의 자격 조회가 실패해 재전달<br>상한을 넘기면 실패 큐 |
-| 출석 회차 중 교체 | 두 태스크가 동시에 실행돼도 선점 키로 한 번만 발송<br>회차 도중 종료되면 남은 회원은 그날 받지 못함 |
-| 프로모션 회차 중 교체 | 전송 중 상태로 남으며 운영자가 재예약 |
+| 출석 회차 중 교체 | 두 태스크가 동시에 실행돼도 선점 키로 한 번만 실행<br>기록한 요청은 새 태스크의 릴레이가 발행하고 기록하지 않은 회원은 그날 받지 못함 |
+| 프로모션 회차 중 교체 | 전송 중 상태로 남으며 운영자가 예약으로 되돌리면 기록하지 않은 회원만 추가 기록 |
 | 개발 stop-then-start | 알림 서비스 배포도 서버와 같은 태스크 전체를 재시작<br>교체 중 모든 요청 실패<br>데이터 컨테이너 재시작 |
 
 <br>

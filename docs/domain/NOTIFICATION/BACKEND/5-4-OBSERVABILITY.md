@@ -71,10 +71,10 @@ Fluent Bit`"]
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 서버의 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
-| 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`, `skipped` |
+| 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`<br>원격 모드의 `sent`는 기록한 요청 수, 로컬 모드는 발송기 호출 수 |
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
-| 프로모션 회차 | 캠페인별 종료<br>`promotion_push_sent`, 실패는 `promotion_push_failed` | `campaignId`, `targets`, `sent`, `skipped`<br>회차 밖 예외는 `error` |
+| 프로모션 회차 | 캠페인별 종료<br>`promotion_push_sent`, 실패는 `promotion_push_failed` | `campaignId`, `targets`, `sent`<br>회차 밖 예외는 `error` |
 | 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자, 예외 클래스 |
 | 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자, 예외 클래스 |
 | FCM 발송 실패 | 서버와 알림 서비스<br>평문 WARN | 회원 식별자, 토큰 앞 12자, 오류 코드, 예외 클래스 |
@@ -94,7 +94,7 @@ Fluent Bit`"]
 예시에는 가상 값을 썼다. 로그 프레임워크가 붙이는 필드는 생략했다.
 
 ```json
-{"@timestamp":"2026-10-16T00:00:12.345Z","message":"event_name=attendance_reminder_sent, targets=1240, sent=1231, skipped=9","level":"INFO","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"attendance_reminder_sent","targets":1240,"sent":1231,"skipped":9,"service":"manyak-server"}
+{"@timestamp":"2026-10-16T00:00:12.345Z","message":"event_name=attendance_reminder_sent, targets=1240, sent=1240","level":"INFO","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"attendance_reminder_sent","targets":1240,"sent":1240,"service":"manyak-server"}
 ```
 
 </details>
@@ -107,7 +107,7 @@ Fluent Bit`"]
 |---|---|
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
-| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `sent`와 `skipped`, 선점 실패 로그 |
+| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 소비 지표와 발송 지표 |
 | 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
 | 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 큐 경보 |

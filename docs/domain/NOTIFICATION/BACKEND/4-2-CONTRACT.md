@@ -569,7 +569,7 @@ Content-Type: application/json
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
 | `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
 | `data` | `object` | 필수 | 푸시 데이터<br>동의와 토큰을 담지 않음 |
-| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>생략하면 만료 없음 |
+| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>생략하면 만료 없음 |
 | `requestId` | `string` | 필수 | 발행 원인의 요청 ID<br>없으면 `unknown` |
 | `sessionId` | `string` | 필수 | 발행 원인의 세션 ID<br>없으면 `unknown` |
 | `schemaVersion` | `integer` | 필수 | `1` |
@@ -582,7 +582,7 @@ Content-Type: application/json
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
 - 추적 헤더는 본문이 아니라 큐의 메시지 속성에 싣는다.
-- 출석 리마인드와 프로모션은 서버 안 발송기가 보내며 큐에 발행하지 않는다. 소비자는 네 시나리오를 모두 검증한다.
+- 출석 리마인드와 프로모션은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>
 <summary><b>메시지 예시</b></summary>
