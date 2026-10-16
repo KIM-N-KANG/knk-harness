@@ -49,7 +49,8 @@ Fluent Bit`"]
 |---|---|---|
 | `request_id` | 로그 MDC, Sentry 태그 | 한 요청의 로그 |
 | 회원 내부 ID | 대사 로그 `user_id`, 체험 Redis 장애 WARN | 회원 |
-| 주문 내부 ID | 웹훅 경고, 회수 부족분 WARN | 주문 |
+| 주문 내부 ID | 웹훅 경고 | 주문 |
+| 적립 행 ID | 회수 부족분 WARN | 구매 적립 |
 | 차감 그룹 | 대사 로그 `ref_type`, `ref_id` | 소모 행 묶음 |
 | 웹훅 멱등 키 | 수신 DEBUG | 그로블 전송 1건<br>검증에는 쓰지 않음 |
 
@@ -77,6 +78,8 @@ Fluent Bit`"]
 | 역순 환불 금액 불일치 | 완료 처리<br>평문 WARN | 주문 내부 ID |
 | 구매 환불 회수 부족분 | 회수<br>평문 WARN | 적립 행 ID, 부족 수량 |
 | 체험 Redis 장애 | 회원 예약, 복원, 스냅샷<br>평문 WARN | 회원 내부 ID, 카운터, 예외 |
+| 분석 이벤트 전송 실패 | 비동기 전송 실패<br>평문 WARN | 이벤트 이름, 예외 |
+| 주문 소유자 식별 실패 | 웹훅 이벤트 발행 전<br>평문 WARN | 주문 내부 ID |
 
 <details>
 <summary><b>예시: 대사 보정 로그 1줄</b></summary>
@@ -110,14 +113,14 @@ Fluent Bit`"]
 
 | 지표 | 종류와 태그 | 의미 |
 |---|---|---|
-| `manyak.payment.groble.webhook` | Counter<br>`result` = `completed`, `refunded`, `marked`, `ignored`, `invalid` | 웹훅 처리 결과<br>`invalid`는 검증 실패 |
+| `manyak.payment.groble.webhook` | Counter<br>`result` = `completed`, `refunded`, `marked`, `ignored`, `invalid` | 웹훅 처리 결과<br>`refunded`는 환불 회수와 선도착 환불을 소비한 완료, `marked`는 주문 없는 환불의 표식 보관, `invalid`는 검증 실패 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 이프 경로의 요청률, 오류율, 응답 시간 |
 
 | 항목 | 기준과 제한 |
 |---|---|
 | 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송 |
 | 전송 주기 | 60초 간격 |
-| 카운트 시점 | 트랜잭션 커밋 뒤<br>롤백된 처리는 세지 않음 |
+| 카운트 시점 | 거래 처리 결과는 트랜잭션 커밋 뒤 기록하고 롤백된 처리는 세지 않음<br>검증 실패 `invalid`는 즉시 기록 |
 
 <br>
 
@@ -166,7 +169,7 @@ Fluent Bit`"]
 | 회원 식별 실패 | 주문 소유자의 공개 식별자를 찾지 못하면 WARN으로 기록하고 발행 생략 |
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
-| 대사 결과 로그 | 환불이 없는 실행은 기록하지 않음<br>기록이 없다는 것은 보정할 것이 없었다는 뜻 |
+| 대사 결과 로그 | 환불이 없는 실행은 기록하지 않음<br>기록이 없으면 보정할 것이 없었거나 그룹이 실패한 것이며 그룹 실패는 별도 로그로 확인 |
 | 미수집과 누락 | 수집 비활성화, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 결제가 없었다고 판단하지 않음 |
 
 <br>
@@ -182,7 +185,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `server_credit_attendance_processed_succeeded` | 출석 보상 요청 처리 | `rewarded`, `amount` |
 | `server_payment_order_processed_succeeded` | 웹 충전 주문 생성 커밋 | `product_id` |
 | `server_payment_purchase_processed_succeeded` | 완료 통지로 구매 적립 커밋 | `product_id`, `price_krw`, `credit_amount` |
-| `server_payment_refund_processed_succeeded` | 환불 통지로 회수 커밋 | `product_id`, `reversal_shortfall` |
+| `server_payment_refund_processed_succeeded` | 환불 통지로 회수 커밋, 또는 선도착 환불을 소비한 완료 처리 커밋 | `product_id`, `reversal_shortfall` |
 
 | 공통 프로퍼티 | 값 |
 |---|---|
@@ -196,7 +199,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `product_id` | 상품 ID |
 | `price_krw` | 결제 금액 |
 | `credit_amount` | 적립 총량 |
-| `reversal_shortfall` | 회수 때 이미 소진돼 돌려받지 못한 수량 |
+| `reversal_shortfall` | 회수 때 이미 소진돼 돌려받지 못한 수량<br>회수 없이 환불 상태가 된 주문은 생략 |
 
 - 출석 이벤트는 적립 여부와 무관하게 요청당 1회 발행한다. 거절된 요청에는 발행하지 않는다.
 - 구매와 환불 이벤트는 처리 트랜잭션 커밋 뒤 발행한다. 무시한 통지와 재전송에는 이벤트를 발행하지 않는다. 적립 없이 환불 상태가 된 주문은 환불 이벤트만 발행한다.

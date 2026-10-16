@@ -68,7 +68,7 @@
 | `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
 | `message` | `string` | 사용자 안내 문구 |
 | `path` | `string` | 요청 경로 |
-| `details` | `object[]` | 선언적 필드 검증과 쿼리 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+| `details` | `object[]` | 선언적 필드 검증, 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
 
 | `details[].field` 규칙 | 값 |
 |---|---|
@@ -381,7 +381,7 @@ Authorization: Bearer {accessToken}
 | `items[].type` | `string` | `SPEND`, `EARN`, `EXPIRE` |
 | `items[].reason` | `string` | 원장 사유<br>한국어 라벨은 클라이언트가 붙임 |
 | `items[].amount` | `integer` | 부호 있는 증감<br>소모, 만료, 회수는 음수 |
-| `items[].title` | `string / null` | 관련 스토리 제목<br>보상, 만료, 회수 행과 삭제된 스토리는 `null` |
+| `items[].title` | `string / null` | 관련 스토리 제목<br>채팅 참조는 읽을 수 없거나 삭제된 스토리면 마지막 공개 스냅샷의 제목이고 스냅샷이 없으면 `null`<br>간편 제작 참조는 삭제된 스토리면 `null`<br>보상, 만료, 회수 행은 `null` |
 | `items[].expiresAt` | `string / null` | 획득 행은 그 적립분의 만료 예정 시각, 만료 행은 실제 만료 시각<br>소모와 회수 행은 `null` |
 | `items[].createdAt` | `string` | 원장 기록 시각<br>만료 행은 만료 시각이 아니라 회수가 기록된 시각 |
 | `nextCursor` | `string / null` | 다음 페이지 커서<br>더 없으면 `null` |
@@ -565,7 +565,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `orderId`가 UUID 형식이 아님 |
+| 400 | `BAD_REQUEST` | `orderId`가 UUID 형식이 아님<br>`details[].field`는 `orderId` |
 | 404 | `NOT_FOUND` | 없는 주문, 타인의 주문 |
 
 <details>
