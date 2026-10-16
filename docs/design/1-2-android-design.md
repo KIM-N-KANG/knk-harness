@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.6 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-14 |
+| 수정일 | 2026-10-16 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -84,7 +84,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | --- | --- |
 | `ChatStarter` | `common` 계약, `chat` 구현. 다른 기능의 채팅 시작 요청을 연결 |
 | `PersonaAccess` | `common` 계약, `my`의 `PersonaRepositoryImpl` 구현. 상세가 내 페르소나 목록과 상세에서 만든 페르소나의 미리 선택을 관찰하고 다시 읽기와 미리 선택 지우기만 호출. 생성, 수정, 삭제는 마이가 소유 |
-| `CreationProgressAccess` | `common` 계약, `create` 구현. 제작 요약 관찰·폐기·새로고침만 노출 |
+| `CreationProgressAccess` | `common` 계약, `create` 구현. 제작 요약 관찰·폐기·새로고침(완성 요청 상태, 서버 초안 목록)만 노출 |
 | `StoryLikeUpdates` | `common` 계약, `home` 구현. 상세의 성공한 좋아요 수를 홈 목록으로 전달 |
 | `StoryDeletion` | `common` 계약, `studio` 구현. 상세 화면의 삭제와 목록 상태를 연결 |
 | `SignupOnboardingWriter` | `common` 계약, `my`의 초대 상태 구현. `auth`가 토큰 발급 응답(`COMPLETED`의 토큰 또는 가입 완료 응답)의 가입 결과를 전달 |
@@ -269,15 +269,19 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 `create/general`이 폼 entity, 순수 domain 변환, API와 Room data, MVI 화면을 소유합니다. `GeneralStoryForm`의 반복 항목은 로컬 안정 ID와 서버 ID를 구분하며 검수 경로는 제출 시 폼에서 안정 ID로 변환합니다. 수정 baseline은 처음 복원한 폼의 요청 표현을 보관하여 알 수 없는 설정 글과 폼에 없는 서버 인물 및 대표 이미지 외의 이미지를 유지합니다. 부분 수정 검증은 실제 PATCH 필드군에 한정하여 수정하지 않은 기존 값이 저장을 막지 않게 합니다.
 
-`navigation`은 `CreateMethodRoute`, `GeneralCreateRoute(draftId)`, `GeneralSubmissionRoute(submissionId)`, `StoryEditRoute(storyId)`를 등록합니다. `app`이 제작 탭과 상세에서 콜백을 연결하고 일반 제작 승인 후 `ChatStarter` 결과로 상세 위에 채팅을 엽니다. 수정 완료는 기존 상세 또는 제작 탭으로 돌아가 화면 표시 시점에 새 값을 조회합니다.
+`navigation`은 `CreateMethodRoute`, `GeneralCreateRoute(draftId, resume)`, `GeneralSubmissionRoute(submissionId)`, `StoryEditRoute(storyId)`를 등록합니다. `app`이 제작 탭과 상세에서 콜백을 연결하고 일반 제작 승인 후 `ChatStarter` 결과로 상세 위에 채팅을 엽니다. 수정 완료는 기존 상세 또는 제작 탭으로 돌아가 화면 표시 시점에 새 값을 조회합니다.
 
 기본 주인공 이름은 `protagonistName`으로 따로 보내고 `userRoleSetting`에는 넣지 않습니다. 수정 폼과 반려 제출본은 `protagonistName`에서 이름을 읽고, 이전 글 맨 앞의 `## 호칭` 절은 특징 본문 맨 앞에 남깁니다. 수정 PATCH는 이름이 바뀌었고 비어 있지 않을 때만 이름을 싣습니다. 이름은 선택 입력이며, 이름을 뺀 글에 `{username}`이 있는데 이름이 비면 이름 칸에 `NAME_TOKEN_NEEDS_NAME` 오류를 두고, 이 오류는 수정에서 바뀐 필드와 상관없이 검사합니다.
 
-`GeneralStoryViewModel`은 입력, 검증과 서버 검수 상태를 MVI로 관리합니다. 탭과 펼침 및 크롭 범위는 저장 가능한 화면 상태로 유지하며 폼의 프로세스 복원은 Room 또는 서버 제출본 조회로 처리합니다. 검수 폴링은 화면 STARTED에서 1초 간격, 단조 시계로 60초 상한을 적용합니다. 제출과 접수 기록은 `FunnelScope`에서 완료하고 세션 세대가 바뀐 결과를 반영하지 않습니다. 신규 POST 응답 유실은 자동 재전송하지 않으며 접수 기록만 실패하면 제출 ID를 유지한 채 기록을 재시도합니다. 성공한 등록과 수정은 `CreationProgressAccess.submissionChanges`로 알리고 제작 탭은 STARTED에서 수집해 제출본과 스토리 목록을 갱신합니다. 화면을 먼저 닫고 늦게 받은 접수도 반영하며, 수정 복귀가 이전 조회와 겹치면 그 조회 뒤에 새 조회를 예약합니다.
+`GeneralStoryViewModel`은 입력, 검증과 서버 검수 상태를 MVI로 관리합니다. 탭과 펼침 및 크롭 범위는 저장 가능한 화면 상태로 유지하며 폼의 프로세스 복원은 서버 초안(옮기지 못한 기기 안 초안 포함) 또는 서버 제출본 조회로 처리합니다. 검수 폴링은 화면 STARTED에서 1초 간격, 단조 시계로 60초 상한을 적용합니다. 제출과 접수 기록은 `FunnelScope`에서 완료하고 세션 세대가 바뀐 결과를 반영하지 않습니다. 신규 POST 응답 유실은 자동 재전송하지 않으며 접수 기록만 실패하면 제출 ID를 유지한 채 기록을 재시도합니다. 성공한 등록과 수정은 `CreationProgressAccess.submissionChanges`로 알리고 제작 탭은 STARTED에서 수집해 제출본과 스토리 목록을 갱신합니다. 화면을 먼저 닫고 늦게 받은 접수도 반영하며, 수정 복귀가 이전 조회와 겹치면 그 조회 뒤에 새 조회를 예약합니다.
 
-Room의 `general_story_draft`는 `(ownerId, draftId)` 복합 키, 버전 있는 폼 JSON, 최초 저장 시각과 접수 제출 ID를 둡니다. v4에서 v5로 테이블만 추가하며 기존 간편 제작 테이블은 그대로 유지합니다. 접수하면 JSON을 비우고 제출 ID만 남겨 이후 저장을 거절합니다. 연결 행은 복원된 라우트를 서버 제출본으로 연결하며 카드에서 제외합니다. `CreationProgressRepository`가 기존 간편 제작 실행기에 위임하면서 두 저장소의 초안을 최초 시각순으로 합칩니다.
+회원의 일반 제작 임시 저장본은 서버 초안(`/users/me/story-drafts`)입니다. `GeneralDraftServerStore`가 `GeneralDraftStore`를 구현하고, payload는 웹과 같은 v1 형식으로 [`GeneralDraftPayload`](../../../manyak-android/create/src/main/java/app/manyak/create/general/data/api/GeneralDraftPayload.kt)가 쓰고 [`GeneralDraftPayloadReader`](../../../manyak-android/create/src/main/java/app/manyak/create/general/data/api/GeneralDraftPayloadReader.kt)가 읽습니다. 이미지는 객체 키만 보내고, 장르는 폼이 이름만 들고 있어 모두 `custom` 항목과 `customTags`의 이름으로 씁니다. 웹이 쓴 `tag` 항목은 제공 장르 카탈로그로 이름을 찾고, 카탈로그를 받지 못하면 장르를 잃은 채 되쓰지 않게 불러오기 실패로 처리합니다. `schemaVersion`이 1이 아니거나 `GENERAL`이 아닌 초안도 열지 않습니다. PUT 오류 본문의 `code`와 `details[field=version]`으로 상한, 용량 초과, 충돌을 가르고, 기준 버전이 있는 저장이 그 밖의 이유로 거절되면 상세 404를 확인한 뒤 같은 ID로 기준 버전 없이 다시 만듭니다. 서버 목록은 계정 ID와 함께 마지막 성공 목록을 메모리에 두고, 목록 재조회가 실패해도 같은 계정이면 유지합니다.
 
-Photo Picker 입력은 실제 MIME과 크기를 확인한 뒤 샘플링 디코딩 및 EXIF 보정을 거쳐 고정 비율로 자릅니다. `GeneralImageUploader`는 API presign 이후 별도 무인증 OkHttpClient로 PUT하고 성공 결과를 계정별 앱 파일에 보관합니다. 저장 snapshot이 바뀐 뒤 참조가 사라진 이전 파일을 정리하며, 편집 취소는 마지막 저장본이 참조하는 파일을 보존합니다. 객체 키와 파일 참조만 저장하고 Bitmap 또는 임시 접근 권한은 저장 정본으로 사용하지 않습니다.
+화면 쪽은 `GeneralDraftSession`이 초안 ID별로 다음 저장의 기준 버전과 열어 둔 기기 안 초안을 화면 수명 동안 들고 있습니다. 저장은 저장 Job 하나로 하나씩 보내고 응답의 `version`을 다음 `baseVersion`으로 씁니다. 409는 상태의 `draftConflictVersion`으로 다이얼로그를 띄워 구성 변경에도 남고, 덮어쓰기는 그 버전을 기준으로 다시 보냅니다. 라우트의 `resume`은 제작 탭 카드로 이어서 연 경우만 참이며, 새로 시작한 화면도 프로세스 복원을 위해 상세를 조회해 404면 안내 없이 빈 폼을 엽니다. 등록과 재제출 요청에는 Draft 진입일 때만 `draftId`를 실어 서버가 접수와 함께 초안을 지웁니다.
+
+Room의 `general_story_draft`는 `(ownerId, draftId)` 복합 키, 버전 있는 폼 JSON, 최초 저장 시각과 접수 제출 ID를 둡니다. 스키마는 v5 그대로이며 이제 서버 연동 전에 저장한 기기 안 초안과 접수 연결 행만 남습니다. 접수하면 JSON을 비우고 제출 ID만 남겨 이후 저장을 거절하고, 연결 행은 복원된 라우트를 서버 제출본으로 연결하며 카드에서 제외합니다. 진입은 연결 행, 기기 안 초안, 서버 상세 순서로 봅니다. 제작 탭은 화면 표시, 재시도, 당겨서 새로고침 때 `CreationProgressAccess.refreshDrafts`로 서버 목록을 받고, 받았으면 기기 안 초안을 같은 ID로 PUT해 성공이거나 409인 것을 모은 뒤 목록을 다시 받고 나서 지웁니다(카드가 기기 안에서 서버로 넘어가는 동안 사라지지 않게). 상한에 걸리면 멈춥니다. `CreationProgressRepository`가 간편 제작 초안과 일반 제작 초안(같은 ID는 서버 쪽)을 최초 시각순으로 합치고, 일반 제작 카드 삭제는 서버 DELETE와 기기 안 행 삭제를 함께 합니다. 서버 카드는 내 스토리 목록보다 늦게 와 목록 맨 앞에 붙을 수 있어, `StudioScreen`은 채팅 목록과 같이 맨 위를 보던 중이면 `requestScrollToItem(0)`으로 맨 위에 둡니다.
+
+Photo Picker 입력은 실제 MIME과 크기를 확인한 뒤 샘플링 디코딩 및 EXIF 보정을 거쳐 고정 비율로 자릅니다. `GeneralImageUploader`는 API presign 이후 별도 무인증 OkHttpClient로 PUT하고 성공 결과를 계정별 앱 파일에 보관합니다. 앱 파일은 화면 수명 동안의 미리보기이고, 다시 열면 서버 초안 상세의 `imageUrls`로 미리보기를 그립니다. 화면을 닫으면 그 화면에서 본 파일을 지우되, 서버로 옮기지 못한 기기 안 초안이 참조하는 파일은 남기고 그 초안을 옮겨 지울 때 함께 정리합니다. 객체 키와 파일 참조만 저장하고 Bitmap 또는 임시 접근 권한은 저장 정본으로 사용하지 않습니다.
 
 일반 제작 화면은 간편 제작의 헤더와 임시 저장 버튼, 접는 입력 항목(`CollapsibleInputSection`)과 장르 검색 콤보박스를 함께 씁니다. 웹에만 있는 모션 컴포넌트인 제작 방식 선택 일러스트와 분량 배분 인라인 슬라이더는 `create/general`이 같은 시간과 곡선으로 구현하며, 두 번째 사용처가 생기기 전까지 `designsystem`으로 올리지 않습니다. 이미지 자르기는 바텀 시트의 검은 판 위에 비율 창을 두고 창 밖을 어둡게 남깁니다.
 
