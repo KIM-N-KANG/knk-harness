@@ -187,9 +187,9 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원 공개 식별자<br>웹훅은 주문 소유자의 공개 식별자 |
-| `device_id` | 디바이스 해시<br>실제 해시가 있을 때만 포함하고 없으면 생략 |
-| `session_id` | 정수 문자열일 때만 포함<br>웹훅은 없음 |
-| `request_id`, `is_logged_in` | 요청 문맥<br>웹훅의 `is_logged_in`은 `false` |
+| `device_id` | 디바이스 해시<br>실제 해시가 있을 때만 포함하고 없으면 생략<br>웹훅은 생략 |
+| `session_id` | 정수 문자열일 때만 포함<br>웹훅은 생략 |
+| `request_id`, `is_logged_in` | 요청 문맥<br>웹훅은 주문 소유자에게 붙이는 회원 이벤트이므로 `is_logged_in`은 `true` |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `rewarded` | 이번 요청으로 출석 보상을 적립했으면 `true` |
 | `amount` | 이번 요청으로 적립한 이프 |
