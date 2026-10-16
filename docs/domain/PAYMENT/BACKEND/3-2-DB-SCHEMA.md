@@ -73,36 +73,40 @@ erDiagram
 
 ### 3-2-3 지갑
 
-`credit_wallets`는 회원당 한 행이다. 첫 적립 때 만든다.
+**`credit_wallets`**
+
+회원당 한 행이다. 첫 적립 때 만든다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `user_id` | `bigint` | NOT NULL, FK `users`, UNIQUE | |
-| `balance` | `bigint` | NOT NULL, 기본 0, CHECK `>= 0` | 원장 합계의 캐시<br>만료된 로트가 정리되기 전에는 잔액 조회 값보다 클 수 있음 |
-| `updated_at` | `timestamptz` | NOT NULL | |
+| `id` | bigint | PK | |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE, UNIQUE | |
+| `balance` | bigint | NOT NULL, 기본 0, CHECK `>= 0` | 원장 합계의 캐시<br>만료된 로트가 정리되기 전에는 잔액 조회 값보다 클 수 있음 |
+| `updated_at` | timestamptz | NOT NULL | |
 
 <br>
 
 ### 3-2-4 원장
 
-`credit_transactions`는 이프 증감 1건당 한 행이다. 추가만 하고 수정하지 않는다.
+**`credit_transactions`**
+
+이프 증감 1건당 한 행이다. 추가만 하고 수정하지 않는다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | 이용내역 정렬의 2차 키 |
-| `user_id` | `bigint` | NOT NULL, FK `users` | |
-| `amount` | `bigint` | NOT NULL, CHECK `<> 0` | 부호 있는 증감<br>적립, 환불, 구매는 양수. 소모, 만료, 회수는 음수 |
-| `reason` | `varchar(30)` | NOT NULL, CHECK 아래 목록 | 증감 사유 |
-| `ref_type` | `varchar(30)` | | 참조 종류<br>아래 목록 |
-| `ref_id` | `bigint` | | 참조 대상의 내부 ID |
-| `idempotency_key` | `varchar(255)` | UNIQUE | 보상, 구매, 요청 안 환불의 멱등 키<br>소모, 만료, 회수, 대사 환불은 NULL |
+| `id` | bigint | PK | 이용내역 정렬의 2차 키 |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | |
+| `amount` | bigint | NOT NULL, CHECK `<> 0` | 부호 있는 증감<br>적립, 환불, 구매는 양수. 소모, 만료, 회수는 음수 |
+| `reason` | varchar(30) | NOT NULL, CHECK 아래 목록 | 증감 사유 |
+| `ref_type` | varchar(30) | | 참조 종류<br>아래 목록 |
+| `ref_id` | bigint | | 참조 대상의 내부 ID |
+| `idempotency_key` | varchar(255) | UNIQUE | 보상, 구매, 요청 안 환불의 멱등 키<br>소모, 만료, 회수, 대사 환불은 NULL |
 
-| 인덱스 | 컬럼 | 용도 |
-|---|---|---|
-| `idx_credit_transactions_user` | `user_id` | 회원별 조회 |
-| `idx_credit_transactions_ref` | `user_id`, `ref_type`, `ref_id` | 대사의 그룹 집계와 환불 수 재확인 |
-| `idx_credit_transactions_user_history` | `user_id`, `created_at DESC`, `id DESC` | 이용내역 커서 페이지 |
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_credit_transactions_user` | `user_id` |
+| `idx_credit_transactions_ref` | `user_id`, `ref_type`, `ref_id` |
+| `idx_credit_transactions_user_history` | `user_id`, `created_at DESC`, `id DESC` |
 
 | `reason` | 부호 | 의미 |
 |---|---|---|
@@ -129,34 +133,38 @@ erDiagram
 
 ### 3-2-5 로트
 
-`credit_lots`는 양수 원장 행 1건마다 한 행이다.
+**`credit_lots`**
+
+양수 원장 행 1건마다 한 행이다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `user_id` | `bigint` | NOT NULL, FK `users` | |
-| `transaction_id` | `bigint` | FK `credit_transactions` | 이 로트를 만든 적립 행<br>로트 도입 전 잔액을 승계한 로트는 NULL |
-| `original_amount` | `bigint` | NOT NULL, CHECK `> 0` | 적립 당시 금액 |
-| `remaining` | `bigint` | NOT NULL, CHECK `0 이상 original_amount 이하` | 소진과 만료로 줄어드는 남은 수량 |
-| `expires_at` | `timestamptz` | | 만료 시각<br>NULL은 무기한인 승계 로트 |
+| `id` | bigint | PK | |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | |
+| `transaction_id` | bigint | FK `credit_transactions.id` | 이 로트를 만든 적립 행<br>로트 도입 전 잔액을 승계한 로트는 NULL |
+| `original_amount` | bigint | NOT NULL, CHECK `> 0` | 적립 당시 금액 |
+| `remaining` | bigint | NOT NULL, CHECK `0 이상, original_amount 이하` | 소진과 만료로 줄어드는 남은 수량 |
+| `expires_at` | timestamptz | | 만료 시각<br>NULL은 무기한인 승계 로트 |
 
-| 인덱스 | 컬럼 | 용도 |
-|---|---|---|
-| `idx_credit_lots_user_active` | `user_id`, `expires_at` WHERE `remaining > 0` | 활성 로트 조회와 소진 순서 정렬 |
-| `idx_credit_lots_transaction` | `transaction_id` | 이용내역의 만료일 해석 |
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_credit_lots_user_active` | `user_id`, `expires_at` WHERE `remaining > 0` |
+| `idx_credit_lots_transaction` | `transaction_id` |
 
 <br>
 
 ### 3-2-6 정책 오버라이드
 
-`credit_policies`는 기본값과 다르게 적용할 정책값만 담는다. 행이 없으면 기본값을 적용한다. 운영자가 직접 기록한다.
+**`credit_policies`**
+
+기본값과 다르게 적용할 정책값만 담는다. 행이 없으면 기본값을 적용한다. 운영자가 직접 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `policy_key` | `varchar(50)` | PK | 정책 키<br>목록은 정책값 조회의 키와 같음 |
-| `amount` | `bigint` | NOT NULL, CHECK `0 이상 10000 이하` | 적용할 값<br>상한으로 자릿수 오타 방지 |
-| `effective_until` | `timestamptz` | | 이 시각이 지나면 기본값으로 복귀<br>NULL은 상시 적용 |
-| `updated_at` | `timestamptz` | NOT NULL | |
+| `policy_key` | varchar(50) | PK | 정책 키<br>목록은 정책값 조회의 키와 같음 |
+| `amount` | bigint | NOT NULL, CHECK `0 이상 10000 이하` | 적용할 값<br>상한으로 자릿수 오타 방지 |
+| `effective_until` | timestamptz | | 이 시각이 지나면 기본값으로 복귀<br>NULL은 상시 적용 |
+| `updated_at` | timestamptz | NOT NULL | |
 
 | `policy_key` | 의미 | 최솟값 |
 |---|---|---|
@@ -172,38 +180,42 @@ erDiagram
 
 ### 3-2-7 주문
 
-`credit_orders`는 결제 1건당 한 행이다. 생성 시점의 가격과 총량을 고정한다.
+**`credit_orders`**
+
+결제 1건당 한 행이다. 생성 시점의 가격과 총량을 고정한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | `bigint` | PK | |
-| `public_id` | `uuid` | NOT NULL, UNIQUE | 외부 노출 식별자 |
-| `user_id` | `bigint` | NOT NULL, FK `users` | |
-| `product_id` | `varchar(32)` | NOT NULL | 상품 ID |
-| `provider` | `varchar(20)` | NOT NULL, CHECK `GROBLE` | |
-| `status` | `varchar(20)` | NOT NULL, CHECK `PENDING`, `COMPLETED`, `REFUNDED` | |
-| `price_krw` | `bigint` | NOT NULL | 생성 시점의 가격 |
-| `credit_amount` | `bigint` | NOT NULL | 생성 시점의 총량 |
-| `provider_ref` | `varchar(255)` | UNIQUE | 그로블 거래 식별자<br>완료 때 채움 |
-| `credit_transaction_id` | `bigint` | FK `credit_transactions` | 구매 적립 행<br>적립 없이 환불 상태가 된 주문은 NULL |
-| `completed_at` | `timestamptz` | | |
-| `refunded_at` | `timestamptz` | | |
-| `reversal_shortfall` | `bigint` | | 회수 때 이미 소진돼 돌려받지 못한 수량<br>NULL은 회수 전, 0은 전량 회수 |
+| `id` | bigint | PK | |
+| `public_id` | uuid | NOT NULL, UNIQUE | 외부 노출 식별자 |
+| `user_id` | bigint | NOT NULL, FK `users.id` | |
+| `product_id` | varchar(32) | NOT NULL | 상품 ID |
+| `provider` | varchar(20) | NOT NULL, CHECK `GROBLE` | |
+| `status` | varchar(20) | NOT NULL, CHECK `PENDING` `COMPLETED` `REFUNDED` | |
+| `price_krw` | bigint | NOT NULL | 생성 시점의 가격 |
+| `credit_amount` | bigint | NOT NULL | 생성 시점의 총량 |
+| `provider_ref` | varchar(255) | UNIQUE | 그로블 거래 식별자<br>완료 때 채움 |
+| `credit_transaction_id` | bigint | FK `credit_transactions.id` | 구매 적립 행<br>적립 없이 환불 상태가 된 주문은 NULL |
+| `completed_at` | timestamptz | | |
+| `refunded_at` | timestamptz | | |
+| `reversal_shortfall` | bigint | | 회수 때 이미 소진돼 돌려받지 못한 수량<br>NULL은 회수 전, 0은 전량 회수 |
 
-| 인덱스 | 컬럼 | 용도 |
-|---|---|---|
-| `idx_credit_orders_user_created_at` | `user_id`, `created_at DESC` | 회원별 주문 조회 |
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_credit_orders_user_created_at` | `user_id`, `created_at DESC` |
 
 <br>
 
 ### 3-2-8 환불 표식
 
-`groble_refund_marks`는 그로블 거래 식별자 단위의 잠금 행이다. 완료보다 먼저 도착한 전체 환불의 금액을 완료 처리 때까지 보관한다.
+**`groble_refund_marks`**
+
+그로블 거래 식별자 단위의 잠금 행이다. 완료보다 먼저 도착한 전체 환불의 금액을 완료 처리 때까지 보관한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `merchant_uid` | `varchar(255)` | PK | 그로블 거래 식별자 |
-| `refund_amount` | `bigint` | | 완료보다 먼저 도착한 전체 환불의 금액<br>NULL은 잠금용 행 |
+| `merchant_uid` | varchar(255) | PK | 그로블 거래 식별자 |
+| `refund_amount` | bigint | | 완료보다 먼저 도착한 전체 환불의 금액<br>NULL은 잠금용 행 |
 
 <br>
 
@@ -213,7 +225,7 @@ erDiagram
 |---|---|---|
 | `users` | `reward_identity_user_id` | 출석 보상의 멱등 키에 사용<br>NULL이면 `id` |
 | `users` | `member_trial_seeded_at` | 체험 스냅샷 완료 시각<br>계정 도메인이 기록하고 PAYMENT는 스냅샷 완료 여부를 반환 |
-| `users` | `status` | 충전과 출석 보상 전 계정 상태 검사 |
+| `users` | status | 충전과 출석 보상 전 계정 상태 검사 |
 | `story_chats` | `current_turn`, `regenerated_count`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |
 | `story_creation_sessions` | `status`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |
 | `stories` | 제목, 기본 주인공 이름, 삭제 시각, 공개 스냅샷 | 이용내역 제목 해석 |
