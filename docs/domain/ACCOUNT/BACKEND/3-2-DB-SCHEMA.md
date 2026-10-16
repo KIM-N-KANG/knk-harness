@@ -13,7 +13,7 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>회원과 페르소나는 외부 노출용 `public_id uuid`를 따로 둠<br>접근 토큰의 주체와 모든 API는 공개 식별자만 사용 |
-| 시각 | `timestamp with time zone`<br>회원, 소셜 연동, 페르소나에 `created_at`과 `updated_at`이 있고 기본값은 `now()`<br>아래 표에서는 생략 |
+| 시각 | `timestamp with time zone`<br>회원, 소셜 연동, 페르소나에 `created_at`과 `updated_at`이 있고 기본값은 `now()`<br>아래 표에서는 표시하지 않음 |
 | 삭제 | 회원과 페르소나는 `deleted_at` 기록<br>소셜 연동은 `deleted_at`으로 끊긴 연동임을 표시<br>물리 삭제 경로 없음 |
 | FK | 소셜 연동은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>초대자 참조는 초대자 삭제 시 비움(`ON DELETE SET NULL`)<br>동의와 페르소나는 연쇄 없음 |
 
@@ -184,7 +184,7 @@ erDiagram
 
 ### 3-2-8 Redis 키
 
-값에 자기 코드의 원문을 저장하지 않는다. 동의 대기 값에는 완료 시 소비할 핸드오프 코드 원문이 대기 수명 동안 들어 있다. 키의 해시는 SHA-256 해시를 base64url로 표현한 값이다. `familyId`는 세션 식별자다.
+각 코드의 저장 값에는 해당 코드 원문을 저장하지 않는다. 동의 대기 값에는 완료 시 소비할 핸드오프 코드 원문이 대기 수명 동안 들어 있다. 키의 해시는 SHA-256 해시를 base64url로 표현한 값이다. `familyId`는 세션 식별자다.
 
 | 키 | 값 | 삭제 |
 |---|---|---|
@@ -192,7 +192,7 @@ erDiagram
 | `rt:tok:{갱신 토큰 해시}` | `familyId`<br>과거 토큰도 유지 | 갱신 토큰 수명 만료 |
 | `rt:grace:{제시한 토큰 해시}` | `{새 토큰 해시}:{새 토큰 원문}` | 유예 만료 |
 | `rt:user:{userId}` | `familyId` 집합 | 갱신 토큰 수명 만료, 탈퇴 |
-| `login_handoff:{코드 해시}` | 핸드오프 JSON<br>소비 뒤에는 기기 식별자를 비움 | 핸드오프 수명 만료<br>소비 뒤에는 결과 보관 수명 만료 |
+| `login_handoff:{코드 해시}` | 핸드오프 JSON<br>소비 후에는 기기 식별자 삭제 | 핸드오프 수명 만료<br>소비 후에는 결과 보관 수명 만료 |
 | `login_handoff_claim:{코드 해시}` | `1` | 결과 보관 수명 만료<br>이관 실패 시 즉시 삭제 |
 | `social_consent:{코드 해시}` | 동의 대기 JSON | 대기 수명 만료, 완료 성공 |
 | `link_auth:{코드 해시}` | `userId` | 링크 코드 수명 만료, 연동 성공 |

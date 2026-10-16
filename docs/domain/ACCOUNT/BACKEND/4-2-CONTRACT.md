@@ -92,7 +92,7 @@
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `accessToken` | `string` | 접근 토큰, `Authorization` 헤더에 실음 |
+| `accessToken` | `string` | 접근 토큰, `Authorization` 헤더에 포함 |
 | `refreshToken` | `string` | 갱신 토큰, 1회용 |
 | `expiresIn` | `integer` | 접근 토큰 만료까지 남은 초 |
 | `tokenType` | `string` | 항상 `Bearer` |
@@ -140,7 +140,7 @@
 
 **2. 응답**
 
-`status`에 따라 실리는 필드가 다르다. 없는 필드는 응답에서 생략한다.
+`status`에 따라 응답에 포함하는 필드가 다르다. 없는 필드는 응답에서 생략한다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -159,7 +159,7 @@
 |---|---|---|
 | 400 | `BAD_REQUEST` | 지원하지 않는 제공자, `idToken` 누락, 본문 파싱 실패 |
 | 401 | `UNAUTHORIZED` | ID 토큰 검증 실패<br>서명, 만료, 발급자, 대상, 공개 키 조회 실패를 구분하지 않음 |
-| 500 | `INTERNAL_SERVER_ERROR` | 계정 저장 중 DB 오류<br>원인을 싣지 않은 고정 문구 |
+| 500 | `INTERNAL_SERVER_ERROR` | 계정 저장 중 DB 오류<br>원인을 포함하지 않는 고정 문구 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -243,7 +243,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 | `privacy` | `string` | 조건부 | 동의한 개인정보 처리방침 버전 |
 | `age14` | `string` | 조건부 | 만 14세 이상 확인 버전, `1` |
 
-완료 시점에 현행 동의가 없는 항목이 필수다. 대기 응답 이후 다른 요청이 같은 계정에 동의를 기록했으면 그 항목은 생략할 수 있다. 보낸 값은 모두 현행 버전이어야 한다. `null`은 생략과 같다. 대기 중에 계정이 탈퇴했거나 문서가 개정되면 필요한 항목과 버전이 달라지므로 항목 누락이나 버전 불일치로 거절되고, 클라이언트는 소셜 인증부터 다시 시작해 현행 항목을 받는다.
+완료 시점에 현행 동의가 없는 항목이 필수다. 대기 응답 이후 다른 요청이 같은 계정에 동의를 기록했으면 그 항목은 생략할 수 있다. 보낸 값은 모두 현행 버전이어야 한다. `null`은 생략과 같다. 대기 중에 계정이 탈퇴했거나 문서가 개정되면 필요한 항목과 버전이 달라지므로 항목 누락이나 버전 불일치로 거절한다. 클라이언트는 소셜 인증부터 다시 시작해 현행 항목을 받는다.
 
 <br>
 
@@ -659,7 +659,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 | `PENDING` | 생성됨, 외부 브라우저가 아직 받지 않음 |
 | `LANDED` | 외부 랜딩이 코드를 확인함 |
 | `MIGRATED` | 로그인 처리 중 핸드오프를 소비하고 결과를 저장함<br>실제로 이관된 항목이 없어도 이 상태 |
-| `MIGRATION_CLOSED` | 로그인이 소비했으나 계정의 이관이 닫혀 이관하지 않음 |
+| `MIGRATION_CLOSED` | 로그인 처리 중 소비했으나 계정의 이관이 닫혀 이관하지 않음 |
 
 <br>
 
@@ -710,7 +710,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `linkCode` | `string` | 연동 요청의 `X-Manyak-Link-Code`에 실을 1회용 코드 |
+| `linkCode` | `string` | 연동 요청의 `X-Manyak-Link-Code`에 포함할 1회용 코드 |
 | `expiresAt` | `string` | 만료 시각 |
 
 <br>
@@ -921,7 +921,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `nickname` | `string` | 조건부 | 새 닉네임<br>2~20자, 완성형 한글과 영문과 숫자만, 공백 불가<br>중복 판정은 소문자 변환과 공백 제거 기준 |
+| `nickname` | `string` | 조건부 | 새 닉네임<br>2~20자, 완성형 한글, 영문, 숫자만, 공백 불가<br>중복 판정은 소문자 변환과 공백 제거 기준 |
 | `profileImagePreset` | `string` | 조건부 | 프리셋 키 |
 
 둘 중 하나는 있어야 한다. 보낸 필드만 반영한다.
@@ -1029,7 +1029,7 @@ Content-Type: application/json
 | `createdAt` | `string` | |
 | `updatedAt` | `string` | |
 
-페르소나가 없으면 빈 배열을 반환한다. 생성 최신순으로 정렬한다. 실패는 공통 실패뿐이다.
+페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 최신인 순으로 정렬한다. 실패는 공통 실패뿐이다.
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1277,7 +1277,7 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 전부 미제출, 본문 파싱 실패 |
-| 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름<br>클라이언트는 현행 문서를 다시 표시해 동의를 받아 재제출하고, 동의 없이 버전 값만 바꿔 자동 재전송하지 않음 |
+| 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름<br>클라이언트는 현행 문서를 다시 표시해 동의를 받은 뒤 재제출. 동의 없이 버전 값만 바꿔 자동 재전송하지 않음 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1444,7 +1444,7 @@ Content-Type: application/json
 
 **2. 응답**
 
-스토리 카드 구조는 STORY 도메인의 일괄 조회와 같다. ([STORY 4-2-7 일괄 조회](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-7-일괄-조회)) 생성 최신순으로 정렬한다. 삭제된 스토리는 제외한다.
+스토리 카드 구조는 STORY 도메인의 일괄 조회와 같다. ([STORY 4-2-7 일괄 조회](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-7-일괄-조회)) 생성 시각이 최신인 순으로 정렬한다. 삭제된 스토리는 제외한다.
 
 <br>
 
@@ -1499,7 +1499,7 @@ Content-Type: application/json
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `inviteCode` | `string` | 내 초대 코드, 대문자와 숫자 8자<br>처음 조회 때 발급하고 이후 같은 값 |
-| `monthlyRewardCount` | `integer` | 이번 KST 월에 초대자로서 받은 보상 횟수 |
+| `monthlyRewardCount` | `integer` | KST 기준 이번 달에 초대자로서 받은 보상 횟수 |
 | `monthlyRewardLimit` | `integer` | 초대자 보상 월 상한, 이프 정책값 |
 
 실패는 공통 실패뿐이다.
@@ -1546,7 +1546,7 @@ Content-Type: application/json
 | `amount` | `integer` | 이번 요청으로 제출자에게 적립된 이프<br>이프 정책값 |
 | `balance` | `integer` | 적립 후 제출자 잔액 |
 
-초대자가 월 상한이면 초대자 적립만 건너뛰고 응답은 그대로 200이다.
+초대자가 월 상한에 도달하면 초대자 적립만 건너뛰고 응답은 그대로 200이다.
 
 <br>
 
