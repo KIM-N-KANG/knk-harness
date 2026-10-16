@@ -174,14 +174,17 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 
 | 이벤트 | 시점 | 프로퍼티 |
 |---|---|---|
-| `server_login_googleLogin_processed_succeeded` | Google 로그인 완료 | `is_new_user` |
+| `server_login_googleLogin_processed_succeeded` | Google 로그인 완료 | `is_new_user`, `is_rejoined` |
 | `server_login_googleLogin_processed_failed` | Google 로그인 실패 | `error_type` |
-| `server_login_kakaoLogin_processed_succeeded` | Kakao 로그인 완료 | `is_new_user` |
+| `server_login_kakaoLogin_processed_succeeded` | Kakao 로그인 완료 | `is_new_user`, `is_rejoined` |
 | `server_login_kakaoLogin_processed_failed` | Kakao 로그인 실패 | `error_type` |
 | `server_link_socialLink_processed_succeeded` | 계정 연동 성공 | `provider` |
 | `server_link_socialLink_processed_failed` | 계정 연동 실패 | `provider`, `error_type` |
 | `server_login_migration_processed_succeeded` | 이관 커밋, 부분 성공 포함 | `migrated_story_count`, `migrated_chat_count`, `already_owned_count`, `conflict_count`, `not_found_count` |
 | `server_login_migration_processed_failed` | 이관 요청 실패 | `error_type` |
+| `server_account_withdrawal_processed_succeeded` | 탈퇴 커밋 | `account_age_days`, `was_suspended` |
+| `server_invite_redeem_processed_succeeded` | 초대 코드 제출 커밋 | `inviter_capped` |
+| `server_invite_redeem_processed_failed` | 초대 코드 제출 거절 | `error_type`, `reason` |
 
 | 공통 프로퍼티 | 값 |
 |---|---|
@@ -190,8 +193,14 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `session_id`, `request_id`, `is_logged_in` | 요청 문맥 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>검증 실패는 `validation`, 공개 키 조회와 연결 실패는 `network`, 검증 통과 뒤 저장 실패는 `server` |
+| `is_rejoined` | 이번 로그인에서 끊긴 연동을 재사용해 재가입 계정을 만들었으면 `true` |
+| `account_age_days` | 가입부터 탈퇴까지 지난 일수 |
+| `was_suspended` | 탈퇴 직전 정지 상태였으면 `true` |
+| `inviter_capped` | 초대자가 월 상한에 도달해 초대자 적립만 건너뛰었으면 `true` |
+| `reason` | 초대 코드 제출 거절 사유<br>`invalid_format`, `not_found`, `self_code`, `already_redeemed`, `inviter_withdrawn`, `inviter_unavailable`, `inviter_newer` |
 
 - 로그인 성공 이벤트는 소셜 인증 완료, 동의 완료, 호환 로그인에서 요청당 1회다. 동의 대기 단계에서는 발행하지 않는다.
 - 이관 카운트의 합은 제출 총수와 같다. 제출 배열이 둘 다 비면 발행하지 않는다.
 - 연동 실패의 `error_type`은 3가지 값만 쓴다. 같은 회원과 타 회원의 충돌을 구분하면 특정 소셜 계정의 가입 여부를 알려주는 신호가 된다.
-- 로그아웃, 탈퇴, 프로필, 페르소나, 동의, 초대에는 서버 이벤트가 없다.
+- 탈퇴와 초대 제출 이벤트는 트랜잭션 커밋 후에 발행한다. 거절 이벤트는 자격 판정에서 거절할 때 발행한다.
+- 로그아웃, 프로필, 페르소나, 동의에는 서버 이벤트가 없다. 로그아웃은 클라이언트 이벤트로, 프로필과 페르소나는 클라이언트의 완료 이벤트로, 동의는 로그인 성공 이벤트로 확인한다.
