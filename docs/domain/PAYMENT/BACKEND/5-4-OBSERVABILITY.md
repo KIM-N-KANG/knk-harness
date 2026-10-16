@@ -24,10 +24,11 @@ Fluent Bit`"]
     S -->|OTLP 지표, 결제 결과 카운터| G["`**Grafana Cloud**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
+    S -->|출석, 결제 이벤트| AM["`**Amplitude**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S comp
-    class F,OS,CW,DP,OD,G,SE,SL ext
+    class F,OS,CW,DP,OD,G,SE,SL,AM ext
 ```
 
 <br>
@@ -75,8 +76,6 @@ Fluent Bit`"]
 | 웹훅 무시 | 본문 불일치<br>평문 WARN | 무시 사유 |
 | 역순 환불 금액 불일치 | 완료 처리<br>평문 WARN | 주문 내부 ID |
 | 구매 환불 회수 부족분 | 회수<br>평문 WARN | 적립 행 ID, 부족 수량 |
-| Google 구매 거부 | 테스트 구매, 미지원 유형<br>평문 WARN | 사유 |
-| Google 환불 대사 실패 | 조회 실패, 건별 회수 실패<br>평문 WARN | 고정 문구 |
 | 체험 Redis 장애 | 회원 예약, 복원, 스냅샷<br>평문 WARN | 회원 내부 ID, 카운터, 예외 |
 
 <details>
@@ -99,8 +98,7 @@ Fluent Bit`"]
 | 기능 | 오류 조회 위치 |
 |---|---|
 | 그로블 결제 | 지표 `manyak.payment.groble.webhook`의 `result` 분포<br>웹훅 무시 WARN의 사유 |
-| Google Play 결제 | 지표 `manyak.payment.google.purchase`의 `result` 분포<br>Sentry `endpoint=/api/v1/users/me/credits/purchases/google` |
-| 결제 환불 | 지표 `manyak.payment.google.voided`<br>회수 부족분 WARN |
+| 결제 환불 | 웹훅 지표의 `refunded`<br>회수 부족분 WARN |
 | 선차감과 환불 | 대사 로그 `credit_reconciliation_refunded`가 반복되면 호출 도메인의 환불 경로 점검<br>혼합 단가 WARN |
 | 정책값 | 기동 로그 `credit_policy_effective`, 변경 로그, 오버라이드 제외 WARN |
 | 체험 | Redis 장애 WARN<br>요청 로그의 `/api/v1/users/me/trials` 500 비율 |
@@ -113,8 +111,6 @@ Fluent Bit`"]
 | 지표 | 종류와 태그 | 의미 |
 |---|---|---|
 | `manyak.payment.groble.webhook` | Counter<br>`result` = `completed`, `refunded`, `marked`, `ignored`, `invalid` | 웹훅 처리 결과<br>`invalid`는 검증 실패 |
-| `manyak.payment.google.purchase` | Counter<br>`result` = `completed`, `duplicate`, `rejected`, `error` | 구매 검증 결과<br>`rejected`는 4xx, `error`는 5xx |
-| `manyak.payment.google.voided` | Counter<br>`result` = `reversed`, `ignored` | 무효 구매 회수 결과 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 이프 경로의 요청률, 오류율, 응답 시간 |
 
 | 항목 | 기준과 제한 |
@@ -130,7 +126,7 @@ Fluent Bit`"]
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
-| 스팬 | HTTP 요청 스팬의 하위에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬<br>Google Play 호출은 HTTP 클라이언트 스팬 |
+| 스팬 | HTTP 요청 스팬의 하위에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬 |
 | 제외 | actuator 요청, Spring Security 내부 관측, 요청 밖의 루트 DB와 Redis 관측은 노이즈 필터가 제외<br>스케줄러의 DB 접근도 요청과 별개이므로 제외 |
 
 <br>
@@ -140,7 +136,7 @@ Fluent Bit`"]
 | 항목 | 기준 |
 |---|---|
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
-| PAYMENT에서 수집하는 오류 | 500 예상하지 못한 예외, Google 처리 중 예외, 게스트 체험 Redis 장애로 인한 500<br>4xx 거절, 웹훅 무시, 대사 보정, 정책 제외는 Sentry에 없어 보고에 포함되지 않음 |
+| PAYMENT에서 수집하는 오류 | 500 예상하지 못한 예외, 게스트 체험 Redis 장애로 인한 500<br>4xx 거절, 웹훅 무시, 대사 보정, 정책 제외는 Sentry에 없어 보고에 포함되지 않음 |
 | 지표 기반 알림 | PAYMENT 전용 규칙 없음 |
 
 <br>
@@ -151,12 +147,12 @@ Fluent Bit`"]
 
 | 데이터 | 현재 기록 방식 |
 |---|---|
-| 구매 토큰, 웹훅 시크릿, 서비스 계정 자격 증명 | 로그, Sentry, 지표에 기록하지 않음 |
+| 웹훅 시크릿 | 로그, Sentry, 지표에 기록하지 않음 |
 | 웹훅 본문 | 기록하지 않음<br>이벤트 종류와 무시 사유만 기록 |
 | 그로블 거래 식별자, 이벤트 ID | 로그에 기록하지 않음 |
 | 디바이스 ID | 해시만 기록 |
 | 금액 | 대사 로그의 단가와 회수 부족분은 기록 |
-| Sentry 요청 필드 | 기본 수집<br>Google 구매 요청 본문에는 토큰이 있으나 5xx 캡처는 원인 예외를 제거한 고정 문구 예외만 보냄 |
+| Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
 
 <br>
@@ -165,6 +161,9 @@ Fluent Bit`"]
 
 | 상황 | 처리 |
 |---|---|
+| 분석 이벤트 전송 실패 | 비동기 호출 후 WARN으로만 기록하고 재시도 없음 |
+| 결제 이벤트 | 트랜잭션 커밋 뒤 발행<br>롤백되면 발행하지 않음 |
+| 회원 식별 실패 | 주문 소유자의 공개 식별자를 찾지 못하면 WARN으로 기록하고 발행 생략 |
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
 | 대사 결과 로그 | 환불이 없는 실행은 기록하지 않음<br>기록이 없다는 것은 보정할 것이 없었다는 뜻 |
@@ -174,4 +173,31 @@ Fluent Bit`"]
 
 ### 5-4-9 분석 이벤트
 
-PAYMENT에는 서버 분석 이벤트가 없다. 결제와 환불은 지표와 주문 상태로 확인한다. 보상 적립은 원장과 계정 도메인의 로그인과 초대 이벤트로 확인한다.
+**서버 이벤트**
+
+Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가 있는 환경에서만 전송한다.
+
+| 이벤트 | 시점 | 프로퍼티 |
+|---|---|---|
+| `server_credit_attendance_processed_succeeded` | 출석 보상 요청 처리 | `rewarded`, `amount` |
+| `server_payment_order_processed_succeeded` | 웹 충전 주문 생성 커밋 | `product_id` |
+| `server_payment_purchase_processed_succeeded` | 완료 통지로 구매 적립 커밋 | `product_id`, `price_krw`, `credit_amount` |
+| `server_payment_refund_processed_succeeded` | 환불 통지로 회수 커밋 | `product_id`, `reversal_shortfall` |
+
+| 공통 프로퍼티 | 값 |
+|---|---|
+| `user_id` | 회원 공개 식별자<br>웹훅은 주문 소유자 |
+| `device_id` | 디바이스 해시<br>실제 해시가 있을 때만 포함하고 없으면 생략 |
+| `session_id` | 정수 문자열일 때만 포함<br>웹훅은 없음 |
+| `request_id`, `is_logged_in` | 요청 문맥<br>웹훅의 `is_logged_in`은 `false` |
+| `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
+| `rewarded` | 이번 요청으로 출석 보상을 적립했으면 `true` |
+| `amount` | 이번 요청으로 적립한 이프 |
+| `product_id` | 상품 ID |
+| `price_krw` | 결제 금액 |
+| `credit_amount` | 적립 총량 |
+| `reversal_shortfall` | 회수 때 이미 소진돼 돌려받지 못한 수량 |
+
+- 출석 이벤트는 적립 여부와 무관하게 요청당 1회다. 거절된 요청은 발행하지 않는다.
+- 구매와 환불 이벤트는 처리 트랜잭션 커밋 뒤 발행한다. 무시한 통지와 재전송은 발행하지 않는다. 적립 없이 환불 상태가 된 주문은 환불 이벤트만 발행한다.
+- 보상 적립의 가입과 초대 이벤트는 계정 도메인이 발행한다. 소모와 환불은 스토리와 채팅 도메인의 이벤트로 본다.

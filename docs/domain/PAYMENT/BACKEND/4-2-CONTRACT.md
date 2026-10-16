@@ -53,7 +53,7 @@
 |---|---|---|
 | 상품 목록, 정책값 조회, 체험 조회 | 처리 | 유효한 토큰은 401<br>만료되거나 위조된 토큰은 익명 처리 |
 | 잔액 조회, 이용내역 조회, 주문 조회 | 처리 | 401 |
-| 출석 보상, 충전 주문 생성, Google Play 구매 | 403 | 401 |
+| 출석 보상, 충전 주문 생성 | 403 | 401 |
 
 <br>
 
@@ -104,7 +104,6 @@
 | `items[].bonusCredits` | `integer` | 보너스 이프 |
 | `items[].totalCredits` | `integer` | 적립 총량 |
 | `items[].webPriceKrw` | `integer` | 웹 가격 |
-| `items[].appPriceKrw` | `integer` | 앱 가격 |
 
 <br>
 
@@ -128,8 +127,8 @@ GET /api/v1/credits/products
 ```json
 {
   "items": [
-    { "productId": "if_2000", "baseCredits": 2000, "bonusCredits": 0, "totalCredits": 2000, "webPriceKrw": 2000, "appPriceKrw": 2800 },
-    { "productId": "if_5000", "baseCredits": 4800, "bonusCredits": 200, "totalCredits": 5000, "webPriceKrw": 4800, "appPriceKrw": 6700 }
+    { "productId": "if_2000", "baseCredits": 2000, "bonusCredits": 0, "totalCredits": 2000, "webPriceKrw": 2000 },
+    { "productId": "if_5000", "baseCredits": 4800, "bonusCredits": 200, "totalCredits": 5000, "webPriceKrw": 4800 }
   ]
 }
 ```
@@ -611,82 +610,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-10 Google Play 구매 검증
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `POST /users/me/credits/purchases/google` |
-| 인증 | 필수 |
-| 성공 | 200 |
-
-**1. 본문**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `productId` | `string` | 필수 | 상품 ID, 1~32자 |
-| `purchaseToken` | `string` | 필수 | Google Play 구매 토큰, 1~4,096자 |
-
-<br>
-
-**2. 응답**
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `orderId` | `string` | 주문 공개 식별자 |
-| `balance` | `integer` | 적립 뒤 잔액<br>재요청이면 현재 잔액 |
-
-- 같은 회원이 같은 상품의 토큰을 다시 보내면 적립 없이 같은 주문으로 200을 응답한다. 환불된 주문의 토큰도 같은 방식으로 처리한다.
-- 앱은 200을 받은 뒤 토큰을 소비한다.
-
-<br>
-
-**3. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 필드 검증 실패, 설정에 없는 상품, Google 검증 실패, 미완료 구매, 상품 불일치, 허용하지 않는 구매 유형, 다른 회원이나 다른 상품에 쓰인 토큰 |
-| 502 | `BAD_GATEWAY` | Google Play 연동 실패 |
-| 503 | `SERVICE_UNAVAILABLE` | Google Play 결제 미설정 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-1) Request
-
-```http
-POST /api/v1/users/me/credits/purchases/google
-Authorization: Bearer {accessToken}
-Content-Type: application/json
-
-{ "productId": "if_5000", "purchaseToken": "{purchaseToken}" }
-```
-
-2) 200 Response body
-
-```json
-{ "orderId": "0f8fad5b-d9cb-469f-a165-70867728950e", "balance": 6230 }
-```
-
-3) 400 Response body
-
-```json
-{
-  "timestamp": "2026-10-16T01:23:45.678Z",
-  "status": 400,
-  "code": "BAD_REQUEST",
-  "message": "Google Play 구매 검증에 실패했습니다.",
-  "path": "/api/v1/users/me/credits/purchases/google",
-  "details": []
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-11 그로블 웹훅 수신
+### 4-2-10 그로블 웹훅 수신
 
 | 항목 | 값 |
 |---|---|
@@ -771,7 +695,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-12 다른 도메인과의 경계
+### 4-2-11 다른 도메인과의 경계
 
 | 도메인 | PAYMENT가 제공하는 것 | PAYMENT가 사용하는 것 |
 |---|---|---|

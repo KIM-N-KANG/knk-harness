@@ -180,11 +180,11 @@ erDiagram
 | `public_id` | `uuid` | NOT NULL, UNIQUE | 외부 노출 식별자 |
 | `user_id` | `bigint` | NOT NULL, FK `users` | |
 | `product_id` | `varchar(32)` | NOT NULL | 상품 ID |
-| `provider` | `varchar(20)` | NOT NULL, CHECK `GROBLE`, `GOOGLE_PLAY` | |
+| `provider` | `varchar(20)` | NOT NULL, CHECK `GROBLE` | |
 | `status` | `varchar(20)` | NOT NULL, CHECK `PENDING`, `COMPLETED`, `REFUNDED` | |
-| `price_krw` | `bigint` | NOT NULL | 생성 시점의 가격<br>웹은 웹 가격, 앱은 앱 가격 |
+| `price_krw` | `bigint` | NOT NULL | 생성 시점의 가격 |
 | `credit_amount` | `bigint` | NOT NULL | 생성 시점의 총량 |
-| `provider_ref` | `varchar(255)` | UNIQUE | 그로블은 거래 식별자, Google Play는 구매 토큰 해시<br>웹 주문은 완료 때 채움 |
+| `provider_ref` | `varchar(255)` | UNIQUE | 그로블 거래 식별자<br>완료 때 채움 |
 | `credit_transaction_id` | `bigint` | FK `credit_transactions` | 구매 적립 행<br>적립 없이 환불 상태가 된 주문은 NULL |
 | `completed_at` | `timestamptz` | | |
 | `refunded_at` | `timestamptz` | | |
