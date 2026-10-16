@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>회원과 페르소나는 외부 노출용 `public_id uuid`를 따로 둠<br>접근 토큰의 주체와 모든 API는 공개 식별자만 사용 |
 | 시각 | `timestamp with time zone`<br>회원, 소셜 연동, 페르소나에 `created_at`과 `updated_at`이 있고 기본값은 `now()`<br>아래 표에서는 생략 |
-| 삭제 | 회원과 페르소나는 `deleted_at` 기록<br>소셜 연동은 `deleted_at`으로 탈퇴 연동임을 표시<br>물리 삭제 경로 없음 |
+| 삭제 | 회원과 페르소나는 `deleted_at` 기록<br>소셜 연동은 `deleted_at`으로 끊긴 연동임을 표시<br>물리 삭제 경로 없음 |
 | FK | 소셜 연동은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>초대자 참조는 초대자 삭제 시 비움(`ON DELETE SET NULL`)<br>동의와 페르소나는 연쇄 없음 |
 
 <br>
@@ -85,7 +85,7 @@ erDiagram
 | `migrated_at` | timestamptz | | 이관에 처음 성공한 시각<br>값이 있으면 이관 닫힘 |
 | `migration_attempts` | integer | NOT NULL, 기본 0 | 이관 시도 누계 |
 | `member_trial_seeded_at` | timestamptz | | 게스트 체험 사용량을 회원으로 옮긴 시각 |
-| `rejoined_at` | timestamptz | | 탈퇴 연동을 재사용해 만든 계정의 생성 시각 |
+| `rejoined_at` | timestamptz | | 끊긴 연동을 재사용해 만든 계정의 생성 시각 |
 | `reward_identity_user_id` | bigint | | 보상 신원<br>`NULL`이면 자기 자신, 재가입 계정은 최초 계정의 `id` |
 | `withdrawn_from_status` | varchar(20) | | 탈퇴 직전 상태 |
 
@@ -110,7 +110,7 @@ erDiagram
 | `email` | varchar(255) | | 저장만 하고 읽지 않음<br>탈퇴 시 `NULL` |
 | `connected_at` | timestamptz | NOT NULL | 연동 시각 |
 | `last_login_at` | timestamptz | | 이 제공자로 마지막으로 로그인한 시각<br>계정 연동으로 추가한 행은 처음 로그인할 때까지 `NULL` |
-| `deleted_at` | timestamptz | | 탈퇴 연동으로 표시한 시각<br>`NULL`이면 활성 연동 |
+| `deleted_at` | timestamptz | | 연동이 끊긴 시각<br>`NULL`이면 활성 연동 |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -172,7 +172,7 @@ erDiagram
 | 테이블 | 컬럼 | ACCOUNT가 하는 일 |
 |---|---|---|
 | `stories` | `user_id` | 이관 시 NULL인 행에 요청자 설정<br>닉네임 변경 시 소유 스토리의 재색인 요청<br>내 스토리 목록 조회 |
-| `story_creation_sessions` | `user_id` | 스토리 이관 시 연결된 진행의 소유자도 함께 설정 |
+| `story_creation_sessions` | `user_id` | 스토리 이관 시 연결된 간편 제작 세션의 소유자도 요청자로 설정 |
 | `story_chats` | `user_id`, `reached_ending_id`, `reached_ending_name_snapshot` | 이관 시 NULL인 행에 요청자 설정<br>도달 엔딩이 있으면 집계 보정<br>내 채팅 목록 조회 |
 | `user_story_ending_reaches` | 전체 | 이관한 채팅의 도달 엔딩을 회원 집계에 최초 1회 삽입 |
 | `story_drafts` | `user_id` | 탈퇴 시 해당 회원의 행 삭제 |
@@ -204,6 +204,6 @@ erDiagram
 | 데이터 | 삭제 |
 |---|---|
 | 회원 | 삭제하지 않음<br>탈퇴는 상태 전환과 익명화 |
-| 소셜 연동 | 삭제하지 않음<br>탈퇴 시 탈퇴 연동으로 전환하고 이메일 삭제 |
+| 소셜 연동 | 삭제하지 않음<br>탈퇴 시 연동을 끊고 이메일 삭제 |
 | 회원 동의, 게스트 동의 | 삭제하지 않음 |
 | 페르소나 | 삭제하지 않음<br>삭제 요청은 `deleted_at` 기록 |

@@ -60,7 +60,7 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_AUTH_JWT_SECRET` | 없음 | 개발과 운영 Secrets Manager | 32바이트 이상 |
-| `MANYAK_GOOGLE_CLIENT_IDS` | 빈 값 | 개발과 운영 Secrets Manager | 콤마 구분<br>웹, Android, 네이티브가 서버 client ID를 대상으로 쓰면 그 `azp` 값도 포함 |
+| `MANYAK_GOOGLE_CLIENT_IDS` | 빈 값 | 개발과 운영 Secrets Manager | 콤마 구분<br>클라이언트가 서버 client ID를 `aud`로 지정한 ID 토큰에 `azp`가 실리면 그 값도 목록에 포함 |
 | `MANYAK_KAKAO_CLIENT_IDS` | 빈 값 | 개발과 운영 Secrets Manager | 단일 카카오 앱의 REST API 키와 네이티브 앱 키만 |
 | `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `PT10M` | 주입 없음 | |
 | `MANYAK_AUTH_CONSENT_GATE_ENABLED` | `false` | 주입 없음 | 미동의 회원 서버 게이트 |
