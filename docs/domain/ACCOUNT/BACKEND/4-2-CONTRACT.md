@@ -444,7 +444,19 @@ Content-Type: application/json
 }
 ```
 
-**2) 401 Response body**
+**2) 200 Response body**
+
+```json
+{
+  "accessToken": "<new-access>",
+  "refreshToken": "<new-refresh>",
+  "expiresIn": 1800,
+  "tokenType": "Bearer",
+  "isNewUser": false
+}
+```
+
+**3) 401 Response body**
 
 ```json
 {
@@ -484,6 +496,28 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | `refreshToken` 누락 |
 
 이미 폐기됐거나 발급된 적 없는 토큰도 204다. 접근 토큰은 폐기하지 않으므로 만료까지 유효하다.
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "<refresh>"
+}
+```
+
+**2) 204 Response**
+
+본문 없음
+
+</details>
 
 <br>
 
@@ -997,6 +1031,27 @@ Content-Type: application/json
 
 페르소나가 없으면 빈 배열을 반환한다. 생성 최신순으로 정렬한다. 실패는 공통 실패뿐이다.
 
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) 200 Response body**
+
+```json
+[
+  {
+    "id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+    "name": "은하",
+    "description": "별을 쫓는 떠돌이 천문학자",
+    "createdAt": "2026-10-16T00:00:00Z",
+    "updatedAt": "2026-10-16T00:00:00Z"
+  }
+]
+```
+
+</details>
+
 <br>
 
 ### 4-2-17 페르소나 생성
@@ -1098,6 +1153,50 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 바꿀 항목 없음, 공백뿐, 길이 위반 |
 | 404 | `NOT_FOUND` | 식별자 형식 오류, 없음, 삭제됨, 타인 소유 |
 
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+PATCH /api/v1/users/me/personas/5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b
+Authorization: Bearer <access>
+Content-Type: application/json
+
+{
+  "description": "별을 쫓다 길을 잃은 천문학자"
+}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "id": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+  "name": "은하",
+  "description": "별을 쫓다 길을 잃은 천문학자",
+  "createdAt": "2026-10-16T00:00:00Z",
+  "updatedAt": "2026-10-16T01:00:00Z"
+}
+```
+
+**3) 404 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T01:00:00Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "페르소나를 찾을 수 없습니다.",
+  "path": "/api/v1/users/me/personas/5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+  "details": []
+}
+```
+
+</details>
+
 <br>
 
 ### 4-2-19 페르소나 삭제
@@ -1180,6 +1279,48 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 전부 미제출, 본문 파싱 실패 |
 | 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름<br>클라이언트는 현행 문서를 다시 표시해 동의를 받아 재제출하고, 동의 없이 버전 값만 바꿔 자동 재전송하지 않음 |
 
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/users/me/consents
+Authorization: Bearer <access>
+Content-Type: application/json
+
+{
+  "privacy": "v1.7"
+}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "terms": { "requiredVersion": "v1.4", "needsConsent": false },
+  "privacy": { "requiredVersion": "v1.7", "needsConsent": false },
+  "age14": { "requiredVersion": "1", "needsConsent": false }
+}
+```
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-16T00:00:00Z",
+  "status": 400,
+  "code": "CONSENT_VERSION_MISMATCH",
+  "message": "현행 문서 버전을 확인하고 다시 동의해 주세요.",
+  "path": "/api/v1/users/me/consents",
+  "details": []
+}
+```
+
+</details>
+
 <br>
 
 ### 4-2-22 게스트 동의 조회
@@ -1243,6 +1384,33 @@ Content-Type: application/json
 |---|---|---|
 | 400 | `BAD_REQUEST` | 디바이스 헤더 누락이나 공백, 미제출, 본문 파싱 실패 |
 | 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/guests/consents
+X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
+Content-Type: application/json
+
+{
+  "guestPrivacy": "v1.0"
+}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "guestPrivacy": { "requiredVersion": "v1.0", "needsConsent": false }
+}
+```
+
+</details>
 
 <br>
 

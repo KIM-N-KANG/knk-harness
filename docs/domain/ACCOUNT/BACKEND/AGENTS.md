@@ -10,20 +10,20 @@ ACCOUNT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 | 문서 | 정하는 것 | 상태 |
 |---|---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 초안 |
-| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 데이터 보존 | 초안 |
-| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 초안 |
-| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 데이터 수명 | 초안 |
-| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 초안 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 신원 검증, 엔드포인트별 처리 흐름, 로그인 후속 처리, 계정 생성과 재가입 | 초안 |
-| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 다른 도메인과의 계약 | 초안 |
-| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준과 토큰, 접근 판정, 계정 상태와 동의 게이트, 신원 증명 검증, 입력 검증, 비밀값과 개인정보, 수용한 한계 | 초안 |
-| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 사용자 행 잠금, 멱등, 유니크 위반, 토큰 회전 원자성, 핸드오프 전이, 수용한 경쟁 | 초안 |
-| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 초안 |
-| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림, 분석 이벤트 | 초안 |
-| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 | 초안 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 초안 |
-| [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 초안 |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 작성 완료 |
+| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 데이터 보존 | 작성 완료 |
+| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 작성 완료 |
+| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 데이터 수명 | 작성 완료 |
+| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 작성 완료 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 신원 검증, 엔드포인트별 처리 흐름, 로그인 후속 처리, 계정 생성과 재가입 | 작성 완료 |
+| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 다른 도메인과의 계약 | 작성 완료 |
+| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준과 토큰, 접근 판정, 계정 상태와 동의 게이트, 신원 증명 검증, 입력 검증, 비밀값과 개인정보, 수용한 한계 | 작성 완료 |
+| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 사용자 행 잠금, 멱등, 유니크 위반, 토큰 회전 원자성, 핸드오프 전이, 수용한 경쟁 | 작성 완료 |
+| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 작성 완료 |
+| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림, 분석 이벤트 | 작성 완료 |
+| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 | 작성 완료 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 작성 완료 |
+| [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 작성 완료 |
 
 - 처음에는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
