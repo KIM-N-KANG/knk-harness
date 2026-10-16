@@ -25,7 +25,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 초안 |
 | [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 초안 |
 
-- 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
+- 처음에는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 미정으로 표시된 항목을 추측으로 채우지 않는다.
 - 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-11 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-11-다른-도메인과의-경계))
@@ -53,7 +53,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 ### 3. 명세와 코드의 대응
 
-서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`, 알림 서비스는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성과 검수 이벤트의 발행 지점은 STORY와 MODERATION 세트, 탈퇴 시 토큰 삭제 호출은 ACCOUNT 세트에 속한다.
+서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`, 알림 서비스는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성과 검수 이벤트의 발행 지점은 STORY와 MODERATION 세트에서, 탈퇴 시 토큰 삭제 호출은 ACCOUNT 세트에서 다룬다.
 
 | 구성 요소 | 구현 위치 | 사용 범위 |
 |---|---|---|
@@ -84,7 +84,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | 문체와 파일명 | [제품 Spec 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체 지침 | 하네스 루트의 `AGENTS.md` |
 | 코드 규칙 | `manyak-server`와 `manyak-notification`의 `CLAUDE.md` |
-| 문서 변경 뒤 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |
+| 문서 변경 후 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |
 | 테스트 실행 | 두 저장소에서 각각 `./gradlew test` 실행<br>알림 서비스 통합 테스트는 Docker 필요 |
 | 원격 모드 수동 확인 | `http/push/push-mode-remote.http`의 절차 |
 

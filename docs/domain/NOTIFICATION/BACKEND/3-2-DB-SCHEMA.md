@@ -2,7 +2,7 @@
 
 이 문서는 NOTIFICATION 도메인이 관리하는 PostgreSQL 테이블의 컬럼, 제약, 인덱스, Redis 키, 큐와 데이터 수명을 정한다.
 
-다른 도메인의 테이블에서는 NOTIFICATION 도메인이 소유하거나 참조하는 컬럼만 설명한다.
+다른 도메인의 테이블에서는 NOTIFICATION 도메인이 관리하거나 참조하는 컬럼만 설명한다.
 
 입력값의 검증 규칙은 보안에, 잠금 순서와 멱등 규칙은 동시성에, 수명과 주기는 오류 처리에 있다. ([5-1-5 입력 검증](5-1-SECURITY.md#5-1-5-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md), [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
 
@@ -66,7 +66,7 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
-| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 소유 회원<br>같은 기기에서 계정이 바뀌면 바뀜 |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 소유 회원<br>같은 기기에서 계정이 바뀌면 소유 회원 변경 |
 | `token` | varchar(512) | NOT NULL, UNIQUE | FCM 등록 토큰 |
 | `platform` | varchar(16) | NOT NULL, CHECK `ANDROID` `WEB` | |
 | `updated_at` | timestamptz | NOT NULL | 마지막 등록 시각<br>값이 같아도 재등록마다 갱신 |
@@ -81,7 +81,7 @@ erDiagram
 
 **`users`**
 
-회원 행의 세 컬럼을 이 도메인이 소유한다. 다른 컬럼은 계정 도메인이 정한다.
+회원 행의 세 컬럼은 이 도메인이 관리한다. 다른 컬럼은 계정 도메인이 정한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -116,7 +116,7 @@ erDiagram
 
 **`push_campaigns`**
 
-프로모션 푸시 1건의 예약과 결과가 한 행이다. 운영자가 예약 행을 넣고 스케줄러가 결과를 적는다.
+프로모션 푸시 1건의 예약과 결과가 한 행이다. 운영자가 예약 행을 추가하고 스케줄러가 결과를 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -127,7 +127,7 @@ erDiagram
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
 | `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | 취소는 선점 전에만 가능 |
 | `target_count` | integer | | 조회된 대상 수 |
-| `sent_count` | integer | | 발송기를 부른 수 |
+| `sent_count` | integer | | 발송기를 호출한 수 |
 | `skipped_count` | integer | | 발송 직전 재확인에서 제외된 수 |
 | `started_at` | timestamptz | | 선점 시각 |
 | `finished_at` | timestamptz | | 회차 종료 시각 |
@@ -166,7 +166,7 @@ erDiagram
 | 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
 |---|---|---|
 | `users` | `status`, `public_id`, `reward_identity_user_id` | 발송 자격 판정, 수신자 식별자, 출석 미수령 판정 |
-| `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재로 미수령 판정 |
+| `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
 
 <br>
 

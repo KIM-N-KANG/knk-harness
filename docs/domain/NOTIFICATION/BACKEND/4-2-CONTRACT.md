@@ -96,7 +96,7 @@
 | `token` | `string` | 필수 | FCM 등록 토큰, 1~512자 |
 | `platform` | `string` | 필수 | `ANDROID`, `WEB` |
 
-- 같은 토큰을 다시 보내면 갱신이다. 토큰이 바뀌면 새 값으로 다시 등록한다. 다른 회원이 등록한 토큰을 보내면 소유자가 요청자로 바뀐다.
+- 같은 토큰을 다시 보내면 갱신한다. 토큰이 바뀌면 새 값으로 다시 등록한다. 다른 회원이 등록한 토큰을 보내면 소유자가 요청자로 바뀐다.
 
 <br>
 
@@ -156,7 +156,7 @@ Content-Type: application/json
 |---|---|---|---|
 | `token` | `string` | 필수 | 지울 토큰, 1~512자 |
 
-- 토큰은 경로가 아니라 본문으로 받는다. 요청자 소유가 아니거나 없으면 아무 일도 하지 않고 성공이다.
+- 토큰은 경로가 아니라 본문으로 받는다. 요청자 소유가 아니거나 없으면 삭제 없이 성공으로 응답한다.
 
 <br>
 
@@ -249,13 +249,13 @@ Authorization: Bearer {accessToken}
 | `marketingPush` | `boolean` | 필수 | 광고 알림 동의<br>`false`면 야간도 함께 철회 |
 | `marketingNightPush` | `boolean` | 필수 | 야간 광고 알림 동의<br>`marketingPush`가 `false`면 `true`일 수 없음 |
 
-- 전체 교체다. 누락과 `null`은 거절해 보내지 않은 설정이 꺼지지 않게 한다.
+- 세 설정값을 모두 교체한다. 누락과 `null`은 거절해 보내지 않은 설정이 꺼지지 않게 한다.
 
 <br>
 
 **2. 응답**
 
-수신 동의 조회와 같은 구조로 변경 뒤 상태를 돌려준다.
+수신 동의 조회와 같은 구조로 변경한 상태를 반환한다.
 
 <br>
 
@@ -390,7 +390,7 @@ X-Manyak-Internal-Secret: {sharedSecret}
 |---|---|---|---|
 | `token` | `string` | 필수 | FCM이 무효라고 알린 토큰, 1~512자 |
 
-- 소유자 조건 없이 토큰으로 지운다. 없어도 성공이다.
+- 소유자 조건 없이 토큰으로 지운다. 없어도 성공으로 응답한다.
 
 <br>
 
@@ -425,7 +425,7 @@ Content-Type: application/json
 
 ### 4-2-8 알림 발송
 
-알림 서비스가 제공한다. 큐 전환 전의 검증 경로이며 서비스 경로는 호출하지 않는다.
+알림 서비스가 제공한다. 큐 전환 전의 검증 경로이며 서비스 경로에서는 호출하지 않는다.
 
 | 항목 | 값 |
 |---|---|
@@ -517,7 +517,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미 |
 |---|---|---|---|
-| `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에 바뀌지 않음 |
+| `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에도 바뀌지 않음 |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
 | `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
@@ -578,7 +578,7 @@ Content-Type: application/json
 |---|---|
 | `type` | 시나리오 식별자 |
 | `recipientId` | 수신 회원 공개 식별자<br>발송기가 항상 덧붙이며 시나리오 값보다 우선 |
-| `deepLink` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로를 붙임, 없는 시나리오도 있음 |
+| `deepLink` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로를 붙임<br>없는 시나리오도 있음 |
 
 <br>
 
