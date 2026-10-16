@@ -25,8 +25,7 @@ flowchart LR
     C["`**클라이언트**
 웹 BFF, Android`"] -->|REST| S["`**서버**
 NOTIFICATION 패키지`"]
-    O["`**STORY, MODERATION, ACCOUNT**
-같은 서버`"] -->|이벤트, 호출| S
+    O["`**STORY, MODERATION, ACCOUNT**`"] -->|이벤트, 호출| S
     S -->|아웃박스 릴레이| Q["`**메시지 큐**`"]
     Q -->|소비| N["`**알림 서비스**`"]
     N -->|자격 조회, 무효 토큰 삭제| S
@@ -37,8 +36,10 @@ NOTIFICATION 패키지`"]
     N --> R
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class C,Q,F,DB,R ext
-    class S,N,O comp
+    class S,N comp
+    class O task
 ```
 
 <br>
