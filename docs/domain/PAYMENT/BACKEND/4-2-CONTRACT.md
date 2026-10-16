@@ -392,7 +392,7 @@ Authorization: Bearer {accessToken}
 | `EARN` | `SIGNUP_REWARD`, `ATTENDANCE_REWARD`, `INVITE_REWARD`, `REFUND`, `PURCHASE` |
 | `EXPIRE` | `EXPIRE`, `PURCHASE_REVERSAL` |
 
-- 커서는 불투명 문자열이다. 같은 위치라도 매번 다른 값이다. 클라이언트는 커서를 해석하거나 조립하지 않는다.
+- 커서는 불투명 문자열이다. 같은 위치를 가리켜도 발급할 때마다 값이 다르다. 클라이언트는 커서를 해석하거나 조립하지 않는다.
 
 <br>
 

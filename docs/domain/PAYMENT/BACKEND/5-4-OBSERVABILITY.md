@@ -185,7 +185,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `server_credit_attendance_processed_succeeded` | 출석 보상 요청 처리 | `rewarded`, `amount` |
 | `server_payment_order_processed_succeeded` | 웹 충전 주문 생성 커밋 | `product_id` |
 | `server_payment_purchase_processed_succeeded` | 완료 통지로 구매 적립 커밋 | `product_id`, `price_krw`, `credit_amount` |
-| `server_payment_refund_processed_succeeded` | 환불 통지로 회수 커밋, 또는 선도착 환불을 소비한 완료 처리 커밋 | `product_id`, `reversal_shortfall` |
+| `server_payment_refund_processed_succeeded` | 환불 통지로 회수 커밋 또는 선도착 환불을 소비한 완료 처리 커밋 | `product_id`, `reversal_shortfall` |
 
 | 공통 프로퍼티 | 값 |
 |---|---|
