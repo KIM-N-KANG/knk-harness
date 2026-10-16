@@ -238,8 +238,8 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `terms` | `string` | 조건부 | 수락한 이용약관 버전 |
-| `privacy` | `string` | 조건부 | 수락한 개인정보 처리방침 버전 |
+| `terms` | `string` | 조건부 | 동의한 이용약관 버전 |
+| `privacy` | `string` | 조건부 | 동의한 개인정보 처리방침 버전 |
 | `age14` | `string` | 조건부 | 만 14세 이상 확인 버전, `1` |
 
 대기 응답에서 `needsConsent`가 `true`였던 항목은 필수다. 이미 현행 동의가 있는 항목은 생략할 수 있다. 보낸 값은 모두 현행 버전이어야 한다. `null`은 생략과 같다.
@@ -1164,8 +1164,8 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `terms` | `string` | 조건부 | 수락한 버전 |
-| `privacy` | `string` | 조건부 | 수락한 버전 |
+| `terms` | `string` | 조건부 | 동의한 버전 |
+| `privacy` | `string` | 조건부 | 동의한 버전 |
 | `age14` | `string` | 조건부 | `1` |
 
 하나 이상 있어야 한다. 누락과 `null`은 미제출이며 철회가 아니다. 같은 버전의 재제출은 최초 동의 시각을 유지한다.
@@ -1232,7 +1232,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `guestPrivacy` | `string` | 필수 | 수락한 현행 버전 |
+| `guestPrivacy` | `string` | 필수 | 동의한 현행 버전 |
 
 <br>
 
