@@ -320,6 +320,11 @@
 | STORY-DRAFT-31 | P1 | 회원, 서버 초안(버전 1)을 가리키는 기기 안 생성 결과 카드, 그 뒤 다른 기기가 같은 초안을 버전 2로 저장 | 제작 탭 진입 → 기기 안 카드 더보기 → "삭제하기" → 확인 | 카드 두 장(기기 안 생성 결과, 서버 초안)이 보임. 기기 안 카드만 지워지고 서버 초안은 남음 | ✅ e2e `stories/story-create-draft-server` | [간편 제작 임시 저장](../spec/3-1-client-spec.md#임시-저장), KNK-1667 |
 | STORY-DRAFT-32 | P1 | 회원, 키워드 임시 저장 뒤 생성 결과가 기기 안 기록으로 남음, 다른 기기가 같은 초안을 먼저 저장 | 다른 스토리라인 탭 → "임시 저장" → 충돌 다이얼로그 "저장하기" | 지금 내용이 서버 스토리라인 초안으로 저장되고 기기 안 생성 결과 기록이 지워져 제작 탭에 한 장으로 보임 | ✅ e2e `stories/story-create-draft-server` | [간편 제작 임시 저장](../spec/3-1-client-spec.md#임시-저장), KNK-1667 |
 | STORY-DRAFT-33 | P2 | 회원, 스토리라인 선택 단계, 임시 저장 응답이 늦음 | 다른 스토리라인 탭 → "임시 저장" → 응답 전에 "선택하기" | 앞 저장이 끝난 뒤 추가 정보 단계의 단계 이동 저장이 이어서 나가 서버 초안의 `step`이 `additional-info` | ✅ e2e `stories/story-create-draft-server` | [간편 제작 임시 저장](../spec/3-1-client-spec.md#임시-저장), KNK-1667 |
+| STORY-DRAFT-34 | P0 | 회원, 서버 초안 4개와 서버에 올리지 않은 기기 안 생성 결과 1개(카드 5장) | 제작 탭 FAB | 제작 방식 선택으로 이동하지 않고 "만들고 있는 스토리는 5개까지 둘 수 있어요" 토스트 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
+| STORY-DRAFT-35 | P1 | 회원, 서버 초안 5개 | 간편 제작 주소로 바로 진입 | 같은 토스트 뒤 제작 탭으로 이동. 서버 PUT 없음 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
+| STORY-DRAFT-36 | P1 | 회원, 서버 초안 4개 | 간편 제작 주소로 바로 진입 | 키워드 단계가 열리고 상한 토스트 없음 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
+| STORY-DRAFT-37 | P1 | 회원, 서버 초안 5개 | 제작 탭 카드 `이어서 만들기` | 막지 않고 키워드 입력을 복원 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
+| STORY-DRAFT-38 | P2 | 게스트, 기기 안 초안 5개 | 제작 탭 FAB | 막지 않고 제작 방식 선택으로 이동 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
 
 ## STORY-GATE — 제작과 채팅 시작 동의 게이트
 
@@ -388,12 +393,13 @@
 | STORY-GENERAL-33 | P1 | 회원, 서버 초안 목록 조회 실패, 기기 안 간편 제작 초안 있음 | 제작 탭 진입 | 목록 오류 화면으로 바뀌지 않고 기기 안 초안 카드는 보임. 서버 초안 카드만 숨김 | ✅ e2e `stories/story-general-create` | [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름), KNK-1667 |
 | STORY-GENERAL-34 | P0 | 회원, 서버 초안(제목·세계관·표지) | 제작 탭 카드 "이어서 만들기" → 입력 확인 → 닫기(X) | 일반 제작 화면에 제목·세계관이 복원되고 표지는 서버 미리보기로 보임. 바뀐 것이 없으므로 닫기는 저장본 안내 | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
 | STORY-GENERAL-35 | P1 | 회원, 이어서 만들 초안이 다른 곳에서 등록·삭제됨(404) | 남아 있던 카드로 "이어서 만들기" | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정)의 초안 없음 토스트 뒤 빈 폼으로 시작. 불러오기 실패 화면 없음 | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
-| STORY-GENERAL-36 | P1 | 회원, 서버 초안 5개 | 새 일반 제작에 입력 → "임시 저장" → 닫기(X) | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정)의 5개 상한 토스트, 서버 초안은 5개 그대로. 저장하지 않은 상태라 닫기는 "임시 저장하지 않은 내용이 있어요" | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
+| STORY-GENERAL-36 | P1 | 회원, 서버 초안 4개로 새 일반 제작을 연 뒤 다른 기기가 다섯 번째 초안을 저장 | 새 일반 제작에 입력 → "임시 저장" → 닫기(X) | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정)의 5개 상한 토스트, 서버 초안은 5개 그대로. 저장하지 않은 상태라 닫기는 "임시 저장하지 않은 내용이 있어요" | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
 | STORY-GENERAL-37 | P1 | 회원, 서버 초안을 이어서 연 뒤 다른 기기가 같은 초안을 먼저 저장 | 제목 수정 → "임시 저장" → 남겨두기 → 다시 "임시 저장" → 저장하기 | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정)의 충돌 다이얼로그. 남겨두기는 서버 내용을 그대로 두고 닫음. 저장하기는 지금 내용으로 덮어쓰고 "임시 저장했어요" | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
 | STORY-GENERAL-38 | P1 | 회원, 서버 초안 4개, 기기 안에 서버 연동 전 일반 제작 임시 저장본 2개 | 제작 탭 진입 | 기기 안 저장본 하나는 서버로 옮겨지고(기기에서 지움) 상한에 걸린 하나는 기기에 남음. 카드는 6장이며 같은 초안이 두 장으로 보이지 않음 | ✅ e2e `stories/story-general-create` | [웹 제작 흐름](../spec/3-2-web-spec.md#웹-제작-흐름), KNK-1667 |
 | STORY-GENERAL-39 | P1 | 회원, 서버 초안을 이어서 연 뒤 다른 기기가 그 초안을 등록하거나 삭제 | 제목 수정 → "임시 저장" | 저장 실패 없이 "임시 저장했어요". 같은 ID의 새 서버 초안(버전 1)으로 지금 입력이 남음 | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
 | STORY-GENERAL-40 | P2 | 회원, `schemaVersion`이 1이 아닌 서버 초안 | 제작 탭 카드 "이어서 만들기" | 폼을 열지 않고 "작성 내용을 불러오지 못했어요"와 다시 시도. 초안을 되쓰지 않음 | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
 | STORY-GENERAL-41 | P2 | 회원, 일반 제작 입력 중, 임시 저장 응답이 늦음 | 제목 입력 → "임시 저장" → 응답 전에 제목 수정 → 다른 탭 | 앞 저장이 끝난 뒤 탭 이동 저장이 이어서 나가 서버 초안에 고친 제목이 남음 | ✅ e2e `stories/story-general-create` | [FE-SCREEN-009 임시 저장](../spec/3-1-client-spec.md#fe-screen-009-일반-제작스토리-수정), KNK-1667 |
+| STORY-GENERAL-42 | P1 | 회원, 서버 초안 5개 | 일반 제작 주소로 바로 진입 | 폼을 열지 않고 "만들고 있는 스토리는 5개까지 둘 수 있어요" 토스트 뒤 제작 탭으로 이동. 서버 PUT 없음 | ✅ e2e `stories/story-general-create` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
 
 ## STORY-EDIT — 스토리 수정 `/stories/[id]/edit`
 

@@ -338,7 +338,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                  | 우선순위 | 발생 시점             | 고유 프로퍼티                                        |
 | --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
 | `client_storyList_viewed`               | P0       | 홈 오리지널 목록 진입 | 없음                                                 |
-| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`. KNK-1355부터 웹도 앱처럼 빈 목록에 FAB만 두어 `fab`만 발화) |
+| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭(만들고 있는 스토리 5개 상한으로 이동하지 않아도 발생) | `source` (string, 필수: `fab` / `emptyState`. KNK-1355부터 웹도 앱처럼 빈 목록에 FAB만 두어 `fab`만 발화) |
 | `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈·채팅·제작 헤더 로그인 버튼 클릭(게스트) | 없음 |
