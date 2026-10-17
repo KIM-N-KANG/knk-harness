@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>외부 노출용 `public_id uuid`를 따로 둠 |
 | 시각 | `timestamp with time zone`<br>`created_at`의 기본값은 `now()`이며 아래 표에서는 표시하지 않음 |
-| 삭제 | 물리 삭제<br>제출본 취소, 스토리 삭제, 회원 탈퇴에서 지움 |
+| 삭제 | 물리 삭제<br>제출본 취소, 스토리 삭제, 회원 탈퇴 시 삭제 |
 | FK | 회원과 스토리 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>회원 행과 스토리 행은 소프트 삭제라 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -43,7 +43,7 @@ erDiagram
 
 **`story_submissions`**
 
-일반 제작 등록 또는 수정 1건의 검수 제출본이 한 행이다. 승인 전 라이브와 분리된다.
+일반 제작 등록 또는 수정 1건의 검수 제출본을 한 행에 저장한다. 승인 전에는 라이브와 분리한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -54,7 +54,7 @@ erDiagram
 | `kind` | varchar(10) | NOT NULL, CHECK `CREATE` `UPDATE` | |
 | `payload` | jsonb | NOT NULL, CHECK 객체 | 요청 본문 원본<br>수정은 부분 요청 그대로 |
 | `input_form` | jsonb | NOT NULL | 접수 시점의 전체 폼<br>검수 입력 조립과 위치 재대응의 기준 |
-| `image_copies` | jsonb | NOT NULL, 기본 `{}`, CHECK 객체 | 원본 객체 키에서 복사본 키로의 매핑<br>재선점은 재사용, 재제출은 비움 |
+| `image_copies` | jsonb | NOT NULL, 기본 `{}`, CHECK 객체 | 원본 객체 키와 복사본 키의 매핑<br>재선점 시 재사용, 재제출 시 비움 |
 | `status` | varchar(10) | NOT NULL, CHECK `PENDING` `APPROVED` `REJECTED` `FAILED` | |
 | `issues` | jsonb | NOT NULL, 기본 `[]`, CHECK 배열 | 위반 항목 목록<br>위치는 검수 입력 원본 기준 |
 | `image_errors` | jsonb | NOT NULL, 기본 `[]`, CHECK 배열 | 이미지 오류 목록<br>위치는 검수 입력 원본 기준 |
@@ -76,7 +76,7 @@ erDiagram
 | `ix_story_submissions_claim` | `id`, `next_attempt_at`, `dispatched_at` WHERE `status = 'PENDING' AND held_at IS NULL` |
 
 - 승인본은 `story_id`가 NOT NULL이어야 한다.
-- 두 부분 유니크 인덱스가 스토리별 대기 1건, 미승인 수정 1건을 강제한다. 신규 등록은 승인 전 `story_id`가 없어 대상이 아니다.
+- 두 부분 유니크 인덱스로 스토리별 대기 1건, 미승인 수정 1건을 제한한다. 신규 등록은 승인 전 `story_id`가 없어 대상이 아니다.
 
 <br>
 
