@@ -13,7 +13,7 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
-| 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에서 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
+| 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
 | 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스는 삭제 경로 없음 |
 | FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
@@ -180,7 +180,7 @@ erDiagram
 
 | 큐 | 내용 | 설정 |
 |---|---|---|
-| `push-requested` | 발송 요청 | SQS 표준 큐<br>실제 이름은 프로젝트와 환경 접두를 붙임<br>수신 상한을 넘기면 실패 메시지 큐로 이동 |
+| `push-requested` | 발송 요청 | SQS 표준 큐<br>실제 이름에는 프로젝트와 환경 접두를 붙임<br>수신 상한을 넘기면 실패 메시지 큐로 이동 |
 | `push-requested-dlq` | 재전달 상한을 넘긴 메시지 | 보존 기간 만료 시 삭제 |
 
 <br>
