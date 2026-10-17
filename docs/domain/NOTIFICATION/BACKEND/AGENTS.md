@@ -8,22 +8,22 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 ### 1. 문서의 역할과 읽는 순서
 
-| 문서 | 정하는 것 | 상태 |
-|---|---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 초안 |
-| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 데이터 보존 | 초안 |
-| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 초안 |
-| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 메시지 큐, 데이터 수명 | 초안 |
-| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 초안 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 토큰과 동의, 발송 자격, 시나리오별 발송 요청, 중계와 소비, 발송 | 초안 |
-| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 알림 서비스, 다른 도메인과의 계약, 큐 메시지, 푸시 데이터 | 초안 |
-| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 접근 판정, 계정 상태와 동의, 수신 동의와 법적 요건, 입력 검증, 내부 경로 보호, 비밀값과 개인정보, 수용한 한계 | 초안 |
-| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 행 잠금, 멱등, 유니크 위반, 선점과 임대, 소비자 선점, 수용한 경쟁 | 초안 |
-| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 초안 |
-| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 | 초안 |
-| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 | 초안 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 | 초안 |
-| [DECISIONS.md](DECISIONS.md) | 결정의 이력 | 초안 |
+| 문서 | 정하는 것 |
+|---|---|
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 |
+| [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 데이터 보존 |
+| [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 |
+| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 메시지 큐, 데이터 수명 |
+| [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 토큰과 동의, 발송 자격, 시나리오별 발송 요청, 중계와 소비, 발송 |
+| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 알림 서비스, 다른 도메인과의 계약, 큐 메시지, 푸시 데이터 |
+| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 접근 판정, 계정 상태와 동의, 수신 동의와 법적 요건, 입력 검증, 내부 경로 보호, 비밀값과 개인정보, 수용한 한계 |
+| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 행 잠금, 멱등, 유니크 위반, 선점과 임대, 소비자 선점, 수용한 경쟁 |
+| [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 |
+| [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 |
+| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 |
+| [DECISIONS.md](DECISIONS.md) | 결정의 이력 |
 
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
