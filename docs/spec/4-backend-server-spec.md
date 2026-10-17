@@ -1892,7 +1892,7 @@ V87은 `story_submissions`, V88은 이미지 오류 저장, V89는 재시도·�
 - decision은 APPROVED 또는 REJECTED입니다. APPROVED는 issues·image_errors가 비고 error_code가 null이어야 합니다. REJECTED에서 image_errors가 없으면 error_code=null과 한 개 이상의 issues, 또는 MODEL_CALL_FAILED와 빈 issues만 허용합니다.
 - image_errors가 있으면 최상위 error_code는 목록에 나타난 코드 중 IMAGE_INVALID → IMAGE_UNREADABLE → IMAGE_DOWNLOAD_FAILED 순으로 고릅니다. 이때 검증된 내용 위반 issues를 함께 보존할 수 있습니다. 이미지 오류 코드를 보내면서 image_errors가 빈 응답은 거절합니다.
 - image_errors의 항목은 `{path, error_code}`이며 실제 IMAGE 문자열 경로와 위 이미지 오류 3종만 허용합니다. 같은 path 중복은 거절합니다. 최상위와 issues·image_errors 항목의 알 수 없는 필드는 무시합니다. image_errors 생략은 빈 배열로 읽되 나머지 불변식은 그대로 검증합니다.
-- issues[].rule은 MINOR_SEXUAL_EXPLOITATION, EXPLICIT_SEXUAL_CONTENT, NONCONSENSUAL_SEXUAL_EXPLOITATION, DRUGS, EXTREME_GORE, SELF_HARM_PROMOTION, HATE_VIOLENCE_INCITEMENT 중 하나입니다. reason은 공백만으로 구성될 수 없습니다.
+- issues[].rule은 EXPLICIT_SEXUAL_CONTENT, DRUGS, EXTREME_GORE, SELF_HARM_PROMOTION, HATE_VIOLENCE_INCITEMENT, GAMBLING_PROMOTION 중 하나입니다. reason은 공백만으로 구성될 수 없습니다.
 - path는 실제 전송한 검수 입력의 문자열 leaf 경로이며 배열 인덱스는 0부터 시작합니다. 객체·배열 자체, 없는 필드·범위 밖 인덱스는 허용하지 않습니다. thumbnailUrl과 characters[n].images[m].imageUrl만 IMAGE이고 나머지는 TEXT입니다. `characters[n].description`이 문자열이면 해당 issues.path는 TEXT 경로입니다. `protagonist_name`을 문자열로 전송한 경우 `issues[].path: "protagonist_name"`도 TEXT 경로로 허용합니다. 생략하거나 null로 보낸 경우에는 허용하지 않습니다. 이 경로는 저장 시 AI 입력 원본 기준으로 유지하고 수정 폼·제출본 조회 응답에서는 `protagonistName`으로 재매핑합니다.
 
 검수 정책과 `issues`의 의미는 AI [§5-3-6](5-ai-server-spec.md#5-3-6-게시물-검수)이 소유합니다. 백엔드는 검수 규칙을 중복 정의하지 않습니다.

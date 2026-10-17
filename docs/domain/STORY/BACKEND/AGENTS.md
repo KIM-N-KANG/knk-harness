@@ -53,7 +53,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 ### 3. 명세와 코드의 대응
 
-코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. `story/submission/*`의 접수와 조회는 이 세트에 속한다. 판정과 재시도는 MODERATION 세트에 속한다.
+코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. `story/submission/*`는 MODERATION 세트에 속한다. 등록과 수정 요청의 API 계층과 입력 검증, 승인 시 저장과 적용만 이 세트에 속한다.
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
