@@ -108,7 +108,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 생성 마감 | 연결과 무관한 생성 마감 도달<br>`chat_turn_timeout` | `chat_id`와 `worker_state`<br>`PENDING`, `RUNNING`, `SAVING`, `CANCELLED`, `FINISHED` 유지<br>`CANCELLED`는 생성 마감으로 종료<br>연결 종료로는 상태 전이 없음 |
 | 생성 중 상태 읽기 실패 | 상세 조회 중 생성 중 키 읽기 또는 저장된 값 해석 실패<br>`chat_generation_read_failed` | `chat_id`와 `error`<br>`error`는 예외 클래스 이름 |
 | 생성 중 키 해제 실패 | 생성 종료 시 생성 중 키 해제 실패<br>`chat_generation_release_failed`<br>키는 TTL로 해제 | `chat_id`와 `error`<br>`error`는 예외 클래스 이름 |
-| 실행기 거부 | 백그라운드 작업 제출 실패<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
+| 이벤트 기록 실패 | 생성 도중 Redis Streams 기록 실패<br>`chat_generation_event_write_failed`<br>생성당 한 번만 기록 | `chat_id`와 `error`<br>`error`는 예외 클래스 이름 |
+| 실행기 거부 | 백그라운드 작업 제출 실패나 첫 POST의 수신 연결 거부<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
