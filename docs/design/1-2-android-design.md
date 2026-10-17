@@ -327,12 +327,13 @@ payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-
 | --- | --- |
 | POST 성공 | Completed 저장 |
 | 네트워크·401·403 | 서버 수락 여부를 단정하지 않고 불확실 상태 유지 |
-| 그 외 실패·409 | GET 요청 조회로 복구하고 조회 404는 Failed |
+| 그 외 실패와 409 | GET 요청 조회로 복구하고, 조회가 FAILED나 404면 요청을 지우고 추가 정보 단계 초안으로 되돌림 |
 | 사용자 새로고침의 미수락 요청 | GET 404이면 같은 저장 명령·requestId로 다시 전송 |
 | 제작 탭의 미완료 카드 | STARTED·노출 중 5초 폴링 |
 | 스토리라인 복구 | STARTED 중 3초 폴링. 완성 요청 폴링과 별개 |
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
+확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 알려 보고 있는 제작 탭이 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
 
 v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. v5→v6은 두 테이블에 nullable `serverDraftVersion` 열만 더해, 기존 행은 기기 안 세션의 것으로 남습니다. destructive migration을 사용하지 않습니다.
 
