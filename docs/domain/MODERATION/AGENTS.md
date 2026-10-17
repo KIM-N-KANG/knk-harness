@@ -6,7 +6,7 @@
 
 <br>
 
-### 1. 세트
+### 세트
 
 | 세트 | 다루는 것 |
 |---|---|
@@ -15,17 +15,5 @@
 | `WEB/` | 검수 상태 표시, 반려 안내 |
 | `ANDROID/` | 검수 상태 표시, 반려 안내 |
 
-- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다. 기존 ADR 항목은 이관하면서 옮긴다.
+- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.
-
-<br>
-
-### 2. 이관 원본
-
-아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 이관이 끝날 때까지 기존 문서가 기준이다.
-
-- `docs/spec/3-2-web-spec.md 3-2-7`
-- `docs/spec/3-3-android-spec.md 3-3-7`
-- `docs/spec/4-backend-server-spec.md 검수 API`
-- `docs/spec/5-ai-server-spec.md 검수 절`
-- `docs/design/3-ai-server-design.md 3-5 게시물 검수의 구현 상태`

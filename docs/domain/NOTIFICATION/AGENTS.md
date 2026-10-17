@@ -6,7 +6,7 @@
 
 <br>
 
-### 1. 세트
+### 세트
 
 | 세트 | 다루는 것 |
 |---|---|
@@ -14,18 +14,5 @@
 | `WEB/` | 권한 요청, 토큰 등록, 수신 처리와 이동 |
 | `ANDROID/` | 권한 요청, 토큰 등록, 수신 처리와 이동 |
 
-- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다. 기존 ADR 항목은 이관하면서 옮긴다.
+- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.
-
-<br>
-
-### 2. 이관 원본
-
-아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 이관이 끝날 때까지 기존 문서가 기준이다.
-
-- `docs/spec/3-3-android-spec.md 3-3-5`
-- `docs/design/1-2-android-design.md 1-2-6 푸시와 알림`
-- `docs/spec/4-backend-server-spec.md 알림 API`
-- `docs/adr/2-backend-server-adr.md BE-035`
-- `docs/adr/1-2-web-adr.md W-018`
-- `docs/adr/1-3-android-adr.md A-032~034`

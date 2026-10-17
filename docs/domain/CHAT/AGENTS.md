@@ -6,7 +6,7 @@
 
 <br>
 
-### 1. 세트
+### 세트
 
 | 세트 | 다루는 것 |
 |---|---|
@@ -15,18 +15,5 @@
 | `WEB/` | 채팅 화면, 스트리밍 수신, 선택지와 이미지 표시 |
 | `ANDROID/` | 채팅 화면, 스트리밍 수신, 선택지와 이미지 표시 |
 
-- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다. 기존 ADR 항목은 이관하면서 옮긴다.
+- 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 다른 세트는 계약을 정한 쪽(BACKEND의 계약 문서)을 기준으로 삼는다.
-
-<br>
-
-### 2. 이관 원본
-
-아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 세트가 작성 완료되면 그 세트가 기준이고, 나머지는 이관이 끝날 때까지 기존 문서가 기준이다.
-
-- `docs/spec/2-user-stories.md 2-5~2-7`
-- `docs/spec/3-1-client-spec.md 3-1-5`
-- `docs/spec/4-backend-server-spec.md 채팅 API와 데이터 모델`
-- `docs/spec/5-ai-server-spec.md 채팅 절과 평가 시스템`
-- `docs/adr/2-backend-server-adr.md BE-015, 016, 021, 028`
-- `docs/adr/3-ai-server-adr.md`
