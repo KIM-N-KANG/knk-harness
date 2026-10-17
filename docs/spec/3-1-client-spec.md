@@ -581,6 +581,21 @@ Android 앱도 같은 본문을 보여 주므로 게스트 이용 안내 제목 
 - 추가 정보나 추천을 아직 고르지 않은 상태에서 "다시 선택하기"를 누르면 경고 없이 스토리라인 선택 단계로 돌아갑니다. 공백만 있는 자유 입력과 처음부터 놓인 빈 입력 행은 작성한 정보로 보지 않습니다.
 - 공백이 아닌 자유 입력 또는 선택한 추천이 하나라도 있으면 `스토리라인을 바꿀까요? / 입력한 추가 정보는 모두 사라져요` 경고를 표시합니다. `닫기`는 단계·스토리라인·입력·추천을 모두 유지합니다. 파괴적 스타일의 `다시 선택하기`를 확정하면 선택 스토리라인, 자유 입력 전부, 추천 선택 전부를 초기화하고 스토리라인 선택 단계로 돌아갑니다.
 
+### 임시 저장
+
+간편 제작 임시 저장본의 서버 보관 계약입니다. Web과 Android가 같은 형식을 씁니다. 저장 시점과 이탈 확인은 플랫폼 스펙을 따르고, 상한, 용량, 충돌, 초안 없음 안내와 문구는 [FE-SCREEN-009 임시 저장](#fe-screen-009-일반-제작스토리-수정)과 같습니다.
+
+- **저장 위치** — 퍼널을 열 때 로그인 상태 확인이 끝난 뒤 세션의 저장 위치를 정하고, 세션 동안에는 세션 재조회로 로그인 판정이 바뀌어도 바꾸지 않습니다. 회원이 새로 시작한 세션, 서버 초안으로 연 세션, 서버 초안을 가리키는 기기 안 기록으로 연 세션은 회원 계정의 서버 초안(`/users/me/story-drafts`, [`4-backend-server-spec.md` 스토리 제작 임시 저장](4-backend-server-spec.md#story-drafts))에 저장합니다. 게스트 세션과, 서버 연동 전이나 게스트 때 만든 기기 안 초안으로 연 세션은 기기 안에 저장합니다. 게스트 때 만든 스토리라인 생성 요청은 서버가 회원 초안에 연결하지 않고, 기존 초안을 한꺼번에 옮기면 회원당 5개 상한이 차므로 기존 기기 안 초안은 서버로 옮기지 않습니다.
+- **초안 ID** — 퍼널 세션마다 하나로 고정한 UUID입니다. 키워드 초안에서 스토리라인 초안으로 넘어가도, 다시 만들어도 같은 ID의 서버 초안을 덮어씁니다. 저장 응답의 `version`을 다음 저장의 `baseVersion`으로 보내고 새 초안은 `baseVersion` 없이 보냅니다.
+- **진행 기록** — 스토리라인 생성 중과 스토리 완성 중 기록, 생성 결과, 완성 실패로 되돌아온 초안은 요청한 기기 안에 두고 서버 초안 ID와 그때의 기준 버전을 함께 둡니다. 생성 결과는 받자마자 서버에 올리지 않고 그 제작의 다음 저장 때(충돌 확인에서 지금 내용으로 저장한 경우 포함) 서버 초안으로 옮긴 뒤 기기 안 기록을 지웁니다. 결과를 보기만 하고 떠난 제작은 서버 자리를 차지하지 않으며, 다른 기기는 그 전까지 이전 서버 초안을 봅니다.
+- **요청** — `mode: "SIMPLE"`, `stage`는 키워드 단계 `KEYWORD_DRAFT`, 스토리라인 선택과 추가 정보 단계 `STORY_DRAFT`, `schemaVersion: 1`입니다. 서버는 `payload`를 해석하지 않습니다. `title`, `thumbnailObjectKey`는 null입니다. 각 필드의 형태는 웹 [간편 제작 payload 변환](../../../manyak-web/src/features/stories/_shared/utils/simple-draft-payload.ts)과 같습니다.
+  - `KEYWORD_DRAFT`: `payload`는 키워드 입력 전체 `{selectedGenreTagIds, addedGenreTagIds, customGenreTags[{name, selected}], protagonist, supportingCharacters[]}`이고 인물은 `{name, gender, selectedTagIds, customTags[{name, selected}]}`입니다. `oneLineIntro`, `generationRequestId`는 null입니다.
+  - `STORY_DRAFT`: `payload`는 `{step, generationRequest, activeStorylineIndex, selectedStorylineId, additionalInfos, selectedRecommendations, artStyle, createdStoryId, completionRequest}`입니다. `step`은 `storyline-select` 또는 `additional-info`, `generationRequest`는 지금 보이는 생성 결과를 만든 스토리라인 생성 요청 본문 전체(재생성과 선택한 키워드 보기에 씀. 다시 만들기가 실패해 이전 결과를 보고 있으면 이전 결과의 요청), `selectedStorylineId`는 고른 스토리라인 ID 또는 null이고, `artStyle`, `createdStoryId`, `completionRequest`는 없으면 null입니다. 생성 결과 원문은 넣지 않고 최상위 `generationRequestId`에 `generationRequest.requestId`를 넣어 연결합니다. `oneLineIntro`는 추가 정보 단계면 고른 스토리라인 본문, 그 밖에는 null입니다.
+- **이어서 만들기** — 스토리라인 초안은 상세 응답의 `generation`이 완료(`COMPLETED`)이고 결과가 있어야 엽니다. 결과가 없으면 초안이 없을 때와 같이 "만들던 스토리를 찾지 못했어요"를 띄우고 새로 시작합니다. 고른 스토리라인을 결과에서 찾지 못하면 스토리라인 선택 단계로 열고, 빠졌거나 null인 선택 필드(키워드 초안의 `addedGenreTagIds` 등)는 빈 배열, 0, 없음으로 채웁니다. `schemaVersion`이 다르거나 `step`, `generationRequest`, 키워드 입력 형태를 읽을 수 없으면 불러오기 실패로 처리합니다.
+- **완성** — 완성 요청 `POST /stories/simple`에 세션의 초안 ID를 `draftId`로 넣습니다. 서버가 완성 요청을 기록할 때 그 초안을 지웁니다.
+- **제작 탭 카드** — 서버 간편 제작 초안 카드는 제목 "만들고 있는 스토리"이고, 설명 줄은 키워드 초안 "키워드를 선택하고 있었어요", 스토리라인 초안은 `oneLineIntro`(고른 스토리라인 본문, 2줄까지) 또는 없으면 "스토리라인을 선택하고 있었어요"입니다. 같은 제작의 기기 안 진행 기록이 있고 그 기록을 남긴 뒤 서버 초안이 다시 저장되지 않았으면(서버 `version`이 기록의 기준 버전 이하) 서버 카드를 숨겨 한 장으로 보이고, 그 기기 안 카드를 지우면 숨긴 서버 초안도 지웁니다. 기록을 남긴 뒤 다른 기기에서 저장한 서버 초안은 따로 보이고, 기기 안 카드를 지워도 남깁니다.
+- 회원이 임시 저장한 간편 제작은 다른 기기에서 같은 계정으로 로그인해도 제작 탭에서 이어서 만들 수 있어야 합니다.
+
 ### 완성 제출과 복구
 
 - 키워드·추가 정보의 검증을 통과한 요청만 전송합니다. 같은 요청의 재시도에는 같은 `requestId`와 명령을 사용합니다.
