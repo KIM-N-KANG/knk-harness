@@ -262,7 +262,7 @@ latency_slo:
 | `run.json` | 실행 모드, 감시 구간, 시스템 설명서 경로와 해시, 모델 식별자, 프롬프트 해시 | 시작 때 |
 | `candidates.jsonl` | 이상 후보 한 건에 한 줄 | 열 때 쓰고 닫을 때 `closed_at`을 채운 줄을 덧붙임 |
 | `reports/<candidate_id>.json` | 진단 보고 | 진단이 끝날 때 |
-| `queries/<candidate_id>.jsonl` | 조회 한 건에 한 줄. 번호, 도구, 인자, 결과 | 조회마다 |
+| `queries/<candidate_id>.jsonl` | 모델 메시지와 조회 한 건에 한 줄. 조회는 번호, 도구, 인자, 결과 | 메시지와 조회마다 |
 | `failures.jsonl` | 실행 실패 한 건에 한 줄 | 실행 실패 때 |
 
 실행 실패한 이상 후보는 `reports/`에 파일이 없고 `failures.jsonl`에 줄이 있다.

@@ -6,25 +6,12 @@
 
 <br>
 
-### 1. 세트
+### 세트
 
-| 세트 | 다루는 것 | 상태 |
-|---|---|---|
-| [`AI/`](AI/AGENTS.md) | 관측 자료 감시, 이상 탐지, 장애 진단 보고 | 6-6 성능 리포트 외 작성 |
-| `BACKEND/` | 로그 필드와 스팬 이름 계약, 수집 경로, 저장소, Sentry와 Langfuse 연결 | 미작성 |
+| 세트 | 다루는 것 |
+|---|---|
+| [`AI/`](AI/AGENTS.md) | 관측 자료 감시, 이상 탐지, 장애 진단 보고 |
+| `BACKEND/` | 로그 필드와 스팬 이름 계약, 수집 경로, 저장소, Sentry와 Langfuse 연결 |
 
 - 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 로그 필드와 스팬 이름은 BACKEND 세트가 정하고 AI 세트는 그 이름을 자료 원천으로 참조한다.
-
-<br>
-
-### 2. 이관 원본
-
-아래 기존 문서의 해당 절을 이 도메인으로 옮긴다. 이관이 끝날 때까지 기존 문서가 기준이다.
-
-- `docs/spec/4-backend-server-spec.md 4-7 운영과 관측`
-- `docs/spec/5-ai-server-spec.md 5-6 운영과 관측`
-- `docs/design/4-deployment.md 4-9 검수, 관측, 롤백`
-- `docs/adr/2-backend-server-adr.md BE-056`
-- `docs/adr/3-ai-server-adr.md Langfuse 원문 관측과 실패 격리`
-- `docs/adr/4-deployment-adr.md DEP-009`
