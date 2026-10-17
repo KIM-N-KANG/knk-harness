@@ -8,7 +8,7 @@
 
 ### 6-4-1 평가 범위
 
-평가 단위는 재생 구간 하나의 실행이다. 탐지기부터 보고 검사기까지 재생 모드의 전체 파이프라인을 평가하며 모델만 따로 평가하지 않는다. 채점은 실행 폴더의 `candidates.jsonl`, `reports/`, `failures.jsonl`만 읽는다.
+평가 단위는 재생 구간 하나의 실행이다. 탐지기부터 보고 검사기까지 재생 모드의 전체 파이프라인을 평가하며 모델만 따로 평가하지 않는다. 채점은 실행 폴더의 `run.json`, `candidates.jsonl`, `reports/`, `failures.jsonl`만 읽는다.
 
 <br>
 
@@ -63,7 +63,7 @@
 | 첫 이상 시각 오차 | 탐지한 보고의 `first_anomaly_at`과 정답 첫 이상 시각의 차이. 3분 이내면 통과 |
 | 근거 검증 통과율 | `incident` 보고의 `evidence[].verified`가 참인 비율 |
 | 탐지 지연 | 이상 후보의 `opened_at`에서 정답 첫 이상 시각을 뺀 값 |
-| 진단 시간, 비용 | 보고의 `usage.elapsed_seconds`, `usage.cost_usd` |
+| 진단 시간, 비용 | 모든 보고와 실행 실패 기록의 `usage.elapsed_seconds`, `usage.cost_usd`. 정답과 짝짓지 않은 후보도 포함 |
 | 오탐 후보 | 정답 구간과 겹치지 않는 `incident` 보고 |
 
 정답 하나와 겹치는 이상 후보가 여럿이면 가장 먼저 연 것으로 채점한다. 하나의 이상 후보가 정답 둘과 겹치면 두 정답 모두 그 보고로 채점한다.

@@ -55,6 +55,7 @@
 | `name` | 문자열 | 스팬 이름별 묶음 |
 | `traceGroup` | 문자열 | 진입 스팬 이름. 요청 경로별 묶음 |
 | `parentSpanId` | 문자열 | 비어 있으면 진입 스팬 |
+| `endTime` | 시각 | 상한 시각 자르기 |
 | `durationInNanos` | 정수 | 지연 집계 |
 | `status.code` | 정수 | 2이면 오류 |
 | `span.attributes.jdbc@query[0]` | 문자열 | DB 쿼리문별 묶음 |
@@ -167,7 +168,7 @@ latency_slo:
 | `closed_at` | 시각 | 선택 | 닫은 감시 시각. 열려 있으면 `null` |
 | `signals[]` | 배열 | 필수 | 1개 이상 |
 | `signals[].type` | 문자열 | 필수 | `entry_latency`, `queue_latency`, `failure_rate`, `error_logs`, `resource_saturation` |
-| `signals[].target` | 문자열 | 필수 | 진입 스팬 이름, 대기 스팬 이름, 서비스 이름, 구성 요소 이름 중 신호 종류에 맞는 것 |
+| `signals[].target` | 문자열 | 필수 | 진입 스팬 이름, 대기 스팬 이름, 서비스 이름 중 신호 종류에 맞는 것<br>자원 포화는 `구성 요소 이름/지표 이름`<br>신호 종류와 대상이 확정 판정의 키 |
 | `signals[].first_at` | 시각 | 필수 | 조건을 처음 넘은 분 |
 | `signals[].peak_value` | 숫자 | 필수 | 붙은 동안의 최댓값 |
 | `signals[].threshold` | 숫자 | 필수 | 기준값 |
@@ -219,7 +220,7 @@ latency_slo:
   "verdict": "incident",
   "impact": {
     "trace_groups": ["http post /api/v1/chats/{chatId}/turns/stream"],
-    "summary": "채팅 턴 스트림 p95가 04:46Z부터 16.2초로 기준 15초를 넘고 04:51Z에 48.3초에 이름. 읽기 요청은 p95 0.05초 이하로 영향 없음."
+    "summary": "채팅 턴 스트림 p95가 04:46Z부터 16.2초로 기준 15초를 넘고 04:50Z에 41.7초에 이름. 읽기 요청은 p95 0.05초 이하로 영향 없음."
   },
   "first_anomaly_at": "2026-10-08T04:46:00Z",
   "suspects": [
@@ -229,7 +230,7 @@ latency_slo:
     }
   ],
   "evidence": [
-    { "query_ref": 2, "observation": "chat.turn.queue 스팬 p95가 04:46Z~05:00Z 구간에서 48.6초", "value": 48.6, "verified": true },
+    { "query_ref": 2, "observation": "chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초", "value": 41.2, "verified": true },
     { "query_ref": 3, "observation": "같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음", "value": 10.4, "verified": true },
     { "query_ref": 5, "observation": "manyak-server CPU 최댓값 36%", "value": 36, "verified": true },
     { "query_ref": 6, "observation": "manyak-server 확장 활동 0건", "value": 0, "verified": true }
@@ -259,8 +260,8 @@ latency_slo:
 
 | 파일 | 내용 | 쓰는 때 |
 |---|---|---|
-| `run.json` | 실행 모드, 감시 구간, 시스템 설명서 경로와 해시, 모델 식별자, 프롬프트 해시 | 시작 때 |
-| `candidates.jsonl` | 이상 후보 한 건에 한 줄 | 열 때 쓰고 닫을 때 `closed_at`을 채운 줄을 덧붙임 |
+| `run.json` | 실행 모드, 감시 구간, 시스템 설명서 경로와 해시, 모델 식별자, 추론 강도, 조회와 시간 예산, 프롬프트 해시 | 시작 때 |
+| `candidates.jsonl` | 이상 후보의 상태 한 건에 한 줄. 같은 ID는 마지막 줄이 최신 상태 | 열 때, 신호가 붙거나 최댓값이 바뀔 때, 닫을 때, 열린 채 실행이 끝날 때 덧붙임 |
 | `reports/<candidate_id>.json` | 진단 보고 | 진단이 끝날 때 |
 | `queries/<candidate_id>.jsonl` | 모델 메시지와 조회 한 건에 한 줄. 조회는 번호, 도구, 인자, 결과 | 메시지와 조회마다 |
 | `failures.jsonl` | 실행 실패 한 건에 한 줄 | 실행 실패 때 |
@@ -271,6 +272,6 @@ latency_slo:
 |---|---|---|---|
 | `candidate_id` | 문자열 | 필수 | 이상 후보의 ID |
 | `failed_at` | 시각 | 필수 | 실패한 실제 시각 |
-| `stage` | 문자열 | 필수 | `query`(조회 실패), `model`(모델 호출 실패), `report`(출력 간 조건을 두 번 어김), `budget`(조회 25회나 5분 소진 후 미제출) |
+| `stage` | 문자열 | 필수 | `query`(조회 실패), `model`(모델 호출 실패), `report`(출력 간 조건을 두 번 어김, 제출 입력 스키마 위반, 같은 후보의 보고가 이미 있음), `budget`(제출 요청 뒤에도 미제출, 5분 소진) |
 | `reason` | 문자열 | 필수 | 실패 원인 한 문장. 비밀값과 식별자를 넣지 않음 |
 | `usage` | 객체 | 필수 | 진단 보고의 `usage`와 같은 필드 |

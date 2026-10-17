@@ -16,8 +16,8 @@ flowchart LR
     P --> M["`**모델 호출**`"]
     M --> T{"`**도구 호출이
 있는가**`"}
-    T -->|"`없음`"| R["`**제출 요청**
-한 번`"]
+    T -->|"`없음, 첫 회`"| R["`**제출 요청**`"]
+    T -->|"`없음, 두 번째`"| F["`**실행 실패**`"]
     T -->|"`조회 도구`"| Q["`**조회 실행**
 번호 부여, 상한 시각 자르기,
 식별자 제거`"]
@@ -30,7 +30,7 @@ flowchart LR
     classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef model fill:#F5D9C9,stroke:#B97450,color:#452B1D
     classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
-    class I,O data
+    class I,O,F data
     class M model
     class P,T,Q,V,R code
 ```
@@ -92,7 +92,7 @@ flowchart LR
 
 ## 보고 규칙
 - 판정은 incident, not_incident, undetermined 중 하나다. 지연 기준 초과나 실패가 자료로 확인될 때만 incident다. 부하가 높아도 기준 안이면 not_incident다. 자료가 비어 있거나 모순되어 정할 수 없으면 undetermined다.
-- 의심 구성 요소는 설명서의 name을 그대로 쓴다. 가능성이 높은 순서로 1~3개다.
+- 의심 구성 요소는 설명서의 name을 그대로 쓴다. incident는 가능성이 높은 순서로 1~3개, undetermined는 0~3개, not_incident는 없음이다.
 - 원인 가설은 증상이 아니라 메커니즘을 쓴다. "큐가 길다"가 아니라 "동시 실행 4개 상한에 걸려 큐에서 대기한다"처럼 쓴다.
 - 근거는 네가 한 조회의 번호와 그 결과에 있는 값만 쓴다. 조회 결과에 없는 수치를 쓰지 않는다.
 - 제안 조치는 즉시 완화와 개선 방향으로 나눈다. 조치를 실행하지 않는다.
