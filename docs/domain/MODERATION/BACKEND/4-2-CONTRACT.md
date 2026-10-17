@@ -91,7 +91,7 @@
 | `issues` | `object[]` | 위반 항목<br>없으면 빈 배열 |
 | `issues[].path` | `string` | 폼 기준 필드 경로 |
 | `issues[].type` | `string` | `TEXT`, `IMAGE` |
-| `issues[].rule` | `string` | `MINOR_SEXUAL_EXPLOITATION`, `EXPLICIT_SEXUAL_CONTENT`, `NONCONSENSUAL_SEXUAL_EXPLOITATION`, `DRUGS`, `EXTREME_GORE`, `SELF_HARM_PROMOTION`, `HATE_VIOLENCE_INCITEMENT` |
+| `issues[].rule` | `string` | `EXPLICIT_SEXUAL_CONTENT`, `DRUGS`, `EXTREME_GORE`, `SELF_HARM_PROMOTION`, `HATE_VIOLENCE_INCITEMENT`, `GAMBLING_PROMOTION` |
 | `issues[].reason` | `string` | 위반 이유 |
 | `imageErrors` | `object[]` | 이미지 오류<br>없으면 빈 배열 |
 | `imageErrors[].path` | `string` | 폼 기준 이미지 필드 경로 |
