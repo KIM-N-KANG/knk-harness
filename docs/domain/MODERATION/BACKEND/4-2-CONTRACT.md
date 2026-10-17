@@ -86,7 +86,7 @@
 | `submissionId` | `string` | 제출본 공개 식별자 |
 | `storyId` | `string / null` | 수정 대상 또는 승인 시 생성된 스토리 공개 식별자<br>승인 전 등록은 `null` |
 | `kind` | `string` | `CREATE`, `UPDATE` |
-| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 그 외는 현재 라이브에 입력을 적용한 폼<br>구조는 STORY 수정 폼 응답과 같고 `submission` 필드는 없음 |
+| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 그 외는 현재 스토리에 입력을 적용한 폼<br>구조는 STORY 수정 폼 응답과 같고 `submission` 필드는 없음 |
 | `status` | `string` | `PENDING`, `APPROVED`, `REJECTED`, `FAILED` |
 | `issues` | `object[]` | 위반 항목<br>없으면 빈 배열 |
 | `issues[].path` | `string` | 폼 기준 필드 경로 |
@@ -108,7 +108,7 @@
 | `IMAGE_UNREADABLE` | 모델이 이미지를 판독하지 못함<br>사용자가 교체해야 함 |
 | `MODEL_CALL_FAILED` | AI 서버의 모델 호출 실패 |
 | `MODERATION_UNAVAILABLE` | 이미지 복사 실패, AI 서버 호출 실패, 시간 초과, 응답 형식 오류 |
-| `APPLY_FAILED` | 승인 뒤 라이브 적용 단계의 검증 실패 |
+| `APPLY_FAILED` | 승인 뒤 현재 스토리 적용 단계의 검증 실패 |
 
 - 반려는 `issues`가 하나 이상이고 `errorCode`가 `null`이다. 실패는 `errorCode`가 있고 `issues`와 `imageErrors`가 함께 있을 수 있다.
 - 대상이 사라진 항목은 `issues`와 `imageErrors`에서 뺀다.
