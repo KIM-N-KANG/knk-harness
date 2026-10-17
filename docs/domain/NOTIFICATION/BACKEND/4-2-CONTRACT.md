@@ -466,7 +466,7 @@ Content-Type: application/json
 
 ### 4-2-8 알림 발송
 
-알림 서비스가 제공한다. 큐를 거치지 않는 수동 검증용 경로이며 서비스 경로에서는 호출하지 않는다.
+알림 서비스가 제공한다. 메시지 큐를 거치지 않는 수동 검증용 경로이며 서비스 경로에서는 호출하지 않는다.
 
 | 항목 | 값 |
 |---|---|
@@ -581,7 +581,7 @@ Content-Type: application/json
 | `ATTENDANCE_REMINDER` | `MARKETING` | `attendance:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
-- 추적 헤더는 본문이 아니라 큐의 메시지 속성에 싣는다.
+- 추적 헤더는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
 - 출석 리마인드와 프로모션은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>

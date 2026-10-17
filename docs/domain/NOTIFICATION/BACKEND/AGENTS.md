@@ -1,6 +1,6 @@
 # AGENTS.md
 
-NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 푸시 토큰, 수신 동의, 발송 자격, 스토리 완성과 검수 완료 알림, 출석 리마인드, 프로모션, 아웃박스와 큐, 알림 서비스의 소비와 발송을 다룬다.
+NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 푸시 토큰, 수신 동의, 발송 자격, 스토리 완성과 검수 완료 알림, 출석 리마인드, 프로모션, 아웃박스와 메시지 큐, 알림 서비스의 소비와 발송을 다룬다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -13,7 +13,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 | 초안 |
 | [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 데이터 보존 | 초안 |
 | [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 | 초안 |
-| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 큐, 데이터 수명 | 초안 |
+| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, Redis 키, 메시지 큐, 데이터 수명 | 초안 |
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 초안 |
 | [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 토큰과 동의, 발송 자격, 시나리오별 발송 요청, 중계와 소비, 발송 | 초안 |
 | [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 알림 서비스, 다른 도메인과의 계약, 큐 메시지, 푸시 데이터 | 초안 |
@@ -43,7 +43,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | 시나리오 추가 | [4-2-9 큐 메시지](4-2-CONTRACT.md#4-2-9-큐-메시지) | [4-1-6 스토리 완성 알림](4-1-PIPELINES.md#4-1-6-스토리-완성-알림), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 동의 규칙 변경 | [5-1-4 수신 동의와 법적 요건](5-1-SECURITY.md#5-1-4-수신-동의와-법적-요건) | [4-1-5 발송 자격 판정](4-1-PIPELINES.md#4-1-5-발송-자격-판정), [DECISIONS.md](DECISIONS.md) |
 | 발송 시각, 문구, 캠페인 변경 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [4-1-8 출석 리마인드](4-1-PIPELINES.md#4-1-8-출석-리마인드), [4-1-9 프로모션](4-1-PIPELINES.md#4-1-9-프로모션) |
-| 큐, 재시도, 선점 시간 변경 | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도) | [5-2-4 발송 요청의 선점과 임대](5-2-CONCURRENCY.md#5-2-4-발송-요청의-선점과-임대), [5-2-5 소비자 선점](5-2-CONCURRENCY.md#5-2-5-소비자-선점) |
+| 메시지 큐, 재시도, 선점 시간 변경 | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도) | [5-2-4 발송 요청의 선점과 임대](5-2-CONCURRENCY.md#5-2-4-발송-요청의-선점과-임대), [5-2-5 소비자 선점](5-2-CONCURRENCY.md#5-2-5-소비자-선점) |
 | 발송 모드 전환 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건), [6-6 적용과 복구](6-DEPLOYMENT.md#6-6-적용과-복구), [3-1-4 배포 단위](3-1-SOFTWARE-ARCHITECTURE.md#3-1-4-배포-단위) |
 | 오류 코드 추가 | [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드) | [3-3-3 요청 검증과 오류](3-3-CONVENTIONS.md#3-3-3-요청-검증과-오류) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
@@ -82,7 +82,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | 소비자와 멱등 | [push/consumer/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/consumer/) | 4-1-12, 5-2-5 |
 | 발송과 자격 조회 | [push/service/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/service/), [push/client/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/client/) | 4-1-13, 4-1-14 |
 | API와 필터 | [push/controller/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/controller/), [global/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/global/) | 4-2-8, 5-1-6 |
-| 큐와 운영 배치 | [envs/dev/sqs.tf](../../../../../manyak-terraform/terraform/envs/dev/sqs.tf), [envs/prod/sqs.tf](../../../../../manyak-terraform/terraform/envs/prod/sqs.tf), [envs/prod/notification.tf](../../../../../manyak-terraform/terraform/envs/prod/notification.tf) | 3-2-10, 6 배포 |
+| 메시지 큐와 운영 배치 | [envs/dev/sqs.tf](../../../../../manyak-terraform/terraform/envs/dev/sqs.tf), [envs/prod/sqs.tf](../../../../../manyak-terraform/terraform/envs/prod/sqs.tf), [envs/prod/notification.tf](../../../../../manyak-terraform/terraform/envs/prod/notification.tf) | 3-2-10, 6 배포 |
 | 테스트 | [src/test/kotlin/com/knk/manyak/notification/](../../../../../manyak-notification/src/test/kotlin/com/knk/manyak/notification/), [http/notifications.http](../../../../../manyak-notification/http/notifications.http) | 5-5 테스트 케이스 |
 | 배포 | [docker-image.yml](../../../../../manyak-notification/.github/workflows/docker-image.yml), [Dockerfile](../../../../../manyak-notification/Dockerfile) | 6 배포 |
 

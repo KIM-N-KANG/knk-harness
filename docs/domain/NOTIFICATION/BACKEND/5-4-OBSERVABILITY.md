@@ -110,7 +110,7 @@ Fluent Bit`"]
 | 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 소비 지표와 발송 지표 |
 | 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
-| 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 큐 경보 |
+| 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |
 | FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |
 | 자격 조회 | 알림 서비스의 자격 조회 실패 WARN, 요청 로그의 내부 경로 상태 |
 
@@ -167,7 +167,7 @@ Fluent Bit`"]
 | 동의 시각 | 로그와 지표에 기록하지 않음 |
 | 공유 시크릿, FCM 자격 증명 | 기록하지 않음 |
 | 기기 식별자 | 해시만 |
-| 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 큐에는 본문으로 보존 |
+| 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 메시지 큐에는 본문으로 보존 |
 | 회원 식별자 | 서버 로그는 내부 ID, 알림 서비스 로그는 공개 식별자 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 서버의 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
@@ -181,5 +181,5 @@ Fluent Bit`"]
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
 | 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>기록이 없으면 회차가 선점되지 않았음을 의미 |
-| 소비 지표의 `dlq` | SQS 환경에서는 증가하지 않음<br>실패 큐 도착은 큐 경보로 확인 |
+| 소비 지표의 `dlq` | SQS 환경에서는 증가하지 않음<br>실패 메시지 큐 도착은 메시지 큐 경보로 확인 |
 | 미수집과 누락 | 수집 비활성화, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 발송이 없었다고 판단하지 않음 |
