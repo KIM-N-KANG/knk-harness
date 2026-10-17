@@ -327,14 +327,55 @@ Authorization: Bearer {accessToken}
 
 **1) Request**
 
-본문은 STORY 일반 제작 등록 예시와 같아 생략했다.
+반려된 신규 등록본을 고쳐 다시 보낸다. 본문 구조는 STORY 일반 제작 등록과 같다.
 
 ```http
 PUT /api/v1/stories/submissions/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b
 Authorization: Bearer {accessToken}
 Content-Type: application/json
 
-{ ...등록 요청 본문... }
+{
+  "title": "{username}의 계약서",
+  "oneLineIntro": "기억을 잃은 마법사 {username}이가 금지된 숲에서 과거를 추적한다",
+  "description": "계약 마법이 지배하는 왕국에서 잃어버린 기억과 사라진 가족의 비밀을 추적한다.",
+  "protagonistName": "서린",
+  "genres": ["판타지", "미스터리"],
+  "storySettings": {
+    "worldSetting": "# 세계관\n계약 마법이 지배하는 왕국. 계약서는 서명자의 기억을 담보로 잡는다.",
+    "characterSetting": "# 도윤\n침착한 도서관 사서. 계약서의 출처를 알고 있다.",
+    "userRoleSetting": "# 주인공\n기억을 잃은 마법사. 자신의 이름이 적힌 계약서를 발견했다.",
+    "ruleSetting": "# 전개 규칙\n사용자의 행동에 따라 단서를 공개한다."
+  },
+  "startSettings": [
+    {
+      "name": "폐관 뒤의 도서관",
+      "prologue": "*마지막 종이 울린 뒤, {username}은 빈 기록장 가장자리에서 푸른 빛을 발견한다.*",
+      "startSituation": "폐관 직후 기록 열람실에서 계약서를 살핀다.",
+      "suggestedInputs": ["기록장을 빛에 비춰 본다.", "도윤에게 푸른 흔적을 가리킨다.", "기록장의 보관 위치를 확인한다."],
+      "endings": [
+        {
+          "name": "되찾은 기억",
+          "requirement": { "minTurns": 8, "achievementCondition": "계약서의 출처를 밝히고 기억을 되찾는다." },
+          "epilogue": "되찾은 기억과 함께 숲을 떠나는 장면을 여운 있게 묘사한다."
+        }
+      ]
+    }
+  ],
+  "mainEvents": [
+    { "name": "계약서 발견", "description": "자신의 이름이 적힌 계약서를 발견한다.", "keySentence": "계약서의 서명을 확인한다." }
+  ],
+  "visibility": "PRIVATE",
+  "thumbnailObjectKey": "thumbnails/uploaded/drafts/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
+  "characters": [
+    {
+      "name": "도윤",
+      "description": "기록을 지키는 과묵한 사서.",
+      "images": [
+        { "objectKey": "characters/uploaded/drafts/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp", "imageName": "도윤_기본" }
+      ]
+    }
+  ]
+}
 ```
 
 **2) 202 Response body**
