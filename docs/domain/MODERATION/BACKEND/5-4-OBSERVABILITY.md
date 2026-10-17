@@ -42,8 +42,8 @@ Fluent Bit`"]
 | MDC 필드 | 값 | 규칙 |
 |---|---|---|
 | `request_id` | 요청 헤더 값, 없으면 `req_` + UUID<br>실행은 선점마다 새 UUID | 생성한 값은 응답 헤더로 반환<br>접수 요청의 값은 제출본에 저장하지 않음 |
-| `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown`<br>실행은 `unknown` |
-| `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음<br>실행은 `unknown` |
+| `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown`<br>실행에는 없음 |
+| `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음<br>실행에는 없음 |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성 |
 
