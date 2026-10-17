@@ -239,7 +239,7 @@ latency_slo:
     "improvement": ["채팅 턴 실행기의 동시 실행 수를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림", "큐 대기 p95를 경보 조건에 추가함"]
   },
   "usage": {
-    "model": "claude-sonnet-5",
+    "model": "claude-opus-5-5",
     "queries": 7,
     "input_tokens": 41200,
     "output_tokens": 2310,
