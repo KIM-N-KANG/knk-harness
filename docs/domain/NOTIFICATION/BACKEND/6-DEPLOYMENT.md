@@ -21,23 +21,23 @@
 | 서버 내부 API | 개발은 같은 태스크 안의 주소, 운영은 사설 DNS | 자격 조회, 무효 토큰 삭제 |
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 공유 시크릿, FCM 자격 증명 |
 | 공개 ALB | 운영 | 내부 경로 차단 |
-| Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 서버의 트레이스 전송 |
+| Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 두 단위의 트레이스 전송 |
 
 <br>
 
 | 의존 대상 | 연결과 설정 실패 시 동작 |
 |---|---|
 | FCM 자격 증명 | 비어 있으면 기동은 정상이고 발송만 비활성<br>비어 있지 않은데 해석할 수 없으면 기동 실패 |
-| 큐 주소 | 원격 모드와 알림 서비스에서 비어 있으면 기동 실패 |
+| 큐 주소 | 개발과 운영 프로파일의 원격 모드 서버와 알림 서비스에서 비어 있으면 기동 실패 |
 | 공유 시크릿 | 비어 있으면 내부 API가 없는 경로로 응답<br>알림 서비스의 자격 조회가 전부 실패 |
 | 서버 내부 주소 | 비어 있으면 알림 서비스는 기동하되 자격 조회 실패로 발송 없음 |
-| 아웃박스 설정 | 임대가 전송 제한과 같거나 짧으면 기동 실패 |
-| 소비자 시간 설정 | 선점 수명이 재전달 가능 시간 이상이거나 처리 예산이 선점 수명 이상이면 기동 실패 |
+| 아웃박스 설정 | 임대가 전송 제한과 같거나 짧거나, 시간 값이 0 이하이거나, 백오프 상한이 초기값보다 작으면 기동 실패 |
+| 소비자 시간 설정 | 선점 수명이 재전달 가능 시간 이상이거나, 처리 예산이 선점 수명 이상이거나, 재전달 횟수가 2 미만이거나, 시간 값이 0 이하면 기동 실패 |
 | 문구 기본값 | 설정에 없으면 기동 실패 |
 | PostgreSQL | 연결할 수 없으면 서버 기동 실패 |
 | Redis | 필요한 시점에 연결<br>서버: 출석 회차를 건너뜀<br>알림 서비스: 재전달 |
 | 큐 | 서버: 아웃박스에 보존하고 백오프<br>알림 서비스: 수신 중단 |
-| Data Prepper | 추적을 켜고 주소가 비면 서버 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
+| Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
 
@@ -64,7 +64,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_PUSH_MODE` | `local` | 개발과 운영 Terraform 변수, 둘 다 `remote` | `local`은 서버가 직접 발송<br>`remote`는 메시지 큐로 알림 서비스에 넘김 |
+| `MANYAK_PUSH_MODE` | `local` | 운영 Terraform 변수, 개발은 Terraform 고정값<br>둘 다 `remote` | `local`은 서버가 직접 발송<br>`remote`는 메시지 큐로 알림 서비스에 넘김 |
 | `MANYAK_PUSH_QUEUE_URL` | 빈 값 | 개발과 운영 Terraform | 원격 모드 필수 |
 | `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
 | `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | 개발과 운영 Secrets Manager | 로컬 모드 롤백에만 필요 |
@@ -110,8 +110,9 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL과 인증 헤더는 Secrets Manager | 서버만 주입<br>알림 서비스는 기본값 |
-| `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | 서버만 주입<br>알림 서비스는 기본값 |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
+| `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | 두 단위 모두 |
+| `MANYAK_TRACING_SAMPLING` | `1.0` | 주입 없음 | |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수<br>두 단위 모두 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | 서버만 |
 
 <br>
@@ -144,7 +145,7 @@
 | FCM 자격 증명 | Secrets Manager 값 변경 후 새 태스크 시작 | 발송 지표의 `failure`가 늘지 않음 |
 | 출석 발송 시각 | 환경 변수 변경 후 새 태스크 시작 | 야간 구간으로 옮기면 야간 동의자에게만 발송 |
 | 소비자 시간 설정 | Terraform 변경 후 apply | 메시지 큐 설정과 함께 바꿈 |
-| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 서버만 해당 |
+| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 지표는 서버만 해당 |
 
 <br>
 

@@ -23,6 +23,7 @@ Fluent Bit`"]
     F --> CW["`**CloudWatch**
 안전망`"]
     S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
+    N -->|OTLP 트레이스| DP
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| G["`**Grafana Cloud**`"]
@@ -75,8 +76,8 @@ Fluent Bit`"]
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
 | 프로모션 회차 | 캠페인별 종료<br>`promotion_push_sent`, 실패는 `promotion_push_failed` | `campaignId`, `targets`, `sent`<br>회차 밖 예외는 `error` |
-| 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자, 예외 클래스 |
-| 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자, 예외 클래스 |
+| 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자<br>발송 실패는 예외 클래스 포함 |
+| 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자<br>발송 실패는 예외 클래스 포함 |
 | FCM 발송 실패 | 서버와 알림 서비스<br>평문 WARN | 회원 식별자, 토큰 앞 12자, 오류 코드, 예외 클래스 |
 | 무효 토큰 정리 | 서버와 알림 서비스<br>평문 INFO | 회원 식별자, 토큰 앞 12자 |
 | 아웃박스 포기 | 포기 시각 경과<br>평문 WARN | 메시지 식별자 |
@@ -130,7 +131,7 @@ Fluent Bit`"]
 |---|---|
 | 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
 | 전송 주기 | 60초 간격 |
-| 사전 등록 | 발송과 아웃박스 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계<br>소비 결과 카운터는 첫 처리에 생성 |
+| 사전 등록 | 발송, 아웃박스, 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
 
 <br>
 
@@ -138,7 +139,7 @@ Fluent Bit`"]
 
 | 항목 | 내용 |
 |---|---|
-| 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성<br>알림 서비스는 어느 환경에도 켜지 않음 |
+| 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성<br>운영은 서버와 알림 서비스 모두 켬 |
 | 서버 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬<br>릴레이는 큐 메시지 속성에 추적 헤더를 실음 |
 | 알림 서비스 스팬 | 큐 수신, 자격 조회 HTTP, FCM 호출<br>메시지 속성의 추적 헤더로 서버 스팬에 이어 붙임 |
 | 제외 | 스케줄 실행 자체, actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB와 Redis 관측은 노이즈 필터가 제외 |
