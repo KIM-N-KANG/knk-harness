@@ -295,7 +295,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `turns[].choices` | `string[]` | 저장된 선택지<br>아직 생성하지 않았으면 빈 배열 |
 | `turns[].reachedEnding` | `string / null` | 이 턴이 도달 턴이면 엔딩 이름 |
 | `turns[].createdAt` | `string` | |
-| `generatingTurn` | `object / null` | 생성 중 키가 있을 때만 객체<br>없으면 `null` |
+| `generatingTurn` | `object / null` | 생성 중 키가 있을 때만 객체<br>키 부재, Redis 읽기 오류, 저장된 값 해석 실패 시 `null`<br>오류 처리는 [5-3 오류 처리](5-3-ERROR-HANDLING.md#5-3-3-오류-분류) 참조 |
 | `generatingTurn.type` | `string` | `CONTINUE`(이어쓰기) 또는 `REGENERATE`(재생성) |
 | `generatingTurn.userInput` | `string` | 생성 중인 사용자 입력 |
 | `generatingTurn.startedAt` | `string` | 요청 접수 시각<br>ISO 8601 UTC 문자열 |
