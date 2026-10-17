@@ -40,7 +40,7 @@
 | 소유와 존재 | 제출 서비스 | 타인 소유, 부재, 형식 오류는 404 |
 | 계정 상태 | 제출 서비스의 상태 재검사 | 정지는 403, 탈퇴와 사용자 없음은 401 |
 | 이미지 복사 실패 | 이미지 복사 | `MODERATION_UNAVAILABLE`로 재시도 판정 |
-| AI 통신 실패, 시간 초과, 빈 응답, 5xx | AI 클라이언트 | `MODERATION_UNAVAILABLE`로 재시도 판정 |
+| AI 통신 실패, 시간 초과, 빈 응답, 오류 상태 응답 | AI 클라이언트 | `MODERATION_UNAVAILABLE`로 재시도 판정<br>AI 서버의 4xx도 같은 분류 |
 | AI 응답 형식 오류 | 응답 검증 | `MODERATION_UNAVAILABLE`<br>위반 항목이나 영구 이미지 오류가 담겼으면 재시도 없이 실패 |
 | AI 일시 오류 코드 | 판정 결과 | `IMAGE_DOWNLOAD_FAILED`, `MODEL_CALL_FAILED`는 재시도 판정 |
 | AI 영구 이미지 오류 | 판정 결과 | `IMAGE_INVALID`, `IMAGE_UNREADABLE`는 즉시 실패<br>검증된 위반 항목과 이미지 오류 보존 |
