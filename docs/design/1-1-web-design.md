@@ -55,6 +55,8 @@ graph LR
 
 채팅은 `fetch`·`ReadableStream`으로 SSE를 읽으며 공용 `fetchWithTimeout`을 우회하므로 클라이언트 시간 상한이 없습니다. EOF·오류·확정 교체 결과는 [공통 SSE 계약](../spec/3-1-client-spec.md#sse-스트리밍-계약)을 따릅니다.
 
+[생성 이어받기](../spec/3-1-client-spec.md#생성-이어받기)는 [follow-chat-generation](../../../manyak-web/src/features/chats/room/utils/follow-chat-generation.ts)이 생성 하나를 종료 이벤트까지 따라가며 맡습니다. 종료 이벤트 없이 닫히면 `started`의 생성 ID로 바로 다시 붙고, 실패하면 1초, 2초, 4초 간격으로 상세의 `generatingTurn`을 다시 찾아 붙어 첫 재연결을 포함해 최대 4번 시도합니다. 상세를 받지 못한 차례는 생성이 끝난 것으로 보지 않습니다. [use-chat-stream](../../../manyak-web/src/features/chats/room/hooks/use-chat-stream.ts)은 전송, 재생성, 재진입을 이 경로 하나로 처리하고, 상세의 생성 ID가 바뀌면 따라가는 수신이 없을 때만 이어받습니다. 시도를 다 쓴 생성은 곧바로 다시 따라가지 않아, 서버가 계속 거절해도 재연결이 끝없이 이어지지 않습니다. 채팅 상세는 `refetchOnMount: 'always'`로 진입마다 새로 받고, 마운트 뒤 첫 조회가 끝날 때까지 로딩으로 둡니다([use-chat-detail](../../../manyak-web/src/features/chats/room/hooks/use-chat-detail.ts)). 기본 `staleTime` 1분 안에 돌아오면 캐시만 쓰여 생성 중인 턴을 놓치기 때문입니다. 이어쓰기 요청의 `lastTurnId`는 생성 타입이 문자열이라 [stream-chat-turn](../../../manyak-web/src/features/chats/room/utils/stream-chat-turn.ts)에서 정수로 덮어 보냅니다.
+
 진행 중 `token`·`character_image`를 도착 순서의 `text | character_image` 조각으로 관리합니다. 완료 후 상세의 `aiOutput`을 [chat-message-segments](../../../manyak-web/src/features/chats/_shared/utils/chat-message-segments.ts)로 파싱해 같은 조각 렌더를 사용합니다. 이어쓰기·재생성·상세·공유가 이 경로를 공유합니다. 이미지 블록은 텍스트 문단의 형제로 두어 `<p>` 안에 중첩하지 않습니다. URL 검증은 [원격 이미지](#원격-이미지-최적화), 표현은 [웹 표현 값](#웹-표현-값)을 따릅니다.
 
 ### 게스트 서재 상태 판정 (웹)
@@ -326,7 +328,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### BFF 프록시
 
-`/api/[...path]`는 `host`·브라우저 `cookie`를 제거하고 식별 헤더와 서버에서 결정한 Authorization을 전달합니다. `cache: no-store`, 응답 본문 스트리밍 통과를 사용합니다. `API_BASE_URL` 누락은 500입니다. 배포 실행 시간 상한은 코드의 요청 제한과 별개이며 [배포 문서](4-deployment.md)·운영 설정에서 확인합니다.
+`/api/[...path]`는 `host`·브라우저 `cookie`를 제거하고 식별 헤더와 서버에서 결정한 Authorization을 전달합니다. `cache: no-store`, 응답 본문 스트리밍 통과를 사용하고, 브라우저 요청의 `signal`을 백엔드 요청에 넘겨 브라우저가 끊으면 백엔드 연결도 닫습니다. `API_BASE_URL` 누락은 500입니다. 배포 실행 시간 상한은 코드의 요청 제한과 별개이며 [배포 문서](4-deployment.md)·운영 설정에서 확인합니다.
 
 ### 요청 타임아웃
 
