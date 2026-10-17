@@ -44,7 +44,7 @@ Fluent Bit`"]
 
 | MDC 필드 | 값 | 규칙 |
 |---|---|---|
-| `request_id` | `req_` + UUID | 요청 헤더 값을 쓰고 없으면 생성<br>응답 헤더로 반환 |
+| `request_id` | 요청 헤더 값, 없으면 `req_` + UUID | 생성한 값은 응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 서버가 계산하고 알림 서비스는 전달만 |
 | `sentry_event_id` | Sentry 이벤트 ID | 서버의 5xx만 |
@@ -54,7 +54,7 @@ Fluent Bit`"]
 |---|---|---|
 | `request_id` | 로그 MDC, Sentry 태그 | 한 요청의 로그 |
 | `request_id`, `session_id` | 큐 메시지 본문, 소비자 MDC, 자격 조회 헤더 | 발행 원인 요청과 소비 처리 |
-| 추적 헤더 | 큐 메시지 속성 | 서버 스팬과 소비자 스팬 |
+| 추적 헤더 | 큐 메시지 속성<br>`traceparent`, `tracestate` | 서버 스팬과 소비자 스팬 |
 | 메시지 식별자 | 아웃박스 경고, 소비 결과 로그 | 발송 요청 1건 |
 | 회원 내부 ID | 서버 발송 실패 WARN, 회차 로그 | 회원 |
 | 회원 공개 식별자 | 알림 서비스 발송 실패 WARN | 회원 |
@@ -82,7 +82,7 @@ Fluent Bit`"]
 | 아웃박스 포기 | 포기 시각 경과<br>평문 WARN | 메시지 식별자 |
 | 아웃박스 결과 기록 실패 | DB 장애<br>평문 WARN | 메시지 식별자, 예외 |
 | 문구 템플릿 적재 실패 | 갱신 실패<br>평문 WARN `push_template_load_failed` | 예외 |
-| 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 결과, 사유 |
+| 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 소비 결과, 알림 발송 응답의 `reason` 값 |
 | 큐 소비 재시도 | 예외<br>평문 WARN | 메시지 식별자, 예외 클래스 |
 | 자격 조회 실패 | 알림 서비스<br>평문 WARN | 회원 공개 식별자, 예외 클래스 |
 
@@ -108,7 +108,7 @@ Fluent Bit`"]
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
 | 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 소비 지표와 발송 지표 |
-| 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그 |
+| 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그<br>발송 결과는 소비 지표와 발송 지표 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
 | 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |
 | FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |
@@ -180,6 +180,6 @@ Fluent Bit`"]
 |---|---|
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
-| 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>기록이 없으면 회차가 선점되지 않았음을 의미 |
+| 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>결과와 실패, 선점 실패 로그가 모두 없으면 실행되지 않았거나 로그가 유실된 것 |
 | 소비 지표의 `dlq` | SQS 환경에서는 증가하지 않음<br>실패 메시지 큐 도착은 메시지 큐 경보로 확인 |
 | 미수집과 누락 | 수집 비활성화, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 발송이 없었다고 판단하지 않음 |

@@ -119,8 +119,8 @@ erDiagram
 | `body` | varchar(300) | NOT NULL | |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
 | `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | |
-| `target_count` | integer | | 조회된 대상 수 |
-| `sent_count` | integer | | 기록한 발송 요청 수 |
+| `target_count` | integer | | 마지막 회차에서 조회된 대상 수 |
+| `sent_count` | integer | | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수 |
 | `skipped_count` | integer | | 사용하지 않음 |
 | `started_at` | timestamptz | | 선점 시각 |
 | `finished_at` | timestamptz | | 회차 종료 시각 |

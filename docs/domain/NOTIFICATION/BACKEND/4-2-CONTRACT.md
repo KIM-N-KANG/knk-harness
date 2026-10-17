@@ -324,7 +324,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `publicId` | 경로 | 필수 | 회원 공개 식별자 |
+| `publicId` | `string` | 필수 | 경로 변수, 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
 | `at` | `string` | 필수 | 판정 시각<br>발송 직전의 현재 시각 |
 
@@ -513,7 +513,7 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류 |
-| 502 | 공통 형식 아님 | 자격 조회 실패<br>본문은 응답과 같은 구조이며 `outcome`은 `FAILED`, `reason`은 `ELIGIBILITY_UNAVAILABLE` |
+| 502 | 없음 | 자격 조회 실패<br>본문은 공통 실패 형식이 아니라 응답과 같은 구조이며 `outcome`은 `FAILED`, `reason`은 `ELIGIBILITY_UNAVAILABLE` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -581,7 +581,7 @@ Content-Type: application/json
 | `ATTENDANCE_REMINDER` | `MARKETING` | `attendance:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
-- 추적 헤더는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
+- 추적 헤더 `traceparent`, `tracestate`는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
 - 출석 리마인드와 프로모션은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>
