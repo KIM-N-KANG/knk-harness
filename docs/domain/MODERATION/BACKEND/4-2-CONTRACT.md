@@ -59,7 +59,7 @@
 | `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
 | `message` | `string` | 사용자 안내 문구 |
 | `path` | `string` | 요청 경로 |
-| `details` | `object[]` | 선언적 필드 검증과 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+| `details` | `object[]` | 선언적 필드 검증, 타입 변환, 기본 주인공 이름 검증 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
 
 | `details[].field` 규칙 | 값 |
 |---|---|
@@ -86,7 +86,7 @@
 | `submissionId` | `string` | 제출본 공개 식별자 |
 | `storyId` | `string / null` | 수정 대상 또는 승인 시 생성된 스토리 공개 식별자<br>승인 전 등록은 `null` |
 | `kind` | `string` | `CREATE`, `UPDATE` |
-| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 그 외는 현재 스토리에 입력을 적용한 폼<br>구조는 STORY 수정 폼 응답과 같고 `submission` 필드는 없음 |
+| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 미승인 등록본은 요청 원본, 미승인 수정본은 현재 스토리에 입력을 적용한 폼<br>구조는 STORY 수정 폼 응답과 같고 `submission` 필드는 없음 |
 | `status` | `string` | `PENDING`, `APPROVED`, `REJECTED`, `FAILED` |
 | `issues` | `object[]` | 위반 항목<br>없으면 빈 배열 |
 | `issues[].path` | `string` | 폼 기준 필드 경로 |
@@ -110,7 +110,7 @@
 | `MODERATION_UNAVAILABLE` | 이미지 복사 실패, AI 서버 호출 실패, 시간 초과, 응답 형식 오류 |
 | `APPLY_FAILED` | 승인 뒤 현재 스토리 적용 단계의 검증 실패 |
 
-- 반려는 `issues`가 하나 이상이고 `errorCode`가 `null`이다. 실패는 `errorCode`가 있고 `issues`와 `imageErrors`가 함께 있을 수 있다.
+- 반려는 저장된 `issues`가 하나 이상이고 `errorCode`가 `null`이다. 응답의 `issues`는 재대응으로 비어 있을 수 있다. 실패는 `errorCode`가 있고 `issues`와 `imageErrors`가 함께 있을 수 있다.
 - 대상이 사라진 항목은 `issues`와 `imageErrors`에서 뺀다.
 
 <br>
@@ -319,6 +319,7 @@ Authorization: Bearer {accessToken}
 | 400 | `IMAGES_TOO_LARGE` | 검수 요청 예상 용량 초과 |
 | 404 | `NOT_FOUND` | 부재, 타인 소유, 형식 오류<br>입력 검증보다 먼저 판정 |
 | 409 | `CONFLICT` | 수정 종류이거나 대기 또는 승인 상태<br>같은 인물 안의 이미지 이름 중복 |
+| 503 | `SERVICE_UNAVAILABLE` | 이미지가 있는 요청에서 이미지 저장소 미설정 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -476,5 +477,5 @@ Authorization: Bearer {accessToken}
 | 대기 중 존재 확인 | 스토리 내부 ID | 대기 중 제출본이 있으면 거절 예외 |
 | 수정 폼 메타데이터 | 스토리 공개 식별자, 회원 내부 ID | 최신 미승인 제출본의 식별자, 상태, 위반 항목, 오류 코드, 이미지 오류 또는 `null` |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 상태, 회차, 제목 | NOTIFICATION의 발송 경로 |
-| 회원 제출본 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
-| 스토리 제출본 전부 삭제 | 스토리 내부 ID | 삭제 행 수 |
+| 회원 제출본 전부 삭제 | 회원 내부 ID | 없음 |
+| 스토리 제출본 전부 삭제 | 스토리 내부 ID | 없음 |
