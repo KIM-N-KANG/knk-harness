@@ -41,13 +41,13 @@ Fluent Bit`"]
 
 ### 5-4-2 상관관계 식별자
 
-서버의 상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 서버의 로그와 Sentry는 같은 식별자 값을 사용한다. 알림 서비스는 큐 메시지와 내부 API 헤더에서 같은 값을 받아 MDC에 기록한다.
+서버의 상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 서버의 로그와 Sentry는 같은 식별자 값을 사용한다. 알림 서비스는 `request_id`와 `session_id`를 큐 메시지 본문과 내부 API 헤더에서 받아 MDC에 기록한다. `device_id_hash`는 내부 API 헤더에서만 받아 MDC에 기록한다. 큐 소비로 시작한 자격 조회에는 기기 해시가 없어 서버 MDC의 `device_id_hash`는 `unknown`으로 남는다. 원인 요청의 로그는 `request_id`로 연결한다.
 
 | MDC 필드 | 값 | 규칙 |
 |---|---|---|
 | `request_id` | 요청 헤더 값, 없으면 `req_` + UUID | 생성한 값은 응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
-| `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 서버가 계산하고 알림 서비스는 전달만 |
+| `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 서버가 계산하고 알림 서비스는 내부 API 헤더로 전달만 |
 | `sentry_event_id` | Sentry 이벤트 ID | 서버의 5xx만 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성 |
 
