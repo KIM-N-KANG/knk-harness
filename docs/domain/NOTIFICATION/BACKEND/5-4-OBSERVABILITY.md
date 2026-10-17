@@ -55,7 +55,7 @@ Fluent Bit`"]
 |---|---|---|
 | `request_id` | 로그 MDC와 Sentry 태그 | 한 요청의 로그 |
 | `request_id`와 `session_id` | 큐 메시지 본문, 소비자 MDC, 자격 조회 헤더 | 발행 원인 요청과 소비 처리 |
-| 추적 헤더 | 큐 메시지 속성<br>`traceparent`와 `tracestate` | 서버 스팬과 소비자 스팬 |
+| 추적 헤더 | 큐 메시지 속성<br>`traceparent`와 `tracestate` | 릴레이 스팬과 소비자 스팬<br>원인 요청과는 `request_id`로 연결 |
 | 메시지 식별자 | 아웃박스 경고와 소비 결과 로그 | 발송 요청 1건 |
 | 회원 내부 ID | 서버 발송 실패 WARN과 회차 로그 | 회원 |
 | 회원 공개 식별자 | 알림 서비스 발송 실패 WARN | 회원 |
@@ -108,8 +108,8 @@ Fluent Bit`"]
 |---|---|
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
-| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 소비 지표와 발송 지표 |
-| 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그<br>발송 결과는 소비 지표와 발송 지표 |
+| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
+| 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
 | 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |
 | FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |
@@ -140,8 +140,9 @@ Fluent Bit`"]
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성<br>운영은 서버와 알림 서비스 모두 켬 |
-| 서버 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬<br>릴레이는 큐 메시지 속성에 추적 헤더를 실음 |
-| 알림 서비스 스팬 | 큐 수신, 자격 조회 HTTP, FCM 호출<br>메시지 속성의 추적 헤더로 서버 스팬에 이어 붙임 |
+| 서버 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외), Redis 스팬 |
+| 릴레이 스팬 | 스케줄러에서 실행되어 원인 요청의 스팬이 없음<br>발행마다 릴레이 스팬을 열고 큐 메시지 속성에 추적 헤더를 실음<br>원인 요청과는 메시지의 `request_id`로 연결 |
+| 알림 서비스 스팬 | 큐 수신, 자격 조회 HTTP, FCM 호출<br>메시지 속성의 추적 헤더로 릴레이 스팬에 이어 붙임 |
 | 제외 | 스케줄 실행 자체, actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB와 Redis 관측은 노이즈 필터가 제외 |
 
 <br>
@@ -162,12 +163,12 @@ Fluent Bit`"]
 
 **1. 데이터 범위**
 
+비밀값과 개인정보의 취급 규칙은 [5-1-7 비밀값과 개인정보](5-1-SECURITY.md#5-1-7-비밀값과-개인정보)에 있다. 아래는 관측 매체별 추가 제한이다.
+
 | 데이터 | 현재 기록 방식 |
 |---|---|
-| 푸시 토큰 | 로그에는 앞 12자만<br>지표와 트레이스에 없음 |
-| 동의 시각 | 로그와 지표에 기록하지 않음 |
-| 공유 시크릿, FCM 자격 증명 | 기록하지 않음 |
-| 기기 식별자 | 해시만 |
+| 푸시 토큰 | 지표와 트레이스에 없음 |
+| 동의 시각 | 지표에 기록하지 않음 |
 | 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 메시지 큐에는 본문으로 보존 |
 | 회원 식별자 | 서버 로그는 내부 ID, 알림 서비스 로그는 공개 식별자 |
 | Sentry 요청 필드 | 기본 수집 |
