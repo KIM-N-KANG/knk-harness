@@ -45,7 +45,7 @@
 | 잔액 부족 | PAYMENT 도메인 | API 계층이 예외를 처리해 402 `INSUFFICIENT_CREDIT`으로 변환 |
 | 게스트 한도 소진과 디바이스 헤더 누락 | PAYMENT 도메인 | 402 `GUEST_TRIAL_LIMIT_EXCEEDED`, 400 |
 | AI 구조화 오류 | AI 서버의 `error` 이벤트 | `error` 이벤트로 중계<br>Sentry에 보내지 않음 |
-| AI 스트림 오류 | AI 호출 구성 요소<br>AI 연결 실패, 이벤트 간 시간 초과, `completed` 없는 종료 | `AI_STREAM_FAILED`로 분류하고 Sentry 전송 |
+| AI 스트림 오류 | AI 호출 구성 요소<br>AI 연결 실패, 이벤트 간 시간 초과, `completed` 없는 종료<br>생성 마감 초과 제외 | `AI_STREAM_FAILED`로 분류하고 Sentry 전송 |
 | 저장 오류 | 턴 저장의 DB 오류 | `AI_STREAM_FAILED`로 분류 |
 | 생성 중 키 획득 오류 | Redis 오류 | 과금 전에 503 `SERVICE_UNAVAILABLE`로 거절 |
 | 상세 조회의 생성 중 상태 읽기 오류 | Redis 생성 중 키 읽기 오류 또는 저장된 값 해석 실패 | 대화 기록 조회를 부가 정보 오류로 막지 않도록 상세는 200으로 정상 응답하고 `generatingTurn`만 `null`로 반환<br>`chat_generation_read_failed` 로그 기록<br>Redis 장애 중 새 이어쓰기와 재생성은 생성 중 키 획득 단계에서 503 `SERVICE_UNAVAILABLE`로 거절<br>Redis 복구 직후 키가 사라졌어도 [5-2-6 저장 시 재확인](5-2-CONCURRENCY.md#5-2-6-생성-중-키와-저장-시-재확인)으로 같은 위치의 중복 저장 방지 |
@@ -86,7 +86,7 @@
 |---|---|---|
 | AI 연결 | 5초 | 턴과 선택지 공통 |
 | AI 스트림 이벤트 간격 | 60초 | 이벤트가 없으면 `AI_STREAM_FAILED`<br>읽기 전체 제한은 두지 않음 |
-| 생성 마감 | 120초 | 요청 접수 시점부터 계산하고 큐 대기 포함<br>연결 종료나 재연결로 초기화하지 않음<br>저장 진입 전 마감 초과는 실패 종료와 환불<br>저장 진입 후 마감 초과는 저장을 끝까지 마치고 저장 결과로 정산 |
+| 생성 마감 | 120초 | 요청 접수 시점부터 계산하고 큐 대기 포함<br>연결 종료나 재연결로 초기화하지 않음<br>저장 진입 전 마감 초과는 AI 서버로의 스트림 요청 연결(HTTP 구독)을 끊고 실패 종료와 환불<br>AI가 `ping`만 보내 이벤트 간 시간 초과가 계속 갱신돼도 생성 마감에 종료<br>저장 진입 후 마감 초과는 저장을 끝까지 마치고 저장 결과로 정산 |
 | 선택지 호출 | 90초 | 초과 시 502 |
 | 실시간 이미지 서명 | 10분 | presigned PUT 만료 |
 
@@ -130,6 +130,7 @@
 | 대상 | 규칙 |
 |---|---|
 | 5xx | 스택트레이스와 함께 ERROR로 기록 |
-| SSE 실패 | HTTP는 200이라 5xx 필터에 잡히지 않음<br>AI 스트림 오류와 저장 오류는 백그라운드 작업에서 직접 Sentry에 보냄<br>AI 구조화 오류는 보내지 않음 |
+| SSE 실패 | HTTP는 200이라 5xx 필터에 잡히지 않음<br>생성 마감 초과를 제외한 AI 스트림 오류와 저장 오류는 백그라운드 작업에서 직접 Sentry에 보냄<br>AI 구조화 오류는 보내지 않음 |
+| 생성 마감 초과 | Sentry 미전송<br>`chat_turn_timeout` 로그와 결과 지표 `failure`로 확인<br>AI 호출 기록(`ai_call_logs`)에는 `AI_STREAM_FAILED` 실패로 기록 |
 | 예상 가능한 4xx | Sentry 미전송<br>원인 예외가 있으면 클래스와 메시지를 한 줄로 WARN에 기록<br>원인 예외가 없으면 DEBUG에 기록 |
 | 환불 실패 | 지표와 구조화 로그로 기록 |
