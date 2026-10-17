@@ -325,6 +325,7 @@
 | STORY-DRAFT-36 | P1 | 회원, 서버 초안 4개 | 간편 제작 주소로 바로 진입 | 키워드 단계가 열리고 상한 토스트 없음 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
 | STORY-DRAFT-37 | P1 | 회원, 서버 초안 5개 | 제작 탭 카드 `이어서 만들기` | 막지 않고 키워드 입력을 복원 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
 | STORY-DRAFT-38 | P2 | 게스트, 기기 안 초안 5개 | 제작 탭 FAB | 막지 않고 제작 방식 선택으로 이동 | ✅ e2e `stories/story-create-draft-server` | [제작 카드와 다중 완성 진행](../spec/3-1-client-spec.md#제작-카드와-다중-완성-진행), KNK-1667 |
+| STORY-DRAFT-39 | P2 | 회원, 기기 안 초안 1개와 서버 초안 1개, 서버 초안 목록 응답이 늦음 | 제작 탭 진입 | 목록이 다 준비될 때까지 스켈레톤만 보이고 기기 안 초안 카드가 먼저 뜨지 않음. 준비되면 카드 두 장이 함께 보임 | ✅ e2e `stories/story-create-draft-server` | [FE-SCREEN-013](../spec/3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록), KNK-1667 |
 
 ## STORY-GATE — 제작과 채팅 시작 동의 게이트
 
