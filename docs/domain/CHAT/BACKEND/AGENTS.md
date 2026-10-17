@@ -44,7 +44,7 @@ CHAT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코�
 | 과금, 환불, 체험 변경 | [4-1-6 이어쓰기](4-1-PIPELINES.md#4-1-6-이어쓰기), [5-2-2 환불의 단일 판정](5-2-CONCURRENCY.md#5-2-2-환불의-단일-판정) | [5-3-4 오류별 처리](5-3-ERROR-HANDLING.md#5-3-4-오류별-처리), [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) |
 | 실시간 이미지 변경 | [4-1-13 실시간 이미지](4-1-PIPELINES.md#4-1-13-실시간-이미지) | [5-1-5 실시간 이미지 검증](5-1-SECURITY.md#5-1-5-실시간-이미지-검증) |
 | 오류 코드 추가 | [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드) | [3-3-3 요청 검증과 오류](3-3-CONVENTIONS.md#3-3-3-요청-검증과-오류) |
-| 생성 중 상태와 이벤트 재연결 | [4-2-4 상세](4-2-CONTRACT.md#4-2-4-상세)와 [4-2-13 생성 스트림 재연결](4-2-CONTRACT.md#4-2-13-생성-스트림-재연결) | [4-1-15 생성 이벤트 수신과 재연결](4-1-PIPELINES.md#4-1-15-생성-이벤트-수신과-재연결), [5-2-6 생성 중 키와 저장 시 재확인](5-2-CONCURRENCY.md#5-2-6-생성-중-키와-저장-시-재확인), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
+| 생성 중 상태와 이벤트 재연결 | [4-2-4 상세](4-2-CONTRACT.md#4-2-4-상세)와 [4-2-13 생성 스트림 재연결](4-2-CONTRACT.md#4-2-13-생성-스트림-재연결) | [4-1-15 생성 이벤트 수신과 재연결](4-1-PIPELINES.md#4-1-15-생성-이벤트-수신과-재연결), [5-2-6 생성 중 키와 저장 시 재확인](5-2-CONCURRENCY.md#5-2-6-생성-중-키와-저장-시-재확인), [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1-12 턴 저장과 판정 반영](4-1-PIPELINES.md#4-1-12-턴-저장과-판정-반영) |
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-10 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-10-수집-조건과-실패-처리) |
 | 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 명세 절 |
@@ -64,6 +64,7 @@ CHAT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코�
 | 후보 이름 구분 | [ChatJudgmentNameMapping.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatJudgmentNameMapping.kt) | 4-1-14 후보 이름 구분 |
 | AI 호출 | [chat/client/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/client/) | 4-1-1 공통 처리, 4-1-6, 4-1-8 |
 | 스트림 실행기 | [ChatSseConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/config/ChatSseConfig.kt), [ChatTurnRefundMeters.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatTurnRefundMeters.kt) | 3-3-4 비동기, 5-4-7 지표 |
+| 생성 중 상태와 이벤트 보관 | [ChatGenerationStore.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationStore.kt), [ChatGenerationDeadlines.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationDeadlines.kt), [ChatGenerationEvents.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationEvents.kt), [ChatGenerationReceivers.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationReceivers.kt) | 4-1-15 생성 이벤트 수신과 재연결, 4-2-13 생성 스트림 재연결, 5-2-6 생성 중 키와 저장 시 재확인 |
 | 피드백 | [feedback/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/feedback/) | 4-1-11 피드백 등록, 4-2-11 피드백 등록 |
 | 모델 | [chat/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
 | 내 채팅 목록, 이관 | [UserContentController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/UserContentController.kt), [GuestDataMigrationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/migration/service/GuestDataMigrationService.kt) | 4-2-12 다른 도메인과의 경계 |
