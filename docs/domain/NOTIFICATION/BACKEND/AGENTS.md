@@ -17,7 +17,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 | 초안 |
 | [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 토큰과 동의, 발송 자격, 시나리오별 발송 요청, 중계와 소비, 발송 | 초안 |
 | [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 알림 서비스, 다른 도메인과의 계약, 큐 메시지, 푸시 데이터 | 초안 |
-| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 접근 판정, 계정 상태, 동의와 법적 요건, 입력 검증, 내부 경로 보호, 비밀값과 개인정보, 수용한 한계 | 초안 |
+| [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 접근 판정, 계정 상태와 동의, 수신 동의와 법적 요건, 입력 검증, 내부 경로 보호, 비밀값과 개인정보, 수용한 한계 | 초안 |
 | [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 행 잠금, 멱등, 유니크 위반, 선점과 임대, 소비자 선점, 수용한 경쟁 | 초안 |
 | [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 | 초안 |
 | [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 | 초안 |
