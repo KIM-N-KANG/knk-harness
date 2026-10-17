@@ -23,9 +23,11 @@ MODERATION 도메인은 서버 애플리케이션의 내부 패키지다. 별도
 flowchart LR
     C["`**클라이언트**
 웹 BFF, Android`"] -->|REST| S["`**MODERATION 도메인**`"]
-    O["`**STORY, ACCOUNT**
-같은 서버`"] -->|호출| S
-    S -->|승인 시 저장과 적용 호출| O
+    O["`**STORY**
+같은 서버`"] -->|접수 요청| S
+    S -->|승인 시 저장과 적용| O
+    A["`**ACCOUNT**
+같은 서버`"] -->|탈퇴 시 삭제| S
     S -->|완료 이벤트| N["`**NOTIFICATION**
 같은 서버`"]
     S -->|검수 요청| AI["`**AI 서버**`"]
@@ -35,7 +37,7 @@ flowchart LR
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     class C,AI,IMG,SL,DB ext
-    class S,O,N comp
+    class S,O,A,N comp
 ```
 
 <br>
