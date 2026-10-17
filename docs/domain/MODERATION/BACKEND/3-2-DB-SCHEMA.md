@@ -65,6 +65,7 @@ erDiagram
 | `held_at` | timestamptz | CHECK 보류 두 컬럼이 함께 NULL이거나 함께 NOT NULL이면서 `PENDING`이고 `next_attempt_at`이 NULL | 보류 시각 |
 | `hold_reason` | text | | 보류 원인 코드<br>마지막 실행 실패의 오류 코드<br>사용자에게 노출하지 않음 |
 | `dispatched_at` | timestamptz | | NULL은 미선점<br>값은 마지막 선점의 임대 시작 시각 |
+| `created_at` | timestamptz | NOT NULL, 기본 `now()` | 접수 시각<br>목록 정렬 기준 |
 | `updated_at` | timestamptz | NOT NULL, 기본 `now()` | |
 | `decided_at` | timestamptz | CHECK `PENDING`이면 NULL, 아니면 NOT NULL | 판정 시각 |
 

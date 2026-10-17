@@ -86,7 +86,7 @@
 | `submissionId` | `string` | 제출본 공개 식별자 |
 | `storyId` | `string / null` | 수정 대상 또는 승인 시 생성된 스토리 공개 식별자<br>승인 전 등록은 `null` |
 | `kind` | `string` | `CREATE`, `UPDATE` |
-| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 미승인 등록본은 요청 원본, 미승인 수정본은 현재 스토리에 입력을 적용한 폼<br>구조는 STORY 수정 폼 응답과 같고 `submission` 필드는 없음 |
+| `payload` | `object` | 복원한 전체 폼<br>승인본은 접수 시점 폼, 미승인 등록본은 요청 원본, 미승인 수정본은 현재 스토리에 입력을 적용한 폼<br>등록본은 등록 요청 본문에 이미지 URL과 검수 상태를 추가한 구조<br>등록본의 새 항목에는 `id`가 없으며 `thumbnailObjectKey`는 유지됨<br>수정본은 STORY 수정 폼 응답과 같은 구조<br>`submission` 필드는 없음 |
 | `status` | `string` | `PENDING`, `APPROVED`, `REJECTED`, `FAILED` |
 | `issues` | `object[]` | 위반 항목<br>없으면 빈 배열 |
 | `issues[].path` | `string` | 폼 기준 필드 경로 |
@@ -151,7 +151,7 @@ Authorization: Bearer {accessToken}
 
 **2) 200 Response body**
 
-반려된 신규 등록본이다. `payload`의 `startSettings`와 `mainEvents` 안쪽은 STORY 수정 폼 예시와 같아 생략했다.
+반려된 신규 등록본이다. `payload`의 `startSettings`와 `mainEvents` 안쪽은 등록 요청 예시와 같아 생략했다.
 
 ```json
 {
@@ -173,7 +173,8 @@ Authorization: Bearer {accessToken}
     "startSettings": [],
     "mainEvents": [],
     "visibility": "PRIVATE",
-    "thumbnailUrl": "https://cdn.example.com/thumbnails/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
+    "thumbnailObjectKey": "thumbnails/uploaded/drafts/3f2504e0-4f89-41d3-9a0c-0305e82c3301/4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
+    "thumbnailUrl": "https://cdn.example.com/thumbnails/uploaded/drafts/3f2504e0-4f89-41d3-9a0c-0305e82c3301/4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
     "thumbnailModerationStatus": "APPROVED",
     "characters": [
       {
@@ -184,9 +185,9 @@ Authorization: Bearer {accessToken}
           {
             "id": null,
             "imageName": "도윤_기본",
-            "imageUrl": "https://cdn.example.com/characters/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp",
+            "imageUrl": "https://cdn.example.com/characters/uploaded/drafts/3f2504e0-4f89-41d3-9a0c-0305e82c3301/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp",
             "moderationStatus": "APPROVED",
-            "objectKey": "characters/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp"
+            "objectKey": "characters/uploaded/drafts/3f2504e0-4f89-41d3-9a0c-0305e82c3301/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp"
           }
         ]
       }
