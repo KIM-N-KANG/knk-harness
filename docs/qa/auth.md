@@ -108,6 +108,7 @@
 | AUTH-CONSENT-22 | P0 | dev 서버 실로그인. 신규 계정, 현행 동의가 있는 기존 회원, 재동의가 필요한 기존 회원, 정지 회원 | Google·Kakao 로그인 → (필요 시) 동의 | 신규와 재동의는 동의 전 서버 계정·세션 없음(시트 이탈 시 계정 미생성 확인). 동의 후 로그인 완료. 기존 회원은 시트 없이 바로 로그인. 정지 회원도 로그인 후 기존 제한 적용 | 수동 | [백엔드 동의 후 가입 완료 흐름](../spec/4-backend-server-spec.md#동의-후-가입-완료-흐름), W-022 |
 | AUTH-CONSENT-23 | P0 | 실기기 Chrome(데스크톱·Android). 신규 계정으로 Google 로그인 → 가입 동의 시트(AUTH-CONSENT-15). 시트를 건드리지 않음 | 브라우저 뒤로가기 버튼 → Google 화면에서 다시 뒤로가기 | 첫 뒤로가기는 Google 계정 선택 화면으로 갈 수 있음(브라우저 정책). 앱 화면으로 돌아오면 가입 시트 없이 게스트, 가입 대기 취소, 탭 표시 삭제. 그 화면에서 더 뒤로가도 시트가 다시 뜨지 않음. 이미 로그인한 세션의 재동의(AUTH-CONSENT-03)면 돌아온 화면에서 새로고침 없이 로그아웃 | ◐ e2e `auth/consent`(히스토리 이동 재진입. Chrome의 건너뛰기는 수동) | [가입 대기](../spec/3-2-web-spec.md#로그인과-회원-이관), W-028 |
 | AUTH-CONSENT-24 | P1 | 이 탭 로그인 표시 + 가입 대기 남음(지난 Google 화면에서 계정을 다시 골라 OAuth가 실패한 경우) | `/login?error=...` 진입 | 로그인 실패 토스트만 뜨고 가입 시트 없음. 가입 대기 취소, 탭 표시 삭제. 세션 확인이 로그인 화면보다 먼저 끝나도 대기 조회 없음 | ✅ e2e `auth/consent` + unit `signup-consent-client` | [가입 대기](../spec/3-2-web-spec.md#로그인과-회원-이관), W-028 |
+| AUTH-CONSENT-25 | P2 | 회원 세션 + 회원 세션 쿠키(`manyak_session_expires_at`) 있음, 세션 확인(`/api/auth/session`) 응답 지연 중 | 제작 탭 진입 | 세션 확인 응답 전에 `GET /users/me/consents`가 먼저 나가고, 세션 확정 뒤 그 응답으로 바로 회원 상태(시트 없음, 회원 목록 조회 시작). 동의 조회는 1회 | ✅ e2e `auth/consent` | [동의 게이트 조회](../design/1-1-web-design.md#동의-게이트-웹) |
 
 ## AUTH-LINK — 계정 연동 (마이 페이지, KNK-740)
 
