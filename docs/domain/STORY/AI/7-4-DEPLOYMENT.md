@@ -1,6 +1,6 @@
 # 7-4 배포
 
-인프라 구조와 공통 배포 절차는 배포 설계를 따른다. ([배포 설계](../../design/4-deployment.md))
+인프라 구조와 공통 배포 절차는 배포 설계를 따른다. ([배포 설계](../../../design/4-deployment.md))
 
 <br>
 
@@ -32,7 +32,7 @@
 
 ### 7-4-2 배포 경로
 
-워크플로는 테스트, 컨테이너 상태 검사, 이미지 게시, ECS 배포 순서로 실행한다.  ([배포 워크플로](../../../../manyak-ai/.github/workflows/docker-image.yml), [배포 설계 4-7 배포 절차](../../design/4-deployment.md#4-7-배포-절차))
+워크플로는 테스트, 컨테이너 상태 검사, 이미지 게시, ECS 배포 순서로 실행한다.  ([배포 워크플로](../../../../../manyak-ai/.github/workflows/docker-image.yml), [배포 설계 4-7 배포 절차](../../../design/4-deployment.md#4-7-배포-절차))
 
 | 단계 | 개발 | 운영 |
 |---|---|---|
@@ -58,11 +58,11 @@
 
 | 대상 | 원본 |
 |---|---|
-| 이미지 구성 | [Dockerfile](../../../../manyak-ai/Dockerfile), [.dockerignore](../../../../manyak-ai/.dockerignore) |
-| 빌드와 배포 자동화 | [docker-image.yml](../../../../manyak-ai/.github/workflows/docker-image.yml) |
-| 운영 태스크와 환경 변수 | [운영 ECS 설정](../../../../manyak-terraform/terraform/envs/prod/ecs.tf) |
-| 운영 모델 Parameter | [ai-model-config.tf](../../../../manyak-terraform/terraform/envs/prod/ai-model-config.tf) |
-| 개발 인프라 | [개발 환경 설정](../../../../manyak-terraform/terraform/envs/dev/main.tf) |
+| 이미지 구성 | [Dockerfile](../../../../../manyak-ai/Dockerfile), [.dockerignore](../../../../../manyak-ai/.dockerignore) |
+| 빌드와 배포 자동화 | [docker-image.yml](../../../../../manyak-ai/.github/workflows/docker-image.yml) |
+| 운영 태스크와 환경 변수 | [운영 ECS 설정](../../../../../manyak-terraform/terraform/envs/prod/ecs.tf) |
+| 운영 모델 Parameter | [ai-model-config.tf](../../../../../manyak-terraform/terraform/envs/prod/ai-model-config.tf) |
+| 개발 인프라 | [개발 환경 설정](../../../../../manyak-terraform/terraform/envs/dev/main.tf) |
 | 로컬 통합 실행 | `manyak-infra`의 Compose |
 
 <br>
@@ -94,7 +94,7 @@ AI 성능 평가 방법은 미정이다. ([6-4 AI 평가 방법](6-4-AI-EVALUATI
 - 비밀값은 AI 담당자가 등록하고 배포 담당자가 Terraform의 주입 설정을 반영한다.
 - 아래 기본값은 코드 기준이며 운영 Parameter의 실제 값은 미확인이다. 채팅 전용 변수는 제외한다.
 
-변수 정의는 설정 모듈을 따른다. ([config.py](../../../../manyak-ai/src/core/config.py))
+변수 정의는 설정 모듈을 따른다. ([config.py](../../../../../manyak-ai/src/core/config.py))
 
 <br>
 
@@ -182,7 +182,7 @@ AI 성능 평가 방법은 미정이다. ([6-4 AI 평가 방법](6-4-AI-EVALUATI
 
 **3. 복구**
 
-운영 워크플로는 태그 변경 전 `latest`의 digest를 보관하고 배포 실패 시 복원한다. ECS 자동 복구만으로 이전 이미지 복원을 보장하지 않는다. ([배포 설계 4-9 검수와 롤백](../../design/4-deployment.md#4-9-검수-관측-롤백))
+운영 워크플로는 태그 변경 전 `latest`의 digest를 보관하고 배포 실패 시 복원한다. ECS 자동 복구만으로 이전 이미지 복원을 보장하지 않는다. ([배포 설계 4-9 검수와 롤백](../../../design/4-deployment.md#4-9-검수-관측-롤백))
 
 | 문제 | 복구 대상 | 방법 |
 |---|---|---|
@@ -214,7 +214,7 @@ AI 성능 평가 방법은 미정이다. ([6-4 AI 평가 방법](6-4-AI-EVALUATI
 
 ### 7-4-8 배포 실패 진단
 
-실패한 실행의 커밋 SHA, 배포 시각과 배포 ID로 대상 태스크를 찾는다. AWS 리전은 `ap-northeast-2`, 클러스터와 서비스 이름은 개발 `manyak-dev`, 운영 `manyak-prod`이다. ([배포 워크플로](../../../../manyak-ai/.github/workflows/docker-image.yml))
+실패한 실행의 커밋 SHA, 배포 시각과 배포 ID로 대상 태스크를 찾는다. AWS 리전은 `ap-northeast-2`, 클러스터와 서비스 이름은 개발 `manyak-dev`, 운영 `manyak-prod`이다. ([배포 워크플로](../../../../../manyak-ai/.github/workflows/docker-image.yml))
 
 | 실패 상황 | 확인할 로그와 설정 | 조회 경로 | 원인별 조치 |
 |---|---|---|---|

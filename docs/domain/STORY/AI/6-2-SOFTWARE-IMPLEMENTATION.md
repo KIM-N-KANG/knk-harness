@@ -122,7 +122,7 @@ flowchart LR
 | 데이터·필드 | 타입 | 의미와 조건 |
 |---|---|---|
 | `dict`의 `stories` | `list[dict]` | 최초 생성은 후보 3편, 보완 출력은 수정 후보만 포함 <br> 후보 필드는 아래 `StoryItem`과 동일. `id`로 기존 후보와 연결해 병합 |
-| `LlmUsage` | `LlmUsage` | 각 모델 호출에서 생성 결과와 함께 출력 <br> 최초·보완 호출의 사용량을 집계해 최종 출력의 `meta`에 반영 <br> [LlmUsage 필드 정의](../../../../manyak-ai/src/services/story_llm.py#L68) |
+| `LlmUsage` | `LlmUsage` | 각 모델 호출에서 생성 결과와 함께 출력 <br> 최초·보완 호출의 사용량을 집계해 최종 출력의 `meta`에 반영 <br> [LlmUsage 필드 정의](../../../../../manyak-ai/src/services/story_llm.py#L68) |
 
 <br>
 
@@ -309,7 +309,7 @@ flowchart LR
 |---|---|---|
 | 생성·보완 결과 | `dict` | 명세 파싱 전 JSON 객체, 입력값 복원·병합 대상 |
 | `input_character_id` | `str` | 인물 카드의 `input-1` 등 식별자, 이름 복원에 사용하고 명세 파싱 전에 제거 |
-| 호출 사용량 | `LlmUsage` | 최초·보완 호출 사용량을 집계해 출력 메타에 반영 <br> [LlmUsage 필드 정의](../../../../manyak-ai/src/services/story_llm.py#L68) |
+| 호출 사용량 | `LlmUsage` | 최초·보완 호출 사용량을 집계해 출력 메타에 반영 <br> [LlmUsage 필드 정의](../../../../../manyak-ai/src/services/story_llm.py#L68) |
 
 <br>
 

@@ -13,7 +13,6 @@
 | 백엔드 | 사용자와 제작 진행 관리<br>스토리와 이미지 저장 | 동기 HTTP 요청<br>대기 한도와 재요청 관리 |
 | 텍스트 모델 API | 스토리라인과 컴파일 본문 생성 | 공급자 어댑터로 호출 |
 | 이미지 모델 API | 인물 이미지와 썸네일 생성 | 이미지 어댑터로 호출 |
-| Langfuse Sentry | 호출, 비용과 오류 기록 | 기록 실패가 요청 결과에 영향 없음 |
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
