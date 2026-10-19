@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.34 |
+| 버전 | v0.35 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-09-09 |
+| 수정일 | 2026-10-08 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -223,6 +223,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1                  | client | `client_onboarding_viewed`                               |
 | P1                  | client | `client_onboarding_createButton_clicked`                 |
 | P1                  | client | `client_onboarding_browseButton_clicked`                 |
+| P2                  | client | `client_onboarding_playStoreBadge_clicked`               |
 | P1                  | client | `client_storyList_storyCard_clicked`                     |
 | P1                  | client | `client_storyList_storyCard_impressed`                   |
 | P1 `Phase 1 · 구현` | client | `client_storyList_loginButton_clicked`                   |
@@ -271,6 +272,19 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 1 · 구현` | client | `client_account_attendanceButton_clicked`                |
 | P1 `Phase 1 · 구현` | client | `client_account_logoutButton_clicked`                    |
 | P1 `Phase 1 · 구현` | client | `client_account_linkAccountButton_clicked`               |
+| P1 `Phase 3 · 구현` | client | `client_storyDetail_persona_selected`                    |
+| P1 `Phase 3 · 구현` | client | `client_storyDetail_personaCreateButton_clicked`         |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_viewed`                            |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_form_submitted`                    |
+| P1 `Phase 3 · 구현` | client | `client_personaCreate_completed`                         |
+| P1 `Phase 3 · 구현` | client | `client_personaList_viewed`                              |
+| P1 `Phase 3 · 구현` | client | `client_personaList_createButton_clicked`                |
+| P1 `Phase 3 · 구현` | client | `client_personaList_persona_deleted`                     |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_viewed`                              |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_form_submitted`                      |
+| P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
+| P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
+| P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -299,6 +313,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P2                  | client | `client_terms_viewed`                                    |
 | P2                  | client | `client_privacy_viewed`                                  |
 | P2 `계획`           | client | `client_serviceInfo_viewed`                              |
+| P2 `Phase 3 · 구현` | client | `client_appBanner_closeButton_clicked`                   |
+| P2 `Phase 3 · 구현` | client | `client_appBanner_escapeGuide_shown`                     |
 
 스토리 상세의 추천 스토리 카드(`client_storyDetail_recommendStoryCard_clicked`, `client_storyDetail_recommendStoryCard_impressed`)는 추천 카드 기능 도입 시 P1으로 추가합니다. 기준은 `6-4-2-4. 스토리 상세`를 따릅니다.
 
@@ -308,20 +324,21 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 #### 6-4-2-1. 온보딩
 
-첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 시작 버튼은 헤더와 본문 끝 두 곳에 있어 `source`로 구분하고, "둘러보기"는 홈으로 이탈합니다(KNK-1185).
+첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 간편 제작으로 가는 버튼과 홈으로 가는 버튼은 기능 소개 섹션 아래에만 있고, `section`으로 어느 섹션인지 남깁니다. `source`는 헤더(`header`)와 본문 끝(`bottom`) 버튼이 있던 이전 기록과 같은 축으로 비교하려고 `section` 값으로 유지합니다(KNK-1185, KNK-1644).
 
 | 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
 | `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
-| `client_onboarding_createButton_clicked` | P1       | "바로 시작하기" 버튼 클릭 | `source` (string, 필수: `header` / `bottom`, KNK-1185) |
-| `client_onboarding_browseButton_clicked` | P1       | 헤더 "둘러보기" 탭(홈으로 이탈. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | 없음          |
+| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기, 스토리라인과 이미지 스타일, 스토리 완성 섹션 아래 버튼 클릭 | `source` (string, 필수: `section`), `section` (string, 필수: `create` / `storyline` / `complete`). 헤더 버튼(`header`)과 본문 끝 버튼(`bottom`)은 KNK-1644에서 섹션 버튼으로 바뀌며 사라짐 |
+| `client_onboarding_browseButton_clicked` | P1       | 채팅, 오리지널 스토리 섹션 아래 버튼 탭(홈으로 이탈. 헤더 "둘러보기"는 KNK-1644에서 사라짐. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | `source` (string, 필수: `section`), `section` (string, 필수: `chat` / `originals`, KNK-1644) |
+| `client_onboarding_playStoreBadge_clicked` | P2 | 푸터 Google Play 배지 클릭(Play 스토어 앱 페이지를 새 탭으로 엶. 실제 설치는 Play Console 획득 보고서의 `utm_medium=onboarding_footer`로 확인) | 없음 |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
 
 | 이벤트                                  | 우선순위 | 발생 시점             | 고유 프로퍼티                                        |
 | --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
 | `client_storyList_viewed`               | P0       | 홈 오리지널 목록 진입 | 없음                                                 |
-| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭 | `source` (string, 필수: `fab` / `emptyState`. KNK-1355부터 웹도 앱처럼 빈 목록에 FAB만 두어 `fab`만 발화) |
+| `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭(만들고 있는 스토리 5개 상한으로 이동하지 않아도 발생) | `source` (string, 필수: `fab` / `emptyState`. KNK-1355부터 웹도 앱처럼 빈 목록에 FAB만 두어 `fab`만 발화) |
 | `client_storyList_storyCard_clicked`    | P1       | 홈·제작 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_storyCard_impressed`  | P1       | 홈·제작 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created`) |
 | `client_storyList_loginButton_clicked` `Phase 1 · 구현` | P1 | 홈·채팅·제작 헤더 로그인 버튼 클릭(게스트) | 없음 |
@@ -338,7 +355,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_viewed`                              | P0       | 제작 화면 진입                                                                 | 없음                                                                                                             |
 | `client_storyCreate_step_viewed`                         | P0       | 각 제작 단계 진입                                                              | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
 | `client_storyCreate_tagCategory_selected`                | P1       | 태그 카테고리 이동(장르 → 주인공 → 주변 인물). 다음/이전 버튼·탭·스와이프 공통 | `from_category` (string, 필수), `to_category` (string, 필수), `direction` (string, 필수: `forward` / `backward`) |
-| `client_storyCreate_addTag_submitted`                    | P2       | 태그 직접 추가 제출                                                            | `category` (string, 필수: `GENRE` / `PROTAGONIST` / `SUPPORTING_CHARACTER`)                                      |
+| `client_storyCreate_addTag_submitted`                    | P2       | 태그 직접 추가 제출                                                            | `category` (string, 필수: `PROTAGONIST` / `SUPPORTING_CHARACTER`. `GENRE`는 제공 장르 검색 전환 전 수집분에만 있음) |
 | `client_storyCreate_storyGeneration_requested`           | P0       | 스토리라인 생성 요청 전송                                                      | 없음                                                                                                             |
 | `server_storyCreate_storyGeneration_processed_succeeded` | P0       | 스토리라인 생성 성공                                                           | `creation_id` (string, 필수)                                                                                     |
 | `server_storyCreate_storyGeneration_processed_failed`    | P0       | 스토리라인 생성 실패                                                           | `creation_id` (string, 필수 — 현재 구현은 발급 전 실패에서 누락 가능, §6-8-7 A1), `error_type` (string, 필수)    |
@@ -355,7 +372,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyCreate_completeError_shown`                 | P1       | 스토리 완성 실패 에러 표시                                                     | `stage` (string, 필수: `story` / `chat`)                                                                         |
 | `client_storyCreate_creditInfoButton_clicked`            | P2       | 제작 헤더 이프 안내 팝오버 열기(닫힘은 계측하지 않음)                        | 없음                                                                                                             |
 | `client_storyCreate_exitButton_clicked`                  | P1       | 제작 이탈 확정(이탈 확인 다이얼로그의 나가기 클릭. 잃을 것이 없으면 헤더 X·브라우저 뒤로가기 즉시) | `step_name` (string, 필수), `step_number` (number, 필수)                                                         |
-| `client_storyCreate_draftSaved`                          | P1       | 임시 저장 쓰기 성공(임시 저장 버튼·단계 이동·화면 숨김)                        | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
+| `client_storyCreate_draftSaved`                          | P1       | 임시 저장 쓰기 성공(임시 저장 버튼, 화면 숨김)                          | `step` (string, 필수: `keyword` / `storyline-select` / `additional-info`)                                        |
 | `client_storyCreate_continueBanner_shown`                | P2       | 제작 탭 진행 카드(이어서 만들기) 노출(임프레션)                                | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT` / `GENERAL_DRAFT`)            |
 | `client_storyCreate_continueBanner_clicked`              | P1       | 제작 탭 진행 카드의 "이어서 만들기" 클릭                                      | `stage` (string, 필수: `KEYWORD_DRAFT` / `STORYLINE_GENERATION` / `STORY_COMPLETION` / `STORY_DRAFT` / `GENERAL_DRAFT`)            |
 | `client_storyCreate_completed`                           | P0       | 스토리화 완료. 서버가 스토리 ID를 확정한 시점(원 응답 또는 제작 탭 폴링)에 발화하며 채팅 생성과 무관합니다 | `story_id` (string, 필수), `genres` (string[], 선택). **`chat_id`·`creation_id`는 포함하지 않습니다** — 완성 시점에는 채팅이 없고, §6-5 퍼널·지표가 이 이벤트를 `creation_id`로 조인한다고 정의해 간극이 있습니다(§6-8-7 A2) |
@@ -364,11 +381,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-임시 저장 관련 이벤트([웹 제작 흐름](3-2-web-spec.md#3-2-3-웹-제작-흐름))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼·단계 이동·화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼·단계 이동·화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
+임시 저장 관련 이벤트([웹 제작 흐름](3-2-web-spec.md#3-2-3-웹-제작-흐름))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼과 화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼, 화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
-`client_storyCreate_addTag_submitted`의 `category`는 세 카테고리에서 모두 발생합니다. 세계관 탭 개편(KNK-621)이 구현되면 장르에서 직접 추가가 사라져 `GENRE`가 더 이상 발생하지 않으므로, 그 시점에 값 집합을 함께 갱신합니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+`client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](3-1-client-spec.md#장르-검색과-선택)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 
 `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
@@ -388,9 +405,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                       | 우선순위 | 발생 시점                            | 고유 프로퍼티             |
 | -------------------------------------------- | -------- | ------------------------------------ | ------------------------- |
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
+| `client_storyDetail_persona_selected` | P1 | 페르소나 Select에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
+| `client_storyDetail_personaCreateButton_clicked` | P1 | 페르소나 Select의 "페르소나 생성하기" 클릭(게스트·10개 상한으로 이동하지 않아도 발생) | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 | `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
+
+`persona_type`은 채팅을 시작하거나 고른 주인공의 종류로 `default`(기본 주인공)·`persona`(내 페르소나) 중 하나입니다(KNK-1469). 페르소나의 이름·소개는 사용자가 자유 입력한 값이라 어떤 이벤트에도 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). Android는 `persona_type`을 KNK-1473에서 같은 값으로 보냅니다.
 
 스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
 
@@ -445,7 +466,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 안내 투어 4종(KNK-694)은 첫 채팅 진입 안내가 실제로 읽히는지 보는 보조 계측입니다. 완주율은 `client_chat_tour_completed` ÷ `client_chat_tour_shown`으로, 이탈 지점은 `client_chat_tourSkipButton_clicked`의 `step_number` 분포로 봅니다. 투어는 기기별 1회만 노출하고 재열람 진입점이 없으므로 `tour_shown`은 사용자당 사실상 1회입니다(`localStorage` 차단 환경에서는 진입마다 반복될 수 있음 — [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)). `step_id`는 단계 번호가 아닌 안내 대상 식별자이며 입력 모드에 따라 첫 스텝이 `add-blocks`(블럭)·`add-emphasis`(일반)로 갈립니다. 같은 화면의 추천 입력 인라인 힌트는 별도 이벤트를 두지 않습니다 — 사용자가 조작하는 UI가 아니라 문구 노출이라 추천 사용률(`client_chat_choiceOption_selected`, §6-5-4)의 변화로 관찰합니다.
 
-`client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패(연결 끊김·중단 등)해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
+`client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 연결이 끊겨도 [생성 이어받기](3-1-client-spec.md#생성-이어받기)로 응답을 받았거나 저장된 턴을 확인했으면 발생하지 않습니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
@@ -489,7 +510,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 **결정 기록 — 서버 로그인 이벤트는 provider별 이름을 유지합니다(2026-07-31, KNK-721).** `server_login_googleLogin_processed_*`는 이미 운영에서 발행 중입니다(서버 `ServerAnalytics` 구현·통합 테스트가 이름을 검증하고, 운영 user-data가 `MANYAK_ANALYTICS_AMPLITUDE_ENABLED=true`로 발행하며, Amplitude 적재를 확인 — 2026-07-31). 따라서 `server_login_socialLogin_*` + `provider` 프로퍼티로의 개명은 지표 이력 단절 또는 전환기 이중 발행(dual-write)·대시보드 이전을 요구해 기각합니다. 카카오는 `server_login_kakaoLogin_processed_*`를 새로 추가하고 고유 프로퍼티는 Google과 동일하게 둡니다. 전체 로그인 성공률·전환은 두 이벤트 합산 차트로, provider 비교는 이벤트별 시리즈로 봅니다. 클라이언트 버튼 클릭도 같은 구조입니다(`client_login_googleButton_clicked` · `client_login_kakaoButton_clicked` — 명명 규칙 `client_{화면}_{요소}_{동작}` 유지).
 
-**서버 `processed_failed`는 백엔드에 로그인 요청이 도달한 이후의 실패만 셉니다.** 토큰 교환 실패(`invalid_client`), 카카오 OIDC 비활성, redirect URI 불일치 같은 OAuth 콜백 단계 실패는 백엔드 호출 전에 끝나므로 서버 이벤트에 잡히지 않습니다 — 콜백 단계에서 로그인이 전면 실패해도 서버 실패율은 정상으로 보입니다. 이 사각지대는 `client_login_oauthError_shown`(NextAuth가 `error` 쿼리와 함께 `/login`으로 복귀시키는 시점에 발행 — [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008)이 커버합니다. 카카오 로그인 릴리스 검수는 서버 실패율과 함께 이 이벤트가 0건에 가깝게 유지되는지 확인하고, 지속 발생 시 콘솔 설정(OIDC 토글·리다이렉트 URI·클라이언트 시크릿)을 점검합니다.
+**서버 `processed_failed`는 백엔드에 로그인 요청이 도달한 이후의 실패만 셉니다.** 토큰 교환 실패(`invalid_client`), 카카오 OIDC 비활성, redirect URI 불일치 같은 OAuth 콜백 단계 실패는 백엔드 호출 전에 끝나므로 서버 이벤트에 잡히지 않습니다 — 콜백 단계에서 로그인이 전면 실패해도 서버 실패율은 정상으로 보입니다. 이 사각지대는 `client_login_oauthError_shown`(NextAuth가 `error` 쿼리와 함께 `/login`으로 복귀시키는 시점에 발행 — [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008)이 커버합니다. 웹은 소셜 인증(`POST /auth/social/{provider}`)을 Auth.js `signIn` 콜백에서 호출하므로 이 호출의 실패는 `error_code` `AccessDenied`로 기록됩니다. 카카오 로그인 릴리스 검수는 서버 실패율과 함께 이 이벤트가 0건에 가깝게 유지되는지 확인하고, 지속 발생 시 콘솔 설정(OIDC 토글·리다이렉트 URI·클라이언트 시크릿)을 점검합니다.
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
@@ -651,15 +672,16 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개와 `client_inappBrowser_loginHandoffCreated`는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 14개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 13개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 인앱 브라우저 (5)   | `client_inappBrowser_*` 3개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
-| 온보딩 (3)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
+| 온보딩 (4)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
-| 대화 공유 (3)       | `client_chat_shareButton_clicked` · `client_chatShare_*` 2개(`client_chatShareDialog_*` 2개는 폐기)                                                                  | 앱 미구현                     |
-| 상황 삽입 (1)       | `client_chat_situationInsertButton_clicked`                                                                                                                        | 앱은 `addBlockButton_clicked`로 통합 |
+| 공유 열람 (2) | `client_chatShare_*` 2개 | 공유 링크 열람은 웹 화면에서 수행 |
+
+Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카드 옵션의 공유 링크 발급 시점에 기록합니다. 일반 입력의 "상황 추가"는 `client_chat_situationInsertButton_clicked`와 `chat_id`를 기록하고, 블럭 모드의 추가는 `client_chat_addBlockButton_clicked`를 사용합니다. 두 동작은 별개이며 입력 원문을 보내지 않습니다.
 
 **웹 후속 작업** — 앱 보강 이벤트(§6-4-2-15) 중 웹에 같은 화면·동작이 있는데 계측이 빠진 항목입니다. 웹이 같은 이름으로 따라와야 플랫폼 비교가 됩니다.
 
@@ -672,6 +694,40 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | 신고                                   | ~~웹 미구현~~ → 구현(KNK-1186)          | `client_report_*` 3개를 같은 이름으로 발화 중                                                          |
 | 시작 설정 선택                         | 웹 미구현(앱 전용 UX)                    | 도입 시 `client_storyDetail_startSetting_selected`                                                       |
 | `client_storyList_viewed`의 `section`  | 미전송                                  | 선택 프로퍼티이므로 웹은 유지. `/studio` 진입을 따로 보려면 `created`로 발화                            |
+
+#### 6-4-2-17. 페르소나 생성과 관리 — `Phase 3 · 구현`(KNK-1469)
+
+페르소나 생성과 관리 화면([`3-1-client-spec.md` FE-SCREEN-008](3-1-client-spec.md#fe-screen-008-로그인마이-페이지))의 이벤트입니다. 스토리 상세에서의 생성 진입은 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가, 관리 목록에서의 생성 진입은 `client_personaList_createButton_clicked`가 담당합니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_personaCreate_viewed` | P1 | 페르소나 생성 화면 진입 | 없음 |
+| `client_personaCreate_form_submitted` | P1 | "생성하기"를 눌러 입력 검증을 통과하고 생성 요청을 보낼 때 | 없음 |
+| `client_personaCreate_completed` | P1 | 생성 응답 201을 받았을 때 | 없음 |
+| `client_personaList_viewed` | P1 | 페르소나 관리 목록 진입 | 없음 |
+| `client_personaList_createButton_clicked` | P1 | 목록의 "페르소나 추가" 클릭(10개 상한으로 이동하지 않아도 발생) | 없음 |
+| `client_personaList_persona_deleted` | P1 | 삭제 확인 뒤 삭제 응답 204를 받았을 때 | 없음 |
+| `client_personaEdit_viewed` | P1 | 페르소나 수정 화면 진입 | 없음 |
+| `client_personaEdit_form_submitted` | P1 | "저장하기"를 눌러 입력 검증을 통과하고 수정 요청을 보낼 때 | 없음 |
+| `client_personaEdit_completed` | P1 | 수정 응답 200을 받았을 때 | 없음 |
+
+- 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+- 페르소나 생성과 수정에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
+- 페르소나 사용률은 `client_storyDetail_chatStartButton_clicked`의 `persona_type = persona` 비율로 봅니다.
+
+#### 6-4-2-18. 앱 안내 배너 — `Phase 3 · 구현`(KNK-1631)
+
+[앱 안내 배너](3-2-web-spec.md#앱-안내-배너)의 이벤트입니다. 여러 화면에 걸친 전역 동작이므로 screenName 자리에 `appBanner`를 씁니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_appBanner_shown` | P1 | 배너 표시. 페이지 로드당 1회이며 클라이언트 이동으로는 다시 보내지 않음 | `variant` (string, 필수: `android_inapp` / `android_browser` / `ios_inapp` / `ios_browser`), `destination` (string, Android 변형만: `story` / `home`), `story_id` (string, 스토리 상세일 때만) |
+| `client_appBanner_actionButton_clicked` | P1 | 배너 버튼 클릭 | `client_appBanner_shown`과 같음 |
+| `client_appBanner_closeButton_clicked` | P2 | 닫기(X) 클릭 | `variant` |
+| `client_appBanner_escapeGuide_shown` | P2 | iOS 인앱에서 외부 전환 1.5초 뒤에도 화면이 그대로라 안내 시트를 열 때 | 없음 |
+
+- `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표입니다.
+- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 설치는 Play Console과 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)로 봅니다.
 
 ### 6-4-3. impression 수집 기준
 
@@ -908,6 +964,8 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 서버 사이드 상관 키 `request_id`를 브라우저 Sentry Tags에 추가하는 것은 추후 도입 항목입니다.
 
 앱 코드와 무관한 외부 노이즈는 `ignoreErrors`로 수집 자체를 차단합니다. 사용자 취소(`AbortError`)·`ResizeObserver` 경고 외에, SNS 인앱 브라우저(인스타그램·쓰레드·카카오톡 등)가 웹뷰에 주입하는 네이티브 브릿지 스크립트(`sendDataToNative`)가 페이지 이탈 시점에 던지는 오류(`window.webkit.messageHandlers` undefined, 호출 메서드와 무관한 Android 브릿지의 `Error invoking {메서드}: Java object is gone`·`Java exception was raised`)도 여기에 해당합니다 — 웹 레포에서 고칠 수 없는 주입 스크립트 오류인데 사용자 영향 1위 이슈로 잡혀 실제 오류를 가렸기 때문입니다. 정본 목록은 `src/observability/monitoring/sentry.ts`의 `SENTRY_IGNORE_ERRORS`입니다.
+
+웹 서버의 요청 오류 이벤트에는 `sendDefaultPii`로 요청 쿠키가 실립니다. 가입 동의 대기 코드는 남의 가입을 완료할 수 있는 단일 사용 코드라 `beforeSend`(`dropRecoverableApiError`)가 쿠키 객체와 cookie 헤더에서 대기 쿠키를 지웁니다. 대기 코드는 분석 이벤트에도 넣지 않습니다.
 
 #### Android — Firebase Crashlytics
 

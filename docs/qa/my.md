@@ -6,13 +6,13 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-09-16 |
+| 수정일 | 2026-10-08 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
-| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/smoke/navigation.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/my/personas.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
 ## 읽는 순서
 
@@ -25,6 +25,7 @@
 - [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
 - [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
+- [MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](#my-persona--페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
@@ -130,7 +131,7 @@
 | MY-CREDITS-26 | P0 | 회원 | 가격 버튼 탭 | `POST /users/me/credits/orders`에 그 상품의 `productId`를 실어 보내고 201의 `paymentUrl`로 전체 이동. 요청 중에는 누른 버튼에 스피너, 모든 가격 버튼 비활성 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297 |
 | MY-CREDITS-27 | P1 | 주문 생성이 4xx·5xx·네트워크 오류 | 가격 버튼 탭 | 이동하지 않고 "결제를 시작하지 못했어요" 토스트. 버튼은 다시 활성화되어 재시도 가능 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
 | MY-CREDITS-28 | P1 | 상품 조회가 5xx·네트워크 오류 | 구매 탭 진입 | 목록 자리에 "충전 상품을 불러오지 못했어요"와 "다시 시도하기". 탭하면 다시 조회해 목록 표시. 조회 중에는 줄 골격 표시 | ✅ e2e `my/credits` | §3-1-7 유료 충전, KNK-1297 |
-| MY-CREDITS-29 | P0 | 결제창 이동 전 남긴 대기 주문이 있고 주문이 `PENDING`→`COMPLETED` | 결제창에서 `/my/credits`로 복귀 | 잔액 아래 "결제 확인" 카드에 스피너 + "결제를 확인하고 있어요"(2초 간격 조회). `COMPLETED`가 되면 "N 이프가 충전됐어요"(N은 `totalCredits`)로 바뀌고 잔액 상자가 `GET /auth/me` 재조회 값으로 갱신. `COMPLETED` 확정 시점에 대기 주문 기록이 삭제되고 카드는 남음. 닫기(X)로 카드가 사라짐 | ✅ e2e `my/credits` | §3-1-7 결제 결과, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297, KNK-1314 |
+| MY-CREDITS-29 | P0 | 결제창 이동 전 남긴 대기 주문이 있고 주문이 `PENDING`→`COMPLETED` | 결제창에서 복귀 화면을 거쳐 `/my/credits`로 복귀 | 잔액 아래 "결제 확인" 카드에 스피너 + "결제를 확인하고 있어요"(2초 간격 조회). `COMPLETED`가 되면 "N 이프가 충전됐어요"(N은 `totalCredits`)로 바뀌고 잔액 상자가 `GET /auth/me` 재조회 값으로 갱신. `COMPLETED` 확정 시점에 대기 주문 기록이 삭제되고 카드는 남음. 닫기(X)로 카드가 사라짐 | ✅ e2e `my/credits` | §3-1-7 결제 결과, [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1297, KNK-1314 |
 | MY-CREDITS-30 | P1 | 대기 주문 조회가 404 | 복귀 | "확인할 수 없는 주문이에요" + 닫기. 다시 확인 버튼 없음 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
 | MY-CREDITS-31 | P1 | 대기 주문 조회가 5xx·네트워크 오류 | 복귀 | "결제 확인에 실패했어요"와 "다시 확인". 자동 재조회는 멈추고, 탭하면 처음부터 다시 폴링 | ✅ e2e `my/credits` | §3-1-7 결제 결과, KNK-1297 |
 | MY-CREDITS-32 | P2 | 주문이 30회(약 60초) 조회 후에도 `PENDING` | 복귀 후 대기 | "아직 결제 확인이 안 됐어요"와 "다시 확인" 표시, 자동 조회 중단 | ✅ 단위 — 웹 `my/credits/utils/credit-order-confirmation` | §3-1-7 결제 결과, KNK-1297 |
@@ -139,7 +140,29 @@
 | MY-CREDITS-35 | P1 | 가격 버튼 탭으로 주문 생성 성공 후 결제창으로 이동 | 브라우저 뒤로가기로 문서가 bfcache 복원(`pageshow` persisted) | 가격 버튼의 스피너·비활성이 풀려 다시 주문 가능 | ✅ e2e `my/credits`(이벤트 직접 발생) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 | MY-CREDITS-37 | P1 | 무료 충전 탭 | 탭 내용을 아래로 당겼다 놓기 | STORY-LIST-30과 같은 표시자로 프로필(잔액·출석 여부)과 정책 수치를 다시 조회 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
 | MY-CREDITS-38 | P1 | 내역 탭, 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 같은 표시자로 내역을 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지. 구매 탭에는 당김 없음 | 수동 | 웹 Spec 화면 전환 규칙, KNK-1355 |
+| MY-CREDITS-39 | P0 | 회원, 마이 → "충전"으로 진입 | 가격 버튼 → 결제창 → 결제 완료 화면의 이동 버튼으로 복귀 → 뒤로가기(앱 바·기기) | 복귀 화면(`/my/credits/return`)이 결제 전 충전 화면까지 되감아 `/my/credits`에 결제 확인 카드가 뜸. 뒤로가기는 결제창이 아니라 `/my`로 감 | ✅ e2e `my/credits` | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
+| MY-CREDITS-42 | P1 | 회원, 알림·주소로 `/my/credits` 바로 진입(아래 기록 없음) | 뒤로가기 헤더 탭 | `/my`로 교체 이동. 결제 복귀 되감기 뒤(MY-CREDITS-39)에는 그대로 결제 전 화면으로 뒤로가기 | ✅ e2e `my/credits` | 웹 Spec 화면 전환 규칙, KNK-1613 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
+
+## MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)
+
+기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지), [웹 URL](../spec/3-2-web-spec.md).
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-PERSONA-01 | P0 | 동의를 마친 회원, 스토리 상세 | 페르소나 Select의 "페르소나 생성하기" → 이름·성별·특징 입력 → "생성하기" | `/my/personas/new`의 "페르소나 생성" 화면이 열림. `POST /users/me/personas`에 앞뒤 공백을 뺀 `name`과 `# 주인공`, `## 성별`, 성별 값, 특징을 줄바꿈으로 이은 `description`이 실림. "페르소나를 생성했어요" 토스트 후 상세로 돌아오고 페르소나 Select에 새 페르소나가 선택되어 있음 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-02 | P1 | 회원, 생성 화면 | 아무것도 입력하지 않고 "생성하기" → 이름 입력 → 성별 선택 | 요청 없이 기본 정보 아래 "이름을 입력해 주세요", 특징 아래 "특징을 입력해 주세요"가 표시됨. 이름을 입력하면 "성별을 선택해 주세요"로 바뀌고 성별을 고르면 안내 문구로 돌아옴 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-03 | P1 | 회원, 생성 요청이 409(10개 초과) 또는 5xx | 입력 후 "생성하기" | 409는 "페르소나는 10개까지 만들 수 있어요", 그 밖은 "페르소나를 생성하지 못했어요" 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `stories/story-persona`(409) | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-04 | P1 | 게스트 | `/my/personas/new` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
+| MY-PERSONA-05 | P2 | 회원, 생성 화면 | 이름 20자, 특징 500자를 넘겨 입력 시도. 생성 요청 중 화면 관찰 | 각 상한에서 입력이 막히고 카운터가 `20 / 20`, `500 / 500`. 요청 중에는 입력이 잠기고 버튼 크기를 유지한 스피너("페르소나 생성 중")가 보임 | 수동 | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
+| MY-PERSONA-06 | P1 | 회원, 내 페르소나 있음 / 없음 | 마이 → "페르소나" 섹션의 "페르소나 관리" | `/my/personas`에서 줄마다 이름과 특징 요약(절 제목 줄 제외)이 최대 두 줄로 보이고 넘으면 말줄임. 줄을 누르면 특징 원문 전체(절 제목과 줄바꿈 포함)가 펼쳐지고 다시 누르면 접힘. 마지막 줄 아래 가운데에 "페르소나 추가" 보조 버튼. 없으면 "아직 만든 페르소나가 없어요"와 그 아래 같은 버튼 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+| MY-PERSONA-07 | P0 | 회원, 내 페르소나 있음 | 줄 더보기 → "수정하기" → 이름 변경 → "저장하기" | 시트(종류 "페르소나", 제목 이름)에 수정하기, 삭제하기 순서. 수정 화면은 "페르소나 수정" 헤더와 "수정한 내용은 새로 시작하는 채팅부터 적용돼요" 설명, 기존 이름과 성별과 특징이 채워짐. `PATCH`에 `name`과 `description`이 실리고 "페르소나를 수정했어요" 토스트 후 목록에 바뀐 이름이 보임 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+| MY-PERSONA-08 | P0 | 회원, 내 페르소나 2개 | 줄 더보기 → "삭제하기" → 확인 다이얼로그의 "삭제하기" | "페르소나를 삭제할까요?"와 "이 페르소나로 진행 중인 채팅은 그대로 이어갈 수 있어요"가 보이고, 확정하면 `DELETE` 후 "페르소나를 삭제했어요" 토스트와 함께 목록에서 사라짐 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+| MY-PERSONA-09 | P1 | 회원, 내 페르소나 10개 | 목록의 "페르소나 추가" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+| MY-PERSONA-10 | P1 | 게스트 | `/my/personas` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
+| MY-PERSONA-11 | P2 | 회원, 목록 조회 실패 / 목록에 없는 ID로 수정 화면 진입 | `/my/personas` 진입 / `/my/personas/없는-ID/edit` 진입 | "페르소나를 불러오지 못했어요"와 "다시 시도하기" / "페르소나를 찾을 수 없어요" | 수동 | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 
@@ -195,11 +218,11 @@
 
 | ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
 | ------------ | --- | --------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- | -------------------------------------- |
-| MY-INFO-01 | P1 | 게스트/회원 | 마이 기타 섹션 "서비스 안내" 메뉴(피드백 위) 탭 | 메뉴 오른쪽에 새 창 아이콘 표시. 원래 `/my` 탭을 유지한 채 새 탭에서 `/about`을 열고, 뒤로가기 없는 마냑 로고 홈 링크 헤더 아래 본문 `h1` "서비스 안내"와 게스트 이용 안내·AI 콘텐츠 안내 등 섹션 표시 | ✅ e2e `my/service-info`·`visual/my-visual` | US-8-4, FE-SCREEN-011 진입점 |
+| MY-INFO-01 | P1 | 게스트/회원 | 마이 기타 섹션 "서비스 안내" 메뉴(피드백 위) 탭 | 메뉴 오른쪽에 새 창 아이콘 표시. 원래 `/my` 탭을 유지한 채 새 탭에서 `/about`을 열고, 뒤로가기 없는 링크 없는 마냑 로고 헤더 아래 본문 `h1` "서비스 안내"와 게스트 이용 안내·AI 콘텐츠 안내 등 섹션 표시. 게스트 이용 안내 제목 아래에 웹 브라우저 전용 안내 표시 | ✅ e2e `my/service-info`·`visual/my-visual` | US-8-4, FE-SCREEN-011 진입점 |
 | MY-INFO-02 | P1 | 페이지 표시됨 | 이프 안내 섹션이 없는지 확인 | "이프 안내" 제목과 이프 수치 고지 문구가 화면에 없어야 함. 수치는 각 사용 지점(STORY-INFO-10·CHAT-INPUT-20·MY-CREDITS-17·MY-MENU-22)이 서버 값으로 표시 | ✅ e2e `my/service-info` | FE-SCREEN-011 콘텐츠 규칙, §3-1-7 이프 정책 수치 표시, KNK-1095 |
 | MY-INFO-03 | P1 | 페이지 표시됨 | 게스트 이용 안내 문구 확인 | FE-SCREEN-011의 게스트 동의 후 체험, 브라우저 저장 한계와 최초 로그인 1회 이관 안내를 표시하고 체험 한도 수치는 복제하지 않음 | ✅ e2e `my/service-info` | FE-SCREEN-011, 웹 사용자 모델 |
-| MY-INFO-05 | P2 | 페이지 표시됨 | 문의 섹션 확인 | 회원 탈퇴 문구·탈퇴 문의 이메일은 표시되지 않고, "피드백" 링크가 `/my/feedback`으로 연결됨 | ✅ e2e `my/service-info` | FE-SCREEN-011, KNK-1068 |
-| MY-INFO-06 | P2 | `/about` 직접 진입 | 헤더의 마냑 로고 탭 | 홈(`/`)으로 이동 | ✅ e2e `my/service-info` | 구현(`HomeLogoHeader`) |
+| MY-INFO-05 | P2 | 페이지 표시됨 | 문의 섹션 확인 | 회원 탈퇴 문구·탈퇴 문의 이메일은 표시되지 않고, 피드백 위치 안내가 링크 없는 텍스트로 표시됨 | ✅ e2e `my/service-info` | FE-SCREEN-011, KNK-1068 |
+| MY-INFO-06 | P2 | `/about` 직접 진입 | 헤더의 마냑 로고 탭 | 로고는 링크가 아니라 이동하지 않음. 헤더에 링크 없음 | ✅ e2e `my/service-info` | [웹 문서 열람](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 | MY-INFO-07 | P2 | 게스트/회원 각각 | `/about` 직접 진입 | 라우트 가드 없이 양쪽 모두 동일한 본문 열람 가능 | ◐ e2e `my/service-info`(게스트만) | FE-SCREEN-011 검수 기준 |
 | MY-INFO-08 | P1 | 페이지 표시됨 | 브라우저 탭 제목 확인 | "서비스 안내 - 마냑" 표시 | ✅ e2e `my/service-info` | FE-SCREEN-011, [웹 문서 제목](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 
@@ -219,6 +242,8 @@
 | MY-NAV-06 | P1 | `/my/feedback`·`/my/invite`·`/my/account-deletion`·`/login` | 각 화면 진입 | 상단 헤더·하단 탭 없이 뒤로가기 헤더만 표시 | 수동 | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-07 | P2 | 하단 안전 영역이 있는 기기(iOS 등) | 하단 탭 확인 | 링크 상하 패딩 16px + `safe-area-inset-bottom` 추가 확보로 탭이 잘리지 않음 | ◐ e2e `smoke/navigation`(패딩만) | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-08 | P2 | 구경로 `/more`·`/more/invite`·`/more/feedback` 진입 | 관찰 | 리다이렉트 없이 Not Found 표시(구경로 shim을 두지 않는 방침) | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| MY-NAV-09 | P1 | iOS Safari 실기기, 회원 또는 게스트 | 아무 화면을 새로고침한 뒤 하단 탭으로 다른 화면에 이동 → 입력 칸(예: 마이 > 피드백 본문)을 탭 → 두 손가락으로 벌림 | 입력 칸에 포커스해도 화면이 확대되지 않고, 두 손가락으로 벌리면 확대됨. Android Chrome에서도 두 손가락 확대가 됨 | ◐ e2e `smoke/ios-input-zoom-lock`(viewport 값만) | [웹 모바일 검수](../spec/3-2-web-spec.md#모바일-검수-기준), [웹 레이아웃](../design/1-1-web-design.md#레이아웃-구조), KNK-1605 |
+| MY-NAV-10 | P2 | 없는 경로 | 새 탭·외부 링크로 바로 진입 / 사이트 안에서 이동해 진입 | "페이지를 찾을 수 없어요"와 홈 링크. 같은 사이트의 이전 기록이 있을 때만 "이전 화면으로" 버튼이 함께 보이고 누르면 이전 화면으로 돌아감 | ✅ e2e `smoke/navigation` | 웹 Spec 라우팅 FE-SCREEN-999, KNK-1613 |
 
 ## MY-BACKGROUND — 문서 배경과 좌우 여백
 

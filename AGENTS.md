@@ -29,7 +29,7 @@
 | [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND · WEB · ANDROID |
 | [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI · BACKEND · WEB · ANDROID |
 
-- 각 도메인의 `AGENTS.md`가 세트 상태와 이관 원본을 안내합니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
+- 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
 - 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
 - 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
 
@@ -73,6 +73,6 @@
 - 관련 문서의 해당 절을 전체로 읽습니다. 요구사항·동작 계약은 Spec, 현재 구현 구조는 Design, 중요한 결정의 이유는 ADR에 기록합니다. 중복 본문 대신 링크를 사용합니다.
 - 제품 동작·분석 기준을 바꿀 때 관련 Spec을 확인하고, 계약 변경을 먼저 반영합니다. 구현 변경 시 영향받는 문서와 검증 항목을 같은 작업에서 갱신하며, 미래 구조를 현재 Design에 먼저 반영하지 않습니다. 계약·예외·보안·실패·복구 조건을 보존하며, 코드만으로 제품 정책의 승인 여부나 과거 결정 이유를 추정하지 않습니다.
 - 일정·진행 상태·미결 사항은 Jira, Phase는 roadmap, 구현 계획과 검증 결과는 기존 계획 문서·PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.
-- 기존 문서 유형의 형식과 명명 규칙을 따릅니다. 코드에서 확인할 수 있는 목록은 원본 링크를 우선하며, 중복된 문서나 목록을 만들지 않습니다. `AGENTS.md`는 간결한 작업 지침으로 작성합니다.
+- 기존 문서 유형의 형식과 명명 규칙을 따릅니다. 코드에서 확인할 수 있는 목록은 원본 링크를 우선하며, 중복된 문서나 목록을 만들지 않습니다. `AGENTS.md`·`CLAUDE.md`는 간결한 작업 지침으로 작성합니다.
 - 확정된 ADR의 ID·본문과 과거 근거를 보존합니다. 결정 변경은 해당 ADR의 기록 규칙에 따라 후속 기록에 대체하는 결정 ID와 적용 범위를 명시합니다.
 - 파일이나 절을 이동·삭제·통합하거나 제목을 바꾸면 하네스와 관련 구현 저장소의 참조도 갱신합니다. 변경 후 링크·앵커·목차·ID 중복과 ADR 보존 여부를 확인하고 `git diff --check`를 실행합니다.
