@@ -82,23 +82,7 @@ flowchart LR
 
 <br>
 
-### 4-1-3 오리지널 목록
-
-폐기 예정 경로다. 클라이언트는 공개 목록의 오리지널 필터로 옮겨 더는 호출하지 않는다. 서버에만 남아 있다.
-
-```mermaid
-%%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
-flowchart LR
-    A{"공식 계정 설정"} -->|없음| E["<b>빈 목록</b>"]
-    A -->|있음| B["<b>소유 공개 스토리 조회</b><br/>발행, 공개, 미삭제, 등록순"]
-    B --> C["<b>응답</b>"]
-    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
-    class A,B,C,E comp
-```
-
-<br>
-
-### 4-1-4 검색
+### 4-1-3 검색
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -122,7 +106,7 @@ flowchart LR
 
 <br>
 
-### 4-1-5 제공 장르
+### 4-1-4 제공 장르
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -140,7 +124,7 @@ flowchart LR
 
 <br>
 
-### 4-1-6 로어북 카탈로그
+### 4-1-5 로어북 카탈로그
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -152,7 +136,7 @@ flowchart LR
 
 <br>
 
-### 4-1-7 일괄 조회
+### 4-1-6 일괄 조회
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -169,7 +153,7 @@ flowchart LR
 
 <br>
 
-### 4-1-8 상세
+### 4-1-7 상세
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -184,7 +168,7 @@ flowchart LR
 
 <br>
 
-### 4-1-9 삭제
+### 4-1-8 삭제
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -199,7 +183,7 @@ flowchart LR
 
 <br>
 
-### 4-1-10 간편 제작 태그 목록
+### 4-1-9 간편 제작 태그 목록
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -212,7 +196,7 @@ flowchart LR
 
 <br>
 
-### 4-1-11 화풍 목록
+### 4-1-10 화풍 목록
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -224,7 +208,7 @@ flowchart LR
 
 <br>
 
-### 4-1-12 간편 제작 스토리라인 생성
+### 4-1-11 간편 제작 스토리라인 생성
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -329,7 +313,7 @@ X-Manyak-Is-Regenerated: false
 
 <br>
 
-### 4-1-13 간편 제작 완성
+### 4-1-12 간편 제작 완성
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -553,7 +537,7 @@ X-Manyak-Is-Regenerated: false
 
 <br>
 
-### 4-1-14 간편 제작 복구 조회
+### 4-1-13 간편 제작 복구 조회
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -566,7 +550,7 @@ flowchart LR
 
 <br>
 
-### 4-1-15 간편 제작 스토리라인 평가
+### 4-1-14 간편 제작 스토리라인 평가
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -581,7 +565,7 @@ flowchart LR
 
 <br>
 
-### 4-1-16 일반 제작 등록
+### 4-1-15 일반 제작 등록
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -615,7 +599,7 @@ flowchart LR
 
 <br>
 
-### 4-1-17 수정 폼
+### 4-1-16 수정 폼
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -629,7 +613,7 @@ flowchart LR
 
 <br>
 
-### 4-1-18 스토리 수정
+### 4-1-17 스토리 수정
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -652,7 +636,7 @@ flowchart LR
 
 <br>
 
-### 4-1-19 이미지 presign
+### 4-1-18 이미지 presign
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -670,7 +654,7 @@ flowchart LR
 
 <br>
 
-### 4-1-20 표지 삭제
+### 4-1-19 표지 삭제
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -687,7 +671,7 @@ flowchart LR
 
 <br>
 
-### 4-1-21 인물 이미지 삭제
+### 4-1-20 인물 이미지 삭제
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -701,7 +685,7 @@ flowchart LR
 
 <br>
 
-### 4-1-22 좋아요
+### 4-1-21 좋아요
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -718,7 +702,7 @@ flowchart LR
 
 <br>
 
-### 4-1-23 신고
+### 4-1-22 신고
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -736,7 +720,7 @@ flowchart LR
 
 <br>
 
-### 4-1-24 초안 목록
+### 4-1-23 초안 목록
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -755,7 +739,7 @@ flowchart LR
 
 <br>
 
-### 4-1-25 초안 상세
+### 4-1-24 초안 상세
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -774,7 +758,7 @@ flowchart LR
 
 <br>
 
-### 4-1-26 초안 저장
+### 4-1-25 초안 저장
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -800,7 +784,7 @@ flowchart LR
 
 <br>
 
-### 4-1-27 초안 삭제
+### 4-1-26 초안 삭제
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -814,7 +798,7 @@ flowchart LR
 
 <br>
 
-### 4-1-28 검색 색인
+### 4-1-27 검색 색인
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -839,7 +823,7 @@ flowchart LR
 
 <br>
 
-### 4-1-29 이름 토큰 치환
+### 4-1-28 이름 토큰 치환
 
 스토리 본문이 실리는 모든 응답에 적용한다. 공개 목록, 검색, 일괄 조회의 카드, 상세, 간편 제작 완성 응답, 복구 조회의 결과, 검색 색인 문서가 대상이다. 수정 폼과 검수 제출본은 원문을 반환한다.
 

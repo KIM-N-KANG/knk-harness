@@ -28,7 +28,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 - 처음에는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추려고 앞 단계를 임의로 바꾸지 않는다.
 - 미정이라고 적힌 항목을 추측으로 채우지 않는다.
-- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-28 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-28-다른-도메인과의-경계))
+- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-27 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-27-다른-도메인과의-경계))
 
 <br>
 
@@ -40,13 +40,13 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 테이블이나 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [3-3-2 계층 책임](3-3-CONVENTIONS.md#3-3-2-계층-책임), 서버 저장소 `http/story/`의 수동 호출 파일과 통합 테스트 |
 | 읽기나 소유권 규칙 변경 | [5-1-2 소유권과 읽기 판정](5-1-SECURITY.md#5-1-2-소유권과-읽기-판정) | [DECISIONS.md](DECISIONS.md) |
-| 제공 장르, 화풍, 입력 검증 변경 | [4-2-5 제공 장르](4-2-CONTRACT.md#4-2-5-제공-장르), [4-2-11 화풍 목록](4-2-CONTRACT.md#4-2-11-화풍-목록) | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [3-2-11 카탈로그](3-2-DB-SCHEMA.md#3-2-11-카탈로그) |
-| 이름 토큰과 치환 변경 | [4-1-29 이름 토큰 치환](4-1-PIPELINES.md#4-1-29-이름-토큰-치환) | [4-1-8 상세](4-1-PIPELINES.md#4-1-8-상세), [4-1-12 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-12-간편-제작-스토리라인-생성), [4-1-13 간편 제작 완성](4-1-PIPELINES.md#4-1-13-간편-제작-완성) |
+| 제공 장르, 화풍, 입력 검증 변경 | [4-2-4 제공 장르](4-2-CONTRACT.md#4-2-4-제공-장르), [4-2-10 화풍 목록](4-2-CONTRACT.md#4-2-10-화풍-목록) | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [3-2-11 카탈로그](3-2-DB-SCHEMA.md#3-2-11-카탈로그) |
+| 이름 토큰과 치환 변경 | [4-1-28 이름 토큰 치환](4-1-PIPELINES.md#4-1-28-이름-토큰-치환) | [4-1-7 상세](4-1-PIPELINES.md#4-1-7-상세), [4-1-11 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-11-간편-제작-스토리라인-생성), [4-1-12 간편 제작 완성](4-1-PIPELINES.md#4-1-12-간편-제작-완성) |
 | 오류 코드 추가 | [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드) | [3-3-3 요청 검증과 오류](3-3-CONVENTIONS.md#3-3-3-요청-검증과-오류) |
-| AI 호출 변경 | [4-1-12 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-12-간편-제작-스토리라인-생성), [4-1-13 간편 제작 완성](4-1-PIPELINES.md#4-1-13-간편-제작-완성) | [AI 5 계약](../../../AI/SIMPLE-GENERATION-STORY/5-CONTRACT.md), [5-4-3 AI 서버로 전달하는 헤더](5-4-OBSERVABILITY.md#5-4-3-ai-서버로-전달하는-헤더) |
+| AI 호출 변경 | [4-1-11 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-11-간편-제작-스토리라인-생성), [4-1-12 간편 제작 완성](4-1-PIPELINES.md#4-1-12-간편-제작-완성) | [AI 5 계약](../../../AI/SIMPLE-GENERATION-STORY/5-CONTRACT.md), [5-4-3 AI 서버로 전달하는 헤더](5-4-OBSERVABILITY.md#5-4-3-ai-서버로-전달하는-헤더) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-10 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-10-수집-조건과-실패-처리) |
-| 초안 저장이나 제작 탭 카드 변경 | [4-2-24 초안 목록](4-2-CONTRACT.md#4-2-24-초안-목록) | [4-1-26 초안 저장](4-1-PIPELINES.md#4-1-26-초안-저장), [3-2-10 생성 요청과 초안](3-2-DB-SCHEMA.md#3-2-10-생성-요청과-초안) |
+| 초안 저장이나 제작 탭 카드 변경 | [4-2-23 초안 목록](4-2-CONTRACT.md#4-2-23-초안-목록) | [4-1-25 초안 저장](4-1-PIPELINES.md#4-1-25-초안-저장), [3-2-10 생성 요청과 초안](3-2-DB-SCHEMA.md#3-2-10-생성-요청과-초안) |
 | 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 명세 절 |
 
 <br>
@@ -58,18 +58,18 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | API 계층 | [story/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/) | 4-2 계약, 5-1-1 인증 수준 |
-| 조회와 소셜 | [StoryService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryService.kt) | 4-1-2~4-1-11 조회와 삭제, 4-1-22 좋아요, 4-1-23 신고 |
-| 간편 제작 | [SimpleStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/SimpleStoryCreationService.kt) | 4-1-12~4-1-15 간편 제작, 5-3-4 오류별 처리, 5-4-7 지표 |
+| 조회와 소셜 | [StoryService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryService.kt) | 4-1-2~4-1-10 조회와 삭제, 4-1-21 좋아요, 4-1-22 신고 |
+| 간편 제작 | [SimpleStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/SimpleStoryCreationService.kt) | 4-1-11~4-1-14 간편 제작, 5-3-4 오류별 처리, 5-4-7 지표 |
 | 생성 요청 기록 | [StoryCreationRequestRecorder.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryCreationRequestRecorder.kt) | 5-2-1 멱등과 회수 |
-| 일반 제작과 수정 | [StoryEditService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryEditService.kt), [GeneralStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GeneralStoryCreationService.kt) | 4-1-16~4-1-18 등록과 수정 |
-| 제공 장르 | [GenreCatalogService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreCatalogService.kt), [GenreInputValidator.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreInputValidator.kt) | 4-2-5 제공 장르, 5-1-4 입력 검증 |
-| 이름 토큰 | [UsernameTokenRenderer.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/UsernameTokenRenderer.kt), [StoryTextRendering.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryTextRendering.kt), [ProtagonistNameValidation.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/ProtagonistNameValidation.kt) | 4-1-1 공통 처리, 4-1-8 상세 |
-| 이미지 | [StoryImageService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageService.kt), [StoryImageAccess.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageAccess.kt), [image/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/image/) | 4-1-19~4-1-21 이미지, 5-1-5 업로드 검증 |
+| 일반 제작과 수정 | [StoryEditService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryEditService.kt), [GeneralStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GeneralStoryCreationService.kt) | 4-1-15~4-1-17 등록과 수정 |
+| 제공 장르 | [GenreCatalogService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreCatalogService.kt), [GenreInputValidator.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreInputValidator.kt) | 4-2-4 제공 장르, 5-1-4 입력 검증 |
+| 이름 토큰 | [UsernameTokenRenderer.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/UsernameTokenRenderer.kt), [StoryTextRendering.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryTextRendering.kt), [ProtagonistNameValidation.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/ProtagonistNameValidation.kt) | 4-1-1 공통 처리, 4-1-7 상세 |
+| 이미지 | [StoryImageService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageService.kt), [StoryImageAccess.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageAccess.kt), [image/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/image/) | 4-1-18~4-1-20 이미지, 5-1-5 업로드 검증 |
 | 공개 스냅샷 | [StoryPublicSnapshotService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryPublicSnapshotService.kt), [StoryPublicSnapshot.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/entity/StoryPublicSnapshot.kt) | 3-2-8 공개 스냅샷 |
-| 초안 | [user/draft/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/draft/), [StoryDraftController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/StoryDraftController.kt) | 4-1-24~4-1-27 초안, 4-2-24~4-2-27 초안 |
+| 초안 | [user/draft/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/draft/), [StoryDraftController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/StoryDraftController.kt) | 4-1-23~4-1-26 초안, 4-2-23~4-2-26 초안 |
 | 모델 | [story/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
-| AI 호출 | [StoryAiClient.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/client/StoryAiClient.kt) | 4-1-1 공통 처리, 4-1-12, 4-1-13 |
-| 검색 | [search/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/search/) | 4-1-4 검색, 4-1-28 색인, 4-2-4 검색 |
+| AI 호출 | [StoryAiClient.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/client/StoryAiClient.kt) | 4-1-1 공통 처리, 4-1-11, 4-1-12 |
+| 검색 | [search/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/search/) | 4-1-3 검색, 4-1-27 색인, 4-2-3 검색 |
 | 오류와 보안 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/), [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/) | 5-3 오류 처리, 5-1 보안 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/), [TracingNoiseFilter.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/TracingNoiseFilter.kt) | 5-4 관측 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
