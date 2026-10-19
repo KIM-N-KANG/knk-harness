@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.31 |
 | 작성일 | 2026-08-02 |
-| 수정일 | 2026-10-14 |
+| 수정일 | 2026-10-19 |
 | 대상 | 마냑 클라이언트 공통(웹·Android) |
 | 작성 목적 | 플랫폼과 무관한 화면, 상태, 사용자 흐름, API 사용과 검수 기준을 정의합니다. |
 
@@ -843,7 +843,7 @@ API 상세 명세는 [백엔드](4-backend-server-spec.md)가 소유합니다. �
 | `X-Manyak-Device-Id`  | 논리 `device_id`       |
 | `X-Manyak-Session-Id` | 논리 `session_id`      |
 
-두 헤더가 없어도 일반 요청은 거부되지 않습니다(백엔드가 `unknown`으로 채움). 단 **`X-Manyak-Device-Id`가 정책상 필수인 경로**가 있습니다 — 게스트 체험 한도 대상 요청(누락 시 400 — [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)), 로그인 핸드오프 생성(`POST /auth/handoffs`), 핸드오프 없는 첫 로그인의 회원 체험 시드([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). `X-Manyak-Session-Id`는 모든 경로에서 best-effort입니다.
+두 헤더가 없어도 일반 요청은 거부되지 않습니다(백엔드가 `unknown`으로 채움). 단 **`X-Manyak-Device-Id`가 정책상 필수인 경로**가 있습니다 — 게스트 체험 한도 대상 요청(누락 시 400 — [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)), 첫 로그인의 회원 체험 시드([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). `X-Manyak-Session-Id`는 모든 경로에서 best-effort입니다.
 
 **요청 식별자** — `X-Manyak-Request-Id`는 백엔드가 생성·응답하는 상관관계 값이며 클라이언트가 만들지 않습니다. 제작 본문의 `requestId`는 멱등·복구용 별개 값입니다.
 

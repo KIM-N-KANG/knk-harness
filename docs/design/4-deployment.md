@@ -95,7 +95,7 @@ dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내
 
 ### 저장소와 자산
 
-PostgreSQL이 업무 데이터 정본이며 OpenSearch 인덱스는 파생 데이터입니다. 운영 DB와 Redis는 태스크 수명과 분리됩니다. 개발 PostgreSQL의 EFS는 태스크 교체 후 데이터를 유지하지만 Redis는 교체 시 유실됩니다. 운영 Redis는 `volatile-ttl` 축출 정책으로 짧은 TTL 키부터 축출합니다. TTL 없는 카운터와 TTL 있는 세션·핸드오프의 수명은 백엔드 Spec을 따릅니다.
+PostgreSQL이 업무 데이터 정본이며 OpenSearch 인덱스는 파생 데이터입니다. 운영 DB와 Redis는 태스크 수명과 분리됩니다. 개발 PostgreSQL의 EFS는 태스크 교체 후 데이터를 유지하지만 Redis는 교체 시 유실됩니다. 운영 Redis는 `volatile-ttl` 축출 정책으로 짧은 TTL 키부터 축출합니다. TTL 없는 카운터와 TTL 있는 세션의 수명은 백엔드 Spec을 따릅니다.
 
 알림의 멱등 기록은 dev 태스크 안 Redis의 `notification:` 접두어 키에 저장합니다. prod 목표는 서버와 같은 ElastiCache를 사용하는 것이며 Redis 보안 그룹에 알림 태스크에서 오는 ingress를 추가합니다. ([BE-051](../adr/2-backend-server-adr.md#be-051))
 
