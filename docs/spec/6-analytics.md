@@ -283,6 +283,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_viewed`                              |
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_form_submitted`                      |
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
+| P1 `Phase 3 · 구현` | client | `client_profileEdit_viewed`                              |
+| P1 `Phase 3 · 구현` | client | `client_profileEdit_completed`                           |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
@@ -728,6 +730,18 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 - `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표입니다.
 - Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 설치는 Play Console과 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)로 봅니다.
+
+#### 6-4-2-19. 프로필 수정 — `Phase 3 · 구현`(KNK-1148)
+
+[프로필 수정](3-1-client-spec.md#fe-screen-008-로그인마이-페이지) 화면의 이벤트입니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_profileEdit_viewed` | P1 | 프로필 수정 화면 진입 | 없음 |
+| `client_profileEdit_completed` | P1 | 수정 응답 200을 받았을 때 | `nickname_changed` (boolean, 필수), `image_changed` (boolean, 필수) |
+
+- 닉네임과 프리셋 키는 싣지 않습니다. 닉네임은 사용자 입력이고([§6-7](#6-7-개인정보와-원문-수집-원칙)), 프리셋 분포가 필요해지면 서버 데이터로 봅니다.
+- 프로필 수정에는 서버 분석 이벤트가 없어 `viewed` 대비 `completed`를 수정 완료율로 봅니다. 409 같은 실패율은 이 두 이벤트로 구분하지 않습니다.
 
 ### 6-4-3. impression 수집 기준
 

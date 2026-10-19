@@ -6,13 +6,13 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-10-08 |
+| 수정일 | 2026-10-19 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
-| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`·프로필 수정 `/my/profile/edit`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/my/personas.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/my/personas.spec.ts`, `e2e/my/profile.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
 ## 읽는 순서
 
@@ -26,6 +26,7 @@
 - [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
 - [MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](#my-persona--페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469)
+- [MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)](#my-profile--프로필-수정-myprofileedit-fe-screen-008-knk-1148)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
@@ -163,6 +164,21 @@
 | MY-PERSONA-09 | P1 | 회원, 내 페르소나 10개 | 목록의 "페르소나 추가" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
 | MY-PERSONA-10 | P1 | 게스트 | `/my/personas` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
 | MY-PERSONA-11 | P2 | 회원, 목록 조회 실패 / 목록에 없는 ID로 수정 화면 진입 | `/my/personas` 진입 / `/my/personas/없는-ID/edit` 진입 | "페르소나를 불러오지 못했어요"와 "다시 시도하기" / "페르소나를 찾을 수 없어요" | 수동 | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+
+## MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)
+
+기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지), [웹 URL](../spec/3-2-web-spec.md). 문구는 스펙 절을 따릅니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-PROFILE-01 | P0 | 회원 | 마이 프로필 영역(닉네임과 꺾쇠) 탭 → 이미지 버튼 → 시트에서 다른 프리셋 → 닉네임 변경 → "저장하기" | `/my/profile/edit`로 이동하고 현재 닉네임과 이미지가 채워짐. 바뀐 내용이 없으면 저장 버튼 비활성. 시트에 현재 이미지 프리셋이 선택 상태로 보이고 고르면 시트가 닫힘. `PATCH /users/me`에 바뀐 `nickname`과 `profileImagePreset`만 실리고, 세션 맞춤 요청(`profileRefresh`) 뒤 저장 토스트와 함께 마이로 돌아와 새 닉네임이 보임 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
+| MY-PROFILE-02 | P1 | 회원, 프로필 수정 화면 | 공백이 든 닉네임 / 1자 닉네임으로 "저장하기" | 요청 없이 닉네임 칸 아래 안내 대신 허용 문자 오류 / 길이 오류가 보이고, 칸을 고치면 안내로 돌아옴 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
+| MY-PROFILE-03 | P1 | 회원, 수정 요청이 409 / 400 / 5xx | 규칙을 지킨 닉네임으로 "저장하기" | 409는 이미 사용 중 사유, 400은 쓸 수 없는 닉네임 사유를 닉네임 칸 아래에 표시. 5xx는 저장 실패 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `my/profile`(409) | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
+| MY-PROFILE-04 | P1 | 회원, 닉네임을 바꾼 상태 | 헤더 뒤로가기 버튼 → "닫기" → 기기 뒤로가기 → "나가기" | 스토리 수정과 같은 확인 다이얼로그가 뜨고, 닫기면 입력이 남은 채 화면에 머묾. 나가기면 저장 없이 마이로 돌아감. 바꾼 내용이 없으면 묻지 않고 나감 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
+| MY-PROFILE-05 | P1 | 게스트 | `/my/profile/edit` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148, [웹 URL](../spec/3-2-web-spec.md) |
+| MY-PROFILE-06 | P2 | 회원, 프리셋 목록 조회 실패 / 회원 정보 조회 실패 | 이미지 버튼으로 시트 열기 / `/my/profile/edit` 진입 | 시트에 이미지 조회 실패 안내와 다시 시도하기 / 화면에 프로필 조회 실패 안내와 다시 시도하기 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
+| MY-PROFILE-07 | P2 | 회원, 저장 성공 직후 | 마이에서 새로고침 | 새로고침 직후 첫 페인트부터 새 닉네임과 이미지가 보이고 이전 닉네임이 잠깐 보이지 않음(세션도 서버 값으로 맞춰짐). 다른 기기의 세션은 다음 로그인 또는 `GET /auth/me` 응답부터 반영 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148, [웹 Design 토큰 세션](../design/1-1-web-design.md#토큰-세션-bff) |
+| MY-PROFILE-08 | P2 | 회원, 닉네임을 바꿔 저장 | 내가 쓴 공개 스토리 상세 열기 | 작성자 표시가 새 닉네임 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 

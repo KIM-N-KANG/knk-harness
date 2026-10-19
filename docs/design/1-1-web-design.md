@@ -345,6 +345,7 @@ NextAuth OAuth 세션과 백엔드 access·refresh용 httpOnly·SameSite 쿠키�
 - **가입 완료.** Credentials 프로바이더 `signup-consent`의 `authorize`가 쿠키의 대기 코드를 `X-Manyak-Consent-Token` 헤더로 `POST /auth/social/complete`에 보내고, 회원 조회 검증 뒤 토큰 쿠키를 쓰고 대기 쿠키를 지운 다음 세션을 만듭니다. 실패는 `CredentialsSignin.code`로 `expired`(대기 없음·401), `outdated`(버전 불일치·필수 항목 누락), `retryable`(그 밖)을 돌려주며, 다시 로그인해야 하는 두 경우만 대기 쿠키를 지웁니다.
 - **가입 대기 BFF.** [`/api/auth/signup-consent`](../../../manyak-web/src/app/api/auth/signup-consent/route.ts)의 `GET`은 대기가 있으면 동의 상태와 만료 시각을, 없으면 404를 `no-store`로 응답합니다. `DELETE`는 대기 쿠키를 지웁니다(서버 대기 코드는 TTL로 만료).
 - 소셜 인증 호출 실패는 `signIn` 콜백에서 던져 Auth.js가 `/login?error=AccessDenied`로 돌려보냅니다.
+- **프로필 수정 뒤 세션 맞춤.** 세션의 `name`과 `image`는 로그인 시점 값이라 프로필을 저장하면 낡습니다. 저장 성공 뒤 브라우저가 `useSession().update({ profileRefresh: true })`를 부르면 `jwt` 콜백의 `update` 트리거가 `ensureFreshAccessToken`으로 확보한 access로 `GET /auth/me`를 다시 읽고, 응답 `id`가 세션 `userId`와 같을 때만 닉네임과 이미지 클레임을 바꿉니다. 브라우저가 보낸 값은 쓰지 않으며 조회가 실패하면 기존 클레임을 유지합니다. 화면은 저장 응답으로 바꾼 `GET /auth/me` 캐시를 먼저 쓰므로 세션 맞춤이 실패해도 표시는 맞고, 새로고침 직후 첫 페인트만 세션 값을 씁니다. 프로필 수정 화면의 문구 정본은 [features/my/profile/constants.ts](../../../manyak-web/src/features/my/profile/constants.ts)입니다.
 
 | 상태 | BFF 처리 |
 | --- | --- |
