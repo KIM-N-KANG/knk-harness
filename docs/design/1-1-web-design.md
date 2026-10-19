@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-05 |
+| 수정일 | 2026-10-19 |
 | 대상 | manyak-web |
 | 작성 목적 | 웹의 현재 요청·라우팅·인증·관측 구조를 설명합니다. |
 | 기준 코드 | [manyak-web](../../../manyak-web) |
@@ -86,7 +86,7 @@ graph LR
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
 | sessionStorage 채팅 열기 의도 | `manyak:pending-chat-open`의 `{storyId, chatId, at}`. 일반 제작 승인이 상세로 바꾸기 직전에 기록하고 상세가 마운트될 때 한 번 읽어 지운 뒤 채팅방을 연다. 30초가 지나면 무시 |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 진행 카드가 이동 전에 기록하고 퍼널이 진입 시 한 번 읽어 그 레코드만 복원. 없으면 새 세션 |
-| sessionStorage 게스트 채팅·로그인 초안 | `manyak:guest-chat-ids`의 JSON 배열(이전 버전에서 탭에만 보관한 채팅 ID. 신규 채팅은 localStorage 서재에 저장하며 기존 탭 ID도 자동 이관과 핸드오프에 포함)과 `manyak:chat-login-draft:{chatId}`의 입력 본문(전송 본문과 같은 직렬화, 채팅방 마운트 시 두 컴포저에 되살리고 삭제). [guest-chat-storage](../../../manyak-web/src/features/chats/_shared/utils/guest-chat-storage.ts)·[chat-login-draft-storage](../../../manyak-web/src/features/chats/room/utils/chat-login-draft-storage.ts) |
+| sessionStorage 게스트 채팅·로그인 초안 | `manyak:guest-chat-ids`의 JSON 배열(이전 버전에서 탭에만 보관한 채팅 ID. 신규 채팅은 localStorage 서재에 저장하며 기존 탭 ID도 자동 이관에 포함)과 `manyak:chat-login-draft:{chatId}`의 입력 본문(전송 본문과 같은 직렬화, 채팅방 마운트 시 두 컴포저에 되살리고 삭제). [guest-chat-storage](../../../manyak-web/src/features/chats/_shared/utils/guest-chat-storage.ts)·[chat-login-draft-storage](../../../manyak-web/src/features/chats/room/utils/chat-login-draft-storage.ts) |
 | sessionStorage 로그인 진행 표시 | `manyak:pending-login`의 `'1'`. 공통 소셜 로그인 시작 함수가 OAuth로 떠나기 전에 기록하고 동의 게이트가 가입 대기 조회와 fail-closed 판정에 읽는다. 동의 완료·가입 취소·재로그인 안내·로그아웃, 히스토리 이동으로 다시 불러온 문서, OAuth 오류로 열린 로그인 화면에서 지운다. 가입 대기 조회가 404여도 지우지 않는다(팝업 로그인 중인 원래 탭 보호). [pending-login-storage](../../../manyak-web/src/features/auth/_shared/utils/pending-login-storage.ts) |
 | localStorage 결제 대기 주문 | `manyak:pending-credit-order`의 `{orderId, savedAt}`. 그로블 결제창 이동 직전에 기록하고 복귀 폴링에 쓴다(24시간 TTL). 결과 확정·닫기·로그아웃·세션 만료·탈퇴에서 지우며, 확정 뒤 카드 유지는 컴포넌트 상태가 맡는다. [주문 저장소](../../../manyak-web/src/features/my/credits/utils/pending-credit-order-storage.ts) |
 | sessionStorage 결제 전 히스토리 길이 | `manyak:payment-history-length`의 정수. 결제창 이동 직전 같은 주소를 `pushState`로 한 칸 쌓아 앞으로 항목을 자른 뒤 길이를 기록하고, 그 칸을 `location.replace`로 결제창으로 바꾼다. 복귀 화면 `/my/credits/return`은 앱 셸 없는 Route Handler 정적 문서이며, 인라인 스크립트가 기록을 읽어 지우고 `history.go`로 결제 전 충전 화면까지 되감는다. 길이가 50(Chrome·Firefox 상한)에 닿았거나 기록이 없으면 `/my/credits`로 replace한다. 앱 셸을 쓰지 않는 이유는 [W-023](../adr/1-2-web-adr.md#w-023). [되감기 계산](../../../manyak-web/src/features/my/credits/utils/payment-return-history.ts)·[복귀 문서](../../../manyak-web/src/app/%28my%29/my/credits/return/route.ts) |
@@ -323,7 +323,6 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 | 라우트 | 책임 |
 | --- | --- |
 | `/api/auth/[...nextauth]` | OAuth 시작·콜백·세션, 연동 전용 `link-*` 포함 |
-| `/api/auth/handoff-session` | 코드 검증 후 httpOnly 쿠키 이전. 무효·만료 404, 코드 원문 미반환 |
 | `/api/auth/session-refresh` | 브라우저 재발급 게이트의 단일 재발급 지점. 만료 2분 전부터 재발급하고 204, 확정 만료는 401·만료 헤더, 일시 실패는 503 |
 
 ### BFF 프록시
@@ -410,7 +409,7 @@ Auth.js의 `__Secure-` 세션 쿠키와 청크를 삭제할 때는 실행 모드
 
 5분 만료는 리스너와 타이머 및 UI 잠금만 정리하고 인증창은 유지합니다. 명시적 재시도 때 이전 창을 닫을 수 있으면 정리합니다. 이전 `signIn` HTTP 요청의 늦은 응답이 새 PKCE 쿠키를 덮어쓰지 않도록 응답 대기 중에는 새 시작 요청을 막습니다. 세션 조회와 회원 조회의 await 뒤에는 시도가 이미 끝났는지 확인해 늦은 결과가 원래 창을 이동시키지 못하게 합니다. 이 잠금은 현재 문서 범위이며 COOP로 분리된 창을 강제로 닫거나 이미 진행 중인 서버 인증을 취소하지는 않습니다. OAuth callback의 PKCE, state, nonce 검증은 유지합니다.
 
-COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀 안내를 남깁니다. 쿠키 저장소가 분리되면 완료 메시지만으로 원래 창에 세션을 생성할 수 없습니다. 제품 범위와 실기기 확인은 [웹 계약](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)을 따릅니다.
+COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀 안내를 남깁니다. 쿠키 저장소가 분리되면 완료 메시지만으로 원래 창에 세션을 생성할 수 없습니다. 제품 범위와 실기기 확인은 [웹 계약](../spec/3-2-web-spec.md#인앱-브라우저-로그인)을 따릅니다.
 
 ### 원격 이미지 최적화
 
@@ -432,22 +431,15 @@ COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀
 | `Instagram`·`Barcelona` | Android `intent://`, iOS `x-safari-`; 사용자 클릭과 수동 외부 열기 안내 병행 |
 | 그 밖의 iOS 인앱(앱 안내 배너) | `x-safari-`; 1.5초 뒤에도 화면이 보이면 외부 브라우저 안내 시트 |
 
-탈출 스킴과 안내는 이미 발급된 `/login/continue?handoff=…` 링크의 복구와 [앱 안내 배너](#앱-안내-배너-웹)의 iOS 인앱 외부 전환에 사용합니다. 스킴 호출은 [external-browser-escape](../../../manyak-web/src/lib/external-browser-escape.ts)가 맡습니다. 새 로그인은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)에 따라 일반 로그인 화면과 Google 인증 팝업을 사용합니다.
+탈출 스킴과 안내는 [앱 안내 배너](#앱-안내-배너-웹)의 iOS 인앱 외부 전환에 사용합니다. 스킴 호출은 [external-browser-escape](../../../manyak-web/src/lib/external-browser-escape.ts)가 맡습니다. 새 로그인은 [웹 지원 표](../spec/3-2-web-spec.md#인앱-브라우저-로그인)에 따라 일반 로그인 화면과 Google 인증 팝업을 사용합니다.
 
-### 인앱 게스트 허용·로그인 핸드오프
+### 인앱 게스트 허용과 로그인
 
-신규 핸드오프 생성, pending 저장과 캠페인 URL 조립 코드는 제거했습니다. 기존 `/login/continue` 랜딩, pending 읽기와 삭제 및 `use-handoff-cleanup`은 이미 발급된 링크와 이관 결과 복구에 필요하므로 유지합니다.
+로그인 핸드오프는 쓰지 않습니다. 인앱에서 만든 게스트 데이터는 같은 브라우저 저장소에 남으므로 인앱 로그인 뒤 [use-auto-migration](../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts)이 회원 필수 동의 완료 후 이관합니다.
 
-모든 소셜 CTA는 [start-social-login](../../../manyak-web/src/features/auth/_shared/utils/start-social-login.ts)을 사용하며 인증 시작 전 원래 탭에 로그인 진행 표시를 남깁니다. 감지 대상인 KakaoTalk, Instagram, Threads는 OS에 관계없이 Google 팝업을 시도하고 Kakao는 같은 탭의 Auth.js redirect를 사용합니다. 홈과 마이의 로그인 링크는 일반 `/login`을 열며, 기존 게스트 한도와 로그인 필요 시트의 진입 조건은 유지합니다. 신규 핸드오프 생성과 외부 전환 직행은 없습니다.
+모든 소셜 CTA는 [start-social-login](../../../manyak-web/src/features/auth/_shared/utils/start-social-login.ts)을 사용하며 인증 시작 전 원래 탭에 로그인 진행 표시를 남깁니다. 감지 대상인 KakaoTalk, Instagram, Threads는 OS에 관계없이 Google 팝업을 시도하고 Kakao는 같은 탭의 Auth.js redirect를 사용합니다. 홈과 마이의 로그인 링크는 일반 `/login`을 열며, 기존 게스트 한도와 로그인 필요 시트의 진입 조건은 유지합니다. 외부 전환 직행은 없습니다.
 
-기존에 발급된 핸드오프는 다음 복구 경로를 유지합니다.
-
-1. 기존 `/login/continue?handoff=…` 링크를 인앱에서 열면 외부 전환 안내를 유지합니다. 외부 랜딩은 코드를 검증해 짧은 httpOnly 쿠키로 옮기고 주소에서 코드만 제거합니다. 함께 전달된 UTM은 유지합니다. `Cache-Control: no-store`와 `Referrer-Policy: no-referrer`를 적용하고, 이관 건수를 보여준 뒤 사용자 클릭으로 로그인을 시작합니다. 성공 수령 시 온보딩 열람도 기록합니다.
-2. BFF는 소셜 인증 전에 쿠키를 읽어 `handoffCode`를 소셜 인증 본문에 싣습니다. 핸드오프가 없으면 Amplitude 쿠키의 device ID를 헤더로 전달합니다. 동의가 남으면 서버가 두 값을 대기 코드에 보관해 가입 완료 때 사용합니다. 회원 체험 시드가 확정된 뒤 보충하지 않습니다.
-3. 로그인 완료(바로 완료 또는 가입 완료)가 시드와 이관을 소비하므로 별도 소비 API를 호출하지 않습니다. 검증된 앱 내 상대 callbackPath로 이동하고 [동의 게이트](#동의-게이트-웹)에서 필수 동의를 받은 뒤 이관 결과를 반영합니다. 서버의 이관 1회, 시도 5회 상한을 따릅니다.
-4. 인앱 복귀 시 이관에 성공한 ID만 제거합니다. 발급 뒤 만든 데이터와 `migrationClosed`로 이관하지 못한 ID는 보존합니다. 새 로그인은 같은 저장소의 [use-auto-migration](../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts)에서 회원 필수 동의 완료 후 기존 게스트 데이터를 이관합니다.
-
-코드·토큰·공유 식별자는 관측 데이터에서 제외합니다. 실패 분기는 [인증 QA](../qa/auth.md)로 확인합니다.
+공유 식별자는 관측 데이터에서 제외합니다([share-id-redaction](../../../manyak-web/src/observability/analytics/share-id-redaction.ts)). 실패 분기는 [인증 QA](../qa/auth.md)로 확인합니다.
 
 ## 1-1-4. 관측 연동
 

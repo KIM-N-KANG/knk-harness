@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.35 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-08 |
+| 수정일 | 2026-10-19 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -576,26 +576,22 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-12. 인앱 브라우저 대응
 
-[웹 인앱 로그인 계약](3-2-web-spec.md#인앱-브라우저와-로그인-핸드오프)의 관측 이벤트입니다. 신규 로그인은 일반 로그인 화면과 Google 팝업 또는 같은 탭의 Kakao 로그인을 사용합니다. 신규 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. `escapeAttempted`, `bannerShown`과 `loginContinue_*`는 기존 발급 링크의 복구에서만 발생합니다. 화면 횡단 전역 동작이므로 screenName 자리에 `inappBrowser`를 씁니다.
+[웹 인앱 로그인 계약](3-2-web-spec.md#인앱-브라우저-로그인)의 관측 이벤트입니다. 인앱 로그인은 일반 로그인 화면과 Google 팝업 또는 같은 탭의 Kakao 로그인을 사용하며, 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. 화면 횡단 전역 동작이므로 screenName 자리에 `inappBrowser`를 씁니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
 | `client_inappBrowser_detected` | P1 | 인앱 브라우저 UA 감지 | `app` (string, 필수: `kakaotalk` / `instagram` / `threads`) |
-| `client_inappBrowser_escapeAttempted` | P1 | 기존 핸드오프 링크에서 카카오톡 탈출 스킴 호출 | `app` (string, 필수: `kakaotalk`) |
-| `client_inappBrowser_bannerShown` | P1 | 기존 핸드오프 링크의 외부 전환 안내 표시 | `app` (동일 enum) |
-| `client_loginContinue_viewed` | P1 | 기존 핸드오프의 외부 랜딩 진입 | 없음 |
-| `client_loginContinue_loginButton_clicked` | P1 | 기존 핸드오프 랜딩에서 소셜 로그인 시작 | `provider` (string, 필수: `google` / `kakao`) |
 
-- 카카오톡 탈출 스킴은 비공식 진입점입니다. 성공 콜백이 없으므로 `escapeAttempted` 대비 `bannerShown`(`app=kakaotalk`) 비율을 실패율의 대리 지표로 씁니다. 신규 로그인 전환율과 섞지 않습니다.
-- 인앱 유입량은 `detected`의 `app` 분포로 확인합니다. 비밀 핸드오프 코드와 토큰 및 공유 식별자는 분석 이벤트나 Sentry에 넣지 않습니다.
+- 인앱 유입량은 `detected`의 `app` 분포로 확인합니다. 토큰과 공유 식별자는 분석 이벤트나 Sentry에 넣지 않습니다.
+- **폐기(2026-10-19).** `client_inappBrowser_escapeAttempted`·`client_inappBrowser_bannerShown`·`client_loginContinue_viewed`·`client_loginContinue_loginButton_clicked`는 로그인 핸드오프의 외부 전환 안내와 랜딩이 없어지면서 더 이상 발화하지 않습니다(코드 정의도 제거). 이전 시계열은 과거 핸드오프 경로 분석용입니다.
 
 **종료된 핸드오프 생성 이벤트와 과거 퍼널 해석**
 
 `client_inappBrowser_loginHandoffCreated`는 발행이 종료되어 활성 이벤트 타입과 위 계약에서 제외합니다. 과거 속성은 `app`과 비밀 코드와 별개인 분석용 `handoff_id`였습니다. 기존 Amplitude 차트의 이 이벤트는 과거 경로 분석용이며, 신규 경로 배포 뒤 0건은 로그인 장애를 뜻하지 않습니다. 생성 이벤트가 시작점인 차트로 현재 로그인 전환율을 판단하지 않습니다.
 
-과거 핸드오프는 인앱과 외부 브라우저의 `device_id`가 달랐습니다. 전환 URL에 UTM 6종을 실어 유입 귀속을 유지했지만 같은 사용자가 두 명으로 집계될 수 있습니다. 새 로그인에는 핸드오프 URL이나 캠페인 파라미터를 조립하지 않습니다. 이미 발급된 URL에 포함된 UTM은 복구 랜딩에서도 유지합니다.
+과거 핸드오프는 인앱과 외부 브라우저의 `device_id`가 달랐습니다. 전환 URL에 UTM 6종을 실어 유입 귀속을 유지했지만 같은 사용자가 두 명으로 집계될 수 있습니다. 새 로그인에는 핸드오프 URL이나 캠페인 파라미터를 조립하지 않습니다.
 
-과거 랜딩 이벤트 2종에는 `handoff_id`가 없어 생성부터 외부 랜딩까지 사용자 또는 ID로 이어지지 않는 갭이 있습니다. 따라서 과거 핸드오프 퍼널의 0%를 실제 로그인 실패율로 읽지 않습니다. 기존 링크의 이관 상태는 [핸드오프 복구 구조](../design/1-1-web-design.md#인앱-게스트-허용로그인-핸드오프)로 확인합니다. Kakao 같은 탭 로그인과 신규 Google 팝업은 핸드오프 생성 퍼널을 거치지 않습니다.
+과거 랜딩 이벤트 2종에는 `handoff_id`가 없어 생성부터 외부 랜딩까지 사용자 또는 ID로 이어지지 않는 갭이 있습니다. 따라서 과거 핸드오프 퍼널의 0%를 실제 로그인 실패율로 읽지 않습니다. Kakao 같은 탭 로그인과 신규 Google 팝업은 핸드오프 생성 퍼널을 거치지 않습니다.
 
 - 게스트 체험 이중 사용 규모 판단을 위한 공통 프로퍼티 `in_app_browser` 추가 검토는 별도 후속 사항입니다. 이번 핸드오프 생성 이벤트 폐기는 이 프로퍼티를 추가하지 않습니다.
 
@@ -617,10 +613,10 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_chatShare_ctaButton_clicked` | P1       | 열람 화면 하단 CTA 버튼 클릭     | `story_id` (string, 필수) |
 | `client_chatShare_characterImage_clicked` | P2 | 열람 화면 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
 
-- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend-server-spec.md §4-3-11`](4-backend-server-spec.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다 — 핸드오프 비밀 코드와 동일 원칙(§6-4-2-12). 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다(핸드오프 코드 마스킹과 동일 처리).
+- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend-server-spec.md §4-3-11`](4-backend-server-spec.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다. 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다.
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
 - CTA 클릭은 공유 링크가 신규 유입으로 이어졌는지를 보는 지표입니다. 열람 대비 클릭(`client_chatShare_viewed` 수 대비 `client_chatShare_ctaButton_clicked` 수)이 공유 열람 화면의 전환율입니다.
-- 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 비밀 토큰과 분리된 분석용 ID를 서버가 발급하는 핸드오프 `handoff_id` 패턴(§6-4-2-12)을 따라 추가합니다.
+- 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 과거 로그인 핸드오프의 `handoff_id`(§6-4-2-12)처럼 비밀 토큰과 분리된 분석용 ID를 서버가 발급해 추가합니다.
 
 #### 6-4-2-15. 안드로이드 앱 보강 이벤트 — `Phase 2 · 구현`(KNK-1178)
 
@@ -672,13 +668,13 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
 
-앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개와 `client_inappBrowser_loginHandoffCreated`는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개, `client_inappBrowser_loginHandoffCreated`와 §6-4-2-12의 폐기 이벤트 4개는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 13개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 9개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| 인앱 브라우저 (5)   | `client_inappBrowser_*` 3개 · `client_loginContinue_*` 2개                                                                                                          | 네이티브 앱에 개념 없음       |
+| 인앱 브라우저 (1)   | `client_inappBrowser_detected`                                                                                                                                     | 네이티브 앱에 개념 없음       |
 | 온보딩 (4)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 공유 열람 (2) | `client_chatShare_*` 2개 | 공유 링크 열람은 웹 화면에서 수행 |
@@ -930,7 +926,7 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않습니다. 백엔드가 `unknown`으로 채웁니다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성·주입하지 않습니다. 백엔드가 생성해 응답 헤더로 echo합니다(§6-6-3). |
 
-**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)). ② 로그인 핸드오프 생성(`POST /auth/handoffs`): 원본 디바이스 ID를 서버에 보관하는 요청 자체의 목적값. ③ 핸드오프 없는 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-연동에러-처리-계약), [`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md)).
+**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-연동에러-처리-계약), [`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md)).
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣습니다. 백엔드는 저장 전 `device_id_hash`로 변환합니다. 프론트엔드는 별도 해시를 만들지 않습니다.
 
