@@ -1,6 +1,6 @@
 # ACCOUNT
 
-게스트와 회원 모델, 소셜 로그인, 동의, 게스트 데이터 이관과 핸드오프, 프로필, 탈퇴와 재가입, 초대를 다룬다.
+게스트와 회원 모델, 소셜 로그인, 동의, 게스트 데이터 이관, 프로필, 탈퇴와 재가입, 초대를 다룬다.
 
 세트별 명세는 하위 폴더에 두고, 각 세트의 문서 역할과 읽는 순서는 그 폴더의 `AGENTS.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
 
@@ -10,7 +10,7 @@
 
 | 세트 | 다루는 것 |
 |---|---|
-| [`BACKEND/`](BACKEND/AGENTS.md) | 소셜 인증과 동의, 세션과 토큰, 핸드오프, 게스트 이관, 계정 연동, 프로필, 페르소나, 탈퇴와 재가입, 초대 |
+| [`BACKEND/`](BACKEND/AGENTS.md) | 소셜 인증과 동의, 세션과 토큰, 게스트 이관, 계정 연동, 프로필, 페르소나, 탈퇴와 재가입, 초대 |
 | `WEB/` | 로그인과 동의 흐름, 게스트 상태, 프로필 화면 |
 | `ANDROID/` | 로그인과 동의 흐름, 게스트 상태, 프로필 화면 |
 

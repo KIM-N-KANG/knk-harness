@@ -19,6 +19,7 @@
 | 식별자 | 회원, 페르소나, 스토리, 채팅은 UUID 공개 식별자 |
 | 제공자 | 경로값과 응답은 소문자 `google`, `kakao`<br>재인증 요청 본문만 대문자 enum |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
+| 로그인 본문의 `handoffCode` | 소셜 인증과 호환 로그인 본문에 들어와도 무시<br>검증하지 않고 거절하지 않음 |
 
 <br>
 
@@ -38,9 +39,8 @@
 | `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별 | 핸드오프 생성과 게스트 동의는 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별 | 게스트 동의는 필수 |
 | `X-Manyak-Consent-Token` | 문자열 | 동의 완료 전용 대기 코드 | 동의 완료는 필수 |
-| `X-Manyak-Handoff-Code` | 문자열 | 핸드오프 확인과 상태 조회 | 해당 요청은 필수 |
 | `X-Manyak-Link-Code` | 문자열 | 계정 연동 | 연동은 필수 |
 
 <br>
@@ -134,7 +134,6 @@
 |---|---|---|---|
 | `provider` | 경로 | 필수 | `google`, `kakao` |
 | `idToken` | `string` | 필수 | 제공자가 발급한 OIDC ID 토큰 |
-| `handoffCode` | `string` | 선택 | 핸드오프 코드<br>유효하지 않으면 무시하고 로그인 진행 |
 
 <br>
 
@@ -174,8 +173,7 @@ Content-Type: application/json
 X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 
 {
-  "idToken": "<provider-id-token>",
-  "handoffCode": "<optional-handoff-code>"
+  "idToken": "<provider-id-token>"
 }
 ```
 
@@ -321,7 +319,6 @@ X-Manyak-Consent-Token: <opaque-code>
 |---|---|---|---|
 | `provider` | 경로 | 필수 | `google`, `kakao` |
 | `idToken` | `string` | 필수 | 제공자가 발급한 OIDC ID 토큰 |
-| `handoffCode` | `string` | 선택 | 핸드오프 코드<br>무효이면 무시 |
 
 <br>
 
@@ -521,175 +518,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-8 핸드오프 생성
-
-핸드오프 3종은 이미 발급된 외부 브라우저 전환 링크를 복구하는 데 쓴다. 현재 클라이언트는 새 핸드오프를 만들지 않는다.
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `POST /auth/handoffs` |
-| 인증 | 불필요, `X-Manyak-Device-Id` 헤더 필수 |
-| 성공 | 201 |
-
-**1. 본문**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `storyIds` | `string[]` | 선택 | 이관할 스토리 공개 식별자, 최대 100개, 기본값 빈 배열 |
-| `chatIds` | `string[]` | 선택 | 이관할 채팅 공개 식별자, 최대 100개, 기본값 빈 배열 |
-| `callbackPath` | `string` | 필수 | 로그인 후 복귀할 앱 내 상대 경로<br>`/`로 시작하고 `//`와 `/\`로 시작하지 않으며 ASCII 제어 문자 없이 512자 이내 |
-| `sourceApp` | `string` | 필수 | `kakaotalk`, `instagram`, `threads` |
-
-<br>
-
-**2. 응답**
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `handoffCode` | `string` | 1회용 코드<br>이 응답에서만 노출 |
-| `handoffId` | `string` | 분석 전용 식별자, 비밀값 아님 |
-| `expiresAt` | `string` | 만료 시각 |
-
-<br>
-
-**3. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 디바이스 헤더 누락이나 공백, 배열 100개 초과, 식별자 형식 오류, 복귀 경로 규칙 위반, 출처 앱 허용값 밖 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-**1) Request**
-
-```http
-POST /api/v1/auth/handoffs
-Content-Type: application/json
-X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
-
-{
-  "storyIds": ["3f2504e0-4f89-41d3-9a0c-0305e82c3301"],
-  "chatIds": ["7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d"],
-  "callbackPath": "/chats/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d",
-  "sourceApp": "kakaotalk"
-}
-```
-
-**2) 201 Response body**
-
-```json
-{
-  "handoffCode": "<opaque-code>",
-  "handoffId": "9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f",
-  "expiresAt": "2026-10-16T00:30:00Z"
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-9 핸드오프 확인
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `GET /auth/handoffs` |
-| 인증 | 불필요, `X-Manyak-Handoff-Code` 헤더 필수 |
-| 성공 | 200 |
-
-**1. 응답**
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `storyCount` | `integer` | 옮길 스토리 건수 |
-| `chatCount` | `integer` | 옮길 채팅 건수 |
-| `callbackPath` | `string` | 생성 시 저장한 복귀 경로 |
-| `expiresAt` | `string` | 만료 시각 |
-
-<br>
-
-**2. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 헤더 누락 |
-| 404 | `NOT_FOUND` | 코드 없음, 만료<br>둘을 구분하지 않음 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-**1) 200 Response body**
-
-```json
-{
-  "storyCount": 1,
-  "chatCount": 1,
-  "callbackPath": "/chats/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d",
-  "expiresAt": "2026-10-16T00:30:00Z"
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-10 핸드오프 상태 조회
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `GET /auth/handoffs/status` |
-| 인증 | 불필요, `X-Manyak-Handoff-Code` 헤더 필수 |
-| 성공 | 200 |
-
-**1. 응답**
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `status` | `string` | `PENDING`, `LANDED`, `MIGRATED`, `MIGRATION_CLOSED` |
-| `migratedStoryIds` | `string[]` | 이번 핸드오프에서 실제로 이관한 스토리 공개 식별자 |
-| `migratedChatIds` | `string[]` | 이번 핸드오프에서 실제로 이관한 채팅 공개 식별자 |
-
-| `status` | 의미 |
-|---|---|
-| `PENDING` | 생성됨, 외부 브라우저가 아직 받지 않음 |
-| `LANDED` | 외부 랜딩이 코드를 확인함 |
-| `MIGRATED` | 로그인 처리 중 핸드오프를 소비하고 결과를 저장함<br>실제로 이관된 항목이 없어도 이 상태 |
-| `MIGRATION_CLOSED` | 로그인 처리 중 소비했으나 계정의 이관이 닫혀 이관하지 않음 |
-
-<br>
-
-**2. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 헤더 누락 |
-| 404 | `NOT_FOUND` | 코드 없음, 만료 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-**1) 200 Response body**
-
-```json
-{
-  "status": "MIGRATED",
-  "migratedStoryIds": ["3f2504e0-4f89-41d3-9a0c-0305e82c3301"],
-  "migratedChatIds": []
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-11 연동 재인증
+### 4-2-8 연동 재인증
 
 | 항목 | 값 |
 |---|---|
@@ -753,7 +582,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-12 계정 연동
+### 4-2-9 계정 연동
 
 | 항목 | 값 |
 |---|---|
@@ -820,7 +649,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-13 게스트 이관
+### 4-2-10 게스트 이관
 
 | 항목 | 값 |
 |---|---|
@@ -909,7 +738,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-14 프로필 수정
+### 4-2-11 프로필 수정
 
 | 항목 | 값 |
 |---|---|
@@ -970,7 +799,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-15 프리셋 목록
+### 4-2-12 프리셋 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1009,7 +838,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-16 페르소나 목록
+### 4-2-13 페르소나 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1054,7 +883,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-17 페르소나 생성
+### 4-2-14 페르소나 생성
 
 | 항목 | 값 |
 |---|---|
@@ -1127,7 +956,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-18 페르소나 수정
+### 4-2-15 페르소나 수정
 
 | 항목 | 값 |
 |---|---|
@@ -1199,7 +1028,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-19 페르소나 삭제
+### 4-2-16 페르소나 삭제
 
 | 항목 | 값 |
 |---|---|
@@ -1215,7 +1044,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-20 회원 동의 조회
+### 4-2-17 회원 동의 조회
 
 | 항목 | 값 |
 |---|---|
@@ -1252,7 +1081,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-21 회원 동의 기록
+### 4-2-18 회원 동의 기록
 
 | 항목 | 값 |
 |---|---|
@@ -1323,7 +1152,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-22 게스트 동의 조회
+### 4-2-19 게스트 동의 조회
 
 | 항목 | 값 |
 |---|---|
@@ -1362,7 +1191,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-23 게스트 동의 기록
+### 4-2-20 게스트 동의 기록
 
 | 항목 | 값 |
 |---|---|
@@ -1414,7 +1243,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-24 회원 탈퇴
+### 4-2-21 회원 탈퇴
 
 | 항목 | 값 |
 |---|---|
@@ -1426,7 +1255,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-25 내 스토리 목록
+### 4-2-22 내 스토리 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1513,7 +1342,7 @@ Authorization: Bearer <access>
 
 <br>
 
-### 4-2-26 내 채팅 목록
+### 4-2-23 내 채팅 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1588,7 +1417,7 @@ Authorization: Bearer <access>
 
 <br>
 
-### 4-2-27 초대 코드 조회
+### 4-2-24 초대 코드 조회
 
 | 항목 | 값 |
 |---|---|
@@ -1625,7 +1454,7 @@ Authorization: Bearer <access>
 
 <br>
 
-### 4-2-28 초대 코드 제출
+### 4-2-25 초대 코드 제출
 
 | 항목 | 값 |
 |---|---|
@@ -1707,7 +1536,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-29 다른 도메인과의 경계
+### 4-2-26 다른 도메인과의 경계
 
 | 도메인 | ACCOUNT가 제공하는 것 | ACCOUNT가 사용하는 것 |
 |---|---|---|

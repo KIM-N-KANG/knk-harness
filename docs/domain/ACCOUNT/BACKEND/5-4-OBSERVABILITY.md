@@ -49,7 +49,6 @@ Fluent Bit`"]
 |---|---|---|
 | `request_id` | 로그 MDC, Sentry 태그, 분석 이벤트 | 한 요청의 로그와 이벤트 |
 | `user_public_id` | 유예 적용 로그, 분석 이벤트 `user_id` | 회원 |
-| `handoffId` | 핸드오프 소비 실패 로그 | 코드와 별개인 분석용 핸드오프 식별자 |
 | 회원 내부 ID | 재사용 탐지 WARN, 재색인 요청 로그 | 회원 |
 
 <br>
@@ -63,9 +62,6 @@ Fluent Bit`"]
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 회전 유예 적용 | 유예 재응답<br>`refresh_reuse_grace_applied` | `user_public_id` |
 | 재사용 탐지 | 유예 밖 재사용<br>평문 WARN | 회원 내부 ID, 세션 폐기 사실 |
-| 핸드오프 소비 실패 | 이관 예외<br>평문 WARN | `handoffId`, 예외 |
-| 핸드오프 조회 폴백 | Redis 장애<br>평문 WARN | 예외 |
-| 핸드오프 결과 저장 재시도 | Redis 장애<br>평문 WARN | 시도 횟수, 예외 |
 | 체험 스냅샷 실패 | Redis 장애<br>평문 WARN | 회원 내부 ID, 예외 |
 | 닉네임 변경 재색인 | 프로필 저장 뒤<br>평문 INFO `nickname_reindex_requested` | 회원 내부 ID, 스토리 수 |
 | 닉네임 접미 발급 | 5회 충돌 뒤<br>평문 INFO | 시도 횟수 |
@@ -93,7 +89,6 @@ Fluent Bit`"]
 |---|---|
 | 로그인 | 분석 이벤트의 로그인 실패 `error_type`<br>Sentry `endpoint=/api/v1/auth/social/{provider}`, `/api/v1/auth/login/{provider}` |
 | 토큰 회전 | 로그 `refresh_reuse_grace_applied`와 재사용 탐지 WARN<br>요청 로그의 `/api/v1/auth/token/refresh` 401 비율 |
-| 핸드오프 | 핸드오프 소비 실패와 저장 재시도 WARN<br>요청 로그의 `/api/v1/auth/handoffs` 404 비율 |
 | 이관 | 분석 이벤트의 이관 실패 `error_type`과 성공 이벤트의 `conflict_count`, `not_found_count` |
 | 계정 연동 | 분석 이벤트의 연동 실패 `error_type` |
 | 체험 스냅샷 | 스냅샷 실패 WARN |
@@ -132,7 +127,7 @@ ACCOUNT 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 H
 | 항목 | 기준 |
 |---|---|
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
-| ACCOUNT에서 수집하는 오류 | 500 예상하지 못한 예외, Redis 장애로 인한 500<br>4xx 거절, 재사용 탐지, 핸드오프 소비 실패는 Sentry에 없어 보고에 포함되지 않음 |
+| ACCOUNT에서 수집하는 오류 | 500 예상하지 못한 예외, Redis 장애로 인한 500<br>4xx 거절, 재사용 탐지는 Sentry에 없어 보고에 포함되지 않음 |
 | 지표 기반 알림 | ACCOUNT 전용 규칙 없음 |
 
 <br>
@@ -148,7 +143,7 @@ ACCOUNT 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 H
 | 디바이스 ID | 해시만<br>원문은 로그에 기록하지 않음 |
 | 닉네임, 페르소나 본문 | 로그에 기록하지 않음 |
 | 요청 경로 | 요청 로그 `endpoint`와 Sentry breadcrumb에 기록<br>경로에 비밀값 없음 |
-| Sentry 요청 필드 | 소셜 인증, 동의 완료, 호환 로그인, 토큰 회전, 로그아웃, 핸드오프 확인과 상태 조회, 연동 재인증과 연동 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |
+| Sentry 요청 필드 | 소셜 인증, 동의 완료, 호환 로그인, 토큰 회전, 로그아웃, 연동 재인증과 연동 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |
 | Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 
 <br>
