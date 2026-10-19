@@ -13,7 +13,7 @@
 | 패키지 | 스토리 패키지 아래 제출 패키지에 제출 서비스, 폼 조립기, 용량 검사, 폴러, 선점 저장소, 실행기, 이미지 복사, AI 클라이언트, 재시도 정책, 보류 알림을 둠<br>제출본 API 계층은 스토리 API 계층과 같은 위치 |
 | 모델 이름 | 테이블의 단수형 |
 | 전송 객체 | 요청은 `Request`, 응답은 `Response`를 접미사로 사용<br>전송 필드는 camelCase<br>DB 컬럼은 snake_case |
-| AI 필드 | 요청은 폼의 camelCase를 유지하고 기본 주인공 이름만 `protagonist_name`<br>응답의 `error_code`, `image_errors`는 클라이언트에 `errorCode`, `imageErrors`로 전달 |
+| AI 필드 | 요청은 폼의 camelCase 필드 이름을 그대로 사용<br>응답의 `error_code`, `image_errors`는 클라이언트에 `errorCode`, `imageErrors`로 전달 |
 | 상태와 종류 | 대문자 enum |
 | 오류 코드 | 대문자 snake_case 문자열<br>AI 코드는 그대로 전달 |
 | 용어 | 용어집을 따름 |
