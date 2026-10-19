@@ -30,7 +30,7 @@
 5-5-QUALITY-EVENT-TRACKING.md
 6-1-RELEASE-TEST-CASES.md
 6-2-RELEASE-DEPLOYMENT.md
-CLAUDE.md
+AGENTS.md
 DECISIONS.md
 ```
 
@@ -53,7 +53,7 @@ DECISIONS.md
 | `5-5-QUALITY-EVENT-TRACKING.md` | 이 도메인의 분석 이벤트와 프로퍼티. 이벤트 이름 규칙은 용어집을 따른다 |
 | `6-1-RELEASE-TEST-CASES.md` | 단위와 통합 테스트 케이스, 실행 명령과 통과 증거, 린트. 케이스가 있는 것과 실행해 통과한 것을 구분한다 |
 | `6-2-RELEASE-DEPLOYMENT.md` | 배포 단위와 의존성, 배포 경로, 환경 변수와 시크릿, 배포 조건, 되돌리기 |
-| `CLAUDE.md` | 문서의 역할, 읽는 순서, 작업별 참조, 명세와 코드의 대응. 명세 본문을 복사하지 않는다 |
+| `AGENTS.md` | 문서의 역할, 읽는 순서, 작업별 참조, 명세와 코드의 대응. 명세 본문을 복사하지 않는다 |
 | `DECISIONS.md` | 결정의 날짜, 배경, 채택한 선택, 대안, 영향과 재검토 조건 |
 
 <br>
