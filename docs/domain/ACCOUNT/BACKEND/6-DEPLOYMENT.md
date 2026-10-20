@@ -74,7 +74,7 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_LEGAL_TERMS_VERSION` | `v1.4` | 주입 없음 | 웹 콘텐츠의 `version`과 같은 값 |
-| `MANYAK_LEGAL_PRIVACY_VERSION` | `v1.7` | 주입 없음 | 웹 콘텐츠의 `version`과 같은 값 |
+| `MANYAK_LEGAL_PRIVACY_VERSION` | `v1.8` | 주입 없음 | 웹 콘텐츠의 `version`과 같은 값 |
 | `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `v1.0` | 주입 없음 | 게스트 발췌문 버전 |
 
 <br>
