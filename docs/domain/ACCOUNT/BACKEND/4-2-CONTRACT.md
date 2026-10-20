@@ -187,7 +187,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
   "isNewUser": true,
   "consents": {
     "terms": { "requiredVersion": "v1.4", "needsConsent": true },
-    "privacy": { "requiredVersion": "v1.7", "needsConsent": true },
+    "privacy": { "requiredVersion": "v1.8", "needsConsent": true },
     "age14": { "requiredVersion": "1", "needsConsent": true }
   }
 }
@@ -269,7 +269,7 @@ X-Manyak-Consent-Token: <opaque-code>
 
 {
   "terms": "v1.4",
-  "privacy": "v1.7",
+  "privacy": "v1.8",
   "age14": "1"
 }
 ```
@@ -1072,7 +1072,7 @@ Content-Type: application/json
 ```json
 {
   "terms": { "requiredVersion": "v1.4", "needsConsent": false },
-  "privacy": { "requiredVersion": "v1.7", "needsConsent": true },
+  "privacy": { "requiredVersion": "v1.8", "needsConsent": true },
   "age14": { "requiredVersion": "1", "needsConsent": false }
 }
 ```
@@ -1121,7 +1121,7 @@ Authorization: Bearer <access>
 Content-Type: application/json
 
 {
-  "privacy": "v1.7"
+  "privacy": "v1.8"
 }
 ```
 
@@ -1130,7 +1130,7 @@ Content-Type: application/json
 ```json
 {
   "terms": { "requiredVersion": "v1.4", "needsConsent": false },
-  "privacy": { "requiredVersion": "v1.7", "needsConsent": false },
+  "privacy": { "requiredVersion": "v1.8", "needsConsent": false },
   "age14": { "requiredVersion": "1", "needsConsent": false }
 }
 ```
