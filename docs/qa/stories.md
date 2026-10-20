@@ -410,7 +410,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | STORY-EDIT-01 | P0 | 회원, 내가 만든 스토리 | 상세 옵션 시트 → 수정하기 | 헤더 "스토리 수정"과 닫기만 있고(임시 저장 버튼 없음) 현재 제목·설정·시작 상황·장르·표지로 폼이 채워짐. 표지·주변 인물 이미지 칸에 "이미지 변경"과 "삭제"가 있음 | ✅ e2e `stories/story-edit` | US-4-5, FE-SCREEN-009 |
 | STORY-EDIT-02 | P0 | STORY-EDIT-01 | 제목만 고침 → 등록 탭 → 저장하기 → 검수 승인 | PATCH 본문에 제목만 실림. 저장하기에 스피너, "스토리를 검토하고 있어요" 뒤 승인되면 "스토리를 수정했어요"와 함께 들어온 화면(상세)으로 돌아가고 새 제목이 보임 | ✅ e2e `stories/story-edit` | US-4-5, FE-SCREEN-009 |
-| STORY-EDIT-03 | P1 | STORY-EDIT-01 | 아무것도 고치지 않고 저장하기 | 요청 없이 들어온 화면으로 돌아감 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
+| STORY-EDIT-03 | P1 | STORY-EDIT-01 | 아무것도 고치지 않고 저장하기 | 요청 없이 들어온 상세로 돌아가 URL과 실제 상세 화면이 함께 바뀌며 수정 폼은 사라짐 | ✅ e2e `stories/story-edit` (Mobile Chrome, Mobile Safari) | FE-SCREEN-009 |
 | STORY-EDIT-04 | P1 | STORY-EDIT-01 | 공개 스위치만 바꿈 → 저장하기 | 검토 중 토스트 없이 바로 "스토리를 수정했어요"와 함께 상세로 돌아가고 공개 범위가 바뀜 | 수동 | FE-SCREEN-009 |
 | STORY-EDIT-05 | P0 | STORY-EDIT-01, 검수 반려 | 제목을 고쳐 저장하기 → 반려 → 다시 고쳐 저장하기 | 반려 토스트, 폼 위 "검토를 통과하지 못했어요"·"표시된 곳을 고쳐 다시 저장해 주세요", 제목 칸에 사유. 다시 저장하면 바뀌지 않은 필드까지 모두 보냄 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
 | STORY-EDIT-06 | P1 | 회원, 검토 중인 수정 제출본이 있는 스토리 | 수정 화면 진입 → 등록 탭 | 폼 위 "수정 내용을 검토하고 있어요"·"검토가 끝나면 다시 수정할 수 있어요", 입력은 잠기고 탭은 옮길 수 있으며 저장하기가 꺼짐 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
@@ -427,7 +427,7 @@
 | STORY-EDIT-17 | P1 | STORY-EDIT-01, 표지와 이미지가 있는 주변 인물 | 표지 삭제 → 주변 인물 탭에서 이미지 삭제 → 저장하기 → 승인 / (별도) 표지만 삭제 → 저장하기 | 표지 삭제 API(`DELETE /stories/{storyId}/thumbnail`)를 한 번 부르고, PATCH에는 그 인물의 대표 이미지를 뺀 `characters`만 실림. 표지만 지우면 PATCH와 검토 중 토스트 없이 "스토리를 수정했어요"와 함께 상세로 돌아가고 상세 히어로가 기본 심벌로 바뀜 | ✅ e2e `stories/story-edit` | FE-SCREEN-009 |
 | STORY-EDIT-18 | P1 | STORY-EDIT-01, 제공 목록에 없는 장르가 저장된 스토리 | 등록 탭 확인 → 검색으로 장르 추가 → 저장 | 저장된 장르가 고른 칩으로 보이고 재선택 안내는 없음. 저장하면 기존 장르를 그대로 두고 추가한 장르와 함께 `genres`로 보냄. 장르를 고치지 않으면 `genres`를 보내지 않음 | ✅ e2e `stories/story-edit` | §3-1-4 장르 검색과 선택, KNK-1542 |
 | STORY-EDIT-19 | P0 | 회원 소유 스토리, 수정 폼 `protagonistName` 있음 / 이전 글 맨 앞에 `## 호칭` 절이 있고 `protagonistName` null | 수정 화면 진입 → 주인공(나) 탭 확인 → 이름 변경 후 저장 | 이름 칸은 `protagonistName`을 표시하고 바꾼 이름만 PATCH `protagonistName`으로 보냄. 이름을 비우면 싣지 않음(서버는 기존 이름 유지). 이전 글의 호칭 절은 특징 본문 맨 앞에 남고 성별 절만 칸으로 옮겨짐 | unit `edit-form`·`character-settings` | FE-SCREEN-009, KNK-1469 |
-| STORY-EDIT-20 | P1 | 제작 탭 카드 옵션 시트 → 수정하기로 수정 화면 진입 | 기기·브라우저 뒤로가기 | 한 번에 제작 탭으로 돌아감(시트 더미가 남지 않음) | ✅ e2e `stories/story-edit` | 웹 Spec 화면 전환 규칙, KNK-1613 |
+| STORY-EDIT-20 | P1 | 제작 탭 카드 옵션 시트 → 수정하기로 수정 화면 진입 | 기기·브라우저 뒤로가기 | 한 번에 제작 탭으로 돌아가 URL과 실제 제작 목록이 함께 바뀌며 수정 폼은 사라짐. 시트 더미가 남지 않음 | ✅ e2e `stories/story-edit` (Mobile Chrome, Mobile Safari) | 웹 Spec 화면 전환 규칙, KNK-1613 |
 
 ## STORY-SUBMISSION — 제작 탭 검수 제출본 `/studio`
 
