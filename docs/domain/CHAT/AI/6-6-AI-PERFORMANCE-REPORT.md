@@ -19,7 +19,7 @@
 | 입력 데이터 | `test` |
 | 생성 방식 | 기존 대화의 마지막 AI 답변 1개, 스트리밍 호출 |
 | 평가자 | `gpt-6-astra / high` |
-| 채점 방식 | 평가 프롬프트 v0.3, `single-tail`, 오프라인 평가 |
+| 채점 방식 | 평가 모델 프롬프트 v0.3, `single-tail`, 오프라인 평가 |
 | 집계 규모 | 생성 2,356건, 채점 7,068건 |
 
 <details>
@@ -31,6 +31,7 @@
 | --- | --- |
 | 실행 설정·코드 버전 | `evaluation/runs/grid-v2-r1/run.json` |
 | 평가 입력 | `evaluation/datasets/test/*.json` |
+| 분량 지시 | `prompt/chat/general/CHAT-TEMPLATE-v2.md` 6절 |
 | 생성 결과·시간·토큰·비용 | `evaluation/runs/grid-v2-r1/<config>/*.gen.json` |
 | Astra 3회 채점 결과 | `evaluation/runs/grid-v2-r1/<config>/*.judge-astra.json` |
 | 복구한 첫 토큰 시간 | `evaluation/runs/grid-v2-r1/ttft-recovery/qwen-matched.json`·`openrouter-matched.json` |
@@ -188,3 +189,4 @@
 4) 응답을 한 번만 생성해 반복 생성의 편차와 장기 대화 성능을 측정하지 않았다.
 5) 운영 기준 조합과 비교하지 않아 운영 대비 개선율은 없다.
 6) TTFT는 길이별 1건이다. GLM의 긴 입력은 high에서 221,376토큰, none에서 0토큰이 캐시 처리되어 조건이 다르다.
+7) 분량 준수율은 엔딩 장면의 초과 허용 예외를 구분하지 않았다. 2200자 초과 답변에 엔딩 장면이 섞여 있을 수 있다.

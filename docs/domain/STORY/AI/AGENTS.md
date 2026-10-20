@@ -43,14 +43,18 @@
 
 ### 3. 명세와 코드의 대응
 
-구현 저장소는 하네스 루트 기준 `../manyak-ai`다. 아래 코드 경로는 구현 저장소 루트 기준이며, 관련 코드를 찾는 시작점으로 사용한다. 파일별 역할과 구현 규칙은 [소프트웨어 구현](6-2-SOFTWARE-IMPLEMENTATION.md)에서 확인한다.
+구현 저장소는 하네스 루트 기준 `../manyak-ai`다. 아래 코드 경로는 구현 저장소 루트 기준이며, 관련 코드를 찾는 시작점으로 사용한다. 구성 요소의 책임과 구현 규칙은 [소프트웨어 구현](6-2-SOFTWARE-IMPLEMENTATION.md)에서 확인한다.
 
 | 범위 | 코드 진입점 | 관련 명세 |
 |---|---|---|
 | 간편 제작 | `src/api/v1/story.py`, `src/services/story_llm.py` | `5-CONTRACT.md`, `6-1-AI-EXECUTION.md` |
 | 요청과 응답 모델 | `src/schemas/` | `5-CONTRACT.md` |
+| 프롬프트 조립 | `src/services/prompt.py`, `src/services/image/prompt.py` | `6-1-AI-EXECUTION.md` |
+| 인물 이미지와 썸네일 생성 | `src/services/image/generate_characters.py`, `src/services/image/generate_thumbnail.py` | `6-2-SOFTWARE-IMPLEMENTATION.md` |
+| 컴파일 출력 변환 | `src/services/story_compile_render.py` | `6-2-SOFTWARE-IMPLEMENTATION.md` |
 | 모델 호출과 이미지 공통 처리 | `src/services/llm/`, `src/services/image/` | `6-1-AI-EXECUTION.md`, `7-1-ERROR-HANDLING.md` |
 | 설정과 초기화 | `src/core/`, `src/main.py` | `6-2-SOFTWARE-IMPLEMENTATION.md`, `7-4-DEPLOYMENT.md` |
+| 관측과 오류 보고 | `src/core/langfuse.py`, `src/core/sentry.py` | `7-3-OBSERVABILITY.md` |
 
 - 공통 코드를 수정하면 채팅 태스크의 영향도 확인하고 관련 테스트를 함께 실행한다.
 - 코드 기본값과 실제 운영 주입값을 구분한다. 운영값은 `7-4-DEPLOYMENT.md`에서 주입 경로를 찾고, 실행 중인 배포 버전과 환경 변수, 설정 저장소의 적용 관계를 확인한다. 코드 기본값이나 Terraform 기본값만으로 운영값을 단정하지 않는다.
@@ -76,3 +80,19 @@
 - 본문이 비어 있거나 목차만 있는 문서는 근거로 쓰지 않는다. 다른 태스크의 명세로 빈 항목을 대신하지 않는다.
 - 저장소에서 확인할 수 없는 정책, 필드와 계약이나 코드만으로 알 수 없는 정책 승인 여부와 결정 이유를 추측하지 않는다. 결정되지 않은 것은 미정, 확인하지 못한 것은 미확인으로 구분한다.
 - 파일이나 절의 제목과 위치를 바꾸면 해당 대상을 참조하는 다른 문서의 링크도 고친다.
+
+<br>
+
+### 5. 테스트 실행
+
+명령과 코드 경로는 `manyak-ai` 저장소 루트 기준이다. 검증 기준은 [7-2 테스트 케이스](7-2-TEST-CASES.md)에서 확인한다.
+
+| 실행 | 명령 | 조건 |
+|---|---|---|
+| 일반 테스트 | `./scripts/test.sh` | Docker `python:3.11-slim`, 실제 모델 호출 제외 |
+| 단위 테스트 | `./scripts/test.sh tests/unit` | 위와 같음 |
+| 실제 모델 포함 | `./scripts/test.sh --live` | `.env`의 실제 키 필요, 호출 비용 발생 <br> 실제 모델 테스트 실행 조건은 `RUN_LIVE_TESTS=1` |
+| CI | `pytest --cov --cov-report=term-missing --cov-fail-under=90` | `src/` 분기 커버리지 90% 이상 <br> 린트와 타입 검사 미실행 |
+
+- 단위 테스트는 `tests/unit/`, API 테스트는 `tests/`, 실제 모델과 컴파일·채팅 연결 테스트는 `tests/integration/`에서 찾는다.
+- 실행 결과는 대상 커밋, 명령과 통과, 실패, 건너뜀 건수를 PR에 기록한다.
