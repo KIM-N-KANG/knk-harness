@@ -903,6 +903,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | ---------------- | -------------------- | ---------------------------------------------------------- |
 | Amplitude        | 사용자 행동 분석     | 퍼널, 전환율, 이탈율, 선택지 사용률                        |
 | Meta 픽셀        | 광고 전환 신호       | `PageView`·`StorylinesGenerated`·`StoryCompiled`·`StartTrial` — Meta 캠페인 학습·성과 측정(KNK-616) |
+| Android Meta SDK | 앱 설치 광고 전환 신호 | 자동 로깅되는 앱 설치와 앱 실행(`fb_mobile_activate_app`) 이벤트와 광고 식별자(AAID) — 앱 설치 캠페인 성과 측정(KNK-1718). 앱이 직접 정의한 이벤트는 보내지 않음 |
 | 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
 | Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal·non-fatal, API 30+ ANR, 수동 화면·P0 행동 로그. API 24~29 ANR·NDK는 초기 범위 밖([`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
@@ -915,6 +916,8 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 Amplitude 이벤트 수를 제품 지표 계산의 기준으로 사용합니다. Sentry·Crashlytics 이벤트 수는 제품 지표 계산에 사용하지 않습니다.
 
 Meta 픽셀도 제품 지표 계산에 사용하지 않습니다 — Meta 광고 최적화·성과 측정 전용이며, 브라우저당 1회 발화 정책과 광고 차단 손실 때문에 Amplitude 퍼널 수치와 정의상 불일치가 정상입니다(정본: 마케팅 전략 문서 "26/07"). 픽셀 이벤트는 프로퍼티 없이 전송하므로 원문 수집 원칙(§6-7)에 저촉되지 않고, `NEXT_PUBLIC_META_PIXEL_ID`가 있는 production에서만 전송합니다(래퍼: `src/observability/marketing/`). 이후 Conversions API 도입을 대비해 발화마다 `eventID`를 부여합니다.
+
+Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산에 사용하지 않습니다. 자동 이벤트 로깅과 광고 식별자 수집만 켜고, 앱 코드에서 이벤트나 프로퍼티를 추가로 보내지 않으므로 원문 수집 원칙(§6-7)에 저촉되지 않습니다. SDK가 광고 식별자, 기기와 OS 정보, IP를 Meta로 직접 전송하므로 이 경로는 개인정보 처리방침 v1.8의 행태정보 절에 고지하고, 이벤트를 추가하거나 수집 항목을 바꾸면 처리방침과 Play Console 데이터 보안 양식을 함께 갱신합니다.
 
 ### 6-6-2. 프론트엔드 API 헤더
 
