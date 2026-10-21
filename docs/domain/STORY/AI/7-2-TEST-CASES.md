@@ -1,6 +1,6 @@
 # 7-2 테스트 케이스
 
-코드 경로와 실행 명령은 `manyak-ai` 저장소 기준이다.
+간편 제작의 정상 동작과 오류 처리를 검증할 입력, 상황과 기대 결과를 정한다.
 
 <br>
 
@@ -10,12 +10,8 @@
 |---|---|---|---|
 | 단위 | 입력 검증, 프롬프트 조립, 보완과 출력 변환 | 가짜 출력과 예외로 대체 | 로컬, CI |
 | API | HTTP 상태, 출력 형식과 메타 | 가짜 출력과 예외로 대체 | 로컬, CI |
-| 실제 모델 통합 | 생성부터 최종 출력까지 연결 | 실제 공급자 호출 | 수동 실행 <br> `RUN_LIVE_TESTS=1` 필요 |
+| 실제 모델 통합 | 생성부터 최종 출력까지 연결 | 실제 공급자 호출 | 수동 실행 |
 | 컴파일과 채팅 연결 | 컴파일 결과의 채팅 프롬프트 반영 | 저장된 명세 사용 | 로컬, CI |
-
-- 백엔드 저장과 CDN은 테스트 범위에서 제외한다.
-- 채팅과 공유하는 코드를 변경하면 채팅 테스트도 실행한다.
-- 생성 문장의 일치 여부와 내용 성능은 검사하지 않는다.
 
 <br>
 
@@ -23,27 +19,11 @@
 
 | 대상 | 방법 |
 |---|---|
-| 텍스트 호출 | `install_llm_sdk`로 가짜 SDK 설치 또는 `_complete_json` 대체 |
-| 이미지 호출 | 이미지 생성 함수와 `_safe` 함수 대체 |
+| 텍스트 호출 | 공급자 응답 또는 텍스트 생성 결과를 고정 출력과 예외로 대체 |
+| 이미지 호출 | 이미지 생성과 결과 변환 경계에서 성공 결과와 실패를 대체 |
 | 오류 기록 | 보고 함수 대체 후 전달 인자 확인 |
 | 호출 관측 | 일반 테스트에서 비활성화 <br> 관측 실패 테스트에서는 가짜 SDK 사용 |
 | 인증 정보 | 일반 테스트에 더미 키 사용 |
-
-<details>
-<summary><b>실행 명령</b></summary>
-
-<br>
-
-| 실행 | 명령 | 조건 |
-|---|---|---|
-| 일반 테스트 | `./scripts/test.sh` | Docker `python:3.11-slim` <br> 실제 모델 호출 제외 |
-| 단위 테스트 | `./scripts/test.sh tests/unit` | 위와 같음 |
-| 실제 모델 포함 | `./scripts/test.sh --live` | `.env`의 실제 키 필요 <br> 호출 비용 발생 |
-| CI | `pytest --cov --cov-report=term-missing --cov-fail-under=90` | `src/` 분기 커버리지 90% 이상 <br> 린트와 타입 검사 미실행 |
-
-실행 결과는 대상 커밋, 명령과 통과, 실패, 건너뜀 건수를 PR에 기록한다.
-
-</details>
 
 <br>
 
@@ -51,30 +31,33 @@
 
 입출력 기준은 계약 문서를 따른다. ([5-2 스토리라인 요청과 결과](5-CONTRACT.md#5-2-스토리라인-요청과-결과))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 입력 검증 | 빈 값, `null`, 공백 <br> 잘못된 성별과 특징 타입, 중복 이름 | 빈 값 정규화 <br> 계약 위반 시 검증 오류 | [test_story_schemas](../../../../../manyak-ai/tests/unit/test_story_schemas.py) <br> [test_request_validation](../../../../../manyak-ai/tests/test_request_validation.py) |
-| 프롬프트 조립 | 인물 정보 일부 누락, 주변 인물 없음 <br> 자리표시자가 포함된 이름 | 인물 블록과 미정 표기 반영 <br> 이름 안의 자리표시자 유지 | [test_storylines_characters](../../../../../manyak-ai/tests/unit/test_storylines_characters.py) |
-| 출력 형식과 번호 | 후보 또는 추천 정보 수 오류, 빈 줄거리 <br> 후보 번호 누락과 순서 오류 | 형식 위반 시 최대 2회 재생성 <br> 소진 시 502 <br> 번호는 재생성 없이 1, 2, 3으로 정리 | [test_story_llm_faults](../../../../../manyak-ai/tests/unit/test_story_llm_faults.py) |
-| 인물 누락과 보완 | 일부 후보의 주변 인물 누락 <br> 이름의 정규화 차이, 입력 이름 없음 | NFC 정규화 후 이름 대조 <br> 누락 후보만 보완 <br> 주인공과 이름 미입력 인물은 검사 제외 | [test_storylines_characters](../../../../../manyak-ai/tests/unit/test_storylines_characters.py) <br> [test_storylines_refill](../../../../../manyak-ai/tests/unit/test_storylines_refill.py) |
-| 보완 병합과 종료 | 다른 후보 번호, 범위 밖 번호, 후보 형식 위반 <br> 보완 2회 뒤에도 인물 누락 | 지정한 후보만 병합 <br> 후보 형식 위반 시 원본 유지 <br> 누락 지속 시 현재 결과로 200, 경고 기록 | [test_storylines_refill](../../../../../manyak-ai/tests/unit/test_storylines_refill.py) <br> [test_storylines_characters](../../../../../manyak-ai/tests/unit/test_storylines_characters.py) |
-| API와 메타 | 토큰 정보 없음, 재호출 발생 <br> 서비스와 HTTP에 동일 입력 | 토큰 `null`, 실제 `retry_count` 반영 <br> 없는 식별자 기록 제외 <br> 서비스와 HTTP의 프롬프트 및 출력 일치 | [test_storylines_api](../../../../../manyak-ai/tests/test_storylines_api.py) |
+| STL-01 | 입력 정규화 | 이름 생략, `null`, 공백만 있는 이름과 특징 <br> 주변 인물 생략 또는 `null` | 빈 이름은 미정 값, 빈 특징과 주변 인물은 빈 목록 <br> 이름과 특징을 NFC 정규화하고 앞뒤 공백과 빈 특징 항목 제거 <br> 이름 내부의 연속 공백과 개행은 공백 한 칸으로 변환 |
+| STL-02 | 입력 거부 | 허용하지 않는 성별, 문자열이 아닌 특징, 정규화 후 중복된 이름 | HTTP 422와 필드별 검증 오류 <br> 모델 호출 없음 |
+| STL-03 | 프롬프트 조립 | 인물 정보 일부 누락, 주변 인물 없음 <br> 자리표시자가 포함된 이름 | 입력한 인물 정보와 미정 표기 반영 <br> 입력 이름 안의 자리표시자를 다시 치환하지 않음 |
+| STL-04 | 출력 형식과 번호 | 후보 또는 추천 정보 개수 오류, 빈 줄거리 <br> 형식은 유효하지만 후보 번호가 누락되거나 순서가 잘못됨 | 형식 위반은 전체 재생성 최대 2회, 소진 시 502 <br> 번호만 잘못된 경우 재생성 없이 결과 순서대로 1, 2, 3 부여 |
+| STL-05 | 인물 누락과 보완 | 일부 후보에 이름을 입력한 주변 인물 누락 <br> 이름의 Unicode 표현 차이, 이름 미입력 인물 | NFC 정규화 후 이름 대조 <br> 누락된 후보만 보완 대상으로 지정 <br> 주인공과 이름 미입력 인물은 검사 제외 |
+| STL-06 | 보완 병합 | 수정 대상과 다른 번호, 범위 밖 번호 또는 형식이 잘못된 후보를 보완 결과로 반환 | 지정한 후보의 유효한 결과만 반영 <br> 병합 후 형식이 깨지면 교체 전 결과 복원 <br> 수정 대상이 아닌 후보 유지 |
+| STL-07 | 보완 소진 | 형식은 유효하지만 부분 보완 2회 뒤에도 입력 인물 누락 | 추가 보완 없이 현재 후보로 HTTP 200 <br> 남은 인물 누락 경고 기록 |
+| STL-08 | API와 메타 | 사용량 누락, 전체 재생성과 부분 보완 발생 <br> 같은 고정 모델 응답으로 서비스와 HTTP 요청 실행 | 알 수 없는 토큰은 `null` <br> 실제 전체 재생성과 부분 보완 횟수를 `retry_count`에 반영하고 SDK 재시도는 제외 <br> 전달하지 않은 식별자는 기록에서 제외 <br> 서비스와 HTTP의 프롬프트 및 출력 일치 |
 
 <br>
 
 ### 7-2-3 컴파일
 
-입출력 기준은 계약 문서를 따른다. ([5-3 컴파일 요청과 결과](5-CONTRACT.md#5-3-컴파일-요청과-결과))
+입출력과 내부 명세의 검증 조건을 확인한다. ([5-3 컴파일 요청과 결과](5-CONTRACT.md#5-3-컴파일-요청과-결과), [6-1-2 컴파일](6-1-AI-EXECUTION.md#6-1-2-컴파일))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 명세 검증 | 인물과 사건 수 경계값 <br> 엔딩 개수와 `min_turns` 하한 | 허용 범위 통과 <br> 개수와 타입 위반 거부 | [test_story_compile](../../../../../manyak-ai/tests/unit/test_story_compile.py) |
-| 프롬프트와 템플릿 | 추가 정보와 로어북 누락 <br> Gemini 모델 선택 | 빈 입력 대체 문구 반영 <br> 최초 생성과 보완에 공급자별 템플릿 적용 | [test_story_compile](../../../../../manyak-ai/tests/unit/test_story_compile.py) <br> [test_compile_characters](../../../../../manyak-ai/tests/unit/test_compile_characters.py) |
-| 입력 보존 | 생성 결과의 장르, 주인공 이름과 성별, 주변 인물 이름 변경 | 입력값 복원 <br> 비운 입력은 생성값 유지 <br> 보완 후 재적용 | [test_compile_protagonist](../../../../../manyak-ai/tests/unit/test_compile_protagonist.py) <br> [test_compile_characters](../../../../../manyak-ai/tests/unit/test_compile_characters.py) |
-| 필수 블록과 입력 인물 | 빈 필수값, 잘못된 객체 타입 <br> 내부 식별자 누락, 인물 누락과 개수 불일치 | 누락 블록 추출 <br> 입력 인물 오류 시 카드 블록 전체 보완 <br> 이미지 생성 전에 처리 | [test_story_compile](../../../../../manyak-ai/tests/unit/test_story_compile.py) <br> [test_compile_character_count](../../../../../manyak-ai/tests/unit/test_compile_character_count.py) |
-| 인물 필드와 병합 | 빈 이름, 중복 이름, 외형 누락 <br> 블록과 필드 동시 누락 | 입력 인물 우선 보존 <br> 요청한 위치와 필드의 유효한 값만 병합 <br> 카드 전체 보완 시 개별 필드 보완 제외 | [test_compile_characters](../../../../../manyak-ai/tests/unit/test_compile_characters.py) |
-| 부분 완료와 최종 실패 | 보완 후 엔딩 또는 외형 누락 <br> 필수 블록 누락이나 중복 이름 지속 | 엔딩 빈 배열, 외형 빈 문자열 허용 <br> 필수 블록과 이름 오류는 502 | [test_story_compile](../../../../../manyak-ai/tests/unit/test_story_compile.py) <br> [test_compile_characters](../../../../../manyak-ai/tests/unit/test_compile_characters.py) |
-| 출력 변환과 API | 유효한 명세, 모델 오류 <br> 스토리라인 인물 명단 전달 | 설정과 사건, 엔딩 변환 <br> 설정 문서에서 외형 제외 <br> 계약에 맞는 메타와 오류 출력 <br> 인물 보완 실패 시 이미지 생성 없이 502 | [test_story_compile](../../../../../manyak-ai/tests/unit/test_story_compile.py) <br> [test_story_compile_api](../../../../../manyak-ai/tests/test_story_compile_api.py) <br> [test_story_character_count_flow](../../../../../manyak-ai/tests/test_story_character_count_flow.py) |
+| CMP-01 | 명세 경계값 | 내부 명세의 인물 카드 0, 1, 5, 6명, 사건 2~6개 <br> 엔딩 0~4개, 최소 턴 수 0과 1 | 인물 1~5명, 사건 3~5개, 엔딩 0개 또는 3개만 통과 <br> 엔딩 최소 턴 수는 1 이상 정수만 허용 <br> 범위와 타입 위반은 명세 검증에서 거부 |
+| CMP-02 | 프롬프트와 템플릿 | 추가 정보와 로어북 누락 <br> Gemini 모델 선택 | 빈 입력의 대체 문구 반영 <br> 최초 생성과 보완 모두 공급자에 맞는 동일 작성 규칙 적용 |
+| CMP-03 | 입력 보존 | 생성 결과의 장르, 입력한 주인공 이름과 성별, 주변 인물 이름 변경 <br> 일부 입력은 미정 | 입력한 값 복원, 비운 입력은 생성값 유지 <br> 주변 인물은 내부 식별자로 연결 <br> 보완 병합 후에도 동일 규칙 재적용 |
+| CMP-04 | 필수 블록과 입력 인물 | 필수값 누락 또는 객체 타입 오류 <br> 입력 인물의 식별자 누락, 인물 누락 또는 개수 불일치 | 문제가 있는 블록을 보완 대상으로 지정 <br> 입력 인물 연결 오류는 카드 블록 전체 보완 <br> 명세 검증 전 이미지 호출 없음 |
+| CMP-05 | 인물 필드와 병합 | 빈 이름, 중복 이름 또는 외형 누락 <br> 블록과 인물 필드 동시 누락 | 입력 인물 우선 보존 <br> 요청한 위치와 필드의 유효한 값만 병합, 다른 값 유지 <br> 카드 전체 보완 시 위치 기반 개별 필드 보완 제외 |
+| CMP-06 | 부분 완료 | 보완 후에도 엔딩 또는 외형이 불완전하고 필수 스토리 명세는 유효함 | 엔딩은 빈 배열, 미생성 외형은 빈 문자열로 정리 <br> 외형이 부족한 인물 이미지는 호출 없이 `appearance_missing` <br> 컴파일 HTTP 200 |
+| CMP-07 | 필수 내용 복구 실패 | 보완 후에도 필수 블록 누락, 중복 이름 또는 입력 인물 불일치 지속 | 컴파일 HTTP 502 <br> 인물 이미지와 썸네일 생성 없음 |
+| CMP-08 | 출력 변환과 API | 설정, 시작, 사건과 엔딩을 포함한 유효 명세 <br> 스토리라인의 인물 명단을 컴파일 입력으로 전달 | 설정은 마크다운, 시작과 사건 및 엔딩은 계약의 구조화 필드로 반환 <br> 설정 마크다운에서 인물 외형 제외 <br> 인물별 소개와 외형, 이미지 및 호출 메타를 출력에 반영 |
 
 <br>
 
@@ -82,12 +65,12 @@
 
 생성 조건과 실패 출력은 해당 문서를 따른다. ([6-1-3 인물 이미지](6-1-AI-EXECUTION.md#6-1-3-인물-이미지), [7-1-5 실패 출력](7-1-ERROR-HANDLING.md#7-1-5-실패-출력))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 프롬프트와 외형 | 외형 충족 또는 누락 <br> 템플릿 파일과 블록 누락 | 인물별 프롬프트 조립 <br> 외형 부족 시 호출 생략 <br> 템플릿 누락 시 예외 | [test_image_characters](../../../../../manyak-ai/tests/unit/test_image_characters.py) |
-| 인물별 결과 | 전원 성공, 일부 실패, 전원 실패 <br> 빈 인물 목록 | 인물별 성공과 실패 결과 유지 <br> 다른 인물의 결과 보존 | [test_image_characters](../../../../../manyak-ai/tests/unit/test_image_characters.py) |
-| 출력과 실패 코드 | 성공 이미지, 공급자 오류 <br> 생성 로직 전체 예외 | 이미지 이름과 형식, Base64 출력 <br> 실패 시 정해진 오류 코드 <br> 전체 예외 시 빈 배열, 컴파일 200 유지 | [test_compile_images](../../../../../manyak-ai/tests/unit/test_compile_images.py) |
-| 썸네일과 동시 생성 | 두 이미지 생성 실행 <br> 한쪽 생성 실패 | 두 작업 동시 실행 <br> 성공한 쪽의 결과 유지 | [test_compile_thumbnail](../../../../../manyak-ai/tests/unit/test_compile_thumbnail.py) |
+| IMG-01 | 프롬프트와 외형 | 외형 6개가 모두 있는 인물과 일부 누락 인물 <br> 템플릿 파일 또는 필수 블록 누락 | 외형 완성 인물은 성별, 외형과 장르로 조립 <br> 외형 부족 인물은 호출 없이 `appearance_missing` <br> 템플릿 누락은 예외로 구분 |
+| IMG-02 | 인물별 결과 | 전원 성공, 일부 실패, 전원 실패 <br> 빈 인물 목록 | 입력 인물 순서로 성공 또는 실패 항목 유지 <br> 한 인물의 실패가 다른 인물 결과를 지우지 않음 <br> 전원 실패해도 인물별 오류 항목 유지 <br> 빈 입력은 빈 목록 |
+| IMG-03 | 출력과 묶음 실패 | 정상 이미지 반환 <br> 생성 로직에서 예상하지 못한 예외 발생 | 성공 시 인물별 이미지 이름, `image/webp`와 Base64 반환 <br> 묶음 예외 시 미완료 인물 작업 취소, 오류 보고와 빈 이미지 목록 <br> 컴파일 HTTP 200 유지 |
+| IMG-04 | 썸네일과 동시 생성 | 인물 이미지와 썸네일 생성 <br> 한쪽에서 일반 생성 실패 발생 | 두 작업 동시 실행 <br> 성공한 쪽의 결과 유지, 실패한 쪽만 이미지 오류 출력 |
 
 <br>
 
@@ -95,11 +78,11 @@
 
 생성 조건과 실패 출력은 해당 문서를 따른다. ([6-1-4 썸네일](6-1-AI-EXECUTION.md#6-1-4-썸네일), [7-1-5 실패 출력](7-1-ERROR-HANDLING.md#7-1-5-실패-출력))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 표지 인물 선택 | 외형 완성 인물 0명, 1명, 3명 이상 <br> 인물 없음 | 외형 완성 인물 중 앞의 최대 2명 사용 <br> 없으면 첫 인물의 일부 정보, 인물이 없으면 장르 사용 <br> 프롬프트에서 인물 이름 제외 | [test_image_thumbnail](../../../../../manyak-ai/tests/unit/test_image_thumbnail.py) |
-| 크기와 출력 | 정상 썸네일 생성 | 세로 3:4 크기 호출 <br> 이미지 이름과 형식, Base64 출력 | [test_compile_thumbnail](../../../../../manyak-ai/tests/unit/test_compile_thumbnail.py) <br> [test_image_generation](../../../../../manyak-ai/tests/unit/test_image_generation.py) |
-| 실패 처리 | 공급자 오류, 예상하지 못한 예외 | 썸네일 객체와 오류 코드 유지 <br> 컴파일 200 및 인물 이미지 보존 | [test_compile_thumbnail](../../../../../manyak-ai/tests/unit/test_compile_thumbnail.py) |
+| THM-01 | 표지 인물 선택 | 외형 완성 인물 0명, 1명, 3명 이상 <br> 인물 카드 없음 | 외형 완성 인물 중 카드 순서로 최대 2명 사용 <br> 완성 인물이 없으면 첫 카드의 일부 정보 사용 <br> 카드도 없으면 장르와 표지 지시로 조립 <br> 모든 경우 프롬프트에서 인물 이름 제외 |
+| THM-02 | 크기와 출력 | 정상 썸네일 생성 | 세로 3:4 크기로 호출 <br> `image_name`은 `썸네일_기본`, 형식은 `image/webp` <br> Base64 이미지에 값이 있고 `error`는 `null` |
+| THM-03 | 실패 처리 | 공급자 오류 또는 예상하지 못한 예외 | 썸네일 객체 유지, 이미지 값은 `null`, `error`는 정해진 코드 <br> 예상하지 못한 예외는 보고 후 `generation_failed` <br> 컴파일 HTTP 200과 인물 이미지 결과 유지 |
 
 <br>
 
@@ -107,20 +90,21 @@
 
 오류 분류와 복구 한도는 오류 처리 문서를 따른다. ([7-1 오류 처리](7-1-ERROR-HANDLING.md))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 텍스트 공급자 오류 | 시간 초과, 호출량 제한, 요청 거부와 연결 실패 | 분류별 502 메시지와 오류 기록 <br> 서비스의 추가 재호출 없음 | [test_story_llm_faults](../../../../../manyak-ai/tests/unit/test_story_llm_faults.py) <br> [test_sentry](../../../../../manyak-ai/tests/unit/test_sentry.py) |
-| 텍스트 파싱 | 빈 본문, 깨진 JSON, 객체가 아닌 출력 <br> 코드 펜스로 감싼 JSON | 유효하지 않은 출력 구분 <br> 코드 펜스 제거 후 유효한 JSON 허용 | [test_story_llm_faults](../../../../../manyak-ai/tests/unit/test_story_llm_faults.py) |
-| 재생성 한도 | 유효하지 않은 출력 반복 <br> 최초 생성부터 60초 경과 | 횟수 소진 시 502 <br> 60초 이후 새 재생성 없음 <br> 남은 시간으로 호출 제한 조정, 최소 1초 | [test_story_llm_faults](../../../../../manyak-ai/tests/unit/test_story_llm_faults.py) |
-| 설정과 사용량 | 미등록 모델, 잘못된 키와 인자 <br> 모델 이름 또는 사용량 없음 | 설정 오류를 502로 변환하지 않음 <br> 이미지 시작 검사 실패 <br> 누락 모델명은 입력값, 누락 토큰은 `null` | [test_story_llm_faults](../../../../../manyak-ai/tests/unit/test_story_llm_faults.py) <br> [test_image_generation](../../../../../manyak-ai/tests/unit/test_image_generation.py) |
-| 이미지 공급자 오류 | 시간 초과, 호출량 제한, 요청 거부 <br> 빈 데이터와 깨진 Base64 | 공통 이미지 예외로 변환 <br> 오류 문구를 정해진 코드로 변환 | [test_image_generation](../../../../../manyak-ai/tests/unit/test_image_generation.py) <br> [test_compile_images](../../../../../manyak-ai/tests/unit/test_compile_images.py) |
-| 오류와 호출 기록 | 공급자 실패, 형식 변환 실패, 외형 부족 <br> 사용량 일부 누락과 출력 해석 실패 | 실패 기록, 외형 부족은 보고 제외 <br> 받은 사용량만 기록 <br> 이미지 바이너리 기록 제외 | [test_image_characters](../../../../../manyak-ai/tests/unit/test_image_characters.py) <br> [test_compile_images](../../../../../manyak-ai/tests/unit/test_compile_images.py) <br> [test_image_generation](../../../../../manyak-ai/tests/unit/test_image_generation.py) |
-| 관측 실패 | 초기화, 추적 시작과 종료 실패 | 생성 요청 처리 유지 | [test_langfuse](../../../../../manyak-ai/tests/unit/test_langfuse.py) <br> [test_sentry](../../../../../manyak-ai/tests/unit/test_sentry.py) |
-| 모듈 경계 | 서비스의 SDK 직접 사용 | 공통 호출 모듈 사용 확인 <br> 자동 검사 범위는 OpenAI와 Anthropic | [test_llm_gateway_boundary](../../../../../manyak-ai/tests/unit/test_llm_gateway_boundary.py) |
+| ERR-01 | 텍스트 공급자 오류 | 시간 초과, 호출량 제한, 요청 거부와 연결 실패 <br> SDK가 복구하지 못한 오류 전달 | HTTP 502와 오류 분류에 맞는 정제 메시지 <br> 공급자 원문을 응답에 넣지 않음 <br> 오류 기록, 서비스의 추가 재호출 없음 |
+| ERR-02 | 텍스트 파싱 | 빈 본문, 깨진 JSON, 객체가 아닌 출력 <br> 코드 펜스로 감싼 유효한 JSON 객체 | 코드 펜스 제거 후 유효한 JSON 객체만 허용 <br> 잘못된 스토리라인 출력은 형식 재생성 대상 <br> 컴파일 최초 출력의 파싱 실패는 재생성 없이 502 |
+| ERR-03 | 스토리라인 재생성 한도 | 유효하지 않은 출력 반복 <br> 최초 생성 시작 후 60초 전과 이후 | 전체 재생성 최대 2회, 복구 실패 시 502 <br> 60초 이후 새 전체 재생성 없음 <br> 최초 생성과 전체 재생성의 90초 예산에서 남은 시간을 호출 한도로 전달, 최소 1초 |
+| ERR-04 | 설정 오류 | 미등록 모델, 누락된 키 또는 잘못된 호출 인자 | 설정 오류를 공급자 오류나 502로 변환하지 않음 <br> 이미지 시작 검사에서 설정 오류가 나면 기동 실패 |
+| ERR-05 | 모델과 사용량 누락 | 공급자 응답에 모델명 또는 토큰 사용량 없음 | 누락 모델명은 요청 모델명으로 기록 <br> 알 수 없는 입력과 출력 사용량은 각각 `null`로 유지 |
+| ERR-06 | 이미지 공급자 오류 | 시간 초과, 호출량 제한, 요청 거부 <br> 빈 이미지 데이터와 깨진 Base64 | 각각 `timeout`, `rate_limited`, `rejected` <br> 빈 데이터와 디코딩 실패는 `generation_failed` <br> 외부 응답에 공급자 오류 원문 없음 |
+| ERR-07 | 오류와 호출 기록 | 공급자 실패, 형식 변환 실패, 외형 부족 <br> 사용량 일부 누락과 출력 해석 실패 | 호출 및 형식 실패 기록 <br> 외형 부족은 생성 실패 보고에서 제외 <br> 받은 사용량만 기록하고 이미지 바이너리는 기록하지 않음 |
+| ERR-08 | 관측 실패 | 관측 초기화, 추적 시작 또는 종료 실패 | 관측 오류로 생성 요청을 실패시키지 않음 <br> 생성 결과와 원래 생성 오류 처리 유지 |
+| ERR-09 | 모듈 경계 | 서비스에서 공급자 SDK 직접 사용 여부 검사 | 공통 모델 호출 모듈만 사용 <br> 현재 자동 검사 범위는 OpenAI와 Anthropic |
 
 <br>
 
-**자동 테스트가 없는 항목**
+**자동 검증의 한계**
 
 | 항목 | 현재 상태 |
 |---|---|
@@ -134,15 +118,15 @@
 
 ### 7-2-7 통합 테스트
 
-실제 모델 호출은 수동으로 실행하며, 컴파일과 채팅 연결 테스트는 모델 호출 없이 CI에서도 실행한다.
+실제 모델 호출은 수동으로 실행하며, 컴파일과 채팅 연결 테스트는 모델 호출 없이 CI에서도 실행한다. 통합 범위는 생성과 결과 연결이다. ([6-1 AI 실행](6-1-AI-EXECUTION.md), [5 계약](5-CONTRACT.md))
 
-| 확인 항목 | 입력과 상황 | 기대 결과 | 테스트 코드 |
+| ID | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|---|
-| 스토리라인 HTTP | 고정 입력 한 건 | 200, 후보 3편과 후보별 추천 정보 3개 <br> 빈 값 없음, 토큰 메타 확인 | [test_storylines_live](../../../../../manyak-ai/tests/integration/test_storylines_live.py) |
-| 컴파일 서비스 | 고정 입력 한 건 | 설정 문서 형식 <br> 첫 선택지 3개, 사건 3~5개, 엔딩 0개 또는 3개 <br> 토큰 메타 확인 | [test_story_compile_live](../../../../../manyak-ai/tests/integration/test_story_compile_live.py) |
-| 컴파일 보완 | 블록과 인물 필드가 함께 누락된 명세 | 보완 호출 한 번으로 요청한 부분만 수정 | [test_story_compile_live](../../../../../manyak-ai/tests/integration/test_story_compile_live.py) |
-| 이미지 생성 | 고정 프롬프트 | WebP 형식 <br> 썸네일의 세로 크기 확인 | [test_image_generation_live](../../../../../manyak-ai/tests/integration/test_image_generation_live.py) |
-| 컴파일과 채팅 연결 | 저장된 명세 | 설정, 주요 사건과 엔딩을 채팅 프롬프트에 반영 | [test_compile_chat_chaining](../../../../../manyak-ai/tests/integration/test_compile_chat_chaining.py) |
+| INT-01 | 스토리라인 HTTP | 고정 입력으로 실제 텍스트 모델을 호출하는 HTTP 요청 | HTTP 200, 후보 3편과 후보별 추천 정보 3개 <br> 줄거리와 추천 정보가 빈 문자열이 아님 <br> 호출 사용량 메타 수신 |
+| INT-02 | 컴파일 서비스 | 고정 입력으로 실제 모델을 사용하는 컴파일 서비스 직접 호출 | 계약에 맞는 설정 마크다운과 구조화 필드 <br> 첫 선택지 3개, 사건 3~5개, 엔딩 0개 또는 3개 <br> 호출 사용량 메타 수신 |
+| INT-03 | 컴파일 보완 | 블록과 인물 필드가 함께 누락된 명세로 보완 호출 | 보완 호출 한 번으로 요청한 블록과 필드 수정 <br> 수정 대상이 아닌 값 유지 |
+| INT-04 | 이미지 생성 | 고정 입력으로 실제 이미지 모델 호출 | WebP 이미지 반환 <br> 썸네일은 세로 3:4 크기 |
+| INT-05 | 컴파일과 채팅 연결 | 저장된 유효 명세를 컴파일 응답으로 변환해 채팅 입력에 전달 <br> 모델 호출 없음 | 설정, 주요 사건과 엔딩이 채팅 프롬프트에 반영 |
 
 <br>
 
