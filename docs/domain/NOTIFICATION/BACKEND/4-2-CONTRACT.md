@@ -95,6 +95,7 @@
 | `scheduledAt` | `string` | 예약 시각 |
 | `status` | `string` | `SCHEDULED`, `SENDING`, `SENT`, `CANCELED`, `FAILED` |
 | `noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
+| `storyId` | `string / null` | 이동 대상 스토리의 공개 식별자<br>프로모션이 스토리로 이어질 때만 |
 | `targetCount` | `integer / null` | 마지막 회차의 대상 수<br>회차 전은 `null` |
 | `sentCount` | `integer / null` | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수<br>실제 도달 수가 아님 |
 | `deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수<br>발송 결과 행의 집계 |
@@ -682,7 +683,8 @@ Content-Type: application/json
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
 | `PROMOTION` | `body` | `string` | 본문 |
 | `PROMOTION` | `noticeId` | `string` | 광고성 공지일 때만<br>공지 공개 식별자 |
-| `PROMOTION` | `deepLink` | `string` | 광고성 공지일 때만<br>`/notices/{noticeId}` |
+| `PROMOTION` | `storyId` | `string` | 이동 대상 스토리가 있을 때만<br>스토리 공개 식별자 |
+| `PROMOTION` | `deepLink` | `string` | 광고성 공지는 `/notices/{noticeId}`<br>이동 대상 스토리는 `/stories/{storyId}`<br>둘 다 없으면 필드 없음 |
 
 | `status` | `title` | `body` |
 |---|---|---|
@@ -774,6 +776,7 @@ Authorization: Bearer {adminToken}
       "scheduledAt": "2026-10-24T01:00:00Z",
       "status": "SCHEDULED",
       "noticeId": null,
+      "storyId": null,
       "targetCount": null,
       "sentCount": null,
       "deliveredMembers": 0,
@@ -810,9 +813,11 @@ Authorization: Bearer {adminToken}
 | `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
 | `body` | `string` | 필수 | 1~300자 |
 | `scheduledAt` | `string` | 선택 | 예약 시각<br>생략하면 현재 시각으로 즉시 발송 |
+| `storyId` | `string` | 선택 | 알림을 누르면 열 스토리의 공개 식별자<br>발행 상태이고 공개이며 삭제되지 않은 스토리만 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 종류는 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
+- `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다.
 - 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-15 대상 수 미리보기](#4-2-15-대상-수-미리보기))
 
 <br>
@@ -821,7 +826,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시각, 시각 형식 오류 |
+| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시각, 시각 형식 오류<br>`storyId`가 UUID 형식이 아니거나 공개 스토리가 아님 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1313,7 +1318,7 @@ Authorization: Bearer {adminToken}
 
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|
-| STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트 |
+| STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트, 캠페인 이동 대상 스토리의 공개 판정 |
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
 | NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
 | ADMIN | 없음 | 관리자 요청자와 변경 감사 기록 |

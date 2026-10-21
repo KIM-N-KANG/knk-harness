@@ -70,7 +70,7 @@ erDiagram
 | `category` | varchar(10) | NOT NULL, CHECK `CHANGE` `ACCESS` | 변경 작업 또는 개인정보 조회 |
 | `action` | varchar(50) | NOT NULL | 작업 이름<br>목록은 아래 |
 | `target_type` | varchar(30) | NOT NULL | 대상 종류<br>목록은 아래 |
-| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본은 공개 식별자<br>정책값은 정책 키<br>검색은 검색어 |
+| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본, 스토리는 공개 식별자<br>정책값은 정책 키<br>검색은 검색어 |
 | `reason` | varchar(500) | | 사유<br>변경 작업은 NOT NULL, 조회는 NULL |
 | `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL<br>필드는 아래 기록 허용 목록만 |
 | `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL<br>필드는 아래 기록 허용 목록만 |
@@ -103,6 +103,9 @@ erDiagram
 | `NOTICE_UNPUBLISHED` | `CHANGE` | `NOTICE` | NOTICE |
 | `NOTICE_DELETED` | `CHANGE` | `NOTICE` | NOTICE |
 | `SUBMISSION_HOLD_RELEASED` | `CHANGE` | `SUBMISSION` | MODERATION |
+| `ORIGINAL_CREATED` | `CHANGE` | `STORY` | STORY |
+| `ORIGINAL_UPDATED` | `CHANGE` | `STORY` | STORY |
+| `ORIGINAL_THUMBNAIL_DELETED` | `CHANGE` | `STORY` | STORY |
 
 변경 전후 값에 넣을 수 있는 필드는 작업마다 다음으로 한정한다. 목록에 없는 필드는 넣지 않는다. 회원의 이메일, 닉네임, 소셜 식별자, 프로필 이미지, 채팅 메시지 원문은 어떤 작업에서도 넣지 않는다.
 
@@ -122,6 +125,9 @@ erDiagram
 | `NOTICE_PUBLISHED`, `NOTICE_UNPUBLISHED` | `status`, `publishedAt`, `notifiedAt` | `status`, `publishedAt`, `notifiedAt` |
 | `NOTICE_DELETED` | `title`, `status` | 없음 |
 | `SUBMISSION_HOLD_RELEASED` | `holdReason`, `attempt` | 없음 |
+| `ORIGINAL_CREATED` | 없음 | `status`, `visibility`, `title`, `genres` |
+| `ORIGINAL_UPDATED` | `status`, `visibility`, `title`, `genres` | `status`, `visibility`, `title`, `genres` |
+| `ORIGINAL_THUMBNAIL_DELETED` | `thumbnailUrl` | 없음 |
 
 공지 본문은 5,000자까지라 변경 전후 값의 상한을 넘으므로 넣지 않는다. 변경 내용은 공지 상세로 확인한다.
 

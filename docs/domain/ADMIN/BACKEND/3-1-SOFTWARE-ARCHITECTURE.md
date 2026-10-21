@@ -24,7 +24,7 @@ flowchart LR
 서버 측 처리기`"] -->|REST, 관리자 토큰| S["`**ADMIN 도메인**
 판정 필터, 감사 기록, 대시보드`"]
     A -->|REST, 관리자 토큰| O["`**PAYMENT, NOTIFICATION, NOTICE,
-ACCOUNT, MODERATION**
+ACCOUNT, MODERATION, STORY**
 각 도메인의 관리자 API`"]
     O -->|요청자 판정, 감사 기록| S
     S -->|신원 검증, 회원 조회| AC["`**ACCOUNT**

@@ -130,6 +130,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
 | `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함 |
 | `notice_id` | bigint | FK `notices.id`, UNIQUE | 공지 알림이면 그 공지<br>프로모션은 NULL |
+| `story_id` | bigint | FK `stories.id` | 이동 대상 스토리<br>없으면 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
