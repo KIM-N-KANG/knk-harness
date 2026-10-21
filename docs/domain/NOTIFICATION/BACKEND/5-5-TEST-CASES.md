@@ -225,12 +225,12 @@
 | 동시 보고 | 같은 `messageId` 동시 2건 | 행 1개, 둘 다 204 |
 | 입력 오류 | `DELIVERED`인데 기기 0, 없는 캠페인, 모르는 `outcome`, 256자 식별자, 시크릿 누락 | 400, 400, 400, 400, 401 |
 | 소비자 보고 시점 | 성공, 폐기, 재전달, 완료된 메시지 재수신 | 보고 1회, 1회, 없음, 없음 |
-| 재전달 뒤 보고 | 토큰 2개 중 1개 일시 오류 뒤 재전달에서 나머지 성공 | 보고 1회, `deliveredDevices` 2, `failedDevices` 0 |
+| 재전달 뒤 보고 | 토큰 2개 중 1개에서 일시 오류 발생 후 재전달에서 나머지 성공 | 보고 1회, `deliveredDevices` 2, `failedDevices` 0 |
 | 보고 실패 | 서버 응답 없음<br>없는 경로 응답 | WARN `push_delivery_report_failed`, 소비 결과는 그대로 확인 |
 | 로컬 모드 | 로컬 모드 완성 알림 발송 | 서버 안 발송기가 결과 행 기록 |
-| 캠페인 집계 | 캠페인 메시지 3건이 도달 2건(기기 3), 폐기 1건 | 목록과 상세의 `deliveredMembers` 2, `deliveredDevices` 3, `failedDevices` 0 |
+| 캠페인 집계 | 캠페인 메시지 3건이 도달 2건(기기 3)과 폐기 1건 | 목록과 상세의 `deliveredMembers` 2, `deliveredDevices` 3, `failedDevices` 0 |
 | 캠페인 상세 | 있는 식별자, 없는 식별자, UUID 아님 | 200, 404, 400 |
 | 시나리오별 날짜별 집계 | 10-20 KST 23:30 `NOTICE` 도달, 10-21 KST 00:10 `NOTICE` 도달, 10-21 `ATTENDANCE_REMINDER` 폐기 | 10-21 `NOTICE` 1건 도달, 10-21 `ATTENDANCE_REMINDER` 요청 1 도달 0, 10-20 `NOTICE` 1건 |
 | 기본 기간 | `from`과 `to` 생략<br>366일 | 오늘까지 7일<br>200과 날짜 행 |
-| 기간 오류 | 367일, `from`이 `to`보다 뒤, `2026/10/21`, 모르는 `type` | 400 |
+| 기간 오류 | 367일, `from`이 `to`보다 늦음, `2026/10/21`, 모르는 `type` | 400 |
 | 팀 계정 | 팀 계정 회원의 도달 | 집계에 포함 |

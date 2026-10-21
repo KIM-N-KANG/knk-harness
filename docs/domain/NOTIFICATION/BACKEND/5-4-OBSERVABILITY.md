@@ -87,7 +87,7 @@ Fluent Bit`"]
 | 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 소비 결과, 알림 발송 응답의 `reason` 값 |
 | 큐 소비 재시도 | 예외<br>평문 WARN | 메시지 식별자, 예외 클래스 |
 | 자격 조회 실패 | 알림 서비스<br>평문 WARN | 회원 공개 식별자, 예외 클래스 |
-| 결과 보고 실패 | 알림 서비스<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자, HTTP 상태 또는 예외 클래스 |
+| 결과 보고 실패 | 알림 서비스<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자와 HTTP 상태 또는 예외 클래스 |
 
 <details>
 <summary><b>예시: 출석 회차 로그 1줄</b></summary>

@@ -84,7 +84,7 @@
 
 **6. 공통 응답 구조**
 
-캠페인 목록 항목과 상세, 예약, 취소, 재실행의 응답은 같은 캠페인 구조를 쓴다.
+캠페인 목록의 항목과 상세, 예약, 취소, 재실행 응답은 같은 캠페인 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -1131,16 +1131,16 @@ Content-Type: application/json
 |---|---|---|---|
 | `messageId` | `string` | 필수 | 메시지 식별자, 1~255자 |
 | `type` | `string` | 필수 | 큐 메시지의 `type` |
-| `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
+| `kind` | `string` | 필수 | `SERVICE`와 `MARKETING` |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `campaignId` | `string` | 선택 | 푸시 데이터의 캠페인 공개 식별자<br>캠페인 메시지만 |
 | `outcome` | `string` | 필수 | `DELIVERED`, `UNDELIVERED`, `DISCARDED` |
 | `reason` | `string` | 필수 | 알림 발송 응답의 `reason` 값, 1~40자 |
-| `deliveredDevices` | `integer` | 필수 | 0 이상<br>`DELIVERED`면 1 이상, 그 외는 0 |
+| `deliveredDevices` | `integer` | 필수 | 0 이상<br>`DELIVERED`면 1 이상이고 그 외는 0 |
 | `failedDevices` | `integer` | 필수 | 0 이상 |
 | `completedAt` | `string` | 필수 | 처리가 끝난 시각 |
 
-- 같은 `messageId`의 재보고는 저장을 바꾸지 않고 성공으로 응답한다.
+- 같은 `messageId`의 재보고는 저장된 행을 바꾸지 않고 성공으로 응답한다.
 
 <br>
 
@@ -1248,10 +1248,10 @@ Content-Type: application/json
 |---|---|---|
 | `from` | `string` | 적용된 시작 날짜 |
 | `to` | `string` | 적용된 끝 날짜 |
-| `items` | `object[]` | 날짜 내림차순, 같은 날은 `type` 오름차순<br>결과 행이 없는 날과 시나리오는 없음 |
+| `items` | `object[]` | 날짜 내림차순이며 같은 날은 `type` 오름차순<br>결과 행이 없는 날과 시나리오는 없음 |
 | `items[].date` | `string` | 완료 시각의 KST 날짜 |
 | `items[].type` | `string` | 시나리오 식별자 |
-| `items[].kind` | `string` | `SERVICE`, `MARKETING` |
+| `items[].kind` | `string` | `SERVICE`와 `MARKETING` |
 | `items[].requested` | `integer` | 처리가 끝난 메시지 수 |
 | `items[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 메시지 수 |
 | `items[].deliveredDevices` | `integer` | 도달 기기 수의 합 |
@@ -1263,7 +1263,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 뒤, 366일 초과, 지원하지 않는 `type` |
+| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 늦음, 366일 초과, 지원하지 않는 `type` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
