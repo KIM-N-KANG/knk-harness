@@ -74,7 +74,7 @@ erDiagram
 | `reason` | varchar(500) | | 사유<br>변경 작업은 NOT NULL, 조회는 NULL |
 | `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL |
 | `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL |
-| `request_id` | varchar(64) | NOT NULL | 요청 ID |
+| `request_id` | varchar(64) | NOT NULL | 상관관계 필터가 확정한 요청 ID<br>헤더 값이 조건에 어긋나면 서버 생성 값 |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -96,6 +96,7 @@ erDiagram
 | `PUSH_CAMPAIGN_CANCELED` | `CHANGE` | `PUSH_CAMPAIGN` | NOTIFICATION |
 | `PUSH_CAMPAIGN_RETRIED` | `CHANGE` | `PUSH_CAMPAIGN` | NOTIFICATION |
 | `PUSH_TEMPLATE_UPSERTED` | `CHANGE` | `PUSH_TEMPLATE` | NOTIFICATION |
+| `PUSH_TEMPLATE_RESET` | `CHANGE` | `PUSH_TEMPLATE` | NOTIFICATION |
 | `NOTICE_CREATED` | `CHANGE` | `NOTICE` | NOTICE |
 | `NOTICE_UPDATED` | `CHANGE` | `NOTICE` | NOTICE |
 | `NOTICE_PUBLISHED` | `CHANGE` | `NOTICE` | NOTICE |

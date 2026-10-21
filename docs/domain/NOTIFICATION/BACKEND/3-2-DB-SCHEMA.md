@@ -99,7 +99,7 @@ erDiagram
 | `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder` 하나 |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
-| `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
+| `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행, 같으면 `id`가 큰 행 |
 | `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용<br>기본 문구로 복귀할 때 현재 시각으로 갱신 |
 
 | 인덱스 | 컬럼 |

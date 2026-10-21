@@ -75,7 +75,7 @@
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 401 | `UNAUTHORIZED` | 인증 필수 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>내부 API의 시크릿 누락 또는 불일치<br>관리자 경로의 토큰 누락, 만료, 위조, 관리자 표식 없음 |
-| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴 |
+| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴, 회원 없음 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 404 | `NOT_FOUND` | 내부 API의 시크릿 미설정 환경 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
@@ -96,7 +96,7 @@
 | `status` | `string` | `SCHEDULED`, `SENDING`, `SENT`, `CANCELED`, `FAILED` |
 | `noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `targetCount` | `integer / null` | 마지막 회차의 대상 수<br>회차 전은 `null` |
-| `sentCount` | `integer / null` | 마지막 회차에 기록한 발송 요청 수 |
+| `sentCount` | `integer / null` | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수<br>실제 도달 수가 아님 |
 | `startedAt` | `string / null` | 선점 시각 |
 | `finishedAt` | `string / null` | 회차 종료 시각 |
 | `createdAt` | `string` | |
@@ -900,7 +900,7 @@ Content-Type: application/json
 | `campaignId` | 경로 | 필수 | 캠페인 공개 식별자 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 예약 상태로 돌아가 다음 폴링에서 다시 실행된다. 이미 기록된 회원의 요청은 중복 기록되지 않는다.
+- 예약 상태로 돌아가 다음 폴링에서 다시 실행된다. 원격 모드에서는 이미 기록된 회원의 요청이 중복 기록되지 않는다. 로컬 모드에는 회원별 기록이 없어 이미 받은 회원에게 다시 갈 수 있다.
 
 <br>
 
@@ -993,7 +993,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `templateKey` | `string` | |
-| `effective` | `object` | 현재 적용되는 문구 |
+| `effective` | `object` | 저장소의 현재 행으로 계산한 지금 적용되는 문구<br>발송기는 스냅샷을 읽으므로 갱신 주기 안에 같아짐 |
 | `effective.title` | `string` | 광고 표기 없는 제목 |
 | `effective.body` | `string` | |
 | `effective.isDefault` | `boolean` | 기본 문구면 `true` |
@@ -1029,11 +1029,11 @@ Authorization: Bearer {adminToken}
 | `templateKey` | 경로 | 필수 | `attendance_reminder` |
 | `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
 | `body` | `string` | 필수 | 1~300자 |
-| `effectiveFrom` | `string` | 선택 | 적용 시작<br>생략하면 현재 |
+| `effectiveFrom` | `string` | 선택 | 적용 시작, 현재 이후<br>생략하면 현재 |
 | `effectiveUntil` | `string` | 선택 | 적용 종료<br>생략하면 상시 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 오버라이드 행을 추가한다. 기존 행은 바꾸지 않는다.
+- 오버라이드 행을 추가한다. 기존 행은 바꾸지 않는다. 같은 시점에 유효한 행이 여럿이면 적용 시작이 가장 늦은 행, 그것도 같으면 나중에 추가된 행을 쓴다.
 
 <br>
 
@@ -1041,7 +1041,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 종료가 시작 이전, 시각 형식 오류 |
+| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시작, 종료가 시작 이전, 시각 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 템플릿 키 |
 
 <details>
@@ -1096,7 +1096,7 @@ Content-Type: application/json
 | `templateKey` | 경로 | 필수 | `attendance_reminder` |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 현재 유효한 행과 아직 시작하지 않은 행의 종료 시각을 현재로 바꾼다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
+- 현재 유효한 행의 종료 시각을 현재로, 아직 시작하지 않은 행의 종료 시각을 그 행의 시작 시각으로 바꾼다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
 
 <br>
 

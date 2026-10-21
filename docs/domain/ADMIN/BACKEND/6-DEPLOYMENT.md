@@ -55,7 +55,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 집계에서만 제외하며 기본값은 통계 대시보드의 팀 계정 목록 |
+| `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 집계에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음 |
 
 관리자 토큰 수명과 대상 클레임 값은 설정 파일의 고정값이다.
 
