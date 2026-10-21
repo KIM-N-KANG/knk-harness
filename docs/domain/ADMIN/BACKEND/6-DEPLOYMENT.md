@@ -55,7 +55,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 집계에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음 |
+| `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
 관리자 토큰 수명과 대상 클레임 값은 설정 파일의 고정값이다.
 
@@ -67,6 +67,7 @@
 |---|---|
 | `MANYAK_AUTH_JWT_SECRET` | 관리자 토큰 서명과 검증<br>바꾸면 발급된 관리자 토큰이 전부 무효 |
 | `MANYAK_GOOGLE_CLIENT_IDS` | 관리자 로그인의 신원 증명 대상 검증<br>관리자 페이지의 Google client ID가 목록에 있어야 함 |
+| `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 스토리 목록의 `original` 범위 판정<br>제작 세션 차트의 제외 목록 보정<br>비어 있으면 모든 스토리가 `user` |
 
 <br>
 
@@ -151,7 +152,8 @@
 | 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동<br>`UP` |
 | 관리자 로그인 | 로그 `admin_login_succeeded`<br>`admin_login_rejected` | 역할 있는 계정이 로그인됨 |
 | 권한 판정 | 로그 `admin_access_denied` | 급증하지 않음 |
-| 대시보드 | 대시보드 요약 응답 | 모든 지표가 채워짐 |
+| 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
+| 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 200과 `totalElements` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>

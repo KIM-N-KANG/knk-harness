@@ -89,7 +89,8 @@ Fluent Bit`"]
 | 관리자 로그인 | 로그 `admin_login_rejected`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/auth/login/google` 401과 403 비율 |
 | 권한 판정 | 로그 `admin_access_denied`<br>요청 로그의 `/api/v1/admin/` 접두 경로 401과 403 비율 |
 | 운영 작업 | 감사 로그 조회<br>실패한 요청은 감사 로그에 없고 요청 로그에만 있음 |
-| 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary` 500 비율<br>`duration_ms` |
+| 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary`와 `/api/v1/admin/dashboard/charts` 500 비율<br>`duration_ms` |
+| 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms` |
 | 접속 기록 | 접속 기록 실패 WARN |
 
 <br>
@@ -100,7 +101,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 
 | 지표 | 종류와 태그 | 의미 |
 |---|---|---|
-| `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 관리자 경로의 요청률, 401과 403 비율, 대시보드 응답 시간 |
+| `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 관리자 경로의 요청률, 401과 403 비율, 대시보드와 목록 응답 시간 |
 
 | 항목 | 기준과 제한 |
 |---|---|
@@ -114,7 +115,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
-| 스팬 | HTTP 요청 아래에 JDBC(QUERY만 포함하며 바인딩 값 제외) 스팬<br>대시보드는 집계 쿼리마다 JDBC 스팬 |
+| 스팬 | HTTP 요청 아래에 JDBC(QUERY만 포함하며 바인딩 값 제외) 스팬<br>대시보드는 집계 쿼리마다, 목록은 전체 건수와 페이지 쿼리마다 JDBC 스팬 |
 | 제외 | actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB 관측은 노이즈 필터가 제외 |
 
 <br>
@@ -138,7 +139,8 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 | 신원 증명<br>관리자 토큰 | 로그, Sentry, 트레이스에 기록하지 않음 |
 | 사유 | 감사 로그에만<br>로그에 기록하지 않음 |
 | 변경 전후 값 | 감사 로그에만 |
-| 검색어 | 감사 로그의 대상 식별자에만<br>로그에 기록하지 않음 |
+| 검색어 | 감사 로그의 대상 식별자에만<br>로그에 기록하지 않음<br>요청 로그 `endpoint`는 쿼리 문자열을 포함하지 않음 |
+| 채팅 메시지 원문 | 조회하지 않으므로 로그, 응답, 트레이스에 없음 |
 | 관리자 식별자 | 로그에는 공개 식별자 |
 | 요청 경로 | 요청 로그 `endpoint`와 Sentry breadcrumb에 기록<br>경로에 비밀값 없음 |
 | Sentry 요청 필드 | 관리자 로그인 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |

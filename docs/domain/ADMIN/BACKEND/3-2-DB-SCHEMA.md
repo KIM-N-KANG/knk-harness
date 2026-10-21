@@ -72,8 +72,8 @@ erDiagram
 | `target_type` | varchar(30) | NOT NULL | 대상 종류<br>목록은 아래 |
 | `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본은 공개 식별자<br>정책값은 정책 키<br>검색은 검색어 |
 | `reason` | varchar(500) | | 사유<br>변경 작업은 NOT NULL, 조회는 NULL |
-| `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL |
-| `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL |
+| `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL<br>필드는 아래 기록 허용 목록만 |
+| `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL<br>필드는 아래 기록 허용 목록만 |
 | `request_id` | varchar(64) | NOT NULL | 상관관계 필터가 확정한 요청 ID<br>헤더 값이 조건에 어긋나면 서버 생성 값 |
 
 | 인덱스 | 컬럼 |
@@ -104,19 +104,46 @@ erDiagram
 | `NOTICE_DELETED` | `CHANGE` | `NOTICE` | NOTICE |
 | `SUBMISSION_HOLD_RELEASED` | `CHANGE` | `SUBMISSION` | MODERATION |
 
+변경 전후 값에 넣을 수 있는 필드는 작업마다 다음으로 한정한다. 목록에 없는 필드는 넣지 않는다. 회원의 이메일, 닉네임, 소셜 식별자, 프로필 이미지, 채팅 메시지 원문은 어떤 작업에서도 넣지 않는다.
+
+| `action` | `before_state` | `after_state` |
+|---|---|---|
+| `MEMBER_SUSPENDED`, `MEMBER_UNSUSPENDED` | `status` | `status` |
+| `CREDIT_GRANTED` | `balance` | `balance`, `amount`, `expiresInDays`, `expiresAt` |
+| `CREDIT_REVOKED` | `balance` | `balance`, `amount`, `shortfall` |
+| `CREDIT_POLICY_UPSERTED` | `policyKey`, `value`, `endsAt` | `policyKey`, `value`, `endsAt` |
+| `CREDIT_POLICY_DELETED` | `policyKey`, `value`, `endsAt` | 없음 |
+| `PUSH_CAMPAIGN_CREATED` | 없음 | `kind`, `title`, `body`, `scheduledAt`, `status`, `storyId` |
+| `PUSH_CAMPAIGN_CANCELED`, `PUSH_CAMPAIGN_RETRIED` | `status`, `scheduledAt` | `status`, `scheduledAt` |
+| `PUSH_TEMPLATE_UPSERTED` | 없음 | `templateKey`, `title`, `body`, `effectiveFrom`, `effectiveUntil` |
+| `PUSH_TEMPLATE_RESET` | `templateKey`와 종료한 행마다 `title`, `body`, `effectiveFrom`, `effectiveUntil` | 없음 |
+| `NOTICE_CREATED` | 없음 | `title`, `status` |
+| `NOTICE_UPDATED` | `title`, `status` | `title`, `status` |
+| `NOTICE_PUBLISHED`, `NOTICE_UNPUBLISHED` | `status`, `publishedAt`, `notifiedAt` | `status`, `publishedAt`, `notifiedAt` |
+| `NOTICE_DELETED` | `title`, `status` | 없음 |
+| `SUBMISSION_HOLD_RELEASED` | `holdReason`, `attempt` | 없음 |
+
+공지 본문은 5,000자까지라 변경 전후 값의 상한을 넘으므로 넣지 않는다. 변경 내용은 공지 상세로 확인한다.
+
 <br>
 
 ### 3-2-5 참조하는 다른 도메인의 컬럼
 
 | 테이블 | 컬럼 | ADMIN이 하는 일 |
 |---|---|---|
-| `users` | `id`, `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 검색과 상세, 회원 수와 탈퇴 수 집계, 팀 계정 제외 판정 |
-| `story_chats` | `created_at`<br>`user_id` | 채팅 시작 수<br>회원 상세의 채팅 수 |
-| `story_messages` | `role`<br>`created_at` | 채팅 턴 수 |
-| `stories` | `created_at`, `user_id`, `deleted_at` | 스토리 수<br>회원 상세의 스토리 수 |
-| `credit_transactions` | `amount`, `reason`, `created_at` | 이프 지급과 소진 |
-| `credit_orders` | `status`, `price_krw`, `completed_at`, `refunded_at` | 결제 건수와 금액<br>환불 건수 |
-| `story_submissions` | `held_at` | 검수 보류 수 |
+| `users` | `id`, `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 목록과 상세, 회원 수 집계, 팀 계정 제외 판정, 소유자 요약 |
+| `social_accounts` | `user_id`, `email`, `deleted_at` | 회원 목록의 이메일 정확 일치 검색 |
+| `story_chats` | `id`, `public_id`, `story_id`, `user_id`, `current_turn`, `created_at`, `updated_at`, `deleted_at` | 채팅 시작 수, 채팅방 목록과 상세, 턴 분포, 유지율, 회원의 채팅방 수와 최근 활동 |
+| `story_messages` | `chat_id`, `role`, `created_at` | 채팅 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
+| `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
+| `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
+| `story_creation_characters` | `creation_session_id`, `role` | 주변 인물 수 |
+| `story_creation_session_tags` | `creation_session_id`, `tag_id` | 스토리의 태그 |
+| `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
+| `ai_call_logs` | `feature`, `status`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅방의 AI 호출 필터 |
+| `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 지급과 소진, 출석, 회원 거래 내역과 소모, 채팅방 소모, 결제 전후 비교 |
+| `credit_orders` | `id`, `public_id`, `user_id`, `product_id`, `status`, `price_krw`, `credit_amount`, `completed_at`, `refunded_at`, `reversal_shortfall` | 결제 건수와 금액, 결제 내역과 상세, 회원 결제액 |
+| `story_submissions` | `story_id`, `status`, `held_at` | 스토리의 보류 상태 |
 
 <br>
 
