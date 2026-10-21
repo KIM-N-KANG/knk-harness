@@ -712,6 +712,7 @@ Content-Type: application/json
 | `memberId` | `string` | 필수 | 회원 공개 식별자 |
 | `type` | `string` | 필수 | `GRANT`는 지급<br>`REVOKE`는 회수 |
 | `amount` | `integer` | 필수 | 1~100,000 |
+| `expiresInDays` | `integer` | 선택 | 지급 로트의 유효기간 일수<br>1~365, 생략하면 30<br>회수에서는 무시 |
 | `idempotencyKey` | `string` | 필수 | 1~64자<br>영문, 숫자, 하이픈<br>관리자 페이지가 요청마다 새로 만들고 재시도에는 같은 값 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
@@ -728,7 +729,7 @@ Content-Type: application/json
 | `shortfall` | `integer` | 회수에서 돌려받지 못한 금액<br>지급은 0 |
 | `balance` | `integer` | 적용 뒤 잔액 |
 | `duplicated` | `boolean` | 같은 멱등 키의 재요청이라 적용하지 않았으면 `true` |
-| `expiresAt` | `string / null` | 지급 로트의 만료 시각<br>회수는 `null` |
+| `expiresAt` | `string / null` | 지급 로트의 만료 시각<br>적립 시각에 유효기간 일수를 더한 값<br>회수는 `null` |
 
 - 같은 멱등 키의 재요청은 종류와 금액이 달라도 적용하지 않고 처음 결과를 `duplicated` `true`로 돌려준다.
 
@@ -738,7 +739,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 범위 밖 금액, 멱등 키 형식 오류, 지원하지 않는 `type`, `memberId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 필드 누락, 범위 밖 금액, 범위 밖 `expiresInDays`, 멱등 키 형식 오류, 지원하지 않는 `type`, `memberId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 회원 |
 | 409 | `CONFLICT` | 탈퇴 계정 |
 
@@ -758,6 +759,7 @@ Content-Type: application/json
   "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
   "type": "GRANT",
   "amount": 5000,
+  "expiresInDays": 90,
   "idempotencyKey": "7f3c2a1e-9b8d-4c6f-a5e4-d3c2b1a09f8e",
   "reason": "결제 오류 보상"
 }
@@ -774,7 +776,7 @@ Content-Type: application/json
   "shortfall": 0,
   "balance": 6230,
   "duplicated": false,
-  "expiresAt": "2026-11-20T01:23:45.678Z"
+  "expiresAt": "2027-01-19T01:23:45.678Z"
 }
 ```
 

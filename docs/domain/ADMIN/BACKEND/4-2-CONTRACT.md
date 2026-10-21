@@ -48,7 +48,7 @@
 |---|---|
 | 형식 | HS256 JWT<br>앱 접근 토큰과 같은 대칭키 |
 | 클레임 | 발급자 `manyak`, 주체는 회원 공개 식별자, 대상 `manyak-admin`, 발급 시각, 만료 |
-| 수명 | 1시간<br>갱신 없음 |
+| 수명 | 2시간<br>갱신 없음 |
 | 구분 | 대상 클레임이 `manyak-admin`을 포함하면 관리자 토큰<br>앱 경로는 대상 클레임이 있는 토큰을 거절 |
 
 <br>
@@ -158,7 +158,7 @@ Content-Type: application/json
 ```json
 {
   "accessToken": "{adminToken}",
-  "expiresIn": 3600,
+  "expiresIn": 7200,
   "tokenType": "Bearer",
   "admin": {
     "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",

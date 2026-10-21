@@ -76,6 +76,7 @@ Fluent Bit`"]
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
 | 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`<br>실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
+| 캠페인 전송 중 시간 초과 | 실패 자동 전환<br>평문 WARN `promotion_push_timed_out` | `campaignId`, `startedAt` |
 | 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자<br>발송 실패는 예외 클래스 포함 |
 | 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자<br>발송 실패는 예외 클래스 포함 |
 | FCM 발송 실패 | 서버와 알림 서비스<br>평문 WARN | 회원 식별자, 토큰 앞 12자, 오류 코드, 예외 클래스 |

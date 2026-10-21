@@ -127,7 +127,7 @@ erDiagram
 | `target_count` | integer | | 마지막 회차에서 조회된 대상 수 |
 | `sent_count` | integer | | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수 |
 | `skipped_count` | integer | | 사용하지 않음 |
-| `started_at` | timestamptz | | 선점 시각 |
+| `started_at` | timestamptz | | 선점 시각<br>전송 중 시간 초과 판정의 기준 |
 | `finished_at` | timestamptz | | 회차 종료 시각 |
 
 | 인덱스 | 컬럼 |

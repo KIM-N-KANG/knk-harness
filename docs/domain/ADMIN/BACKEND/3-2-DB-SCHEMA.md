@@ -109,7 +109,7 @@ erDiagram
 
 | 테이블 | 컬럼 | ADMIN이 하는 일 |
 |---|---|---|
-| `users` | `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 검색과 상세, 회원 수와 탈퇴 수 집계 |
+| `users` | `id`, `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 검색과 상세, 회원 수와 탈퇴 수 집계, 팀 계정 제외 판정 |
 | `story_chats` | `created_at`<br>`user_id` | 채팅 시작 수<br>회원 상세의 채팅 수 |
 | `story_messages` | `role`<br>`created_at` | 채팅 턴 수 |
 | `stories` | `created_at`, `user_id`, `deleted_at` | 스토리 수<br>회원 상세의 스토리 수 |
