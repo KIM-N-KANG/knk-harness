@@ -120,7 +120,7 @@
 | 관리자 토큰 수명 | 설정 파일 변경 후 재빌드 | 로그인 응답의 `expiresIn` |
 | 팀 계정 제외 목록 | 환경 변수 변경 후 새 태스크 시작 | 대시보드 요약의 회원 수 변화 |
 | 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>다음 캐시 갱신부터 반영 | 분석 지표의 활성 사용자 수 변화 |
-| Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 200 |
+| Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
 | 대칭키 | Secrets Manager 값 변경 후 새 태스크 시작 | 앱과 관리자 토큰이 모두 무효가 되어 재로그인 |
 | 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |
 
@@ -171,8 +171,8 @@
 | 관리자 로그인 | 로그 `admin_login_succeeded`<br>`admin_login_rejected` | 역할 있는 계정이 로그인됨 |
 | 권한 판정 | 로그 `admin_access_denied` | 급증하지 않음 |
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
-| 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 200과 `totalElements` |
-| 분석 지표 | 분석 지표 응답 | 200과 `daily` 90개<br>503이면 `admin_analytics_fetch_failed`의 `reason` |
+| 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 성공 응답과 `totalElements` |
+| 분석 지표 | 분석 지표 응답 | 성공 응답과 `daily` 90개<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>
@@ -186,4 +186,4 @@
 | 관리자 로그인이 전부 권한 없음 | 로그 `admin_login_rejected`의 `reason` | `no_role`이면 운영 DB의 역할 행 확인<br>`no_member`면 그 Google 계정으로 앱에 먼저 가입 |
 | 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
 | 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
-| 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error` 401이면 키 값<br>`rate_limited`면 10분 뒤 재시도 |
+| 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 10분 뒤 재시도 |
