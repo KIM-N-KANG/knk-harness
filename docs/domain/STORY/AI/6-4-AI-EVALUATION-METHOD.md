@@ -840,7 +840,7 @@ flowchart LR
 %%{init: {"flowchart": {"curve": "linear", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
     D["<b>고정 데이터셋</b><br/>train 또는 test<br/>후보 세트 2개 · 본문 6편"] --- J
-    P["<b>평가 프롬프트</b><br/>비교할 버전"] --- J
+    P["<b>평가 모델의 프롬프트</b><br/>비교할 버전"] --- J
     J["<b>평가 모델</b><br/>모델과 추론 강도 고정<br/>후보 세트당 독립 채점 3회"] --> V
     L["<b>사용자 선택 라벨</b><br/>선택 1, 미선택 0"] --> V
     V["<b>회차별 일치 판정</b><br/>각 후보 세트에서 선택 후보가<br/>단독 최고점이면 일치<br/>동점 또는 낮은 점수면 불일치"] --> R
@@ -871,14 +871,14 @@ flowchart LR
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
 flowchart LR
     A["<b>평가 모델 프롬프트 수정</b>"] --> B["<b>train 평가</b><br/>후보 세트당 독립 호출 3회"]
-    B --> C["<b>기존 버전의 train 일치율과 비교</b>"]
-    C -->|상승| D["<b>test 평가</b><br/>같은 수정본 사용"]
-    C -->|같거나 하락| F["<b>수정본 기각</b><br/>기존 버전 유지"]
-    D --> G["<b>기존 버전의 test 일치율과 비교</b>"]
-    G -->|상승| E["<b>정식 버전 채택</b><br/>즉시 종료"]
-    G -->|같거나 하락| F
-    F -->|5사이클 미만| A
-    F -->|5사이클 도달| H["<b>종료</b><br/>기존 버전 유지"]
+    B --> C["<b>test 평가 진행 여부 판단</b>"]
+    C -->|검증 진행| D["<b>test 평가</b><br/>같은 수정본 사용"]
+    C -->|기각| F["<b>수정본 기각</b><br/>기존 버전 유지"]
+    D --> G["<b>채택 여부 판단</b>"]
+    G -->|채택| E["<b>정식 버전 채택</b><br/>즉시 종료"]
+    G -->|기각| F
+    F -->|실험 계속| A
+    F -->|종료 조건 충족| H["<b>종료</b><br/>기존 버전 유지"]
     classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     classDef check fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
@@ -889,9 +889,10 @@ flowchart LR
 
 | 항목 | 기준 |
 |---|---|
-| 개선 입력 | 정식 프롬프트, train 데이터와 채점 피드백, `failed-ideas.md` |
-| 수정 범위 | 후보 프롬프트의 `<criteria>` 내부만 수정 |
-| 실패 기록 | train에서 기각된 아이디어와 기준, 후보의 일치율을 `failed-ideas.md`에 기록 |
+| 가설 수립 | 오케스트레이션 AI가 담당 |
+| 개선 입력 | 정식 프롬프트, train 데이터와 채점 피드백, train에서 기각된 아이디어 기록 |
+| 수정 범위 | 평가 모델의 프롬프트에서 평가 기준 패턴을 추가, 수정, 삭제 <br> 나머지 지시와 출력 형식은 유지 |
+| 실패 기록 | train에서 기각된 아이디어와 기준 버전, 후보의 일치율 보존 |
 
 <br>
 
@@ -900,8 +901,6 @@ flowchart LR
 | 항목 | 설정값 |
 |---|---|
 | 오케스트레이션 AI 모델 | `gpt-6-astra`, 추론 강도 `xhigh` |
-| 최대 개선 사이클 수 | 5회 |
-| 전체 모델 호출 한도 | 재시도 포함 1,600회 |
 | 호출 타임아웃 | 5분 |
 | 실패 시 최대 재시도 횟수 | 3회 |
 | 동시 채점 호출 수 | 3개(후보 세트 6개, 총 18편) |

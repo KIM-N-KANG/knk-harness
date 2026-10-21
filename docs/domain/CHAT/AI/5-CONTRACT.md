@@ -21,6 +21,8 @@
 
 | 필드명 | 타입 | 필수 | 뜻과 기본값 |
 |---|---|---|---|
+| `user_id` | `string / null` | 선택 | 백엔드가 인증한 회원의 공개 UUID(`public_id`)<br>회원 요청에는 필수, 게스트는 생략 또는 `null`<br>기본값 `null`, 내부 숫자 ID와 기기 식별자는 사용하지 않음<br>UUID 형식 오류는 422<br>라우팅용, 모델 프롬프트에서 제외 |
+| `model_tier` | `string` | 선택 | 이번 본문 생성에 선택한 등급: `BASIC`, `ADVANCED`<br>기본값 `BASIC`, `null`과 허용값 이외의 값은 422<br>재생성도 요청 시점에 선택한 등급을 전달<br>라우팅용, 모델 프롬프트에서 제외 |
 | `genre` | `string` | 필수 | 장르 |
 | `story_settings` | `object` | 필수 | 스토리 설정 |
 | `story_settings.world_setting` | `string` | 필수 | 세계관 마크다운 본문 |
@@ -52,11 +54,9 @@
 | `character_images[].image_url` | `string` | 필수 | 이미지 URL |
 | `image_slots` | `object[]` | 선택 | 실시간 이미지 업로드 슬롯 최대 1개<br>기본값 `[]`, 비어 있으면 생성하지 않음 |
 | `image_slots[].key` | `string` | 필수 | 저장 객체 키<br>빈 문자열과 공백만 있는 값은 허용하지 않음 |
-| `image_slots[].upload_url` | `string` | 필수 | WebP 바이너리를 `PUT`할 서명 URL<br>`Content-Type: image/webp`, 허용된 업로드 호스트만 사용 |
-| `image_slots[].public_url` | `string` | 필수 | 업로드 성공 후 반환할 이미지 URL |
+| `image_slots[].upload_url` | `string` | 필수 | WebP 바이너리를 `PUT`할 서명 URL<br>`Content-Type: image/webp`, 허용된 업로드 호스트만 사용<br>HTTPS만 허용, 사용자 정보와 fragment, 공백, 443 이외의 포트 금지 |
+| `image_slots[].public_url` | `string` | 필수 | 업로드 성공 후 반환할 이미지 URL<br>HTTPS만 허용, 사용자 정보와 fragment, 공백, 443 이외의 포트 금지 |
 | `generate_child_image` | `boolean` | 선택 | 이전 요청 호환용, 기본값 `false`<br>생성 여부는 `image_slots`로 결정 |
-
-슬롯의 두 URL은 HTTPS만 허용하며 사용자 정보, fragment, 공백과 443 이외의 포트는 허용하지 않는다.
 
 <br>
 
@@ -73,8 +73,6 @@
 | `ping` | 없음 | `object` | 대기 중 연결 유지, `{}` |
 | `completed` | 아래 완료 필드 | `object` | 정상 종료 |
 | `error` | `code`, `message` | `string` | 실패 코드와 메시지 ([5-4 실패 계약](#5-4-실패-계약)) |
-
-`character_image`는 해당 인물의 첫 대사 앞에 온다. 본문 완성과 이미지 처리를 기다리는 동안 `ping`을 보내고, 이후 이미지와 본문을 순서대로 전달한다. 슬롯이 없으면 저장 이미지 선택, 있으면 실시간 이미지 생성을 수행한다. `started`, `chatId`, `turnId`는 백엔드가 부착한다.
 
 <br>
 
@@ -99,6 +97,8 @@
 
 ```json
 {
+  "user_id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "model_tier": "BASIC",
   "genre": "판타지",
   "story_settings": {
     "world_setting": "# 세계관\n마법 도서관에는 지워진 기록의 흔적이 남는다.",
@@ -214,7 +214,7 @@ data: {}
 
 | 필드명 | 타입 | 필수 | 뜻 |
 |---|---|---|---|
-| 채팅 턴 요청 필드 | 5-2와 같음 | 5-2와 같음 | 같은 설정과 사용자 입력<br>`history`는 이번 턴 제외 ([5-2 계약](#5-2-채팅-턴-요청과-결과)) |
+| 채팅 턴 요청 필드 중 `user_id`, `model_tier`를 제외한 필드 | 5-2와 같음 | 5-2와 같음 | 같은 설정과 사용자 입력<br>`history`는 이번 턴 제외 ([5-2 계약](#5-2-채팅-턴-요청과-결과)) |
 | `ai_output` | `string` | 필수 | 이번 턴의 `aiOutput` |
 
 <br>
@@ -309,7 +309,7 @@ data: {}
 | `X-Manyak-Story-Id` | 문자열 | 스토리 연결 | 선택 |
 | `X-Manyak-Chat-Id` | 문자열 | 채팅 연결 | 선택 |
 | `X-Manyak-Start-Setting-Id` | 문자열 | 시작 설정 연결 | 선택 |
-| `X-Manyak-Turn-Number` | 정수 문자열 | 턴 번호, 1~2,147,483,647 | 선택 |
+| `X-Manyak-Turn-Number` | 정수 문자열 | 턴 번호 | 선택 |
 | `X-Manyak-Is-Regenerated` | `true` 또는 `false` | 재생성 여부 | 선택 |
 
 <br>
@@ -334,12 +334,12 @@ data: {}
 | 요청 항목 | API 인자와 호출 방식 |
 |---|---|
 | API | `openai` SDK의 `chat.completions.create` |
-| 모델 이름 | `model`<br>본문은 `CHAT_MODEL`, 선택지는 `CHAT_CHOICE_MODEL`<br>프로덕션 `CHAT_MODEL`은 `gpt-6-luna` |
+| 모델 이름 | `model`<br>본문은 라우팅으로 선택한 OpenAI 모델, 선택지는 `CHAT_CHOICE_MODEL` |
 | 메시지 | `messages[]`의 `role`, `content` |
 | 본문 스트리밍 | `stream=true`, `stream_options.include_usage=true` |
 | 선택지 JSON 모드 | `response_format.type="json_object"` |
 | 출력 토큰 한도 | OpenAI는 `max_completion_tokens`, DeepSeek은 `max_tokens` |
-| 추론 설정 | `gpt-6-luna`: `reasoning_effort="none"`<br>`deepseek-flash`: `extra_body.thinking.type="disabled"` |
+| 추론 설정 | `gpt-6-luna`, `gpt-6.1-sol`: `reasoning_effort="low"`<br>`deepseek-flash`: `extra_body.thinking.type="disabled"` |
 | 호출 제한 시간 | `timeout`, 초 단위 |
 
 <br>
@@ -370,7 +370,7 @@ data: {}
   stream: true
   stream_options:
     include_usage: true
-  reasoning_effort: none
+  reasoning_effort: low
   timeout: <호출 제한 시간, 초>
 ```
 
@@ -518,5 +518,49 @@ data:
 ```
 
 확률, 신뢰도와 토큰 수는 구조 설명을 위한 예시 값이다.
+
+</details>
+
+<br>
+
+**4. Google Text API**
+
+| 요청 항목 | API 인자와 호출 방식 |
+|---|---|
+| API | `google-genai` SDK의 `client.aio.models.generate_content_stream` |
+| 모델 이름 | `model="gemini-3.8-flash"` |
+| 시스템 지시 | `config.system_instruction` |
+| 대화 | `contents[]`의 `role`, `parts[].text`<br>`assistant`는 `model`, `user`는 `user`로 전달 |
+| 추론 설정 | `config.thinking_config.thinking_level="medium"` |
+| 호출 제한 시간 | `config.http_options.timeout`, 밀리초 단위 |
+
+<br>
+
+| 응답 항목 | 출처 |
+|---|---|
+| 본문 조각 | 각 스트림 조각의 `text` |
+| 입력 토큰 | `usage_metadata.prompt_token_count` |
+| 출력 토큰 | `usage_metadata.candidates_token_count`와 `thoughts_token_count`의 합<br>알려진 값만 합산하며 둘 다 없으면 `null` |
+| 실제 모델 이름 | 응답 `model_version`, 없으면 요청 모델 이름 |
+| 공급자 | 응답 `meta.provider`에 `google` 사용 |
+
+<details>
+<summary><b>본문 요청 구조 예시</b></summary>
+
+<br>
+
+```text
+model: gemini-3.8-flash
+contents:
+  - role: user
+    parts:
+      - text: <조립된 사용자 프롬프트>
+config:
+  system_instruction: <조립된 시스템 프롬프트>
+  thinking_config:
+    thinking_level: medium
+  http_options:
+    timeout: <호출 제한 시간, 밀리초>
+```
 
 </details>
