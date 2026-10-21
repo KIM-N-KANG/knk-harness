@@ -1193,7 +1193,93 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-16 다른 도메인과의 경계
+### 4-2-16 분석 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/analytics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>기본 `30` |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 서버가 분석 도구에서 값을 받은 시각<br>캐시된 응답은 캐시한 시각 |
+| `from` | `string` | 범위 첫날의 KST 날짜 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜<br>오늘 |
+| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>`daily` 마지막 항목의 `activeUsers`와 같음 |
+| `daily` | `object[]` | 날짜 오름차순 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeUsers` | `integer` | 그 날 이벤트가 있는 고유 사용자 수 |
+| `daily[].newUsers` | `integer` | 그 날 처음 이벤트가 있었던 고유 사용자 수 |
+
+- 값은 분석 도구가 집계한 것이며 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정, 호출 실패, 호출 한도 초과이고 캐시도 없음 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/analytics?days=7
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+`daily`는 두 날만 보였다.
+
+```json
+{
+  "asOf": "2026-10-21T05:10:00Z",
+  "from": "2026-10-15",
+  "to": "2026-10-21",
+  "todayActiveUsers": 318,
+  "daily": [
+    { "date": "2026-10-15", "activeUsers": 402, "newUsers": 31 },
+    { "date": "2026-10-16", "activeUsers": 377, "newUsers": 27 }
+  ]
+}
+```
+
+**3) 503 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T05:10:00.000Z",
+  "status": 503,
+  "code": "SERVICE_UNAVAILABLE",
+  "message": "분석 지표를 가져올 수 없습니다.",
+  "path": "/api/v1/admin/dashboard/analytics",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-17 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
@@ -1203,6 +1289,7 @@ Authorization: Bearer {adminToken}
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 없음 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅방 조회, AI 호출 기록 조회 |
+| Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

@@ -16,7 +16,8 @@
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 관리자 역할과 감사 로그 테이블 |
 | Google | 공개 키 집합 | 계정 도메인의 검증기 경유 |
-| Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키와 Google client ID |
+| Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, Google client ID, Amplitude API 키와 시크릿 키 |
+| Amplitude | Dashboard REST API | 분석 지표 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
 <br>
@@ -28,6 +29,8 @@
 | PostgreSQL | 연결할 수 없으면 기동 실패 |
 | 관리자 역할 행 없음 | 기동은 정상<br>아무도 로그인할 수 없음 |
 | 팀 계정 제외 목록 | 정수가 아닌 값이 있으면 기동 실패<br>빈 값이면 제외 없이 집계 |
+| Amplitude 키 | 둘 중 하나라도 비면 분석 지표만 사용 불가<br>기동은 정상 |
+| Amplitude | 연결할 수 없으면 분석 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
@@ -57,11 +60,22 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값은 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분과 호출 시간 한도 5초는 설정 파일의 고정값이다.
 
 <br>
 
-**2. 다른 도메인이 관리하는 값**
+**2. 분석 지표**
+
+| 이름 | 기본값 | 주입 출처 | 비고 |
+|---|---|---|---|
+| `MANYAK_AMPLITUDE_API_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | 공통 분석 발행기와 같은 키<br>운영 프로젝트 하나뿐이라 개발 서버도 같은 값 |
+| `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
+| `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>비어 있으면 제외 없이 조회 |
+| `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
+
+<br>
+
+**3. 다른 도메인이 관리하는 값**
 
 | 이름 | ADMIN이 쓰는 곳 |
 |---|---|
@@ -71,7 +85,7 @@
 
 <br>
 
-**3. 관측**
+**4. 관측**
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
@@ -88,6 +102,8 @@
 |---|---|---|
 | 관리자 페이지 client ID | 관리자 페이지가 쓰는 Google client ID가 서버의 허용 목록에 포함 | 수동 검토 |
 | 관리자 역할 | 운영 DB에 관리자 역할 행이 있어야 첫 로그인이 가능 | 수동 확인<br>서버는 역할 행 유무를 검사하지 않음 |
+| Amplitude 시크릿 | 두 시크릿 JSON에 키 두 개가 있고 태스크 정의가 참조 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
+| 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
 | 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포 | 수동 검토 |
 | 관리자 경로 추가 | 회귀 테스트가 새 경로를 자동 수집하는지 테스트 결과에서 확인 | CI 자동 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
@@ -103,6 +119,8 @@
 | 관리자 역할 부여와 회수 | 운영 DB에서 역할 행 추가 또는 삭제<br>다음 요청부터 반영<br>재배포 없음 | 회수된 계정의 관리자 요청이 권한 없음으로 거절됨<br>감사 로그 조회 응답의 `admin.isAdmin` |
 | 관리자 토큰 수명 | 설정 파일 변경 후 재빌드 | 로그인 응답의 `expiresIn` |
 | 팀 계정 제외 목록 | 환경 변수 변경 후 새 태스크 시작 | 대시보드 요약의 회원 수 변화 |
+| 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>다음 캐시 갱신부터 반영 | 분석 지표의 활성 사용자 수 변화 |
+| Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 200 |
 | 대칭키 | Secrets Manager 값 변경 후 새 태스크 시작 | 앱과 관리자 토큰이 모두 무효가 되어 재로그인 |
 | 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |
 
@@ -154,6 +172,7 @@
 | 권한 판정 | 로그 `admin_access_denied` | 급증하지 않음 |
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
 | 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 200과 `totalElements` |
+| 분석 지표 | 분석 지표 응답 | 200과 `daily` 90개<br>503이면 `admin_analytics_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>
@@ -167,3 +186,4 @@
 | 관리자 로그인이 전부 권한 없음 | 로그 `admin_login_rejected`의 `reason` | `no_role`이면 운영 DB의 역할 행 확인<br>`no_member`면 그 Google 계정으로 앱에 먼저 가입 |
 | 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
 | 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
+| 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error` 401이면 키 값<br>`rate_limited`면 10분 뒤 재시도 |
