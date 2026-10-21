@@ -1238,7 +1238,7 @@ Content-Type: application/json
 | `to` | `string` | 선택 | 끝 KST 날짜 `YYYY-MM-DD`<br>생략하면 오늘 |
 | `type` | `string` | 선택 | 큐 메시지의 `type` 값 중 하나<br>생략하면 전체 |
 
-- 시작과 끝을 포함한 기간은 최대 31일이다.
+- 시작과 끝을 포함한 기간은 최대 366일이다. 기간을 바꿔 가며 조회하고 주 단위나 월 단위 합계는 관리자 페이지가 날짜 행을 더해 만든다.
 
 <br>
 
@@ -1263,7 +1263,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 뒤, 31일 초과, 지원하지 않는 `type` |
+| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 뒤, 366일 초과, 지원하지 않는 `type` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1298,7 +1298,7 @@ Authorization: Bearer {adminToken}
   "timestamp": "2026-10-21T03:00:00.000Z",
   "status": 400,
   "code": "BAD_REQUEST",
-  "message": "통계 기간은 최대 31일입니다.",
+  "message": "통계 기간은 최대 366일입니다.",
   "path": "/api/v1/admin/push/delivery-stats",
   "details": []
 }
