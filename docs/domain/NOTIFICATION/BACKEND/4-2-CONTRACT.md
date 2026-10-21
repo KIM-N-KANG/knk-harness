@@ -104,12 +104,7 @@
 | `finishedAt` | `string / null` | 회차 종료 시각 |
 | `createdAt` | `string` | |
 
-목록 응답은 같은 페이지 구조를 쓴다.
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `items` | `object[]` | 최신순 |
-| `nextCursor` | `string / null` | 다음 페이지 커서<br>더 없으면 `null` |
+목록 응답은 관리자 목록 공통의 페이지 쿼리와 페이지 구조를 쓴다. ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 <br>
 
@@ -739,10 +734,10 @@ Content-Type: application/json
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `status` | `string` | 선택 | 캠페인 상태 값 중 하나<br>생략하면 전체 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
-| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
+| `sort` | `string` | 선택 | `createdAt`, `scheduledAt`<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
-- 생성 시각 내림차순이다. 프로모션과 공지 알림을 함께 보여 준다.
+- 프로모션과 공지 알림을 함께 보여 준다.
 
 <br>
 
@@ -750,7 +745,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>형식 오류인 `cursor` 또는 `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -760,7 +755,7 @@ Content-Type: application/json
 **1) Request**
 
 ```http
-GET /api/v1/admin/push/campaigns?status=SCHEDULED&limit=1
+GET /api/v1/admin/push/campaigns?status=SCHEDULED&size=1
 Authorization: Bearer {adminToken}
 ```
 
@@ -787,7 +782,10 @@ Authorization: Bearer {adminToken}
       "createdAt": "2026-10-21T03:00:00Z"
     }
   ],
-  "nextCursor": null
+  "page": 1,
+  "size": 1,
+  "totalElements": 1,
+  "totalPages": 1
 }
 ```
 

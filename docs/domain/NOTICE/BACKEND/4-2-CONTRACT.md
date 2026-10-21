@@ -249,10 +249,10 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `status` | `string` | 선택 | `DRAFT`<br>`PUBLISHED`<br>생략하면 전체 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정<br>기본 20 |
-| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
+| `sort` | `string` | 선택 | `createdAt`, `publishedAt`, `updatedAt`<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 관리자 목록 공통의 페이지 쿼리 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
 
-- 생성 시각 내림차순이다. 항목에 `body`는 없다.
+- 응답은 관리자 목록 공통의 페이지 구조다. 항목에 `body`는 없다.
 
 <br>
 
@@ -260,7 +260,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>형식 오류인 `cursor` 또는 `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -270,7 +270,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 **1) Request**
 
 ```http
-GET /api/v1/admin/notices?status=DRAFT&limit=1
+GET /api/v1/admin/notices?status=DRAFT&size=1
 Authorization: Bearer {adminToken}
 ```
 
@@ -290,7 +290,10 @@ Authorization: Bearer {adminToken}
       "updatedAt": "2026-10-21T01:10:00Z"
     }
   ],
-  "nextCursor": null
+  "page": 1,
+  "size": 1,
+  "totalElements": 1,
+  "totalPages": 1
 }
 ```
 

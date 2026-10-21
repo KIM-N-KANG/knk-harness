@@ -64,7 +64,7 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
-| `id` | bigint | PK | 목록 정렬의 2차 키 |
+| `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE | 외부 노출 식별자 |
 | `admin_user_id` | bigint | NOT NULL, FK `users.id` | 처리자 |
 | `category` | varchar(10) | NOT NULL, CHECK `CHANGE` `ACCESS` | 변경 작업 또는 개인정보 조회 |
@@ -78,7 +78,7 @@ erDiagram
 
 | 인덱스 | 컬럼 |
 |---|---|
-| `idx_admin_audit_logs_created` | `created_at DESC`<br>`id DESC` |
+| `idx_admin_audit_logs_created` | `created_at DESC`<br>`public_id` |
 | `idx_admin_audit_logs_admin` | `admin_user_id`<br>`created_at DESC` |
 | `idx_admin_audit_logs_target` | `target_type`, `target_id`, `created_at DESC` |
 

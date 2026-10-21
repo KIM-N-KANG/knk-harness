@@ -467,13 +467,15 @@ Authorization: Bearer {accessToken}
 |---|---|
 | 요청 | `GET /admin/moderation/holds` |
 | 인증 | 관리자 |
-| 성공 | 200 |
+| 성공 | 200<br>관리자 목록 공통의 페이지 구조 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `limit` | `integer` | 선택 | 최대 건수<br>기본값 100<br>1~100 범위를 벗어나면 범위 안으로 보정 |
+| `sort` | `string` | 선택 | `heldAt`, `createdAt`<br>기본 `heldAt` |
+| `order` | `string` | 선택 | 기본 `asc`<br>오래 보류된 제출본이 먼저 |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 <br>
 
@@ -481,7 +483,7 @@ Authorization: Bearer {accessToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items` | `object[]` | 보류 시각 오름차순 |
+| `items` | `object[]` | 보류 중인 제출본 |
 | `items[].submissionId` | `string` | 제출본 공개 식별자 |
 | `items[].kind` | `string` | `CREATE`<br>`UPDATE` |
 | `items[].storyId` | `string / null` | 수정 대상 스토리 공개 식별자<br>등록은 `null` |
@@ -499,7 +501,7 @@ Authorization: Bearer {accessToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
+| 400 | `BAD_REQUEST` | 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -528,7 +530,11 @@ Authorization: Bearer {adminToken}
       "heldAt": "2026-10-21T01:30:00Z",
       "createdAt": "2026-10-21T01:20:00Z"
     }
-  ]
+  ],
+  "page": 1,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
 }
 ```
 

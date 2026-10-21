@@ -103,12 +103,25 @@
 | `isAdmin` | `boolean` | 관리자 역할 보유 여부 |
 | `createdAt` | `string` | 가입 시각 |
 
-목록 응답은 같은 페이지 구조를 쓴다.
+관리자 목록은 모두 같은 페이지 쿼리와 페이지 구조를 쓴다. 다른 도메인의 관리자 목록도 같다.
+
+| 쿼리 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `page` | `integer` | 선택 | 1부터 시작하는 페이지 번호<br>기본 1<br>전체 페이지 수를 넘으면 빈 `items` |
+| `size` | `integer` | 선택 | 페이지 크기<br>1~100<br>기본 20 |
+| `sort` | `string` | 선택 | 정렬 열<br>허용 값과 기본값은 각 절 |
+| `order` | `string` | 선택 | `asc` 또는 `desc`<br>기본 `desc` |
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items` | `object[]` | 최신순 |
-| `nextCursor` | `string / null` | 다음 페이지 커서<br>더 없으면 `null` |
+| `items` | `object[]` | 현재 페이지의 항목 |
+| `page` | `integer` | 요청한 페이지 번호 |
+| `size` | `integer` | 요청한 페이지 크기 |
+| `totalElements` | `integer` | 필터를 적용한 전체 건수 |
+| `totalPages` | `integer` | 전체 페이지 수<br>건수가 0이면 0 |
+
+- 정렬 열의 값이 같은 항목은 그 항목의 공개 식별자 오름차순으로 순서를 고정한다. `null`은 방향과 무관하게 마지막이다.
+- `page`와 `size`가 정수가 아니거나 범위 밖이면 400이다. 허용하지 않는 `sort`와 `order` 값도 400이다. `cursor`와 `limit`는 받지 않으며 보내면 400이다.
 
 <br>
 
@@ -288,8 +301,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
-| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
+| `sort` | `string` | 선택 | `completedAt`, `refundedAt`, `priceKrw`, `creditAmount`<br>기본 `completedAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 <br>
 
@@ -313,7 +326,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 형식 오류인 `cursor` 또는 `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -323,7 +336,7 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/payments/orders?limit=1
+GET /api/v1/admin/payments/orders?size=1
 Authorization: Bearer {adminToken}
 ```
 
@@ -344,7 +357,10 @@ Authorization: Bearer {adminToken}
       "reversalShortfall": null
     }
   ],
-  "nextCursor": "MjAyNi0xMC0yMVQwMToyMjowM1p8NDE"
+  "page": 1,
+  "size": 1,
+  "totalElements": 41,
+  "totalPages": 41
 }
 ```
 
@@ -496,8 +512,8 @@ Authorization: Bearer {adminToken}
 | `action` | `string` | 선택 | 작업 이름 |
 | `targetType` | `string` | 선택 | 대상 종류 |
 | `targetId` | `string` | 선택 | 대상 식별자<br>`targetType`과 함께 지정 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
-| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
+| `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 <br>
 
@@ -523,7 +539,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 형식 오류인 `cursor`, `adminId`가 UUID 형식이 아님, `targetId`만 지정, `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | `adminId`가 UUID 형식이 아님, `targetId`만 지정, 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -533,7 +549,7 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/audit-logs?action=CREDIT_GRANTED&limit=1
+GET /api/v1/admin/audit-logs?action=CREDIT_GRANTED&size=1
 Authorization: Bearer {adminToken}
 ```
 
@@ -556,7 +572,10 @@ Authorization: Bearer {adminToken}
       "createdAt": "2026-10-21T01:23:45.678Z"
     }
   ],
-  "nextCursor": null
+  "page": 1,
+  "size": 1,
+  "totalElements": 1,
+  "totalPages": 1
 }
 ```
 

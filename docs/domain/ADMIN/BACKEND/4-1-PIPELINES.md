@@ -125,13 +125,13 @@ ACCOUNT, STORY, CHAT, PAYMENT, MODERATION`"]
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
-    A["`**커서 해석**
-형식 오류는 거절`"] --> B["`**완료와 환불 주문 조회**
-PAYMENT, 페이지 크기 + 1건`"]
+    A["`**페이지와 정렬 해석**
+범위 밖은 거절`"] --> B["`**완료와 환불 주문 조회**
+PAYMENT, 전체 건수와 현재 페이지`"]
     B --> C["`**주문 소유자 조회**
 ACCOUNT`"]
     C --> D["`**응답 조립**
-다음 커서`"]
+페이지 구조`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class A,D comp
@@ -141,9 +141,8 @@ ACCOUNT`"]
 | 항목 | 규칙 |
 |---|---|
 | 대상 | 완료 시각이 있는 주문<br>대기 주문은 제외 |
-| 정렬 | 완료 시각 내림차순<br>같으면 내부 ID 내림차순 |
-| 커서 | 마지막 항목의 완료 시각과 내부 ID를 담은 불투명 문자열<br>관리자 전용 경로라 봉인하지 않음 |
-| 다음 페이지 판정 | 페이지 크기보다 한 건 더 조회해 초과분이 있을 때만 커서 발급 |
+| 정렬 | 요청한 열과 방향<br>같으면 주문 공개 식별자 오름차순 |
+| 페이지 | 전체 건수 조회와 현재 페이지 조회를 각각 실행<br>건너뛸 행 수는 `(page - 1) × size` |
 
 <br>
 
@@ -179,17 +178,17 @@ ACCOUNT, 최대 20건`"]
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
-    A["`**필터와 커서 해석**`"] --> B["`**감사 로그 조회**
-페이지 크기 + 1건`"]
+    A["`**필터와 페이지 해석**`"] --> B["`**감사 로그 조회**
+전체 건수와 현재 페이지`"]
     B --> C["`**처리자 표시 조립**
 ACCOUNT, 닉네임과 공개 식별자`"]
     C --> D["`**응답**
-다음 커서`"]
+페이지 구조`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class A,B,D comp
     class C task
 ```
 
-- 정렬은 기록 시각 내림차순이며 같으면 내부 ID 내림차순이다. 커서 규칙은 결제 내역과 같다.
+- 정렬은 기록 시각이며 같으면 감사 로그 공개 식별자 오름차순이다. 페이지 규칙은 결제 내역과 같다.
 - 감사 로그 조회 자체는 접속 기록을 남기지 않는다.
