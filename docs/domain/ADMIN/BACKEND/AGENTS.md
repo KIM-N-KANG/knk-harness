@@ -21,7 +21,7 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 감사 기록 트랜잭션, 멱등, 역할 변경과의 경쟁, 수용한 경쟁 |
 | [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 오류 분류, 복구, 시간 한도 |
 | [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 |
-| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스, 관리자 경로 회귀 테스트 |
+| [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스<br>관리자 경로 회귀 테스트 |
 | [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 역할 부여, 되돌리기 |
 | [DECISIONS.md](DECISIONS.md) | 결정의 이력 |
 
@@ -36,11 +36,11 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 | 하려는 일 | 먼저 볼 곳 | 함께 볼 곳 |
 |---|---|---|
-| 요청, 응답 필드 변경 | [4-2 계약](4-2-CONTRACT.md) | [4-1 처리 흐름](4-1-PIPELINES.md), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
-| 테이블, 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
+| 요청과 응답 필드 변경 | [4-2 계약](4-2-CONTRACT.md) | [4-1 처리 흐름](4-1-PIPELINES.md)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
+| 테이블과 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 다른 도메인에 관리자 API 추가 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [4-1-4 감사 기록](4-1-PIPELINES.md#4-1-4-감사-기록), [3-2-4 감사 로그](3-2-DB-SCHEMA.md#3-2-4-감사-로그)의 작업 이름, [5-5-3 권한 판정과 회귀](5-5-TEST-CASES.md#5-5-3-권한-판정과-회귀) |
-| 토큰 정책 변경 | [5-1-1 인증 수준과 토큰](5-1-SECURITY.md#5-1-1-인증-수준과-토큰) | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도), [DECISIONS.md](DECISIONS.md) |
-| 지표 추가 | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약) | [4-1-5 대시보드 요약](4-1-PIPELINES.md#4-1-5-대시보드-요약), [3-2-5 참조하는 다른 도메인의 컬럼](3-2-DB-SCHEMA.md#3-2-5-참조하는-다른-도메인의-컬럼) |
+| 토큰 정책 변경 | [5-1-1 인증 수준과 토큰](5-1-SECURITY.md#5-1-1-인증-수준과-토큰) | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도)<br>[DECISIONS.md](DECISIONS.md) |
+| 지표 추가 | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약) | [4-1-5 대시보드 요약](4-1-PIPELINES.md#4-1-5-대시보드-요약)<br>[3-2-5 참조하는 다른 도메인의 컬럼](3-2-DB-SCHEMA.md#3-2-5-참조하는-다른-도메인의-컬럼) |
 | 관리자 역할 부여와 회수 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [5-1-2 권한 판정](5-1-SECURITY.md#5-1-2-권한-판정) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-8 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-8-수집-조건과-실패-처리) |
@@ -56,15 +56,15 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 |---|---|---|
 | 관리자 API 계층 | `admin/controller/` | 4-2-2~4-2-7 |
 | 로그인, 토큰, 감사 기록, 대시보드, 회원 조회 | `admin/service/` | 4-1-2~4-1-8 |
-| 관리자 판정 필터, 앱 토큰 검증 보강 | `admin/security/`, [global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
+| 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/`<br>[global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
 | 신원 검증기 | [auth/social/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/social/) | 4-1-2 |
-| 토큰 발급 기반 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/), [auth/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/config/) | 4-2-1 관리자 토큰 |
-| 모델, 저장 계층 | `admin/entity/`, `admin/repository/` | 3-2 DB 스키마 |
+| 토큰 발급 기반 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/)<br>[auth/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/config/) | 4-2-1 관리자 토큰 |
+| 모델과 저장 계층 | `admin/entity/`<br>`admin/repository/` | 3-2 DB 스키마 |
 | 오류 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
-| 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
-| 테스트 | `src/test/kotlin/com/knk/manyak/admin/`, `http/admin/` | 5-5 테스트 케이스 |
-| 배포 | [.github/workflows/](../../../../../manyak-server/.github/workflows/), [Dockerfile](../../../../../manyak-server/Dockerfile) | 6 배포 |
+| 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/)<br>[dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
+| 테스트 | `src/test/kotlin/com/knk/manyak/admin/`<br>`http/admin/` | 5-5 테스트 케이스 |
+| 배포 | [.github/workflows/](../../../../../manyak-server/.github/workflows/)<br>[Dockerfile](../../../../../manyak-server/Dockerfile) | 6 배포 |
 
 <br>
 

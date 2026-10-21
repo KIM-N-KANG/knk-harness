@@ -473,7 +473,7 @@ Authorization: Bearer {accessToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `limit` | `integer` | 선택 | 최대 건수, 기본값 100<br>1~100 범위를 벗어나면 범위 안으로 보정 |
+| `limit` | `integer` | 선택 | 최대 건수<br>기본값 100<br>1~100 범위를 벗어나면 범위 안으로 보정 |
 
 <br>
 
@@ -483,7 +483,7 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | `items` | `object[]` | 보류 시각 오름차순 |
 | `items[].submissionId` | `string` | 제출본 공개 식별자 |
-| `items[].kind` | `string` | `CREATE`, `UPDATE` |
+| `items[].kind` | `string` | `CREATE`<br>`UPDATE` |
 | `items[].storyId` | `string / null` | 수정 대상 스토리 공개 식별자<br>등록은 `null` |
 | `items[].ownerId` | `string` | 소유 회원 공개 식별자 |
 | `items[].holdReason` | `string` | 보류 원인 코드<br>`IMAGE_DOWNLOAD_FAILED`, `MODEL_CALL_FAILED`, `MODERATION_UNAVAILABLE` |
@@ -549,7 +549,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `submissionId` | 경로 | 필수 | 제출본 공개 식별자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -568,7 +568,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `submissionId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `submissionId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 제출본 |
 | 409 | `CONFLICT` | 보류 중이 아님 |
 
@@ -617,7 +617,7 @@ Content-Type: application/json
 | STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제 |
 | NOTIFICATION | 검수 완료 이벤트 | 없음 |
 | ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금, 회원 공개 식별자 |
-| ADMIN | 보류 중 제출본 수 | 관리자 요청자, 변경 감사 기록 |
+| ADMIN | 보류 중 제출본 수 | 관리자 요청자와 변경 감사 기록 |
 | AI 서버 | 검수 입력 | 판정 결과 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 

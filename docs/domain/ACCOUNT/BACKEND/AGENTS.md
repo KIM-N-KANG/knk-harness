@@ -42,7 +42,7 @@ ACCOUNT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [3-3-2 계층 책임](3-3-CONVENTIONS.md#3-3-2-계층-책임), 서버 저장소 `http/auth/`, `http/user/`, `http/invite/`의 수동 호출 파일과 통합 테스트 |
 | 로그인 흐름, 보상, 체험 변경 | [4-1-5 로그인 후속 처리](4-1-PIPELINES.md#4-1-5-로그인-후속-처리) | [5-2-2 멱등과 1회 처리](5-2-CONCURRENCY.md#5-2-2-멱등과-1회-처리), PAYMENT 세트 |
 | 탈퇴, 재가입, 승계 변경 | [4-1-6 계정 생성과 재가입](4-1-PIPELINES.md#4-1-6-계정-생성과-재가입), [4-1-14 탈퇴](4-1-PIPELINES.md#4-1-14-탈퇴) | [5-2-1 사용자 행 잠금](5-2-CONCURRENCY.md#5-2-1-사용자-행-잠금), [DECISIONS.md](DECISIONS.md) |
-| 계정 정지와 해제 | [4-2-26 계정 정지](4-2-CONTRACT.md#4-2-26-계정-정지) | [4-1-17 계정 정지와 해제](4-1-PIPELINES.md#4-1-17-계정-정지와-해제), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
+| 계정 정지와 해제 | [4-2-26 계정 정지](4-2-CONTRACT.md#4-2-26-계정-정지) | [4-1-17 계정 정지와 해제](4-1-PIPELINES.md#4-1-17-계정-정지와-해제)<br>[ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
 | 토큰 정책 변경 | [5-1-1 인증 수준과 토큰](5-1-SECURITY.md#5-1-1-인증-수준과-토큰) | [5-2-4 토큰 회전의 원자성](5-2-CONCURRENCY.md#5-2-4-토큰-회전의-원자성), [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도) |
 | 동의 문서 개정, 게이트 변경 | [5-1-3 계정 상태와 동의](5-1-SECURITY.md#5-1-3-계정-상태와-동의) | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) |
 | 제공자 추가, client ID 변경 | [5-1-4 신원 증명 검증](5-1-SECURITY.md#5-1-4-신원-증명-검증) | [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿) |
@@ -64,7 +64,7 @@ ACCOUNT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 토큰 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/), [auth/token/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/token/) | 4-1-8, 5-1-1, 5-2-4 |
 | 세션 응답 조립 | [auth/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/service/) | 4-1-7, 4-2-1 공통 응답 구조 |
 | 이관 | [migration/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/migration/) | 4-1-10, 4-2-10 |
-| 프로필, 페르소나, 탈퇴, 내 콘텐츠, 관리자 정지와 해제 | [user/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/), [user/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/service/) | 4-1-11, 4-1-12, 4-1-14, 4-1-16, 4-1-17, 4-2-11~4-2-16, 4-2-21~4-2-23, 4-2-26, 4-2-27 |
+| 프로필, 페르소나, 탈퇴, 내 콘텐츠, 관리자 정지와 해제 | [user/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/)<br>[user/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/service/) | 4-1-11, 4-1-12, 4-1-14, 4-1-16, 4-1-17, 4-2-11~4-2-16, 4-2-21~4-2-23, 4-2-26, 4-2-27 |
 | 동의 | [user/consent/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/consent/) | 4-1-13, 4-2-17~4-2-20, 5-1-3 |
 | 초대 | [invite/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/invite/) | 4-1-15, 4-2-24, 4-2-25 |
 | 모델 | [user/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/entity/), [auth/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |

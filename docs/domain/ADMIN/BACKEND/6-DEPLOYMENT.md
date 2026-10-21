@@ -4,7 +4,7 @@
 
 서버 전체 배포 절차 중 ADMIN 도메인과 관련된 항목만 다룬다.
 
-토큰 수명은 오류 처리에, 관측 스택과 조회 도구는 관측에 있다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도), [5-4-1 관측 스택](5-4-OBSERVABILITY.md#5-4-1-관측-스택))
+토큰 수명은 오류 처리에 있으며 관측 스택과 조회 도구는 관측에 있다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도), [5-4-1 관측 스택](5-4-OBSERVABILITY.md#5-4-1-관측-스택))
 
 <br>
 
@@ -14,9 +14,9 @@
 
 | 의존 대상 | 내용 | ADMIN 도메인이 쓰는 것 |
 |---|---|---|
-| PostgreSQL | 기동 시 마이그레이션 적용 | 관리자 역할, 감사 로그 테이블 |
+| PostgreSQL | 기동 시 마이그레이션 적용 | 관리자 역할과 감사 로그 테이블 |
 | Google | 공개 키 집합 | 계정 도메인의 검증기 경유 |
-| Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, Google client ID |
+| Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키와 Google client ID |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
 <br>
@@ -39,7 +39,7 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포 시 `latest` 태그 지정<br>실패하면 이전 digest로 복원 |
+| 이미지 태그 | 커밋 SHA 앞 7자리<br>환경 태그 `dev` | 커밋 SHA 앞 7자리<br>배포 시 `latest` 태그 지정<br>실패하면 이전 digest로 복원 |
 | 상태 검사 | 배포 완료, 서버 컨테이너 정상, health `UP` | 동일 |
 
 <br>
@@ -67,7 +67,7 @@ ADMIN 전용 환경 변수는 없다. 관리자 토큰 수명과 대상 클레�
 |---|---|---|---|
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL과 인증 헤더는 Secrets Manager | Grafana Cloud로 전송 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL과 인증 헤더는 Secrets Manager | Grafana Cloud로 전송 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
 
 <br>
@@ -90,7 +90,7 @@ ADMIN 전용 환경 변수는 없다. 관리자 토큰 수명과 대상 클레�
 
 | 변경 대상 | 변경 위치와 적용 | 확인 조건 |
 |---|---|---|
-| 관리자 역할 부여와 회수 | 운영 DB에서 역할 행 추가 또는 삭제<br>다음 요청부터 반영, 재배포 없음 | 회수된 계정의 관리자 요청이 권한 없음으로 거절됨<br>감사 로그 조회 응답의 `admin.isAdmin` |
+| 관리자 역할 부여와 회수 | 운영 DB에서 역할 행 추가 또는 삭제<br>다음 요청부터 반영<br>재배포 없음 | 회수된 계정의 관리자 요청이 권한 없음으로 거절됨<br>감사 로그 조회 응답의 `admin.isAdmin` |
 | 관리자 토큰 수명 | 설정 파일 변경 후 재빌드 | 로그인 응답의 `expiresIn` |
 | 대칭키 | Secrets Manager 값 변경 후 새 태스크 시작 | 앱과 관리자 토큰이 모두 무효가 되어 재로그인 |
 | 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |
@@ -138,8 +138,8 @@ ADMIN 전용 환경 변수는 없다. 관리자 토큰 수명과 대상 클레�
 
 | 확인 항목 | 자료 | 기준 |
 |---|---|---|
-| 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
-| 관리자 로그인 | 로그 `admin_login_succeeded`, `admin_login_rejected` | 역할 있는 계정이 로그인됨 |
+| 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동<br>`UP` |
+| 관리자 로그인 | 로그 `admin_login_succeeded`<br>`admin_login_rejected` | 역할 있는 계정이 로그인됨 |
 | 권한 판정 | 로그 `admin_access_denied` | 급증하지 않음 |
 | 대시보드 | 대시보드 요약 응답 | 모든 지표가 채워짐 |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
@@ -150,8 +150,8 @@ ADMIN 전용 환경 변수는 없다. 관리자 토큰 수명과 대상 클레�
 
 | 실패 상황 | 확인할 자료와 위치 | 원인별 조치 |
 |---|---|---|
-| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | 대칭키 길이, 추적 주소 누락 중 해당 값 수정 후 새 태스크 시작 |
-| 관리자 로그인이 전부 인증 실패 | 요청 로그, Google client ID 시크릿 | 관리자 페이지의 client ID가 허용 목록에 없으면 추가 후 새 태스크 시작 |
+| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | 대칭키 길이와 추적 주소 누락 중 해당 값 수정 후 새 태스크 시작 |
+| 관리자 로그인이 전부 인증 실패 | 요청 로그<br>Google client ID 시크릿 | 관리자 페이지의 client ID가 허용 목록에 없으면 추가 후 새 태스크 시작 |
 | 관리자 로그인이 전부 권한 없음 | 로그 `admin_login_rejected`의 `reason` | `no_role`이면 운영 DB의 역할 행 확인<br>`no_member`면 그 Google 계정으로 앱에 먼저 가입 |
-| 모든 관리자 요청이 인증 실패 | 요청 로그, 관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
-| 변경 API가 전부 서버 오류 | Sentry, 감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
+| 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
+| 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |

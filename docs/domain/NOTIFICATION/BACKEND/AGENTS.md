@@ -44,7 +44,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | 시나리오 추가 | [4-2-9 큐 메시지](4-2-CONTRACT.md#4-2-9-큐-메시지) | [4-1-6 스토리 완성 알림](4-1-PIPELINES.md#4-1-6-스토리-완성-알림), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 동의 규칙 변경 | [5-1-4 수신 동의와 법적 요건](5-1-SECURITY.md#5-1-4-수신-동의와-법적-요건) | [4-1-5 발송 자격 판정](4-1-PIPELINES.md#4-1-5-발송-자격-판정), [DECISIONS.md](DECISIONS.md) |
 | 발송 시각 변경 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [4-1-8 출석 리마인드](4-1-PIPELINES.md#4-1-8-출석-리마인드) |
-| 캠페인, 문구 관리자 API 변경 | [4-1-15 캠페인 관리](4-1-PIPELINES.md#4-1-15-캠페인-관리), [4-1-16 문구 템플릿 변경](4-1-PIPELINES.md#4-1-16-문구-템플릿-변경) | [4-1-9 캠페인](4-1-PIPELINES.md#4-1-9-캠페인), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
+| 캠페인과 문구 관리자 API 변경 | [4-1-15 캠페인 관리](4-1-PIPELINES.md#4-1-15-캠페인-관리)<br>[4-1-16 문구 템플릿 변경](4-1-PIPELINES.md#4-1-16-문구-템플릿-변경) | [4-1-9 캠페인](4-1-PIPELINES.md#4-1-9-캠페인)<br>[ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
 | 메시지 큐, 재시도, 선점 시간 변경 | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도) | [5-2-4 발송 요청의 선점과 임대](5-2-CONCURRENCY.md#5-2-4-발송-요청의-선점과-임대), [5-2-5 소비자 선점](5-2-CONCURRENCY.md#5-2-5-소비자-선점) |
 | 발송 모드 전환 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건), [6-6 적용과 복구](6-DEPLOYMENT.md#6-6-적용과-복구), [3-1-4 배포 단위](3-1-SOFTWARE-ARCHITECTURE.md#3-1-4-배포-단위) |
 | 오류 코드 추가 | [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드) | [3-3-3 요청 검증과 오류](3-3-CONVENTIONS.md#3-3-3-요청-검증과-오류) |
@@ -62,7 +62,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
-| 회원 API, 내부 API, 관리자 API | [push/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/controller/) | 4-2-2~4-2-7, 4-2-11~4-2-18 |
+| 회원 API, 내부 API, 관리자 API | [push/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/controller/) | 4-2-2~4-2-7<br>4-2-11~4-2-18 |
 | 토큰, 동의, 자격, 발송기, 출석, 캠페인, 캠페인 관리, 템플릿 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-2~4-1-5, 4-1-8~4-1-10, 4-1-13, 4-1-15, 4-1-16 |
 | 완성 리스너 | [push/event/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/event/), [push/outbox/StoryCompletionOutboxListener.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/outbox/StoryCompletionOutboxListener.kt) | 4-1-6 |
 | 검수 리스너 | [story/submission/ModerationPushListeners.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/ModerationPushListeners.kt) | 4-1-7 |

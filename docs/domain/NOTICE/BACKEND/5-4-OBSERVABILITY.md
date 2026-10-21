@@ -2,7 +2,7 @@
 
 이 문서는 NOTICE 도메인의 관측 스택, 요청을 추적할 식별자, 구조화 로그 이벤트, 오류 확인 위치, 지표, 트레이스, 알림, 수집 조건을 정한다.
 
-개인정보 취급 규칙은 보안에, 오류 로그 수준은 오류 처리에 있다. ([5-1-5 식별자와 개인정보](5-1-SECURITY.md#5-1-5-식별자와-개인정보), [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
+개인정보 취급 규칙은 보안에 있으며 오류 로그 수준은 오류 처리에 있다. ([5-1-5 식별자와 개인정보](5-1-SECURITY.md#5-1-5-식별자와-개인정보), [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
 
 <br>
 
@@ -44,7 +44,7 @@ Fluent Bit`"]
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
-| `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
+| `traceId`<br>`spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 
 | 식별자 | 기록 위치 | 연결 대상 |
 |---|---|---|
@@ -59,7 +59,7 @@ Fluent Bit`"]
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
+| 모든 API 요청 | 응답 종료<br>`api_request_completed`<br>5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 게시 | 게시 커밋 뒤<br>`notice_published` | `notice_id`, `notified`, `notification_kind`<br>알림을 요청하지 않으면 `notification_kind` 없음 |
 
 <br>
@@ -94,7 +94,7 @@ NOTICE 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HT
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
-| 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외) 스팬 |
+| 스팬 | HTTP 요청 아래에 JDBC(QUERY만 포함하며 바인딩 값 제외) 스팬 |
 | 제외 | actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB 관측은 노이즈 필터가 제외 |
 
 <br>
@@ -103,7 +103,7 @@ NOTICE 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HT
 
 | 항목 | 기준 |
 |---|---|
-| 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
+| 정기 보고 | 매일 오전 10시(KST)<br>지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
 | NOTICE에서 수집하는 오류 | 500 예상하지 못한 예외<br>4xx 거절은 Sentry에 없어 보고에 포함되지 않음 |
 | 지표 기반 알림 | NOTICE 전용 규칙 없음 |
 

@@ -59,7 +59,7 @@ Fluent Bit`"]
 | 메시지 식별자 | 아웃박스 경고와 소비 결과 로그 | 발송 요청 1건 |
 | 회원 내부 ID | 서버 발송 실패 WARN과 회차 로그 | 회원 |
 | 회원 공개 식별자 | 알림 서비스 발송 실패 WARN | 회원 |
-| 캠페인 공개 식별자 | 캠페인 회차 로그, 감사 로그 대상 | 캠페인 |
+| 캠페인 공개 식별자 | 캠페인 회차 로그<br>감사 로그 대상 | 캠페인 |
 
 스케줄러 회차는 요청과 별도로 실행하므로 요청 ID가 없다. 큐 메시지의 `requestId`는 발행 원인 요청의 값이며 스케줄러에서 만든 메시지는 `unknown`이다.
 
@@ -75,7 +75,7 @@ Fluent Bit`"]
 | 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`<br>원격 모드의 `sent`는 기록한 요청 수, 로컬 모드는 발송기 호출 수 |
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
-| 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`, 실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
+| 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`<br>실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
 | 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자<br>발송 실패는 예외 클래스 포함 |
 | 완성 알림 실패 | 로컬 모드 발송 실패와 실행기 포화<br>평문 WARN | 회원 내부 ID, 스토리 공개 식별자<br>발송 실패는 예외 클래스 포함 |
 | FCM 발송 실패 | 서버와 알림 서비스<br>평문 WARN | 회원 식별자, 토큰 앞 12자, 오류 코드, 예외 클래스 |
@@ -109,7 +109,7 @@ Fluent Bit`"]
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
 | 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
-| 캠페인 | 캠페인 목록 API의 결과 필드, 회차 로그<br>발송 결과는 출석 리마인드와 같음 |
+| 캠페인 | 캠페인 목록 API의 결과 필드<br>회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 관리자 API | 요청 로그의 `/api/v1/admin/push/` 접두 경로 상태 분포<br>변경 이력은 관리자 도메인의 감사 로그 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
 | 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |

@@ -46,9 +46,9 @@
 
 | 항목 | 값 |
 |---|---|
-| 형식 | HS256 JWT, 앱 접근 토큰과 같은 대칭키 |
+| 형식 | HS256 JWT<br>앱 접근 토큰과 같은 대칭키 |
 | 클레임 | 발급자 `manyak`, 주체는 회원 공개 식별자, 대상 `manyak-admin`, 발급 시각, 만료 |
-| 수명 | 1시간, 갱신 없음 |
+| 수명 | 1시간<br>갱신 없음 |
 | 구분 | 대상 클레임이 `manyak-admin`을 포함하면 관리자 토큰<br>앱 경로는 대상 클레임이 있는 토큰을 거절 |
 
 <br>
@@ -64,7 +64,7 @@
 | `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
 | `message` | `string` | 안내 문구 |
 | `path` | `string` | 요청 경로 |
-| `details` | `object[]` | 선언적 필드 검증, 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+| `details` | `object[]` | 선언적 필드 검증 실패나 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
 
 | `details[].field` 규칙 | 값 |
 |---|---|
@@ -83,7 +83,7 @@
 
 **6. 공통 응답 구조**
 
-회원 검색 항목과 회원 상세, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
+회원 검색 항목, 회원 상세, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -200,7 +200,7 @@ Content-Type: application/json
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf` | `string` | 집계 기준 시각 |
-| `todayStartsAt` | `string` | 오늘 범위의 시작, KST 자정 |
+| `todayStartsAt` | `string` | 오늘 범위의 시작인 KST 자정 |
 | `members` | `object` | 회원 |
 | `members.total` | `integer` | 탈퇴하지 않은 회원 수 |
 | `members.joinedToday` | `integer` | 오늘 가입 |
@@ -272,13 +272,13 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `GET /admin/payments/orders` |
 | 인증 | 관리자 |
-| 성공 | 200, 페이지 구조 |
+| 성공 | 200<br>페이지 구조 |
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정, 기본 50 |
+| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
 
 <br>
@@ -290,7 +290,7 @@ Authorization: Bearer {adminToken}
 | `items[].orderId` | `string` | 주문 공개 식별자 |
 | `items[].member` | `object` | 회원 요약 구조 |
 | `items[].productId` | `string` | 상품 ID |
-| `items[].status` | `string` | `COMPLETED`, `REFUNDED` |
+| `items[].status` | `string` | `COMPLETED`<br>`REFUNDED` |
 | `items[].priceKrw` | `integer` | 결제 금액 |
 | `items[].creditAmount` | `integer` | 적립 총량 |
 | `items[].completedAt` | `string` | 완료 시각 |
@@ -303,7 +303,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 형식 오류인 `cursor`, `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 형식 오류인 `cursor` 또는 `limit` 타입 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -354,7 +354,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `query` | `string` | 필수 | 1~50자<br>UUID 형식이면 공개 식별자, 아니면 닉네임 부분 일치 |
+| `query` | `string` | 필수 | 1~50자<br>UUID 형식이면 공개 식별자로 검색하고 아니면 닉네임 부분 일치로 검색 |
 
 <br>
 
@@ -362,7 +362,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items` | `object[]` | 회원 요약 구조, 최대 20건<br>가입 시각 내림차순 |
+| `items` | `object[]` | 회원 요약 구조<br>최대 20건<br>가입 시각 내림차순 |
 
 - 검색은 접속 기록으로 감사 로그에 남는다.
 
@@ -476,7 +476,7 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `GET /admin/audit-logs` |
 | 인증 | 관리자 |
-| 성공 | 200, 페이지 구조 |
+| 성공 | 200<br>페이지 구조 |
 
 **1. 쿼리**
 
@@ -486,7 +486,7 @@ Authorization: Bearer {adminToken}
 | `action` | `string` | 선택 | 작업 이름 |
 | `targetType` | `string` | 선택 | 대상 종류 |
 | `targetId` | `string` | 선택 | 대상 식별자<br>`targetType`과 함께 지정 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정, 기본 50 |
+| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
 
 <br>
@@ -497,7 +497,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `items[].auditLogId` | `string` | 감사 로그 공개 식별자 |
 | `items[].admin` | `object` | 처리자의 회원 요약 구조 |
-| `items[].category` | `string` | `CHANGE`, `ACCESS` |
+| `items[].category` | `string` | `CHANGE`<br>`ACCESS` |
 | `items[].action` | `string` | 작업 이름 |
 | `items[].targetType` | `string` | 대상 종류 |
 | `items[].targetId` | `string` | 대상 식별자 |
@@ -558,11 +558,11 @@ Authorization: Bearer {adminToken}
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
-| ACCOUNT | 관리자 요청자 식별, 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 계정 상태, 회원 수 집계 |
-| PAYMENT | 관리자 요청자 식별, 감사 기록 연산 | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 |
-| NOTIFICATION, NOTICE, MODERATION | 관리자 요청자 식별, 감사 기록 연산 | 보류 제출본 수 |
-| STORY, CHAT | 없음 | 스토리 수, 채팅 시작 수, 턴 수, 회원별 소유 수 |
-| 모든 도메인 | 관리자 판정 필터, 앱 토큰 검증 보강 | 인증 필터, 상관관계 필터 |
+| ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 계정 상태, 회원 수 집계 |
+| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 |
+| NOTIFICATION, NOTICE, MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 보류 제출본 수 |
+| STORY<br>CHAT | 없음 | 스토리 수, 채팅 시작 수, 턴 수, 회원별 소유 수 |
+| 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.
 

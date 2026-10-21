@@ -84,12 +84,12 @@
 
 **6. 공통 응답 구조**
 
-캠페인 목록 항목, 캠페인 예약과 취소와 재실행의 응답은 같은 캠페인 구조를 쓴다.
+캠페인 목록 항목과 예약, 취소, 재실행의 응답은 같은 캠페인 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `campaignId` | `string` | 캠페인 공개 식별자 |
-| `kind` | `string` | `SERVICE`, `MARKETING` |
+| `kind` | `string` | `SERVICE`와 `MARKETING` |
 | `title` | `string` | 광고 표기 없는 제목 |
 | `body` | `string` | |
 | `scheduledAt` | `string` | 예약 시각 |
@@ -683,8 +683,8 @@ Content-Type: application/json
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
 | `PROMOTION` | `body` | `string` | 본문 |
-| `PROMOTION` | `noticeId` | `string` | 광고성 공지일 때만, 공지 공개 식별자 |
-| `PROMOTION` | `deepLink` | `string` | 광고성 공지일 때만, `/notices/{noticeId}` |
+| `PROMOTION` | `noticeId` | `string` | 광고성 공지일 때만<br>공지 공개 식별자 |
+| `PROMOTION` | `deepLink` | `string` | 광고성 공지일 때만<br>`/notices/{noticeId}` |
 
 | `status` | `title` | `body` |
 |---|---|---|
@@ -729,14 +729,14 @@ Content-Type: application/json
 |---|---|
 | 요청 | `GET /admin/push/campaigns` |
 | 인증 | 관리자 |
-| 성공 | 200, 페이지 구조의 캠페인 구조 |
+| 성공 | 200<br>페이지 구조의 캠페인 구조 |
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `status` | `string` | 선택 | 캠페인 상태 값 중 하나<br>생략하면 전체 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정, 기본 50 |
+| `limit` | `integer` | 선택 | 페이지 크기<br>1~100으로 보정<br>기본 50 |
 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
 
 - 생성 시각 내림차순이다. 프로모션과 공지 알림을 함께 보여 준다.
@@ -747,7 +747,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`, 형식 오류인 `cursor`, `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>형식 오류인 `cursor` 또는 `limit` 타입 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -795,16 +795,16 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `POST /admin/push/campaigns` |
 | 인증 | 관리자 |
-| 성공 | 201, 캠페인 구조 |
+| 성공 | 201<br>캠페인 구조 |
 
 **1. 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `title` | `string` | 필수 | 1~100자, 광고 표기 없이 |
+| `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
 | `body` | `string` | 필수 | 1~300자 |
 | `scheduledAt` | `string` | 선택 | 예약 시각<br>생략하면 현재 시각으로 즉시 발송 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 종류는 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
 - 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-15 대상 수 미리보기](#4-2-15-대상-수-미리보기))
@@ -864,14 +864,14 @@ Content-Type: application/json
 |---|---|
 | 요청 | `POST /admin/push/campaigns/{campaignId}/cancel` |
 | 인증 | 관리자 |
-| 성공 | 200, 캠페인 구조 |
+| 성공 | 200<br>캠페인 구조 |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaignId` | 경로 | 필수 | 캠페인 공개 식별자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -879,7 +879,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `campaignId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `campaignId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 캠페인 |
 | 409 | `CONFLICT` | 예약 상태가 아님<br>이미 선점됐거나 끝났거나 취소됨 |
 
@@ -891,14 +891,14 @@ Content-Type: application/json
 |---|---|
 | 요청 | `POST /admin/push/campaigns/{campaignId}/retry` |
 | 인증 | 관리자 |
-| 성공 | 200, 캠페인 구조 |
+| 성공 | 200<br>캠페인 구조 |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaignId` | 경로 | 필수 | 캠페인 공개 식별자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 예약 상태로 돌아가 다음 폴링에서 다시 실행된다. 이미 기록된 회원의 요청은 중복 기록되지 않는다.
 
@@ -908,7 +908,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `campaignId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `campaignId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 캠페인 |
 | 409 | `CONFLICT` | 실패 상태가 아님 |
 
@@ -926,7 +926,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
+| `kind` | `string` | 필수 | `SERVICE`와 `MARKETING` |
 
 <br>
 
@@ -935,9 +935,9 @@ Content-Type: application/json
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `kind` | `string` | 요청한 종류 |
-| `targetCount` | `integer` | 지금 조건으로 대상이 되는 회원 수 |
+| `targetCount` | `integer` | 현재 조건으로 대상이 되는 회원 수 |
 | `nightEligibleCount` | `integer / null` | 광고 종류에서 야간 동의까지 있는 회원 수<br>서비스 종류는 `null` |
-| `nightNow` | `boolean` | 지금이 KST 야간이면 `true` |
+| `nightNow` | `boolean` | 현재 시각이 KST 야간이면 `true` |
 | `asOf` | `string` | 집계 시각 |
 
 - 실제 발송 대상은 회차가 다시 조회하므로 미리보기와 다를 수 있다.
@@ -993,16 +993,16 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `templateKey` | `string` | |
-| `effective` | `object` | 지금 적용되는 문구 |
+| `effective` | `object` | 현재 적용되는 문구 |
 | `effective.title` | `string` | 광고 표기 없는 제목 |
 | `effective.body` | `string` | |
 | `effective.isDefault` | `boolean` | 기본 문구면 `true` |
-| `overrides` | `object[]` | 오버라이드 행, 적용 시작 내림차순 |
+| `overrides` | `object[]` | 오버라이드 행<br>적용 시작 내림차순 |
 | `overrides[].title` | `string` | |
 | `overrides[].body` | `string` | |
 | `overrides[].effectiveFrom` | `string` | |
 | `overrides[].effectiveUntil` | `string / null` | `null`은 상시 |
-| `overrides[].active` | `boolean` | 지금 유효한 행이면 `true` |
+| `overrides[].active` | `boolean` | 현재 유효한 행이면 `true` |
 
 <br>
 
@@ -1020,18 +1020,18 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `PUT /admin/push/templates/{templateKey}` |
 | 인증 | 관리자 |
-| 성공 | 200, 문구 템플릿 조회와 같은 응답 |
+| 성공 | 200<br>문구 템플릿 조회와 같은 응답 |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `templateKey` | 경로 | 필수 | `attendance_reminder` |
-| `title` | `string` | 필수 | 1~100자, 광고 표기 없이 |
+| `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
 | `body` | `string` | 필수 | 1~300자 |
 | `effectiveFrom` | `string` | 선택 | 적용 시작<br>생략하면 현재 |
 | `effectiveUntil` | `string` | 선택 | 적용 종료<br>생략하면 상시 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 오버라이드 행을 추가한다. 기존 행은 바꾸지 않는다.
 
@@ -1087,16 +1087,16 @@ Content-Type: application/json
 |---|---|
 | 요청 | `DELETE /admin/push/templates/{templateKey}` |
 | 인증 | 관리자 |
-| 성공 | 200, 문구 템플릿 조회와 같은 응답 |
+| 성공 | 200<br>문구 템플릿 조회와 같은 응답 |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `templateKey` | 경로 | 필수 | `attendance_reminder` |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 지금 유효한 행과 아직 시작하지 않은 행의 종료 시각을 현재로 바꾼다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
+- 현재 유효한 행과 아직 시작하지 않은 행의 종료 시각을 현재로 바꾼다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
 
 <br>
 
@@ -1116,7 +1116,7 @@ Content-Type: application/json
 | STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트 |
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
 | NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
-| ADMIN | 없음 | 관리자 요청자, 변경 감사 기록 |
+| ADMIN | 없음 | 관리자 요청자와 변경 감사 기록 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
 | PAYMENT | 없음 | 출석 보상 멱등 키의 존재 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |

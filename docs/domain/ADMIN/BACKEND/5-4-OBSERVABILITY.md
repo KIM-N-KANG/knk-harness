@@ -2,7 +2,7 @@
 
 이 문서는 ADMIN 도메인의 관측 스택, 요청을 추적할 식별자, 구조화 로그 이벤트, 오류 확인 위치, 지표, 트레이스, 알림, 수집 조건을 정한다.
 
-비밀값과 개인정보 취급 규칙은 보안에, 오류 로그 수준은 오류 처리에 있다. ([5-1-6 비밀값과 개인정보](5-1-SECURITY.md#5-1-6-비밀값과-개인정보), [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
+비밀값과 개인정보 취급 규칙은 보안에 있으며 오류 로그 수준은 오류 처리에 있다. ([5-1-6 비밀값과 개인정보](5-1-SECURITY.md#5-1-6-비밀값과-개인정보), [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
 
 <br>
 
@@ -44,7 +44,7 @@ Fluent Bit`"]
 | `request_id` | `req_` + UUID | 요청 헤더 값을 쓰고 없으면 생성<br>응답 헤더로 반환하고 감사 로그에 저장 |
 | `session_id` | `X-Manyak-Session-Id` | 관리자 페이지는 보내지 않아 `unknown` |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
-| `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
+| `traceId`<br>`spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 
 | 식별자 | 기록 위치 | 연결 대상 |
 |---|---|---|
@@ -60,12 +60,12 @@ Fluent Bit`"]
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
+| 모든 API 요청 | 응답 종료<br>`api_request_completed`<br>5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
 | 관리자 로그인 성공 | 토큰 발급 뒤<br>`admin_login_succeeded` | `admin_public_id` |
 | 관리자 로그인 거절 | 자격 없음 판정<br>`admin_login_rejected` | `reason` = `no_member`, `no_role`, `suspended`, `deleted`<br>회원 식별자 없음 |
 | 관리자 판정 거절 | 필터의 403<br>평문 WARN `admin_access_denied` | `endpoint`, `reason` = `no_role`, `suspended`, `deleted`, `no_member`, `admin_public_id` |
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
-| 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름, 예외 클래스 |
+| 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
 
 <details>
 <summary><b>예시: 로그인 거절 로그 1줄</b></summary>
@@ -89,7 +89,7 @@ Fluent Bit`"]
 | 관리자 로그인 | 로그 `admin_login_rejected`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/auth/login/google` 401과 403 비율 |
 | 권한 판정 | 로그 `admin_access_denied`<br>요청 로그의 `/api/v1/admin/` 접두 경로 401과 403 비율 |
 | 운영 작업 | 감사 로그 조회<br>실패한 요청은 감사 로그에 없고 요청 로그에만 있음 |
-| 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary` 500 비율, `duration_ms` |
+| 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary` 500 비율<br>`duration_ms` |
 | 접속 기록 | 접속 기록 실패 WARN |
 
 <br>
@@ -114,7 +114,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 | 항목 | 내용 |
 |---|---|
 | 활성화와 표본 | 환경 변수로 켜며 기본값은 비활성 |
-| 스팬 | HTTP 요청 아래에 JDBC(QUERY만, 바인딩 값 제외) 스팬<br>대시보드는 집계 쿼리마다 JDBC 스팬 |
+| 스팬 | HTTP 요청 아래에 JDBC(QUERY만 포함하며 바인딩 값 제외) 스팬<br>대시보드는 집계 쿼리마다 JDBC 스팬 |
 | 제외 | actuator 요청, Spring Security 내부 관측, 요청 밖 루트 DB 관측은 노이즈 필터가 제외 |
 
 <br>
@@ -123,8 +123,8 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 
 | 항목 | 기준 |
 |---|---|
-| 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
-| ADMIN에서 수집하는 오류 | 500 예상하지 못한 예외, 감사 기록 실패로 인한 500<br>401과 403 거절은 Sentry에 없어 보고에 포함되지 않음 |
+| 정기 보고 | 매일 오전 10시(KST)<br>지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
+| ADMIN에서 수집하는 오류 | 500 예상하지 못한 예외<br>감사 기록 실패로 인한 500<br>401과 403 거절은 Sentry에 없어 보고에 포함되지 않음 |
 | 지표 기반 알림 | ADMIN 전용 규칙 없음 |
 
 <br>
@@ -135,7 +135,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 
 | 데이터 | 현재 기록 방식 |
 |---|---|
-| 신원 증명, 관리자 토큰 | 로그, Sentry, 트레이스에 기록하지 않음 |
+| 신원 증명<br>관리자 토큰 | 로그, Sentry, 트레이스에 기록하지 않음 |
 | 사유 | 감사 로그에만<br>로그에 기록하지 않음 |
 | 변경 전후 값 | 감사 로그에만 |
 | 검색어 | 감사 로그의 대상 식별자에만<br>로그에 기록하지 않음 |

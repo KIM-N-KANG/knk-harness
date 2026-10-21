@@ -4,7 +4,7 @@
 
 다른 도메인의 테이블에서는 NOTICE 도메인이 참조하는 컬럼만 설명한다.
 
-입력값의 검증 규칙은 보안에, 잠금과 알림 1회성은 동시성에 있다. ([5-1-4 입력 검증](5-1-SECURITY.md#5-1-4-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
+입력값의 검증 규칙은 보안에 있으며 잠금과 알림 1회성은 동시성에 있다. ([5-1-4 입력 검증](5-1-SECURITY.md#5-1-4-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
 
 <br>
 
@@ -59,8 +59,8 @@ erDiagram
 
 | 인덱스 | 컬럼 |
 |---|---|
-| `idx_notices_published` | `published_at DESC`, `id DESC` WHERE `status = 'PUBLISHED'` |
-| `idx_notices_created` | `created_at DESC`, `id DESC` |
+| `idx_notices_published` | `published_at DESC`<br>`id DESC` WHERE `status = 'PUBLISHED'` |
+| `idx_notices_created` | `created_at DESC`<br>`id DESC` |
 
 <br>
 

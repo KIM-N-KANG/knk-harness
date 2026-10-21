@@ -4,7 +4,7 @@
 
 다른 도메인의 테이블에서는 ADMIN 도메인이 참조하는 컬럼만 설명한다.
 
-입력값의 검증 규칙은 보안에, 감사 기록의 트랜잭션 규칙은 동시성에 있다. ([5-1-5 입력 검증](5-1-SECURITY.md#5-1-5-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
+입력값의 검증 규칙은 보안에 있으며 감사 기록의 트랜잭션 규칙은 동시성에 있다. ([5-1-5 입력 검증](5-1-SECURITY.md#5-1-5-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
 
 <br>
 
@@ -70,7 +70,7 @@ erDiagram
 | `category` | varchar(10) | NOT NULL, CHECK `CHANGE` `ACCESS` | 변경 작업 또는 개인정보 조회 |
 | `action` | varchar(50) | NOT NULL | 작업 이름<br>목록은 아래 |
 | `target_type` | varchar(30) | NOT NULL | 대상 종류<br>목록은 아래 |
-| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원과 공지와 캠페인과 제출본은 공개 식별자, 정책값은 정책 키, 검색은 검색어 |
+| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본은 공개 식별자<br>정책값은 정책 키<br>검색은 검색어 |
 | `reason` | varchar(500) | | 사유<br>변경 작업은 NOT NULL, 조회는 NULL |
 | `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL |
 | `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL |
@@ -78,8 +78,8 @@ erDiagram
 
 | 인덱스 | 컬럼 |
 |---|---|
-| `idx_admin_audit_logs_created` | `created_at DESC`, `id DESC` |
-| `idx_admin_audit_logs_admin` | `admin_user_id`, `created_at DESC` |
+| `idx_admin_audit_logs_created` | `created_at DESC`<br>`id DESC` |
+| `idx_admin_audit_logs_admin` | `admin_user_id`<br>`created_at DESC` |
 | `idx_admin_audit_logs_target` | `target_type`, `target_id`, `created_at DESC` |
 
 | `action` | `category` | `target_type` | 기록하는 도메인 |
@@ -110,11 +110,11 @@ erDiagram
 | 테이블 | 컬럼 | ADMIN이 하는 일 |
 |---|---|---|
 | `users` | `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 검색과 상세, 회원 수와 탈퇴 수 집계 |
-| `story_chats` | `created_at`, `user_id` | 채팅 시작 수, 회원 상세의 채팅 수 |
-| `story_messages` | `role`, `created_at` | 채팅 턴 수 |
-| `stories` | `created_at`, `user_id`, `deleted_at` | 스토리 수, 회원 상세의 스토리 수 |
+| `story_chats` | `created_at`<br>`user_id` | 채팅 시작 수<br>회원 상세의 채팅 수 |
+| `story_messages` | `role`<br>`created_at` | 채팅 턴 수 |
+| `stories` | `created_at`, `user_id`, `deleted_at` | 스토리 수<br>회원 상세의 스토리 수 |
 | `credit_transactions` | `amount`, `reason`, `created_at` | 이프 지급과 소진 |
-| `credit_orders` | `status`, `price_krw`, `completed_at`, `refunded_at` | 결제 건수와 금액, 환불 건수 |
+| `credit_orders` | `status`, `price_krw`, `completed_at`, `refunded_at` | 결제 건수와 금액<br>환불 건수 |
 | `story_submissions` | `held_at` | 검수 보류 수 |
 
 <br>

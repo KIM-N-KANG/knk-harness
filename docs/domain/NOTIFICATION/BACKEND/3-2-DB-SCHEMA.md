@@ -100,7 +100,7 @@ erDiagram
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
-| `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용<br>기본 문구 복귀가 현재 시각으로 갱신 |
+| `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용<br>기본 문구로 복귀할 때 현재 시각으로 갱신 |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -167,7 +167,7 @@ erDiagram
 | `users` | `reward_identity_user_id` | 출석 미수령 판정 |
 | `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
 | `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
-| `notices` | `id`, `public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
+| `notices` | `id`<br>`public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
 
 <br>
 

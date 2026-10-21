@@ -710,10 +710,10 @@ Content-Type: application/json
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `memberId` | `string` | 필수 | 회원 공개 식별자 |
-| `type` | `string` | 필수 | `GRANT`는 지급, `REVOKE`는 회수 |
+| `type` | `string` | 필수 | `GRANT`는 지급<br>`REVOKE`는 회수 |
 | `amount` | `integer` | 필수 | 1~100,000 |
-| `idempotencyKey` | `string` | 필수 | 1~64자, 영문과 숫자와 하이픈<br>관리자 페이지가 요청마다 새로 만들고 재시도에는 같은 값 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `idempotencyKey` | `string` | 필수 | 1~64자<br>영문, 숫자, 하이픈<br>관리자 페이지가 요청마다 새로 만들고 재시도에는 같은 값 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -809,10 +809,10 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items` | `object[]` | 정책 키 7종, 저장 키 순서 |
-| `items[].policyKey` | `string` | 저장 키, snake_case |
+| `items` | `object[]` | 정책 키 7종<br>저장 키 순서 |
+| `items[].policyKey` | `string` | 저장 키<br>snake_case |
 | `items[].defaultAmount` | `integer` | 기본값 |
-| `items[].effectiveAmount` | `integer` | 지금 적용 중인 값, 스냅샷 기준 |
+| `items[].effectiveAmount` | `integer` | 현재 적용 중인 값<br>스냅샷 기준 |
 | `items[].minimum` | `integer` | 키별 최솟값 |
 | `items[].override` | `object / null` | 오버라이드 행<br>없으면 `null` |
 | `items[].override.amount` | `integer` | |
@@ -858,7 +858,7 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `PUT /admin/credits/policies/{policyKey}` |
 | 인증 | 관리자 |
-| 성공 | 200, 정책 오버라이드 조회의 항목 구조 |
+| 성공 | 200<br>정책 오버라이드 조회의 항목 구조 |
 
 **1. 경로와 본문**
 
@@ -866,8 +866,8 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `policyKey` | 경로 | 필수 | 저장 키 7종 중 하나 |
 | `amount` | `integer` | 필수 | 키별 최솟값 이상 10,000 이하 |
-| `effectiveUntil` | `string` | 선택 | 종료 시각, 현재 이후<br>생략하면 상시 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `effectiveUntil` | `string` | 선택 | 종료 시각<br>현재 이후<br>생략하면 상시 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 키당 한 행이며 이미 있으면 덮어쓴다. 응답의 `effectiveAmount`는 갱신 전 스냅샷 값일 수 있다.
 
@@ -918,14 +918,14 @@ Content-Type: application/json
 |---|---|
 | 요청 | `DELETE /admin/credits/policies/{policyKey}` |
 | 인증 | 관리자 |
-| 성공 | 200, 정책 오버라이드 조회의 항목 구조 |
+| 성공 | 200<br>정책 오버라이드 조회의 항목 구조 |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `policyKey` | 경로 | 필수 | 저장 키 7종 중 하나 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 삭제 뒤 갱신 주기 안에 기본값으로 돌아간다.
 
@@ -936,7 +936,7 @@ Content-Type: application/json
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `reason` 누락 |
-| 404 | `NOT_FOUND` | 없는 정책 키, 오버라이드 행 없음 |
+| 404 | `NOT_FOUND` | 없는 정책 키<br>오버라이드 행 없음 |
 
 <br>
 
@@ -948,7 +948,7 @@ Content-Type: application/json
 | STORY | 체험 예약과 복원, 선차감, 환불, 정책값 `story_creation_cost`, 잔액 부족과 한도 소진 예외 | 간편 제작 진행의 상태와 스토리 참조, 스토리 제목과 읽기 판정 |
 | CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_turn_cost`, `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조 |
 | NOTIFICATION | 출석 보상 멱등 키의 존재 | 없음 |
-| ADMIN | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 | 관리자 요청자, 변경 감사 기록 |
+| ADMIN | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 | 관리자 요청자와 변경 감사 기록 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다. 상태 코드 변환은 호출 도메인이 한다.
@@ -965,7 +965,7 @@ Content-Type: application/json
 | 복원 | 기기 식별자 또는 회원, 카운터 | 회원 복원은 성공 여부 |
 | 체험 스냅샷 | 회원, 기기 식별자 | 완료 여부 |
 | 정책값 | 정책 키 | 현재 유효값 |
-| 완료와 환불 주문 조회 | 커서, 페이지 크기 | 완료 시각 내림차순의 주문과 다음 커서 |
+| 완료와 환불 주문 조회 | 커서<br>페이지 크기 | 완료 시각 내림차순의 주문과 다음 커서 |
 | 지급과 소진 집계 | 시각 범위 | 지급 사유 합계와 소모 사유 합계의 절댓값 |
 
 | 예외 | 앱 코드 | 의미 |

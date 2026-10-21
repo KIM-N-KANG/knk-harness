@@ -1550,7 +1550,7 @@ Content-Type: application/json
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `memberId` | 경로 | 필수 | 회원 공개 식별자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -1569,9 +1569,9 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `memberId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `memberId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 회원 |
-| 409 | `CONFLICT` | 이미 정지, 탈퇴 계정 |
+| 409 | `CONFLICT` | 이미 정지<br>탈퇴 계정 |
 | 409 | `ADMIN_ACCOUNT_PROTECTED` | 관리자 역할이 있는 회원 |
 
 <details>
@@ -1618,14 +1618,14 @@ Content-Type: application/json
 |---|---|
 | 요청 | `DELETE /admin/members/{memberId}/suspension` |
 | 인증 | 관리자 |
-| 성공 | 200, 계정 정지와 같은 응답 구조이고 `status`는 `ACTIVE` |
+| 성공 | 200<br>계정 정지와 같은 응답 구조이고 `status`는 `ACTIVE` |
 
 **1. 경로와 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `memberId` | 경로 | 필수 | 회원 공개 식별자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -1633,9 +1633,9 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `memberId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `memberId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 회원 |
-| 409 | `CONFLICT` | 정지 상태가 아님, 탈퇴 계정 |
+| 409 | `CONFLICT` | 정지 상태가 아님<br>탈퇴 계정 |
 
 <br>
 

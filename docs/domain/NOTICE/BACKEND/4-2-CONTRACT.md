@@ -58,7 +58,7 @@
 | `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
 | `message` | `string` | 안내 문구 |
 | `path` | `string` | 요청 경로 |
-| `details` | `object[]` | 선언적 필드 검증, 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+| `details` | `object[]` | 선언적 필드 검증 실패나 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
 
 | `details[].field` 규칙 | 값 |
 |---|---|
@@ -77,14 +77,14 @@
 
 **6. 공통 응답 구조**
 
-관리자 목록 항목, 관리자 상세, 작성과 수정과 게시와 게시 해제의 응답은 같은 관리자 공지 구조를 쓴다.
+관리자 목록 항목, 관리자 상세, 작성, 수정, 게시, 게시 해제의 응답은 같은 관리자 공지 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `noticeId` | `string` | 공지 공개 식별자 |
 | `title` | `string` | |
 | `body` | `string` | 목록에서는 생략 |
-| `status` | `string` | `DRAFT`, `PUBLISHED` |
+| `status` | `string` | `DRAFT`<br>`PUBLISHED` |
 | `publishedAt` | `string / null` | 마지막 게시 시각<br>게시한 적 없으면 `null` |
 | `notifiedAt` | `string / null` | 알림 요청 시각<br>요청한 적 없으면 `null` |
 | `createdBy` | `object` | 작성 관리자 |
@@ -108,13 +108,13 @@
 |---|---|
 | 요청 | `GET /notices` |
 | 인증 | 불필요 |
-| 성공 | 200, 페이지 구조 |
+| 성공 | 200<br>페이지 구조 |
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정, 기본 20 |
+| `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정<br>기본 20 |
 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
 
 <br>
@@ -133,7 +133,7 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 형식 오류인 `cursor`, `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 형식 오류인 `cursor` 또는 `limit` 타입 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -242,14 +242,14 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 |---|---|
 | 요청 | `GET /admin/notices` |
 | 인증 | 관리자 |
-| 성공 | 200, 페이지 구조의 관리자 공지 구조 |
+| 성공 | 200<br>페이지 구조의 관리자 공지 구조 |
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `status` | `string` | 선택 | `DRAFT`, `PUBLISHED`<br>생략하면 전체 |
-| `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정, 기본 20 |
+| `status` | `string` | 선택 | `DRAFT`<br>`PUBLISHED`<br>생략하면 전체 |
+| `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정<br>기본 20 |
 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
 
 - 생성 시각 내림차순이다. 항목에 `body`는 없다.
@@ -260,7 +260,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`, 형식 오류인 `cursor`, `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>형식 오류인 `cursor` 또는 `limit` 타입 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -304,7 +304,7 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `GET /admin/notices/{noticeId}` |
 | 인증 | 관리자 |
-| 성공 | 200, 관리자 공지 구조 |
+| 성공 | 200<br>관리자 공지 구조 |
 
 **1. 실패 응답**
 
@@ -321,7 +321,7 @@ Authorization: Bearer {adminToken}
 |---|---|
 | 요청 | `POST /admin/notices` |
 | 인증 | 관리자 |
-| 성공 | 201, 관리자 공지 구조 |
+| 성공 | 201<br>관리자 공지 구조 |
 
 **1. 본문**
 
@@ -329,7 +329,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `title` | `string` | 필수 | 1~100자 |
 | `body` | `string` | 필수 | 1~5,000자 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 생성된 공지는 초안이다.
 
@@ -386,7 +386,7 @@ Content-Type: application/json
 |---|---|
 | 요청 | `PATCH /admin/notices/{noticeId}` |
 | 인증 | 관리자 |
-| 성공 | 200, 관리자 공지 구조 |
+| 성공 | 200<br>관리자 공지 구조 |
 
 **1. 본문**
 
@@ -394,7 +394,7 @@ Content-Type: application/json
 |---|---|---|---|
 | `title` | `string` | 선택 | 1~100자<br>생략하면 유지 |
 | `body` | `string` | 선택 | 1~5,000자<br>생략하면 유지 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - `title`과 `body` 중 하나는 있어야 한다. `null`은 생략과 같다.
 
@@ -404,7 +404,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 둘 다 없음, 공백만, 길이 초과, `reason` 누락, `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 둘 다 없음, 공백만, 길이 초과, `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
 
 <br>
@@ -422,8 +422,8 @@ Content-Type: application/json
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `notify` | `boolean` | 필수 | 알림을 함께 요청할지 |
-| `notificationKind` | `string` | `notify`가 `true`면 필수 | `SERVICE`는 정보성, `MARKETING`은 광고성 |
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `notificationKind` | `string` | `notify`가 `true`면 필수 | `SERVICE`는 정보성<br>`MARKETING`은 광고성 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -500,13 +500,13 @@ Content-Type: application/json
 |---|---|
 | 요청 | `POST /admin/notices/{noticeId}/unpublish` |
 | 인증 | 관리자 |
-| 성공 | 200, 관리자 공지 구조 |
+| 성공 | 200<br>관리자 공지 구조 |
 
 **1. 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -514,7 +514,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
 | 409 | `CONFLICT` | 게시되지 않은 공지 |
 
@@ -526,13 +526,13 @@ Content-Type: application/json
 |---|---|
 | 요청 | `DELETE /admin/notices/{noticeId}` |
 | 인증 | 관리자 |
-| 성공 | 204, 본문 없음 |
+| 성공 | 204<br>본문 없음 |
 
 **1. 본문**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `reason` | `string` | 필수 | 사유, 1~500자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 <br>
 
@@ -540,9 +540,9 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락, `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
-| 409 | `CONFLICT` | 게시된 공지, 알림을 요청한 적 있는 공지 |
+| 409 | `CONFLICT` | 게시된 공지<br>알림을 요청한 적 있는 공지 |
 
 <br>
 
@@ -551,9 +551,9 @@ Content-Type: application/json
 | 도메인 | NOTICE가 제공하는 것 | NOTICE가 사용하는 것 |
 |---|---|---|
 | NOTIFICATION | 없음 | 공지 발송 요청 연산 |
-| ADMIN | 없음 | 관리자 요청자, 변경 감사 기록 |
+| ADMIN | 없음 | 관리자 요청자와 변경 감사 기록 |
 | ACCOUNT | 없음 | 작성 관리자의 닉네임과 공개 식별자 |
-| 모든 도메인 | 없음 | 상관관계 필터, 관리자 판정 필터 |
+| 모든 도메인 | 없음 | 상관관계 필터와 관리자 판정 필터 |
 
 다른 도메인의 연산을 호출할 때의 입력과 결과는 다음과 같다.
 

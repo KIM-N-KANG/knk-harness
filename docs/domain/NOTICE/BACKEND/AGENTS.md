@@ -27,7 +27,7 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
-- 관리자 인증 수준과 토큰은 ADMIN 세트가, 공지 알림의 대상 판정과 발송은 NOTIFICATION 세트가 정한다.
+- 관리자 인증 수준과 토큰은 ADMIN 세트가 정하고 공지 알림의 대상 판정과 발송은 NOTIFICATION 세트가 정한다.
 - 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-11 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-11-다른-도메인과의-경계))
 
 <br>
@@ -36,10 +36,10 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 | 하려는 일 | 먼저 볼 곳 | 함께 볼 곳 |
 |---|---|---|
-| 요청, 응답 필드 변경 | [4-2 계약](4-2-CONTRACT.md) | [4-1 처리 흐름](4-1-PIPELINES.md), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
-| 테이블, 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
-| 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더), 서버 저장소 `http/notice/`의 수동 호출 파일과 통합 테스트 |
-| 상태 전이, 알림 규칙 변경 | [4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시) | [5-2-2 멱등과 1회 처리](5-2-CONCURRENCY.md#5-2-2-멱등과-1회-처리), [NOTIFICATION 4-1-9 캠페인](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-9-캠페인) |
+| 요청과 응답 필드 변경 | [4-2 계약](4-2-CONTRACT.md) | [4-1 처리 흐름](4-1-PIPELINES.md)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
+| 테이블과 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
+| 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)<br>서버 저장소 `http/notice/`의 수동 호출 파일과 통합 테스트 |
+| 상태 전이와 알림 규칙 변경 | [4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시) | [5-2-2 멱등과 1회 처리](5-2-CONCURRENCY.md#5-2-2-멱등과-1회-처리)<br>[NOTIFICATION 4-1-9 캠페인](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-9-캠페인) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-8 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-8-수집-조건과-실패-처리) |
 | 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 명세 절 |
@@ -53,14 +53,14 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | 공개 API와 관리자 API 계층 | `notice/controller/` | 4-2-2~4-2-10 |
-| 공지 서비스, 게시 | `notice/service/` | 4-1-2~4-1-7 |
-| 모델, 저장 계층 | `notice/entity/`, `notice/repository/` | 3-2 DB 스키마 |
+| 공지 서비스와 게시 | `notice/service/` | 4-1-2~4-1-7 |
+| 모델과 저장 계층 | `notice/entity/`<br>`notice/repository/` | 3-2 DB 스키마 |
 | 캠페인 생성 연산 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-4 |
 | 오류 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
-| 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
-| 테스트 | `src/test/kotlin/com/knk/manyak/notice/`, `http/notice/` | 5-5 테스트 케이스 |
-| 배포 | [.github/workflows/](../../../../../manyak-server/.github/workflows/), [Dockerfile](../../../../../manyak-server/Dockerfile) | 6 배포 |
+| 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/)<br>[dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
+| 테스트 | `src/test/kotlin/com/knk/manyak/notice/`<br>`http/notice/` | 5-5 테스트 케이스 |
+| 배포 | [.github/workflows/](../../../../../manyak-server/.github/workflows/)<br>[Dockerfile](../../../../../manyak-server/Dockerfile) | 6 배포 |
 
 <br>
 

@@ -81,7 +81,7 @@ Fluent Bit`"]
 | 접수, 조회, 재제출, 취소 | 요청 로그의 `/api/v1/stories/general`, `/api/v1/stories/{storyId}`, `/api/v1/stories/submissions` 상태 분포<br>Sentry `endpoint` 태그 |
 | 실행 | 로그 `moderation_execution_failed`의 예외 클래스와 HTTP 상태, 트레이스 `story.moderation.run` |
 | 판정 내용 | AI 서버 Langfuse의 제출본 식별자 검색 |
-| 재시도와 보류 | 관리자 보류 목록, 제출본 행의 재시도 횟수와 다음 시도 시각<br>보류 알림 Slack 메시지<br>해제 이력은 관리자 도메인의 감사 로그 |
+| 재시도와 보류 | 관리자 보류 목록<br>제출본 행의 재시도 횟수와 다음 시도 시각<br>보류 알림 Slack 메시지<br>해제 이력은 관리자 도메인의 감사 로그 |
 | 임대 복구 | 제출본 행의 임대 시작 시각과 회차<br>로그 `moderation_execution_deferred`, `moderation_dispatch_deferred` |
 | 승인 적용 실패 | 제출본 `errorCode` `APPLY_FAILED` |
 
