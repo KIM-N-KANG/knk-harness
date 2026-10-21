@@ -58,7 +58,7 @@
 
 - 공통 코드를 수정하면 채팅 태스크의 영향도 확인하고 관련 테스트를 함께 실행한다.
 - 코드 기본값과 실제 운영 주입값을 구분한다. 운영값은 `7-4-DEPLOYMENT.md`에서 주입 경로를 찾고, 실행 중인 배포 버전과 환경 변수, 설정 저장소의 적용 관계를 확인한다. 코드 기본값이나 Terraform 기본값만으로 운영값을 단정하지 않는다.
-- 로컬 평가 자료는 git에서 제외된 `experiment/`에 있다. 평가 방법과 실행 설계는 `6-4-AI-EVALUATION-METHOD.md`와 `6-5-AI-EVALUATION-IMPLEMENTATION.md`를 따른다.
+- 스토리라인 로컬 평가 자료는 git에서 제외된 `evaluation/storyline/`에 있다. 평가 방법과 실행 설계는 `6-4-AI-EVALUATION-METHOD.md`와 `6-5-AI-EVALUATION-IMPLEMENTATION.md`를 따른다.
 
 <br>
 
