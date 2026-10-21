@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
 | 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
-| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스는 삭제 경로 없음 |
+| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스는 삭제 경로 없음<br>템플릿은 종료 시각만 갱신 |
 | FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -36,10 +36,13 @@ erDiagram
         bigint id PK
         varchar template_key
     }
+    notices |o--o| push_campaigns : "NOTICE, 공지 알림"
     push_campaigns {
         bigint id PK
         uuid public_id
+        varchar kind
         varchar status
+        bigint notice_id FK
     }
     push_outbox {
         bigint id PK
@@ -88,7 +91,7 @@ erDiagram
 
 **`push_message_templates`**
 
-출석 리마인드 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 운영자가 직접 기록한다.
+출석 리마인드 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 관리자 API가 행을 추가한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -97,7 +100,7 @@ erDiagram
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
-| `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용 |
+| `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용<br>기본 문구 복귀가 현재 시각으로 갱신 |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -109,12 +112,14 @@ erDiagram
 
 **`push_campaigns`**
 
-프로모션 푸시 1건의 예약과 결과가 한 행이다. 운영자가 예약 행을 추가하고 스케줄러가 결과를 기록한다.
+캠페인 1건의 예약과 결과가 한 행이다. 관리자 API가 예약 행을 추가하고 공지 게시가 공지 알림 행을 추가하며 스케줄러가 결과를 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
+| `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함 |
+| `notice_id` | bigint | FK `notices.id`, UNIQUE | 공지 알림이면 그 공지<br>프로모션은 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
@@ -160,7 +165,9 @@ erDiagram
 | `users` | `status` | 발송 자격 판정 |
 | `users` | `public_id` | 수신자 식별자 |
 | `users` | `reward_identity_user_id` | 출석 미수령 판정 |
+| `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
 | `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
+| `notices` | `id`, `public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
 
 <br>
 

@@ -1,8 +1,8 @@
 # 4-2 계약
 
-이 문서는 MODERATION 도메인의 클라이언트 API와 다른 도메인과의 경계를 정한다.
+이 문서는 MODERATION 도메인의 클라이언트 API, 관리자 API와 다른 도메인과의 경계를 정한다.
 
-접수 요청의 본문과 실패 조건은 STORY 세트의 등록과 수정 계약에, 처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에 있다. ([STORY 4-2-15 일반 제작 등록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-15-일반-제작-등록), [STORY 4-2-17 스토리 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-17-스토리-수정), [4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드))
+접수 요청의 본문과 실패 조건은 STORY 세트의 등록과 수정 계약에, 처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 관리자 토큰과 권한 판정은 관리자 계약에 있다. ([STORY 4-2-15 일반 제작 등록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-15-일반-제작-등록), [STORY 4-2-17 스토리 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-17-스토리-수정), [4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 <br>
 
@@ -15,7 +15,8 @@
 | 경로 | `/api/v1`을 생략해 적음 |
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
-| 식별자 | 제출본과 스토리는 UUID 공개 식별자<br>내부 PK와 회차, 임대, 재시도 상태는 노출하지 않음 |
+| 식별자 | 제출본, 스토리, 회원은 UUID 공개 식별자<br>내부 PK와 임대는 노출하지 않음<br>회차와 재시도 상태는 관리자 보류 목록에만 노출 |
+| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수 |
 | 위치 | 위반 항목과 이미지 오류의 `path`는 응답 폼 기준의 필드 경로<br>배열 인덱스는 0부터 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
@@ -23,9 +24,10 @@
 
 **2. 인증 수준**
 
-| 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
-|---|---|---|
-| `필수` | 거절 | 회원으로 처리 |
+| 수준 | 토큰 없음 또는 무효 | 유효한 앱 접근 토큰 | 관리자 토큰 |
+|---|---|---|---|
+| `필수` | 거절 | 회원으로 처리 | 거절 |
+| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 통과 |
 
 <br>
 
@@ -33,7 +35,7 @@
 
 | 요청 헤더 | 값 형식 | 쓰임 | 필수 |
 |---|---|---|---|
-| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
+| `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 생성하고 응답 헤더로 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
 
@@ -70,8 +72,8 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 401 | `UNAUTHORIZED` | 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정 |
-| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403 |
+| 401 | `UNAUTHORIZED` | 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>관리자 경로의 관리자 표식 없음 |
+| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
 
@@ -459,15 +461,165 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-6 다른 도메인과의 경계
+### 4-2-6 보류 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/moderation/holds` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `limit` | `integer` | 선택 | 최대 건수, 기본값 100<br>1~100 범위를 벗어나면 범위 안으로 보정 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 보류 시각 오름차순 |
+| `items[].submissionId` | `string` | 제출본 공개 식별자 |
+| `items[].kind` | `string` | `CREATE`, `UPDATE` |
+| `items[].storyId` | `string / null` | 수정 대상 스토리 공개 식별자<br>등록은 `null` |
+| `items[].ownerId` | `string` | 소유 회원 공개 식별자 |
+| `items[].holdReason` | `string` | 보류 원인 코드<br>`IMAGE_DOWNLOAD_FAILED`, `MODEL_CALL_FAILED`, `MODERATION_UNAVAILABLE` |
+| `items[].attempt` | `integer` | 회차 |
+| `items[].heldAt` | `string` | 보류 시각 |
+| `items[].createdAt` | `string` | 접수 시각 |
+
+- 입력 원문, 검수 폼, 이미지 URL은 싣지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/moderation/holds
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b",
+      "kind": "CREATE",
+      "storyId": null,
+      "ownerId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+      "holdReason": "MODERATION_UNAVAILABLE",
+      "attempt": 3,
+      "heldAt": "2026-10-21T01:30:00Z",
+      "createdAt": "2026-10-21T01:20:00Z"
+    }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-7 보류 해제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/moderation/holds/{submissionId}/release` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `submissionId` | 경로 | 필수 | 제출본 공개 식별자 |
+| `reason` | `string` | 필수 | 사유, 1~500자 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `submissionId` | `string` | 제출본 공개 식별자 |
+| `status` | `string` | 항상 `PENDING` |
+| `attempt` | `integer` | 해제 시점의 회차<br>다음 선점에서 1 증가 |
+| `releasedAt` | `string` | 해제 시각 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reason` 누락, `submissionId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 제출본 |
+| 409 | `CONFLICT` | 보류 중이 아님 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/moderation/holds/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b/release
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "reason": "AI 서버 복구 확인" }
+```
+
+**2) 200 Response body**
+
+```json
+{ "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b", "status": "PENDING", "attempt": 3, "releasedAt": "2026-10-21T02:00:00Z" }
+```
+
+**3) 409 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T02:00:00.000Z",
+  "status": 409,
+  "code": "CONFLICT",
+  "message": "보류 중인 제출본이 아닙니다.",
+  "path": "/api/v1/admin/moderation/holds/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b/release",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-8 다른 도메인과의 경계
 
 | 도메인 | MODERATION이 제공하는 것 | MODERATION이 사용하는 것 |
 |---|---|---|
 | STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제 |
 | NOTIFICATION | 검수 완료 이벤트 | 없음 |
-| ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금 |
+| ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금, 회원 공개 식별자 |
+| ADMIN | 보류 중 제출본 수 | 관리자 요청자, 변경 감사 기록 |
 | AI 서버 | 검수 입력 | 판정 결과 |
-| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
+| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
 다른 도메인이 호출하거나 받는 연산의 입력과 결과는 다음과 같다.
 
@@ -480,3 +632,4 @@ Authorization: Bearer {accessToken}
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 상태, 회차, 제목 | NOTIFICATION의 발송 경로 |
 | 회원 제출본 전부 삭제 | 회원 내부 ID | 없음 |
 | 스토리 제출본 전부 삭제 | 스토리 내부 ID | 없음 |
+| 보류 중 제출본 수 | 없음 | 대기 상태이고 보류 시각이 있는 제출본 수 |

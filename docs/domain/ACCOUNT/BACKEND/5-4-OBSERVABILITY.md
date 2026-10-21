@@ -93,6 +93,7 @@ Fluent Bit`"]
 | 계정 연동 | 분석 이벤트의 연동 실패 `error_type` |
 | 체험 스냅샷 | 스냅샷 실패 WARN |
 | 프로필 | 요청 로그의 `/api/v1/users/me` 409 비율, 재색인 요청 로그 |
+| 계정 정지와 해제 | 관리자 도메인의 감사 로그<br>요청 로그의 `/api/v1/admin/members/{memberId}/suspension` 상태 분포 |
 
 <br>
 
