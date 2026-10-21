@@ -60,7 +60,7 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분과 호출 시간 한도 5초는 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분, 호출 시간 한도 5초, 실패 쿨다운 60초는 설정 파일의 고정값이다.
 
 <br>
 
@@ -70,7 +70,7 @@
 |---|---|---|---|
 | `MANYAK_AMPLITUDE_API_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | 공통 분석 발행기와 같은 키<br>운영 프로젝트 하나뿐이라 개발 서버도 같은 값 |
 | `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
-| `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>비어 있으면 제외 없이 조회 |
+| `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>사용자 수 조회의 세그먼트 `userdata_cohort` 제외 조건에 사용<br>비어 있으면 제외 없이 조회 |
 | `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
 
 <br>
@@ -186,4 +186,4 @@
 | 관리자 로그인이 전부 권한 없음 | 로그 `admin_login_rejected`의 `reason` | `no_role`이면 운영 DB의 역할 행 확인<br>`no_member`면 그 Google 계정으로 앱에 먼저 가입 |
 | 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
 | 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
-| 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 10분 뒤 재시도 |
+| 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 쿨다운 뒤 자동 재호출이므로 대기 |

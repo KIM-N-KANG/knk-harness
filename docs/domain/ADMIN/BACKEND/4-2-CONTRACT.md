@@ -1216,7 +1216,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 서버가 분석 도구에서 값을 받은 시각<br>캐시된 응답은 캐시한 시각 |
+| `asOf` | `string` | 서버가 분석 도구에서 값을 받은 시각<br>캐시된 응답은 캐시한 시각이며 갱신 중이나 쿨다운 중에는 10분보다 오래될 수 있음 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜<br>오늘 |
 | `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>`daily` 마지막 항목의 `activeUsers`와 같음 |
@@ -1234,7 +1234,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 허용하지 않는 `days` |
-| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정, 호출 실패, 호출 한도 초과이고 캐시도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1292,7 +1292,7 @@ Authorization: Bearer {adminToken}
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅방 조회, AI 호출 기록 조회 |
-| Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회 |
+| Amplitude | 없음 | Dashboard REST API의 활성·신규 사용자 수 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

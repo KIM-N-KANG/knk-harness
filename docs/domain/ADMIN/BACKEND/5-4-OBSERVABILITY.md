@@ -25,7 +25,7 @@ Fluent Bit`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     S -->|감사 로그| DB["`**PostgreSQL**`"]
-    S -->|세분화 조회| AM["`**Amplitude**`"]
+    S -->|사용자 수 조회| AM["`**Amplitude**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S comp
@@ -67,7 +67,7 @@ Fluent Bit`"]
 | 관리자 판정 거절 | 필터의 403<br>평문 WARN `admin_access_denied` | `endpoint`, `reason` = `no_role`, `suspended`, `deleted`, `no_member`, `admin_public_id` |
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
 | 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
-| 분석 도구 호출 실패 | 세분화 조회 실패<br>평문 WARN `admin_analytics_fetch_failed` | `reason` = `no_credentials`, `http_error`, `rate_limited`, `timeout`, HTTP 상태<br>응답 본문과 키는 기록하지 않음 |
+| 분석 도구 호출 실패 | 사용자 수 조회 실패<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `timeout`, HTTP 상태<br>응답 본문과 키는 기록하지 않음 |
 
 <details>
 <summary><b>예시: 로그인 거절 로그 1줄</b></summary>

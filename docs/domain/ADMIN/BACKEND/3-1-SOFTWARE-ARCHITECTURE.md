@@ -15,7 +15,7 @@ ADMIN 도메인은 서버 애플리케이션의 내부 패키지다. 별도 프�
 | 관리자 페이지 | 로그인, 대시보드, 콘텐츠와 회원 조회, 운영 작업 화면 | 서버 측 처리기의 REST 호출 |
 | Google | 관리자 신원 증명의 서명 검증용 공개 키 제공 | 계정 도메인의 검증기 경유 |
 | PostgreSQL | 관리자 역할과 감사 로그 | JDBC |
-| Amplitude | 활성과 신규 사용자 수 제공 | Dashboard REST API HTTPS 호출 |
+| Amplitude | 활성과 신규 사용자 수 제공 | Dashboard REST API 사용자 수 조회 HTTPS 호출 |
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 20, "rankSpacing": 60}}}%%
@@ -32,7 +32,7 @@ ACCOUNT, MODERATION, STORY**
     S -->|집계와 목록 조회| R["`**STORY, CHAT, PAYMENT, MODERATION**
 같은 서버`"]
     S --> DB["`**PostgreSQL**`"]
-    S -->|세분화 조회, 10분 캐시| AM["`**Amplitude**`"]
+    S -->|사용자 수 조회, 10분 캐시| AM["`**Amplitude**`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     class A,DB,AM ext
