@@ -84,7 +84,7 @@
 
 **6. 공통 응답 구조**
 
-캠페인 목록 항목과 예약, 취소, 재실행의 응답은 같은 캠페인 구조를 쓴다.
+캠페인 목록 항목과 상세, 예약, 취소, 재실행의 응답은 같은 캠페인 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -97,6 +97,9 @@
 | `noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `targetCount` | `integer / null` | 마지막 회차의 대상 수<br>회차 전은 `null` |
 | `sentCount` | `integer / null` | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수<br>실제 도달 수가 아님 |
+| `deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수<br>발송 결과 행의 집계 |
+| `deliveredDevices` | `integer` | 도달 기기 수의 합 |
+| `failedDevices` | `integer` | 실패 기기 수의 합 |
 | `startedAt` | `string / null` | 선점 시각 |
 | `finishedAt` | `string / null` | 회차 종료 시각 |
 | `createdAt` | `string` | |
@@ -776,6 +779,9 @@ Authorization: Bearer {adminToken}
       "noticeId": null,
       "targetCount": null,
       "sentCount": null,
+      "deliveredMembers": 0,
+      "deliveredDevices": 0,
+      "failedDevices": 0,
       "startedAt": null,
       "finishedAt": null,
       "createdAt": "2026-10-21T03:00:00Z"
@@ -1109,7 +1115,200 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-19 다른 도메인과의 경계
+### 4-2-19 발송 결과 보고
+
+서버가 제공하고 알림 서비스가 호출한다.
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /internal/push-deliveries` |
+| 인증 | 내부 |
+| 성공 | 204, 본문 없음 |
+
+**1. 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `messageId` | `string` | 필수 | 메시지 식별자, 1~255자 |
+| `type` | `string` | 필수 | 큐 메시지의 `type` |
+| `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
+| `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
+| `campaignId` | `string` | 선택 | 푸시 데이터의 캠페인 공개 식별자<br>캠페인 메시지만 |
+| `outcome` | `string` | 필수 | `DELIVERED`, `UNDELIVERED`, `DISCARDED` |
+| `reason` | `string` | 필수 | 알림 발송 응답의 `reason` 값, 1~40자 |
+| `deliveredDevices` | `integer` | 필수 | 0 이상<br>`DELIVERED`면 1 이상, 그 외는 0 |
+| `failedDevices` | `integer` | 필수 | 0 이상 |
+| `completedAt` | `string` | 필수 | 처리가 끝난 시각 |
+
+- 같은 `messageId`의 재보고는 저장을 바꾸지 않고 성공으로 응답한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류, `outcome`과 `deliveredDevices`의 불일치, 없는 캠페인 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /internal/push-deliveries
+X-Manyak-Internal-Secret: {sharedSecret}
+Content-Type: application/json
+
+{
+  "messageId": "promotion:6f1d2c3b-4a5e-4f60-9b7c-8d9e0f1a2b3c:3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "type": "PROMOTION",
+  "kind": "MARKETING",
+  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "campaignId": "6f1d2c3b-4a5e-4f60-9b7c-8d9e0f1a2b3c",
+  "outcome": "DELIVERED",
+  "reason": "PARTIAL_FAILURE",
+  "deliveredDevices": 1,
+  "failedDevices": 1,
+  "completedAt": "2026-10-24T01:00:12.345Z"
+}
+```
+
+**2) 204 Response**
+
+본문 없음
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-24T01:00:12.345Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "도달 결과는 도달 기기 수가 1 이상이어야 합니다.",
+  "path": "/internal/push-deliveries",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-20 캠페인 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/push/campaigns/{campaignId}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>캠페인 구조 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaignId` | 경로 | 필수 | 캠페인 공개 식별자 |
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `campaignId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 캠페인 |
+
+<br>
+
+### 4-2-21 알림 통계
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/push/delivery-stats` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from` | `string` | 선택 | 시작 KST 날짜 `YYYY-MM-DD`<br>생략하면 `to`의 6일 전 |
+| `to` | `string` | 선택 | 끝 KST 날짜 `YYYY-MM-DD`<br>생략하면 오늘 |
+| `type` | `string` | 선택 | 큐 메시지의 `type` 값 중 하나<br>생략하면 전체 |
+
+- 시작과 끝을 포함한 기간은 최대 31일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `from` | `string` | 적용된 시작 날짜 |
+| `to` | `string` | 적용된 끝 날짜 |
+| `items` | `object[]` | 날짜 내림차순, 같은 날은 `type` 오름차순<br>결과 행이 없는 날과 시나리오는 없음 |
+| `items[].date` | `string` | 완료 시각의 KST 날짜 |
+| `items[].type` | `string` | 시나리오 식별자 |
+| `items[].kind` | `string` | `SERVICE`, `MARKETING` |
+| `items[].requested` | `integer` | 처리가 끝난 메시지 수 |
+| `items[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 메시지 수 |
+| `items[].deliveredDevices` | `integer` | 도달 기기 수의 합 |
+| `items[].failedDevices` | `integer` | 실패 기기 수의 합 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 뒤, 31일 초과, 지원하지 않는 `type` |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/push/delivery-stats?from=2026-10-20&to=2026-10-21
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "from": "2026-10-20",
+  "to": "2026-10-21",
+  "items": [
+    { "date": "2026-10-21", "type": "ATTENDANCE_REMINDER", "kind": "MARKETING", "requested": 412, "deliveredMembers": 380, "deliveredDevices": 455, "failedDevices": 9 },
+    { "date": "2026-10-21", "type": "STORY_COMPLETED", "kind": "SERVICE", "requested": 64, "deliveredMembers": 61, "deliveredDevices": 70, "failedDevices": 2 },
+    { "date": "2026-10-20", "type": "NOTICE", "kind": "SERVICE", "requested": 1180, "deliveredMembers": 1102, "deliveredDevices": 1301, "failedDevices": 15 }
+  ]
+}
+```
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T03:00:00.000Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "통계 기간은 최대 31일입니다.",
+  "path": "/api/v1/admin/push/delivery-stats",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-22 다른 도메인과의 경계
 
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|

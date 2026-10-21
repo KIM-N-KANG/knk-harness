@@ -56,7 +56,7 @@ Fluent Bit`"]
 | `request_id` | 로그 MDC와 Sentry 태그 | 한 요청의 로그 |
 | `request_id`와 `session_id` | 큐 메시지 본문, 소비자 MDC, 자격 조회 헤더 | 발행 원인 요청과 소비 처리 |
 | 추적 헤더 | 큐 메시지 속성<br>`traceparent`와 `tracestate` | 릴레이 스팬과 소비자 스팬<br>원인 요청과는 `request_id`로 연결 |
-| 메시지 식별자 | 아웃박스 경고와 소비 결과 로그 | 발송 요청 1건 |
+| 메시지 식별자 | 아웃박스 경고, 소비 결과 로그, 보고 실패 WARN, 발송 결과 행 | 발송 요청 1건 |
 | 회원 내부 ID | 서버 발송 실패 WARN과 회차 로그 | 회원 |
 | 회원 공개 식별자 | 알림 서비스 발송 실패 WARN | 회원 |
 | 캠페인 공개 식별자 | 캠페인 회차 로그<br>감사 로그 대상 | 캠페인 |
@@ -87,6 +87,7 @@ Fluent Bit`"]
 | 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 소비 결과, 알림 발송 응답의 `reason` 값 |
 | 큐 소비 재시도 | 예외<br>평문 WARN | 메시지 식별자, 예외 클래스 |
 | 자격 조회 실패 | 알림 서비스<br>평문 WARN | 회원 공개 식별자, 예외 클래스 |
+| 결과 보고 실패 | 알림 서비스<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자, HTTP 상태 또는 예외 클래스 |
 
 <details>
 <summary><b>예시: 출석 회차 로그 1줄</b></summary>
@@ -112,6 +113,7 @@ Fluent Bit`"]
 | 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
 | 캠페인 | 캠페인 목록 API의 결과 필드<br>회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 관리자 API | 요청 로그의 `/api/v1/admin/push/` 접두 경로 상태 분포<br>변경 이력은 관리자 도메인의 감사 로그 |
+| 알림 통계 | 알림 통계 API와 캠페인 상세<br>보고 실패 WARN<br>요청 로그의 `/internal/push-deliveries` 상태 분포<br>누락 규모는 지표 `manyak.push.send.result`의 `success`와 결과 행의 도달 기기 수 합을 비교 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
 | 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |
 | FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |

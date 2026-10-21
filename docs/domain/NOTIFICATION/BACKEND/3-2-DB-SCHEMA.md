@@ -14,8 +14,8 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
 | 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
-| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스는 삭제 경로 없음<br>템플릿은 종료 시각만 갱신 |
-| FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
+| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스, 발송 결과는 삭제 경로 없음<br>템플릿은 종료 시각만 갱신 |
+| FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>발송 결과의 회원과 캠페인은 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
 
@@ -48,6 +48,16 @@ erDiagram
         bigint id PK
         varchar message_id
         varchar status
+    }
+    push_campaigns |o--o{ push_delivery_results : "캠페인 메시지"
+    users |o--o{ push_delivery_results : "ACCOUNT, 수신 회원"
+    push_delivery_results {
+        bigint id PK
+        varchar message_id
+        varchar type
+        bigint campaign_id FK
+        bigint user_id FK
+        varchar outcome
     }
 ```
 
@@ -158,12 +168,39 @@ erDiagram
 
 <br>
 
-### 3-2-8 참조하는 다른 도메인의 컬럼
+### 3-2-8 발송 결과
+
+**`push_delivery_results`**
+
+처리가 끝난 발송 요청 1건이 한 행이다. 알림 서비스의 보고를 받아 서버가 기록하고 로컬 모드는 서버 안 발송기가 기록한다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `message_id` | varchar(255) | NOT NULL, UNIQUE | 메시지 식별자 |
+| `type` | varchar(40) | NOT NULL | 시나리오 식별자 |
+| `kind` | varchar(16) | NOT NULL, CHECK `SERVICE` `MARKETING` | |
+| `campaign_id` | bigint | FK `push_campaigns.id` | 캠페인 메시지만<br>그 외 NULL |
+| `user_id` | bigint | FK `users.id` | 수신 회원<br>공개 식별자에 해당하는 회원이 없으면 NULL |
+| `outcome` | varchar(16) | NOT NULL, CHECK `DELIVERED` `UNDELIVERED` `DISCARDED` | |
+| `reason` | varchar(40) | NOT NULL | 알림 발송 응답의 `reason` 값 |
+| `delivered_devices` | integer | NOT NULL, CHECK `>= 0` | 재전달을 포함해 FCM이 받아들인 기기 수 |
+| `failed_devices` | integer | NOT NULL, CHECK `>= 0` | 마지막 처리에서 영구 실패한 기기 수<br>무효 토큰은 포함하지 않음 |
+| `completed_at` | timestamptz | NOT NULL | 처리가 끝난 시각<br>통계의 날짜 기준 |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_push_delivery_results_campaign` | `campaign_id` WHERE `campaign_id IS NOT NULL` |
+| `idx_push_delivery_results_type_completed` | `type`, `completed_at` |
+
+<br>
+
+### 3-2-9 참조하는 다른 도메인의 컬럼
 
 | 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
 |---|---|---|
 | `users` | `status` | 발송 자격 판정 |
-| `users` | `public_id` | 수신자 식별자 |
+| `users` | `public_id` | 수신자 식별자<br>발송 결과의 수신 회원 해석 |
 | `users` | `reward_identity_user_id` | 출석 미수령 판정 |
 | `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
 | `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
@@ -171,7 +208,7 @@ erDiagram
 
 <br>
 
-### 3-2-9 Redis 키
+### 3-2-10 Redis 키
 
 `push:` 키는 서버가 쓴다. `notification:` 키는 알림 서비스가 쓴다.
 
@@ -183,7 +220,7 @@ erDiagram
 
 <br>
 
-### 3-2-10 메시지 큐
+### 3-2-11 메시지 큐
 
 | 큐 | 내용 | 설정 |
 |---|---|---|
@@ -192,10 +229,10 @@ erDiagram
 
 <br>
 
-### 3-2-11 데이터 수명
+### 3-2-12 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
 | 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
 | 수신 동의 | 없음<br>철회는 값을 비움 |
-| 문구 템플릿, 캠페인, 아웃박스 | 없음 |
+| 문구 템플릿, 캠페인, 아웃박스, 발송 결과 | 없음 |
