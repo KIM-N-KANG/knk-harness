@@ -331,8 +331,8 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
 | ---------------------------------------- | -------- | ----------------------- | ------------- |
 | `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
-| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기, 스토리라인과 이미지 스타일, 스토리 완성 섹션 아래 버튼 클릭 | `source` (string, 필수: `section`), `section` (string, 필수: `create` / `storyline` / `complete`). 헤더 버튼(`header`)과 본문 끝 버튼(`bottom`)은 KNK-1644에서 섹션 버튼으로 바뀌며 사라짐 |
-| `client_onboarding_browseButton_clicked` | P1       | 채팅, 오리지널 스토리 섹션 아래 버튼 탭(홈으로 이탈. 헤더 "둘러보기"는 KNK-1644에서 사라짐. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | `source` (string, 필수: `section`), `section` (string, 필수: `chat` / `originals`, KNK-1644) |
+| `client_onboarding_createButton_clicked` | P1       | 헤더 "시작하기" 버튼, 스토리 만들기, 스토리라인과 이미지 스타일, 스토리 완성 섹션 아래 버튼 클릭 | `source` (string, 필수: `header` / `section`), `section` (string, `source=section`일 때 필수: `create` / `storyline` / `complete`). 헤더 버튼(`header`)은 KNK-1644에서 사라졌다가 KNK-1750에서 다시 생김. 본문 끝 버튼(`bottom`)은 KNK-1644에서 사라짐 |
+| `client_onboarding_browseButton_clicked` | P1       | 헤더 "둘러보기" 버튼, 채팅, 오리지널 스토리 섹션 아래 버튼 탭(홈으로 이탈. 헤더 "둘러보기"는 KNK-1644에서 사라졌다가 KNK-1750에서 다시 생김. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | `source` (string, 필수: `header` / `section`), `section` (string, `source=section`일 때 필수: `chat` / `originals`, KNK-1644) |
 | `client_onboarding_playStoreBadge_clicked` | P2 | 푸터 Google Play 배지 클릭(Play 스토어 앱 페이지를 새 탭으로 엶. 실제 설치는 Play Console 획득 보고서의 `utm_medium=onboarding_footer`로 확인) | 없음 |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
