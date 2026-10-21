@@ -248,8 +248,9 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
+| `q` | `string` | 선택 | 제목 부분 일치<br>공지 공개 식별자 정확 일치<br>규칙은 관리자 목록 공통의 검색어 규칙 |
 | `status` | `string` | 선택 | `DRAFT`<br>`PUBLISHED`<br>생략하면 전체 |
-| `sort` | `string` | 선택 | `createdAt`, `publishedAt`, `updatedAt`<br>기본 `createdAt` |
+| `sort` | `string` | 선택 | `createdAt`, `updatedAt`, `publishedAt`, `notifiedAt`, `title`, `status`<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 관리자 목록 공통의 페이지 쿼리 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
 
 - 응답은 관리자 목록 공통의 페이지 구조다. 항목에 `body`는 없다.
@@ -260,7 +261,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>공통 페이지 쿼리 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>검색어와 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>

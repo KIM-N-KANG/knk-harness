@@ -1122,7 +1122,10 @@ Authorization: Bearer {adminToken}
 | `action` | `string` | 선택 | 작업 이름 |
 | `targetType` | `string` | 선택 | 대상 종류 |
 | `targetId` | `string` | 선택 | 대상 식별자<br>`targetType`과 함께 지정 |
-| `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
+| `q` | `string` | 선택 | 처리자 닉네임, 작업 이름, 사유 부분 일치<br>감사 로그 공개 식별자와 대상 식별자 정확 일치 |
+| `from`, `to` | `string` | 선택 | 기록일 |
+| `category` | `string` | 선택 | `CHANGE`, `ACCESS` |
+| `sort` | `string` | 선택 | `createdAt`, `category`, `action`, `targetType`, `admin`<br>`admin`은 처리자 닉네임<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 <br>
@@ -1149,7 +1152,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `adminId`가 UUID 형식이 아님, `targetId`만 지정, 공통 페이지 쿼리 오류 |
+| 400 | `BAD_REQUEST` | `adminId`가 UUID 형식이 아님, `targetId`만 지정, 검색어, 날짜, enum, 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>

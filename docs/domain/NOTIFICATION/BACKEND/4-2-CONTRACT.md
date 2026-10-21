@@ -733,8 +733,10 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
+| `q` | `string` | 선택 | 제목과 본문 부분 일치<br>캠페인 공개 식별자 정확 일치<br>규칙은 관리자 목록 공통의 검색어 규칙 |
 | `status` | `string` | 선택 | 캠페인 상태 값 중 하나<br>생략하면 전체 |
-| `sort` | `string` | 선택 | `createdAt`, `scheduledAt`<br>기본 `createdAt` |
+| `kind` | `string` | 선택 | `SERVICE`, `MARKETING`<br>생략하면 전체 |
+| `sort` | `string` | 선택 | `createdAt`, `scheduledAt`, `title`, `kind`, `status`, `targetCount`, `sentCount`, `deliveredMembers`, `deliveredDevices`, `failedDevices`<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 - 프로모션과 공지 알림을 함께 보여 준다.
@@ -745,7 +747,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>공통 페이지 쿼리 오류 |
+| 400 | `BAD_REQUEST` | 지원하지 않는 `status`와 `kind`<br>검색어와 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1235,6 +1237,7 @@ Content-Type: application/json
 | `from` | `string` | 선택 | 시작 KST 날짜 `YYYY-MM-DD`<br>생략하면 `to`의 6일 전 |
 | `to` | `string` | 선택 | 끝 KST 날짜 `YYYY-MM-DD`<br>생략하면 오늘 |
 | `type` | `string` | 선택 | 큐 메시지의 `type` 값 중 하나<br>생략하면 전체 |
+| `kind` | `string` | 선택 | `SERVICE`, `MARKETING`<br>생략하면 전체<br>`type`과 함께 지정하면 둘 다 만족하는 행 |
 
 - 시작과 끝을 포함한 기간은 최대 366일이다. 기간을 바꿔 가며 조회하고 주 단위나 월 단위 합계는 관리자 페이지가 날짜 행을 더해 만든다.
 
@@ -1261,7 +1264,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 늦음, 366일 초과, 지원하지 않는 `type` |
+| 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 늦음, 366일 초과, 지원하지 않는 `type`과 `kind` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
