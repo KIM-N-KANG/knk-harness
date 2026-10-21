@@ -68,15 +68,6 @@ erDiagram
         varchar type
         bigint applied_amount
     }
-    users ||--o{ credit_admin_adjustments : "ACCOUNT, 관리자 조정"
-    credit_admin_adjustments |o--o| credit_transactions : "만든 원장 행"
-    credit_admin_adjustments {
-        bigint id PK
-        varchar idempotency_key
-        bigint user_id FK
-        varchar type
-        bigint applied_amount
-    }
     credit_policies {
         varchar policy_key PK
         bigint amount
