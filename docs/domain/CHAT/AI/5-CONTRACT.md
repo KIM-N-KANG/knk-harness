@@ -26,6 +26,7 @@
 | `story_settings.world_setting` | `string` | 필수 | 세계관 마크다운 본문 |
 | `story_settings.character_setting` | `string` | 필수 | 주변 인물 마크다운 본문 |
 | `story_settings.user_role_setting` | `string` | 필수 | 주인공 마크다운 본문 |
+| `story_settings.protagonist_name` | `string` | 선택 | 이번 채팅의 주인공 이름<br>기본값 빈 문자열 |
 | `story_settings.rule_setting` | `string` | 필수 | 전개 규칙 마크다운 본문 |
 | `start_settings` | `object` | 필수 | 선택한 시작 설정 |
 | `start_settings.name` | `string` | 필수 | 시작 설정 이름 |
@@ -103,6 +104,7 @@
     "world_setting": "# 세계관\n마법 도서관에는 지워진 기록의 흔적이 남는다.",
     "character_setting": "# 도윤\n침착한 도서관 사서.",
     "user_role_setting": "# 서린\n기록을 조사하는 신입 기록관.",
+    "protagonist_name": "서린",
     "rule_setting": "# 전개 규칙\n사용자의 행동에 따라 단서를 공개한다."
   },
   "start_settings": {
@@ -193,12 +195,7 @@ data: {}
     "model": "gpt-6-luna",
     "provider": "openai",
     "promptVersions": {
-      "CORE": 1,
-      "SAFETY": 1,
-      "STORY": 1,
-      "CHARACTER": 1,
-      "USER": 1,
-      "MEMORY": 1
+      "CHAT": 1
     },
     "inputTokenCount": 1200,
     "outputTokenCount": 300,
@@ -243,6 +240,7 @@ data: {}
     "world_setting": "# 세계관\n마법 도서관에는 지워진 기록의 흔적이 남는다.",
     "character_setting": "# 도윤\n침착한 도서관 사서.",
     "user_role_setting": "# 서린\n기록을 조사하는 신입 기록관.",
+    "protagonist_name": "서린",
     "rule_setting": "# 전개 규칙\n사용자의 행동에 따라 단서를 공개한다."
   },
   "start_settings": {
@@ -322,7 +320,7 @@ data: {}
 |---|---|---|---|
 | `model` | `model` | `string` | 실제 본문 또는 선택지 모델 이름 |
 | `provider` | `provider` | `string` | 모델 공급자 |
-| `promptVersions` | `prompt_versions` | `map<string, integer>` | 템플릿별 버전<br>채팅: `CORE`, `SAFETY`, `STORY`, `CHARACTER`, `USER`, `MEMORY`<br>선택지: `NEXT_ACTIONS` |
+| `promptVersions` | `prompt_versions` | `map<string, integer>` | 템플릿별 버전<br>채팅: `CHAT`, 버전 1<br>선택지: `NEXT_ACTIONS` |
 | `inputTokenCount` | `input_token_count` | `integer / null` | 입력 토큰 합계<br>채팅은 본문, 선택지는 최초 생성과 보완 호출<br>저장 이미지 선택과 이미지 생성 제외, 알 수 없으면 `null` |
 | `outputTokenCount` | `output_token_count` | `integer / null` | 같은 집계 범위의 출력 토큰 합계<br>알 수 없으면 `null` |
 | `retryCount` | `retry_count` | `integer` | 보완 호출 횟수, SDK 재시도 제외<br>채팅은 0, 선택지는 0~2 |

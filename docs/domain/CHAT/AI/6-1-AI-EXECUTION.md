@@ -85,29 +85,19 @@ flowchart LR
 
 **3. 프롬프트 조립**
 
-`prompt/chat/`의 템플릿에서 frontmatter를 제외한 본문을 사용한다. 프롬프트 조립기가 다음 순서로 메시지를 조립한다.
-
-| 순서 | 역할 | 내용 |
+| 템플릿 부분 | 채우는 자리 | 들어가는 값 |
 |---|---|---|
-| 1 | `system` | `SAFETY` → `CORE` → `STORY` → `CHARACTER` → `USER` 템플릿 |
-| 2 | `user`, `assistant` | 전처리한 대화 기록 |
-| 3 | `user` | 이번 사용자 입력 |
-| 4 | `system` | `MEMORY` 템플릿에 대화 요약을 채운 현재 상태 |
-| 5 | `system` | `CHARACTER` → `STORY` → `CORE` → `SAFETY`의 `<phi_core>` 부분을 다시 배치한 핵심 규칙 |
-
-| 템플릿 | 채우는 자리 | 들어가는 값 |
-|---|---|---|
-| `STORY-TEMPLATE.md` | `{{장르}}` | 장르 |
-| `STORY-TEMPLATE.md` | `{{world_setting}}` | 세계관 |
-| `STORY-TEMPLATE.md` | `{{start_setting}}` | 전처리한 시작 설정 |
-| `STORY-TEMPLATE.md` | `{{rule_setting}}` | 전개 규칙 |
-| `STORY-TEMPLATE.md` | `{{main_events}}` | 주요 사건 목록 |
-| `STORY-TEMPLATE.md` | `{{endings}}` | 엔딩 후보 목록 |
-| `CHARACTER-TEMPLATE.md` | `{{character_setting}}` | 주변 인물 설정 |
-| `USER-TEMPLATE.md` | `{{user_role_setting}}` | 주인공 설정 |
-| `MEMORY-TEMPLATE.md` | `{{summary}}` | 대화 요약, 없으면 빈 문자열 |
-
-`SAFETY`와 `CORE`에는 입력을 채우는 자리가 없다. 인물 이미지 목록과 업로드 슬롯은 본문 모델에 전달하지 않는다.
+| `[SYSTEM]` | `{{장르}}` | 장르 |
+| `[SYSTEM]` | `{{world_setting}}` | 세계관 |
+| `[SYSTEM]` | `{{start_setting}}` | 전처리한 시작 설정 |
+| `[SYSTEM]` | `{{rule_setting}}` | 전개 규칙 |
+| `[SYSTEM]` | `{{character_setting}}` | 주변 인물 설정 |
+| `[SYSTEM]` | `{{protagonist_name}}` | 이번 채팅의 주인공 이름, 없으면 빈 문자열 |
+| `[SYSTEM]` | `{{user_role_setting}}` | 주인공 설정 |
+| `[SYSTEM]` | `{{main_events}}` | 주요 사건 목록 |
+| `[USER]` | `{{endings}}` | 엔딩 후보 목록 |
+| `[USER]` | `{{summary}}` | 대화 요약, 없으면 빈 문자열 |
+| `[USER]` | `{{user_input}}` | 이번 사용자 입력 |
 
 <br>
 
@@ -135,7 +125,7 @@ flowchart LR
 
 **6. 최종 출력**
 
-본문의 사용량과 템플릿 버전을 `meta`에 담는다. 응답 필드는 계약을 따른다. ([5-2 채팅 턴 요청과 결과](5-CONTRACT.md#5-2-채팅-턴-요청과-결과), [5-5 요청 헤더와 메타데이터](5-CONTRACT.md#5-5-요청-헤더와-메타데이터))
+본문의 사용량을 `meta`에 담고 채팅 프롬프트 버전은 `meta.promptVersions`에 `{"CHAT": 1}`로 기록한다. ([5-2 채팅 턴 요청과 결과](5-CONTRACT.md#5-2-채팅-턴-요청과-결과), [5-5 요청 헤더와 메타데이터](5-CONTRACT.md#5-5-요청-헤더와-메타데이터))
 
 | 조건 | 처리 순서 |
 |---|---|

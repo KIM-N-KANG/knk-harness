@@ -35,7 +35,7 @@ flowchart LR
 | 항목 | 비교 범위 |
 |---|---|
 | 기반 모델 | 아래 기반 모델 목록 |
-| 프롬프트 | 범용 프롬프트 1개로 고정<br>grid search 중에는 바꾸지 않음 |
+| 프롬프트 | `prompt/chat/general/CHAT-TEMPLATE.md`로 고정<br>grid search 중에는 바꾸지 않음 |
 | 추론 강도 | `none`, `low`, `medium`, `high` 중 아래 표에서 지원하는 값 |
 | 데이터 | test 데이터 1개만 사용 |
 
