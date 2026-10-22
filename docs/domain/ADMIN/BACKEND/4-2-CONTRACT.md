@@ -1289,11 +1289,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 120일 이하 |
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
-- 기간 상한은 한 번의 갱신 비용이 분석 도구 비용 예산 안에 들도록 정했다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+- 지난 날짜 값은 서버 DB에 저장되어 있어 비어 있는 날짜만 분석 도구에서 받는다. 비어 있는 날짜가 비용 예산보다 많으면 받은 날짜만 응답하고 나머지는 `pendingDates`에 넣는다. 관리자 페이지는 `pendingDates`가 비어 있지 않으면 60초 뒤 같은 요청을 다시 보낸다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 <br>
 
@@ -1301,11 +1301,12 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 서버가 분석 도구에서 이 범위의 값을 받은 시각<br>캐시된 응답은 캐시한 시각<br>오늘을 포함한 범위는 10분, 포함하지 않는 범위는 24시간까지 캐시하며 갱신 중이나 쿨다운 중에는 더 오래될 수 있음 |
+| `asOf` | `string` | 응답에 쓴 값을 분석 도구에서 받은 시각<br>오늘과 어제처럼 확정 전 값이 있으면 그 가운데 가장 이른 시각, 확정 값만이면 그 가운데 가장 늦은 시각<br>갱신 중이나 쿨다운 중에는 오늘 값이 10분보다 오래될 수 있음 |
+| `pendingDates` | `string[]` | 준비 중 날짜<br>아직 값을 받지 못해 `daily`에서 뺀 KST 날짜, 오름차순<br>비어 있으면 범위 전체가 준비됨 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜 |
-| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>범위와 무관하게 오늘 값이며 범위와 따로 10분 캐시<br>KST 날짜가 바뀐 값은 주지 않음 |
-| `daily` | `object[]` | 날짜 오름차순 |
+| `todayActiveUsers` | `integer / null` | 오늘 활성 사용자 수<br>범위와 무관하게 KST 오늘 날짜의 값이며 10분마다 다시 받음<br>오늘 값을 아직 받지 못했으면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `integer` | 그날 이벤트가 있는 고유 사용자 수 |
 | `daily[].newUsers` | `integer` | 그날 처음 이벤트가 있었던 고유 사용자 수 |
@@ -1318,8 +1319,8 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 120일 초과 |
-| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 비용 예산 부족, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 쓸 수 있는 캐시도 없음 |
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 준비된 날짜가 하나도 없는데 자격 증명 미설정, 호출 실패, 호출 한도 초과, 비용 예산 부족, 실패 뒤 쿨다운, 다른 요청의 갱신 중이라 값을 받지 못함 |
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
@@ -1343,6 +1344,7 @@ Authorization: Bearer {adminToken}
   "from": "2026-10-15",
   "to": "2026-10-21",
   "todayActiveUsers": 318,
+  "pendingDates": [],
   "daily": [
     { "date": "2026-10-15", "activeUsers": 402, "newUsers": 31 },
     { "date": "2026-10-16", "activeUsers": 377, "newUsers": 27 }
@@ -1476,14 +1478,14 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 광고 구분 조건과 이벤트 정의는 제품 제약에 있고 캐시와 비용 예산, 기간 상한의 근거는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 광고 구분 조건과 이벤트 정의는 제품 제약에 있고 값 저장과 비용 예산, 기간 상한의 근거는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>캠페인 목록에 없는 값도 허용<br>생략하면 캠페인 목록에서 종료일이 없는 마지막 항목의 값 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 35일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다. 관리자 페이지는 캠페인 목록의 시작일과 종료일로 범위를 미리 채운다.
@@ -1496,7 +1498,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 분석 도구에서 이 범위의 값을 받은 시각<br>오늘을 포함하지 않는 범위는 24시간까지 캐시된 값 |
+| `asOf` | `string` | 분석 지표와 같음 |
+| `pendingDates` | `string[]` | 분석 지표와 같음 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜 |
 | `campaign` | `string` | 적용한 캠페인 값 |
@@ -1511,11 +1514,11 @@ Authorization: Bearer {adminToken}
 | `daily[].newVisitorsBySource.dcinside` | `integer` | 캠페인이 아니면서 소스가 디시인사이드 |
 | `daily[].newVisitorsBySource.other` | `integer` | 캠페인이 아니면서 소스 목록 밖 |
 | `daily[].signups` | `object` | 신규 가입자<br>세그먼트 묶음 구조 |
-| `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 `signups` 누계<br>세그먼트 묶음 구조 |
+| `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 `signups` 누계<br>세그먼트 묶음 구조 |
 | `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
 | `daily[].completionRequests` | `integer` | 스토리 완성 요청 횟수 |
 | `daily[].chatMessages` | `integer` | 채팅 메시지 전송 횟수 |
-| `totals` | `object` | 범위 합계 |
+| `totals` | `object` | 준비된 날짜의 합계<br>`pendingDates`가 있으면 범위 일부의 값 |
 | `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
 | `totals.newVisitors` | `object` | 일별 합<br>세그먼트 묶음 구조 |
 | `totals.signups` | `object` | 일별 합<br>세그먼트 묶음 구조 |
@@ -1530,7 +1533,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 35일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
 
 <details>
@@ -1555,6 +1558,7 @@ Authorization: Bearer {adminToken}
   "from": "2026-10-22",
   "to": "2026-10-23",
   "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "pendingDates": [],
   "daily": [
     {
       "date": "2026-10-22",
@@ -1608,7 +1612,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
 | `steps` | `object[]` | 단계 순서<br>6개 |
 | `steps[].event` | `string` | 단계의 이벤트 이름 |
 | `steps[].users` | `object` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
@@ -1682,7 +1687,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
 | `storyId` | `string` | 적용한 대상 스토리 |
 | `steps` | `object[]` | 단계 순서<br>7개 |
 | `steps[].event` | `string` | 단계의 이벤트 이름 |
@@ -1724,7 +1730,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 캠페인 추이와 같음 |
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to` | | 캠페인 추이와 같음 |
 | `sources` | `object[]` | 첫 유입 소스별 신규 방문자<br>`newVisitors` 내림차순 |
 | `sources[].source` | `string / null` | 사용자 속성 `gp:initial_utm_source`<br>없으면 `null` |
 | `sources[].newVisitors` | `integer` | 범위 안 `_new` 고유 사용자 수 |
@@ -1757,7 +1764,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 42일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
@@ -1768,13 +1775,13 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>전체만이며 플랫폼별 값은 없음 |
-| `daily` | `object[]` | 날짜 오름차순 |
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
 | `daily[].newVisitors` | `object` | 신규 방문자<br>플랫폼 묶음 구조 |
-| `daily[].cumulativeNewVisitors` | `object` | 범위 첫날부터 누계<br>플랫폼 묶음 구조 |
+| `daily[].cumulativeNewVisitors` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 누계<br>플랫폼 묶음 구조 |
 | `daily[].messagesPerUser` | `object` | 사용자당 채팅 메시지 전송 수<br>`web`과 `android`만 값이 있는 소수이고 `all`과 `unknown`은 `null` |
 
 <br>
@@ -1783,7 +1790,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 42일 초과, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -1800,7 +1807,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하<br>`to`는 어제 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하<br>`to`는 어제 이하 |
 | `days` | `integer` | 선택 | `7`만 허용<br>어제를 끝으로 하는 최근 7일<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 어제를 끝으로 하는 최근 7일이다. 범위는 신규 방문일 기준이다.
@@ -1813,9 +1820,10 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 분석 지표와 같음 |
+| `pendingDates` | `string[]` | 아직 값을 받지 못해 `cohorts`에서 뺀 코호트 날짜<br>그 밖은 분석 지표와 같음 |
 | `platforms` | `object[]` | `all`, `web`, `android` 세 항목 |
 | `platforms[].platform` | `string` | `all`, `web`, `android` |
-| `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순 |
+| `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `platforms[].cohorts[].date` | `string` | 신규 방문일 |
 | `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
 | `platforms[].cohorts[].d1`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았으면 `null` |
@@ -1827,7 +1835,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 20일 초과, `to`가 어제보다 뒤, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, `to`가 어제보다 뒤, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -1844,7 +1852,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 15일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `14` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 14일이다.
@@ -1855,8 +1863,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 분석 지표와 같음 |
-| `daily` | `object[]` | 날짜 오름차순 |
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null` |
 
@@ -1868,7 +1876,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 15일 초과, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -1943,7 +1951,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 분석 지표와 같음 |
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to` | | 분석 지표와 같음 |
 | `funnel` | `string` | 요청한 퍼널 |
 | `platform` | `string` | 적용한 플랫폼 |
 | `storyId` | `string / null` | 적용한 대상 스토리 |
@@ -2021,7 +2030,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all` |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 40일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
@@ -2032,9 +2041,9 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 분석 지표와 같음 |
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
 | `platform` | `string` | 적용한 플랫폼 |
-| `daily` | `object[]` | 날짜 오름차순 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수<br>`unknown`은 전송 합계에서 나머지 셋을 뺀 값 |
 | `daily[].streamErrors` | `integer` | 스트림 오류 표시 횟수 |
@@ -2054,7 +2063,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 40일 초과, 허용하지 않는 `platform`과 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `platform`과 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>

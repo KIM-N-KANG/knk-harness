@@ -12,9 +12,9 @@
 
 | 규칙 | 내용 |
 |---|---|
-| 식별자 | 내부 PK는 `bigint` 자동 증가<br>감사 로그는 외부 노출용 `public_id uuid`를 따로 둠<br>감사 로그의 대상은 그 도메인의 외부 식별자 문자열로 기록 |
+| 식별자 | 내부 PK는 `bigint` 자동 증가<br>감사 로그는 외부 노출용 `public_id uuid`를 따로 둠<br>감사 로그의 대상은 그 도메인의 외부 식별자 문자열로 기록<br>Amplitude 조회 값은 API로 노출하지 않아 `public_id`가 없음 |
 | 시각 | `timestamp with time zone`<br>`created_at`의 기본값은 `now()`이며 아래 표에서는 표시하지 않음 |
-| 삭제 | 감사 로그는 삭제 경로 없음<br>관리자 역할은 역할 관리 운영자가 행을 삭제 |
+| 삭제 | 감사 로그는 삭제 경로 없음<br>관리자 역할은 역할 관리 운영자가 행을 삭제<br>Amplitude 조회 값은 삭제 경로 없음 |
 | FK | 관리자 역할은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>감사 로그의 처리자는 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -39,7 +39,22 @@ erDiagram
         varchar target_type
         varchar target_id
     }
+    admin_analytics_daily_values {
+        bigint id PK
+        varchar metric
+        char params_hash
+        date metric_date
+    }
+    admin_analytics_range_values {
+        bigint id PK
+        varchar metric
+        char params_hash
+        date range_from
+        date range_to
+    }
 ```
+
+Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 
 <br>
 
@@ -133,7 +148,56 @@ erDiagram
 
 <br>
 
-### 3-2-5 참조하는 다른 도메인의 컬럼
+### 3-2-5 Amplitude 조회 값
+
+Amplitude에서 받은 지표 값을 저장한다. 조회 흐름과 유효 판정은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 마이그레이션 번호는 서버 저장소의 다음 번호를 쓴다.
+
+**`admin_analytics_daily_values`**
+
+일별 지표 조회 하나의 한 날짜 값, 또는 리텐션 조회 하나의 한 코호트 날짜 배열이 한 행이다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `metric` | varchar(64) | NOT NULL | 지표 식별자<br>서버 코드가 조회 정의마다 정한 이름 |
+| `params_hash` | char(64) | NOT NULL | 조회 정의의 매개변수를 정해진 순서로 직렬화한 JSON의 SHA-256 16진 문자열 |
+| `params` | jsonb | NOT NULL | 해시를 만든 매개변수 원문<br>운영자가 행의 의미를 확인하는 용도 |
+| `metric_date` | date | NOT NULL | KST 날짜<br>리텐션은 코호트 날짜 |
+| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열 |
+| `fetched_at` | timestamptz | NOT NULL | Amplitude에서 받은 시각 |
+| `finalized_at` | timestamptz | | 확정한 시각<br>NULL이면 다시 받을 수 있음 |
+
+| 제약과 인덱스 | 컬럼 |
+|---|---|
+| `uk_admin_analytics_daily_values_key` UNIQUE | `metric`, `params_hash`, `metric_date` |
+
+**`admin_analytics_range_values`**
+
+범위 지표 조회 하나의 한 범위 값이 한 행이다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `metric` | varchar(64) | NOT NULL | 지표 식별자 |
+| `params_hash` | char(64) | NOT NULL | 일별 테이블과 같은 규칙 |
+| `params` | jsonb | NOT NULL | 해시를 만든 매개변수 원문 |
+| `range_from` | date | NOT NULL | 범위 첫날 KST 날짜 |
+| `range_to` | date | NOT NULL, CHECK `range_from <= range_to` | 범위 마지막 날 KST 날짜 |
+| `value` | jsonb | NOT NULL | 응답을 만들 원값<br>퍼널은 단계별 사용자 수 배열, 묶음 조회는 묶음 값과 사용자 수 배열, MAU는 숫자 하나 |
+| `fetched_at` | timestamptz | NOT NULL | Amplitude에서 받은 시각 |
+| `finalized_at` | timestamptz | | 확정한 시각<br>NULL이면 다시 받을 수 있음 |
+
+| 제약과 인덱스 | 컬럼 |
+|---|---|
+| `uk_admin_analytics_range_values_key` UNIQUE | `metric`, `params_hash`, `range_from`, `range_to` |
+
+- 두 테이블 모두 고유 키 인덱스로 조회한다. 일별 테이블은 `metric`, `params_hash`가 같고 `metric_date`가 범위 안인 행을 읽는다.
+- 저장은 고유 키 충돌 시 값과 `fetched_at`을 덮어쓰는 upsert이며 `finalized_at`이 있는 행은 덮어쓰지 않는다.
+- 회원 식별자와 개인정보는 넣지 않는다. 값은 집계 수치뿐이다.
+
+<br>
+
+### 3-2-6 참조하는 다른 도메인의 컬럼
 
 | 테이블 | 컬럼 | ADMIN이 하는 일 |
 |---|---|---|
@@ -154,9 +218,10 @@ erDiagram
 
 <br>
 
-### 3-2-6 데이터 수명
+### 3-2-7 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
 | 관리자 역할 | 역할 관리 운영자가 삭제 |
 | 감사 로그 | 없음 |
+| Amplitude 조회 값 | 없음<br>지표 정의가 바뀌면 새 키로 다시 받고 옛 행은 남음<br>잘못 받은 값은 운영 DB에서 그 행을 지워 다음 요청에서 다시 받게 함 |

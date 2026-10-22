@@ -24,7 +24,7 @@ Fluent Bit`"]
     S -->|OTLP 지표| G["`**Grafana Cloud**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
-    S -->|감사 로그| DB["`**PostgreSQL**`"]
+    S -->|감사 로그, Amplitude 조회 값| DB["`**PostgreSQL**`"]
     S -->|지표 조회| AM["`**Amplitude**`"]
     S -->|보고서 내려받기| GCS["`**Google Cloud Storage**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
@@ -69,6 +69,8 @@ Fluent Bit`"]
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
 | 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
 | 분석 도구 호출 실패 | 사용자 수, 세분화, 퍼널, 리텐션, 세션 조회 실패와 비용 예산 부족<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `budget_exceeded`, `timeout`, HTTP 상태, `endpoint`(분석 지표와 캠페인, 사용자, 전환, 기능 지표의 엔드포인트 경로)<br>응답 본문과 키는 기록하지 않음 |
+| 분석 값 갱신 | 분석 도구를 호출한 갱신이 끝날 때<br>`admin_analytics_refreshed`<br>저장 값만으로 응답한 요청은 기록하지 않음 | `endpoint`, `queries`(보낸 조회 수), `fetched_days`(받은 날짜 수, 범위 지표는 0 또는 1), `reused_days`(저장 값으로 채운 날짜 수), `pending_days`(준비 중 날짜 수), `cost`(남긴 비용), `finalized_rows`(이번에 확정한 행 수), `duration_ms`<br>값과 매개변수 원문은 기록하지 않음 |
+| 분석 값 저장 실패 | 저장 트랜잭션 예외<br>평문 WARN `admin_analytics_store_failed` | `endpoint`, `metric`, 예외 클래스 |
 | 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `no_reports`, `timeout`, `parse_error`<br>`status` = 저장소 응답의 HTTP 상태이며 응답이 없으면 `null`<br>키 해석 실패와 연결 실패는 상태 없는 `http_error`<br>객체 이름, 파일 내용, 키는 기록하지 않음 |
 
 <details>
@@ -96,7 +98,7 @@ Fluent Bit`"]
 | 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary`와 `/api/v1/admin/dashboard/charts` 500 비율<br>`duration_ms` |
 | 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms` |
 | 접속 기록 | 접속 기록 실패 WARN |
-| 분석 지표 | `admin_analytics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/analytics` 503 비율 |
+| 분석 지표 | `admin_analytics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/analytics` 503 비율<br>`admin_analytics_refreshed`의 `pending_days`가 줄지 않으면 예산 경쟁이나 반복 실패 |
 | 캠페인 분석 | `admin_analytics_fetch_failed`의 `budget_exceeded` 빈도<br>요청 로그의 `/api/v1/admin/campaigns/` 접두 경로 503 비율과 `duration_ms` |
 | 사용자, 전환, 기능 지표 | 요청 로그의 `/api/v1/admin/users/`, `/api/v1/admin/conversion/`, `/api/v1/admin/quality/` 접두 경로 503과 500 비율, `duration_ms` |
 | 설치 지표 | `admin_play_stats_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/play-installs` 503 비율 |

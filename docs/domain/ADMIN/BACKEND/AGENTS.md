@@ -13,7 +13,7 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | [1-BACKGROUND.md](1-BACKGROUND.md) | 배경, 역할, 주체, 용어 |
 | [2-REQUIREMENTS.md](2-REQUIREMENTS.md) | 요구 주체, 기대하는 동작, 다른 주체와의 역할 분담, 제품 제약, 대시보드 지표와 분포 차트 정의, 데이터 보존 |
 | [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 |
-| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 감사 로그 작업 이름, 데이터 수명 |
+| [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 감사 로그 작업 이름, Amplitude 조회 값 저장, 데이터 수명 |
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 |
 | [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 로그인, 판정, 감사 기록, 목록 공통, 대시보드, 스토리, 채팅, 회원, 결제, 이프 내역, 감사 로그 조회, 분석 지표, 설치 지표, 캠페인 분석, 사용자와 전환과 기능 지표, Amplitude 조회 공통 |
 | [4-2-CONTRACT.md](4-2-CONTRACT.md) | 관리자 API 공통 규칙과 토큰, 페이지와 검색 규칙, 엔드포인트, 다른 도메인과의 경계 |
@@ -41,7 +41,7 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 다른 도메인에 관리자 API 추가 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [4-1-4 감사 기록](4-1-PIPELINES.md#4-1-4-감사-기록), [3-2-4 감사 로그](3-2-DB-SCHEMA.md#3-2-4-감사-로그)의 작업 이름, [5-5-3 권한 판정과 회귀](5-5-TEST-CASES.md#5-5-3-권한-판정과-회귀) |
 | 토큰 정책 변경 | [5-1-1 인증 수준과 토큰](5-1-SECURITY.md#5-1-1-인증-수준과-토큰) | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도)<br>[DECISIONS.md](DECISIONS.md) |
 | 분석 도구 지표 변경 | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약)의 캠페인 분석 지표와 사용자, 전환, 기능과 품질 지표 | [4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)의 비용 산식과 엔드포인트별 비용 표<br>[DECISIONS.md](DECISIONS.md) 결정 12, 13, 15 |
-| 지표나 분포 차트 추가 | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약) | [4-1-7 대시보드 차트](4-1-PIPELINES.md#4-1-7-대시보드-차트)<br>[4-2-4 대시보드 차트](4-2-CONTRACT.md#4-2-4-대시보드-차트)의 목록 링크<br>[3-2-5 참조하는 다른 도메인의 컬럼](3-2-DB-SCHEMA.md#3-2-5-참조하는-다른-도메인의-컬럼) |
+| 지표나 분포 차트 추가 | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약) | [4-1-7 대시보드 차트](4-1-PIPELINES.md#4-1-7-대시보드-차트)<br>[4-2-4 대시보드 차트](4-2-CONTRACT.md#4-2-4-대시보드-차트)의 목록 링크<br>[3-2-6 참조하는 다른 도메인의 컬럼](3-2-DB-SCHEMA.md#3-2-6-참조하는-다른-도메인의-컬럼) |
 | 목록 필터나 정렬 추가 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)의 페이지와 검색 규칙 | [4-1-5 목록 공통 처리](4-1-PIPELINES.md#4-1-5-목록-공통-처리)<br>[5-1-4 감사와 접속 기록](5-1-SECURITY.md#5-1-4-감사와-접속-기록) |
 | 관리자 역할 부여와 회수 | [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) | [5-1-2 권한 판정](5-1-SECURITY.md#5-1-2-권한-판정) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
@@ -58,7 +58,7 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 |---|---|---|
 | 관리자 API 계층 | `admin/controller/` | 4-2-2~4-2-32 |
 | 로그인, 토큰, 감사 기록, 대시보드, 목록과 상세 | `admin/service/`<br>`admin/repository/`의 조회 쿼리 | 4-1-2~4-1-13 |
-| 분석 도구 클라이언트, 캠페인과 사용자와 전환과 기능 지표, 비용 예산, 캐시 | `admin/analytics/` | 4-1-14, 4-1-16~4-1-20 |
+| 분석 도구 클라이언트, 캠페인과 사용자와 전환과 기능 지표, 비용 예산, 값 저장 | `admin/analytics/` | 4-1-14, 4-1-16~4-1-20, 3-2-5 |
 | 설치 보고서 클라이언트, 해석기, 캐시 | `admin/playstats/` | 4-1-15 |
 | 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/`<br>[global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
 | 신원 검증기 | [auth/social/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/social/) | 4-1-2 |
