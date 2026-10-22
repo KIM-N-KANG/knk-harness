@@ -13,9 +13,9 @@
 | 규칙 | 내용 |
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>채팅과 공유는 외부 노출용으로 `public_id uuid`를 따로 둠<br>채팅과 공유를 식별하는 API는 공개 식별자만 사용<br>턴 ID는 AI 응답 메시지의 `bigint` PK를 그대로 노출 |
-| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>`updated_at`은 채팅과 모델 등급에만 있음<br>아래 표에서는 생략 |
+| 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>`updated_at`은 채팅과 모델에만 있음<br>아래 표에서는 생략 |
 | 삭제 | 채팅 삭제 시 `story_chats.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 채팅의 삭제 여부로 제외 |
-| FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제<br>모델 등급은 삭제하지 않으므로 채팅의 등급 참조는 삭제 동작 없음 |
+| FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제<br>모델은 삭제하지 않으므로 채팅의 모델 참조는 삭제 동작 없음 |
 | 순서 | 메시지는 채팅 안에서 `message_order`를 1부터 부여<br>선택지는 메시지 안에서 `choice_order`를 1부터 부여 |
 | 글 | 메시지 본문은 AI 응답 원문을 이미지 마커와 함께 보존<br>프롤로그 스냅샷은 플레이 이름으로 치환한 값 |
 | 이름 스냅샷 | 도달 엔딩과 거쳐온 사건은 FK와 별도로 토큰 원문 이름을 보관<br>원본 행이 교체돼도 기록이 남음 |
@@ -42,7 +42,7 @@ erDiagram
     story_endings |o--o{ story_chats : "STORY, 도달 엔딩"
     story_endings |o--o{ story_messages : "STORY, 도달 턴"
     story_chats ||--o{ story_chat_shares : "공유"
-    chat_model_tiers ||--o{ story_chats : "모델 등급"
+    chat_models ||--o{ story_chats : "모델"
     story_chats {
         bigint id PK
         uuid public_id
@@ -51,9 +51,9 @@ erDiagram
         bigint start_setting_id FK
         bigint target_main_event_id FK
         bigint reached_ending_id FK
-        varchar model_tier_code FK
+        varchar model_code FK
     }
-    chat_model_tiers {
+    chat_models {
         varchar code PK
     }
     story_messages {
@@ -134,7 +134,7 @@ erDiagram
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 최초 도달 엔딩 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 시점의 엔딩 이름 |
 | `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `ENDED` | |
-| `model_tier_code` | varchar(20) | NOT NULL, FK `chat_model_tiers.code` | 선택한 모델 등급<br>등급 추가 전에 만들어진 채팅은 `BASIC` |
+| `model_code` | varchar(20) | NOT NULL, FK `chat_models.code` | 선택한 모델<br>모델 추가 전에 만들어진 채팅은 `BASIC` |
 | `deleted_at` | timestamptz | | |
 
 | 인덱스 | 컬럼 |
@@ -144,9 +144,9 @@ erDiagram
 
 <br>
 
-**`chat_model_tiers`**
+**`chat_models`**
 
-턴 본문을 생성할 모델 등급의 목록이다. 운영자가 직접 기록한다.
+턴 본문을 생성할 모델의 목록이다. 운영자가 직접 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -155,18 +155,18 @@ erDiagram
 | `turn_cost` | bigint | NOT NULL, CHECK `1 이상 10000 이하` | 턴당 소모 이프<br>재생성 포함<br>상한으로 자릿수 오타 방지 |
 | `sort_order` | integer | NOT NULL, CHECK `>= 1` | 노출 순서 |
 | `is_active` | boolean | NOT NULL, 기본 `true` | 목록 노출과 선택 허용 여부 |
-| `is_default` | boolean | NOT NULL, 기본 `false`, CHECK `is_active OR NOT is_default` | 새 채팅과 비활성 등급 대체에 쓰는 기본 등급<br>노출 중인 행만 가능 |
+| `is_default` | boolean | NOT NULL, 기본 `false`, CHECK `is_active OR NOT is_default` | 새 채팅과 비활성 모델 대체에 쓰는 기본 모델<br>노출 중인 행만 가능 |
 
 | 인덱스 | 컬럼 |
 |---|---|
-| `uq_chat_model_tiers_default` | `(is_default)` UNIQUE WHERE `is_default` |
+| `uq_chat_models_default` | `(is_default)` UNIQUE WHERE `is_default` |
 
 | `code` | `name` | `turn_cost` | `sort_order` | `is_default` |
 |---|---|---|---|---|
-| `BASIC` | 기본 | 20 | 1 | `false` |
-| `ADVANCED` | 고급 | 50 | 2 | `true` |
+| `BASIC` | 라이트 | 20 | 1 | `false` |
+| `ADVANCED` | 오로라 | 50 | 2 | `true` |
 
-새 등급 코드를 추가하려면 AI 서버의 라우팅이 그 코드를 먼저 알아야 한다. ([6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건))
+새 모델 코드를 추가하려면 AI 서버의 라우팅이 그 코드를 먼저 알아야 한다. ([6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건))
 
 <br>
 
@@ -292,7 +292,7 @@ erDiagram
 | `story_creation_sessions` | `storyline_request_id` |
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
-| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>`CHAT_TURN` 행의 `amount`는 청구 등급의 가격이라 같은 채팅 안에서 섞일 수 있음 |
+| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
 
 <br>
 
@@ -305,6 +305,6 @@ erDiagram
 | 선택지 | 재생성 시 활성 선택지만 교체<br>이전 값은 버전 이력에 남음 |
 | 실시간 이미지 객체 | 삭제 없음 |
 | 공유 | 삭제 없음<br>원본 채팅의 `deleted_at`으로 열람 차단 |
-| 모델 등급 | 노출 중단만 수행<br>물리 삭제 없음 |
+| 모델 | 노출 중단만 수행<br>물리 삭제 없음 |
 | 도달 집계 | 삭제 없음 |
 | 피드백 | 삭제 없음 |
