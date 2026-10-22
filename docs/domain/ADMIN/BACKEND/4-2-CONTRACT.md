@@ -315,7 +315,10 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>기본 `30`<br>오늘을 포함한 최근 N일의 KST 날짜 범위 |
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
 
 <br>
 
@@ -327,7 +330,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `asOf` | `string` | 집계 기준 시각 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
-| `to` | `string` | 범위 마지막 날의 KST 날짜<br>오늘 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
 | `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 있고 없는 날은 0 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].joined` | `integer` | 가입 |
@@ -380,7 +383,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -390,7 +393,7 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/dashboard/charts?days=7
+GET /api/v1/admin/dashboard/charts?from=2026-10-15&to=2026-10-21
 Authorization: Bearer {adminToken}
 ```
 
@@ -1284,7 +1287,10 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>기본 `30` |
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
 
 <br>
 
@@ -1292,10 +1298,10 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 서버가 분석 도구에서 값을 받은 시각<br>캐시된 응답은 캐시한 시각이며 갱신 중이나 쿨다운 중에는 10분보다 오래될 수 있음 |
+| `asOf` | `string` | 서버가 분석 도구에서 이 범위의 값을 받은 시각<br>캐시된 응답은 캐시한 시각이며 갱신 중이나 쿨다운 중에는 10분보다 오래될 수 있음 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
-| `to` | `string` | 범위 마지막 날의 KST 날짜<br>오늘 |
-| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>`daily` 마지막 항목의 `activeUsers`와 같음 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
+| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>범위와 무관하게 오늘 값 |
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `integer` | 그 날 이벤트가 있는 고유 사용자 수 |
@@ -1309,7 +1315,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
 
 <details>
@@ -1320,7 +1326,7 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/dashboard/analytics?days=7
+GET /api/v1/admin/dashboard/analytics?from=2026-10-15&to=2026-10-21
 Authorization: Bearer {adminToken}
 ```
 

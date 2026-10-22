@@ -178,7 +178,7 @@
 | 권한 판정 | 로그 `admin_access_denied` | 급증하지 않음 |
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
 | 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 성공 응답과 `totalElements` |
-| 분석 지표 | 분석 지표 응답 | 성공 응답과 `daily` 90개<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason` |
+| 분석 지표 | 기본 범위의 분석 지표 응답 | 성공 응답과 `daily` 30개<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason` |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
