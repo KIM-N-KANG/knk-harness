@@ -40,7 +40,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그와 AI 호출 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별<br>Amplitude 연결에는 정수 문자열이어야 함 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 게스트의 턴과 이미지 체험 한도 집계<br>AI 서버에는 해시로 전달<br>게스트 서버 분석 이벤트의 `device_id` | 게스트 이어쓰기와 재생성은 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 게스트의 턴과 이미지 체험 한도 집계<br>AI 서버에는 해시로 전달<br>서버 분석 이벤트의 `device_id` | 게스트 이어쓰기와 재생성은 필수 |
 | `User-Agent` | 문자열 | 피드백에 함께 저장 | 선택 |
 
 <br>

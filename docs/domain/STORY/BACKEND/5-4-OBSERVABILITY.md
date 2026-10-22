@@ -231,7 +231,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원이면 공개 식별자 |
-| `device_id` | 게스트면 요청 헤더 `X-Manyak-Device-Id` 원본, 헤더가 없으면 `unknown`<br>회원이면 실제 디바이스 해시가 있을 때만 포함 |
+| `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 게스트는 `unknown`, 회원은 생략 |
 | `session_id`, `request_id`, `is_logged_in` | 요청 문맥 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server` |
@@ -241,7 +241,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 
 <br>
 
-Amplitude HTTP V2 배치 페이로드 1건이다. 예시 값은 형식만 맞춘 가상 값이다. 회원 이벤트도 요청에 실제 디바이스 해시가 있으면 `device_id`와 `device_id_hash`를 함께 싣는다. 게스트는 `device_id`에 요청 헤더 원본을 싣고 `device_id_hash`에는 해시를 싣는다.
+Amplitude HTTP V2 배치 페이로드 1건이다. 예시 값은 형식만 맞춘 가상 값이다. `device_id`는 요청 헤더 원본이고 이벤트 프로퍼티 `device_id_hash`는 그 해시다.
 
 ```json
 {
@@ -250,7 +250,7 @@ Amplitude HTTP V2 배치 페이로드 1건이다. 예시 값은 형식만 맞춘
     {
       "event_type": "server_storyCreate_storyGeneration_processed_succeeded",
       "user_id": "3f6a1c2e-9b7d-4e21-8c55-0a1b2c3d4e5f",
-      "device_id": "device_hash_0123456789abcdef",
+      "device_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
       "session_id": 1760000000000,
       "insert_id": "req_0123456789abcdef:server_storyCreate_storyGeneration_processed_succeeded",
       "time": 1760000000123,
