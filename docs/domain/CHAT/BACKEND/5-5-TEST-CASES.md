@@ -62,7 +62,7 @@
 | AI 요청의 식별자와 모델 코드 | 회원 턴, 게스트 턴(`AURORA` 저장), 재생성 | `user_id`는 공개 UUID와 `model_tier`는 청구 모델, `user_id`는 `null`과 `model_tier=LITE`, 요청 시점 모델 |
 | 생성 중 모델 변경 | AI 호출 중 `AURORA`에서 `LITE`으로 변경 뒤 완료, 변경 뒤 AI 실패 | 50 차감 유지와 `model_tier=AURORA`, 환불 50 |
 | 가격 변경 중 턴 | 턴 시작 뒤 모델 행의 가격 변경 뒤 실패 | 시작 시점 가격으로 차감과 같은 금액 환불 |
-| 차감 행 연결 | 유료 이어쓰기, 체험 이어쓰기, 게스트 이어쓰기, 유료 재생성 | AI 응답 메시지의 `credit_transaction_id`가 차감 행, `NULL`, `NULL`, 새 차감 행이고 이전 차감 행은 버전 이력으로 이동 |
+| 차감 행 연결 | 유료 이어쓰기, 체험 이어쓰기, 게스트 이어쓰기, 유료 재생성 | AI 응답 메시지의 `credit_transaction_id`가 차감 행, `NULL`, `NULL`, 새 차감 행이고 이전 차감 행은 버전 이력으로 이동<br>차감 행의 `idempotency_key`는 `charge:chat-turn:` 접두 |
 | 대사와 저장의 경쟁 | 저장 진입 전에 그 차감이 `refund:charge:{id}`로 환불됨 | 결과 폐기와 `AI_STREAM_FAILED`, 환불 행 1개 유지, 턴 미저장 |
 | AI의 모델 코드 거절 | AI가 요청을 422로 거절 | `AI_STREAM_FAILED`, 환불, Sentry 캡처 |
 | AI 오류 이벤트 | AI가 `error` 전송 | 같은 코드와 문구의 `error`, 환불과 복원, 턴 미저장 |
@@ -119,7 +119,8 @@
 | 지표 | 이탈 뒤 저장 성공, AI 실패, 생성 마감 초과, 생성 중 거절 | `success`, `failure`, `failure`, `rejected`<br>`model_code` 태그는 청구 모델, 거절은 `none`<br>연결 종료만으로 `cancelled` 기록 없음 |
 | 분석 이벤트 | 저장 성공, 도달 턴, 저장 전 실패, 저장 후 전송 실패 | 성공 이벤트에 `model_code`와 `turn_cost`, `ending_id` 포함, 실패 이벤트에 `model_code`, 중복 실패 없음 |
 | 턴 저장 로그 | 체험 턴, 유료 `AURORA` 턴 | `ai_response_saved`에 `model_code=LITE`과 `turn_cost=0`, `model_code=AURORA`와 `turn_cost=50` |
-| 기존 채팅 마이그레이션 | 모델 컬럼 추가 전 채팅 행 | 실제 PostgreSQL에서 `model_code=LITE`으로 채워지고 NOT NULL 통과 |
+| 기존 채팅 마이그레이션 | 모델 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `model_code=LITE`로 채워지고 NOT NULL 통과, 생략 삽입도 `LITE`로 성공 |
+| 새 채팅의 모델 명시 | 기본 모델이 `AURORA`인 상태에서 채팅 생성 | 저장된 `model_code`가 DB 기본값 `LITE`가 아니라 `AURORA` |
 
 <br>
 
