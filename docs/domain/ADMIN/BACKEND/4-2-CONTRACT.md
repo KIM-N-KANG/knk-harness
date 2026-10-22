@@ -16,8 +16,8 @@
 |---|---|
 | 경로 | `/api/v1`을 생략해 적음<br>관리자 API는 모두 `/admin/` 아래 |
 | JSON 필드 이름 | camelCase |
-| 시각 | ISO 8601 UTC 문자열 |
-| 식별자 | 회원, 감사 로그, 주문, 스토리, 채팅방은 UUID 공개 식별자<br>내부 PK는 노출하지 않음 |
+| 시각 | ISO 8601 UTC 문자열<br>날짜 필드는 `YYYY-MM-DD`이며 기준 시간대는 각 절에 적음 |
+| 식별자 | 회원, 감사 로그, 주문, 스토리, 채팅은 UUID 공개 식별자<br>내부 PK는 노출하지 않음 |
 | 채팅 대화 원문 | 어떤 관리자 응답에도 사용자 메시지, AI 응답, 추천 입력을 싣지 않음 |
 | 호출 주체 | 관리자 페이지의 서버 측 처리기<br>브라우저가 직접 호출하지 않으므로 관리자 페이지 주소는 CORS 허용 목록에 없음 |
 | 사유 | 변경 작업의 요청 본문에 `reason` 필수 |
@@ -94,7 +94,7 @@
 
 **7. 공통 응답 구조**
 
-회원 목록 항목, 스토리와 채팅방의 소유자, 주문과 이프 거래의 회원, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
+회원 목록 항목, 스토리와 채팅의 소유자, 주문과 이프 내역의 회원, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -180,7 +180,7 @@
 | 403 | `FORBIDDEN` | 회원 없음, 관리자 역할 없음, 정지, 탈퇴<br>사유를 구분하지 않음 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -253,10 +253,10 @@ Content-Type: application/json
 | `stories.total` | `integer` | 스토리 누적 |
 | `stories.createdToday` | `integer` | 오늘 생성 |
 | `credits` | `object` | 이프 |
-| `credits.grantedTotal` | `integer` | 지급 누적 |
-| `credits.grantedToday` | `integer` | 오늘 지급 |
-| `credits.spentTotal` | `integer` | 소진 누적 |
-| `credits.spentToday` | `integer` | 오늘 소진 |
+| `credits.grantedTotal` | `integer` | 누적 적립 |
+| `credits.grantedToday` | `integer` | 오늘 적립 |
+| `credits.spentTotal` | `integer` | 누적 소모 |
+| `credits.spentToday` | `integer` | 오늘 소모 |
 | `payments` | `object` | 결제 |
 | `payments.completedTotal` | `integer` | 결제 건수 누적 |
 | `payments.completedToday` | `integer` | 오늘 결제 건수 |
@@ -265,7 +265,7 @@ Content-Type: application/json
 
 <br>
 
-- 관리자 페이지는 이프 지급 카드를 `direction=granted`, 이프 소진 카드를 `direction=spent`의 이프 거래 내역으로 잇는다. ([4-2-13 이프 거래 내역](#4-2-13-이프-거래-내역))
+- 관리자 페이지는 이프 적립 카드는 `direction=granted`로, 이프 소모 카드는 `direction=spent`로 이프 내역에 잇는다. ([4-2-13 이프 내역](#4-2-13-이프-내역))
 
 <br>
 
@@ -274,7 +274,7 @@ Content-Type: application/json
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -337,15 +337,15 @@ Authorization: Bearer {adminToken}
 | `daily[].chats` | `integer` | 채팅 시작 |
 | `daily[].turns` | `integer` | 턴 |
 | `daily[].stories` | `integer` | 스토리 생성 |
-| `daily[].granted` | `integer` | 이프 지급 |
-| `daily[].spent` | `integer` | 이프 소진 |
+| `daily[].granted` | `integer` | 이프 적립 |
+| `daily[].spent` | `integer` | 이프 소모 |
 | `daily[].payments` | `integer` | 결제 건수 |
 | `daily[].revenue` | `integer` | 결제 금액 |
 | `daily[].attendance` | `integer` | 출석 회원 수 |
 | `distributions` | `object[]` | 분포 차트<br>아래 표의 순서로 항상 8개 |
 | `distributions[].chartId` | `string` | 차트 식별자 |
 | `distributions[].title` | `string` | 제목 |
-| `distributions[].description` | `string` | 집계 기준 설명<br>첫 사용자 메시지까지 시간은 제외한 채팅방 수 포함 |
+| `distributions[].description` | `string` | 집계 기준 설명<br>첫 사용자 입력까지 걸린 시간은 제외한 채팅 수 포함 |
 | `distributions[].unit` | `string` | 값의 단위 |
 | `distributions[].points` | `object[]` | 막대 하나가 한 항목 |
 | `distributions[].points[].label` | `string` | 막대 이름 |
@@ -363,7 +363,7 @@ Authorization: Bearer {adminToken}
 | `first-message` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
 | `ai-latency` | `chat_response`, `choice_generation`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
 | `ai-success` | 같음 | `%` | 같은 목록<br>`aiFeature`, `aiStatus=FINISHED`, `aiFrom`, `aiTo` |
-| `characters` | `0명`부터 `5명`<br>사용자가 직접 입력한 주변 인물 수 | `세션` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
+| `characters` | `0명`부터 `5명`<br>간편 제작별 직접 입력한 주변 인물 수 | `건` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
 
 일별 추이의 한 날짜를 눌렀을 때 여는 목록은 관리자 페이지가 다음 쿼리로 만든다.
 
@@ -386,7 +386,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -399,7 +399,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-`daily`는 두 날, `distributions`는 한 차트만 보였다.
+예시에는 `daily`의 날짜 항목 2개와 `distributions`의 차트 1개만 표시했다.
 
 ```json
 {
@@ -414,7 +414,7 @@ Authorization: Bearer {adminToken}
     {
       "chartId": "turns",
       "title": "턴 수 분포",
-      "description": "채팅 시작일 기준, 구간별 채팅방 수",
+      "description": "채팅 생성일을 기준으로 구간별 채팅 수 집계",
       "unit": "개",
       "points": [
         { "label": "0", "value": 41, "link": { "list": "chats", "params": { "turnBucket": "0", "from": "2026-10-15", "to": "2026-10-21" } } },
@@ -476,7 +476,7 @@ Authorization: Bearer {adminToken}
 | `items[].supportingCharacterCount` | `integer / null` | 제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>제작 세션이 없으면 `null` |
 | `items[].owner` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트 소유는 `null` |
 | `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
-| `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 합 |
+| `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 수 합계 |
 | `items[].createdAt` | `string` | 생성 시각 |
 
 - 삭제된 스토리는 싣지 않는다. 팀 계정 제외는 적용하지 않는다.
@@ -490,7 +490,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`memberId`가 UUID 형식이 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -555,10 +555,10 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `retention` | `object[]` | 턴 유지율<br>`turn`이 1, 3, 5, 10, 20인 항목 5개 |
+| `retention` | `object[]` | 기준 턴 도달률<br>`turn`이 1, 3, 5, 10, 20인 항목 5개 |
 | `retention[].turn` | `integer` | 기준 턴 |
 | `retention[].rate` | `number` | 삭제되지 않은 채팅 중 현재 턴이 기준 턴 이상인 비율<br>0~1<br>채팅이 없으면 0 |
-| `recentChats` | `object[]` | 최근 생성된 채팅방 5개<br>채팅방 목록 항목 구조 |
+| `recentChats` | `object[]` | 최근 생성된 채팅 5개<br>채팅 목록 항목 구조 |
 
 <br>
 
@@ -571,7 +571,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-7 채팅방 목록
+### 4-2-7 채팅 목록
 
 | 항목 | 값 |
 |---|---|
@@ -583,14 +583,14 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `q` | `string` | 선택 | 스토리 제목과 회원 닉네임 부분 일치<br>채팅방 공개 식별자 정확 일치 |
+| `q` | `string` | 선택 | 스토리 제목과 회원 닉네임 부분 일치<br>채팅 공개 식별자 정확 일치 |
 | `storyId` | `string` | 선택 | 스토리 공개 식별자 |
 | `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
 | `startedAs` | `string` | 선택 | `GUEST`, `MEMBER` |
 | `turnBucket` | `integer` | 선택 | 0~10<br>턴 수 분포 차트의 구간 순서 |
-| `hasFirstMessage` | `boolean` | 선택 | `true`는 생성 뒤 900초 안에 첫 사용자 메시지가 있는 채팅방<br>`false`는 그 외 |
-| `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅방 |
-| `from`, `to` | `string` | 선택 | 채팅방 생성일 |
+| `hasFirstMessage` | `boolean` | 선택 | `true`는 생성 뒤 900초 안에 첫 사용자 메시지가 있는 채팅<br>`false`는 그 외 |
+| `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅 |
+| `from`, `to` | `string` | 선택 | 채팅 생성일 |
 | `aiFrom`, `aiTo` | `string` | 선택 | AI 호출 기록 생성일 |
 | `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation` |
 | `aiStatus` | `string` | 선택 | 스토리 목록과 같음 |
@@ -604,17 +604,17 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items[].chatId` | `string` | 채팅방 공개 식별자 |
+| `items[].chatId` | `string` | 채팅 공개 식별자 |
 | `items[].story` | `object` | 스토리 요약 구조 |
 | `items[].member` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트는 `null` |
-| `items[].startedAs` | `string` | 소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅방은 `MEMBER` |
-| `items[].turnCount` | `integer` | 현재 턴 |
+| `items[].startedAs` | `string` | 현재 소유자 유형이며 시작 당시 유형이 아님<br>소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅은 `MEMBER` |
+| `items[].turnCount` | `integer` | 현재 턴 수 |
 | `items[].startedAt` | `string` | 생성 시각 |
 | `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
-| `items[].creditsSpent` | `integer` | 이 채팅방을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
+| `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
 | `items[].firstMessageSeconds` | `integer / null` | 생성부터 첫 사용자 메시지까지 초<br>사용자 메시지가 없으면 `null` |
 
-- 삭제된 채팅방은 싣지 않는다. 메시지 원문은 어떤 필드에도 없다.
+- 삭제된 채팅은 싣지 않는다. 메시지 원문은 어떤 필드에도 없다.
 
 <br>
 
@@ -625,7 +625,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`storyId` 또는 `memberId`가 UUID 형식이 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -664,19 +664,19 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-8 채팅방 상세
+### 4-2-8 채팅 상세
 
 | 항목 | 값 |
 |---|---|
 | 요청 | `GET /admin/chats/{chatId}` |
 | 인증 | 관리자 |
-| 성공 | 200<br>채팅방 목록 항목 구조 |
+| 성공 | 200<br>채팅 목록 항목 구조 |
 
 **1. 경로**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `chatId` | 경로 | 필수 | 채팅방 공개 식별자 |
+| `chatId` | 경로 | 필수 | 채팅 공개 식별자 |
 
 <br>
 
@@ -685,7 +685,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `chatId`가 UUID 형식이 아님 |
-| 404 | `NOT_FOUND` | 없거나 삭제된 채팅방 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 채팅 |
 
 <br>
 
@@ -705,8 +705,8 @@ Authorization: Bearer {adminToken}
 | `status` | `string` | 선택 | `ACTIVE`, `SUSPENDED`, `DELETED` |
 | `excludeDeleted` | `boolean` | 선택 | `true`면 탈퇴 회원 제외 |
 | `from`, `to` | `string` | 선택 | 가입일 |
-| `chatBucket` | `integer` | 선택 | 0~4<br>회원별 채팅방 생성 횟수 차트의 구간 순서<br>채팅방이 없는 회원은 어떤 값에도 해당하지 않음 |
-| `chatFrom`, `chatTo` | `string` | 선택 | 채팅방 생성일<br>지정하면 `chatBucket` 판정과 `periodChatCount`를 그 기간으로 세고 기간에 채팅방이 없는 회원은 제외 |
+| `chatBucket` | `integer` | 선택 | 0~4<br>회원별 채팅 생성 횟수 차트의 구간 순서<br>채팅이 없는 회원은 어떤 값에도 해당하지 않음 |
+| `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatBucket` 판정과 `periodChatCount`를 그 기간으로 세고 기간에 채팅이 없는 회원은 제외 |
 | `creditDirection` | `string` | 선택 | `granted`, `spent`<br>그 방향의 원장 행이 있는 회원 |
 | `creditDate` | `string` | 선택 | 원장 기록일<br>`creditDirection`과 함께만 |
 | `attendanceDate` | `string` | 선택 | 그 KST 날짜에 출석 보상을 받은 회원 |
@@ -721,11 +721,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items[].lastActiveAt` | `string / null` | 삭제되지 않은 채팅방의 마지막 갱신, 원장 기록, 스토리 생성 중 가장 최근 시각<br>없으면 `null` |
-| `items[].creditsSpent` | `integer` | 소모 사유 원장 행 합계의 절댓값 |
+| `items[].lastActiveAt` | `string / null` | 삭제되지 않은 채팅의 마지막 갱신, 원장 기록, 스토리 생성 중 가장 최근 시각<br>없으면 `null` |
+| `items[].creditsSpent` | `integer` | 누적 이프 소모량<br>소모 사유 원장 행 합계의 절댓값이며 환불을 빼지 않음 |
 | `items[].paidKrw` | `integer` | 완료 상태 주문의 금액 합<br>환불된 주문 제외 |
-| `items[].chatCount` | `integer` | 삭제되지 않은 채팅방 수 |
-| `items[].periodChatCount` | `integer / null` | `chatFrom` 또는 `chatTo`를 지정했을 때 그 기간의 채팅방 수<br>지정하지 않으면 `null` |
+| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
+| `items[].periodChatCount` | `integer / null` | `chatFrom` 또는 `chatTo`를 지정했을 때 그 기간의 채팅 수<br>지정하지 않으면 `null` |
 
 - `q`가 있으면 접속 기록으로 감사 로그에 남는다. 이메일은 검색에만 쓰고 응답에는 없다.
 
@@ -738,7 +738,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`creditDate`만 지정 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -805,7 +805,7 @@ Authorization: Bearer {adminToken}
 | `deletedAt` | `string / null` | 탈퇴 시각 |
 
 - 상세 조회는 접속 기록으로 감사 로그에 남는다.
-- 이 회원의 결제, 채팅방, 스토리는 각 목록을 `memberId`로 조회한다. 이프 거래와 출석은 다음 두 절이다.
+- 이 회원의 결제, 채팅, 스토리는 각 목록을 `memberId`로 조회한다. 이프 내역과 출석은 다음 두 절이다.
 
 <br>
 
@@ -817,7 +817,7 @@ Authorization: Bearer {adminToken}
 | 404 | `NOT_FOUND` | 없는 회원 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -852,7 +852,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-11 회원 이프 거래 내역
+### 4-2-11 회원 이프 내역
 
 | 항목 | 값 |
 |---|---|
@@ -892,7 +892,7 @@ Authorization: Bearer {adminToken}
 | 404 | `NOT_FOUND` | 없는 회원 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -953,11 +953,11 @@ Authorization: Bearer {adminToken}
 
 **3. 실패 응답**
 
-회원 이프 거래 내역과 같다.
+회원 이프 내역과 같다.
 
 <br>
 
-### 4-2-13 이프 거래 내역
+### 4-2-13 이프 내역
 
 | 항목 | 값 |
 |---|---|
@@ -969,7 +969,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `direction` | `string` | 선택 | `granted`는 지급 사유의 양수 행, `spent`는 소모 사유의 음수 행<br>정의는 대시보드의 이프 지급과 소진과 같음<br>생략하면 모든 원장 행 |
+| `direction` | `string` | 선택 | `granted`는 적립 사유의 양수 행, `spent`는 소모 사유의 음수 행<br>정의는 대시보드의 이프 적립과 소모와 같음<br>생략하면 모든 원장 행 |
 | `date` | `string` | 선택 | 원장 기록일 |
 | `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
@@ -986,8 +986,8 @@ Authorization: Bearer {adminToken}
 | `items[].member` | `object` | 회원 요약 구조 |
 
 - 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서의 역순이다.
-- 회원별 누계와 회원 필터는 없다. 한 회원의 거래는 회원 거래 내역에서 본다. ([4-2-11 회원 이프 거래 내역](#4-2-11-회원-이프-거래-내역))
-- 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 지급·소진 값과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
+- 회원별 누계와 회원 필터는 없다. 한 회원의 원장 행은 회원 이프 내역에서 본다. ([4-2-11 회원 이프 내역](#4-2-11-회원-이프-내역))
+- 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 적립량과 소모량과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
 - 접속 기록을 남기지 않는다.
 
 <br>
@@ -999,7 +999,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | `direction` 허용 값 밖, 날짜 형식 오류, 공통 페이지 쿼리 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1059,10 +1059,10 @@ Authorization: Bearer {adminToken}
 | `items[].productId` | `string` | 상품 ID |
 | `items[].status` | `string` | `COMPLETED`<br>`REFUNDED` |
 | `items[].priceKrw` | `integer` | 결제 금액 |
-| `items[].creditAmount` | `integer` | 적립 총량 |
+| `items[].creditAmount` | `integer` | 구매로 적립된 이프 수량 |
 | `items[].completedAt` | `string` | 완료 시각 |
 | `items[].refundedAt` | `string / null` | 환불 시각 |
-| `items[].reversalShortfall` | `integer / null` | 회수 때 돌려받지 못한 수량<br>환불 전은 `null` |
+| `items[].reversalShortfall` | `integer / null` | 구매 환불 회수에서 돌려받지 못한 이프 수량<br>환불 전은 `null` |
 
 <br>
 
@@ -1073,7 +1073,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`memberId`가 UUID 형식이 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1136,9 +1136,9 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `firstPaidAt` | `string` | 회원의 완료 시각이 있는 주문 가운데 가장 이른 완료 시각<br>환불된 주문도 포함 |
 | `before` | `object` | 기준 시각 전 |
-| `before.turns` | `integer` | 채팅 턴 소모 원장 행 수 |
-| `before.stories` | `integer` | 간편 제작 소모 원장 행 수 |
-| `before.creditsSpent` | `integer` | 소모 사유 합계의 절댓값에서 환불 합계를 뺀 값 |
+| `before.turns` | `integer` | 이프가 소모된 채팅 처리 횟수<br>채팅 턴 사유 원장 행 수이며 재생성 포함, 무료 체험 제외 |
+| `before.stories` | `integer` | 이프가 소모된 간편 제작 횟수<br>간편 제작 사유 원장 행 수 |
+| `before.creditsSpent` | `integer` | 환불을 반영한 이프 순소모량<br>소모 사유 합계의 절댓값에서 AI 실패 환불 합계를 뺀 값 |
 | `after` | `object` | 기준 시각 이후<br>`before`와 같은 세 필드 |
 
 <br>
@@ -1151,7 +1151,7 @@ Authorization: Bearer {adminToken}
 | 404 | `NOT_FOUND` | 없는 주문<br>완료 시각이 없는 대기 주문 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1203,7 +1203,7 @@ Authorization: Bearer {adminToken}
 | `targetId` | `string` | 선택 | 대상 식별자<br>`targetType`과 함께 지정 |
 | `q` | `string` | 선택 | 처리자 닉네임, 작업 이름, 사유 부분 일치<br>감사 로그 공개 식별자와 대상 식별자 정확 일치 |
 | `from`, `to` | `string` | 선택 | 기록일 |
-| `category` | `string` | 선택 | `CHANGE`, `ACCESS` |
+| `category` | `string` | 선택 | 작업 분류<br>`CHANGE`, `ACCESS` |
 | `sort` | `string` | 선택 | `createdAt`, `category`, `action`, `targetType`, `admin`<br>`admin`은 처리자 닉네임<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
@@ -1215,7 +1215,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `items[].auditLogId` | `string` | 감사 로그 공개 식별자 |
 | `items[].admin` | `object` | 처리자의 회원 요약 구조 |
-| `items[].category` | `string` | `CHANGE`<br>`ACCESS` |
+| `items[].category` | `string` | 작업 분류<br>`CHANGE`<br>`ACCESS` |
 | `items[].action` | `string` | 작업 이름 |
 | `items[].targetType` | `string` | 대상 종류 |
 | `items[].targetId` | `string` | 대상 식별자 |
@@ -1234,7 +1234,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | `adminId`가 UUID 형식이 아님, `targetId`만 지정, 검색어, 날짜, enum, 공통 페이지 쿼리 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1304,8 +1304,8 @@ Authorization: Bearer {adminToken}
 | `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>범위와 무관하게 오늘 값 |
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].activeUsers` | `integer` | 그 날 이벤트가 있는 고유 사용자 수 |
-| `daily[].newUsers` | `integer` | 그 날 처음 이벤트가 있었던 고유 사용자 수 |
+| `daily[].activeUsers` | `integer` | 그날 이벤트가 있는 고유 사용자 수 |
+| `daily[].newUsers` | `integer` | 그날 처음 이벤트가 있었던 고유 사용자 수 |
 
 - 값은 분석 도구가 집계한 것이며 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
 
@@ -1319,7 +1319,7 @@ Authorization: Bearer {adminToken}
 | 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1332,7 +1332,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-`daily`는 두 날만 보였다.
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
 
 ```json
 {
@@ -1376,15 +1376,15 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 월별 보고서 전체에서 날짜가 가장 늦은 행의 날짜 `YYYY-MM-DD`<br>Play 기준 날짜라 KST로 바꾸지 않음 |
-| `totalInstalls` | `integer` | 보고서 전체 기간의 일별 기기 설치 수 합 |
-| `activeDevices` | `integer` | 날짜가 가장 늦은 행의 활성 기기 설치 수 |
+| `asOf` | `string` | 집계 기준 날짜 `YYYY-MM-DD`<br>월별 보고서 전체에서 날짜가 가장 늦은 행의 날짜<br>Play 기준 날짜라 KST로 바꾸지 않으며 캐시한 시각이 아님 |
+| `totalInstalls` | `integer` | Android 누적 기기 설치 수<br>보고서 전체 기간의 일별 기기 설치 수 합이며 고유 설치 사용자 수가 아님 |
+| `activeDevices` | `integer` | 날짜가 가장 늦은 행의 활성 기기 수 |
 | `daily` | `object[]` | 보고서 첫 날짜부터 마지막 날짜까지 모든 날이 한 항목씩<br>날짜 오름차순<br>보고서에 행이 없는 날도 채움 |
 | `daily[].date` | `string` | Play 기준 날짜 |
-| `daily[].installs` | `integer` | 그 날 기기 설치 수<br>행이 없는 날은 0 |
-| `daily[].uninstalls` | `integer` | 그 날 기기 삭제 수<br>행이 없는 날은 0 |
-| `daily[].cumulativeInstalls` | `integer` | 첫 날부터 그 날까지의 기기 설치 누계<br>행이 없는 날은 전날 값<br>마지막 항목은 `totalInstalls`와 같음 |
-| `daily[].activeDevices` | `integer / null` | 그 날의 활성 기기 설치 수<br>행이 없는 날은 `null` |
+| `daily[].installs` | `integer` | 그날 기기 설치 수<br>행이 없는 날은 0 |
+| `daily[].uninstalls` | `integer` | 그날 앱 삭제 수<br>행이 없는 날은 0 |
+| `daily[].cumulativeInstalls` | `integer` | 첫날부터 그날까지의 기기 설치 누계<br>행이 없는 날은 전날 값<br>마지막 항목은 `totalInstalls`와 같음 |
+| `daily[].activeDevices` | `integer / null` | 그날의 활성 기기 수<br>행이 없는 날은 `null` |
 
 - 값은 Play Console 일괄 보고서가 집계한 것이며 보고서는 며칠 늦게 채워진다. 보고서가 2026년 9월부터라 행 수가 작아 기간 쿼리는 없다.
 
@@ -1397,7 +1397,7 @@ Authorization: Bearer {adminToken}
 | 503 | `SERVICE_UNAVAILABLE` | 서비스 계정 키 미설정<br>보고서 저장소 호출 실패, 보고서 없음, 해석 실패, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청과 응답 예시</b></summary>
 
 <br>
 
@@ -1410,7 +1410,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-`daily`는 두 날만 보였다.
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
 
 ```json
 {
@@ -1433,12 +1433,12 @@ Authorization: Bearer {adminToken}
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
 | ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
-| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 지급과 소진 집계 |
+| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
 | NOTIFICATION, NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
-| CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅방 조회, AI 호출 기록 조회 |
-| Amplitude | 없음 | Dashboard REST API의 활성·신규 사용자 수 조회 |
+| CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, AI 호출 기록 조회 |
+| Amplitude | 없음 | Dashboard REST API의 활성 사용자와 신규 사용자 수 조회 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 

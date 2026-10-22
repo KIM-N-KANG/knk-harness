@@ -89,7 +89,7 @@
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `campaignId` | `string` | 캠페인 공개 식별자 |
-| `kind` | `string` | `SERVICE`와 `MARKETING` |
+| `kind` | `string` | 알림 성격<br>`SERVICE`는 정보성, `MARKETING`은 광고성 |
 | `title` | `string` | 광고 표기 없는 제목 |
 | `body` | `string` | |
 | `scheduledAt` | `string` | 예약 시각 |
@@ -737,7 +737,7 @@ Content-Type: application/json
 |---|---|---|---|
 | `q` | `string` | 선택 | 제목과 본문 부분 일치<br>캠페인 공개 식별자 정확 일치<br>규칙은 관리자 목록 공통의 검색어 규칙 |
 | `status` | `string` | 선택 | 캠페인 상태 값 중 하나<br>생략하면 전체 |
-| `kind` | `string` | 선택 | `SERVICE`, `MARKETING`<br>생략하면 전체 |
+| `kind` | `string` | 선택 | 알림 성격<br>`SERVICE`, `MARKETING`<br>생략하면 전체 |
 | `sort` | `string` | 선택 | `createdAt`, `scheduledAt`, `title`, `kind`, `status`, `targetCount`, `sentCount`, `deliveredMembers`, `deliveredDevices`, `failedDevices`<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
@@ -816,7 +816,7 @@ Authorization: Bearer {adminToken}
 | `storyId` | `string` | 선택 | 알림을 누르면 열 스토리의 공개 식별자<br>발행 상태이고 공개이며 삭제되지 않은 스토리만 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 종류는 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
+- 알림 성격은 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
 - `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다.
 - 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-15 대상 수 미리보기](#4-2-15-대상-수-미리보기))
 
@@ -945,7 +945,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `kind` | `string` | 요청한 종류 |
+| `kind` | `string` | 요청한 알림 성격 |
 | `targetCount` | `integer` | 현재 조건으로 대상이 되는 회원 수 |
 | `nightEligibleCount` | `integer / null` | 광고 종류에서 야간 동의까지 있는 회원 수<br>서비스 종류는 `null` |
 | `nightNow` | `boolean` | 현재 시각이 KST 야간이면 `true` |
@@ -1242,7 +1242,7 @@ Content-Type: application/json
 | `from` | `string` | 선택 | 시작 KST 날짜 `YYYY-MM-DD`<br>생략하면 `to`의 6일 전 |
 | `to` | `string` | 선택 | 끝 KST 날짜 `YYYY-MM-DD`<br>생략하면 오늘 |
 | `type` | `string` | 선택 | 큐 메시지의 `type` 값 중 하나<br>생략하면 전체 |
-| `kind` | `string` | 선택 | `SERVICE`, `MARKETING`<br>생략하면 전체<br>`type`과 함께 지정하면 둘 다 만족하는 행 |
+| `kind` | `string` | 선택 | 알림 성격<br>`SERVICE`, `MARKETING`<br>생략하면 전체<br>알림 종류 `type`과 함께 지정하면 둘 다 만족하는 행 |
 
 - 시작과 끝을 포함한 기간은 최대 366일이다. 기간을 바꿔 가며 조회하고 주 단위나 월 단위 합계는 관리자 페이지가 날짜 행을 더해 만든다.
 
@@ -1257,9 +1257,9 @@ Content-Type: application/json
 | `items` | `object[]` | 날짜 내림차순이며 같은 날은 `type` 오름차순<br>결과 행이 없는 날과 시나리오는 없음 |
 | `items[].date` | `string` | 완료 시각의 KST 날짜 |
 | `items[].type` | `string` | 시나리오 식별자 |
-| `items[].kind` | `string` | `SERVICE`와 `MARKETING` |
+| `items[].kind` | `string` | 알림 성격<br>`SERVICE`와 `MARKETING` |
 | `items[].requested` | `integer` | 처리가 끝난 메시지 수 |
-| `items[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 메시지 수 |
+| `items[].deliveredMembers` | `integer` | 도달 메시지 수(건)<br>도달 기기가 하나 이상인 메시지 수이며 고유 회원 수가 아님 |
 | `items[].deliveredDevices` | `integer` | 도달 기기 수의 합 |
 | `items[].failedDevices` | `integer` | 실패 기기 수의 합 |
 

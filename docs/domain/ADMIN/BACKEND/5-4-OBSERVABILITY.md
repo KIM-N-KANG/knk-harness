@@ -2,7 +2,7 @@
 
 이 문서는 ADMIN 도메인의 관측 스택, 요청을 추적할 식별자, 구조화 로그 이벤트, 오류 확인 위치, 지표, 트레이스, 알림, 수집 조건을 정한다.
 
-비밀값과 개인정보 취급 규칙은 보안에 있으며 오류 로그 수준은 오류 처리에 있다. ([5-1-6 비밀값과 개인정보](5-1-SECURITY.md#5-1-6-비밀값과-개인정보), [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
+비밀값과 개인정보 취급 규칙은 보안에 있으며 오류 로그 수준은 오류 처리에 있다. ([5-1-6 비밀값과 개인정보](5-1-SECURITY.md#5-1-6-비밀값과-개인정보)와 [5-3-8 로그와 Sentry](5-3-ERROR-HANDLING.md#5-3-8-로그와-sentry))
 
 <br>
 
@@ -72,7 +72,7 @@ Fluent Bit`"]
 | 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `not_found`, `timeout`, `parse_error`, HTTP 상태, 실패한 객체 이름<br>파일 내용과 키는 기록하지 않음 |
 
 <details>
-<summary><b>예시: 로그인 거절 로그 1줄</b></summary>
+<summary><b>로그인 거절 로그 1줄 예시</b></summary>
 
 <br>
 

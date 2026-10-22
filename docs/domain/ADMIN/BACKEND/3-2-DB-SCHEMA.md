@@ -4,7 +4,7 @@
 
 다른 도메인의 테이블에서는 ADMIN 도메인이 참조하는 컬럼만 설명한다.
 
-입력값의 검증 규칙은 보안에 있으며 감사 기록의 트랜잭션 규칙은 동시성에 있다. ([5-1-5 입력 검증](5-1-SECURITY.md#5-1-5-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
+입력값의 검증 규칙은 보안에 있으며 감사 기록의 트랜잭션 규칙은 동시성에 있다. ([5-1-5 입력 검증](5-1-SECURITY.md#5-1-5-입력-검증)과 [5-2 동시성](5-2-CONCURRENCY.md))
 
 <br>
 
@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>감사 로그는 외부 노출용 `public_id uuid`를 따로 둠<br>감사 로그의 대상은 그 도메인의 외부 식별자 문자열로 기록 |
 | 시각 | `timestamp with time zone`<br>`created_at`의 기본값은 `now()`이며 아래 표에서는 표시하지 않음 |
-| 삭제 | 감사 로그는 삭제 경로 없음<br>관리자 역할은 운영자가 행을 삭제 |
+| 삭제 | 감사 로그는 삭제 경로 없음<br>관리자 역할은 역할 관리 운영자가 행을 삭제 |
 | FK | 관리자 역할은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>감사 로그의 처리자는 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -47,7 +47,7 @@ erDiagram
 
 **`admin_accounts`**
 
-관리자 역할을 가진 회원 1명이 1행이다. 운영자가 직접 기록하고 삭제한다.
+관리자 역할을 가진 회원 1명이 1행이다. 역할 관리 운영자가 직접 기록하고 삭제한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -139,15 +139,15 @@ erDiagram
 |---|---|---|
 | `users` | `id`, `public_id`, `nickname`, `status`, `created_at`, `deleted_at` | 관리자 판정, 회원 목록과 상세, 회원 수 집계, 팀 계정 제외 판정, 소유자 요약 |
 | `social_accounts` | `user_id`, `email`, `deleted_at` | 회원 목록의 이메일 정확 일치 검색 |
-| `story_chats` | `id`, `public_id`, `story_id`, `user_id`, `current_turn`, `created_at`, `updated_at`, `deleted_at` | 채팅 시작 수, 채팅방 목록과 상세, 턴 분포, 유지율, 회원의 채팅방 수와 최근 활동 |
+| `story_chats` | `id`, `public_id`, `story_id`, `user_id`, `current_turn`, `created_at`, `updated_at`, `deleted_at` | 채팅 시작 수, 채팅 목록과 상세, 턴 분포, 기준 턴 도달률, 회원의 채팅 수와 최근 활동 |
 | `story_messages` | `chat_id`, `role`, `created_at` | 채팅 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
 | `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
 | `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
 | `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |
 | `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
-| `ai_call_logs` | `feature`, `status`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅방의 AI 호출 필터 |
-| `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 지급과 소진, 출석, 회원 거래 내역과 소모, 채팅방 소모, 결제 전후 비교 |
+| `ai_call_logs` | `feature`, `status`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터 |
+| `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 적립과 소모, 출석, 회원 이프 내역과 소모량, 채팅 소모량, 결제 전후 비교 |
 | `credit_orders` | `id`, `public_id`, `user_id`, `product_id`, `status`, `price_krw`, `credit_amount`, `completed_at`, `refunded_at`, `reversal_shortfall` | 결제 건수와 금액, 결제 내역과 상세, 회원 결제액 |
 | `story_submissions` | `story_id`, `status`, `held_at` | 스토리의 보류 상태 |
 
@@ -157,5 +157,5 @@ erDiagram
 
 | 데이터 | 삭제 |
 |---|---|
-| 관리자 역할 | 운영자가 삭제 |
+| 관리자 역할 | 역할 관리 운영자가 삭제 |
 | 감사 로그 | 없음 |
