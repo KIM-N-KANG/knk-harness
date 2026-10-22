@@ -500,3 +500,65 @@ flowchart LR
 | 캠페인 간편 제작 퍼널 | 24 | 31일 | 744 |
 | 캠페인 상세 진입 퍼널 | 14 | 31일 | 434 |
 | 캠페인 유입 소스 | 2 | 45일 | 90 |
+
+<br>
+
+### 4-1-17 사용자 지표
+
+사용자 활동, 사용자 리텐션, 사용자 세션은 Amplitude를, 신규 가입자는 서버 DB를 읽는다. Amplitude 조회의 캐시, 단일 갱신, 쿨다운, 비용 예산, 실패 처리는 캠페인 분석과 같다.
+
+| 항목 | 규칙 |
+|---|---|
+| 공통 조건 | 사용자 속성 `country`가 `South Korea` 또는 `(none)`<br>플랫폼은 사용자 속성 `platform`이 `Web`, `Android`, 없음 |
+| 활동 조회 | `_active` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>`_new` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>채팅 메시지 전송 이벤트의 사용자당 평균(`m=average`)을 `platform` 묶음으로 1회<br>MAU는 사용자 수 조회 `m=active`, `i=30`으로 `to`를 끝으로 1회<br>묶음 결과의 `Web`, `Android` 값이 플랫폼별, 나머지가 `unknown` |
+| 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`, n일 모드로 전체, Web, Android 세그먼트 3회<br>응답의 코호트별 1일, 7일, 30일 비율을 그대로 쓰고 아직 지나지 않은 날은 `null`<br>리텐션 조회의 비용 산식은 문서에 없어 일수 × 2로 가정하며 구현 때 확인 |
+| 세션 조회 | 평균 세션 길이 `GET /api/2/sessions/average`와 사용자당 세션 수 `GET /api/2/sessions/peruser`를 전체, Web, Android 세그먼트로 각 3회<br>두 조회의 지원 여부와 응답 형태는 구현 때 확인하며 지원하지 않으면 이 엔드포인트를 사용 불가로 응답 |
+| 신규 가입자 | `users`를 `created_at`의 KST 날짜로 묶고 팀 계정 제외 목록을 뺌<br>가입 경로는 그 회원의 `social_accounts` 중 `connected_at`이 가장 이른 행의 `provider`가 `GOOGLE`, `KAKAO`, 그 외<br>게스트 이관은 `migrated_at`이 있는 회원 |
+
+| 엔드포인트 | 하루 비용 | 기간 상한 | 상한에서의 비용 |
+|---|---|---|---|
+| 사용자 활동 | 6 | 62일 | 372 |
+| 사용자 리텐션 | 6(가정) | 31일 | 186 |
+| 사용자 세션 | 6 | 62일 | 372 |
+
+세 엔드포인트를 같은 5분에 모두 갱신해도 930으로 예산 안이다.
+
+<br>
+
+### 4-1-18 전환 지표
+
+| 항목 | 규칙 |
+|---|---|
+| 퍼널 조회 | 순서 모드, 전환 창 86,400초, 활성 사용자 기준<br>공통 조건에 플랫폼 조건을 더한 세그먼트 1개<br>퍼널마다 별도 엔드포인트 호출이라 따로 갱신 |
+| `web-first-visit` | 캠페인 간편 제작 퍼널과 같은 6단계, 플랫폼 Web, 1회 |
+| `android-first-visit` | `client_login_viewed` → `client_chat_messageInput_submitted`, 플랫폼 Android, 1회 |
+| `story-creation` | `client_storyCreate_storyGeneration_requested` → `client_storyCreate_storylineOption_selected` → `client_storyCreate_storyCompletion_requested` → `client_storyCreate_completed`, 1회 |
+| `story-detail-chat` | 캠페인 상세 진입 퍼널과 같은 7단계에서 캠페인 조건을 빼고 `storyId`가 있을 때만 1단계와 2단계에 `story_id` 필터, 1회 |
+| `guest-limit-login` | `client_guestLimitDialog_shown` → `client_guestLimitDialog_loginButton_clicked` → 로그인 성공<br>마지막 단계는 구글과 카카오 로그인 성공 이벤트로 퍼널을 2회 조회해 1단계와 2단계는 첫 조회 값, 3단계는 두 조회의 합<br>같은 사용자가 두 경로로 로그인하면 두 번 셈 |
+| 턴 도달률 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `user_id` 유무로 게스트와 회원으로 나누고 `current_turn`이 1, 5, 10, 20 이상인 수를 셈<br>팀 계정 제외 목록 적용 |
+| 게스트에서 회원으로 | 소유 회원의 `users.migrated_at`이 있고 채팅 `created_at`이 그보다 이른 채팅 중 `current_turn`이 5 이상인 수와 6 이상인 수<br>채팅별 이관 시각이 없어 회원의 이관 시각으로 판정 |
+
+| 퍼널 | 하루 비용 | 기간 상한 | 상한에서의 비용 |
+|---|---|---|---|
+| `web-first-visit` | 12 | 31일 | 372 |
+| `android-first-visit` | 4 | 31일 | 124 |
+| `story-creation` | 8 | 31일 | 248 |
+| `story-detail-chat` | 14 | 31일 | 434 |
+| `guest-limit-login` | 12 | 31일 | 372 |
+
+다섯 퍼널을 같은 5분에 모두 갱신하면 1,550으로 예산을 넘는다. 관리자 페이지가 퍼널 카드를 차례로 요청하고 예산 부족 카드는 잠시 뒤 다시 요청한다.
+
+<br>
+
+### 4-1-19 기능과 품질 지표
+
+| 항목 | 규칙 |
+|---|---|
+| 기능 사용 조회 | 채팅 메시지 전송 이벤트 합계를 이벤트 속성 `input_mode`로 묶어 1회<br>`client_chat_streamError_shown` 합계 1회<br>`client_chat_loadError_shown`, `client_storyList_loadError_shown`, `client_storyCreate_completeError_shown`, `client_creditShortageDialog_shown`, `client_creditCharge_viewed`, `client_creditCharge_attendanceButton_clicked`, `client_invite_codeInput_succeeded` 고유 사용자 7회<br>`platform`이 `all`이면 플랫폼 조건 없이 공통 조건만 |
+| 오류율 | 날짜마다 스트림 오류 합계를 입력 방식 묶음의 합으로 나눔 |
+| 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>팀 계정 제외 목록 적용 |
+| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 곱함<br>단가가 없는 모델은 비용 `null`이고 응답의 `unpricedModels`에 적음 |
+
+| 엔드포인트 | 하루 비용 | 기간 상한 | 상한에서의 비용 |
+|---|---|---|---|
+| 기능 사용과 안정성 | 9 | 90일 | 810 |
