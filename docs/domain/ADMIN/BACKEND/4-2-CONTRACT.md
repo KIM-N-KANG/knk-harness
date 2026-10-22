@@ -94,7 +94,7 @@
 
 **7. 공통 응답 구조**
 
-회원 목록 항목, 스토리와 채팅방의 소유자, 주문의 회원, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
+회원 목록 항목, 스토리와 채팅방의 소유자, 주문과 이프 거래의 회원, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -968,7 +968,6 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `direction` | `string` | 선택 | `granted`는 지급 사유의 양수 행, `spent`는 소모 사유의 음수 행<br>정의는 대시보드의 이프 지급과 소진과 같음<br>생략하면 모든 원장 행 |
 | `date` | `string` | 선택 | 원장 기록일 |
-| `memberId` | `string` | 선택 | 회원 공개 식별자 |
 | `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
@@ -981,13 +980,10 @@ Authorization: Bearer {adminToken}
 | `items[].amount` | `integer` | 부호 있는 수량 |
 | `items[].reason` | `string` | 원장 사유 |
 | `items[].createdAt` | `string` | 기록 시각 |
-| `items[].member` | `object` | 회원 |
-| `items[].member.memberId` | `string` | 회원 공개 식별자 |
-| `items[].member.nickname` | `string` | 탈퇴 계정은 익명화된 이름 |
-| `items[].member.status` | `string` | `ACTIVE`, `SUSPENDED`, `DELETED` |
+| `items[].member` | `object` | 회원 요약 구조 |
 
 - 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서의 역순이다.
-- 회원별 누계는 없다. 회원 거래 내역에서 본다. ([4-2-11 회원 이프 거래 내역](#4-2-11-회원-이프-거래-내역))
+- 회원별 누계와 회원 필터는 없다. 한 회원의 거래는 회원 거래 내역에서 본다. ([4-2-11 회원 이프 거래 내역](#4-2-11-회원-이프-거래-내역))
 - 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 지급·소진 값과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
 - 접속 기록을 남기지 않는다.
 
@@ -997,8 +993,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `direction` 허용 값 밖, 날짜 형식 오류, `memberId`가 UUID 형식이 아님, 공통 페이지 쿼리 오류 |
-| 404 | `NOT_FOUND` | 없는 회원의 `memberId` |
+| 400 | `BAD_REQUEST` | `direction` 허용 값 밖, 날짜 형식 오류, 공통 페이지 쿼리 오류 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1017,8 +1012,8 @@ Authorization: Bearer {adminToken}
 ```json
 {
   "items": [
-    { "amount": -20, "reason": "CHAT_TURN", "createdAt": "2026-10-21T04:58:12Z", "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE" } },
-    { "amount": -250, "reason": "STORY_CREATION", "createdAt": "2026-10-21T04:40:02Z", "member": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고", "status": "ACTIVE" } }
+    { "amount": -20, "reason": "CHAT_TURN", "createdAt": "2026-10-21T04:58:12Z", "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" } },
+    { "amount": -250, "reason": "STORY_CREATION", "createdAt": "2026-10-21T04:40:02Z", "member": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고", "status": "ACTIVE", "isAdmin": true, "createdAt": "2026-07-01T09:00:00Z" } }
   ],
   "page": 1,
   "size": 2,

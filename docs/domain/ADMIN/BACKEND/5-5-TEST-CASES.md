@@ -162,10 +162,10 @@
 | 결제 상세 오류 | 대기 주문<br>없는 주문<br>UUID 아님 | 404<br>404<br>400 |
 | 이프 거래 목록 | 회원 A 지급 +250, 소모 -20, 환불 +20, 만료 -30과 회원 B 소모 -250, 팀 계정 소모 -20 | 필터 없이 6건 기록 시각 내림차순<br>`direction=granted` 1건, `direction=spent` 3건(팀 계정 포함), 환불과 만료는 어느 방향에도 없음 |
 | 이프 거래 동률 | 같은 기록 시각의 행 2개 | 내부 ID 내림차순 |
-| 이프 거래 필터 | `date`에 KST 자정 직전과 직후 행<br>`memberId`로 탈퇴 회원 | 그 날짜의 행만<br>탈퇴 회원 행과 `member.status` `DELETED` |
-| 이프 거래 응답 범위 | 응답 항목 | 거래 식별자, `balanceAfter`, 이메일 필드 없음<br>`member`는 세 필드만 |
-| 이프 거래 오류 | `direction=refund`, `date=2026-13-01`, UUID 아닌 `memberId`, 없는 회원 `memberId` | 400, 400, 400, 404 |
-| 이프 거래 접속 기록 | `memberId`로 조회 | 감사 로그 없음 |
+| 이프 거래 필터 | `date`에 KST 자정 직전과 직후 행<br>탈퇴 회원의 행 | 그 날짜의 행만<br>탈퇴 회원 행도 포함되고 `member.status` `DELETED` |
+| 이프 거래 응답 범위 | 응답 항목 | 거래 식별자, `balanceAfter`, 이메일 필드 없음<br>`member`는 회원 요약 구조 |
+| 이프 거래 오류 | `direction=refund`, `date=2026-13-01`, `memberId` 지정 | 400, 400, 무시하고 전체 |
+| 이프 거래 접속 기록 | 목록 조회 | 감사 로그 없음 |
 
 <br>
 
