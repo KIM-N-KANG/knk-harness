@@ -59,6 +59,7 @@ ai_call_logs`"]
 | `creation_id` | AI 호출 헤더 | 간편 제작부터 채팅까지의 과정 |
 | `ai_call_log_id` | `ai_response_saved`, `ai_response_regenerated`, `ai_stream_failed` 로그 | `ai_call_logs` 행 |
 | `model_code` | 턴 저장과 재생성 로그, 결과 지표 태그, 분석 이벤트 | 청구 모델의 코드<br>AI 요청 필드 `model_tier`와 같은 값<br>실제 LLM은 `ai_call_logs.model` |
+| `long_response` | 턴 저장과 재생성 로그, 분석 이벤트 | 턴 시작 시점의 출력 분량<br>AI 요청 필드 `long_response`와 같은 값<br>A/B 비교에서 짧은 응답 턴만 고르는 기준 |
 
 <br>
 
@@ -103,8 +104,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>SSE는 요청 디스패치가 끝나는 시점이라 스트림 전체 시간이 아님 |
 | AI 호출 | 호출 직전 `ai_call_started`, 종료 시 `ai_call_completed` | `feature`, `ai_call_log_id`<br>종료 시 `outcome`(`success`, `failure`), `duration_ms` |
 | 채팅 생성 | 저장 후<br>`chat_started` | `story_id`, `chat_id` |
-| 턴 저장 | 저장 확정 직후<br>`user_message_saved`, `ai_response_saved` | `chat_id`, `story_id`, `turn_number`<br>`message_length_bucket`, `ai_call_log_id`<br>`ai_response_saved`에는 `model_code`와 `turn_cost`(차감한 이프, 체험과 게스트는 0) |
-| 재생성 저장 | 교체 확정 직후<br>`ai_response_regenerated` | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id`, `model_code`, `turn_cost` |
+| 턴 저장 | 저장 확정 직후<br>`user_message_saved`, `ai_response_saved` | `chat_id`, `story_id`, `turn_number`<br>`message_length_bucket`, `ai_call_log_id`<br>`ai_response_saved`에는 `model_code`, `turn_cost`(차감한 이프, 체험과 게스트는 0), `long_response` |
+| 재생성 저장 | 교체 확정 직후<br>`ai_response_regenerated` | `chat_id`, `story_id`, `turn_number`, `ai_call_log_id`, `model_code`, `turn_cost`, `long_response` |
 | 스트림 실패 | AI 스트림 오류나 저장 오류<br>`ai_stream_failed` | `chat_id`, `story_id`, `ai_call_log_id`, `sentry_event_id` |
 | 생성 마감 | 연결과 무관한 생성 마감 도달<br>`chat_turn_timeout` | `chat_id`와 `worker_state`<br>`PENDING`, `RUNNING`, `SAVING`, `CANCELLED`, `FINISHED` 유지<br>`CANCELLED`는 생성 마감으로 종료<br>연결 종료로는 상태 전이 없음 |
 | 생성 중 상태 읽기 실패 | 상세 조회 중 생성 중 키 읽기 또는 저장된 값 해석 실패<br>`chat_generation_read_failed` | `chat_id`와 `error`<br>`error`는 예외 클래스 이름 |
@@ -124,7 +125,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 예시는 가상 값이다. 로그 프레임워크가 붙이는 필드는 생략했다. `request_id`, `session_id`, `device_id_hash`, `traceId`, `spanId`는 MDC에서 인코더가 붙인다.
 
 ```json
-{"@timestamp":"2026-10-12T01:23:45.678Z","message":"event_name=ai_response_saved, chat_id=7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d, story_id=3f2504e0-4f89-41d3-9a0c-0305e82c3301, turn_number=3, ai_call_log_id=48213, model_code=AURORA, turn_cost=50","level":"INFO","request_id":"req_0f1e2d3c4b5a69788796a5b4c3d2e1f0","session_id":"sess_7c1d9e2b","device_id_hash":"device_hash_9a8b7c6d5e4f3a2b","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"ai_response_saved","chat_id":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","story_id":"3f2504e0-4f89-41d3-9a0c-0305e82c3301","turn_number":3,"ai_call_log_id":48213,"model_code":"AURORA","turn_cost":50,"service":"manyak-server"}
+{"@timestamp":"2026-10-12T01:23:45.678Z","message":"event_name=ai_response_saved, chat_id=7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d, story_id=3f2504e0-4f89-41d3-9a0c-0305e82c3301, turn_number=3, ai_call_log_id=48213, model_code=AURORA, turn_cost=50, long_response=true","level":"INFO","request_id":"req_0f1e2d3c4b5a69788796a5b4c3d2e1f0","session_id":"sess_7c1d9e2b","device_id_hash":"device_hash_9a8b7c6d5e4f3a2b","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"ai_response_saved","chat_id":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","story_id":"3f2504e0-4f89-41d3-9a0c-0305e82c3301","turn_number":3,"ai_call_log_id":48213,"model_code":"AURORA","turn_cost":50,"long_response":true,"service":"manyak-server"}
 ```
 
 </details>
@@ -239,8 +240,8 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 
 | 이벤트 | 시점 | 프로퍼티 |
 |---|---|---|
-| `server_chat_aiMessage_processed_succeeded` | 턴 저장 확정 | `chat_id`, `turn_number`, `is_regenerated`, `model_code`, `turn_cost`<br>`ending_id`는 도달 턴이고 현재 엔딩 행이 있을 때만 |
-| `server_chat_aiMessage_processed_failed` | 저장 전 실패 | `chat_id`, `error_type`, `is_regenerated`, `model_code`<br>`turn_number`는 없음 |
+| `server_chat_aiMessage_processed_succeeded` | 턴 저장 확정 | `chat_id`, `turn_number`, `is_regenerated`, `model_code`, `turn_cost`, `long_response`<br>`ending_id`는 도달 턴이고 현재 엔딩 행이 있을 때만 |
+| `server_chat_aiMessage_processed_failed` | 저장 전 실패 | `chat_id`, `error_type`, `is_regenerated`, `model_code`, `long_response`<br>`turn_number`는 없음 |
 | `server_feedback_submission_processed_succeeded` | 피드백 커밋 | 없음 |
 | `server_feedback_submission_processed_failed` | 피드백 롤백 | `error_type` |
 
@@ -252,6 +253,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>AI 오류 코드에 따라 변환 |
 | `model_code` | 청구 모델 코드 |
+| `long_response` | 턴 시작 시점의 출력 분량 |
 | `turn_cost` | 차감한 턴 이프<br>체험과 게스트는 0 |
 
 저장 성공 뒤 전송에 실패해도 이미 성공 이벤트를 발행했으므로 실패 이벤트를 발행하지 않는다.
