@@ -70,6 +70,7 @@ PR에 대상 커밋, 실행 명령, 모델과 설정, 통과·실패·건너뜀 
 | RES-08 | 완료 응답과 메타 | 가짜 본문, 사건과 엔딩 재료 포함, 사용량 누락<br>라우팅 대상별 모델과 공급자를 반환하는 가짜 스트림 | SSE 필드는 camelCase<br>`choices=[]`, 본문 사용량만 반영<br>`meta.promptVersions={"CHAT": 1}`<br>`targetMainEvent`, `occurredMainEventName`, `endingName` 필드 없음<br>알 수 없는 사용량은 `null`, `retryCount=0`<br>`meta.model`, `meta.provider`가 실제 호출 결과와 일치 |
 | RES-09 | 요청 문맥 격리 | 서로 다른 식별자, 등급과 고급 배정 그룹으로 동시 요청 | 각 요청의 관측 식별자, 호출 모델과 추론 강도가 섞이지 않음<br>전역 설정과 모델 등록부 변경 없음 |
 | RES-10 | 모델 라우팅과 호출 연결 | 게스트의 기본과 고급 요청, 회원의 기본 요청, UUID 마지막 16진수 자리별 고급 요청<br>같은 UUID로 반복 요청, 기본과 고급 전환 후 신규 진행과 재생성<br>기존 `CHAT_MODEL`, `CHAT_REASONING_EFFORT` 설정이 남은 경우<br>공급자 호출을 대체해 전달 인자 검사 | 게스트와 기본은 Luna low<br>고급은 짝수 Sol low, 홀수 Gemini medium<br>같은 UUID의 고급 배정 유지, 대소문자에 따른 차이 없음<br>신규 진행과 재생성 모두 현재 요청 등급 적용<br>선택된 모델과 추론 강도가 공급자 호출 인자에 반영<br>기존 전역 모델·추론 설정이 요청별 라우팅을 덮어쓰지 않음 |
+| RES-11 | 출력 분량 선택 | `long_response` 생략, `false`, `true` | 생략 시 `false` 적용<br>선택한 분량에 맞게 `{{response_length}}` 치환<br>미치환 슬롯 없음 |
 
 <br>
 

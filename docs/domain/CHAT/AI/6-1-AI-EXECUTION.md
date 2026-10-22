@@ -105,6 +105,7 @@ flowchart LR
 | `[SYSTEM]` | `{{protagonist_name}}` | 이번 채팅의 주인공 이름, 없으면 빈 문자열 |
 | `[SYSTEM]` | `{{user_role_setting}}` | 주인공 설정 |
 | `[SYSTEM]` | `{{main_events}}` | 주요 사건 목록 |
+| `[SYSTEM]` | `{{response_length}}` | `long_response`에 따라 짧은 응답 또는 긴 응답의 목표 분량 주입<br>구체적인 분량은 프롬프트 설정에서 관리<br>실제 출력 글자 수 검증이나 보정 없음 |
 | `[USER]` | `{{endings}}` | 엔딩 후보 목록 |
 | `[USER]` | `{{summary}}` | 대화 요약, 없으면 빈 문자열 |
 | `[USER]` | `{{user_input}}` | 이번 사용자 입력 |
