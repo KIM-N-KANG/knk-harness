@@ -1428,7 +1428,213 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-19 다른 도메인과의 경계
+### 4-2-19 캠페인 추이
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/analytics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 세그먼트 조건과 이벤트 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>생략하면 설정값의 기본 캠페인<br>설정값도 비어 있으면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 45일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+세그먼트 묶음 구조는 `all`(전체 Web), `ads`(광고 유입), `nonAds`(광고 외 유입)의 세 정수다. `nonAds`는 `all`에서 `ads`를 뺀 값이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 분석 도구에서 이 범위의 값을 받은 시각<br>캐시 규칙은 분석 지표와 같음 |
+| `from` | `string` | 범위 첫날의 KST 날짜 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
+| `campaign` | `string` | 적용한 캠페인 값 |
+| `daily` | `object[]` | 날짜 오름차순 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeUsers` | `integer` | 웹 DAU<br>그날 활성 이벤트가 있는 고유 사용자 수 |
+| `daily[].newVisitors` | `object` | 신규 방문자<br>세그먼트 묶음 구조 |
+| `daily[].newVisitorsBySource` | `object` | 유입 소스별 신규 방문자 |
+| `daily[].newVisitorsBySource.ads` | `integer` | 광고 유입<br>`newVisitors.ads`와 같음 |
+| `daily[].newVisitorsBySource.instagram` | `integer` | 캠페인이 아니면서 소스가 인스타그램 |
+| `daily[].newVisitorsBySource.threads` | `integer` | 캠페인이 아니면서 소스가 쓰레드 |
+| `daily[].newVisitorsBySource.dcinside` | `integer` | 캠페인이 아니면서 소스가 디시인사이드 |
+| `daily[].newVisitorsBySource.other` | `integer` | 캠페인이 아니면서 소스 목록 밖 |
+| `daily[].signups` | `object` | 신규 가입자<br>세그먼트 묶음 구조 |
+| `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 `signups` 누계<br>세그먼트 묶음 구조 |
+| `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
+| `daily[].completionRequests` | `integer` | 스토리 완성 요청 횟수 |
+| `daily[].chatMessages` | `integer` | 채팅 메시지 전송 횟수 |
+| `totals` | `object` | 범위 합계 |
+| `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
+| `totals.newVisitors` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.signups` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.adsShare` | `number / null` | `totals.newVisitors.ads`를 `totals.newVisitors.all`로 나눈 0~1<br>`all`이 0이면 `null` |
+| `totals.storylineRequests`, `totals.completionRequests`, `totals.chatMessages` | `integer` | 일별 합 |
+
+- 팀 계정 코호트 제외는 적용하지 않는다. 캠페인 분석은 광고가 데려온 사용자를 보는 것이 목적이고 원본 차트에도 제외가 없다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, 캠페인이 요청과 설정 모두 비어 있음 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건<br>5분 비용 예산 초과도 포함 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/analytics?from=2026-10-22&to=2026-10-23
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-23T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-23",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "daily": [
+    {
+      "date": "2026-10-22",
+      "activeUsers": 162,
+      "newVisitors": { "all": 162, "ads": 152, "nonAds": 10 },
+      "newVisitorsBySource": { "ads": 152, "instagram": 4, "threads": 2, "dcinside": 1, "other": 3 },
+      "signups": { "all": 21, "ads": 18, "nonAds": 3 },
+      "cumulativeSignups": { "all": 21, "ads": 18, "nonAds": 3 },
+      "storylineRequests": 40,
+      "completionRequests": 17,
+      "chatMessages": 231
+    }
+  ],
+  "totals": {
+    "activeUsersAverage": 150.5,
+    "newVisitors": { "all": 301, "ads": 280, "nonAds": 21 },
+    "signups": { "all": 39, "ads": 33, "nonAds": 6 },
+    "adsShare": 0.93,
+    "storylineRequests": 71,
+    "completionRequests": 30,
+    "chatMessages": 402
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-20 캠페인 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/funnels` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `storyId` | `string` | 선택 | 상세 진입 퍼널의 대상 스토리 공개 식별자<br>생략하면 설정값의 기본 스토리<br>둘 다 비어 있으면 상세 진입 퍼널은 `null` |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 7일 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `storyId` | `string / null` | 적용한 대상 스토리 |
+| `creation` | `object` | 간편 제작 퍼널<br>온보딩에서 첫 채팅까지 |
+| `creation.steps` | `object[]` | 단계 순서<br>6개 |
+| `creation.steps[].event` | `string` | 단계의 이벤트 이름 |
+| `creation.steps[].users` | `object` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
+| `storyDetail` | `object / null` | 상세 진입 퍼널<br>대상 스토리가 없으면 `null` |
+| `storyDetail.steps` | `object[]` | 단계 순서<br>7개 |
+| `storyDetail.steps[].event` | `string` | 단계의 이벤트 이름 |
+| `storyDetail.steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호 1~5<br>그 외 `null` |
+| `storyDetail.steps[].users` | `object` | 도달한 고유 사용자 수<br>`all`만 값이 있고 `ads`와 `nonAds`는 `null` |
+
+- 단계 사이 전환율은 관리자 페이지가 앞 단계로 나눠 만든다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 7일 초과, `storyId`가 UUID 형식이 아님 |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/funnels?from=2026-10-17&to=2026-10-23
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 각 퍼널의 처음 두 단계만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-23T05:10:00Z",
+  "from": "2026-10-17",
+  "to": "2026-10-23",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "storyId": "cca6358a-0ef3-4709-88d1-100b9faeeca8",
+  "creation": {
+    "steps": [
+      { "event": "client_onboarding_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
+      { "event": "client_onboarding_createButton_clicked", "users": { "all": 188, "ads": 171, "nonAds": 17 } }
+    ]
+  },
+  "storyDetail": {
+    "steps": [
+      { "event": "client_storyDetail_viewed", "turnNumber": null, "users": { "all": 240, "ads": null, "nonAds": null } },
+      { "event": "client_storyDetail_chatStartButton_clicked", "turnNumber": null, "users": { "all": 131, "ads": null, "nonAds": null } }
+    ]
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-21 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
@@ -1438,7 +1644,7 @@ Authorization: Bearer {adminToken}
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, AI 호출 기록 조회 |
-| Amplitude | 없음 | Dashboard REST API의 활성 사용자와 신규 사용자 수 조회 |
+| Amplitude | 없음 | Dashboard REST API의 활성 사용자와 신규 사용자 수 조회, 이벤트 세분화 조회, 퍼널 조회 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
