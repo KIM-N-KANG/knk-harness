@@ -1305,13 +1305,23 @@ Authorization: Bearer {adminToken}
 | `pendingDates` | `string[]` | 준비 중 날짜<br>아직 값을 받지 못해 `daily`에서 뺀 KST 날짜, 오름차순<br>비어 있으면 범위 전체가 준비됨 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜 |
-| `todayActiveUsers` | `integer / null` | 오늘 활성 사용자 수<br>범위와 무관하게 KST 오늘 날짜의 값이며 10분마다 다시 받음<br>오늘 값을 아직 받지 못했으면 `null` |
+| `todayActiveUsers` | `object / null` | 오늘 활성 사용자 수<br>플랫폼 값 구조<br>범위와 무관하게 KST 오늘 날짜의 값이며 10분마다 다시 받음<br>오늘 값을 아직 받지 못했으면 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].activeUsers` | `integer` | 그날 이벤트가 있는 고유 사용자 수 |
-| `daily[].newUsers` | `integer` | 그날 처음 이벤트가 있었던 고유 사용자 수 |
+| `daily[].activeUsers` | `object` | 그날 이벤트가 있는 고유 사용자 수<br>플랫폼 값 구조 |
+| `daily[].newUsers` | `object` | 그날 처음 이벤트가 있었던 고유 사용자 수<br>플랫폼 값 구조 |
 
-- 값은 분석 도구가 집계한 것이며 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
+플랫폼 값 구조는 다음 세 정수다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `total` | `integer` | 플랫폼이 Web 또는 Android인 고유 사용자 수 |
+| `web` | `integer` | 플랫폼이 Web인 고유 사용자 수 |
+| `android` | `integer` | 플랫폼이 Android인 고유 사용자 수 |
+
+- 같은 사람이 같은 날 두 플랫폼에서 활동하면 `web`과 `android`에 한 번씩, `total`에는 한 번만 들어가므로 `web + android`가 `total`과 다를 수 있다.
+- 사용자 속성 `country`가 `South Korea` 또는 `(none)`이고 `platform`이 `Web` 또는 `Android`인 사용자만 센다. 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
+- 값은 분석 도구가 집계한 것이며 코호트 ID가 설정돼 있으면 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
 
 <br>
 
@@ -1343,11 +1353,19 @@ Authorization: Bearer {adminToken}
   "asOf": "2026-10-21T05:10:00Z",
   "from": "2026-10-15",
   "to": "2026-10-21",
-  "todayActiveUsers": 318,
+  "todayActiveUsers": { "total": 203, "web": 186, "android": 19 },
   "pendingDates": [],
   "daily": [
-    { "date": "2026-10-15", "activeUsers": 402, "newUsers": 31 },
-    { "date": "2026-10-16", "activeUsers": 377, "newUsers": 27 }
+    {
+      "date": "2026-10-15",
+      "activeUsers": { "total": 211, "web": 195, "android": 18 },
+      "newUsers": { "total": 31, "web": 28, "android": 3 }
+    },
+    {
+      "date": "2026-10-16",
+      "activeUsers": { "total": 198, "web": 181, "android": 19 },
+      "newUsers": { "total": 27, "web": 25, "android": 2 }
+    }
   ]
 }
 ```

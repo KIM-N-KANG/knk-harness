@@ -178,17 +178,19 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 | 빈 저장소에서 `days` 7 | 대역에 `m=active`와 `m=new` 각 1회, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`, `daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목과 같음 |
-| 과거 범위 | `from`과 `to`가 지난달 | `daily`는 그 범위, `todayActiveUsers`는 오늘 날짜 `m=active` 값 |
-| 코호트 제외 | 코호트 ID 설정 있음<br>빈 값 | 요청 `s`에 `userdata_cohort`와 `is not`과 코호트 ID<br>`s` 없음 |
-| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 2회뿐<br>오늘 날짜만 다시 조회 |
+| 조회 | 빈 저장소에서 `days` 7 | 대역에 세분화 조회 6회(`_active`와 `_new` 각각 합계, Web, Android), `m=uniques`, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`<br>`daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목의 `activeUsers`와 같음 |
+| 조건 | 위 요청 | 모든 이벤트 필터에 `subprop_type` `user`의 `country` `South Korea`, `(none)` 조건<br>합계 조회는 `platform` `Web`, `Android`, 플랫폼별 조회는 그 값 하나<br>`platform` `(none)` 조회 없음 |
+| 플랫폼 값 | 그날 `_active` 합계 217, Web 200, Android 20 | `activeUsers`의 `total` 217, `web` 200, `android` 20<br>`web + android` 220이 `total`과 달라도 그대로 |
+| 과거 범위 | `from`과 `to`가 지난달 | `daily`는 그 범위, `todayActiveUsers`는 오늘 날짜 `_active` 세 조회 값 |
+| 코호트 제외 | 코호트 ID 설정 있음<br>빈 값 | 모든 세분화 요청의 `s`에 `userdata_cohort`와 `is not`과 코호트 ID<br>`s` 없음 |
+| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 6회뿐<br>오늘 날짜만 다시 조회 |
 | 자정 경계 | 오늘을 포함한 범위를 KST 23:55에 조회한 뒤 다음 날 00:01에 같은 `from`, `to`로 조회<br>00:01 조회 때 대역이 500 | 00:01 조회는 어제가 된 날짜와 새 오늘 날짜를 조회<br>대역 500이면 `todayActiveUsers` `null`, 전날 값을 오늘 값으로 주지 않음 |
-| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 120일 범위 갱신 | 예산 계수기 480 증가, `pendingDates` 빈 배열 |
+| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 30일 범위 갱신<br>같은 설정의 빈 저장소에서 60일 범위 갱신 | 예산 계수기 360 증가, `pendingDates` 빈 배열<br>최근 41일만 받아 492 증가, 나머지 19일은 `pendingDates` |
 | 실패 | 대역이 500, 429, 5초 무응답<br>저장 값 없음 | 503, `admin_analytics_fetch_failed`의 `reason` 각각 `http_error`, `rate_limited`, `timeout` |
 | 실패와 저장 값 | 오늘 값이 만료된 상태에서 대역 500 | 200, 만료된 오늘 값을 그대로 쓰고 `asOf`는 그 값을 받은 시각 |
 | 쿨다운 | 실패 뒤 30초 안에 재요청<br>61초 뒤 재요청 | 대역 호출 없이 저장 값 또는 503<br>대역 재호출 |
-| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 갱신 요청은 1건이고 그 요청의 대역 조회는 `m=active`와 `m=new` 각 1회<br>나머지 2건은 기다리지 않고 저장 값으로 응답 |
-| 부분 실패 | 빈 저장소에서 활성 성공, 신규 실패 | 활성 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 신규만 조회 |
+| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 갱신 요청은 1건이고 그 요청의 대역 조회는 오늘 날짜의 세분화 6회<br>나머지 2건은 기다리지 않고 저장 값으로 응답 |
+| 부분 실패 | 빈 저장소에서 `_active` 세 조회 성공, `_new` 합계 조회 실패 | `_active` 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 `_new` 세 조회만 보냄 |
 | 자격 증명 없음 | 키 빈 값, 저장 값 없음 | 대역 호출 없이 503, `reason` `no_credentials` |
 | 기간 오류 | `days` 10, 367일 범위, `to` 내일, `days`와 `from` 동시 | 400 |
 | 격리 | 대역 500 상태에서 요약과 차트 호출 | 200 |
