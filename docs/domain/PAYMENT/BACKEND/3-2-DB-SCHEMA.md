@@ -230,7 +230,7 @@ erDiagram
 | `users` | status | 충전과 출석 보상 전 계정 상태 검사 |
 | `story_chats` | `current_turn`, `regenerated_count`, `story_id` | 전환 전 채팅 턴 차감의 대사 완료 수 판정, 이용내역 제목 해석 |
 | `story_messages`, `story_message_versions` | `credit_transaction_id` | 채팅 턴 차감 행이 저장된 턴에 연결됐는지 판정 |
-| `chat_models` | `code`, `turn_cost` | 정책값 응답의 `chatTurnCost`에 라이트(`BASIC`)의 가격을 실음 |
+| `chat_models` | `code`, `turn_cost` | 정책값 응답의 `chatTurnCost`에 라이트(`LITE`)의 가격을 실음 |
 | `story_creation_sessions` | `status`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |
 | `stories` | 제목, 기본 주인공 이름, 삭제 시각, 공개 스냅샷 | 이용내역 제목 해석 |
 

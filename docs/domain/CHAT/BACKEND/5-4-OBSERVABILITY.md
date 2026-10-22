@@ -124,7 +124,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 예시는 가상 값이다. 로그 프레임워크가 붙이는 필드는 생략했다. `request_id`, `session_id`, `device_id_hash`, `traceId`, `spanId`는 MDC에서 인코더가 붙인다.
 
 ```json
-{"@timestamp":"2026-10-12T01:23:45.678Z","message":"event_name=ai_response_saved, chat_id=7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d, story_id=3f2504e0-4f89-41d3-9a0c-0305e82c3301, turn_number=3, ai_call_log_id=48213, model_code=ADVANCED, turn_cost=50","level":"INFO","request_id":"req_0f1e2d3c4b5a69788796a5b4c3d2e1f0","session_id":"sess_7c1d9e2b","device_id_hash":"device_hash_9a8b7c6d5e4f3a2b","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"ai_response_saved","chat_id":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","story_id":"3f2504e0-4f89-41d3-9a0c-0305e82c3301","turn_number":3,"ai_call_log_id":48213,"model_code":"ADVANCED","turn_cost":50,"service":"manyak-server"}
+{"@timestamp":"2026-10-12T01:23:45.678Z","message":"event_name=ai_response_saved, chat_id=7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d, story_id=3f2504e0-4f89-41d3-9a0c-0305e82c3301, turn_number=3, ai_call_log_id=48213, model_code=AURORA, turn_cost=50","level":"INFO","request_id":"req_0f1e2d3c4b5a69788796a5b4c3d2e1f0","session_id":"sess_7c1d9e2b","device_id_hash":"device_hash_9a8b7c6d5e4f3a2b","traceId":"4bf92f3577b34da6a3ce929d0e0e4736","spanId":"00f067aa0ba902b7","event_name":"ai_response_saved","chat_id":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","story_id":"3f2504e0-4f89-41d3-9a0c-0305e82c3301","turn_number":3,"ai_call_log_id":48213,"model_code":"AURORA","turn_cost":50,"service":"manyak-server"}
 ```
 
 </details>

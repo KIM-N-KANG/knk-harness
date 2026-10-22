@@ -136,7 +136,7 @@ erDiagram
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 최초 도달 엔딩 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 시점의 엔딩 이름 |
 | `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `ENDED` | |
-| `model_code` | varchar(20) | NOT NULL, FK `chat_models.code` | 선택한 모델<br>모델 추가 전에 만들어진 채팅은 `BASIC` |
+| `model_code` | varchar(20) | NOT NULL, FK `chat_models.code` | 선택한 모델<br>모델 추가 전에 만들어진 채팅은 `LITE` |
 | `deleted_at` | timestamptz | | |
 
 | 인덱스 | 컬럼 |
@@ -165,8 +165,8 @@ erDiagram
 
 | `code` | `name` | `turn_cost` | `sort_order` | `is_default` |
 |---|---|---|---|---|
-| `BASIC` | 라이트 | 20 | 1 | `false` |
-| `ADVANCED` | 오로라 | 50 | 2 | `true` |
+| `LITE` | 라이트 | 20 | 1 | `false` |
+| `AURORA` | 오로라 | 50 | 2 | `true` |
 
 새 모델 코드를 추가하려면 AI 서버의 라우팅이 그 코드를 먼저 알아야 한다. ([6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건))
 
