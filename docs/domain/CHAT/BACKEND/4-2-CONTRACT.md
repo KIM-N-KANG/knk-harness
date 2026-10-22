@@ -1005,7 +1005,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `model` | `string` | 선택 | 노출 중인 모델 코드<br>생략하면 모델을 바꾸지 않음 |
+| `model` | `string` | 선택 | 노출 중인 모델 코드<br>생략하면 모델을 바꾸지 않음<br>`null`은 거절 |
 | `longResponse` | `boolean` | 선택 | 출력 분량<br>`false`는 짧은 응답, `true`는 긴 응답<br>생략하면 출력 분량을 바꾸지 않음<br>`null`은 거절 |
 
 <br>
@@ -1015,7 +1015,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `id` | `string` | 채팅 공개 식별자 |
-| `model` | `string` | 변경 뒤 채팅에 보관한 모델 코드 |
+| `model` | `string` | 유효 모델 코드<br>보관한 모델이 노출 중이면 그 코드, 아니면 기본 모델 코드<br>`longResponse`만 보낸 요청도 같은 규칙 |
 | `longResponse` | `boolean` | 변경 뒤 채팅에 보관한 출력 분량 |
 
 <br>
@@ -1024,7 +1024,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `model`과 `longResponse`가 모두 없음<br>`longResponse`가 `null`<br>`model`이 빈 값<br>노출 중인 모델 코드가 아님 |
+| 400 | `BAD_REQUEST` | `model`과 `longResponse`가 모두 없음<br>`model`이나 `longResponse`가 `null`<br>`model`이 빈 값<br>노출 중인 모델 코드가 아님 |
 | 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨, 형식 오류 |
 
