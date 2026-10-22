@@ -1428,7 +1428,44 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-19 캠페인 추이
+### 4-2-19 캠페인 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+캠페인 목록은 설정 파일 고정값이다. 항목을 더하거나 고치려면 배포한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 시작일 오름차순 |
+| `items[].key` | `string` | 항목 식별자<br>`meta-web-1`부터 `meta-web-4` |
+| `items[].name` | `string` | 표시 이름<br>`1차`부터 `4차` |
+| `items[].campaign` | `string` | UTM 캠페인 값 |
+| `items[].startDate` | `string` | 시작 KST 날짜 |
+| `items[].endDate` | `string / null` | 종료 KST 날짜<br>진행 중이면 `null` |
+| `items[].storyId` | `string / null` | 상세 진입 퍼널의 기본 대상 스토리 공개 식별자 |
+
+| `key` | `campaign` | `startDate` | `endDate` | `storyId` |
+|---|---|---|---|---|
+| `meta-web-1` | `KR_META_WEB_ACTIVATION_COLD_202607` | `2026-07-21` | `2026-07-31` | `null` |
+| `meta-web-2` | `KR_META_WEB_ACTIVATION_COLD_202608` | `2026-08-21` | `2026-09-16` | `null` |
+| `meta-web-3` | `KR_META_WEB_ACTIVATION_COLD_202609` | `2026-09-17` | `2026-10-21` | `cca6358a-0ef3-4709-88d1-100b9faeeca8` |
+| `meta-web-4` | `KR_META_WEB_ACTIVATION_COLD_202610` | `2026-10-22` | `null` | `cca6358a-0ef3-4709-88d1-100b9faeeca8` |
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<br>
+
+### 4-2-20 캠페인 추이
 
 | 항목 | 값 |
 |---|---|
@@ -1436,17 +1473,17 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 세그먼트 조건과 이벤트 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 세그먼트 조건과 이벤트 정의는 제품 제약에 있다. 캐시와 비용 예산 규칙은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>생략하면 설정값의 기본 캠페인<br>설정값도 비어 있으면 400 |
+| `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>캠페인 목록에 없는 값도 허용<br>생략하면 캠페인 목록에서 종료일이 없는 마지막 항목의 값 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 45일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
-- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 관리자 페이지는 캠페인 목록의 시작일과 종료일로 범위를 미리 채운다.
 
 <br>
 
@@ -1456,7 +1493,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 분석 도구에서 이 범위의 값을 받은 시각<br>캐시 규칙은 분석 지표와 같음 |
+| `asOf` | `string` | 분석 도구에서 이 범위의 값을 받은 시각<br>오늘을 포함하지 않는 범위는 24시간까지 캐시된 값 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜 |
 | `campaign` | `string` | 적용한 캠페인 값 |
@@ -1490,7 +1527,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, 캠페인이 요청과 설정 모두 비어 있음 |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건<br>5분 비용 예산 초과도 포함 |
 
 <details>
@@ -1544,11 +1581,11 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-20 캠페인 퍼널
+### 4-2-21 캠페인 간편 제작 퍼널
 
 | 항목 | 값 |
 |---|---|
-| 요청 | `GET /admin/campaigns/funnels` |
+| 요청 | `GET /admin/campaigns/funnels/creation` |
 | 인증 | 관리자 |
 | 성공 | 200 |
 
@@ -1557,9 +1594,8 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
-| `storyId` | `string` | 선택 | 상세 진입 퍼널의 대상 스토리 공개 식별자<br>생략하면 설정값의 기본 스토리<br>둘 다 비어 있으면 상세 진입 퍼널은 `null` |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 7일 이하 |
-| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
 
@@ -1570,16 +1606,9 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
-| `storyId` | `string / null` | 적용한 대상 스토리 |
-| `creation` | `object` | 간편 제작 퍼널<br>온보딩에서 첫 채팅까지 |
-| `creation.steps` | `object[]` | 단계 순서<br>6개 |
-| `creation.steps[].event` | `string` | 단계의 이벤트 이름 |
-| `creation.steps[].users` | `object` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
-| `storyDetail` | `object / null` | 상세 진입 퍼널<br>대상 스토리가 없으면 `null` |
-| `storyDetail.steps` | `object[]` | 단계 순서<br>7개 |
-| `storyDetail.steps[].event` | `string` | 단계의 이벤트 이름 |
-| `storyDetail.steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호 1~5<br>그 외 `null` |
-| `storyDetail.steps[].users` | `object` | 도달한 고유 사용자 수<br>`all`만 값이 있고 `ads`와 `nonAds`는 `null` |
+| `steps` | `object[]` | 단계 순서<br>6개 |
+| `steps[].event` | `string` | 단계의 이벤트 이름 |
+| `steps[].users` | `object` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
 
 - 단계 사이 전환율은 관리자 페이지가 앞 단계로 나눠 만든다.
 
@@ -1589,7 +1618,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 7일 초과, `storyId`가 UUID 형식이 아님 |
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과 |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <details>
@@ -1600,33 +1629,24 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/campaigns/funnels?from=2026-10-17&to=2026-10-23
+GET /api/v1/admin/campaigns/funnels/creation?from=2026-10-22&to=2026-10-28
 Authorization: Bearer {adminToken}
 ```
 
 **2) 200 Response body**
 
-예시에는 각 퍼널의 처음 두 단계만 표시했다.
+예시에는 처음 두 단계만 표시했다.
 
 ```json
 {
-  "asOf": "2026-10-23T05:10:00Z",
-  "from": "2026-10-17",
-  "to": "2026-10-23",
+  "asOf": "2026-10-29T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-28",
   "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
-  "storyId": "cca6358a-0ef3-4709-88d1-100b9faeeca8",
-  "creation": {
-    "steps": [
-      { "event": "client_onboarding_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
-      { "event": "client_onboarding_createButton_clicked", "users": { "all": 188, "ads": 171, "nonAds": 17 } }
-    ]
-  },
-  "storyDetail": {
-    "steps": [
-      { "event": "client_storyDetail_viewed", "turnNumber": null, "users": { "all": 240, "ads": null, "nonAds": null } },
-      { "event": "client_storyDetail_chatStartButton_clicked", "turnNumber": null, "users": { "all": 131, "ads": null, "nonAds": null } }
-    ]
-  }
+  "steps": [
+    { "event": "client_onboarding_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
+    { "event": "client_onboarding_createButton_clicked", "users": { "all": 188, "ads": 171, "nonAds": 17 } }
+  ]
 }
 ```
 
@@ -1634,7 +1654,94 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-21 다른 도메인과의 경계
+### 4-2-22 캠페인 상세 진입 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/funnels/story-detail` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `storyId` | `string` | 선택 | 대상 스토리 공개 식별자<br>생략하면 적용한 캠페인과 값이 같은 캠페인 목록 항목의 `storyId`<br>그것도 없으면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `storyId` | `string` | 적용한 대상 스토리 |
+| `steps` | `object[]` | 단계 순서<br>7개 |
+| `steps[].event` | `string` | 단계의 이벤트 이름 |
+| `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호 1~5<br>그 외 `null` |
+| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>전체 세그먼트만 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과, `storyId`가 UUID 형식이 아님, 대상 스토리가 요청과 목록 모두에 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<br>
+
+### 4-2-23 캠페인 유입 소스
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/sources` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 45일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 캠페인 값은 받지 않으며 모든 유입을 보여 준다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 캠페인 추이와 같음 |
+| `sources` | `object[]` | 첫 유입 소스와 매체별 신규 방문자<br>`newVisitors` 내림차순 |
+| `sources[].source` | `string / null` | 사용자 속성 `gp:initial_utm_source`<br>없으면 `null` |
+| `sources[].medium` | `string / null` | 사용자 속성 `gp:initial_utm_medium`<br>없으면 `null` |
+| `sources[].newVisitors` | `integer` | 범위 안 `_new` 고유 사용자 수 |
+| `posts` | `object[]` | 커뮤니티와 SNS 게시글별 방문자<br>`visitors` 내림차순 |
+| `posts[].source` | `string / null` | 이벤트 속성 `utm_source` |
+| `posts[].content` | `string / null` | 이벤트 속성 `utm_content` |
+| `posts[].visitors` | `integer` | 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 페이지 조회의 고유 사용자 수 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<br>
+
+### 4-2-24 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
