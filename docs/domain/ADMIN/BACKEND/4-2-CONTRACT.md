@@ -1358,7 +1358,69 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-18 다른 도메인과의 경계
+### 4-2-18 설치 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/play-installs` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 보고서 마지막 행의 날짜 `YYYY-MM-DD`<br>Play 기준 날짜라 KST로 바꾸지 않음 |
+| `totalInstalls` | `integer` | 보고서 전체 기간의 일별 기기 설치 수 합 |
+| `activeDevices` | `integer` | 마지막 행의 활성 기기 설치 수 |
+| `daily` | `object[]` | 마지막 30행<br>날짜 오름차순 |
+| `daily[].date` | `string` | Play 기준 날짜 |
+| `daily[].installs` | `integer` | 그 날 기기 설치 수 |
+| `daily[].uninstalls` | `integer` | 그 날 기기 삭제 수 |
+
+- 값은 Play Console 일괄 보고서가 집계한 것이며 보고서는 며칠 늦게 채워진다. 쿼리는 없다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 503 | `SERVICE_UNAVAILABLE` | 서비스 계정 키 미설정<br>보고서 저장소 호출 실패, 보고서 없음, 해석 실패, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/play-installs
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+`daily`는 두 날만 보였다.
+
+```json
+{
+  "asOf": "2026-10-17",
+  "totalInstalls": 31,
+  "activeDevices": 11,
+  "daily": [
+    { "date": "2026-10-16", "installs": 1, "uninstalls": 0 },
+    { "date": "2026-10-17", "installs": 2, "uninstalls": 1 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-19 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
@@ -1369,6 +1431,7 @@ Authorization: Bearer {adminToken}
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅방 조회, AI 호출 기록 조회 |
 | Amplitude | 없음 | Dashboard REST API의 활성·신규 사용자 수 조회 |
+| Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

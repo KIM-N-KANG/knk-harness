@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 관리자 로그인과 토큰, 관리자 판정 필터, 감사 로그, 대시보드 요약과 차트, 스토리와 채팅방과 회원과 결제의 목록과 상세, 이프 거래 내역을 다룬다. 다른 도메인의 관리자 API는 그 도메인 세트가 정한다.
+ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 관리자 로그인과 토큰, 관리자 판정 필터, 감사 로그, 대시보드 요약과 차트, 스토리와 채팅방과 회원과 결제의 목록과 상세, 이프 거래 내역, Amplitude 분석 지표와 Play 설치 지표를 다룬다. 다른 도메인의 관리자 API는 그 도메인 세트가 정한다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -15,20 +15,20 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 |
 | [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 감사 로그 작업 이름, 데이터 수명 |
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 로그인, 판정, 감사 기록, 목록 공통, 대시보드, 스토리, 채팅방, 회원, 결제, 이프 거래, 감사 로그 조회, 분석 지표 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 로그인, 판정, 감사 기록, 목록 공통, 대시보드, 스토리, 채팅방, 회원, 결제, 이프 거래, 감사 로그 조회, 분석 지표, 설치 지표 |
 | [4-2-CONTRACT.md](4-2-CONTRACT.md) | 관리자 API 공통 규칙과 토큰, 페이지와 검색 규칙, 엔드포인트, 다른 도메인과의 경계 |
 | [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준과 토큰, 권한 판정, 계정 상태, 감사와 접속 기록, 입력 검증, 비밀값과 개인정보, 수용한 한계 |
 | [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 감사 기록 트랜잭션, 멱등, 역할 변경과의 경쟁, 수용한 경쟁 |
 | [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 오류 분류, 복구, 시간 한도 |
 | [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 |
 | [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스<br>관리자 경로 회귀 테스트 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수와 분석 도구 시크릿, 조건, 역할 부여, 되돌리기 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수와 분석 도구·설치 보고서 시크릿, 조건, 역할 부여, 되돌리기 |
 | [DECISIONS.md](DECISIONS.md) | 결정의 이력 |
 
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 다른 도메인의 관리자 API는 그 도메인 세트의 4-2에 있고 인증 수준과 토큰 규칙만 이 세트의 4-2-1을 따른다. 관리자 화면의 알림 통계도 NOTIFICATION 세트의 4-2에서 정한다.
-- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-18 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-18-다른-도메인과의-경계))
+- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-19 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-19-다른-도메인과의-경계))
 
 <br>
 
@@ -55,9 +55,10 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
-| 관리자 API 계층 | `admin/controller/` | 4-2-2~4-2-17 |
+| 관리자 API 계층 | `admin/controller/` | 4-2-2~4-2-18 |
 | 로그인, 토큰, 감사 기록, 대시보드, 목록과 상세 | `admin/service/`<br>`admin/repository/`의 조회 쿼리 | 4-1-2~4-1-13 |
 | 분석 도구 클라이언트와 캐시 | `admin/analytics/` | 4-1-14 |
+| 설치 보고서 클라이언트, 해석기, 캐시 | `admin/playstats/` | 4-1-15 |
 | 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/`<br>[global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
 | 신원 검증기 | [auth/social/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/social/) | 4-1-2 |
 | 토큰 발급 기반 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/)<br>[auth/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/config/) | 4-2-1 관리자 토큰 |

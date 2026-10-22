@@ -26,10 +26,11 @@ Fluent Bit`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     S -->|감사 로그| DB["`**PostgreSQL**`"]
     S -->|사용자 수 조회| AM["`**Amplitude**`"]
+    S -->|보고서 내려받기| GCS["`**Google Cloud Storage**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S comp
-    class F,OS,CW,DP,OD,G,SE,SL,DB,AM ext
+    class F,OS,CW,DP,OD,G,SE,SL,DB,AM,GCS ext
 ```
 
 관리자의 변경과 조회 이력은 로그가 아니라 감사 로그 테이블이 원본이다. 관리자 페이지의 감사 로그 화면으로 본다.
@@ -68,6 +69,7 @@ Fluent Bit`"]
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
 | 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
 | 분석 도구 호출 실패 | 사용자 수 조회 실패<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `timeout`, HTTP 상태<br>응답 본문과 키는 기록하지 않음 |
+| 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `not_found`, `timeout`, `parse_error`, HTTP 상태, 실패한 객체 이름<br>파일 내용과 키는 기록하지 않음 |
 
 <details>
 <summary><b>예시: 로그인 거절 로그 1줄</b></summary>
@@ -95,6 +97,7 @@ Fluent Bit`"]
 | 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms` |
 | 접속 기록 | 접속 기록 실패 WARN |
 | 분석 지표 | `admin_analytics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/analytics` 503 비율 |
+| 설치 지표 | `admin_play_stats_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/play-installs` 503 비율 |
 
 <br>
 
@@ -139,7 +142,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 
 | 데이터 | 현재 기록 방식 |
 |---|---|
-| 신원 증명<br>관리자 토큰<br>분석 도구 API 키와 시크릿 키 | 로그, Sentry, 트레이스에 기록하지 않음 |
+| 신원 증명<br>관리자 토큰<br>분석 도구 API 키와 시크릿 키<br>Play 서비스 계정 키 | 로그, Sentry, 트레이스에 기록하지 않음 |
 | 사유 | 감사 로그에만<br>로그에 기록하지 않음 |
 | 변경 전후 값 | 감사 로그에만 |
 | 검색어 | 감사 로그의 대상 식별자에만<br>로그에 기록하지 않음<br>요청 로그 `endpoint`는 쿼리 문자열을 포함하지 않음 |

@@ -18,6 +18,7 @@
 | Google | 공개 키 집합 | 계정 도메인의 검증기 경유 |
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, Google client ID, Amplitude API 키와 시크릿 키 |
 | Amplitude | Dashboard REST API | 분석 지표 |
+| Google Cloud Storage | Play Console 일괄 보고서 버킷 | 설치 지표 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
 <br>
@@ -31,6 +32,8 @@
 | 팀 계정 제외 목록 | 정수가 아닌 값이 있으면 기동 실패<br>빈 값이면 제외 없이 집계 |
 | Amplitude 키 | 둘 중 하나라도 비면 분석 지표만 사용 불가<br>기동은 정상 |
 | Amplitude | 연결할 수 없으면 분석 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
+| Play 서비스 계정 키 | 비면 설치 지표만 사용 불가<br>기동은 정상<br>base64가 아니거나 JSON이 아니면 기동 실패 |
+| Google Cloud Storage | 연결할 수 없으면 설치 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
@@ -60,11 +63,11 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분, 호출 시간 한도 5초, 실패 쿨다운 60초는 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분, 호출 시간 한도 5초, 실패 쿨다운 60초, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`은 설정 파일의 고정값이다.
 
 <br>
 
-**2. 분석 지표**
+**2. 분석 지표와 설치 지표**
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
@@ -72,6 +75,7 @@
 | `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
 | `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>사용자 수 조회의 세그먼트 `userdata_cohort` 제외 조건에 사용<br>비어 있으면 제외 없이 조회 |
 | `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
+| `MANYAK_PLAY_STATS_SA_KEY_BASE64` | 빈 값 | 운영 Secrets Manager `manyak/prod/app`만<br>개발은 주입 없음 | Play 보고서 읽기 전용 서비스 계정 키 JSON의 base64<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨<br>개발 서버는 설치 지표가 사용 불가 |
 
 <br>
 
@@ -103,6 +107,7 @@
 | 관리자 페이지 client ID | 관리자 페이지가 쓰는 Google client ID가 서버의 허용 목록에 포함 | 수동 검토 |
 | 관리자 역할 | 운영 DB에 관리자 역할 행이 있어야 첫 로그인이 가능 | 수동 확인<br>서버는 역할 행 유무를 검사하지 않음 |
 | Amplitude 시크릿 | 두 시크릿 JSON에 키 두 개가 있고 태스크 정의가 참조 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
+| Play 서비스 계정 키 | 운영 시크릿 JSON에 키가 있고 태스크 정의가 참조<br>서비스 계정에 보고서 버킷 읽기 권한 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
 | 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
 | 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포 | 수동 검토 |
 | 관리자 경로 추가 | 회귀 테스트가 새 경로를 자동 수집하는지 테스트 결과에서 확인 | CI 자동 |
@@ -121,6 +126,7 @@
 | 팀 계정 제외 목록 | 환경 변수 변경 후 새 태스크 시작 | 대시보드 요약의 회원 수 변화 |
 | 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>다음 캐시 갱신부터 반영 | 분석 지표의 활성 사용자 수 변화 |
 | Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
+| Play 서비스 계정 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 설치 지표 응답 성공 |
 | 대칭키 | Secrets Manager 값 변경 후 새 태스크 시작 | 앱과 관리자 토큰이 모두 무효가 되어 재로그인 |
 | 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |
 
@@ -173,6 +179,7 @@
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
 | 목록 | 스토리, 채팅방, 회원, 결제 목록 첫 페이지 | 성공 응답과 `totalElements` |
 | 분석 지표 | 분석 지표 응답 | 성공 응답과 `daily` 90개<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason` |
+| 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>
@@ -187,3 +194,4 @@
 | 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
 | 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
 | 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 쿨다운 뒤 자동 재호출이므로 대기 |
+| 설치 지표가 계속 사용 불가 | `admin_play_stats_fetch_failed`의 `reason`과 객체 이름 | `no_credentials`면 운영 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 권한 거부 상태면 서비스 계정의 버킷 읽기 권한<br>`not_found`면 Play Console의 보고서 생성 여부와 패키지 이름<br>`parse_error`면 보고서 형식 변경 |
