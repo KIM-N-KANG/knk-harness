@@ -154,10 +154,10 @@ GET /api/v1/credits/products
 | `inviteMonthlyCap` | `integer` | 초대자 보상의 KST 월 횟수 상한<br>제출자 몫에는 적용하지 않음 |
 | `attendanceReward` | `integer` | 출석 보상 이프 |
 | `storyCreationCost` | `integer` | 간편 제작 소모 이프<br>회원 체험을 소진한 뒤 적용 |
-| `chatTurnCost` | `integer` | 채팅 턴 소모 이프, 재생성 포함<br>회원 체험을 소진한 뒤 적용 |
+| `chatTurnCost` | `integer` | deprecated<br>기본 등급(`BASIC`)의 턴당 소모 이프<br>등급별 가격은 CHAT의 모델 등급 목록이 기준이며 다음 릴리스에서 제거 ([4-2-14 모델 등급 목록](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-14-모델-등급-목록)) |
 | `chatImageCost` | `integer` | 채팅 이미지 소모 이프<br>0이면 체험 소진 뒤에도 무료 |
 
-- 한 응답의 값은 같은 시점의 정책 스냅샷이다. 오버라이드 변경은 갱신 주기 안에 반영된다. 클라이언트는 이 값을 표시하고 하드코딩하지 않는다.
+- 한 응답의 값은 `chatTurnCost`를 제외하면 같은 시점의 정책 스냅샷이다. 오버라이드 변경은 갱신 주기 안에 반영된다. `chatTurnCost`는 등급 표를 요청마다 읽는다. 클라이언트는 이 값을 표시하고 하드코딩하지 않는다.
 
 <br>
 
@@ -701,7 +701,7 @@ Content-Type: application/json
 |---|---|---|
 | ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 체험 스냅샷 완료 시각 기록 |
 | STORY | 체험 예약과 복원, 선차감, 환불, 정책값 `story_creation_cost`, 잔액 부족과 한도 소진 예외 | 간편 제작 진행의 상태와 스토리 참조, 스토리 제목과 읽기 판정 |
-| CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_turn_cost`, `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조 |
+| CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조, 기본 등급의 턴 가격 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다. 상태 코드 변환은 호출 도메인이 한다.

@@ -65,7 +65,7 @@ Fluent Bit`"]
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
-| 정책 기동 적재 | 기동 직후<br>평문 INFO `credit_policy_effective` | 7종의 현재 유효값 |
+| 정책 기동 적재 | 기동 직후<br>평문 INFO `credit_policy_effective` | 정책 키 6종의 현재 유효값 |
 | 정책 변경 | 갱신에서 값이 바뀐 키<br>평문 INFO `credit_policy_changed` | `key`, `from`, `to`<br>종료 시각 만료도 다음 갱신에서 드러남 |
 | 정책 적재 실패 | 갱신 실패<br>평문 WARN `credit_policy_load_failed` | 예외 |
 | 정책 오버라이드 제외 | 갱신마다 한 번<br>평문 WARN `credit_policy_override_unknown_key`, `credit_policy_override_rejected` | `key`, `amount`, 유효한 키 목록 또는 `minimum`과 기본값 |

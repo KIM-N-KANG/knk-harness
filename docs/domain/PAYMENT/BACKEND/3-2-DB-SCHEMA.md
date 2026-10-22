@@ -116,7 +116,7 @@ erDiagram
 | `PURCHASE` | `+` | 구매 적립 |
 | `REFUND` | `+` | 선차감의 환불 |
 | `STORY_CREATION` | `-` | 간편 제작 소모 |
-| `CHAT_TURN` | `-` | 채팅 턴 소모, 재생성 포함 |
+| `CHAT_TURN` | `-` | 채팅 턴 소모, 재생성 포함<br>금액은 그 턴의 모델 등급 가격이라 같은 채팅 안에서 섞일 수 있음 |
 | `CHAT_IMAGE` | `-` | 채팅 이미지 소모 |
 | `EXPIRE` | `-` | 로트 만료 회수 |
 | `PURCHASE_REVERSAL` | `-` | 결제 환불 회수 |
@@ -173,8 +173,9 @@ erDiagram
 | `invite_monthly_cap` | 초대자 월 상한 횟수 | 0 |
 | `attendance_reward` | 출석 보상 | 1 |
 | `story_creation_cost` | 간편 제작 소모 | 1 |
-| `chat_turn_cost` | 채팅 턴 소모 | 1 |
 | `chat_image_cost` | 채팅 이미지 소모 | 0 |
+
+채팅 턴 소모는 정책 키가 아니다. 목록에 없는 키의 행은 갱신 때 무시하고 경고를 남긴다.
 
 <br>
 
@@ -227,6 +228,7 @@ erDiagram
 | `users` | `member_trial_seeded_at` | 체험 스냅샷 완료 시각<br>계정 도메인이 기록하고 PAYMENT는 스냅샷 완료 여부를 반환 |
 | `users` | status | 충전과 출석 보상 전 계정 상태 검사 |
 | `story_chats` | `current_turn`, `regenerated_count`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |
+| `chat_model_tiers` | `turn_cost`, `is_default` | 정책값 응답의 `chatTurnCost`에 기본 등급의 가격을 실음 |
 | `story_creation_sessions` | `status`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |
 | `stories` | 제목, 기본 주인공 이름, 삭제 시각, 공개 스냅샷 | 이용내역 제목 해석 |
 
