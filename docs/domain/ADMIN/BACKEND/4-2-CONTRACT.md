@@ -876,10 +876,10 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `items[].amount` | `integer` | 부호 있는 수량 |
 | `items[].reason` | `string` | 원장 사유 |
-| `items[].balanceAfter` | `integer` | 이 행까지의 원장 누계 |
+| `items[].balanceAfter` | `integer` | 기록 시각과 내부 ID 오름차순으로 이 행까지 `amount`를 합한 원장 누계<br>만료와 로트 상태를 반영한 사용 가능 잔액(`creditBalance`)과 다름 |
 | `items[].createdAt` | `string` | 기록 시각 |
 
-- 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서를 유지한다.
+- 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 정렬은 기록 시각과 내부 ID를 `order` 방향으로 함께 적용해 기본 `desc`에서는 같은 시각의 행도 내부 ID 내림차순이다.
 - 조회는 회원 상세와 같은 접속 기록을 남긴다.
 
 <br>
@@ -1130,11 +1130,11 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-결제 내역 항목에 다음 필드를 더한다. 전후 비교의 기준은 그 회원의 첫 완료 주문 완료 시각이다.
+결제 내역 항목에 다음 필드를 더한다. 전후 비교의 기준은 그 회원의 완료 시각이 있는 주문 가운데 가장 이른 완료 시각이며 환불된 주문도 포함한다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `firstPaidAt` | `string` | 회원의 첫 완료 주문 완료 시각 |
+| `firstPaidAt` | `string` | 회원의 완료 시각이 있는 주문 가운데 가장 이른 완료 시각<br>환불된 주문도 포함 |
 | `before` | `object` | 기준 시각 전 |
 | `before.turns` | `integer` | 채팅 턴 소모 원장 행 수 |
 | `before.stories` | `integer` | 간편 제작 소모 원장 행 수 |
@@ -1376,9 +1376,9 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 보고서 마지막 행의 날짜 `YYYY-MM-DD`<br>Play 기준 날짜라 KST로 바꾸지 않음 |
+| `asOf` | `string` | 월별 보고서 전체에서 날짜가 가장 늦은 행의 날짜 `YYYY-MM-DD`<br>Play 기준 날짜라 KST로 바꾸지 않음 |
 | `totalInstalls` | `integer` | 보고서 전체 기간의 일별 기기 설치 수 합 |
-| `activeDevices` | `integer` | 마지막 행의 활성 기기 설치 수 |
+| `activeDevices` | `integer` | 날짜가 가장 늦은 행의 활성 기기 설치 수 |
 | `daily` | `object[]` | 보고서 첫 날짜부터 마지막 날짜까지 모든 날이 한 항목씩<br>날짜 오름차순<br>보고서에 행이 없는 날도 채움 |
 | `daily[].date` | `string` | Play 기준 날짜 |
 | `daily[].installs` | `integer` | 그 날 기기 설치 수<br>행이 없는 날은 0 |

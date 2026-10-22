@@ -114,8 +114,8 @@ erDiagram
 | `MEMBER_SUSPENDED`, `MEMBER_UNSUSPENDED` | `status` | `status` |
 | `CREDIT_GRANTED` | `balance` | `balance`, `amount`, `expiresInDays`, `expiresAt` |
 | `CREDIT_REVOKED` | `balance` | `balance`, `amount`, `shortfall` |
-| `CREDIT_POLICY_UPSERTED` | `policyKey`, `value`, `endsAt` | `policyKey`, `value`, `endsAt` |
-| `CREDIT_POLICY_DELETED` | `policyKey`, `value`, `endsAt` | 없음 |
+| `CREDIT_POLICY_UPSERTED` | `policyKey`, `amount`, `effectiveUntil` | `policyKey`, `amount`, `effectiveUntil` |
+| `CREDIT_POLICY_DELETED` | `policyKey`, `amount`, `effectiveUntil` | 없음 |
 | `PUSH_CAMPAIGN_CREATED` | 없음 | `kind`, `title`, `body`, `scheduledAt`, `status`, `storyId` |
 | `PUSH_CAMPAIGN_CANCELED`, `PUSH_CAMPAIGN_RETRIED` | `status`, `scheduledAt` | `status`, `scheduledAt` |
 | `PUSH_TEMPLATE_UPSERTED` | 없음 | `templateKey`, `title`, `body`, `effectiveFrom`, `effectiveUntil` |
