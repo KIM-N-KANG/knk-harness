@@ -301,7 +301,7 @@ erDiagram
 | `story_creation_sessions` | `storyline_request_id` |
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
-| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>`CHAT_TURN` 행의 `id`를 메시지와 버전 이력에 연결<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
+| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>턴 소모와 그 환불의 `ref_type`은 `CHAT_TURN`, 이미지는 `CHAT_IMAGE`<br>`CHAT_TURN` 소모 행의 `id`를 메시지와 버전 이력에 연결<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
 
 <br>
 

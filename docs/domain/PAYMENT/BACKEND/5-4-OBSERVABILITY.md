@@ -69,7 +69,7 @@ Fluent Bit`"]
 | 정책 변경 | 갱신에서 값이 바뀐 키<br>평문 INFO `credit_policy_changed` | `key`, `from`, `to`<br>종료 시각 만료도 다음 갱신에서 드러남 |
 | 정책 적재 실패 | 갱신 실패<br>평문 WARN `credit_policy_load_failed` | 예외 |
 | 정책 오버라이드 제외 | 갱신마다 한 번<br>평문 WARN `credit_policy_override_unknown_key`, `credit_policy_override_rejected` | `key`, `amount`, 유효한 키 목록 또는 `minimum`과 기본값 |
-| 대사 보정 | 환불을 발행한 실행<br>`credit_reconciliation_refunded` | `groups_scanned`, `charges_scanned`, `refunds_emitted`<br>`charges_scanned`는 후보 조회로 읽은 표식 있는 차감 수 |
+| 대사 보정 | 환불을 발행한 실행<br>`credit_reconciliation_refunded` | `groups_scanned`, `charges_scanned`, `refunds_emitted`<br>`charges_scanned`는 후보 조회로 읽은 `CHAT_TURN` 참조 차감 수 |
 | 대사 실행 실패 | 실행 전체 예외<br>`credit_reconciliation_failed` | `error` |
 | 대사 그룹 실패 | 그룹 처리 예외<br>`credit_reconciliation_group_failed` | `user_id`, `ref_type`, `ref_id`, `error` |
 | 대사 차감 행 실패 | 채팅 턴 차감 행 처리 예외<br>`credit_reconciliation_charge_failed` | `user_id`, `transaction_id`, `error` |
