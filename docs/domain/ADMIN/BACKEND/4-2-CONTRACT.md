@@ -1373,12 +1373,14 @@ Authorization: Bearer {adminToken}
 | `asOf` | `string` | 보고서 마지막 행의 날짜 `YYYY-MM-DD`<br>Play 기준 날짜라 KST로 바꾸지 않음 |
 | `totalInstalls` | `integer` | 보고서 전체 기간의 일별 기기 설치 수 합 |
 | `activeDevices` | `integer` | 마지막 행의 활성 기기 설치 수 |
-| `daily` | `object[]` | 마지막 30행<br>날짜 오름차순 |
+| `daily` | `object[]` | 보고서 첫 행부터 마지막 행까지 전체<br>날짜 오름차순 |
 | `daily[].date` | `string` | Play 기준 날짜 |
 | `daily[].installs` | `integer` | 그 날 기기 설치 수 |
 | `daily[].uninstalls` | `integer` | 그 날 기기 삭제 수 |
+| `daily[].cumulativeInstalls` | `integer` | 첫 행부터 그 날까지의 기기 설치 누계<br>마지막 항목은 `totalInstalls`와 같음 |
+| `daily[].activeDevices` | `integer` | 그 날의 활성 기기 설치 수 |
 
-- 값은 Play Console 일괄 보고서가 집계한 것이며 보고서는 며칠 늦게 채워진다. 쿼리는 없다.
+- 값은 Play Console 일괄 보고서가 집계한 것이며 보고서는 며칠 늦게 채워진다. 보고서가 2026년 9월부터라 행 수가 작아 기간 쿼리는 없다.
 
 <br>
 
@@ -1410,8 +1412,8 @@ Authorization: Bearer {adminToken}
   "totalInstalls": 31,
   "activeDevices": 11,
   "daily": [
-    { "date": "2026-10-16", "installs": 1, "uninstalls": 0 },
-    { "date": "2026-10-17", "installs": 2, "uninstalls": 1 }
+    { "date": "2026-10-16", "installs": 1, "uninstalls": 0, "cumulativeInstalls": 29, "activeDevices": 10 },
+    { "date": "2026-10-17", "installs": 2, "uninstalls": 1, "cumulativeInstalls": 31, "activeDevices": 11 }
   ]
 }
 ```
