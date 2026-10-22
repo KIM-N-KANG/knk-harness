@@ -265,6 +265,10 @@ Content-Type: application/json
 
 <br>
 
+- 관리자 페이지는 이프 지급 카드를 `direction=granted`, 이프 소진 카드를 `direction=spent`의 이프 거래 내역으로 잇는다. ([4-2-13 이프 거래 내역](#4-2-13-이프-거래-내역))
+
+<br>
+
 **2. 실패 응답**
 
 공통 실패만 있다.
@@ -344,7 +348,7 @@ Authorization: Bearer {adminToken}
 | `distributions[].points[].label` | `string` | 막대 이름 |
 | `distributions[].points[].value` | `number` | 값<br>비율은 0~100의 백분율 |
 | `distributions[].points[].link` | `object` | 막대를 눌렀을 때 열 목록 |
-| `distributions[].points[].link.list` | `string` | `stories`, `chats`, `members` |
+| `distributions[].points[].link.list` | `string` | `stories`, `chats`, `members`, `credit-transactions` |
 | `distributions[].points[].link.params` | `object` | 그 목록의 쿼리 이름과 값<br>값은 모두 문자열 |
 
 | `chartId` | `label` | `unit` | `link` |
@@ -366,7 +370,7 @@ Authorization: Bearer {adminToken}
 | `chats` | `chats` | `from`과 `to`에 그 날짜 |
 | `turns` | `chats` | `turnDate` |
 | `stories` | `stories` | `from`과 `to`에 그 날짜 |
-| `granted`, `spent` | `members` | `creditDirection`에 `granted` 또는 `spent`, `creditDate` |
+| `granted`, `spent` | `credit-transactions` | `direction`에 `granted` 또는 `spent`, `date` |
 | `payments`, `revenue` | `payments` | `from`과 `to`에 그 날짜 |
 | `attendance` | `members` | `attendanceDate` |
 
@@ -950,7 +954,84 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-13 결제 내역
+### 4-2-13 이프 거래 내역
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/credits/transactions` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `direction` | `string` | 선택 | `granted`는 지급 사유의 양수 행, `spent`는 소모 사유의 음수 행<br>정의는 대시보드의 이프 지급과 소진과 같음<br>생략하면 모든 원장 행 |
+| `date` | `string` | 선택 | 원장 기록일 |
+| `memberId` | `string` | 선택 | 회원 공개 식별자 |
+| `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].amount` | `integer` | 부호 있는 수량 |
+| `items[].reason` | `string` | 원장 사유 |
+| `items[].createdAt` | `string` | 기록 시각 |
+| `items[].member` | `object` | 회원 |
+| `items[].member.memberId` | `string` | 회원 공개 식별자 |
+| `items[].member.nickname` | `string` | 탈퇴 계정은 익명화된 이름 |
+| `items[].member.status` | `string` | `ACTIVE`, `SUSPENDED`, `DELETED` |
+
+- 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서의 역순이다.
+- 회원별 누계는 없다. 회원 거래 내역에서 본다. ([4-2-11 회원 이프 거래 내역](#4-2-11-회원-이프-거래-내역))
+- 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 지급·소진 값과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
+- 접속 기록을 남기지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `direction` 허용 값 밖, 날짜 형식 오류, `memberId`가 UUID 형식이 아님, 공통 페이지 쿼리 오류 |
+| 404 | `NOT_FOUND` | 없는 회원의 `memberId` |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/credits/transactions?direction=spent&date=2026-10-21&size=2
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    { "amount": -20, "reason": "CHAT_TURN", "createdAt": "2026-10-21T04:58:12Z", "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE" } },
+    { "amount": -250, "reason": "STORY_CREATION", "createdAt": "2026-10-21T04:40:02Z", "member": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고", "status": "ACTIVE" } }
+  ],
+  "page": 1,
+  "size": 2,
+  "totalElements": 713,
+  "totalPages": 357
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-14 결제 내역
 
 | 항목 | 값 |
 |---|---|
@@ -1033,7 +1114,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-14 결제 상세
+### 4-2-15 결제 상세
 
 | 항목 | 값 |
 |---|---|
@@ -1106,7 +1187,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-15 감사 로그 조회
+### 4-2-16 감사 로그 조회
 
 | 항목 | 값 |
 |---|---|
@@ -1196,7 +1277,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-16 분석 지표
+### 4-2-17 분석 지표
 
 | 항목 | 값 |
 |---|---|
@@ -1282,7 +1363,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-17 다른 도메인과의 경계
+### 4-2-18 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|

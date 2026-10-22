@@ -100,7 +100,7 @@ flowchart LR
 
 ### 4-1-5 목록 공통 처리
 
-스토리, 채팅방, 회원, 결제, 감사 로그 목록은 같은 순서로 처리한다.
+스토리, 채팅방, 회원, 결제, 이프 거래, 감사 로그 목록은 같은 순서로 처리한다.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -320,7 +320,39 @@ PAYMENT 원장`"]
 
 <br>
 
-### 4-1-12 감사 로그 조회
+### 4-1-12 이프 거래 내역
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
+flowchart LR
+    A["`**목록 공통 처리**`"] --> B{"`**memberId가
+있는가**`"}
+    B -->|예| C["`**회원 존재 확인**
+ACCOUNT, 없으면 거절`"]
+    B -->|아니오| D["`**원장 조회**
+PAYMENT`"]
+    C --> D
+    D --> E["`**회원 요약 결합**
+ACCOUNT`"]
+    E --> F["`**응답**`"]
+    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    class A,B,F comp
+    class C,D,E task
+```
+
+| 항목 | 규칙 |
+|---|---|
+| 대상 | 모든 회원의 원장 행<br>팀 계정 제외 없음 |
+| 방향 | `granted`는 지급 사유이면서 양수인 행, `spent`는 소모 사유이면서 음수인 행<br>사유 집합은 대시보드 요약의 이프 지급과 소진과 같음 |
+| 날짜 | 기록 시각의 KST 달력 날짜 |
+| 정렬 | 기록 시각 내림차순<br>같으면 내부 ID 내림차순<br>원장 행에 공개 식별자가 없어 동률 규칙의 예외 |
+| 회원 | `memberId`는 존재하는 회원이어야 하며 없으면 거절<br>탈퇴 회원도 조회 가능 |
+| 누계 | 계산하지 않음 |
+
+<br>
+
+### 4-1-13 감사 로그 조회
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
@@ -343,7 +375,7 @@ ACCOUNT, 닉네임과 공개 식별자`"]
 
 <br>
 
-### 4-1-13 분석 지표
+### 4-1-14 분석 지표
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
