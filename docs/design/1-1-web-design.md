@@ -49,7 +49,7 @@ graph LR
     BFF -->|서버 전용 API_BASE_URL| API[백엔드]
 ```
 
-브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)).
+브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)). 공용 요청 계층([custom-instance](../../../manyak-web/src/api/mutator/custom-instance.ts))이 2xx가 아닌 응답을 `FetchError`로 던지므로, 생성 응답 타입은 `forceSuccessResponse`로 2xx 응답만 담습니다. 에러 응답은 호출부에서 `FetchError`의 `status`로 구분합니다.
 
 ### SSE 클라이언트 구현 (웹)
 
