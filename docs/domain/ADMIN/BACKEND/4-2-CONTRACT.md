@@ -1769,7 +1769,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수 |
+| `monthlyActiveUsers` | `integer` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>전체만이며 플랫폼별 값은 없음 |
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
@@ -1818,7 +1818,7 @@ Authorization: Bearer {adminToken}
 | `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순 |
 | `platforms[].cohorts[].date` | `string` | 신규 방문일 |
 | `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
-| `platforms[].cohorts[].d1`, `d7`, `d30` | `number / null` | 그날로부터 1일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 지나지 않았으면 `null` |
+| `platforms[].cohorts[].d1`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았으면 `null` |
 | `platforms[].summary` | `object` | 범위 전체의 가중 평균 `d1`, `d7`, `d30`<br>계산 가능한 코호트만 |
 
 <br>
@@ -1950,7 +1950,9 @@ Authorization: Bearer {adminToken}
 | `steps` | `object[]` | 단계 순서 |
 | `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 구글과 카카오 로그인 성공 두 이벤트의 합이라 `login_succeeded` |
 | `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호<br>그 외 `null` |
-| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수 |
+| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>`guest-limit-login`의 마지막 단계만 예외로 두 로그인 경로 퍼널 결과의 합 |
+
+- `guest-limit-login`의 마지막 단계는 구글과 카카오 경로를 모두 거친 사용자를 두 번 세는 근사치라 앞 단계보다 클 수 있다. 관리자 페이지가 앞 단계로 나눈 전환율도 1을 넘을 수 있으며 서버는 값을 고치지 않는다.
 
 <br>
 
@@ -2036,7 +2038,7 @@ Authorization: Bearer {adminToken}
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수<br>`unknown`은 전송 합계에서 나머지 셋을 뺀 값 |
 | `daily[].streamErrors` | `integer` | 스트림 오류 표시 횟수 |
-| `daily[].streamErrorRate` | `number / null` | `streamErrors`를 전송 합계로 나눈 0~1<br>전송이 0이면 `null` |
+| `daily[].streamErrorRate` | `number / null` | `streamErrors`를 전송 합계로 나눈 0 이상의 값<br>두 이벤트의 단순 건수 비율이라 한 전송에 오류가 여러 번 표시되면 1을 넘을 수 있음<br>전송이 0이면 `null` |
 | `daily[].users` | `object` | 그날 이벤트가 있었던 고유 사용자 수 |
 | `daily[].users.chatLoadError` | `integer` | 채팅 불러오기 오류 |
 | `daily[].users.storyListLoadError` | `integer` | 스토리 목록 불러오기 오류 |
@@ -2118,16 +2120,19 @@ Authorization: Bearer {adminToken}
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목 |
 | `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `storyline_generation`, `story_completion` |
-| `daily[].byFeature[].model` | `string / null` | 기록의 모델 이름 |
+| `daily[].byFeature[].model` | `string / null` | 기록의 모델 이름<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
 | `daily[].byFeature[].calls` | `integer` | 성공 호출 수 |
-| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | 토큰 합 |
-| `daily[].byFeature[].costKrw` | `number / null` | 입력 토큰 × 입력 단가 + 출력 토큰 × 출력 단가<br>단가가 없는 모델은 `null` |
+| `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수 |
+| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | 토큰 합<br>토큰 수가 없는 호출은 0으로 더함 |
+| `daily[].byFeature[].costKrw` | `number / null` | `(inputTokens × 입력 단가 + outputTokens × 출력 단가) / 1,000,000`<br>단가는 백만 토큰당 원<br>`model`이 `null`이거나 단가가 없는 모델은 `null` |
 | `totals` | `object` | 범위 합계 |
-| `totals.costKrw` | `number` | 단가가 있는 항목의 합 |
-| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 비용 합을 `chat_response` 성공 호출 수로 나눔<br>호출이 0이면 `null` |
-| `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 비용 합을 `story_completion` 성공 호출 수로 나눔<br>호출이 0이면 `null` |
-| `unpricedModels` | `string[]` | 범위 안에 호출이 있는데 단가가 없는 모델 이름 |
+| `totals.costKrw` | `number` | `costKrw`가 `null`이 아닌 항목의 합 |
+| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 단가 유무와 무관한 전체 호출 수<br>호출이 0이면 `null` |
+| `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
+| `unpricedModels` | `string[]` | 범위 안에 호출이 있는데 단가가 없는 모델 이름<br>`model`이 `null`인 기록은 넣지 않음 |
 
+- 비용은 백만 토큰당 단가로 계산한다. 입력 단가 1,000원, 출력 단가 4,000원인 모델의 입력 2,000토큰과 출력 1,000토큰은 (2,000 × 1,000 + 1,000 × 4,000) / 1,000,000 = 6원이다.
+- 모델 미상, 단가 없음, 토큰 미수집인 호출은 비용 합에서 빠지거나 0으로 더해지므로 `totals`와 원가는 그만큼 작다. 빠진 정도는 `unpricedModels`, `model`이 `null`인 항목, `callsWithoutTokens`로 알 수 있다.
 - 이미지 생성 비용은 AI 호출 기록에 토큰이 없어 포함하지 않는다.
 
 <br>

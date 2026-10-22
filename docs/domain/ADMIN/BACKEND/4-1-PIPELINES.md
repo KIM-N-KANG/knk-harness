@@ -287,7 +287,7 @@ ACCOUNT`"]
 | 원장 필터 | `creditDirection`은 적립 사유의 양수 행 또는 소모 사유의 음수 행<br>`creditDate`는 그 행의 기록일 |
 | 출석 필터 | 출석 보상 사유의 행이 그 KST 날짜에 있는 회원 |
 | 상세 | 목록 항목에 잔액, 소유 스토리 수, 탈퇴 시각을 더함<br>잔액은 PAYMENT의 잔액 연산 |
-| 이프 내역 | 회원의 원장 행을 기록 시각과 내부 ID 순으로 조회<br>누계는 그 순서의 수량 합 |
+| 이프 내역 | 회원의 원장 행을 기록 시각과 내부 ID에 같은 `order` 방향을 적용해 조회<br>누계는 방향과 무관하게 기록 시각과 내부 ID 오름차순의 수량 합 |
 | 출석 기록 | 출석 보상 행을 KST 날짜로 묶음 |
 | 접속 기록 | 검색어가 있는 목록은 정규화한 검색어를 대상으로 `MEMBER_SEARCHED`<br>상세, 이프 내역, 출석 기록은 회원 공개 식별자를 대상으로 `MEMBER_VIEWED`<br>검색어 없는 목록은 기록하지 않음 |
 
@@ -502,7 +502,7 @@ flowchart LR
 |---|---|
 | 공통 조건 | 사용자 속성 `country`가 `South Korea` 또는 `(none)`<br>플랫폼은 사용자 속성 `platform`이 `Web`, `Android`, 값 없음 `(none)` |
 | 활동 조회 | `_active` 고유 사용자를 전체, Web, Android, 플랫폼 없음의 이벤트 필터로 4회<br>`_new` 고유 사용자를 같은 네 필터로 4회<br>채팅 메시지 전송 이벤트의 사용자당 평균(`m=average`)을 Web과 Android 이벤트 필터로 2회<br>전체는 국가 조건만, 플랫폼별은 국가 조건에 `platform` 조건을 더함<br>MAU는 사용자 수 조회 `m=active`, `i=30`을 `start`가 `to`의 29일 전, `end`가 `to`인 범위로 1회이며 국가 조건은 세그먼트 `s`에 넣음<br>30일 구간이 `start`에서 시작하므로 `start`를 이렇게 맞춰야 `to`로 끝나는 30일 값이 나옴 |
-| 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`, 구간 모드 `rm=bracket`으로 전체, Web, Android 3회<br>국가와 플랫폼 조건은 시작과 복귀 이벤트의 이벤트 필터로 넣음<br>리텐션 조회가 이벤트 필터를 적용하는지는 구현 때 운영 키로 확인하고 적용하지 않으면 세그먼트 `s`에 넣으며 이때 기간 상한이 짧아짐<br>응답은 코호트 날짜마다 `count`, `outof`, `incomplete`의 배열이며 비율은 `count`를 `outof`로 나누고 `incomplete`인 날은 `null` |
+| 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`로 전체, Web, Android 3회<br>구간 모드 `rm`은 보내지 않아 기본값 `n-day`이며 원본 Amplitude 차트와 같음<br>국가와 플랫폼 조건은 시작과 복귀 이벤트의 이벤트 필터로 넣음<br>리텐션 조회가 이벤트 필터를 적용하는지는 구현 때 운영 키로 확인하고 적용하지 않으면 세그먼트 `s`에 넣으며 이때 기간 상한이 짧아짐<br>응답은 코호트 날짜마다 시작일부터 하루씩의 `count`, `outof`, `incomplete` 배열이며 인덱스 0이 시작일<br>인덱스 1, 7, 30의 `count`를 `outof`로 나눈 값이 D1, D7, D30<br>그 인덱스가 없거나 `incomplete`면 `null` |
 | 세션 조회 | 평균 세션 길이 `GET /api/2/sessions/average`를 전체, Web, Android로 3회<br>사용자당 세션 수 `GET /api/2/sessions/peruser`는 조회하지 않음<br>국가와 플랫폼 조건은 세그먼트 `s`에 넣음<br>응답은 `data.series`의 일별 값(평균 길이는 초)이며 `seriesCollapsed`의 기간 평균은 쓰지 않음 |
 | 신규 가입자 | `users`를 `created_at`의 KST 날짜로 묶고 팀 계정 제외 목록을 뺌<br>가입 경로는 그 회원의 `social_accounts` 중 `connected_at`이 가장 이른 행의 `provider`가 `GOOGLE`, `KAKAO`, 그 외<br>게스트 이관은 `migrated_at`이 있는 회원 |
 
@@ -535,7 +535,7 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 입력 방식 | `choice`, `plain`, `block`은 각 필터 조회의 합계<br>`unknown`은 전송 합계에서 세 값을 뺀 값 |
 | 오류율 | 날짜마다 스트림 오류 합계를 전송 합계로 나눔 |
 | 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>팀 계정 제외 목록 적용 |
-| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 곱함<br>단가가 없는 모델은 비용 `null`이고 응답의 `unpricedModels`에 적음 |
+| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>`model`이 `NULL`인 기록은 한 묶음으로 두고 토큰 수가 `NULL`이면 0으로 더하며 그런 호출 수를 따로 셈<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 토큰 합에 곱한 뒤 1,000,000으로 나눔<br>단가가 없는 모델과 `model`이 `NULL`인 묶음은 비용 `null`이고 단가가 없는 모델 이름만 응답의 `unpricedModels`에 적음 |
 
 <br>
 

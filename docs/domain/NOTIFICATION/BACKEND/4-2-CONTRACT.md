@@ -947,7 +947,7 @@ Content-Type: application/json
 |---|---|---|
 | `kind` | `string` | 요청한 알림 성격 |
 | `targetCount` | `integer` | 현재 조건으로 대상이 되는 회원 수 |
-| `nightEligibleCount` | `integer / null` | 광고 종류에서 야간 동의까지 있는 회원 수<br>서비스 종류는 `null` |
+| `nightEligibleCount` | `integer / null` | 알림 성격이 `MARKETING`일 때 야간 광고 알림 동의까지 있는 회원 수<br>`SERVICE`면 `null` |
 | `nightNow` | `boolean` | 현재 시각이 KST 야간이면 `true` |
 | `asOf` | `string` | 집계 시각 |
 

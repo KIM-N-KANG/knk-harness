@@ -69,7 +69,7 @@ Fluent Bit`"]
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
 | 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
 | 분석 도구 호출 실패 | 사용자 수, 세분화, 퍼널, 리텐션, 세션 조회 실패와 비용 예산 부족<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `budget_exceeded`, `timeout`, HTTP 상태, `endpoint`(분석 지표와 캠페인, 사용자, 전환, 기능 지표의 엔드포인트 경로)<br>응답 본문과 키는 기록하지 않음 |
-| 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `not_found`, `timeout`, `parse_error`, HTTP 상태, 실패한 객체 이름<br>파일 내용과 키는 기록하지 않음 |
+| 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `no_reports`, `timeout`, `parse_error`<br>`status` = 저장소 응답의 HTTP 상태이며 응답이 없으면 `null`<br>키 해석 실패와 연결 실패는 상태 없는 `http_error`<br>객체 이름, 파일 내용, 키는 기록하지 않음 |
 
 <details>
 <summary><b>로그인 거절 로그 1줄 예시</b></summary>

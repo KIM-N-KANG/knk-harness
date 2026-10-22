@@ -106,7 +106,7 @@
 | 제작 세션 팀 제외 | 공식 계정이 아닌 제외 목록 회원의 세션 | 집계에서 제외 |
 | 차트 구역 | 분포 차트 8개 | `category`가 `users` 2개, `engagement` 3개, `content` 1개, `ai-quality` 2개 |
 | 막대 링크 | `turns` 차트 둘째 막대 | `link.list` `chats`, `params.turnBucket` `1`, `from`과 `to`가 응답의 `from`, `to`와 같음 |
-| 링크 일치 | 건수 차트 막대의 `link`로 목록 호출(팀 계정과 삭제 행 없는 데이터)<br>평균과 비율 차트 막대의 `link`로 목록 호출 | 목록 `totalElements`가 막대 `value`와 같음<br>목록 항목이 막대 산식의 대상과 같고 그 항목으로 산식을 계산하면 `value`와 같음 |
+| 링크 일치 | 건수 차트 막대의 `link`로 목록 호출(팀 계정과 삭제 행 없는 데이터)<br>`genre-depth`, `started-as`, `first-message` 막대의 `link`로 목록 호출<br>`ai-latency`, `ai-success` 막대의 `link`로 목록 호출 | 목록 `totalElements`가 막대 `value`와 같음<br>목록 항목이 막대 산식의 대상과 같고 그 항목으로 산식을 계산하면 `value`와 같음<br>목록이 조건에 맞는 호출 기록이 하나 이상 연결된 스토리나 채팅과 정확히 같음<br>AI 차트 값은 호출 단위라 목록 항목으로 재계산하지 않음 |
 
 <br>
 
@@ -157,6 +157,7 @@
 | 상세 오류 | 없는 회원<br>UUID 아님 | 404<br>400 |
 | 응답 범위 | 목록과 상세 응답 | 이메일과 소셜 식별자 필드 없음 |
 | 이프 내역 | 원장 행 5건, `size` 2 | 기록 시각 내림차순, `balanceAfter`는 그 행까지의 누계, `totalPages` 3, 식별자 필드 없음 |
+| 이프 내역 동률 | 같은 기록 시각에 +250, -20 순으로 기록된 원장 행 2개<br>기본 `desc`와 `order=asc` | `desc`는 -20 행이 먼저이고 `balanceAfter`는 230, 250 순<br>`asc`는 +250 행이 먼저 |
 | 출석 기록 | 서로 다른 날 출석 2건 | 날짜 내림차순 2건과 `creditAmount` |
 | 접속 기록 | 검색어 있는 목록, 상세, 이프 내역, 출석 기록 | `MEMBER_SEARCHED` 1행과 `MEMBER_VIEWED` 3행 |
 | 결제 내역 필터 | `status=REFUNDED`, `memberId`, `from`과 `to` | 조건에 맞는 주문만 |
@@ -206,7 +207,8 @@
 | 날짜 | 보고서 날짜 `2026-10-17` | `asOf`가 그대로 `2026-10-17` |
 | 캐시 | 1시간 안에 두 번 호출 | 대역 호출은 처음 한 번 |
 | 캐시 만료 | 고정 시계를 1시간 뒤로 옮긴 뒤 호출 | 대역 재호출 |
-| 실패 | 대역이 500, 객체 없음, 10초 무응답, 깨진 CSV<br>캐시 없음 | 503, `admin_play_stats_fetch_failed`의 `reason` 각각 `http_error`, `not_found`, `timeout`, `parse_error` |
+| 실패 | 대역이 500, 설치 개요 객체 없음, 10초 무응답, 깨진 CSV<br>캐시 없음 | 503, `admin_play_stats_fetch_failed`의 `reason` 각각 `http_error`, `no_reports`, `timeout`, `parse_error` |
+| 키 형식 오류 | base64가 아닌 키, base64이지만 JSON이 아닌 키 | 기동 정상<br>조회는 저장소 호출 없이 503, `reason` `http_error`, `status` `null` |
 | 부분 실패 | 월별 파일 2개 중 하나가 500 | 503, 캐시 미갱신 |
 | 실패와 캐시 | 캐시 있는 상태에서 대역 500 | 200과 캐시 값 |
 | 쿨다운 | 실패 뒤 30초 안에 재요청 | 대역 호출 없이 503 또는 캐시 |
@@ -257,7 +259,8 @@
 | 플랫폼별 값 | `_active` 전체 13, Web 10, Android 3, 플랫폼 없음 2 | `activeUsers`의 `all` 13, `web` 10, `android` 3, `unknown` 2<br>셋의 합 15와 `all`이 달라도 그대로 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 42일<br>43일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm=bracket`, 코호트 7개<br>이벤트 필터 방식이면 `s` 없이 시작과 복귀 이벤트의 필터에 `country`와 `platform`, 예산 계수기 168 증가<br>세그먼트 방식이면 `s`가 전체는 `country`, Web과 Android는 `country`와 `platform`, 예산 계수기 448 증가<br> `count` 5와 `outof` 20이면 0.25, `incomplete`인 날은 `null` |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개<br>이벤트 필터 방식이면 `s` 없이 시작과 복귀 이벤트의 필터에 `country`와 `platform`, 예산 계수기 168 증가<br>세그먼트 방식이면 `s`가 전체는 `country`, Web과 Android는 `country`와 `platform`, 예산 계수기 448 증가 |
+| 리텐션 인덱스 | 코호트 배열의 인덱스 1이 `count` 5와 `outof` 20, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d7` `null`, `d30` `null` |
 | 리텐션 기간 | 이벤트 필터 방식 20일, 세그먼트 방식 7일<br>`to`가 오늘, 이벤트 필터 방식 21일, 세그먼트 방식 8일, `days` 30 | 200<br>400 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
 | 세션 기간 | 15일, 쿼리 생략 시 14일<br>16일, `days` 30 | 200<br>400 |
@@ -267,15 +270,17 @@
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `platform` `Android`<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
-| 게스트 한도 퍼널 | 구글 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[2].users` 7, `event` `login_succeeded` |
+| 게스트 한도 퍼널 | 구글 퍼널 2단계 6과 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[1].users` 6, `steps[2].users` 7로 앞 단계보다 커도 그대로, `event` `login_succeeded` |
 | 퍼널 기간 | 31일<br>32일, 모르는 퍼널 이름 | 200<br>400 |
 | 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `all` `chats` 4, 턴 1 비율 0.75, 턴 5는 0.75, 턴 10은 0.5, 턴 20은 0.25, `guest`와 `member` 각 2 |
 | 게스트에서 회원으로 | 이관 시각 전 생성 채팅 턴 5와 7, 이관 뒤 생성 채팅 턴 8 | `chatsReached5` 2, `chatsReached6` 1, `rate` 0.5 |
 | 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 12회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 7개), `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
+| 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 기능 사용 기간 | 40일<br>41일, `days` 90 | 200<br>400 |
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
-| AI 비용 | `chat_response` 성공 2회(입력 1,000·출력 500 토큰, 단가 있음), `story_completion` 성공 1회(단가 없는 모델) | `byFeature`의 `costKrw`가 단가 곱의 합, 단가 없는 항목은 `null`, `unpricedModels`에 그 모델, `costPerTurnKrw`는 비용을 2로 나눈 값 |
+| AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
+| 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
 | AI 비용 범위 | 실패 호출과 팀 계정 회원의 호출 | 실패는 제외, 팀 계정은 포함 |
 | DB 지표 기간 | 366일<br>367일 | 200<br>400 |
 | 격리 | 대역 500 상태에서 DB 지표 호출 | 모두 200 |
