@@ -196,6 +196,7 @@
 | 해석 | gzip과 UTF-16LE로 압축한 월별 CSV 2개(9월 행 5개, 10월 행 3개) | 두 달 합산, `totalInstalls`가 8행의 기기 설치 합, `activeDevices`와 `asOf`는 날짜가 가장 늦은 행 |
 | 총 사용자 설치 열 | 모든 행이 0인 열 | 어떤 응답 값에도 쓰이지 않음 |
 | 일별 추이 | 행 45개, 설치가 1, 2, 3인 첫 세 행 | `daily` 45개, 날짜 오름차순, `cumulativeInstalls`가 1, 3, 6으로 이어지고 마지막 항목은 `totalInstalls`와 같음, 행마다 `activeDevices` |
+| 빈 날 채움 | 10월 2일 행이 없고 1일 누계 5, 3일 설치 2 | 2일 항목이 `installs` 0, `uninstalls` 0, `cumulativeInstalls` 5, `activeDevices` `null`<br>3일 누계 7 |
 | 날짜 | 보고서 날짜 `2026-10-17` | `asOf`가 그대로 `2026-10-17` |
 | 캐시 | 1시간 안에 두 번 호출 | 대역 호출은 처음 한 번 |
 | 캐시 만료 | 고정 시계를 1시간 뒤로 옮긴 뒤 호출 | 대역 재호출 |
