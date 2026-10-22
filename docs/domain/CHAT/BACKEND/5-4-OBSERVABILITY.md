@@ -246,7 +246,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원이면 공개 식별자 |
-| `device_id` | 게스트면 디바이스 해시 |
+| `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 게스트는 `unknown`, 회원은 생략 |
 | `session_id`, `request_id`, `is_logged_in` | 요청 문맥 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>AI 오류 코드에 따라 변환 |
