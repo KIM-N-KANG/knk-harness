@@ -344,6 +344,7 @@ Authorization: Bearer {adminToken}
 | `daily[].attendance` | `integer` | 출석 회원 수 |
 | `distributions` | `object[]` | 분포 차트<br>아래 표의 순서로 항상 8개 |
 | `distributions[].chartId` | `string` | 차트 식별자 |
+| `distributions[].category` | `string` | 분석 화면의 구역<br>`users`, `engagement`, `content`, `ai-quality` |
 | `distributions[].title` | `string` | 제목 |
 | `distributions[].description` | `string` | 집계 기준 설명<br>첫 사용자 입력까지 걸린 시간은 제외한 채팅 수 포함 |
 | `distributions[].unit` | `string` | 값의 단위 |
@@ -354,9 +355,9 @@ Authorization: Bearer {adminToken}
 | `distributions[].points[].link.list` | `string` | `stories`, `chats`, `members`, `credit-transactions` |
 | `distributions[].points[].link.params` | `object` | 그 목록의 쿼리 이름과 값<br>값은 모두 문자열 |
 
-| `chartId` | `label` | `unit` | `link` |
-|---|---|---|---|
-| `genre-depth` | 범위 안에 생성된 채팅이 있는 장르 정식 이름 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
+| `chartId` | `category` | `label` | `unit` | `link` |
+|---|---|---|---|---|
+| `genre-depth` | `engagement` | 범위 안에 생성된 채팅이 있는 장르 정식 이름 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
 | `turns` | `0`, `1`, `2`, `3~4`, `5~6`, `7~9`, `10~14`, `15~19`, `20~29`, `30~49`, `50+` | `개` | `chats`<br>`turnBucket`(0부터 10), `from`, `to` |
 | `started-as` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
 | `member-chats` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
