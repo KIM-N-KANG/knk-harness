@@ -19,6 +19,7 @@
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, Google client ID, Amplitude API 키와 시크릿 키 |
 | Amplitude | Dashboard REST API | 분석 지표 |
 | Google Cloud Storage | Play Console 일괄 보고서 버킷 | 설치 지표 |
+| Redis | 다른 도메인과 같은 인스턴스 | Amplitude 배치의 5분 슬롯 선점 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
 <br>
@@ -34,6 +35,7 @@
 | Amplitude | 연결할 수 없으면 분석 도구 지표의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답 |
 | Play 서비스 계정 키 | 비면 설치 지표만 사용 불가<br>기동은 정상<br>키는 첫 보고서 조회 때 해석하므로 base64나 서비스 계정 JSON이 아니어도 기동은 정상이고 설치 지표만 사용 불가<br>그때 로그 `reason`은 HTTP 상태 없는 `http_error` |
 | Google Cloud Storage | 연결할 수 없으면 설치 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
+| Redis | 연결할 수 없으면 Amplitude 배치와 백필만 건너뜀<br>화면 요청은 그대로 값을 받음 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
@@ -63,7 +65,7 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트, DB 분석 지표 중 신규 가입자, 턴 도달률, 채팅 옵션 비중에서 제외하고 AI 비용에는 적용하지 않으며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표 호출 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 태스크당 비용 예산(최근 5분 500), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), AI 모델별 입력과 출력 백만 토큰당 원화 단가 표, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`은 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표 호출 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 태스크당 비용 예산(최근 5분 500)과 그 가운데 배치와 백필 몫(300), 분석 값 배치의 실행 간격 5분과 새벽 배치 시작 시각 KST 03:00, 초기 백필 시작일 2026-07-01, 배치 켜기 여부(기본 켬, 테스트 프로파일은 끔), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), AI 모델별 입력과 출력 백만 토큰당 원화 단가 표, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`은 설정 파일의 고정값이다.
 
 <br>
 
@@ -128,6 +130,7 @@
 | 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>오늘과 어제 값은 다음 갱신부터 반영<br>확정한 지난 날짜는 반영되지 않아 필요하면 분석 지표 행을 지움 | 분석 지표의 활성 사용자 수 변화 |
 | 캠페인 목록 | 설정 파일 변경 후 재빌드와 배포 | 캠페인 목록 응답 |
 | AI 모델 단가 | 설정 파일 변경 후 재빌드와 배포 | AI 비용 응답의 `unpricedModels`가 비어 있음 |
+| 초기 백필 시작일, 배치 몫 | 설정 파일 변경 후 재빌드와 배포 | `admin_analytics_backfill`의 `remaining_days`와 `cost` |
 | 저장된 분석 값 다시 받기 | 운영 DB의 `admin_analytics_daily_values` 또는 `admin_analytics_range_values`에서 해당 `metric`과 날짜의 행 삭제<br>재배포 없음 | 다음 요청의 `admin_analytics_refreshed`에서 그 날짜를 받음 |
 | Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
 | Play 서비스 계정 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 설치 지표 응답 성공 |
@@ -186,6 +189,7 @@
 | 분석 지표 | 기본 범위의 분석 지표 응답 | 성공 응답과 `daily` 30개, `pendingDates` 빈 배열<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason`<br>배포 전에 받은 지난 날짜는 다시 받지 않음(`admin_analytics_refreshed`의 `fetched_days`가 오늘과 어제 이하) |
 | 캠페인 분석 | 캠페인 목록과 기본값의 추이 응답 | 성공 응답과 `campaign`이 목록의 진행 중 항목<br>`budget_exceeded`가 반복되면 호출 묶음 재검토 |
 | 사용자, 전환, 기능 지표 | 기본 범위의 사용자 활동, 전환 퍼널 하나, 기능 사용 응답과 DB 지표 응답 | 성공 응답 |
+| 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
@@ -200,5 +204,6 @@
 | 관리자 로그인이 전부 권한 없음 | 로그 `admin_login_rejected`의 `reason` | `no_role`이면 운영 DB의 역할 행 확인<br>`no_member`면 그 Google 계정으로 앱에 먼저 가입 |
 | 모든 관리자 요청이 인증 실패 | 요청 로그<br>관리자 페이지의 쿠키 만료 | 토큰 만료면 재로그인<br>대칭키 변경이면 재로그인 안내 |
 | 변경 API가 전부 서버 오류 | Sentry<br>감사 로그 테이블 존재 여부 | 마이그레이션 적용 확인 |
+| 백필이 끝나지 않음 | `admin_analytics_backfill`의 `result`, `reason` | `budget_share`만 반복되면 화면 요청이 예산을 먼저 쓰는 중이라 대기<br>`claim_failed`면 Redis 연결<br>`no_credentials`면 Amplitude 시크릿 |
 | 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason`과 `endpoint` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 쿨다운 뒤 자동 재호출이므로 대기<br>`budget_exceeded`면 같은 5분에 갱신한 엔드포인트가 많은 것이므로 대기하고, 한 엔드포인트만 반복되면 그 엔드포인트의 조회 구성과 기간 상한 재검토 |
 | 설치 지표가 계속 사용 불가 | `admin_play_stats_fetch_failed`의 `reason`과 `status` | `no_credentials`면 운영 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 권한 거부 상태면 서비스 계정의 버킷 읽기 권한<br>`http_error`에 상태가 없으면 키의 base64와 JSON 형식, 그다음 저장소 연결<br>`no_reports`면 Play Console의 보고서 생성 여부와 패키지 이름<br>`parse_error`면 보고서 형식 변경 |
