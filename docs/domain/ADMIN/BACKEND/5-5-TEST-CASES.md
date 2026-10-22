@@ -99,7 +99,8 @@
 | 회원별 채팅방 | 회원 A 채팅 1, 회원 B 채팅 5 | `1개` 1, `5~9개` 1 |
 | 첫 메시지 시간 | 첫 사용자 메시지가 30초, 60초, 1000초인 채팅과 메시지 없는 채팅 | `평균` 45<br>`description`에 900초 초과 1과 입력 없음 1 |
 | AI 지연과 성공률 | `chat_response` 성공 2(지연 1초, 3초), 실패 1, 진행 중 1 | `ai-latency`의 `chat_response` 2<br>`ai-success`의 `chat_response` 66.67 |
-| 제작 세션 인물 수 | 주변 인물 0명과 2명 세션<br>공식 계정의 세션 1건 | `0명` 1, `2명` 1<br>공식 계정 세션 포함 |
+| 제작 세션 인물 수 | 주변 인물 행 없는 세션, 입력한 주변 인물 2명 세션<br>공식 계정의 세션 1건 | `0명` 1, `2명` 1<br>공식 계정 세션 포함 |
+| 빈 자리 인물 제외 | 주변 인물 행 3개 중 이름만 있는 1개, 특징 태그만 연결된 1개, 이름·성별·태그가 모두 빈 1개 | `2명` 1<br>스토리 목록 `supportingCharacterCount=2`에 그 스토리 포함 |
 | 제작 세션 팀 제외 | 공식 계정이 아닌 제외 목록 회원의 세션 | 집계에서 제외 |
 | 막대 링크 | `turns` 차트 둘째 막대 | `link.list` `chats`, `params.turnBucket` `1`, `from`과 `to`가 응답의 `from`, `to`와 같음 |
 | 링크 일치 | 막대의 `link`로 목록 호출 | 목록 `totalElements`가 막대 `value`와 같음(팀 계정 없는 데이터) |
@@ -113,7 +114,7 @@
 | 스토리 범위 | 공식 계정 스토리 1, 회원 스토리 1, 게스트 스토리 1 | `scope=original` 1건, `scope=user` 2건, 게스트 스토리의 `owner` `null` |
 | 공식 계정 미설정 | 설정값 빈 값 | `scope=original` 0건 |
 | 장르 필터 | `genre=판타지` | 장르 문자열에 판타지가 있는 스토리만 |
-| 태그와 인물 수 | 제작 세션으로 완성한 스토리와 일반 등록 스토리 | 태그 배열과 `supportingCharacterCount`<br>일반 등록은 빈 배열과 `null` |
+| 태그와 인물 수 | 제작 세션으로 완성한 스토리와 일반 등록 스토리<br>세션에 빈 자리 인물 1개 포함 | 태그 배열과 빈 자리를 뺀 `supportingCharacterCount`<br>일반 등록은 빈 배열과 `null` |
 | 보류 상태 | 보류 제출본 있는 스토리<br>대기 제출본만 있는 스토리 | `HELD`<br>`APPROVED` |
 | 채팅 기간 | `chatFrom`, `chatTo` 안에 채팅 1건, 밖에 2건인 스토리와 기간에 채팅 없는 스토리 | `chatCount` 1, `totalTurns`는 그 채팅의 턴<br>채팅 없는 스토리 제외 |
 | AI 호출 필터 | `aiFeature=story_completion&aiStatus=FAILED` | 실패 기록이 연결된 스토리만 |

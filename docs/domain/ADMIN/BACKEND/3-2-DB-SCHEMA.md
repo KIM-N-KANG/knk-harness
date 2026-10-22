@@ -143,8 +143,8 @@ erDiagram
 | `story_messages` | `chat_id`, `role`, `created_at` | 채팅 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
 | `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
-| `story_creation_characters` | `creation_session_id`, `role` | 주변 인물 수 |
-| `story_creation_session_tags` | `creation_session_id`, `tag_id` | 스토리의 태그 |
+| `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
+| `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |
 | `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
 | `ai_call_logs` | `feature`, `status`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅방의 AI 호출 필터 |
 | `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 지급과 소진, 출석, 회원 거래 내역과 소모, 채팅방 소모, 결제 전후 비교 |

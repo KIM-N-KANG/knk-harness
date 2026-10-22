@@ -356,7 +356,7 @@ Authorization: Bearer {adminToken}
 | `first-message` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
 | `ai-latency` | `chat_response`, `choice_generation`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
 | `ai-success` | 같음 | `%` | 같은 목록<br>`aiFeature`, `aiStatus=FINISHED`, `aiFrom`, `aiTo` |
-| `characters` | `0명`부터 `5명` | `세션` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
+| `characters` | `0명`부터 `5명`<br>사용자가 직접 입력한 주변 인물 수 | `세션` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
 
 일별 추이의 한 날짜를 눌렀을 때 여는 목록은 관리자 페이지가 다음 쿼리로 만든다.
 
@@ -440,7 +440,7 @@ Authorization: Bearer {adminToken}
 | `visibility` | `string` | 선택 | `PUBLIC`, `PRIVATE` |
 | `moderationStatus` | `string` | 선택 | `HELD`는 보류 중인 제출본이 있는 스토리<br>`APPROVED`는 그 외 |
 | `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
-| `supportingCharacterCount` | `integer` | 선택 | 0~5<br>제작 세션에 입력한 주변 인물 수<br>제작 세션이 없는 스토리는 어떤 값에도 해당하지 않음 |
+| `supportingCharacterCount` | `integer` | 선택 | 0~5<br>제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>이름, 성별, 특징 태그가 모두 빈 자리는 세지 않음<br>제작 세션이 없는 스토리는 어떤 값에도 해당하지 않음 |
 | `from`, `to` | `string` | 선택 | 스토리 생성일 |
 | `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatCount`와 `totalTurns`를 그 기간의 채팅으로만 세고 기간에 채팅이 없는 스토리는 제외 |
 | `creationFrom`, `creationTo` | `string` | 선택 | 제작 세션 생성일 |
@@ -466,7 +466,7 @@ Authorization: Bearer {adminToken}
 | `items[].visibility` | `string` | `PUBLIC`, `PRIVATE` |
 | `items[].moderationStatus` | `string` | `HELD`, `APPROVED` |
 | `items[].tags` | `string[]` | 제작 세션에서 선택한 태그 이름<br>장르, 주인공, 주변 인물 특징 순<br>제작 세션이 없으면 빈 배열 |
-| `items[].supportingCharacterCount` | `integer / null` | 제작 세션의 주변 인물 수<br>제작 세션이 없으면 `null` |
+| `items[].supportingCharacterCount` | `integer / null` | 제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>제작 세션이 없으면 `null` |
 | `items[].owner` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트 소유는 `null` |
 | `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
 | `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 합 |
