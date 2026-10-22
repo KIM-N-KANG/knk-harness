@@ -62,6 +62,8 @@
 | AI 요청의 식별자와 모델 코드 | 회원 턴, 게스트 턴(`ADVANCED` 저장), 재생성 | `user_id`는 공개 UUID와 `model_tier`는 청구 모델, `user_id`는 `null`과 `model_tier=BASIC`, 요청 시점 모델 |
 | 생성 중 모델 변경 | AI 호출 중 `ADVANCED`에서 `BASIC`으로 변경 뒤 완료, 변경 뒤 AI 실패 | 50 차감 유지와 `model_tier=ADVANCED`, 환불 50 |
 | 가격 변경 중 턴 | 턴 시작 뒤 모델 행의 가격 변경 뒤 실패 | 시작 시점 가격으로 차감과 같은 금액 환불 |
+| 차감 행 연결 | 유료 이어쓰기, 체험 이어쓰기, 게스트 이어쓰기, 유료 재생성 | AI 응답 메시지의 `credit_transaction_id`가 차감 행, `NULL`, `NULL`, 새 차감 행이고 이전 차감 행은 버전 이력으로 이동 |
+| 대사와 저장의 경쟁 | 저장 진입 전에 그 차감이 `refund:charge:{id}`로 환불됨 | 결과 폐기와 `AI_STREAM_FAILED`, 환불 행 1개 유지, 턴 미저장 |
 | AI의 모델 코드 거절 | AI가 요청을 422로 거절 | `AI_STREAM_FAILED`, 환불, Sentry 캡처 |
 | AI 오류 이벤트 | AI가 `error` 전송 | 같은 코드와 문구의 `error`, 환불과 복원, 턴 미저장 |
 | AI 스트림 실패 | 연결 실패, 이벤트 간 시간 초과, `completed` 없는 종료 | `AI_STREAM_FAILED`, 환불, Sentry 캡처 |

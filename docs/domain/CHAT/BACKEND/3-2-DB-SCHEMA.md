@@ -15,7 +15,7 @@
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>채팅과 공유는 외부 노출용으로 `public_id uuid`를 따로 둠<br>채팅과 공유를 식별하는 API는 공개 식별자만 사용<br>턴 ID는 AI 응답 메시지의 `bigint` PK를 그대로 노출 |
 | 시각 | `timestamp with time zone`<br>모든 테이블에 `created_at`이 있으며 기본값은 `now()`<br>`updated_at`은 채팅과 모델에만 있음<br>아래 표에서는 생략 |
 | 삭제 | 채팅 삭제 시 `story_chats.deleted_at` 기록<br>하위 테이블의 행은 유지하고 조회 시 채팅의 삭제 여부로 제외 |
-| FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제<br>모델은 삭제하지 않으므로 채팅의 모델 참조는 삭제 동작 없음 |
+| FK | 채팅을 물리 삭제하면 하위 테이블의 행도 함께 삭제(`ON DELETE CASCADE`)<br>채팅이 참조하는 시작 설정, 목표 사건, 도달 엔딩이 삭제되면 값만 비움(`ON DELETE SET NULL`)<br>거쳐온 사건의 조인 행은 주요 사건 삭제 시 함께 삭제<br>모델과 원장 행은 삭제하지 않으므로 모델 참조와 차감 행 참조는 삭제 동작 없음 |
 | 순서 | 메시지는 채팅 안에서 `message_order`를 1부터 부여<br>선택지는 메시지 안에서 `choice_order`를 1부터 부여 |
 | 글 | 메시지 본문은 AI 응답 원문을 이미지 마커와 함께 보존<br>프롤로그 스냅샷은 플레이 이름으로 치환한 값 |
 | 이름 스냅샷 | 도달 엔딩과 거쳐온 사건은 FK와 별도로 토큰 원문 이름을 보관<br>원본 행이 교체돼도 기록이 남음 |
@@ -61,6 +61,7 @@ erDiagram
         bigint chat_id FK
         integer message_order
         bigint reached_ending_id FK
+        bigint credit_transaction_id FK
     }
     story_choices {
         bigint id PK
@@ -72,6 +73,7 @@ erDiagram
         bigint id PK
         bigint message_id FK
         integer version_number
+        bigint credit_transaction_id FK
     }
     story_chat_main_events {
         bigint id PK
@@ -183,6 +185,11 @@ erDiagram
 | `message_order` | integer | NOT NULL, CHECK `> 0`, UNIQUE `(chat_id, message_order)` | |
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
+| `credit_transaction_id` | bigint | FK `credit_transactions.id` | 활성본을 생성한 턴의 `CHAT_TURN` 차감 행<br>체험 턴, 게스트 턴, 사용자 입력 행은 `NULL`<br>선차감 대사가 저장 여부를 판정하는 연결 |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `uq_story_messages_credit_transaction` | `credit_transaction_id` UNIQUE WHERE `credit_transaction_id IS NOT NULL` |
 
 <br>
 
@@ -215,10 +222,12 @@ erDiagram
 | `version_number` | integer | NOT NULL, UNIQUE `(message_id, version_number)` | 보관 순서에 따라 1부터 부여 |
 | `content` | text | NOT NULL | 교체 직전 AI 응답 |
 | `choices` | text | NOT NULL | 교체 직전 선택지의 JSON 배열 |
+| `credit_transaction_id` | bigint | FK `credit_transactions.id` | 교체 직전 활성본을 생성한 차감 행<br>교체 시 메시지 행의 값을 옮겨 보관<br>체험 턴과 게스트 턴은 `NULL` |
 
 | 인덱스 | 컬럼 |
 |---|---|
 | `idx_story_message_versions_message_id` | `message_id` |
+| `uq_story_message_versions_credit_transaction` | `credit_transaction_id` UNIQUE WHERE `credit_transaction_id IS NOT NULL` |
 
 <br>
 
@@ -292,7 +301,7 @@ erDiagram
 | `story_creation_sessions` | `storyline_request_id` |
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
-| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
+| `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>`CHAT_TURN` 행의 `id`를 메시지와 버전 이력에 연결<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
 
 <br>
 
