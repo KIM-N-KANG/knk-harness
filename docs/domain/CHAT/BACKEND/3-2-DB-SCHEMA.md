@@ -137,6 +137,7 @@ erDiagram
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 시점의 엔딩 이름 |
 | `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `ENDED` | |
 | `model_code` | varchar(20) | NOT NULL, FK `chat_models.code`, 기본 `LITE` | 선택한 모델<br>DB 기본값은 컬럼 추가 시 기존 행을 채우고 컬럼을 모르는 구버전 코드의 삽입을 받기 위한 값<br>새 채팅의 값은 앱이 기본 모델(`is_default`)로 명시해 저장 |
+| `long_response` | boolean | NOT NULL, 기본 `false` | 출력 분량<br>`false`는 짧은 응답, `true`는 긴 응답 |
 | `deleted_at` | timestamptz | | |
 
 | 인덱스 | 컬럼 |
