@@ -63,7 +63,7 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트에서만 제외하며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분, 호출 시간 한도 5초, 실패 쿨다운 60초, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`은 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 지표의 캐시 시간 10분, 호출 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석의 캐시 시간 10분, 조회 시간 한도 10초, 비용 예산 5분 1,000, 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`은 설정 파일의 고정값이다.
 
 <br>
 
@@ -75,6 +75,8 @@
 | `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
 | `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>사용자 수 조회의 세그먼트 `userdata_cohort` 제외 조건에 사용<br>비어 있으면 제외 없이 조회 |
 | `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
+| `MANYAK_ADMIN_CAMPAIGN_DEFAULT` | `KR_META_WEB_ACTIVATION_COLD_202610` | 개발과 운영 태스크 정의에 직접 기록 | 캠페인 분석의 기본 캠페인 값<br>비어 있으면 쿼리 `campaign` 필수 |
+| `MANYAK_ADMIN_CAMPAIGN_STORY_ID` | 빈 값 | 개발과 운영 태스크 정의에 직접 기록 | 상세 진입 퍼널의 기본 대상 스토리 공개 식별자<br>비어 있으면 그 퍼널은 `null` |
 | `MANYAK_PLAY_STATS_SA_KEY_BASE64` | 빈 값 | 운영 Secrets Manager `manyak/prod/app`만<br>개발은 주입 없음 | Play 보고서 읽기 전용 서비스 계정 키 JSON의 base64<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨<br>개발 서버는 설치 지표가 사용 불가 |
 
 <br>
@@ -125,6 +127,7 @@
 | 관리자 토큰 수명 | 설정 파일 변경 후 재빌드 | 로그인 응답의 `expiresIn` |
 | 팀 계정 제외 목록 | 환경 변수 변경 후 새 태스크 시작 | 대시보드 요약의 회원 수 변화 |
 | 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>다음 캐시 갱신부터 반영 | 분석 지표의 활성 사용자 수 변화 |
+| 기본 캠페인과 대상 스토리 | 환경 변수 변경 후 새 태스크 시작 | 캠페인 분석 응답의 `campaign`과 `storyId` |
 | Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
 | Play 서비스 계정 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 설치 지표 응답 성공 |
 | 대칭키 | Secrets Manager 값 변경 후 새 태스크 시작 | 앱과 관리자 토큰이 모두 무효가 되어 재로그인 |
@@ -179,6 +182,7 @@
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 8개 |
 | 목록 | 스토리, 채팅, 회원, 결제 목록 첫 페이지 | 성공 응답과 `totalElements` |
 | 분석 지표 | 기본 범위의 분석 지표 응답 | 성공 응답과 `daily` 30개<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason` |
+| 캠페인 분석 | 기본값의 추이와 퍼널 응답 | 성공 응답과 `campaign`이 설정값<br>`budget_exceeded`가 반복되면 호출 묶음 재검토 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 

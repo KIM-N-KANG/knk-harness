@@ -68,7 +68,7 @@ Fluent Bit`"]
 | 관리자 판정 거절 | 필터의 403<br>평문 WARN `admin_access_denied` | `endpoint`, `reason` = `no_role`, `suspended`, `deleted`, `no_member`, `admin_public_id` |
 | 앱 경로의 관리자 토큰 | 앱 토큰 검증 보강의 401<br>평문 WARN | `endpoint` |
 | 접속 기록 실패 | 독립 트랜잭션 예외<br>평문 WARN | 작업 이름<br>예외 클래스 |
-| 분석 도구 호출 실패 | 사용자 수 조회 실패<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `timeout`, HTTP 상태<br>응답 본문과 키는 기록하지 않음 |
+| 분석 도구 호출 실패 | 사용자 수, 세분화, 퍼널 조회 실패<br>평문 WARN `admin_analytics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `rate_limited`, `budget_exceeded`, `timeout`, HTTP 상태, `endpoint`(분석 지표, 캠페인 추이, 캠페인 퍼널)<br>응답 본문과 키는 기록하지 않음 |
 | 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `not_found`, `timeout`, `parse_error`, HTTP 상태, 실패한 객체 이름<br>파일 내용과 키는 기록하지 않음 |
 
 <details>
@@ -97,6 +97,7 @@ Fluent Bit`"]
 | 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms` |
 | 접속 기록 | 접속 기록 실패 WARN |
 | 분석 지표 | `admin_analytics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/analytics` 503 비율 |
+| 캠페인 분석 | `admin_analytics_fetch_failed`의 `budget_exceeded` 빈도<br>요청 로그의 `/api/v1/admin/campaigns/` 접두 경로 503 비율과 `duration_ms` |
 | 설치 지표 | `admin_play_stats_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/play-installs` 503 비율 |
 
 <br>
