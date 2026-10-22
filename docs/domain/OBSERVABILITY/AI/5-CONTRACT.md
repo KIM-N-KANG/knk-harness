@@ -12,12 +12,13 @@
 
 | 대상 | 방향 | 방식 | 권한 |
 |---|---|---|---|
-| OpenSearch | 읽기 | 검색 API에 집계 질의 | 재생: 재생용 OpenSearch 관리자 계정<br>실시간: loadtest OpenSearch 읽기 계정 |
-| CloudWatch 지표 | 읽기 | 재생: 보관 파일<br>실시간: 지표 조회 API | 지표 읽기 |
-| Application Auto Scaling, CloudWatch 경보 | 읽기 | 재생: 보관 파일<br>실시간: 확장 활동과 경보 이력 조회 API | 이력 읽기 |
+| OpenSearch | 읽기 | 검색 API에 집계 질의 | 재생: 재생용 OpenSearch 관리자 계정<br>실시간: 운영 OpenSearch의 읽기 전용 사용자 |
+| CloudWatch 지표 | 읽기 | 재생: 보관 파일<br>실시간: 지표 조회 API | 실시간: 태스크 역할의 지표 읽기 |
+| Application Auto Scaling, CloudWatch 경보 | 읽기 | 재생: 보관 파일<br>실시간: 확장 활동과 경보 이력 조회 API | 실시간: 태스크 역할의 이력 읽기 |
+| Secrets Manager | 읽기 | 실시간: 시작 때 비밀 하나를 읽음<br>재생: 같은 키를 담은 비밀 파일을 읽음 | 실시간: 태스크 역할의 그 비밀 읽기 |
 | 모델 API | 호출 | Claude Agent SDK의 세션 | API 키 |
 | 슬랙 | 양방향 | 소켓 모드. 채널 하나에 알림을 올리고 스레드 메시지와 버튼 응답을 받음 | 봇 토큰과 앱 토큰. 채널 쓰기, 스레드 읽기 |
-| 코드 저장소 | 쓰기 | manyak-server, manyak-ai, manyak-terraform을 받아 브랜치를 push하고 PR을 만듦 | 토큰. 세 저장소의 내용 쓰기와 PR 생성 |
+| 코드 저장소 | 읽기와 쓰기 | manyak-server와 manyak-ai를 코드 사본으로 받음<br>manyak-server와 manyak-terraform을 조치 작업 공간으로 받아 브랜치를 push하고 PR을 만듦 | 토큰. manyak-ai 내용 읽기<br>manyak-server와 manyak-terraform의 내용 쓰기와 PR 생성 |
 | 운영자 | 출력 | 실행 폴더의 파일과 슬랙 | 파일 쓰기 |
 
 <br>
@@ -26,12 +27,12 @@
 
 **1. 로그 인덱스**
 
-인덱스 이름은 `manyak-logs-<환경>-<yyyy.MM.dd>`다. 재생용 OpenSearch에는 보관한 `manyak-logs-loadtest-*` 인덱스를 같은 이름으로 적재한다.
+인덱스 이름은 `manyak-logs-<환경>-<yyyy.MM.dd>`다. 재생용 OpenSearch에는 보관한 `manyak-logs-loadtest-*` 인덱스를 같은 이름으로 적재한다. 실시간 모드는 운영의 `manyak-logs-prod-*`를 읽는다.
 
 | 필드 | 타입 | 쓰임 |
 |---|---|---|
 | `@timestamp` | 시각 | 분 묶음 |
-| `service` | 문자열 | 서비스별 묶음. `manyak-server`, `manyak-ai`, `manyak-notification` |
+| `service` | 문자열 | 서비스별 묶음. 시스템 설명서의 `log_service` 값 |
 | `level` | 문자열 | 오류 로그 신호. `ERROR`, `WARN`, `INFO` |
 | `event_name` | 문자열 | 사건 이름별 묶음 |
 | `endpoint` | 문자열 | 요청 경로별 묶음 |
@@ -39,7 +40,7 @@
 | `status_code` | 정수 | 상태 코드별 묶음 |
 | `duration_ms` | 정수 | 요청 처리 시간 집계 |
 | `error_code` | 문자열 | 오류 코드별 묶음 |
-| `message` | 문자열 | 표본 메시지 |
+| `message` | 문자열 | 표본 메시지. 재생 모드에서만 읽음 |
 | `traceId` | 문자열 | 스팬 인덱스와 연결 |
 
 `device_id_hash`, `session_id`, `request_id`는 조회 결과에서 뺀다.
@@ -53,7 +54,7 @@
 | 필드 | 타입 | 쓰임 |
 |---|---|---|
 | `startTime` | 시각 | 분 묶음 |
-| `serviceName` | 문자열 | 서비스별 묶음. `manyak-server-loadtest`, `manyak-ai` |
+| `serviceName` | 문자열 | 서비스별 묶음. 시스템 설명서의 `span_service` 값 |
 | `name` | 문자열 | 스팬 이름별 묶음 |
 | `traceGroup` | 문자열 | 진입 스팬 이름. 요청 경로별 묶음 |
 | `parentSpanId` | 문자열 | 비어 있으면 진입 스팬 |
@@ -90,7 +91,7 @@
 
 ### 5-3 시스템 설명서
 
-운영자가 관리하는 YAML 파일이다. 에이전트는 시작할 때 한 번 읽는다.
+운영자가 관리하는 YAML 파일이다. 재생 구간마다 하나를 두고 운영 환경에 하나를 따로 둔다. 에이전트는 시작할 때 실행 인자로 받은 파일을 한 번 읽는다.
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
@@ -158,6 +159,70 @@ latency_slo:
 
 </details>
 
+<details>
+<summary><b>시스템 설명서 예시(운영 환경)</b></summary>
+
+<br>
+
+크기와 확장 정책은 manyak-terraform의 운영 설정, 실행기 상한은 manyak-server의 기본 설정, 로드밸런서 차원은 운영 계정에서 확인한 값이다. 지연 기준은 loadtest와 같다.
+
+```yaml
+components:
+  - name: manyak-server
+    kind: service
+    log_service: manyak-server
+    span_service: manyak-server
+    metric_dimensions: { ClusterName: manyak-prod, ServiceName: manyak-prod }
+    capacity: { tasks: 2, cpu: 1.0, memory_mb: 2048 }
+  - name: manyak-server 채팅 턴 실행기
+    kind: executor
+    parent: manyak-server
+    capacity: { concurrency: 64, queue_capacity: 100 }
+    description: 채팅 턴을 태스크당 concurrency개까지 동시에 실행하고 나머지는 큐에서 기다림. 대기 시간은 chat.turn.queue 스팬
+  - name: manyak-server 오토스케일링
+    kind: autoscaling
+    parent: manyak-server
+    scaling: { metric: CPUUtilization, target_percent: 70, min_tasks: 2, max_tasks: 4, evaluation_minutes: 3 }
+  - name: manyak-ai
+    kind: service
+    log_service: manyak-ai
+    span_service: manyak-ai
+    metric_dimensions: { ClusterName: manyak-prod, ServiceName: manyak-prod-ai }
+    capacity: { tasks: 2, cpu: 0.5, memory_mb: 1024 }
+  - name: manyak-ai 오토스케일링
+    kind: autoscaling
+    parent: manyak-ai
+    scaling: { metric: CPUUtilization, target_percent: 70, min_tasks: 2, max_tasks: 4, evaluation_minutes: 3 }
+  - name: manyak-notification
+    kind: service
+    log_service: manyak-notification
+    span_service: manyak-notification
+    metric_dimensions: { ClusterName: manyak-prod, ServiceName: manyak-prod-notification }
+    capacity: { tasks: 2, cpu: 0.25, memory_mb: 1024 }
+  - name: manyak-notification 오토스케일링
+    kind: autoscaling
+    parent: manyak-notification
+    scaling: { metric: CPUUtilization, target_percent: 70, min_tasks: 2, max_tasks: 4, evaluation_minutes: 3 }
+  - name: manyak-postgres
+    kind: database
+    metric_dimensions: { DBInstanceIdentifier: manyak-prod-pg }
+    description: db.t3.micro, Multi-AZ
+  - name: manyak-redis
+    kind: cache
+    metric_dimensions: { CacheClusterId: manyak-prod-redis }
+    description: cache.t3.micro 2노드. 주 노드 manyak-prod-redis, 복제 노드 manyak-prod-redis-rg-001
+  - name: manyak-alb
+    kind: load_balancer
+    metric_dimensions: { LoadBalancer: app/manyak-prod-alb/6bff84d38528448d }
+latency_slo:
+  - { trace_group: "http post /api/v1/chats/{chatId}/turns/stream", p95_seconds: 15 }
+  - { trace_group: "http post /api/v1/chats/{chatId}/turns/{turnId}/choices", p95_seconds: 15 }
+  - { trace_group: "http post /api/v1/chats", p95_seconds: 2 }
+  - { trace_group: "http get /api/v1/stories", p95_seconds: 1 }
+```
+
+</details>
+
 <br>
 
 ### 5-4 이상 후보
@@ -175,6 +240,7 @@ latency_slo:
 | `signals[].peak_value` | 숫자 | 필수 | 붙은 동안의 최댓값 |
 | `signals[].threshold` | 숫자 | 필수 | 기준값 |
 | `signals[].unit` | 문자열 | 필수 | `seconds`, `ratio`, `count`, `percent` |
+| `skip_reason` | 문자열 | 선택 | 진단을 부르지 않은 이유. `daily_budget_exceeded`. 진단했으면 `null` |
 
 <br>
 
@@ -192,10 +258,16 @@ latency_slo:
 | `suspects[]` | 배열 | 조건부 | `incident`일 때 1~3개. `undetermined`는 0~3개. `not_incident`는 빈 배열 |
 | `suspects[].component` | 문자열 | 필수 | 시스템 설명서의 `components[].name` |
 | `suspects[].hypothesis` | 문자열 | 필수 | 원인 가설 |
-| `evidence[]` | 배열 | 조건부 | `incident`와 `not_incident`는 1개 이상 |
-| `evidence[].query_ref` | 정수 | 필수 | 조회 기록의 번호 |
+| `evidence[]` | 배열 | 조건부 | `incident`와 `not_incident`는 1개 이상. 근거 하나에 `query_ref`와 `code_ref` 중 하나만 둠 |
 | `evidence[].observation` | 문자열 | 필수 | 관찰 한 문장 |
-| `evidence[].value` | 숫자 | 필수 | 조회 결과에 있는 값 |
+| `evidence[].query_ref` | 정수 | 조건부 | 조회 근거의 조회 기록 번호. 코드 근거면 `null` |
+| `evidence[].value` | 숫자 | 조건부 | 조회 근거에서 조회 결과에 있는 값. 코드 근거면 `null` |
+| `evidence[].code_ref` | 객체 | 조건부 | 코드 근거의 위치. 조회 근거면 `null` |
+| `evidence[].code_ref.repo` | 문자열 | 필수 | `manyak-server`, `manyak-ai` |
+| `evidence[].code_ref.path` | 문자열 | 필수 | 저장소 루트 기준 파일 경로 |
+| `evidence[].code_ref.start_line` | 정수 | 필수 | 인용 범위의 첫 줄. 1부터 셈 |
+| `evidence[].code_ref.end_line` | 정수 | 필수 | 인용 범위의 끝 줄. `start_line` 이상 |
+| `evidence[].code_ref.quote` | 문자열 | 필수 | 범위 안에 그대로 있는 문장 |
 | `evidence[].verified` | 불리언 | 필수 | 보고 검사기가 채움 |
 | `actions` | 객체 | 조건부 | `incident`일 때 필수, 아니면 `null` |
 | `actions.immediate[]` | 배열 | 필수 | 즉시 완화. 1개 이상 |
@@ -213,7 +285,7 @@ latency_slo:
 
 <br>
 
-보고는 합성 예시이고 수치는 KNK-1598의 측정값이다.
+보고는 합성 예시이고 수치는 KNK-1598의 측정값이다. 코드 근거는 R1 구간 당시 manyak-server 커밋 `118b584`의 코드다.
 
 ```json
 {
@@ -232,14 +304,27 @@ latency_slo:
     }
   ],
   "evidence": [
-    { "query_ref": 2, "observation": "chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초", "value": 41.2, "verified": true },
-    { "query_ref": 3, "observation": "같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음", "value": 10.4, "verified": true },
-    { "query_ref": 5, "observation": "manyak-server CPU 최댓값 36%", "value": 36, "verified": true },
-    { "query_ref": 6, "observation": "manyak-server 확장 활동 0건", "value": 0, "verified": true }
+    { "observation": "chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초", "query_ref": 2, "value": 41.2, "code_ref": null, "verified": true },
+    { "observation": "같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음", "query_ref": 3, "value": 10.4, "code_ref": null, "verified": true },
+    {
+      "observation": "채팅 턴 실행기의 동시 실행 수가 코드에 4로 고정됨",
+      "query_ref": null,
+      "value": null,
+      "code_ref": {
+        "repo": "manyak-server",
+        "path": "src/main/kotlin/com/knk/manyak/chat/config/ChatSseConfig.kt",
+        "start_line": 15,
+        "end_line": 17,
+        "quote": "corePoolSize = 4"
+      },
+      "verified": true
+    },
+    { "observation": "manyak-server CPU 최댓값 36%", "query_ref": 5, "value": 36, "code_ref": null, "verified": true },
+    { "observation": "manyak-server 확장 활동 0건", "query_ref": 6, "value": 0, "code_ref": null, "verified": true }
   ],
   "actions": {
     "immediate": ["manyak-server 태스크 수를 2에서 4로 올려 동시 실행 수를 8에서 16으로 늘림"],
-    "improvement": ["채팅 턴 실행기의 동시 실행 수를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림", "큐 대기 p95를 경보 조건에 추가함"]
+    "improvement": ["ChatSseConfig.kt 15~17줄의 고정값 corePoolSize 4를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림", "큐 대기 p95를 경보 조건에 추가함"]
   },
   "usage": {
     "model": "claude-opus-5-5",
@@ -258,12 +343,12 @@ latency_slo:
 
 ### 5-6 실행 폴더
 
-실행 하나가 폴더 하나를 만든다. 폴더 이름은 실행 모드와 시작 시각이다.
+실행 하나가 폴더 하나를 만든다. 폴더는 실행 인자로 받은 상위 경로 아래에 두고 이름은 실행 모드와 시작 시각이다. 상위 경로는 재생이면 운영자 PC의 폴더이고 실시간이면 태스크의 임시 저장소다.
 
 | 파일 | 내용 | 쓰는 때 |
 |---|---|---|
-| `run.json` | 실행 모드, 감시 구간, 시스템 설명서 경로와 해시, 모델 식별자, 추론 강도, 조회와 시간 예산, 프롬프트 해시 | 시작 때 |
-| `candidates.jsonl` | 이상 후보의 상태 한 건에 한 줄. 같은 ID는 마지막 줄이 최신 상태 | 열 때, 신호가 붙거나 최댓값이 바뀔 때, 닫을 때, 열린 채 실행이 끝날 때 덧붙임 |
+| `run.json` | 실행 모드, 슬랙 연결 여부, 감시 구간, 시스템 설명서 경로와 해시, 코드 사본의 저장소별 커밋, 모델 식별자, 추론 강도, 조회, 시간, 비용 예산, 프롬프트 해시 | 시작 때 |
+| `candidates.jsonl` | 이상 후보의 상태 한 건에 한 줄. 같은 ID는 마지막 줄이 최신 상태 | 열 때, 진단을 생략할 때, 신호가 붙거나 최댓값이 바뀔 때, 닫을 때, 열린 채 실행이 끝날 때 덧붙임 |
 | `reports/<candidate_id>.json` | 진단 보고 | 진단이 끝날 때 |
 | `queries/<candidate_id>.jsonl` | 모델 메시지와 조회 한 건에 한 줄. 조회는 번호, 도구, 인자, 결과 | 메시지와 조회마다 |
 | `failures.jsonl` | 실행 실패 한 건에 한 줄 | 실행 실패 때 |
@@ -271,13 +356,13 @@ latency_slo:
 | `approvals.jsonl` | 승인 요청 한 건에 한 줄 | 승인 응답이 오거나 시간이 초과될 때 |
 | `actions.jsonl` | 조치 PR 한 건에 한 줄 | PR을 만들 때 |
 
-실행 실패한 이상 후보는 `reports/`에 파일이 없고 `failures.jsonl`에 줄이 있다. 재생 모드의 실행 폴더에는 `sessions.jsonl`, `approvals.jsonl`, `actions.jsonl`이 없다.
+실행 실패한 이상 후보는 `reports/`에 파일이 없고 `failures.jsonl`에 줄이 있다. 진단을 부르지 않은 이상 후보는 `reports/`와 `failures.jsonl` 어디에도 없고 `candidates.jsonl`의 `skip_reason`이 채워져 있다. 슬랙을 켜지 않은 재생의 실행 폴더에는 `sessions.jsonl`, `approvals.jsonl`, `actions.jsonl`이 없다.
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
 | `candidate_id` | 문자열 | 필수 | 이상 후보의 ID |
 | `failed_at` | 시각 | 필수 | 실패한 실제 시각 |
-| `stage` | 문자열 | 필수 | `query`(조회 실패), `model`(모델 호출 실패), `report`(출력 간 조건을 두 번 어김, 제출 입력 스키마 위반, 같은 후보의 보고가 이미 있음), `budget`(제출 요청 뒤에도 미제출, 5분 소진), `notify`(슬랙 알림 실패), `session`(세션 복원 실패, 세션 비용 초과, 조율 턴 모델 호출 실패), `action`(PR 생성 실패) |
+| `stage` | 문자열 | 필수 | `query`(조회 실패), `model`(모델 호출 실패), `report`(출력 간 조건을 두 번 어김, 제출 입력 스키마 위반, 같은 후보의 보고가 이미 있음), `budget`(제출 요청 뒤에도 미제출, 5분 소진, 진단 턴 비용 한도 도달), `notify`(슬랙 알림 실패), `session`(세션 복원 실패, 세션 비용 초과, 조율 턴 모델 호출 실패), `action`(PR 생성 실패) |
 | `reason` | 문자열 | 필수 | 실패 원인 한 문장. 비밀값과 식별자를 넣지 않음 |
 | `usage` | 객체 | 필수 | 진단 보고의 `usage`와 같은 필드. `notify`, `session`, `action`은 그 시점까지의 세션 누적값 |
 
@@ -309,7 +394,7 @@ latency_slo:
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
 | `session_id` | 문자열 | 필수 | |
-| `repo` | 문자열 | 필수 | `manyak-server`, `manyak-ai`, `manyak-terraform` |
+| `repo` | 문자열 | 필수 | `manyak-server`, `manyak-terraform` |
 | `pr_url` | 문자열 | 필수 | |
 | `created_at` | 시각 | 필수 | |
 
@@ -332,7 +417,7 @@ latency_slo:
 | 즉시 완화 | `actions.immediate[]` |
 | 보고 파일 ID | `candidate_id` |
 
-실행 실패는 알림 메시지 대신 실패 단계와 사유를 한 줄로 올린다.
+실행 실패는 알림 메시지 대신 실패 단계와 사유를 한 줄로 올린다. 하루 비용 상한을 넘어 그날 처음 진단을 생략할 때는 상한 금액과 진단을 다시 시작하는 UTC 시각을 한 줄로 올린다. 같은 날 다음 생략에는 올리지 않는다.
 
 **2. 스레드 메시지**
 
@@ -359,7 +444,9 @@ latency_slo:
 
 | 항목 | 내용 |
 |---|---|
-| 대상 브랜치 | manyak-server와 manyak-ai는 `dev`. manyak-terraform은 그 저장소의 기본 브랜치 |
+| 대상 저장소 | manyak-server와 manyak-terraform |
+| 대상 브랜치 | manyak-server는 `dev`. manyak-terraform은 그 저장소의 기본 브랜치 |
 | 작업 브랜치 | 이름에 `candidate_id`를 넣음 |
 | 변경 | 설정값만. 저장소당 PR 하나 |
 | 본문 | 진단 요약(판정, 1순위 의심 구성 요소, 원인 가설)<br>근거 목록<br>변경 내용과 이유<br>슬랙 스레드 링크<br>보고 파일 ID |
+| 귀속 | 커밋 메시지와 PR 본문에 Co-Authored-By 같은 귀속 트레일러를 넣지 않음 |
