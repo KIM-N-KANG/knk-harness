@@ -259,9 +259,9 @@
 | 플랫폼별 값 | `_active` 전체 13, Web 10, Android 3, 플랫폼 없음 2 | `activeUsers`의 `all` 13, `web` 10, `android` 3, `unknown` 2<br>셋의 합 15와 `all`이 달라도 그대로 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 42일<br>43일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개<br>이벤트 필터 방식이면 `s` 없이 시작과 복귀 이벤트의 필터에 `country`와 `platform`, 예산 계수기 168 증가<br>세그먼트 방식이면 `s`가 전체는 `country`, Web과 Android는 `country`와 `platform`, 예산 계수기 448 증가 |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 `country`와 `platform`, 예산 계수기 168 증가 |
 | 리텐션 인덱스 | 코호트 배열의 인덱스 1이 `count` 5와 `outof` 20, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d7` `null`, `d30` `null` |
-| 리텐션 기간 | 이벤트 필터 방식 20일, 세그먼트 방식 7일<br>`to`가 오늘, 이벤트 필터 방식 21일, 세그먼트 방식 8일, `days` 30 | 200<br>400 |
+| 리텐션 기간 | 20일<br>`to`가 오늘, 21일, `days` 30 | 200<br>400 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
 | 세션 기간 | 15일, 쿼리 생략 시 14일<br>16일, `days` 30 | 200<br>400 |
 | 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
