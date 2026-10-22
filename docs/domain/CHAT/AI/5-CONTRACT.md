@@ -22,7 +22,8 @@
 | 필드명 | 타입 | 필수 | 뜻과 기본값 |
 |---|---|---|---|
 | `user_id` | `string / null` | 선택 | 백엔드가 인증한 회원의 공개 UUID(`public_id`)<br>회원 요청에는 필수, 게스트는 생략 또는 `null`<br>기본값 `null`, 내부 숫자 ID와 기기 식별자는 사용하지 않음<br>UUID 형식 오류는 422<br>라우팅용, 모델 프롬프트에서 제외 |
-| `model_tier` | `string` | 선택 | 이번 본문 생성에 선택한 등급: `BASIC`, `ADVANCED`<br>기본값 `BASIC`, `null`과 허용값 이외의 값은 422<br>재생성도 요청 시점에 선택한 등급을 전달<br>라우팅용, 모델 프롬프트에서 제외 |
+| `model_tier` | `string` | 선택 | 이번 본문 생성에 선택한 등급: `LITE`, `AURORA`<br>기본값 `LITE`, `null`과 허용값 이외의 값은 422<br>재생성도 요청 시점에 선택한 등급을 전달<br>라우팅용, 모델 프롬프트에서 제외 |
+| `long_response` | `boolean` | 선택 | 이번 본문의 출력 분량 선택<br>`false`: 짧은 응답, `true`: 긴 응답<br>생략 시 `false`<br>`null`은 허용하지 않음<br>재생성도 요청 시점의 선택을 전달 |
 | `genre` | `string` | 필수 | 장르 |
 | `story_settings` | `object` | 필수 | 스토리 설정 |
 | `story_settings.world_setting` | `string` | 필수 | 세계관 마크다운 본문 |
@@ -98,7 +99,8 @@
 ```json
 {
   "user_id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
-  "model_tier": "BASIC",
+  "model_tier": "LITE",
+  "long_response": false,
   "genre": "판타지",
   "story_settings": {
     "world_setting": "# 세계관\n마법 도서관에는 지워진 기록의 흔적이 남는다.",

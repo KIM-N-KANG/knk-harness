@@ -37,7 +37,7 @@
 
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
-| 채팅 턴 요청 | SSE 응답 생성 시작부터 종료까지<br>`채팅 턴` | 슬롯을 제외한 요청 입력, 연결 식별자, 프롬프트 버전, `retry_count=0`<br>유효한 `user_source`가 있으면 metadata에도 포함 |
+| 채팅 턴 요청 | SSE 응답 생성 시작부터 종료까지<br>`채팅 턴` | 슬롯을 제외한 요청 입력, 연결 식별자, 프롬프트 버전, `retry_count=0`<br>metadata에 `user_id`, `model_tier`, `model`, `provider` 포함<br>유효한 `user_source`가 있으면 metadata에도 포함 |
 | 선택지 요청 | API 실행부터 반환까지<br>`채팅 선택지` | `user_source`와 슬롯을 제외한 입력, 연결 식별자, `NEXT_ACTIONS` 버전<br>반환 전 실제 `retry_count` 반영 |
 | 텍스트 호출 | 본문, 선택지 최초 생성과 보완 호출마다 | OpenAI SDK 자동 계측의 프롬프트, 출력, 모델, 사용량과 시간 |
 | 저장 이미지 선택 호출 | TypeSafe 호출마다<br>`LLM 판정` | 모델, 질문 수, 제한 시간, 재시도 0, 사용량과 응답 수<br>호출 input과 output에 대화·이미지 이름·선택 원문 제외 |

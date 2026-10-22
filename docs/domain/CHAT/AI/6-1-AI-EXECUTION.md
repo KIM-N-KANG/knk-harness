@@ -31,15 +31,15 @@ flowchart LR
 
 | 등급 | UUID 마지막 자리 | 본문 모델 | 추론 강도 |
 |---|---|---|---|
-| 기본 (`BASIC`) | 무관 | `gpt-6-luna` | `low` |
-| 고급 (`ADVANCED`) | 짝수 | `gpt-6.1-sol` | `low` |
-| 고급 (`ADVANCED`) | 홀수 | `gemini-3.8-flash` | `medium` |
+| `LITE` | - | `gpt-6-luna` | `low` |
+| `AURORA` | 짝수 | `gpt-6.1-sol` | `low` |
+| `AURORA` | 홀수 | `gemini-3.8-flash` | `medium` |
 
 | 라우팅 항목 | 처리 규칙 |
 |---|---|
-| 판단 순서 | `user_id`가 없거나 `null`이면 게스트로 판별<br>게스트는 전달된 등급과 관계없이 기본 등급 적용 |
-| 고급 모델 배정 기준 | 마지막 16진수 문자를 숫자로 해석(대소문자 구분 없음)<br>짝수: `0`, `2`, `4`, `6`, `8`, `a`, `c`, `e`<br>홀수: `1`, `3`, `5`, `7`, `9`, `b`, `d`, `f` |
-| 고급 모델 배정 | 매 요청에서 UUID로 계산, 별도 배정 저장 없음<br>같은 회원 UUID는 같은 고급 모델에 배정 |
+| 판단 순서 | `user_id`가 없거나 `null`이면 게스트로 판별<br>게스트는 전달된 등급과 관계없이 `LITE` 등급 적용 |
+| `AURORA` 모델 배정 기준 | 마지막 16진수 문자를 숫자로 해석(대소문자 구분 없음)<br>짝수: `0`, `2`, `4`, `6`, `8`, `a`, `c`, `e`<br>홀수: `1`, `3`, `5`, `7`, `9`, `b`, `d`, `f` |
+| `AURORA` 모델 배정 | 매 요청에서 UUID로 계산, 별도 배정 저장 없음<br>같은 회원 UUID는 같은 `AURORA` 모델에 배정 |
 | 등급 변경 | 채팅 중 매 요청의 `model_tier`로 모델과 추론 강도 선택<br>이전 턴의 등급과 모델은 이어받지 않음 |
 
 | 항목 | 값 |
@@ -105,6 +105,7 @@ flowchart LR
 | `[SYSTEM]` | `{{protagonist_name}}` | 이번 채팅의 주인공 이름, 없으면 빈 문자열 |
 | `[SYSTEM]` | `{{user_role_setting}}` | 주인공 설정 |
 | `[SYSTEM]` | `{{main_events}}` | 주요 사건 목록 |
+| `[SYSTEM]` | `{{response_length}}` | `long_response`에 따라 짧은 응답 또는 긴 응답의 분량 주입 |
 | `[USER]` | `{{endings}}` | 엔딩 후보 목록 |
 | `[USER]` | `{{summary}}` | 대화 요약, 없으면 빈 문자열 |
 | `[USER]` | `{{user_input}}` | 이번 사용자 입력 |
