@@ -39,7 +39,7 @@
 | `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 게스트의 체험 카운터 식별 | 게스트의 체험 조회는 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 게스트의 체험 카운터 식별<br>서버 분석 이벤트의 `device_id` | 게스트의 체험 조회는 필수 |
 | `X-Groble-Timestamp` | 초 단위 Unix 시각 | 웹훅 서명 대상과 재전송 방지 | 웹훅은 필수 |
 | `X-Groble-Signature` | 16진수 64자 | 웹훅 서명 | 웹훅은 필수 |
 | `X-Groble-Signature-Previous` | 16진수 64자 | 시크릿 교체 기간의 이전 서명 | 선택 |

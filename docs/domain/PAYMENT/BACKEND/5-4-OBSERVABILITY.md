@@ -154,7 +154,7 @@ Fluent Bit`"]
 | 웹훅 시크릿 | 로그, Sentry, 지표에 기록하지 않음 |
 | 웹훅 본문 | 기록하지 않음<br>이벤트 종류와 무시 사유만 기록 |
 | 그로블 거래 식별자, 이벤트 ID | 로그에 기록하지 않음 |
-| 디바이스 ID | 해시만 기록 |
+| 디바이스 ID | 해시만 기록<br>원문은 분석 이벤트의 `device_id`로만 Amplitude에 전달<br>분석 이벤트 경로에서는 원문을 저장하지 않음 |
 | 금액 | 대사 로그의 단가와 회수 부족분은 기록 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
@@ -191,7 +191,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원 공개 식별자<br>웹훅은 주문 소유자의 공개 식별자 |
-| `device_id` | 디바이스 해시<br>실제 해시가 있을 때만 포함하고 없으면 생략<br>웹훅은 생략 |
+| `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 생략<br>웹훅은 생략 |
 | `session_id` | 정수 문자열일 때만 포함<br>웹훅은 생략 |
 | `request_id`, `is_logged_in` | 요청 문맥<br>웹훅은 주문 소유자에게 붙이는 회원 이벤트이므로 `is_logged_in`은 `true` |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |

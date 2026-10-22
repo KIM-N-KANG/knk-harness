@@ -81,7 +81,7 @@ graph LR
 | --- | --- |
 | localStorage 스토리·채팅 ID | `manyak:created-story-ids`·`manyak:created-chat-ids`, 최신순 JSON 배열. [스토리 저장소](../../../manyak-web/src/features/stories/_shared/utils/story-id-storage.ts)·[채팅 저장소](../../../manyak-web/src/features/chats/_shared/utils/chat-id-storage.ts) |
 | localStorage 안내 | `manyak:onboarding-seen`의 `'1'`, `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
-| localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
+| localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`·`manyak:chat-advanced-model-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지·고급 모델 기본 off). [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
 | IndexedDB 제작 | Dexie DB `manyak-creation`의 `pendingCreations`, `storyCompletions`, `metadata`. [DB 정의](../../../manyak-web/src/features/stories/_shared/utils/creation-db.ts), [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts). 일반 제작 `GENERAL_DRAFT`는 서버 초안으로 옮기기 전의 레거시만 남음. 회원 간편 제작 서버 세션의 사용자 저장은 서버 초안이고, 이 DB에는 진행 기록과 기기 안 세션의 초안만 남음 |
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
 | sessionStorage 채팅 열기 의도 | `manyak:pending-chat-open`의 `{storyId, chatId, at}`. 일반 제작 승인이 상세로 바꾸기 직전에 기록하고 상세가 마운트될 때 한 번 읽어 지운 뒤 채팅방을 연다. 30초가 지나면 무시 |
@@ -255,7 +255,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### 법적 콘텐츠 소스 (웹)
 
-[terms-content.ts](../../../manyak-web/src/features/legal/content/terms-content.ts)·[privacy-content.ts](../../../manyak-web/src/features/legal/content/privacy-content.ts)가 시행일·버전·본문의 정본입니다. Android `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`/privacy`를 만들고 `LegalDocumentScreen` WebView가 같은 본문을 표시합니다. 미래 시행일을 현재 시행본으로 부르지 않습니다. 문서 버전을 개정할 때는 백엔드 `MANYAK_LEGAL_TERMS_VERSION`과 `MANYAK_LEGAL_PRIVACY_VERSION`의 요구 버전을 공개 본문에 맞춰야 합니다. 프런트엔드 본문 변경만으로 서버의 재동의 요구 버전은 바뀌지 않습니다. 공지 기간과 실제 공개일을 확인한 뒤 시행일을 확정합니다.
+[terms-content.ts](../../../manyak-web/src/features/legal/content/terms-content.ts)·[privacy-content.ts](../../../manyak-web/src/features/legal/content/privacy-content.ts)가 시행일·버전·본문의 정본입니다. Android `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`/privacy`를 만들고 `LegalDocumentScreen` WebView가 같은 본문을 표시합니다. 미래 시행일을 현재 시행본으로 부르지 않습니다. 공개 본문의 버전과 백엔드 `MANYAK_LEGAL_TERMS_VERSION`, `MANYAK_LEGAL_PRIVACY_VERSION`의 동의 요구 버전은 분리합니다. 재동의가 필요한 개정만 요구 버전을 올리고, 그 밖의 개정은 공지 후 시행일부터 적용합니다([W-043](../adr/1-2-web-adr.md#w-043)). 프런트엔드 본문 변경만으로 서버의 재동의 요구 버전은 바뀌지 않습니다. 공지 기간과 실제 공개일을 확인한 뒤 시행일을 확정합니다.
 
 ### 게스트 동의 시트 (웹)
 
