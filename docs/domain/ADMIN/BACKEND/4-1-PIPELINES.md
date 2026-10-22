@@ -480,12 +480,12 @@ flowchart LR
 | 항목 | 규칙 |
 |---|---|
 | 호출 대상 | 이벤트 세분화 조회 `GET /api/2/events/segmentation`과 퍼널 조회 `GET /api/2/funnels`<br>인증과 주소는 분석 지표와 같음 |
-| 공통 조건 | 모든 조회의 세그먼트에 사용자 속성 `country`가 `South Korea` 또는 `(none)`이고 `platform`이 `Web`인 조건<br>`i=1`, 날짜 범위는 `YYYYMMDD` |
+| 공통 조건 | 모든 조회의 세그먼트에 사용자 속성 `country`가 `South Korea` 또는 `(none)`인 조건<br>신규 가입자를 뺀 조회에는 `platform`이 `Web`인 조건을 더함<br>`i=1`, 날짜 범위는 `YYYYMMDD` |
 | 세그먼트 | 전체는 공통 조건만<br>광고 유입은 공통 조건에 사용자 속성 `gp:initial_utm_campaign`이 캠페인 값인 조건<br>광고 외 유입은 조회하지 않고 전체에서 광고 유입을 뺌 |
 | 캠페인 목록 | 설정 파일 고정값<br>`campaign` 쿼리가 없으면 종료일이 없는 마지막 항목, 상세 진입 퍼널의 `storyId`가 없으면 적용한 캠페인과 값이 같은 항목의 대상 스토리 |
-| 추이 조회 | 웹 DAU는 `_active` 고유 사용자, 전체 1회<br>신규 방문자는 `_new` 고유 사용자, 전체와 광고 2회<br>소스별은 `_new`에 캠페인이 아니면서 `gp:initial_utm_source`가 `ig`, `th`와 `threads`, `dc`, 그 밖인 조건 4회<br>신규 가입자는 구글과 카카오 로그인 성공 이벤트에 이벤트 속성 `is_new_user`가 `true`인 조건으로 전체와 광고 각각 2회씩 4회를 받아 두 이벤트를 더함<br>횟수는 스토리라인 생성 요청, 스토리 완성 요청, 채팅 메시지 전송 이벤트의 합계(totals) 3회 |
+| 추이 조회 | 웹 DAU는 `_active` 고유 사용자, 전체 1회<br>신규 방문자는 `_new` 고유 사용자, 전체와 광고 2회<br>소스별은 `_new`에 캠페인이 아니면서 `gp:initial_utm_source`가 `ig`, `th`와 `threads`, `dc`, 그 밖인 조건 4회<br>신규 가입자는 구글과 카카오 로그인 성공 이벤트에 이벤트 속성 `is_new_user`가 `true`인 조건으로 전체와 광고 각각 2회씩 4회를 받아 두 이벤트를 더함<br>서버 가입 이벤트에는 사용자 속성 `platform`이 대부분 없어 가입자 조회에는 `platform` 조건을 넣지 않고 `country`와 `gp:initial_utm_campaign`만 씀<br>횟수는 스토리라인 생성 요청, 스토리 완성 요청, 채팅 메시지 전송 이벤트의 합계(totals) 3회 |
 | 퍼널 조회 | 순서 모드, 전환 창 86,400초, 활성 사용자 기준<br>간편 제작 퍼널과 상세 진입 퍼널은 별도 엔드포인트라 따로 갱신<br>간편 제작 퍼널은 전체와 광고 2회<br>상세 진입 퍼널은 전체 1회이며 1단계는 이벤트 속성 `story_id`가 대상 스토리이고 사용자 속성 `gp:utm_campaign`이 캠페인 값, 2단계는 `story_id`가 대상 스토리, 3~7단계는 채팅 메시지 전송의 이벤트 속성 `turn_number`가 문자열 `1`~`5` |
-| 유입 소스 조회 | `_new` 고유 사용자를 `gp:initial_utm_source`와 `gp:initial_utm_medium`으로 묶어 1회<br>페이지 조회 이벤트 `[Amplitude] Page Viewed`에 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 조건으로 `utm_source`와 `utm_content`로 묶어 고유 사용자 1회<br>묶음 속성 두 개를 한 조회에 넣을 수 있는지는 구현 때 확인 |
+| 유입 소스 조회 | `_new` 고유 사용자를 `gp:initial_utm_source`와 `gp:initial_utm_medium`으로 묶어 1회<br>페이지 조회 이벤트 `[Amplitude] Page Viewed`에 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 조건으로 `utm_source`와 `utm_content`로 묶어 고유 사용자 1회<br>묶음 속성 `g`는 두 개까지 한 조회에 넣고 `gp:` 접두 이름을 그대로 씀 |
 | 비용 | 세분화 조회는 일수 × 이벤트 수, 퍼널 조회는 일수 × 단계 수 × 2<br>모든 Amplitude 호출은 5분 1,000의 예산 계수기를 공유하고 갱신 전에 예상 비용이 남은 예산을 넘으면 호출하지 않고 쿨다운과 같이 처리 |
 | 호출 순서 | 한 갱신 안에서 조회를 하나씩 순서대로 보내고 동시에 보내지 않음 |
 | 계산 | 광고 외 유입은 날짜마다 전체에서 광고를 뺌<br>누적 가입자는 범위 첫날부터 누계<br>퍼널의 광고 외는 단계마다 전체에서 광고를 뺌 |
@@ -510,15 +510,15 @@ flowchart LR
 | 항목 | 규칙 |
 |---|---|
 | 공통 조건 | 사용자 속성 `country`가 `South Korea` 또는 `(none)`<br>플랫폼은 사용자 속성 `platform`이 `Web`, `Android`, 없음 |
-| 활동 조회 | `_active` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>`_new` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>채팅 메시지 전송 이벤트의 사용자당 평균(`m=average`)을 `platform` 묶음으로 1회<br>MAU는 사용자 수 조회 `m=active`, `i=30`으로 `to`를 끝으로 1회<br>묶음 결과의 `Web`, `Android` 값이 플랫폼별, 나머지가 `unknown` |
-| 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`, n일 모드로 전체, Web, Android 세그먼트 3회<br>응답의 코호트별 1일, 7일, 30일 비율을 그대로 쓰고 아직 지나지 않은 날은 `null`<br>리텐션 조회의 비용 산식은 문서에 없어 일수 × 2로 가정하며 구현 때 확인 |
-| 세션 조회 | 평균 세션 길이 `GET /api/2/sessions/average`와 사용자당 세션 수 `GET /api/2/sessions/peruser`를 전체, Web, Android 세그먼트로 각 3회<br>두 조회의 지원 여부와 응답 형태는 구현 때 확인하며 지원하지 않으면 이 엔드포인트를 사용 불가로 응답 |
+| 활동 조회 | `_active` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>`_new` 고유 사용자 전체 1회와 `platform` 묶음 1회<br>채팅 메시지 전송 이벤트의 사용자당 평균(`m=average`)을 `platform` 묶음으로 1회<br>MAU는 사용자 수 조회 `m=active`, `i=30`을 `start`가 `to`의 29일 전, `end`가 `to`인 범위로 1회<br>30일 구간이 `start`에서 시작하므로 `start`를 이렇게 맞춰야 `to`로 끝나는 30일 값이 나옴<br>묶음 결과의 `Web`, `Android` 값이 플랫폼별, 나머지가 `unknown` |
+| 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`, 구간 모드 `rm=bracket`으로 전체, Web, Android 세그먼트 3회<br>세그먼트 `s`에 `platform` 속성 조건을 그대로 적용<br>응답은 코호트 날짜마다 `count`, `outof`, `incomplete`의 배열이며 비율은 `count`를 `outof`로 나누고 `incomplete`인 날은 `null`<br>비용은 일수 × 2로 계산 |
+| 세션 조회 | 평균 세션 길이 `GET /api/2/sessions/average`와 사용자당 세션 수 `GET /api/2/sessions/peruser`를 전체, Web, Android 세그먼트로 각 3회<br>응답은 `data.series`의 일별 값(평균 길이는 초)이며 `seriesCollapsed`의 기간 평균은 쓰지 않음 |
 | 신규 가입자 | `users`를 `created_at`의 KST 날짜로 묶고 팀 계정 제외 목록을 뺌<br>가입 경로는 그 회원의 `social_accounts` 중 `connected_at`이 가장 이른 행의 `provider`가 `GOOGLE`, `KAKAO`, 그 외<br>게스트 이관은 `migrated_at`이 있는 회원 |
 
 | 엔드포인트 | 하루 비용 | 기간 상한 | 상한에서의 비용 |
 |---|---|---|---|
 | 사용자 활동 | 6 | 62일 | 372 |
-| 사용자 리텐션 | 6(가정) | 31일 | 186 |
+| 사용자 리텐션 | 6 | 31일 | 186 |
 | 사용자 세션 | 6 | 62일 | 372 |
 
 세 엔드포인트를 같은 5분에 모두 갱신해도 930으로 예산 안이다.

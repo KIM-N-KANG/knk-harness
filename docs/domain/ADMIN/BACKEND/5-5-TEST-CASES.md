@@ -218,7 +218,7 @@
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
 | 캠페인 목록 | 조회 | 설정 파일의 4항목이 시작일 오름차순, 4차만 `endDate` `null` |
-| 추이 조회 | `days` 7, 캠페인 생략 | 대역에 세분화 조회 14회가 순서대로, 모든 요청의 세그먼트에 `country`와 `platform` 조건, 캠페인은 종료일 없는 마지막 항목의 값 |
+| 추이 조회 | `days` 7, 캠페인 생략 | 대역에 세분화 조회 14회가 순서대로, 모든 요청의 세그먼트에 `country` 조건, 가입자 조회 4회만 `platform` 조건 없음, 캠페인은 종료일 없는 마지막 항목의 값 |
 | 목록 밖 캠페인 | `campaign=TEST_2026` | 200, 그 값으로 조회 |
 | 세그먼트 차 | 전체 `_new` 10, 광고 7 | `newVisitors` `all` 10, `ads` 7, `nonAds` 3 |
 | 소스별 | 광고 7, `ig` 2, `th` 1, `dc` 0, 그 밖 1 | `newVisitorsBySource` 각 값과 `ads`는 `newVisitors.ads`와 같음 |
@@ -246,13 +246,13 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 사용자 활동 | `days` 7 | 대역에 세분화 5회와 사용자 수 조회 1회, `platform` 묶음 응답의 `Web` 10, `Android` 3, 없음 2가 `web` 10, `android` 3, `unknown` 2, `all` 15 |
+| 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 5회와 사용자 수 조회 1회(`start` 09-22, `end` 10-21, `i=30`), `platform` 묶음 응답의 `Web` 10, `Android` 3, 없음 2가 `web` 10, `android` 3, `unknown` 2, `all` 15 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 62일<br>63일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, 코호트 7개, 어제 코호트의 `d1`은 값이고 `d7`은 `null` |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm=bracket`, 세그먼트에 `platform` 조건, 코호트 7개, `count` 5와 `outof` 20이면 0.25, `incomplete`인 날은 `null` |
 | 리텐션 기간 | `to`가 오늘<br>32일 | 400<br>400 |
 | 세션 | `days` 7 | 대역에 세션 조회 6회, `averageSessionSeconds`와 `sessionsPerUser`의 `all`, `web`, `android` |
-| 세션 미지원 | 대역이 세션 조회에 404 | 503, `reason` `http_error` |
+| 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
 | 신규 가입자 | 회원 3명(구글 2, 카카오 1), 그중 1명 `migrated_at` 있음, 팀 계정 1명 | `signups.total` 3, `google` 2, `kakao` 1, `migratedFromGuest` 1, 팀 계정 제외 |
 | 가입 경로 | 연동이 없는 회원 | `other` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, 세그먼트에 `platform` `Web` |
