@@ -1289,10 +1289,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 120일 이하 |
 | `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
+- 기간 상한은 한 번의 갱신 비용이 분석 도구 비용 예산 안에 들도록 정했다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 <br>
 
@@ -1300,10 +1301,10 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 서버가 분석 도구에서 이 범위의 값을 받은 시각<br>캐시된 응답은 캐시한 시각이며 갱신 중이나 쿨다운 중에는 10분보다 오래될 수 있음 |
+| `asOf` | `string` | 서버가 분석 도구에서 이 범위의 값을 받은 시각<br>캐시된 응답은 캐시한 시각<br>오늘을 포함한 범위는 10분, 포함하지 않는 범위는 24시간까지 캐시하며 갱신 중이나 쿨다운 중에는 더 오래될 수 있음 |
 | `from` | `string` | 범위 첫날의 KST 날짜 |
 | `to` | `string` | 범위 마지막 날의 KST 날짜 |
-| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>범위와 무관하게 오늘 값 |
+| `todayActiveUsers` | `integer` | 오늘 활성 사용자 수<br>범위와 무관하게 오늘 값이며 범위와 따로 10분 캐시<br>KST 날짜가 바뀐 값은 주지 않음 |
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `integer` | 그날 이벤트가 있는 고유 사용자 수 |
@@ -1317,8 +1318,8 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
-| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 120일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 도구 자격 증명 미설정<br>호출 실패, 호출 한도 초과, 비용 예산 부족, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 쓸 수 있는 캐시도 없음 |
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
@@ -1475,14 +1476,14 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 세그먼트 조건과 이벤트 정의는 제품 제약에 있다. 캐시와 비용 예산 규칙은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 광고 구분 조건과 이벤트 정의는 제품 제약에 있고 캐시와 비용 예산, 기간 상한의 근거는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>캠페인 목록에 없는 값도 허용<br>생략하면 캠페인 목록에서 종료일이 없는 마지막 항목의 값 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 45일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 35일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다. 관리자 페이지는 캠페인 목록의 시작일과 종료일로 범위를 미리 채운다.
@@ -1529,8 +1530,8 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
-| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건<br>5분 비용 예산 초과도 포함 |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 35일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
@@ -1596,8 +1597,8 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
-| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
 
@@ -1620,7 +1621,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과 |
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 20일 초과 |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <details>
@@ -1711,10 +1712,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 45일 이하 |
-| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 10일 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
 
-- 셋 다 없으면 오늘을 포함한 최근 30일이다. 캠페인 값은 받지 않으며 모든 유입을 보여 준다.
+- 셋 다 없으면 오늘을 포함한 최근 7일이다. 캠페인 값은 받지 않으며 모든 유입을 보여 준다.
+- 두 표 모두 값이 열린 묶음 조회라 하루 비용이 커서 기간이 짧다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 <br>
 
@@ -1723,13 +1725,11 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 캠페인 추이와 같음 |
-| `sources` | `object[]` | 첫 유입 소스와 매체별 신규 방문자<br>`newVisitors` 내림차순 |
+| `sources` | `object[]` | 첫 유입 소스별 신규 방문자<br>`newVisitors` 내림차순 |
 | `sources[].source` | `string / null` | 사용자 속성 `gp:initial_utm_source`<br>없으면 `null` |
-| `sources[].medium` | `string / null` | 사용자 속성 `gp:initial_utm_medium`<br>없으면 `null` |
 | `sources[].newVisitors` | `integer` | 범위 안 `_new` 고유 사용자 수 |
 | `posts` | `object[]` | 커뮤니티와 SNS 게시글별 방문자<br>`visitors` 내림차순 |
-| `posts[].source` | `string / null` | 이벤트 속성 `utm_source` |
-| `posts[].content` | `string / null` | 이벤트 속성 `utm_content` |
+| `posts[].content` | `string / null` | 이벤트 속성 `utm_content`<br>없으면 `null` |
 | `posts[].visitors` | `integer` | 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 페이지 조회의 고유 사용자 수 |
 
 <br>
@@ -1738,7 +1738,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 45일 초과, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 10일 초과, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <br>
@@ -1751,13 +1751,13 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수이며 `all`은 나머지 셋의 합이다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수이며 넷을 각각 따로 조회한다. 한 사용자가 같은 날 여러 플랫폼에서 활동하면 플랫폼마다 한 번씩 세고 `all`에는 한 번만 세므로 나머지 셋의 합이 `all`보다 클 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 62일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 42일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
@@ -1783,7 +1783,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 62일 초과, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 42일 초과, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -1800,10 +1800,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하<br>`to`는 어제 이하 |
-| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>어제를 끝으로 하는 최근 N일<br>`from`, `to`와 함께 보내면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하이며 세그먼트 방식이면 7일 이하<br>`to`는 어제 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>어제를 끝으로 하는 최근 7일<br>`from`, `to`와 함께 보내면 400 |
 
-- 셋 다 없으면 어제를 끝으로 하는 최근 30일이다. 범위는 신규 방문일 기준이다.
+- 셋 다 없으면 어제를 끝으로 하는 최근 7일이다. 범위는 신규 방문일 기준이다.
+- 기간 상한은 국가와 플랫폼 조건을 넣는 방식에 따라 다르다. 이벤트 필터 방식은 20일, 세그먼트 방식은 7일이며 구현 때 운영 키로 이벤트 필터 적용 여부를 확인해 하나로 정한다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 <br>
 
@@ -1826,7 +1827,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 31일 초과, `to`가 어제보다 뒤, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 기간 상한 초과, `to`가 어제보다 뒤, 허용하지 않는 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -1841,7 +1842,12 @@ Authorization: Bearer {adminToken}
 
 **1. 쿼리**
 
-사용자 활동과 같다.
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 15일 이하 |
+| `days` | `integer` | 선택 | `7`, `14` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 14일이다.
 
 <br>
 
@@ -1853,15 +1859,17 @@ Authorization: Bearer {adminToken}
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null` |
-| `daily[].sessionsPerUser` | `object` | 사용자당 세션 수<br>같은 구조 |
 
-- 세션 정의는 분석 도구의 기본 세션이다.
+- 세션 정의는 분석 도구의 기본 세션이다. 사용자당 세션 수는 제공하지 않는다.
 
 <br>
 
 **3. 실패 응답**
 
-사용자 활동과 같다.
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 15일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
 
@@ -2011,8 +2019,8 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all` |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 90일 이하 |
-| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 40일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 30일이다.
 
@@ -2026,9 +2034,9 @@ Authorization: Bearer {adminToken}
 | `platform` | `string` | 적용한 플랫폼 |
 | `daily` | `object[]` | 날짜 오름차순 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수 |
+| `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수<br>`unknown`은 전송 합계에서 나머지 셋을 뺀 값 |
 | `daily[].streamErrors` | `integer` | 스트림 오류 표시 횟수 |
-| `daily[].streamErrorRate` | `number / null` | `streamErrors`를 전송 횟수 합으로 나눈 0~1<br>전송이 0이면 `null` |
+| `daily[].streamErrorRate` | `number / null` | `streamErrors`를 전송 합계로 나눈 0~1<br>전송이 0이면 `null` |
 | `daily[].users` | `object` | 그날 이벤트가 있었던 고유 사용자 수 |
 | `daily[].users.chatLoadError` | `integer` | 채팅 불러오기 오류 |
 | `daily[].users.storyListLoadError` | `integer` | 스토리 목록 불러오기 오류 |
@@ -2044,7 +2052,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 90일 초과, 허용하지 않는 `platform`과 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 40일 초과, 허용하지 않는 `platform`과 `days` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
