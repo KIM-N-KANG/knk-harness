@@ -206,7 +206,7 @@ GET /api/v1/credits/policies
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `chatTurn` | `object` | 채팅 턴 |
+| `chatTurn` | `object` | 채팅 턴<br>회원은 라이트(`LITE`) 턴에만 적용 |
 | `chatImage` | `object` | 채팅 이미지 |
 | `storyCreation` | `object` | 간편 제작 |
 | `storylineGeneration` | `object` | 스토리라인 생성 |
