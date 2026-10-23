@@ -1,6 +1,6 @@
 # 3-1 계약
 
-이 문서는 관리자 웹 대시보드 그룹과 이프 내역 화면이 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
+이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 보류 화면이 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
 
 요청과 응답 필드, 실패 응답의 기준은 BACKEND 계약에, BFF의 검증과 전달은 데이터 연동에 있다. ([BACKEND 4-2 계약](../BACKEND/4-2-CONTRACT.md), [3-2 데이터 연동](3-2-DATA-INTEGRATION.md))
 
@@ -33,6 +33,10 @@
 | 인프라 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-33 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-33-인프라-지표) |
 | 인프라 DB 테이블 | `GET /api/infra/db-tables` | [4-2-34 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-34-db-테이블-크기) |
 | 이프 내역 | `GET /api/credits/transactions` | [4-2-13 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-13-이프-내역) |
+| 검수 보류 목록 | `GET /api/moderation/holds` | [MODERATION 4-2-6 보류 목록](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-6-보류-목록) |
+| 검수 보류 해제 | `POST /api/moderation/holds/{submissionId}/release` | [MODERATION 4-2-7 보류 해제](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-7-보류-해제) |
+
+- 검수 보류의 두 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
 
 <br>
 
@@ -52,6 +56,8 @@
 | 인프라 지표 | 기간만 |
 | DB 테이블 크기 | `limit=20` |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
+| 검수 보류 목록 | `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `sort=heldAt`, `order=asc` |
+| 검수 보류 해제 | 본문 `reason`<br>앞뒤 공백을 지운 1~500자 |
 
 - 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
 - 기간 오류가 있거나 필요한 조건이 비어 있으면 요청을 보내지 않는다.
