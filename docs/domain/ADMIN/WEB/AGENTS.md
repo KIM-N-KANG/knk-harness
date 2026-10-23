@@ -54,7 +54,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 사이드바와 메뉴 | `features/navigation/`, `components/admin/` | 2-1-1 |
 | 워드마크 | `components/admin/` | 2-1-1 |
 | 기간 선택기 | `features/dashboard/` | 2-1-2, 2-5 |
-| 개요, 분석, Amplitude 사용자 지표, 설치 지표 | `features/dashboard/` | 2-1-3, 2-1-4 |
+| 개요, 분석 | `features/dashboard/` | 2-1-3, 2-1-4 |
 | 유입, 사용자, 전환, 기능과 품질 화면 | `features/analytics/` | 2-1-5~2-1-8 |
 | 이프 내역 | `features/credits/` | 2-1-9 |
 | 화면 경로 | `app/(admin)/` | 2-1-1 |

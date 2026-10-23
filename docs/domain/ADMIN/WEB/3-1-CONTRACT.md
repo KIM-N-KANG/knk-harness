@@ -14,8 +14,8 @@
 |---|---|---|
 | 개요 요약 카드 | `GET /api/dashboard/summary` | [4-2-3 대시보드 요약](../BACKEND/4-2-CONTRACT.md#4-2-3-대시보드-요약) |
 | 개요 일별 추이, 분석 | `GET /api/dashboard/charts` | [4-2-4 대시보드 차트](../BACKEND/4-2-CONTRACT.md#4-2-4-대시보드-차트) |
-| 개요 Amplitude 사용자 지표 | `GET /api/dashboard/analytics` | [4-2-17 분석 지표](../BACKEND/4-2-CONTRACT.md#4-2-17-분석-지표) |
-| 개요 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-18 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-18-설치-지표) |
+| 개요 오늘 활성 사용자 카드 | `GET /api/dashboard/analytics` | [4-2-17 분석 지표](../BACKEND/4-2-CONTRACT.md#4-2-17-분석-지표) |
+| 개요 앱 설치 카드, 유입 분석 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-18 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-18-설치-지표) |
 | 유입 분석 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-19 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-19-캠페인-목록) |
 | 유입 분석 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-20 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-추이) |
 | 유입 분석 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-21 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-간편-제작-퍼널) |
@@ -39,6 +39,8 @@
 | 화면과 탭 | 쿼리 |
 |---|---|
 | 기간을 받는 모든 요청 | `from`, `to`<br>화면이 정한 범위를 KST 날짜로 보냄<br>`days`는 보내지 않음 |
+| 개요 오늘 활성 사용자 카드 | `from`과 `to` 모두 KST 오늘<br>페이지의 기간을 보내지 않음 |
+| 설치 지표 | 쿼리 없음 |
 | 유입 분석의 캠페인 추이와 두 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 유입 분석 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
 | 유입 분석 유입 소스 | 기간만 |
