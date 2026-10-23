@@ -1545,7 +1545,7 @@ Authorization: Bearer {adminToken}
 | `daily[].signups` | `object` | 신규 가입자<br>세그먼트 묶음 구조 |
 | `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 `signups` 누계<br>세그먼트 묶음 구조 |
 | `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
-| `daily[].completionRequests` | `integer` | 스토리 완성 요청 횟수 |
+| `daily[].completionRequests` | `integer` | 간편 제작 요청 횟수 |
 | `daily[].chatMessages` | `integer` | 채팅 메시지 전송 횟수 |
 | `totals` | `object` | 준비된 날짜의 합계<br>`pendingDates`가 있으면 범위 일부의 값 |
 | `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
@@ -2079,7 +2079,7 @@ Authorization: Bearer {adminToken}
 | `daily[].users` | `object` | 그날 이벤트가 있었던 고유 사용자 수 |
 | `daily[].users.chatLoadError` | `integer` | 채팅 불러오기 오류 |
 | `daily[].users.storyListLoadError` | `integer` | 스토리 목록 불러오기 오류 |
-| `daily[].users.storyCompleteError` | `integer` | 스토리 완성 오류 |
+| `daily[].users.storyCompleteError` | `integer` | 간편 제작 오류 |
 | `daily[].users.creditShortage` | `integer` | 이프 부족 안내 |
 | `daily[].users.creditChargeViewed` | `integer` | 충전 화면 조회 |
 | `daily[].users.attendanceClicked` | `integer` | 충전 화면의 출석 버튼 클릭 |
