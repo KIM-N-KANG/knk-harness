@@ -151,6 +151,7 @@ ACCOUNT, STORY, CHAT, PAYMENT`"]
 - 오늘 범위는 요청 시작 때 한 번 계산해 모든 집계에 같은 값을 쓴다. 자정을 걸치는 요청에서 지표끼리 기준이 어긋나지 않게 한다.
 - 집계는 읽기 전용이며 캐시하지 않는다.
 - 팀 계정 제외 목록은 설정에서 읽어 모든 집계의 소유 회원 조건에 적용한다.
+- 회원 누적은 탈퇴 회원을 포함해 세고 현재 회원과 누적 탈퇴는 `status`로 나눈다.
 
 <br>
 
@@ -505,7 +506,7 @@ flowchart LR
 | 활동 조회 | `_active` 고유 사용자를 전체, Web, Android, 플랫폼 없음의 이벤트 필터로 4회<br>`_new` 고유 사용자를 같은 네 필터로 4회<br>채팅 메시지 전송 이벤트의 사용자당 평균(`m=average`)을 Web과 Android 이벤트 필터로 2회<br>전체는 국가 조건만, 플랫폼별은 국가 조건에 `platform` 조건을 더함<br>MAU는 사용자 수 조회 `m=active`, `i=30`을 `start`가 `to`의 29일 전, `end`가 `to`인 범위로 1회이며 국가 조건은 세그먼트 `s`에 넣음<br>MAU는 범위 지표로 저장하고 나머지는 일별 지표로 저장<br>예산이 모자라면 MAU를 먼저 받고 남은 예산으로 날짜를 받음<br>30일 구간이 `start`에서 시작하므로 `start`를 이렇게 맞춰야 `to`로 끝나는 30일 값이 나옴 |
 | 리텐션 조회 | 리텐션 조회 `GET /api/2/retention`에 시작 이벤트 `_new`, 복귀 이벤트 `_active`로 전체, Web, Android 3회<br>구간 모드 `rm`은 보내지 않아 기본값 `n-day`이며 원본 Amplitude 차트와 같음<br>국가와 플랫폼 조건은 시작과 복귀 이벤트의 이벤트 필터로 넣음<br>응답은 코호트 날짜마다 시작일부터 하루씩의 `count`, `outof`, `incomplete` 배열이며 인덱스 0이 시작일<br>인덱스 1, 7, 30의 `count`를 `outof`로 나눈 값이 D1, D7, D30<br>그 인덱스가 없거나 `incomplete`면 `null`<br>코호트 날짜별로 배열을 저장 |
 | 세션 조회 | 평균 세션 길이 `GET /api/2/sessions/average`를 전체, Web, Android로 3회<br>사용자당 세션 수 `GET /api/2/sessions/peruser`는 조회하지 않음<br>국가와 플랫폼 조건은 세그먼트 `s`에 넣음<br>응답은 `data.series`의 일별 값(평균 길이는 초)이며 `seriesCollapsed`의 기간 평균은 쓰지 않음 |
-| 신규 가입자 | `users`를 `created_at`의 KST 날짜로 묶고 팀 계정 제외 목록을 뺌<br>가입 경로는 그 회원의 `social_accounts` 중 `connected_at`이 가장 이른 행의 `provider`가 `GOOGLE`, `KAKAO`, 그 외<br>게스트 이관은 `migrated_at`이 있는 회원 |
+| 신규 가입자 | `users`를 `created_at`의 KST 날짜로 묶고 팀 계정 제외 목록을 뺌<br>탈퇴 회원도 셈<br>누계는 범위 첫날 KST 자정 전에 생성된 회원 수에 일별 `total`을 차례로 더함<br>가입 경로는 그 회원의 `social_accounts` 중 `connected_at`이 가장 이른 행의 `provider`가 `GOOGLE`, `KAKAO`, 그 외<br>게스트 이관은 `migrated_at`이 있는 회원 |
 
 <br>
 

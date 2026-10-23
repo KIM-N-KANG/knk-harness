@@ -84,7 +84,7 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 회원 수 | 활성 2, 정지 1, 탈퇴 1 | `total` 3 |
+| 누적 가입자 수 | 활성 2, 정지 1, 탈퇴 1, 팀 계정 제외 목록의 회원 1 | `members.total` 4, `active` 3, `withdrawn` 1<br>`total`이 `active`와 `withdrawn`의 합 |
 | 오늘 경계 | KST 23:59에 가입한 회원과 00:01에 가입한 회원<br>00:30 조회 | `joinedToday` 1 |
 | 턴 수 | AI 응답 메시지 3개<br>그중 하나에 판본 2개 | `turnsTotal` 3 |
 | 이프 적립과 소모 | 출석 250, 구매 5000, 관리자 지급 100, 채팅 턴 -20, 만료 -30, 환불 +20 | `grantedTotal` 5350<br>`spentTotal` 20 |
@@ -268,6 +268,7 @@
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |
 | 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
 | 신규 가입자 | 회원 3명(구글 2, 카카오 1), 그중 1명 `migrated_at` 있음, 팀 계정 1명 | `signups.total` 3, `google` 2, `kakao` 1, `migratedFromGuest` 1, 팀 계정 제외 |
+| 누적 가입자 | 범위 첫날 전에 가입한 회원 5명(그중 탈퇴 1), 범위 첫날 2명, 둘째 날 1명(탈퇴), 팀 계정 1명<br>끝 날짜가 오늘 | `cumulativeSignups` 7, 8<br>마지막 값이 같은 데이터의 요약 `members.total` 8과 같음 |
 | 가입 경로 | 연동이 없는 회원 | `other` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `platform` `Android`<br>400 |

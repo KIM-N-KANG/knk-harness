@@ -242,7 +242,9 @@ Content-Type: application/json
 | `asOf` | `string` | 집계 기준 시각 |
 | `todayStartsAt` | `string` | 오늘 범위의 시작인 KST 자정 |
 | `members` | `object` | 회원 |
-| `members.total` | `integer` | 탈퇴하지 않은 회원 수 |
+| `members.total` | `integer` | 누적 가입자 수<br>탈퇴 회원을 포함한 전체 회원 수 |
+| `members.active` | `integer` | 현재 회원 수<br>탈퇴하지 않은 회원 수이며 정지 회원 포함 |
+| `members.withdrawn` | `integer` | 누적 탈퇴 수<br>`status`가 `DELETED`인 회원 수 |
 | `members.joinedToday` | `integer` | 오늘 가입 |
 | `chats` | `object` | 채팅 |
 | `chats.startedTotal` | `integer` | 채팅 시작 누적 |
@@ -265,6 +267,8 @@ Content-Type: application/json
 
 <br>
 
+- `members.total`은 `members.active`와 `members.withdrawn`의 합이다. 세 값 모두 팀 계정 제외 목록을 뺀다.
+- 관리자 페이지는 가입자 카드를 탈퇴 회원을 포함한 회원 목록(`excludeDeleted` 없음)에 잇는다. 회원 목록은 팀 계정을 제외하지 않아 건수가 카드와 다를 수 있다.
 - 관리자 페이지는 이프 적립 카드는 `direction=granted`로, 이프 소모 카드는 `direction=spent`로 이프 내역에 잇는다. ([4-2-13 이프 내역](#4-2-13-이프-내역))
 
 <br>
@@ -291,7 +295,7 @@ Authorization: Bearer {adminToken}
 {
   "asOf": "2026-10-21T05:12:00Z",
   "todayStartsAt": "2026-10-20T15:00:00Z",
-  "members": { "total": 1240, "joinedToday": 12 },
+  "members": { "total": 1300, "active": 1240, "withdrawn": 60, "joinedToday": 12 },
   "chats": { "startedTotal": 8210, "startedToday": 64, "turnsTotal": 96320, "turnsToday": 710 },
   "stories": { "total": 1530, "createdToday": 9 },
   "credits": { "grantedTotal": 2480000, "grantedToday": 6250, "spentTotal": 1902400, "spentToday": 14200 },
@@ -1940,7 +1944,7 @@ Authorization: Bearer {adminToken}
 | `daily[].signups.google` | `integer` | 첫 소셜 연동이 구글 |
 | `daily[].signups.kakao` | `integer` | 첫 소셜 연동이 카카오 |
 | `daily[].signups.other` | `integer` | 그 외 연동 또는 연동 없음 |
-| `daily[].cumulativeSignups` | `integer` | 범위 첫날부터 `total` 누계 |
+| `daily[].cumulativeSignups` | `integer` | 서비스 시작부터 그날까지 생성된 회원 수<br>범위 첫날 전의 가입과 탈퇴 회원을 포함한 전체 누계<br>범위 끝이 오늘이면 마지막 값이 같은 시점 대시보드 요약의 `members.total`과 같음 |
 | `daily[].migratedFromGuest` | `integer` | 그날 생성된 회원 중 게스트 데이터를 이관한 회원 수 |
 
 <br>
