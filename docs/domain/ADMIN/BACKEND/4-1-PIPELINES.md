@@ -490,7 +490,7 @@ flowchart LR
 | 캠페인 목록 | 설정 파일 고정값<br>`campaign` 쿼리가 없으면 종료일이 없는 마지막 항목, 상세 진입 퍼널의 `storyId`가 없으면 적용한 캠페인과 값이 같은 항목의 대상 스토리 |
 | 추이 조회 | 웹 DAU는 `_active` 고유 사용자, 전체 1회<br>신규 방문자는 `_new` 고유 사용자, 전체와 광고 2회<br>소스별은 `_new`에 캠페인이 아니면서 `gp:initial_utm_source`가 `ig`, `th`와 `threads`, `dc`, 그 밖인 이벤트 필터 4회<br>신규 가입자는 구글과 카카오 로그인 성공 이벤트에 이벤트 속성 `is_new_user`가 `true`인 필터로 전체와 광고 각각 2회씩 4회를 받아 두 이벤트를 더함<br>서버 가입 이벤트에는 사용자 속성 `platform`이 대부분 없어 가입자 조회에는 `platform` 조건을 넣지 않고 `country`와 `gp:initial_utm_campaign`만 씀<br>횟수는 스토리라인 생성 요청, 간편 제작 요청, 채팅 메시지 전송 이벤트의 합계(totals) 3회 |
 | 퍼널 조회 | 순서 모드, 전환 창 86,400초, 활성 사용자 기준<br>간편 제작 퍼널과 상세 진입 퍼널은 별도 엔드포인트라 따로 갱신<br>간편 제작 퍼널은 전체와 광고 2회<br>상세 진입 퍼널은 전체 1회이며 1단계는 이벤트 속성 `story_id`가 대상 스토리이고 사용자 속성 `gp:utm_campaign`이 캠페인 값, 2단계는 `story_id`가 대상 스토리, 3~7단계는 채팅 메시지 전송의 이벤트 속성 `turn_number`가 문자열 `1`~`5` |
-| 유입 소스 조회 | `_new` 고유 사용자를 묶음 속성 `g`에 `gp:initial_utm_source` 하나만 넣어 1회<br>페이지 조회 이벤트 `[Amplitude] Page Viewed`에 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 필터를 걸고 이벤트 묶음 `utm_content` 하나로 고유 사용자 1회<br>값이 열린 묶음이라 묶음 속성을 쓰되 조회마다 하나만 써서 비용을 줄임<br>매체(`gp:initial_utm_medium`)와 게시글의 소스(`utm_source`)로는 묶지 않음 |
+| 유입 소스 조회 | `_new` 고유 사용자를 묶음 속성 `g`에 `gp:initial_utm_source` 하나만 넣어 1회<br>페이지 조회 이벤트 `[Amplitude] Page Viewed`에 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 필터(`subprop_op` `is`, 값 `["community","social"]`)를 걸고 이벤트 묶음 `utm_content` 하나로 고유 사용자 1회<br>값이 열린 묶음이라 묶음 속성을 쓰되 조회마다 하나만 써서 비용을 줄임<br>매체(`gp:initial_utm_medium`)와 게시글의 소스(`utm_source`)로는 묶지 않음 |
 | 계산 | 광고 외 유입은 날짜마다 전체에서 광고를 뺌<br>누적 가입자는 범위 첫날부터 누계<br>퍼널의 광고 외는 단계마다 전체에서 광고를 뺌 |
 | 저장 단위 | 추이는 일별 지표라 조회 정의와 날짜로 저장하고 캠페인 값은 조회 정의에 들어감<br>두 퍼널과 유입 소스는 범위 지표라 조회 정의와 `from`, `to`로 저장하고 대상 스토리도 조회 정의에 들어감 |
 | 기본값 | 캠페인 목록과 소스 목록은 설정 파일 고정값 |
@@ -552,9 +552,11 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 |---|---|
 | 호출 대상 | Amplitude Dashboard REST API<br>이벤트 세분화 `GET /api/2/events/segmentation`, 퍼널 `GET /api/2/funnels`, 리텐션 `GET /api/2/retention`, 평균 세션 길이 `GET /api/2/sessions/average`<br>US 데이터 센터 주소<br>API 키와 시크릿 키의 기본 인증 |
 | 사용자 속성 조건 | 국가, 플랫폼, 캠페인, 소스 같은 사용자 속성 조건은 세그먼트 `s`가 아니라 이벤트 필터로 넣음<br>`e`의 `filters`에 `subprop_type`이 `user`인 조건이며 퍼널은 단계마다 같은 조건을 넣음<br>`gp:` 접두 속성 이름은 그대로 씀<br>세그먼트는 기본 하나뿐이라 조건 수가 1 |
+| 여러 값 조건 | 사용자 속성과 이벤트 속성 모두 여러 값 중 하나에 맞는 조건은 `subprop_op` `is`에 값 배열을 넣어 OR로 씀<br>예: `{"subprop_type":"event","subprop_key":"utm_medium","subprop_op":"is","subprop_value":["community","social"]}`<br>`in` 연산자는 운영에서 HTTP 400(code 229)으로 거절되어 쓰지 않음 |
 | 세그먼트 조건 | 이벤트를 받지 않는 세션 조회와 코호트 조건에만 `s`를 씀 |
 | 값이 정해진 묶음 | 플랫폼과 입력 방식처럼 값을 미리 아는 묶음은 묶음 속성을 쓰지 않음<br>값마다 이벤트 필터를 건 같은 이벤트를 따로 조회<br>세분화 요청 하나에는 `e`와 `e2`로 이벤트 둘까지 넣을 수 있음 |
 | 값이 열린 묶음 | 유입 소스와 게시글처럼 값을 미리 알 수 없는 묶음만 묶음 속성을 쓰고 한 조회에 하나만 씀 |
+| 퍼널 응답 | 조건에 맞는 사용자가 없으면 HTTP 200에 `data`가 빈 배열로 오며 단계마다 0으로 처리<br>`data`가 없거나 `null`이거나 항목의 단계 수가 요청한 단계 수와 다르면 형식 오류로 보고 그 조회를 실패(`parse_error`)로 처리 |
 | 날짜 | `i=1`, `start`와 `end`는 범위의 `YYYYMMDD`<br>Amplitude 프로젝트 시간대가 KST라 응답 날짜를 그대로 씀 |
 | 호출 순서 | 한 태스크의 Amplitude 호출은 엔드포인트와 갱신이 달라도 한 번에 하나만 보냄<br>프로젝트 전체의 동시 요청 한도 5를 여러 태스크가 나눠 쓰기 때문 |
 

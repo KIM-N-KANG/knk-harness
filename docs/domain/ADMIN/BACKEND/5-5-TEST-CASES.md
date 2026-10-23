@@ -236,11 +236,13 @@
 | 합계 | 이틀 DAU 100, 200과 신규 방문자 전체 10, 광고 7 | `activeUsersAverage` 150, `adsShare` 0.7 |
 | 추이 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 간편 제작 퍼널 | `days` 7 | 대역에 퍼널 조회 2회, 순서 모드와 `cs` 86400, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` 조건 |
+| 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 모든 단계의 사용자 수 0, 정상 응답과 값 저장 |
+| 퍼널 형식 오류 | `data` 없음, `data` `null`, 6단계 요청에 5단계 항목 | 503, `admin_analytics_fetch_failed`의 `reason` `parse_error`, 값 저장 안 함 |
 | 퍼널 세그먼트 차 | 1단계 전체 100, 광고 80 | `steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
 | 상세 진입 퍼널 | `days` 7, `storyId` 생략, 캠페인은 4차 | 대역에 퍼널 조회 1회, `storyId`는 목록 항목의 값, 1단계 필터에 `story_id`와 `gp:utm_campaign`, 3~7단계 `turn_number` `"1"`~`"5"` |
 | 대상 스토리 없음 | `campaign=TEST_2026`, `storyId` 생략 | 400 |
 | 퍼널 기간 | 간편 제작 20일과 상세 진입 31일<br>간편 제작 21일이나 `days` 30, 상세 진입 32일 | 200<br>400 |
-| 유입 소스 | `days` 7 | 대역에 세분화 조회 2회, 첫 조회는 `g`에 `gp:initial_utm_source`만 두고 `g2` 없음, 둘째 조회는 이벤트 묶음 `utm_content` 하나, 예산 계수기 350 증가, `sources`는 `newVisitors` 내림차순, `posts`는 `utm_medium` 조건 |
+| 유입 소스 | `days` 7 | 대역에 세분화 조회 2회, 첫 조회는 `g`에 `gp:initial_utm_source`만 두고 `g2` 없음, 둘째 조회는 이벤트 묶음 `utm_content` 하나, 예산 계수기 350 증가, `sources`는 `newVisitors` 내림차순<br>둘째 조회의 이벤트 필터가 `utm_medium`, `subprop_op` `is`, 값 `["community","social"]`이고 `in`을 쓰지 않음 |
 | 유입 소스 기간 | 10일<br>11일, `days` 30 | 200<br>400 |
 | 캠페인 없음 | 목록에 종료일 없는 항목이 없고 `campaign` 생략<br>101자 `campaign` | 400 |
 | 저장 키 | 같은 범위에 다른 `campaign` 두 번 | 대역 호출 두 묶음, 캠페인 값이 다른 매개변수 해시 |
@@ -278,6 +280,7 @@
 | 누적 가입자 | 범위 첫날 전에 가입한 회원 5명(그중 탈퇴 1), 범위 첫날 2명, 둘째 날 1명(탈퇴), 팀 계정 1명<br>끝 날짜가 오늘 | `cumulativeSignups` 7, 8<br>마지막 값이 같은 데이터의 요약 `members.total` 8과 같음 |
 | 가입 경로 | 연동이 없는 회원 | `other` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
+| 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `platform` `Android`<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
 | 게스트 한도 퍼널 | 구글 퍼널 2단계 6과 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[1].users` 6, `steps[2].users` 7로 앞 단계보다 커도 그대로, `event` `login_succeeded` |
