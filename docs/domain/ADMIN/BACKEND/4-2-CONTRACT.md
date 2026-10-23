@@ -1811,7 +1811,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 세분화 응답의 `seriesCollapsed` 값이며 일별 값의 합이 아님<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
@@ -2435,7 +2435,7 @@ Authorization: Bearer {adminToken}
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
-| Amplitude | 없음 | Dashboard REST API의 활성 사용자와 신규 사용자 수 조회, 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
+| Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | AWS CloudWatch, ECS | 없음 | CloudWatch `GetMetricData` 지표 조회, ECS `DescribeServices` 태스크 수 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
