@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 관리자 페이지의 사이드바와 워드마크, 대시보드 그룹의 개요와 분석과 캠페인과 사용자와 전환과 기능과 품질 화면, 이프 내역 화면을 다룬다. 회원, 스토리, 오리지널, 채팅, 결제, 공지, 감사 로그, 알림 화면은 이 세트에 아직 없다.
+ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 관리자 페이지의 사이드바와 워드마크, 대시보드 그룹의 개요와 분석과 유입과 사용자와 전환과 기능과 품질 화면, 이프 내역 화면을 다룬다. 회원, 스토리, 오리지널, 채팅, 결제, 공지, 감사 로그, 알림 화면은 이 세트에 아직 없다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -19,7 +19,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | [2-5-STATE-MANAGEMENT.md](2-5-STATE-MANAGEMENT.md) | URL 상태, 서버 상태, 브라우저 저장 |
 | [3-1-CONTRACT.md](3-1-CONTRACT.md) | 화면이 부르는 BFF 경로와 서버 계약의 대응, 보내는 쿼리 |
 | [3-2-DATA-INTEGRATION.md](3-2-DATA-INTEGRATION.md) | 조회, 캐시, 재요청, 데이터 모드 |
-| [3-4-INTERACTION-FLOWS.md](3-4-INTERACTION-FLOWS.md) | 화면 진입, 탭 전환, 기간 변경, 캠페인 선택, 준비 중 재요청의 흐름 |
+| [3-4-INTERACTION-FLOWS.md](3-4-INTERACTION-FLOWS.md) | 화면 진입, 탭 전환, 기간 변경, 광고 캠페인 선택, 준비 중 재요청의 흐름 |
 | [4-1-ERROR-HANDLING.md](4-1-ERROR-HANDLING.md) | 불러오는 중, 실패, 사용 불가, 준비 중, 값 없음, 기간 오류의 표시와 복귀 |
 | [4-2-QUALITY.md](4-2-QUALITY.md) | 접근성, 인증 상태, 분석 이벤트 |
 | [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 화면별 테스트 케이스와 검증 명령 |
@@ -55,7 +55,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 워드마크 | `components/admin/` | 2-1-1 |
 | 기간 선택기 | `features/dashboard/` | 2-1-2, 2-5 |
 | 개요, 분석, Amplitude 사용자 지표, 설치 지표 | `features/dashboard/` | 2-1-3, 2-1-4 |
-| 캠페인, 사용자, 전환, 기능과 품질 화면 | `features/analytics/` | 2-1-5~2-1-8 |
+| 유입, 사용자, 전환, 기능과 품질 화면 | `features/analytics/` | 2-1-5~2-1-8 |
 | 이프 내역 | `features/credits/` | 2-1-9 |
 | 화면 경로 | `app/(admin)/` | 2-1-1 |
 | BFF route handler와 서버 전달 | `app/api/`, `api/` | 3-1, 3-2 |

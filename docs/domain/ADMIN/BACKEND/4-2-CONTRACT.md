@@ -1829,7 +1829,6 @@ Authorization: Bearer {adminToken}
 | `days` | `integer` | 선택 | `7`만 허용<br>어제를 끝으로 하는 최근 7일<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 어제를 끝으로 하는 최근 7일이다. 범위는 신규 방문일 기준이다.
-- 기간 상한은 한 번의 갱신 비용이 분석 도구 비용 예산 안에 들도록 정했다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
 
 <br>
 

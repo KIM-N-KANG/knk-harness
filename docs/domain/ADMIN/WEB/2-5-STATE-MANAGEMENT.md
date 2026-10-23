@@ -18,9 +18,9 @@
 | `days` | 개요, 분석 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
 | `metric` | 개요 | 일별 추이 지표 키 |
 | `tab` | 지표 화면 | 탭 값 |
-| `campaign` | 캠페인 분석 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
-| `segment` | 캠페인 분석 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
-| `storyId` | 캠페인 분석, 전환 | 대상 스토리 공개 식별자 |
+| `campaign` | 유입 분석 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
+| `segment` | 유입 분석 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
+| `storyId` | 유입 분석, 전환 | 대상 스토리 공개 식별자 |
 | `funnel` | 전환 | 퍼널 키 |
 | `platform` | 사용자, 전환, 기능과 품질 | 그 화면에서 플랫폼을 고르는 탭의 값 |
 | `direction` | 이프 내역 | `granted`, `spent` |
@@ -32,7 +32,7 @@
 | 기간 쿼리 우선순위 | 알려진 `range`가 있으면 그 범위<br>없고 `from`과 `to`가 올바르면 그 범위<br>둘 다 없으면 탭의 기본 기간 |
 | 기간 선택 | `range`, `from`, `to`, `days`를 지우고 새 값만 씀 |
 | 탭 전환 | `tab`만 바꾸고 기간과 조건은 유지 |
-| 캠페인 변경 | `campaign`을 바꾸고 `range`, `from`, `to`, `storyId`를 지움 |
+| 광고 캠페인 변경 | `campaign`을 바꾸고 `range`, `from`, `to`, `storyId`를 지움 |
 | 잘못된 값 | 알 수 없는 `tab`, `metric`, `funnel`, `platform`, `segment`는 기본값으로 화면을 그림 |
 | 뒤로 가기 | 쿼리 변경은 기록에 남아 뒤로 가기로 앞의 선택으로 돌아감<br>`days` 교체만 기록에 남기지 않음 |
 
