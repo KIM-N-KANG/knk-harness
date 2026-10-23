@@ -44,7 +44,7 @@
 | 유입 분석의 캠페인 추이와 두 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 유입 분석 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
 | 유입 분석 유입 소스 | 기간만 |
-| 전환 퍼널 | 경로의 `funnel`<br>`platform`은 스토리 제작, 상세 진입 채팅, 게스트 한도 로그인에서만<br>`storyId`는 상세 진입 채팅에서 값이 있을 때만 |
+| 전환 퍼널 | 경로의 `funnel`<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인에서만<br>`storyId`는 상세 진입 채팅에서 값이 있을 때만 |
 | 기능 사용과 안정성 | `platform`의 `all`, `web`, `android` |
 | 리텐션 | 기간만<br>플랫폼은 응답의 세 항목 가운데 화면에서 고름 |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
