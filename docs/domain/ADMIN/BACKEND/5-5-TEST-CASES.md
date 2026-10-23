@@ -294,9 +294,20 @@
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | 모델별 턴 수 | 10-21 AI 응답: 메시지 `model_code` `AURORA` 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 채팅의 `LITE` 3개, 삭제된 채팅의 `LITE` 1개, 채팅 모델이 `AURORA`인 게스트 채팅의 `LITE` 1개, `model_code`가 `NULL`인 1개, 팀 계정 채팅의 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 5, "UNRECORDED": 1}`<br>합 8이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
 | 모델 변경과 재분류 | `LITE`로 턴 3개를 만든 뒤 채팅 모델을 `AURORA`로 바꿈 | `turnsByModel`은 그대로 `LITE` 3, `byModel`은 그 채팅을 `AURORA`로 셈 |
-| AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
-| 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
-| 실시간 이미지 비용 | 장당 원가 48원, 모델 없는 `chat_image` 성공 3회와 실패 1회, 입력 단가 1,000원과 출력 단가 4,000원 모델의 `chat_response` 성공 1회(입력 1,000토큰, 출력 500토큰) | `chat_image` 항목의 `calls` 3, `costKrw` 144, `inputTokens`와 `outputTokens` 0, `callsWithoutTokens` 0<br>`totals.costKrw` 147, `costPerTurnKrw` 3, `chatImageUnitCostKrw` 48<br>`unpricedModels`에 영향 없음 |
+| AI 비용 | 환율 1,400, Langfuse 대역이 10-21 KST의 `채팅 턴` 모델 `gpt-x` 0.004 USD와 `채팅 선택지` 0.001 USD, AI 호출 기록에 같은 날 `chat_response` `gpt-x` 성공 2회와 `choice_generation` 1회 | `chat_response` 항목 `calls` 2, `costKrw` 5.6, `choice_generation` 항목 `costKrw` 1.4, `costPerTurnKrw` 3.5 |
+| KST 날짜 합산 | 대역의 1시간 단위 값이 UTC 10-21 14:00(KST 22-23시)와 UTC 10-21 15:00(KST 10-22 00시) | 앞의 값은 10-21, 뒤의 값은 10-22 항목 |
+| 한쪽에만 있는 조합 | AI 호출 기록에만 있는 모델 `gpt-y`, Langfuse에만 있는 모델 `gpt-z` | `gpt-y` 항목 `costKrw` `null`, `gpt-z` 항목 `calls` 0과 비용 |
+| 매핑 없는 이름 | Langfuse 추적 이름 `새 기능` 0.002 USD | `unmapped`에 `새 기능`과 2.8, `totals.costKrw`에 포함 |
+| 실시간 이미지 | 장당 원가 48, `chat_image` 성공 3회와 실패 1회, Langfuse에 `이미지 생성:자식` 관측 | `chat_image` `costKrw` 144<br>Langfuse 질의에 `이미지 생성:자식` 제외 조건 |
+| 단가 없는 모델 | Langfuse 모델 `gpt-w`의 토큰 1,000과 비용 0 | `unpricedModels`에 `gpt-w` |
+| 저장과 확정 | 고정 시계 10-23, 범위 10-15~10-23 첫 요청 뒤 두 번째 요청 | 첫 요청은 Langfuse 호출 1번, 두 번째는 오늘 값이 10분 안이면 호출 없음<br>10-15~10-21은 `finalized_at` 기록 |
+| 긴 범위 | 비어 있는 90일 | Langfuse 호출 2번(31일 둘)으로 최근 62일을 받고 앞의 28일은 `pendingDates` |
+| 호출 간격 | 한 요청 안의 두 호출 | 두 호출 사이 1초 이상 |
+| 호출 제한 | 대역이 429와 `Retry-After: 30` | 30초 동안 호출 없음, 저장 값만 응답, `reason` `rate_limited` |
+| 실패와 저장 값 | 대역 500, 범위의 일부 날짜만 저장 | 200, 저장된 날짜만 비용, 나머지 `pendingDates`, `reason` `http_error` |
+| 실패와 저장 없음 | 대역 500, 저장 값 없음 | 503 |
+| 설정 없음 | Langfuse 비밀 키 빈 값 | 호출 없이 503, `reason` `not_configured` |
+| 형식 오류 | 대역이 숫자가 아닌 비용 | 503 또는 저장 값 응답, `reason` `parse_error` |
 | AI 비용 범위 | 실패 호출과 팀 계정 회원의 호출 | 실패는 제외, 팀 계정은 포함 |
 | DB 지표 기간 | 366일<br>367일 | 200<br>400 |
 | 격리 | 대역 500 상태에서 DB 지표 호출 | 모두 200 |

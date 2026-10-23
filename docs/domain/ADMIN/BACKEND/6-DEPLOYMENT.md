@@ -18,6 +18,7 @@
 | Google | 공개 키 집합 | 계정 도메인의 검증기 경유 |
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 대칭키, Google client ID, Amplitude API 키와 시크릿 키 |
 | Amplitude | Dashboard REST API | 분석 지표 |
+| Langfuse | Metrics API | AI 비용의 금액 |
 | Google Cloud Storage | Play Console 일괄 보고서 버킷 | 설치 지표 |
 | AWS CloudWatch, ECS | 서버 태스크 역할의 읽기 권한 | 인프라 지표 |
 | Redis | 다른 도메인과 같은 인스턴스 | Amplitude 배치의 5분 슬롯 선점 |
@@ -34,6 +35,8 @@
 | 팀 계정 제외 목록 | 정수가 아닌 값이 있으면 기동 실패<br>빈 값이면 제외 없이 집계 |
 | Amplitude 키 | 둘 중 하나라도 비면 분석 도구 지표는 저장 값만 응답하고 저장 값도 없으면 사용 불가<br>기동은 정상 |
 | Amplitude | 연결할 수 없으면 분석 도구 지표의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답 |
+| Langfuse 키와 환경 이름 | 하나라도 비면 AI 비용만 사용 불가<br>기동은 정상 |
+| Langfuse | 연결할 수 없으면 AI 비용의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답 |
 | Play 서비스 계정 키 | 비면 설치 지표만 사용 불가<br>기동은 정상<br>키는 첫 보고서 조회 때 해석하므로 base64나 서비스 계정 JSON이 아니어도 기동은 정상이고 설치 지표만 사용 불가<br>그때 로그 `reason`은 HTTP 상태 없는 `http_error` |
 | Google Cloud Storage | 연결할 수 없으면 설치 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
 | CloudWatch, ECS | 권한이 없거나 연결할 수 없으면 인프라 지표만 사용 불가<br>기동은 정상<br>그 범위의 캐시가 있으면 캐시로 응답 |
@@ -68,7 +71,7 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트, DB 분석 지표 중 신규 가입자, 턴 도달률, 채팅 옵션 비중에서 제외하고 AI 비용에는 적용하지 않으며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표 호출 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 태스크당 비용 예산(최근 5분 500)과 그 가운데 배치와 백필 몫(300), 분석 값 배치의 실행 간격 5분과 새벽 배치 시작 시각 KST 03:00, 초기 백필 시작일 2026-07-01, 배치 켜기 여부(기본 켬, 테스트 프로파일은 끔), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), AI 모델별 입력과 출력 백만 토큰당 원화 단가 표, 실시간 이미지 장당 원가(초기 48원), 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`, 인프라 지표의 기간 상한 31일과 집계 간격 경계(2일, 7일, 63일), 캐시 60초, 호출 시간 한도 5초, 실패 쿨다운 60초, DB 테이블 크기의 캐시 5분과 개수 상한 100은 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표 호출 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 태스크당 비용 예산(최근 5분 500)과 그 가운데 배치와 백필 몫(300), 분석 값 배치의 실행 간격 5분과 새벽 배치 시작 시각 KST 03:00, 초기 백필 시작일 2026-07-01, 배치 켜기 여부(기본 켬, 테스트 프로파일은 끔), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), 실시간 이미지 장당 원가(초기 48원), Langfuse 비용의 원화 환율(초기 1,400원), Langfuse 추적 이름과 기능의 매핑 표, Langfuse 값의 오늘 유효 시간 10분과 어제 1시간, Langfuse 호출 시간 한도 10초, 호출 간격 1초, 한 응답의 최대 호출 2번과 호출당 최대 31일, 실패 쿨다운 60초, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`, 인프라 지표의 기간 상한 31일과 집계 간격 경계(2일, 7일, 63일), 캐시 60초, 호출 시간 한도 5초, 실패 쿨다운 60초, DB 테이블 크기의 캐시 5분과 개수 상한 100은 설정 파일의 고정값이다.
 
 <br>
 
@@ -84,7 +87,19 @@
 
 <br>
 
-**3. 인프라 지표**
+**3. AI 비용**
+
+| 이름 | 기본값 | 주입 출처 | 비고 |
+|---|---|---|---|
+| `MANYAK_ADMIN_LANGFUSE_HOST` | 빈 값 | 운영 Secrets Manager `manyak/prod/app`의 `AI_LANGFUSE_HOST`<br>개발은 주입 없음 | AI 서버와 같은 Langfuse 주소 |
+| `MANYAK_ADMIN_LANGFUSE_PUBLIC_KEY` | 빈 값 | 같은 시크릿의 `AI_LANGFUSE_PUBLIC_KEY` | 공개 API 키 |
+| `MANYAK_ADMIN_LANGFUSE_SECRET_KEY` | 빈 값 | 같은 시크릿의 `AI_LANGFUSE_SECRET_KEY` | 비밀 키<br>로그와 응답에 넣지 않음 |
+| `MANYAK_ADMIN_LANGFUSE_ENVIRONMENT` | 빈 값 | 운영 태스크 정의에 직접 기록 | Langfuse 관측의 환경 이름<br>운영 AI가 Langfuse에 남기는 환경 이름과 같아야 함 |
+
+- 개발 서버는 주입하지 않아 AI 비용이 사용 불가다.
+- 태스크 정의에 세 시크릿 참조와 환경 이름을 추가해야 주입된다.
+
+**4. 인프라 지표**
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
@@ -99,7 +114,7 @@
 - 개발 태스크 정의에는 주입하지 않는다. 개발 서버의 인프라 지표는 사용 불가다.
 - 리전은 태스크의 AWS SDK 기본 리전(`ap-northeast-2`)을 쓴다.
 
-**4. 다른 도메인이 관리하는 값**
+**5. 다른 도메인이 관리하는 값**
 
 | 이름 | ADMIN이 쓰는 곳 |
 |---|---|
@@ -109,7 +124,7 @@
 
 <br>
 
-**5. 관측**
+**6. 관측**
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
@@ -129,6 +144,7 @@
 | Amplitude 시크릿 | 두 시크릿 JSON에 키 두 개가 있고 태스크 정의가 참조 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
 | Play 서비스 계정 키 | 운영 시크릿 JSON에 키가 있고 태스크 정의가 참조<br>서비스 계정에 보고서 버킷 읽기 권한 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
 | 인프라 지표 권한과 설정 | 운영 서버 태스크 역할에 `cloudwatch:GetMetricData`와 세 서비스에 한정한 `ecs:DescribeServices`<br>운영 태스크 정의에 인프라 지표 환경 변수 | 수동 검토<br>`manyak-terraform`의 운영 apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 인프라 지표만 사용 불가 |
+| Langfuse 시크릿 | 운영 태스크 정의에 `manyak/prod/app`의 Langfuse 세 키 참조와 환경 이름 | 수동 검토<br>운영 Terraform apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 AI 비용만 사용 불가 |
 | 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
 | 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포 | 수동 검토 |
 | 분석 지표 정의 변경 | 조회 조건을 바꾸면 매개변수 해시가 바뀌어 지난 날짜를 처음부터 다시 받음<br>긴 범위는 여러 5분에 걸쳐 채워짐 | 수동 검토 |
@@ -148,7 +164,8 @@
 | 팀 계정 제외 목록 | 환경 변수 변경 후 새 태스크 시작 | 대시보드 요약의 회원 수 변화 |
 | 팀 계정 코호트 구성원 | 분석 도구에서 코호트 편집<br>오늘과 어제 값은 다음 갱신부터 반영<br>확정한 지난 날짜는 반영되지 않아 필요하면 분석 지표 행을 지움 | 분석 지표의 활성 사용자 수 변화 |
 | 캠페인 목록 | 설정 파일 변경 후 재빌드와 배포 | 캠페인 목록 응답 |
-| AI 모델 단가와 실시간 이미지 장당 원가 | 설정 파일 변경 후 재빌드와 배포 | AI 비용 응답의 `unpricedModels`가 비어 있고 `chatImageUnitCostKrw`가 바꾼 값 |
+| AI 모델 단가 | Langfuse 모델 설정에서 바꿈<br>배포 없음 | AI 비용 응답의 `unpricedModels`가 비어 있음<br>이미 확정한 날짜의 값은 바뀌지 않음 |
+| 실시간 이미지 장당 원가, 환율, 추적 이름 매핑 | 설정 파일 변경 후 재빌드와 배포 | AI 비용 응답의 `chatImageUnitCostKrw`, `usdKrwRate`, `unmapped` |
 | 초기 백필 시작일, 배치 몫 | 설정 파일 변경 후 재빌드와 배포 | `admin_analytics_backfill`의 `remaining_days`와 `cost` |
 | 저장된 분석 값 다시 받기 | 운영 DB의 `admin_analytics_daily_values` 또는 `admin_analytics_range_values`에서 해당 `metric`과 날짜의 행 삭제<br>재배포 없음 | 다음 요청의 `admin_analytics_refreshed`에서 그 날짜를 받음 |
 | Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
@@ -211,6 +228,7 @@
 | 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 `ecs.services` 3개의 `runningTasks` 1 이상, 모든 묶음이 `null` 아님<br>사용 불가면 `admin_infra_metrics_fetch_failed`의 `reason` |
+| AI 비용 | 기본 범위의 AI 비용 응답 | 성공 응답, `unmapped` 빈 배열, 비용이 있는 날짜의 `costKrw`가 `null`이 아님<br>사용 불가면 `admin_ai_cost_fetch_failed`의 `reason` |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>
@@ -228,4 +246,6 @@
 | 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason`과 `endpoint` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 쿨다운 뒤 자동 재호출이므로 대기<br>`budget_exceeded`면 같은 5분에 갱신한 엔드포인트가 많은 것이므로 대기하고, 한 엔드포인트만 반복되면 그 엔드포인트의 조회 구성과 기간 상한 재검토 |
 | 설치 지표가 계속 사용 불가 | `admin_play_stats_fetch_failed`의 `reason`과 `status` | `no_credentials`면 운영 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 권한 거부 상태면 서비스 계정의 버킷 읽기 권한<br>`http_error`에 상태가 없으면 키의 base64와 JSON 형식, 그다음 저장소 연결<br>`no_reports`면 Play Console의 보고서 생성 여부와 패키지 이름<br>`parse_error`면 보고서 형식 변경 |
 | 인프라 지표가 계속 사용 불가 | `admin_infra_metrics_fetch_failed`의 `reason`, `service`, `error_code` | `not_configured`면 운영 태스크 정의의 인프라 지표 환경 변수<br>`access_denied`면 서버 태스크 역할의 정책과 `service`의 권한<br>`throttled`면 60초 뒤 다시 시도<br>`incomplete`면 `error_code`를 보고 60초 뒤 다시 시도하며 `Forbidden`이면 태스크 역할 정책<br>`timeout`이나 `aws_error`면 NAT 경로와 AWS 상태 |
+| AI 비용이 계속 사용 불가 | `admin_ai_cost_fetch_failed`의 `reason`과 `status` | `not_configured`면 운영 태스크 정의의 Langfuse 시크릿 참조와 환경 이름<br>`http_error`에 401이면 키 값<br>`rate_limited`면 호출 제한이 풀린 뒤 다시 시도<br>`parse_error`면 Metrics API 응답 형식과 서버 구현 |
+| AI 비용이 0이거나 `unmapped`만 있음 | 응답의 `unmapped`와 Langfuse 추적 이름 | 환경 이름 설정과 추적 이름 매핑 표 |
 | 인프라 지표의 한 묶음만 비어 있음 | 응답에서 `null`인 묶음 | 그 묶음의 환경 변수, OpenSearch는 계정 ID까지 |

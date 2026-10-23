@@ -160,12 +160,14 @@
 | 모델 합집합과 기록 전 | `byModel`에 `AURORA`만, `turnsByModel`에 `LITE`와 `UNRECORDED` | 비중 표 행이 오로라, 라이트, 기록 전 셋<br>없는 쪽 값은 0 |
 | 모르는 모델 | 모델 코드 `NOVA` | `NOVA` 그대로 |
 | 채팅 없음 | 채팅 수 합 0 | 비중 자리 "채팅 없음" |
-| AI 비용 | `totals.costKrw` 6, `costPerTurnKrw` 3 | 총 AI 비용 6원, 턴당 원가 3원 |
-| 실시간 이미지 비용 | `chatImageUnitCostKrw` 48, `chat_image` 항목 `calls` 3과 `costKrw` 144, `totals.costKrw` 147, `costPerTurnKrw` 3 | 총 AI 비용 147원, 턴당 원가 3원<br>비용 차트에 실시간 이미지 생성 계열 144원<br>비용 표의 실시간 이미지 생성 행 토큰 칸 "해당 없음"<br>출처 툴팁 "실시간 이미지는 장당 48원으로 계산하며…" |
-| 단가 없음 | `costKrw`가 `null`이고 모델 있음 | "단가 없음", 0원으로 표시하지 않음 |
-| 모델 정보 없음 | `model`이 `null` | "모델 정보 없음"과 누락 안내 |
-| 토큰 없음 | `callsWithoutTokens` 1 | 토큰 없음 안내 |
+| AI 비용 | `totals.costKrw` 7, `costPerTurnKrw` 3.5, `usdKrwRate` 1400 | 총 AI 비용 7원, 턴당 원가 3.5원, 출처 표시 "Langfuse" |
+| 실시간 이미지 비용 | `chatImageUnitCostKrw` 48, `chat_image` 항목 `calls` 3과 `costKrw` 144, `totals.costKrw` 151, `costPerTurnKrw` 3.5 | 총 AI 비용 151원, 턴당 원가 3.5원<br>비용 차트에 실시간 이미지 생성 계열 144원<br>비용 표의 실시간 이미지 생성 행 토큰 칸 "해당 없음"<br>출처 툴팁에 "1달러 1400원", "장당 48원" |
+| 비용 기록 없음 | `costKrw`가 `null`이고 그 날짜가 `pendingDates`에 없음 | "비용 기록 없음", 0원으로 표시하지 않음 |
+| 비용 준비 중 | `pendingDates`에 10-01, 그날 `costKrw` `null` | 그 칸 "준비 중", 준비 중 알림, 60초 뒤 다시 요청 |
+| 토큰 없음 | `callsWithoutTokens` 1 | "토큰 수가 기록되지 않은 호출 1회가 있어 토큰 합이 실제보다 작을 수 있습니다." |
 | 단가 없는 모델 목록 | `unpricedModels`에 모델 하나 | 단가 없는 모델 안내 |
+| 연결되지 않은 추적 | `unmapped`에 `새 기능` 2.8 | 연결되지 않은 추적 안내에 `새 기능`과 2.8원, 기능별 차트에는 없음 |
+| AI 비용 사용 불가 | AI 비용 요청이 503 | AI 비용 탭에 "AI 비용을 불러올 수 없음", 다른 탭은 정상 |
 | 기능 이름 | `story_completion`<br>`chat_image` | "간편 제작"<br>"실시간 이미지 생성" |
 
 <br>

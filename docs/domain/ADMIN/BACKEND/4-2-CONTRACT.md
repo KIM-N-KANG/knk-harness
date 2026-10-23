@@ -2146,7 +2146,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버 DB의 AI 호출 기록으로 계산한다. 팀 계정 제외 목록은 적용하지 않는다. 토큰 단가와 실시간 이미지 장당 원가는 설정 파일 고정값이다.
+금액은 Langfuse가 모델 설정의 단가로 계산한 비용을 Metrics API로 받아 원화로 바꾼다. 호출 수와 토큰 수는 서버 DB의 AI 호출 기록으로 센다. 실시간 이미지는 설정 파일의 장당 원가로 계산한다. 팀 계정 제외 목록은 적용하지 않는다. ([4-1-23 AI 비용의 Langfuse 조회](4-1-PIPELINES.md#4-1-23-ai-비용의-langfuse-조회))
 
 **1. 쿼리**
 
@@ -2158,34 +2158,42 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음<br>`asOf`는 Langfuse 값을 받은 시각 가운데 가장 이른 시각 |
+| `pendingDates` | `string[]` | Langfuse 값을 아직 받지 못해 `daily`의 비용을 비운 KST 날짜<br>오름차순, 비어 있으면 범위 전체가 준비됨 |
 | `currency` | `string` | 항상 `KRW` |
+| `usdKrwRate` | `number` | Langfuse 비용(USD)을 원화로 바꾼 환율<br>설정값 |
 | `chatImageUnitCostKrw` | `number` | 실시간 이미지 장당 원가<br>설정값이며 초기값 48 |
-| `daily` | `object[]` | 날짜 오름차순<br>AI 호출 기록 생성일 기준 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목 |
+| `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목<br>AI 호출 기록과 Langfuse 가운데 한쪽에만 있는 조합도 항목 |
 | `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
-| `daily[].byFeature[].model` | `string / null` | 기록의 모델 이름<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
-| `daily[].byFeature[].calls` | `integer` | 성공 호출 수 |
+| `daily[].byFeature[].model` | `string / null` | 모델 이름<br>AI 호출 기록의 `model`과 Langfuse의 모델 이름이 같으면 한 항목<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
+| `daily[].byFeature[].calls` | `integer` | AI 호출 기록의 성공 호출 수<br>Langfuse에만 있는 조합은 0 |
 | `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수<br>`chat_image`는 항상 0 |
-| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | 토큰 합<br>토큰 수가 없는 호출은 0으로 더함<br>`chat_image`는 항상 0 |
-| `daily[].byFeature[].costKrw` | `number / null` | `(inputTokens × 입력 단가 + outputTokens × 출력 단가) / 1,000,000`<br>단가는 백만 토큰당 원<br>`model`이 `null`이거나 단가가 없는 모델은 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 `model`과 무관하게 `null`이 아님 |
+| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | AI 호출 기록의 토큰 합<br>토큰 수가 없는 호출은 0으로 더함<br>`chat_image`는 항상 0 |
+| `daily[].byFeature[].costKrw` | `number / null` | Langfuse 비용 합 × `usdKrwRate`<br>Langfuse에 그 조합의 비용이 없으면 `null`<br>그 날짜가 `pendingDates`에 있으면 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 Langfuse를 쓰지 않음 |
+| `unmapped` | `object[]` | 기능 매핑 표에 없는 Langfuse 추적 이름의 범위 비용 |
+| `unmapped[].traceName` | `string` | Langfuse 추적 이름 |
+| `unmapped[].costKrw` | `number` | 범위 비용 합 × `usdKrwRate` |
 | `totals` | `object` | 범위 합계 |
-| `totals.costKrw` | `number` | `costKrw`가 `null`이 아닌 항목의 합<br>`chat_image` 항목 포함 |
-| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 단가 유무와 무관한 전체 호출 수<br>호출이 0이면 `null` |
+| `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합 |
+| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 전체 호출 수<br>호출이 0이면 `null` |
 | `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
-| `unpricedModels` | `string[]` | 범위 안에 호출이 있는데 단가가 없는 모델 이름<br>`model`이 `null`인 기록과 `chat_image` 기록은 넣지 않음 |
+| `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량은 있는데 비용이 0인 모델 이름<br>Langfuse 모델 설정에 단가가 없는 모델 |
 
-- 비용은 백만 토큰당 단가로 계산한다. 입력 단가 1,000원, 출력 단가 4,000원인 모델의 입력 2,000토큰과 출력 1,000토큰은 (2,000 × 1,000 + 1,000 × 4,000) / 1,000,000 = 6원이다.
-- 모델 미상, 단가 없음, 토큰 미수집인 호출은 비용 합에서 빠지거나 0으로 더해지므로 `totals`와 원가는 그만큼 작다. 빠진 정도는 `unpricedModels`, `model`이 `null`인 항목, `callsWithoutTokens`로 알 수 있다.
-- 실시간 이미지(`chat_image`)는 토큰이 없어 성공 호출 수에 장당 원가를 곱한다. 장당 원가 48원인 날 성공 3장은 144원이다. 턴당 원가와 스토리당 원가에는 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다.
-- 표지와 인물 이미지 같은 스토리 제작의 이미지 생성 비용은 AI 호출 기록에 없어 포함하지 않는다.
+- 비용은 Langfuse가 입력, 출력, 캐시 입력 토큰을 모델 설정의 단가로 계산한 값이다. 서버는 단가를 갖지 않는다.
+- 간편 제작의 표지와 인물 이미지 생성 비용은 `스토리 컴파일` 추적에 들어 있어 `story_completion`에 포함된다. 채팅의 실시간 이미지 생성 관측은 Langfuse 합에서 빼고 장당 원가로 더한다.
+- 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
+- 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.
 
 <br>
 
 **3. 실패 응답**
 
-신규 가입자와 같다.
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
+| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 범위의 저장 값도 없음 |
 
 <br>
 
@@ -2436,6 +2444,7 @@ Authorization: Bearer {adminToken}
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
+| Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | AWS CloudWatch, ECS | 없음 | CloudWatch `GetMetricData` 지표 조회, ECS `DescribeServices` 태스크 수 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |

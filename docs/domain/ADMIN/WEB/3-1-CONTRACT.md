@@ -73,6 +73,7 @@
 | `todayActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
 | `monthlyActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
 | Amplitude 지표와 서버 DB 지표의 `asOf` | 탭 제목 아래에 KST 시각으로 "{시각} KST 집계 기준" |
+| AI 비용의 `asOf` | Langfuse 출처 툴팁의 "{받은 시각} KST" |
 | 인프라 지표와 DB 테이블 크기의 `asOf` | 출처 툴팁의 "{받은 시각} KST"<br>캐시로 응답한 값이면 그 캐시를 만든 시각 |
 | 설치 지표의 `asOf` | Play 기준 날짜를 바꾸지 않고 "집계 기준 날짜 {날짜} (Play 기준 태평양 시간)" |
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |

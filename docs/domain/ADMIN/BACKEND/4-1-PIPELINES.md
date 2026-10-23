@@ -538,7 +538,7 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 입력 방식 | `choice`, `plain`, `block`은 각 필터 조회의 합계<br>`unknown`은 전송 합계에서 세 값을 뺀 값 |
 | 오류율 | 날짜마다 스트림 오류 합계를 전송 합계로 나눔 |
 | 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>모델별 턴 수는 범위 안에 생성된 AI 응답 메시지를 메시지 `created_at`의 KST 날짜와 메시지의 `model_code`(그 턴의 청구 모델)로 묶어 셈<br>메시지 `model_code`가 `NULL`이면 `UNRECORDED`로 묶음<br>채팅의 `model_code`는 쓰지 않음<br>재생성 판본은 세지 않고 채팅의 삭제 여부와 생성일은 보지 않음<br>팀 계정 제외 목록 적용 |
-| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>`model`이 `NULL`인 기록은 한 묶음으로 두고 토큰 수가 `NULL`이면 0으로 더하며 그런 호출 수를 따로 셈<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 토큰 합에 곱한 뒤 1,000,000으로 나눔<br>단가가 없는 모델과 `model`이 `NULL`인 묶음은 비용 `null`이고 단가가 없는 모델 이름만 응답의 `unpricedModels`에 적음<br>`chat_image`는 토큰과 모델 단가를 쓰지 않고 날짜와 모델로 묶은 성공 호출 수에 실시간 이미지 장당 원가를 곱함<br>그 항목의 토큰 합은 0이고 토큰 수가 없는 호출 수와 단가 없는 모델에 세지 않음<br>턴당 원가와 스토리당 원가의 분자와 분모에 넣지 않음 |
+| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 호출 수, `input_token_count`와 `output_token_count`의 합, 토큰 수가 없는 호출 수를 셈<br>`model`이 `NULL`인 기록은 한 묶음<br>금액은 Langfuse에서 받은 날짜별 비용을 같은 기능과 모델 조합에 붙임 ([4-1-23 AI 비용의 Langfuse 조회](#4-1-23-ai-비용의-langfuse-조회))<br>`chat_image`는 성공 호출 수에 실시간 이미지 장당 원가를 곱함<br>턴당 원가와 스토리당 원가의 분모는 AI 호출 기록의 성공 수<br>팀 계정 제외 목록은 적용하지 않음 |
 
 <br>
 
@@ -768,3 +768,33 @@ ECS DescribeServices**
 | 연결 | 서버의 기본 데이터 소스와 읽기 전용 트랜잭션 |
 | 캐시 | `limit`를 키로 5분 프로세스 메모리, 태스크마다 따로 |
 | 실패 | DB 오류는 공통 처리이고 캐시로 대신 응답하지 않음 |
+
+<br>
+
+### 4-1-23 AI 비용의 Langfuse 조회
+
+| 항목 | 규칙 |
+|---|---|
+| 호출 대상 | Langfuse Metrics API `GET /api/public/metrics`<br>설정한 Langfuse 주소, 공개 키와 비밀 키의 기본 인증 |
+| 질의 | 관측(observations) 보기에서 비용 합(`totalCost`)과 토큰 합(`totalTokens`)을 추적 이름과 모델 이름으로 묶고 시간 단위는 1시간<br>환경 조건은 설정한 Langfuse 환경 이름<br>관측 이름이 `이미지 생성:자식`(채팅 실시간 이미지)인 관측은 뺌<br>필드 이름은 구현 때 Langfuse Metrics API 문서로 확인 |
+| 날짜 | 1시간 단위 값을 KST 날짜로 더함<br>한 요청은 최대 31일 |
+| 기능 매핑 | 추적 이름을 아래 표로 기능에 대응<br>표에 없는 이름은 기능 없이 `unmapped`로 응답하고 합계에 넣음 |
+| 원화 변환 | USD 비용 × 설정한 환율 |
+| 저장 | KST 날짜마다 추적 이름, 모델, 비용, 토큰을 `admin_analytics_daily_values`에 지표 이름 `langfuse_ai_cost`로 한 행 저장<br>저장과 유효 판정은 Amplitude 값 저장과 같은 테이블과 upsert 규칙 |
+| 유효 판정 | 확정일(KST 오늘 − 2일 이하)은 그 날짜가 끝난 뒤 한 번 받으면 고정<br>어제는 1시간, 오늘은 10분 |
+| 받을 날짜 | 범위 가운데 유효한 값이 없는 날짜만 최근 날짜부터 연속 구간으로 묶어 받음<br>한 응답에서 Langfuse 호출은 최대 2번(62일)이고 남은 날짜는 `pendingDates` |
+| 호출 간격 | 태스크 안에서 한 번에 하나만 보내고 호출 사이 1초 이상 |
+| 호출 제한 | 429면 `Retry-After`가 있으면 그 시간, 없으면 60초 동안 호출하지 않음<br>그동안 저장 값으로 응답하고 받지 못한 날짜는 `pendingDates` |
+| 실패 | 연결 실패, 5xx, 시간 초과 10초, 응답 형식 오류는 60초 쿨다운<br>범위에 저장 값이 하나도 없으면 503, 일부라도 있으면 받은 날짜만 채우고 나머지는 `pendingDates` |
+| 설정 없음 | 주소, 공개 키, 비밀 키, 환경 이름 가운데 하나라도 비면 호출 없이 503 |
+| 실시간 이미지 | AI 호출 기록의 `chat_image` 성공 수 × 장당 원가<br>Langfuse 값을 쓰지 않음 |
+
+| Langfuse 추적 이름 | 기능 |
+|---|---|
+| `채팅 턴` | `chat_response` |
+| `채팅 선택지` | `choice_generation` |
+| `스토리라인 생성` | `storyline_generation` |
+| `스토리 컴파일` | `story_completion` |
+
+- 추적 이름은 AI 명세의 기록 이름이다. 서버 구현 때 운영 Langfuse에서 실제 이름을 확인하고 다르면 이 표와 설정을 함께 고친다. ([CHAT AI 7-3 관측](../../CHAT/AI/7-3-OBSERVABILITY.md), [STORY AI 7-3 관측](../../STORY/AI/7-3-OBSERVABILITY.md))
+- 매핑 표는 설정 파일 값이다. 추적 이름을 바꾸면 그 이름의 비용은 매핑을 고칠 때까지 `unmapped`로 보인다.
