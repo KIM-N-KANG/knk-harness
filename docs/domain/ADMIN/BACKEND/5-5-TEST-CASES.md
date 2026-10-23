@@ -289,7 +289,8 @@
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 기능 사용 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
-| 모델별 턴 수 | 10-21에 `AURORA` 채팅의 AI 응답 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 `LITE` 채팅의 10-21 AI 응답 3개, 삭제된 `LITE` 채팅의 10-21 AI 응답 1개, 팀 계정 채팅의 AI 응답 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 4}`<br>합 6이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
+| 모델별 턴 수 | 10-21 AI 응답: 메시지 `model_code` `AURORA` 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 채팅의 `LITE` 3개, 삭제된 채팅의 `LITE` 1개, 채팅 모델이 `AURORA`인 게스트 채팅의 `LITE` 1개, `model_code`가 `NULL`인 1개, 팀 계정 채팅의 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 5, "UNRECORDED": 1}`<br>합 8이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
+| 모델 변경과 재분류 | `LITE`로 턴 3개를 만든 뒤 채팅 모델을 `AURORA`로 바꿈 | `turnsByModel`은 그대로 `LITE` 3, `byModel`은 그 채팅을 `AURORA`로 셈 |
 | AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
 | 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
 | 실시간 이미지 비용 | 장당 원가 48원, 모델 없는 `chat_image` 성공 3회와 실패 1회, 입력 단가 1,000원과 출력 단가 4,000원 모델의 `chat_response` 성공 1회(입력 1,000토큰, 출력 500토큰) | `chat_image` 항목의 `calls` 3, `costKrw` 144, `inputTokens`와 `outputTokens` 0, `callsWithoutTokens` 0<br>`totals.costKrw` 147, `costPerTurnKrw` 3, `chatImageUnitCostKrw` 48<br>`unpricedModels`에 영향 없음 |

@@ -151,6 +151,7 @@ erDiagram
 | `message_order` | integer | NOT NULL, CHECK `> 0`, UNIQUE `(chat_id, message_order)` | |
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
+| `model_code` | varchar(20) | FK `chat_models.code` | AI 응답 행에 그 활성본을 만든 턴의 청구 모델 코드<br>게스트 턴은 채팅에 보관한 모델과 무관하게 `LITE`<br>재생성으로 활성본이 바뀌면 그 재생성의 청구 모델로 바뀜<br>사용자 입력 행과 컬럼 추가 전의 행은 `NULL` |
 
 <br>
 

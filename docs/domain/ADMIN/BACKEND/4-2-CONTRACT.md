@@ -2127,8 +2127,8 @@ Authorization: Bearer {adminToken}
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].chats` | `integer` | 채팅 수 |
 | `daily[].withPersona` | `integer` | 페르소나 이름 스냅샷이 있는 채팅 수 |
-| `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 `chat_models.code`의 값 |
-| `daily[].turnsByModel` | `object` | 채팅 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 그 채팅의 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 모델의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 모델은 키 없음 |
+| `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 채팅의 현재 선택 모델 `chat_models.code`<br>모델을 바꾼 채팅은 바꾼 모델로 셈 |
+| `daily[].turnsByModel` | `object` | 청구 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 메시지에 기록한 청구 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>게스트 턴은 채팅 모델과 무관하게 `LITE`<br>모델 기록 전의 메시지는 키 `UNRECORDED`<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 키의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 키는 없음 |
 
 <br>
 
