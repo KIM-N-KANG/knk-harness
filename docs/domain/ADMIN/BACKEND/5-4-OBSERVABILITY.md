@@ -74,6 +74,7 @@ Fluent Bit`"]
 | 분석 값 저장 실패 | 저장 트랜잭션 예외<br>평문 WARN `admin_analytics_store_failed` | `endpoint`, `metric`, 예외 클래스 |
 | 분석 값 배치 | 슬롯을 잡은 배치 실행이 끝날 때<br>`admin_analytics_backfill`<br>슬롯을 잡지 못했거나 할 일이 없던 실행은 기록하지 않음 | `phase` = `nightly`, `backfill`<br>`result` = `done`(남은 날짜 없음), `partial`(다음 실행에서 이어 받음), `failed`, `skipped`<br>`reason` = 끝낸 사유이며 `budget_share`(배치 몫 소진), `rate_limited`, `http_error`, `timeout`, `no_credentials`, `claim_failed`<br>`keys`(처리한 기본 지표 키 수), `fetched_days`, `remaining_days`(그 단계에 남은 비어 있는 날짜 수), `cost`, `duration_ms` |
 | 설치 보고서 실패 | 보고서 내려받기 또는 해석 실패<br>평문 WARN `admin_play_stats_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `no_credentials`, `http_error`, `no_reports`, `timeout`, `parse_error`<br>`status` = 저장소 응답의 HTTP 상태이며 응답이 없으면 `null`<br>키 해석 실패와 연결 실패는 상태 없는 `http_error`<br>객체 이름, 파일 내용, 키는 기록하지 않음 |
+| 인프라 지표 실패 | CloudWatch나 ECS 호출 실패와 설정 없음<br>평문 WARN `admin_infra_metrics_fetch_failed`<br>쿨다운 중 건너뛴 요청은 기록하지 않음 | `reason` = `not_configured`, `access_denied`, `throttled`, `timeout`, `aws_error`<br>`service` = `cloudwatch`, `ecs`이며 설정 없음은 `null`<br>`error_code` = AWS 오류 코드이며 없으면 `null` |
 
 <details>
 <summary><b>로그인 거절 로그 1줄 예시</b></summary>
@@ -105,6 +106,7 @@ Fluent Bit`"]
 | 사용자, 전환, 기능 지표 | 요청 로그의 `/api/v1/admin/users/`, `/api/v1/admin/conversion/`, `/api/v1/admin/quality/` 접두 경로 503과 500 비율, `duration_ms` |
 | 분석 값 배치 | `admin_analytics_backfill`의 `phase`별 `result`와 `remaining_days`<br>`nightly`가 그날 `done`에 이르지 않거나 `backfill`의 `remaining_days`가 줄지 않으면 배치 몫 경쟁이나 반복 실패 |
 | 설치 지표 | `admin_play_stats_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/play-installs` 503 비율 |
+| 인프라 지표 | `admin_infra_metrics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/infra/metrics` 503 비율과 `/api/v1/admin/infra/db-tables`의 `duration_ms` |
 
 <br>
 

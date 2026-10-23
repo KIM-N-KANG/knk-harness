@@ -30,6 +30,8 @@
 | 기능 사용과 안정성 | `GET /api/quality/client` | [4-2-30 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-30-기능-사용과-안정성) |
 | 채팅 옵션 비중 | `GET /api/quality/chat-options` | [4-2-31 채팅 옵션 비중](../BACKEND/4-2-CONTRACT.md#4-2-31-채팅-옵션-비중) |
 | AI 비용 | `GET /api/quality/ai-cost` | [4-2-32 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-32-ai-비용) |
+| 인프라 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-33 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-33-인프라-지표) |
+| 인프라 DB 테이블 | `GET /api/infra/db-tables` | [4-2-34 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-34-db-테이블-크기) |
 | 이프 내역 | `GET /api/credits/transactions` | [4-2-13 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-13-이프-내역) |
 
 <br>
@@ -47,6 +49,8 @@
 | 전환 퍼널 | 경로의 `funnel`<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인에서만<br>`storyId`는 상세 진입 채팅에서 값이 있을 때만 |
 | 기능 사용과 안정성 | `platform`의 `all`, `web`, `android` |
 | 리텐션 | 기간만<br>플랫폼은 응답의 세 항목 가운데 화면에서 고름 |
+| 인프라 지표 | 기간만 |
+| DB 테이블 크기 | `limit=20` |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
 
 - 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.

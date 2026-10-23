@@ -2180,7 +2180,239 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-33 다른 도메인과의 경계
+### 4-2-33 인프라 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/infra/metrics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버가 태스크 역할로 CloudWatch와 ECS를 불러 운영 AWS 리소스의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 31일 이하 |
+
+- 둘 다 없으면 KST 오늘 하루다.
+- 조회 시작은 `from`의 KST 자정이고 끝은 `to` 다음 날 KST 자정과 현재 시각 가운데 이른 쪽이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | CloudWatch와 ECS에서 값을 받은 시각 |
+| `from`, `to` | `string` | 적용한 KST 날짜 |
+| `periodSeconds` | `integer` | 점 하나의 집계 간격(초)<br>기간 2일 이하 `300`, 7일 이하 `900`, 그보다 길면 `3600`<br>조회 시작이 63일보다 오래되면 기간과 무관하게 `3600` |
+| `ecs` | `object / null` | ECS 서비스 지표<br>클러스터나 서비스 설정이 비어 있으면 `null` |
+| `ecs.services` | `object[]` | 설정한 서비스 순서 |
+| `ecs.services[].name` | `string` | 설정의 표시 키<br>운영은 `server`, `ai`, `notification` |
+| `ecs.services[].runningTasks` | `integer` | 지금 실행 중인 태스크 수 |
+| `ecs.services[].desiredTasks` | `integer` | 지금 목표 태스크 수 |
+| `ecs.services[].pendingTasks` | `integer` | 지금 시작 중인 태스크 수 |
+| `ecs.services[].cpu` | 점 목록 | `AWS/ECS` `CPUUtilization` 평균(%) |
+| `ecs.services[].memory` | 점 목록 | `AWS/ECS` `MemoryUtilization` 평균(%) |
+| `alb` | `object / null` | ALB 지표<br>설정이 비어 있으면 `null` |
+| `alb.requests` | 점 목록 | `AWS/ApplicationELB` `RequestCount` 합(회) |
+| `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>대상에 닿지 못해 ALB가 만든 5xx |
+| `alb.target5xx` | 점 목록 | `HTTPCode_Target_5XX_Count` 합(회)<br>서버가 돌려준 5xx |
+| `alb.responseTimeP95Ms` | 점 목록 | `TargetResponseTime`의 `p95`(밀리초) |
+| `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있으면 `null` |
+| `rds.cpu` | 점 목록 | `AWS/RDS` `CPUUtilization` 평균(%) |
+| `rds.freeStorageBytes` | 점 목록 | `FreeStorageSpace` 최솟값(바이트) |
+| `rds.connections` | 점 목록 | `DatabaseConnections` 최댓값(개) |
+| `rds.readLatencyMs` | 점 목록 | `ReadLatency` 평균(밀리초) |
+| `rds.writeLatencyMs` | 점 목록 | `WriteLatency` 평균(밀리초) |
+| `redis` | `object / null` | ElastiCache Redis 노드 지표<br>설정이 비어 있으면 `null` |
+| `redis.nodes` | `object[]` | 설정한 노드 순서 |
+| `redis.nodes[].id` | `string` | 캐시 클러스터 ID |
+| `redis.nodes[].cpu` | 점 목록 | `AWS/ElastiCache` `EngineCPUUtilization` 평균(%) |
+| `redis.nodes[].memory` | 점 목록 | `DatabaseMemoryUsagePercentage` 평균(%) |
+| `redis.nodes[].connections` | 점 목록 | `CurrConnections` 최댓값(개) |
+| `opensearch` | `object / null` | OpenSearch 도메인 지표<br>도메인이나 계정 ID 설정이 비어 있으면 `null` |
+| `opensearch.freeStorageBytes` | 점 목록 | `AWS/ES` `FreeStorageSpace` 최솟값(바이트)<br>CloudWatch 값이 MB라 1,048,576을 곱함 |
+| `opensearch.jvmMemoryPressure` | 점 목록 | `JVMMemoryPressure` 최댓값(%) |
+
+점 목록은 다음 구조의 배열이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `[].at` | `string` | 집계 구간이 시작하는 시각 |
+| `[].value` | `number` | 그 구간의 값 |
+
+- 점은 시각 오름차순이다.
+- 건수 지표(`alb.requests`, `alb.elb5xx`, `alb.target5xx`)는 CloudWatch가 값이 없는 구간을 빼고 주므로 서버가 조회 범위의 모든 구간을 0으로 채운다. 나머지 지표는 CloudWatch가 값을 준 구간만 담고 빈 구간을 채우지 않는다.
+- 태스크 수는 현재 값이라 기간과 무관하다.
+- 리소스 이름과 계정 ID는 응답에 넣지 않는다. Redis 노드만 노드를 구분하려고 캐시 클러스터 ID를 넣는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 31일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 리소스 설정이 모두 비어 있음<br>CloudWatch나 ECS 호출 실패, 권한 거부, 호출 제한, 시간 초과, 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/infra/metrics?from=2026-10-23&to=2026-10-23
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 점 목록마다 점 1~2개만 표시하고 `ai`와 `notification` 서비스, 두 번째 Redis 노드를 줄였다.
+
+```json
+{
+  "asOf": "2026-10-23T01:12:40Z",
+  "from": "2026-10-23",
+  "to": "2026-10-23",
+  "periodSeconds": 300,
+  "ecs": {
+    "services": [
+      {
+        "name": "server",
+        "runningTasks": 2,
+        "desiredTasks": 2,
+        "pendingTasks": 0,
+        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 7.4 }, { "at": "2026-10-22T15:05:00Z", "value": 8.1 }],
+        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 41.2 }, { "at": "2026-10-22T15:05:00Z", "value": 41.5 }]
+      }
+    ]
+  },
+  "alb": {
+    "requests": [{ "at": "2026-10-22T15:00:00Z", "value": 312 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "elb5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 0 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "target5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 1 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "responseTimeP95Ms": [{ "at": "2026-10-22T15:00:00Z", "value": 182.0 }]
+  },
+  "rds": {
+    "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 4.9 }],
+    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 18253611008 }],
+    "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 21 }],
+    "readLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 0.8 }],
+    "writeLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 1.6 }]
+  },
+  "redis": {
+    "nodes": [
+      {
+        "id": "manyak-prod-redis-rg-001",
+        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 1.2 }],
+        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 3.4 }],
+        "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 18 }]
+      }
+    ]
+  },
+  "opensearch": {
+    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 6442450944 }],
+    "jvmMemoryPressure": [{ "at": "2026-10-22T15:00:00Z", "value": 58.0 }]
+  }
+}
+```
+
+**3) 503 Response body**
+
+```json
+{
+  "timestamp": "2026-10-23T01:12:40.000Z",
+  "status": 503,
+  "code": "SERVICE_UNAVAILABLE",
+  "message": "인프라 지표를 가져올 수 없습니다.",
+  "path": "/api/v1/admin/infra/metrics",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-34 DB 테이블 크기
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/infra/db-tables` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버의 PostgreSQL 카탈로그에서 데이터베이스 크기와 테이블별 크기를 읽어 큰 순서로 응답한다. 기간과 무관한 현재 값이다. ([4-1-22 DB 테이블 크기](4-1-PIPELINES.md#4-1-22-db-테이블-크기))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `limit` | `integer` | 선택 | 응답할 테이블 수<br>1~100, 기본 20 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 카탈로그를 읽은 시각 |
+| `databaseBytes` | `integer` | 현재 데이터베이스 전체 크기(바이트) |
+| `tableCount` | `integer` | 집계 대상 테이블 수 |
+| `tables` | `object[]` | `totalBytes` 내림차순, 최대 `limit`개<br>같으면 `schema`, `name` 오름차순 |
+| `tables[].schema` | `string` | 스키마 이름 |
+| `tables[].name` | `string` | 테이블 이름 |
+| `tables[].totalBytes` | `integer` | 테이블, 인덱스, TOAST를 합한 크기 |
+| `tables[].tableBytes` | `integer` | 본 테이블만의 크기 |
+| `tables[].indexBytes` | `integer` | 그 테이블 인덱스의 합 |
+| `tables[].estimatedRows` | `integer` | 통계가 추정한 살아 있는 행 수<br>정확한 개수가 아니며 통계 수집 전이면 0 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `limit`가 정수가 아니거나 1~100 밖 |
+
+- DB 오류는 공통 처리를 따른다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/infra/db-tables?limit=2
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-10-23T01:12:40Z",
+  "databaseBytes": 1288490188,
+  "tableCount": 74,
+  "tables": [
+    { "schema": "public", "name": "chat_messages", "totalBytes": 402653184, "tableBytes": 301989888, "indexBytes": 83886080, "estimatedRows": 412380 },
+    { "schema": "public", "name": "ai_call_logs", "totalBytes": 268435456, "tableBytes": 209715200, "indexBytes": 50331648, "estimatedRows": 520117 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-35 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
@@ -2192,6 +2424,7 @@ Authorization: Bearer {adminToken}
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
 | Amplitude | 없음 | Dashboard REST API의 활성 사용자와 신규 사용자 수 조회, 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
+| AWS CloudWatch, ECS | 없음 | CloudWatch `GetMetricData` 지표 조회, ECS `DescribeServices` 태스크 수 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

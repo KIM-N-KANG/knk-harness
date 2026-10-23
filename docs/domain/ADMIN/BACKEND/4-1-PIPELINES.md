@@ -704,3 +704,62 @@ flowchart LR
 | `story-detail-chat` | 범위 | 7단계 퍼널 1 × 7 × 2 = 14 | 14 | 일수 × 14 | 7일<br>7 × 14 = 98 | 31일<br>31 × 14 = 434 |
 | `guest-limit-login` | 범위 | 3단계 퍼널 구글과 카카오 2 × (1 × 3 × 2) = 12 | 12 | 일수 × 12 | 7일<br>7 × 12 = 84 | 31일<br>31 × 12 = 372 |
 | 기능 사용과 안정성 | 일별 | 전송 합계와 입력 방식 셋 4 × (1 × 1) = 4<br>스트림 오류 합계 1 × 1 = 1<br>오류와 이프 신호 사용자 수 7 × (1 × 1) = 7 | 12 | 2 × 12 = 24 | 30일<br>30 × 12 = 360 | 366일<br>366 × 12 = 4,392<br>5분마다 41일씩 |
+
+<br>
+
+### 4-1-21 인프라 지표
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
+flowchart LR
+    A{"`**범위의 60초 캐시가
+있는가**`"} -->|예| E["`**응답**`"]
+    A -->|아니오| F{"`**쿨다운 중이거나
+다른 요청이 갱신 중인가**`"}
+    F -->|예| G{"`**만료된 캐시가
+있는가**`"}
+    G -->|예| E
+    G -->|아니오| X["`**사용 불가로 응답**`"]
+    F -->|아니오| C["`**CloudWatch GetMetricData
+ECS DescribeServices**
+태스크 역할, 5초`"]
+    C -->|성공| D["`**변환과 조립**
+단위 변환, 건수 0 채움, 캐시 갱신`"]
+    D --> E
+    C -->|실패| H["`**쿨다운 60초 시작**`"]
+    H --> G
+    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    class A,D,E,F,G,H,X comp
+    class C task
+```
+
+| 항목 | 규칙 |
+|---|---|
+| 대상 | 설정값의 ECS 클러스터와 서비스, ALB, RDS 인스턴스, Redis 노드, OpenSearch 도메인과 계정 ID ([6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿))<br>설정이 빈 리소스 묶음은 조회하지 않고 응답에서 `null`<br>모두 비면 호출 없이 사용 불가 |
+| 인증 | 서버 태스크 역할의 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
+| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>`TargetResponseTime`은 확장 통계 `p95`<br>운영 질의 수는 ECS 6, ALB 4, RDS 5, Redis 6, OpenSearch 2로 23개<br>응답에 `NextToken`이 있으면 이어 받음 |
+| 차원 | ECS는 `ClusterName`과 `ServiceName`<br>ALB는 `LoadBalancer`(ALB ARN 접미사)<br>RDS는 `DBInstanceIdentifier`<br>Redis는 `CacheClusterId`<br>OpenSearch는 `DomainName`과 `ClientId`(계정 ID) |
+| 태스크 수 | `DescribeServices` 한 번으로 설정한 서비스 전부의 `runningCount`, `desiredCount`, `pendingCount`<br>설정한 서비스가 응답의 `failures`에 있으면 실패로 봄 |
+| 집계 간격 | 기간 2일 이하 300초, 7일 이하 900초, 그보다 길면 3600초<br>조회 시작이 63일보다 오래되면 3600초<br>CloudWatch는 5분 단위 값을 63일, 1시간 단위 값을 455일 보관 |
+| 시각 | 조회 시작은 `from`의 KST 자정, 끝은 `to` 다음 날 KST 자정과 현재 시각 중 이른 쪽<br>점의 시각은 구간 시작 시각 |
+| 변환 | 지연 시간은 초를 밀리초로, OpenSearch 저장 공간은 MB를 바이트로 |
+| 빈 구간 | 건수 지표만 조회 범위의 모든 구간을 0으로 채움<br>그 밖의 지표는 받은 구간만 |
+| 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>태스크마다 따로이고 키는 최근 100개 |
+| 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>호출 실패, 권한 거부, 호출 제한, 두 호출을 합친 시간 한도 5초 초과는 그 키에 60초 쿨다운 |
+| 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 23개라 캐시를 거치지 않은 요청 1,000번에 약 0.23달러<br>`DescribeServices`는 무료 |
+| 집계와의 분리 | 다른 대시보드 응답과 별도 엔드포인트라 AWS 호출 장애가 DB 지표와 DB 테이블 크기에 영향을 주지 않음 |
+
+<br>
+
+### 4-1-22 DB 테이블 크기
+
+| 항목 | 규칙 |
+|---|---|
+| 대상 | `pg_class`의 일반 테이블(`relkind = 'r'`) 가운데 스키마가 `pg_catalog`, `information_schema`, `pg_toast`가 아닌 것 |
+| 크기 | 전체는 `pg_total_relation_size`, 본 테이블은 `pg_relation_size`, 인덱스는 `pg_indexes_size`<br>데이터베이스는 `pg_database_size(current_database())` |
+| 행 수 | `pg_stat_user_tables.n_live_tup`의 추정치<br>`COUNT(*)`를 하지 않음 |
+| 정렬과 개수 | 전체 크기 내림차순으로 `limit`개<br>`tableCount`는 대상 전체 수 |
+| 연결 | 서버의 기본 데이터 소스와 읽기 전용 트랜잭션 |
+| 캐시 | `limit`를 키로 5분 프로세스 메모리, 태스크마다 따로 |
+| 실패 | DB 오류는 공통 처리이고 캐시로 대신 응답하지 않음 |

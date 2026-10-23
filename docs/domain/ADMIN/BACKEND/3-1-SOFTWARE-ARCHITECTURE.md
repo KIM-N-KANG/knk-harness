@@ -17,6 +17,7 @@ ADMIN 도메인은 서버 애플리케이션의 내부 패키지다. 별도 프�
 | PostgreSQL | 관리자 역할, 감사 로그, Amplitude 조회 값 | JDBC |
 | Amplitude | 활성과 신규 사용자 수, 세분화, 퍼널, 리텐션, 세션 제공 | Dashboard REST API HTTPS 호출 |
 | Google Cloud Storage | Play Console 일괄 보고서 보관 | 서비스 계정으로 객체 목록과 내려받기 HTTPS 호출 |
+| AWS CloudWatch, ECS | 운영 리소스 지표와 서비스 태스크 수 | 서버 태스크 역할로 AWS SDK 호출 |
 | Redis | 분석 값 배치의 5분 슬롯 선점 | 다른 도메인과 같은 Redis에 `SET NX` |
 
 ```mermaid
@@ -36,10 +37,11 @@ ACCOUNT, MODERATION, STORY**
     S --> DB["`**PostgreSQL**`"]
     S -->|비어 있는 날짜만 조회, 비용 예산| AM["`**Amplitude**`"]
     S -->|보고서 내려받기, 1시간 캐시| GCS["`**Google Cloud Storage**
+    S -->|지표 조회, 60초 캐시| CW["`**CloudWatch, ECS**`"]
 Play 일괄 보고서`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
-    class A,DB,AM,GCS ext
+    class A,DB,AM,GCS,CW ext
     class S,O,AC,R comp
 ```
 
@@ -104,6 +106,8 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | Amplitude 배치 스케줄러 | 현재 시각, 기본 지표 키 목록 | 저장 값 | 5분마다 실행, Redis 슬롯 선점, 새벽 배치, 초기 백필, 배치 예산 몫 |
 | DB 분석 지표 | 기간 | 신규 가입자, 턴 도달률, 채팅 옵션 비중, AI 비용 | 날짜별 집계, 팀 계정 제외, 단가 적용 |
 | 설치 지표 | 없음 | Android 누적 기기 설치 수, 활성 기기 수, 일별 기기 설치 수와 앱 삭제 수 | 보고서 내려받기, CSV 해석과 합산, 1시간 캐시, 실패 시 사용 불가 |
+| 인프라 지표 | 기간 | ECS, ALB, RDS, Redis, OpenSearch 지표와 서비스별 태스크 수 | CloudWatch와 ECS 호출, 단위 변환, 건수 0 채움, 60초 캐시, 실패 시 사용 불가 |
+| DB 테이블 크기 | 개수 | 데이터베이스 크기와 테이블별 크기와 추정 행 수 | 카탈로그 조회, 5분 캐시 |
 | 회원 조회 | 검색어 또는 공개 식별자 | 회원 요약과 상세, 이프 내역과 출석 페이지 | 검색, 잔액과 콘텐츠 수 조회, 접속 기록 |
 
 <br>
@@ -119,6 +123,7 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | 보안 필터 → 관리자 역할 저장소 | 요청마다 조회<br>캐시 없음 |
 | ADMIN → Amplitude | 분석 지표 조회만<br>이벤트 발행은 공통 분석 발행기가 함<br>호출 전에 값 저장소를 먼저 읽어 비어 있거나 만료된 날짜만 조회 |
 | ADMIN → Google Cloud Storage | 설치 보고서 읽기만<br>쓰기 없음 |
+| ADMIN → CloudWatch, ECS | 지표와 서비스 상태 읽기만<br>쓰기 없음 |
 | Amplitude 배치 스케줄러 → Redis | 5분 슬롯 키 선점만<br>값은 Redis에 두지 않음 |
 | Amplitude 배치 스케줄러 → 값 저장소와 Amplitude 호출 | 화면 요청과 같은 구성 요소를 거침<br>배치 예산 몫만 다름 |
 
@@ -138,6 +143,8 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | 배치 슬롯 키 | KST 5분 슬롯 | Redis에 10분 TTL<br>슬롯마다 한 태스크만 배치를 실행 |
 | 비용 예산 계수기 | 최근 5분 동안 예약하고 남긴 호출 비용 | 프로세스 메모리<br>태스크마다 500이라 태스크 둘의 합이 프로젝트 한도 1,000 안 |
 | 설치 지표 캐시 | 누적 기기 설치 수, 활성 기기 수, 일별 전체 행 | 프로세스 메모리에만 1시간<br>태스크마다 따로 |
+| 인프라 지표 캐시 | 범위별 응답 전체 | 프로세스 메모리에만 60초<br>태스크마다 따로 |
+| DB 테이블 크기 캐시 | 개수별 응답 | 프로세스 메모리에만 5분<br>태스크마다 따로 |
 
 <br>
 
