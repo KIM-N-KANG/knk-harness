@@ -103,6 +103,7 @@
 | 회원별 채팅 | 회원 A 채팅 1, 회원 B 채팅 5 | `1개` 1, `5~9개` 1 |
 | 첫 메시지 시간 | 첫 사용자 메시지가 30초, 60초, 1000초인 채팅과 메시지 없는 채팅 | `평균` 45<br>`description`에 900초 초과 1과 입력 없음 1 |
 | AI 지연과 성공률 | `chat_response` 성공 2(지연 1초, 3초), 실패 1, 진행 중 1 | `ai-latency`의 `chat_response` 2<br>`ai-success`의 `chat_response` 66.67 |
+| 실시간 이미지 AI 지표 | `chat_image` 성공 2(지연 4초, 지연 없음 1), 실패 2, 팀 계정 채팅의 성공 1 | `ai-latency`의 `chat_image` 4<br>`ai-success`의 `chat_image` 50, 팀 계정 채팅 제외<br>두 차트 항목 순서가 `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
 | 간편 제작별 입력 주변 인물 수 | 주변 인물 행 없는 세션, 입력한 주변 인물 2명 세션<br>공식 계정의 세션 1건 | `0명` 1, `2명` 1<br>공식 계정 세션 포함 |
 | 빈 자리 인물 제외 | 주변 인물 행 3개 중 이름만 있는 1개, 특징 태그만 연결된 1개, 이름, 성별, 태그가 모두 빈 1개 | `2명` 1<br>스토리 목록 `supportingCharacterCount=2`에 그 스토리 포함 |
 | 제작 세션 팀 제외 | 공식 계정이 아닌 제외 목록 회원의 세션 | 집계에서 제외 |
@@ -123,6 +124,7 @@
 | 보류 상태 | 보류 제출본 있는 스토리<br>대기 제출본만 있는 스토리 | `HELD`<br>`APPROVED` |
 | 채팅 기간 | `chatFrom`, `chatTo` 안에 채팅 1건, 밖에 2건인 스토리와 기간에 채팅 없는 스토리 | `chatCount` 1, `totalTurns`는 그 채팅의 턴<br>채팅 없는 스토리 제외 |
 | AI 호출 필터 | `aiFeature=story_completion&aiStatus=FAILED` | 실패 기록이 연결된 스토리만 |
+| 이미지 호출 필터 | 채팅 목록 `aiFeature=chat_image&aiStatus=FAILED` | 실패한 `chat_image` 기록이 연결된 채팅만 |
 | 스토리 검색 | 제목 일부, 소유자 닉네임 일부, 스토리 공개 식별자 | 각각 일치하는 스토리 |
 | 삭제 스토리 | 삭제된 스토리 목록과 상세 | 목록 제외<br>404 |
 | 기준 턴 도달률 | 채팅 턴 0, 1, 5, 12 | `turn` 1은 0.75, 3은 0.5, 5는 0.5, 10은 0.25, 20은 0 |
@@ -284,6 +286,7 @@
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
 | 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
+| 이미지 비용 제외 | `chat_image` 성공 3회와 `chat_response` 성공 1회 | `byFeature`에 `chat_image` 항목 없음, `callsWithoutTokens`와 `unpricedModels`에 영향 없음 |
 | AI 비용 범위 | 실패 호출과 팀 계정 회원의 호출 | 실패는 제외, 팀 계정은 포함 |
 | DB 지표 기간 | 366일<br>367일 | 200<br>400 |
 | 격리 | 대역 500 상태에서 DB 지표 호출 | 모두 200 |

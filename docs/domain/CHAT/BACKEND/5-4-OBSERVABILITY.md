@@ -73,11 +73,11 @@ ai_call_logs`"]
 
 ### 5-4-4 AI 호출 기록
 
-AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `SUCCEEDED`는 AI 호출 성공만 의미한다. 턴 저장 완료는 `turn_number IS NOT NULL`로 판정한다.
+AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `SUCCEEDED`는 AI 호출 성공만 의미한다. 턴 저장 완료는 `turn_number IS NOT NULL`로 판정한다. 실시간 이미지는 턴 본문 호출 안에서 AI가 만들지만 성공률과 소요 시간을 따로 보려고 업로드 위치를 발급한 턴마다 `chat_image` 행을 하나 더 남긴다.
 
 | 필드 | CHAT 도메인의 값 |
 |---|---|
-| `feature` | `chat_response`, `choice_generation` |
+| `feature` | `chat_response`, `choice_generation`, `chat_image` |
 | `caller_service` | `manyak-server` |
 | `request_id` | MDC 값, 없으면 `unknown`<br>128자로 자름 |
 | `session_id`, `device_id_hash` | MDC 값, `unknown`이면 `null`<br>128자로 자름 |
@@ -87,9 +87,21 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | `provider`, `model` | AI 응답 `meta`, 컬럼 길이 상한에 맞춰 자름 |
 | `input_token_count`, `output_token_count`, `retry_count` | AI 응답 `meta`, 음수는 0<br>`null`이면 덮어쓰지 않음 |
 | `prompt_versions` | AI 응답 `meta`<br>`null`이면 덮어쓰지 않음 |
-| `latency_ms` | 호출 시작부터 `completed` 수신까지 |
-| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED` |
+| `latency_ms` | 호출 시작부터 `completed` 수신까지<br>`chat_image`는 본문 호출 시작부터 발급한 공개 URL이 실린 첫 `character_image` 이벤트 수신까지이고 그 이벤트가 없으면 `null` |
+| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED`<br>`chat_image`는 본문 마커에 발급 URL이 없으면 `AI_IMAGE_MISSING`, 객체가 없거나 확인에 실패하면 `AI_IMAGE_NOT_FOUND`, 턴이 저장 전에 실패하면 `AI_IMAGE_TURN_FAILED` |
 | `sentry_event_id` | 본문 호출의 스트림 실패만 |
+
+**`chat_image` 행**
+
+| 항목 | 규칙 |
+|---|---|
+| 만드는 때 | 업로드 위치 발급에 성공한 직후 `STARTED`로 적재<br>업로드 위치를 발급하지 않은 턴(실시간 이미지 끔, 저장소 미설정, 게스트 이미지 체험 소진, 발급 실패)은 행 없음<br>이어쓰기와 재생성 모두 같음 |
+| 성공 | 실시간 이미지 검증을 통과하면 `SUCCEEDED` |
+| 실패 | 검증에서 탈락하거나 턴이 저장 전에 실패하면 `FAILED`와 `error_code` |
+| 전이 시각 | 턴 저장 트랜잭션이 끝난 뒤 별도 트랜잭션으로 기록<br>턴이 저장 전에 실패하면 실패 처리와 환불 때 기록 |
+| 연결 | `chat_id`, `story_id`, `request_id`, `session_id`, `device_id_hash`는 같은 턴의 본문 행과 같음<br>`turn_number`는 턴 저장이 확정되면 그 턴 번호이고 저장 전 실패는 `null` |
+| 모델과 토큰 | `provider`, `model`은 AI 응답 `meta`에 실시간 이미지 값이 있을 때만 채우고 없으면 `null`<br>`input_token_count`, `output_token_count`, `prompt_versions`는 이미지 생성이 토큰 수를 주지 않아 `null`<br>`retry_count`는 0 |
+| 기록 실패 | 적재와 전이의 실패는 WARN 로그만 남기고 턴과 이미지 처리 결과를 바꾸지 않음<br>전이에 실패한 행은 `STARTED`로 남음 |
 
 <br>
 
@@ -138,7 +150,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 선택지 | `ai_call_logs` `feature=choice_generation`<br>Sentry `endpoint=/api/v1/chats/{chatId}/turns/{turnId}/choices` |
 | 환불 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`<br>지표 `manyak.chat.turn.refund` |
 | 실행기 포화 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`<br>스팬 `chat.turn.queue` |
-| 실시간 이미지 | 턴은 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음<br>업로드 위치 발급과 객체 확인 실패는 WARN 평문 로그 |
+| 실시간 이미지 | `ai_call_logs` `feature=chat_image`의 `FAILED`와 `error_code`<br>턴은 성공으로 끝나 Sentry에 남지 않음<br>업로드 위치 발급과 객체 확인 실패는 WARN 평문 로그 |
 | 피드백 전달 | WARN 평문 로그와 Sentry 메시지 |
 
 <br>
@@ -221,6 +233,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 |---|---|
 | `ai_call_logs` `STARTED` 적재 실패 | 예외가 전파되어 AI 호출을 시작하지 않음<br>환불 처리 |
 | `ai_call_logs` 전이 저장 실패 | 예외가 전파됨<br>성공한 AI 호출도 스트림 실패로 끝남 |
+| `ai_call_logs`의 `chat_image` 행 적재와 전이 실패 | WARN 로그만 남기고 턴과 이미지 처리 결과를 바꾸지 않음<br>전이 실패면 행이 `STARTED`로 남음 |
 | 응답 `meta` 반영, 지표 기록 실패 | 무시하고 호출 결과 유지 |
 | 턴 번호 사후 반영 실패 | 예외가 전파됨<br>저장된 턴은 유지되고 스트림은 `error`로 끝남 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |

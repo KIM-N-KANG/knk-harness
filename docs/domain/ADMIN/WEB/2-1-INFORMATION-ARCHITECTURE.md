@@ -468,6 +468,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중과 AI
 |---|---|
 | `chat_response` | AI 응답 생성 |
 | `choice_generation` | 선택지 생성 |
+| `chat_image` | 실시간 이미지 생성 |
 | `storyline_generation` | 스토리라인 생성 |
 | `story_completion` | 간편 제작 |
 

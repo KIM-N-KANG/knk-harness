@@ -93,6 +93,11 @@
 | 검증 | 발급 URL 마커와 객체 존재, 발급하지 않은 실시간 URL, 객체 없음, 목록에만 있는 URL | 그대로 저장, 마커 제거와 환불, 제거와 환불, 실패 처리 |
 | 환불 범위 | 이미지만 실패, 본문 실패 | 이미지 행만 환불, 두 행 모두 환불 |
 | 발급 실패 | presign 예외 | 업로드 위치 없이 진행, 체험 복원 |
+| 이미지 호출 기록 적재 | 업로드 위치 발급 성공<br>미발급(끔, 저장소 미설정, 게스트 체험 소진, presign 예외) | `feature=chat_image`, `STARTED` 행 하나<br>`chat_image` 행 없음 |
+| 이미지 호출 성공 기록 | 발급 URL 마커와 객체 존재, 발급 URL이 실린 `character_image` 이벤트가 시작 1.2초 뒤 도착 | `SUCCEEDED`, `latency_ms` 1200, `turn_number`가 저장된 턴 번호, `chat_id`가 채팅 공개 ID, 토큰 컬럼 `null` |
+| 이미지 호출 실패 기록 | 마커에 발급 URL 없음<br>객체 없음<br>턴이 저장 전에 스트림 실패 | `FAILED`와 `AI_IMAGE_MISSING`<br>`FAILED`와 `AI_IMAGE_NOT_FOUND`<br>`FAILED`와 `AI_IMAGE_TURN_FAILED`, `turn_number` `null` |
+| 이미지 이벤트 없음 | 검증은 통과했지만 발급 URL이 실린 `character_image` 이벤트가 없음 | `SUCCEEDED`, `latency_ms` `null` |
+| 이미지 기록 실패 격리 | `chat_image` 행 적재 또는 전이가 예외 | 턴 저장과 `completed` 정상, 이미지 처리 결과 그대로, WARN 로그 |
 
 <br>
 

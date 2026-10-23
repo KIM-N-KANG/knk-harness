@@ -261,6 +261,7 @@ erDiagram
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
 | `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id` |
+| `ai_call_logs` | CHAT이 기록하는 `chat_response`, `choice_generation`, `chat_image` 행과 [5-4-4 AI 호출 기록](5-4-OBSERVABILITY.md#5-4-4-ai-호출-기록)의 컬럼<br>`ck_ai_call_logs_feature`가 `chat_image`를 허용해야 함 |
 
 <br>
 

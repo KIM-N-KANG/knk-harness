@@ -211,7 +211,7 @@ Amplitude에서 받은 지표 값을 저장한다. 조회 흐름과 유효 판�
 | `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
 | `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |
 | `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
-| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용 |
+| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용<br>`feature`는 CHAT이 기록하는 `chat_image`를 포함하고 AI 비용은 그 값을 뺌 |
 | `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 적립과 소모, 출석, 회원 이프 내역과 소모량, 채팅 소모량, 결제 전후 비교 |
 | `credit_orders` | `id`, `public_id`, `user_id`, `product_id`, `status`, `price_krw`, `credit_amount`, `completed_at`, `refunded_at`, `reversal_shortfall` | 결제 건수와 금액, 결제 내역과 상세, 회원 결제액 |
 | `story_submissions` | `story_id`, `status`, `held_at` | 스토리의 보류 상태 |

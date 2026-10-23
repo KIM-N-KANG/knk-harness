@@ -366,7 +366,7 @@ Authorization: Bearer {adminToken}
 | `started-as` | `users` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
 | `member-chats` | `users` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
 | `first-message` | `engagement` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
-| `ai-latency` | `ai-quality` | `chat_response`, `choice_generation`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
+| `ai-latency` | `ai-quality` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
 | `ai-success` | `ai-quality` | 같음 | `%` | 같은 목록<br>`aiFeature`, `aiStatus=FINISHED`, `aiFrom`, `aiTo` |
 | `characters` | `content` | `0명`부터 `5명`<br>간편 제작별 직접 입력한 주변 인물 수 | `건` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
 
@@ -609,7 +609,7 @@ Authorization: Bearer {adminToken}
 | `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅 |
 | `from`, `to` | `string` | 선택 | 채팅 생성일 |
 | `aiFrom`, `aiTo` | `string` | 선택 | AI 호출 기록 생성일 |
-| `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation` |
+| `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation`, `chat_image` |
 | `aiStatus` | `string` | 선택 | 스토리 목록과 같음 |
 | `hasLatency` | `boolean` | 선택 | 스토리 목록과 같음 |
 | `sort` | `string` | 선택 | `startedAt`, `lastActiveAt`, `turnCount`, `creditsSpent`<br>기본 `startedAt` |
@@ -2174,7 +2174,7 @@ Authorization: Bearer {adminToken}
 
 - 비용은 백만 토큰당 단가로 계산한다. 입력 단가 1,000원, 출력 단가 4,000원인 모델의 입력 2,000토큰과 출력 1,000토큰은 (2,000 × 1,000 + 1,000 × 4,000) / 1,000,000 = 6원이다.
 - 모델 미상, 단가 없음, 토큰 미수집인 호출은 비용 합에서 빠지거나 0으로 더해지므로 `totals`와 원가는 그만큼 작다. 빠진 정도는 `unpricedModels`, `model`이 `null`인 항목, `callsWithoutTokens`로 알 수 있다.
-- 이미지 생성 비용은 AI 호출 기록에 토큰이 없어 포함하지 않는다.
+- 이미지 생성 비용은 포함하지 않는다. 실시간 이미지의 `chat_image` 기록은 토큰이 없어 집계 대상에서 빼며 `callsWithoutTokens`에도 세지 않는다. 장당 단가로 넣는 방식은 결정 21의 제안이다.
 
 <br>
 
