@@ -775,14 +775,14 @@ ECS DescribeServices**
 
 | 항목 | 규칙 |
 |---|---|
-| 호출 대상 | Langfuse Metrics API `GET /api/public/metrics`<br>설정한 Langfuse 주소, 공개 키와 비밀 키의 기본 인증 |
-| 질의 | 관측(observations) 보기에서 비용 합(`totalCost`)과 토큰 합(`totalTokens`)을 추적 이름과 모델 이름으로 묶고 시간 단위는 1시간<br>환경 조건은 설정한 Langfuse 환경 이름<br>관측 이름이 `이미지 생성:자식`(채팅 실시간 이미지)인 관측은 뺌<br>필드 이름은 구현 때 Langfuse Metrics API 문서로 확인 |
-| 날짜 | 1시간 단위 값을 KST 날짜로 더함<br>한 요청은 최대 31일 |
+| 호출 대상 | Langfuse Metrics API v2 `GET /api/public/v2/metrics`<br>v1 `GET /api/public/metrics`는 Langfuse Cloud에서 2026-11-16에 지원이 끝나 쓰지 않음<br>질의 JSON 전체를 직렬화해 `query` 쿼리에 URL 인코딩으로 넣음<br>설정한 Langfuse 주소, 공개 키와 비밀 키의 기본 인증 |
+| 질의 | 관측(`observations`) 보기에서 비용 합(`totalCost`)과 토큰 합(`totalTokens`)을 추적 이름(`traceName`)과 모델 이름(`providedModelName`)으로 묶고 시간 단위는 1시간<br>v2는 관측 행에 추적 이름이 있어 전날 시작한 추적의 다음 날 관측도 그 관측의 시각으로 집계됨<br>환경 조건은 설정한 Langfuse 환경 이름<br>관측 이름(`name`)이 `이미지 생성:자식`(채팅 실시간 이미지)인 관측은 뺌<br>관측의 성공과 실패는 거르지 않음<br>행 제한은 최대값 1,000으로 요청<br>필드 이름과 행 제한 매개변수는 구현 때 Langfuse v2 문서로 확인 |
+| 범위와 날짜 | 논리 범위는 KST 시작일 00:00 이상, 종료일 다음 날 00:00 미만<br>API의 `toTimestamp`는 끝을 포함하므로 다음 날 KST 00:00에서 1밀리초를 뺀 시각을 보냄<br>응답의 1시간 구간 시작 시각이 논리 범위 밖인 행은 버림<br>1시간 단위 값을 그 구간 시작 시각의 KST 날짜로 더함 |
 | 기능 매핑 | 추적 이름을 아래 표로 기능에 대응<br>표에 없는 이름은 기능 없이 `unmapped`로 응답하고 합계에 넣음 |
 | 원화 변환 | USD 비용 × 설정한 환율 |
-| 저장 | KST 날짜마다 추적 이름, 모델, 비용, 토큰을 `admin_analytics_daily_values`에 지표 이름 `langfuse_ai_cost`로 한 행 저장<br>저장과 유효 판정은 Amplitude 값 저장과 같은 테이블과 upsert 규칙 |
+| 저장 | `admin_analytics_daily_values`에 지표 이름 `langfuse_ai_cost`로 KST 날짜마다 한 행<br>`value`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체의 배열이고 USD로 저장해 응답 때 원화로 바꿈<br>조회가 정상으로 끝났는데 데이터가 없는 날짜는 빈 배열로 저장해 아직 받지 않은 날짜(행 없음)와 구별<br>`params_hash`는 Langfuse 주소, 공개 키, 환경 이름, 질의 정의(측정값, 묶음, 제외 관측 이름, 시간 단위)를 정해진 순서로 직렬화한 SHA-256<br>`params` 원문에는 공개 키 대신 주소, 환경 이름, 질의 정의만 넣음<br>upsert와 확정 규칙은 Amplitude 값과 같음 |
 | 유효 판정 | 확정일(KST 오늘 − 2일 이하)은 그 날짜가 끝난 뒤 한 번 받으면 고정<br>어제는 1시간, 오늘은 10분 |
-| 받을 날짜 | 범위 가운데 유효한 값이 없는 날짜만 최근 날짜부터 연속 구간으로 묶어 받음<br>한 응답에서 Langfuse 호출은 최대 2번(62일)이고 남은 날짜는 `pendingDates` |
+| 받을 날짜 | 범위 가운데 유효한 값이 없는 날짜만 최근 날짜부터 연속 구간으로 묶음<br>한 번의 호출 구간은 기본 3일(72시간)<br>응답 행 수가 행 제한 1,000과 같으면 잘렸을 수 있어 저장하지 않고 구간을 반으로 나눠 다시 받음(최소 1시간)<br>1시간 구간 하나가 1,000행이면 형식 오류로 처리<br>한 응답에서 Langfuse 호출은 최대 6번이고 남은 날짜는 `pendingDates` |
 | 호출 간격 | 태스크 안에서 한 번에 하나만 보내고 호출 사이 1초 이상 |
 | 호출 제한 | 429면 `Retry-After`가 있으면 그 시간, 없으면 60초 동안 호출하지 않음<br>그동안 저장 값으로 응답하고 받지 못한 날짜는 `pendingDates` |
 | 실패 | 연결 실패, 5xx, 시간 초과 10초, 응답 형식 오류는 60초 쿨다운<br>범위에 저장 값이 하나도 없으면 503, 일부라도 있으면 받은 날짜만 채우고 나머지는 `pendingDates` |

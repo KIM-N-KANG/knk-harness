@@ -2179,9 +2179,10 @@ Authorization: Bearer {adminToken}
 | `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합 |
 | `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 전체 호출 수<br>호출이 0이면 `null` |
 | `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
-| `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량은 있는데 비용이 0인 모델 이름<br>Langfuse 모델 설정에 단가가 없는 모델 |
+| `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량(토큰 합)은 있으나 비용 합이 0인 모델 이름<br>단가가 없는지, 정상 0원인지, 일부 관측의 비용이 빠졌는지는 구별하지 않음<br>이름은 호환을 위해 유지 |
 
 - 비용은 Langfuse가 입력, 출력, 캐시 입력 토큰을 모델 설정의 단가로 계산한 값이다. 서버는 단가를 갖지 않는다.
+- 금액에는 실패한 AI 호출 과정에서 생긴 관측 비용도 들어간다. 호출 수, 토큰 수, 원가의 분모는 성공한 AI 호출 기록이다.
 - 간편 제작의 표지와 인물 이미지 생성 비용은 `스토리 컴파일` 추적에 들어 있어 `story_completion`에 포함된다. 채팅의 실시간 이미지 생성 관측은 Langfuse 합에서 빼고 장당 원가로 더한다.
 - 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
 - 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.

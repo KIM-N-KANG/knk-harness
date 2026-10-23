@@ -150,7 +150,7 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 
 ### 3-2-5 Amplitude 조회 값
 
-Amplitude에서 받은 지표 값을 저장한다. 조회 흐름과 유효 판정은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 마이그레이션 번호는 서버 저장소의 다음 번호를 쓴다.
+Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `langfuse_ai_cost`)을 저장한다. 조회 흐름과 유효 판정은 처리 흐름에 있다. ([4-1-23 AI 비용의 Langfuse 조회](4-1-PIPELINES.md#4-1-23-ai-비용의-langfuse-조회)) ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 마이그레이션 번호는 서버 저장소의 다음 번호를 쓴다.
 
 **`admin_analytics_daily_values`**
 
@@ -163,8 +163,8 @@ Amplitude에서 받은 지표 값을 저장한다. 조회 흐름과 유효 판�
 | `params_hash` | char(64) | NOT NULL | 조회 정의의 매개변수를 정해진 순서로 직렬화한 JSON의 SHA-256 16진 문자열 |
 | `params` | jsonb | NOT NULL | 해시를 만든 매개변수 원문<br>운영자가 행의 의미를 확인하는 용도 |
 | `metric_date` | date | NOT NULL | KST 날짜<br>리텐션은 코호트 날짜 |
-| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열 |
-| `fetched_at` | timestamptz | NOT NULL | Amplitude에서 받은 시각 |
+| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열<br>`langfuse_ai_cost`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체 배열이고 정상 조회에 데이터가 없던 날은 빈 배열 |
+| `fetched_at` | timestamptz | NOT NULL | Amplitude나 Langfuse에서 받은 시각 |
 | `finalized_at` | timestamptz | | 확정한 시각<br>NULL이면 다시 받을 수 있음 |
 
 | 제약과 인덱스 | 컬럼 |
