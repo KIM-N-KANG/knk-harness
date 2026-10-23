@@ -739,14 +739,15 @@ ECS DescribeServices**
 | 대상 | 설정값의 ECS 클러스터와 서비스, ALB, RDS 인스턴스, Redis 노드, OpenSearch 도메인과 계정 ID ([6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿))<br>설정이 빈 리소스 묶음은 조회하지 않고 응답에서 `null`<br>모두 비면 호출 없이 사용 불가 |
 | 인증 | 서버 태스크 역할의 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
 | 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>`TargetResponseTime`은 확장 통계 `p95`<br>운영 질의 수는 ECS 6, ALB 4, RDS 5, Redis 6, OpenSearch 2로 23개<br>응답에 `NextToken`이 있으면 이어 받음 |
+| 결과 확인 | 이어 받은 뒤 질의마다 `StatusCode`가 `Complete`이고 `Messages`에 오류가 없는지 확인<br>`Complete`가 아니거나(`PartialData`, `InternalError`, `Forbidden`) 오류가 있으면 그 질의가 속한 묶음의 조회 실패이며 0으로 채우지 않음<br>`GetMetricData` 한 번이 모든 묶음을 담으므로 응답 전체를 호출 실패와 같이 처리하고 캐시를 갱신하지 않음 |
 | 차원 | ECS는 `ClusterName`과 `ServiceName`<br>ALB는 `LoadBalancer`(ALB ARN 접미사)<br>RDS는 `DBInstanceIdentifier`<br>Redis는 `CacheClusterId`<br>OpenSearch는 `DomainName`과 `ClientId`(계정 ID) |
 | 태스크 수 | `DescribeServices` 한 번으로 설정한 서비스 전부의 `runningCount`, `desiredCount`, `pendingCount`<br>설정한 서비스가 응답의 `failures`에 있으면 실패로 봄 |
 | 집계 간격 | 기간 2일 이하 300초, 7일 이하 900초, 그보다 길면 3600초<br>조회 시작이 63일보다 오래되면 3600초<br>CloudWatch는 5분 단위 값을 63일, 1시간 단위 값을 455일 보관 |
 | 시각 | 조회 시작은 `from`의 KST 자정, 끝은 `to` 다음 날 KST 자정과 현재 시각 중 이른 쪽<br>점의 시각은 구간 시작 시각 |
 | 변환 | 지연 시간은 초를 밀리초로, OpenSearch 저장 공간은 MB를 바이트로 |
-| 빈 구간 | 건수 지표만 조회 범위의 모든 구간을 0으로 채움<br>그 밖의 지표는 받은 구간만 |
+| 빈 구간 | 건수 지표만 조회 범위의 모든 구간을 0으로 채움<br>`Complete`인 결과에만 적용<br>그 밖의 지표는 받은 구간만 |
 | 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>태스크마다 따로이고 키는 최근 100개 |
-| 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>호출 실패, 권한 거부, 호출 제한, 두 호출을 합친 시간 한도 5초 초과는 그 키에 60초 쿨다운 |
+| 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 두 호출을 합친 시간 한도 5초 초과는 그 키에 60초 쿨다운 |
 | 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 23개라 캐시를 거치지 않은 요청 1,000번에 약 0.23달러<br>`DescribeServices`는 무료 |
 | 집계와의 분리 | 다른 대시보드 응답과 별도 엔드포인트라 AWS 호출 장애가 DB 지표와 DB 테이블 크기에 영향을 주지 않음 |
 

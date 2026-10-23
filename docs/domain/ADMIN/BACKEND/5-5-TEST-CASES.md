@@ -346,6 +346,8 @@
 | 호출 제한 | 대역이 `ThrottlingException` | 503, `reason` `throttled` |
 | 시간 초과 | 대역이 5초 무응답 | 503, `reason` `timeout` |
 | 이어 받기 | `GetMetricData`가 `NextToken`으로 두 번에 나눠 응답 | 두 응답의 점을 합친 하나의 응답 |
+| 불완전 결과 | 이어 받은 뒤에도 `RequestCount` 결과의 `StatusCode`가 `PartialData`<br>캐시 없음 | 503, `reason` `incomplete`, 0으로 채운 점을 만들지 않고 캐시 미갱신 |
+| 질의 오류 | 한 질의 결과의 `StatusCode`가 `Forbidden`이나 `InternalError`<br>같은 범위의 만료된 캐시 있음 | 200과 캐시 값, 캐시 미갱신, `reason` `incomplete` |
 | 캐시 | 60초 안에 같은 범위 두 번 | 대역 호출은 처음 한 번 |
 | 범위별 캐시 | 다른 `from`으로 요청 | 대역을 따로 호출 |
 | 캐시 만료 | 고정 시계를 61초 뒤로 옮긴 뒤 같은 범위 | 대역 재호출 |

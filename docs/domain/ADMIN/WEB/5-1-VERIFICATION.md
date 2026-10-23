@@ -179,8 +179,10 @@
 | 태스크 카드 | `server`의 실행 1, 목표 2, 시작 중 1 | 큰 숫자 1개, 작은 줄 "목표 2개, 시작 중 1개" |
 | 서비스 이름 | `name`이 `server`, `ai`, `notification`, `worker` | 서버, AI, 알림, `worker` |
 | 요청 합 | `requests` 점 3개 312, 0, 40 | 요청 수 카드 352회 |
-| 용량 | `rds.freeStorageBytes` 마지막 점 18,253,611,008 | RDS 여유 스토리지 17.0GB |
+| 용량 | `rds.freeStorageBytes` 마지막 점 18,253,611,008 | RDS 여유 스토리지 18.3GB |
 | 응답 시간 | `responseTimeP95Ms` 182 | 182.0ms |
+| 수집된 값 없음 | `opensearch.freeStorageBytes`가 빈 배열<br>`rds.connections` 점이 모두 0 | OpenSearch 여유 스토리지 카드 "수집된 값 없음"<br>연결 수 차트는 0을 그림 |
+| 받은 시각 | `asOf` `2026-10-23T01:12:40Z` | CloudWatch 출처 툴팁에 "2026-10-23 10:12 KST에 받은 값" |
 | 가로 축 | `periodSeconds` 300, 기간 하루<br>기간 7일 | 축 눈금 `HH:mm`<br>`MM-DD HH:mm` |
 | 빈 구간 | `rds.cpu`가 12구간 중 10구간 | 비어 있는 두 구간에서 선이 끊김 |
 | 사용률 축 | CPU 최댓값 8% | 세로 축 0~100% |
@@ -188,7 +190,7 @@
 | 묶음 `null` | `redis`가 `null` | Redis 구역에 "이 환경에는 Redis 지표 설정이 없습니다.", RDS와 OpenSearch 구역 정상 |
 | 사용 불가 | 인프라 지표 요청이 사용 불가 | 서비스와 요청 탭과 저장소 탭에 "인프라 지표를 불러올 수 없음", DB 테이블 탭은 정상 |
 | DB 테이블 | URL에 `tab=tables&range=last7d` | 기간 선택기 비활성과 "현재", 요청은 `limit=20`만, 출처 표시 "서버 DB" |
-| 테이블 순서와 단위 | `tables` 3개, 첫 항목 `totalBytes` 402,653,184 | 순위 막대와 표가 응답 순서, 첫 항목 384.0MB |
+| 테이블 순서와 단위 | `tables` 3개, 첫 항목 `totalBytes` 402,653,184 | 순위 막대와 표가 응답 순서, 첫 항목 402.7MB |
 | 스키마 표기 | `public.chat_messages`, `audit.events` | "chat_messages", "audit.events" |
 | 추정 행 수 도움말 | 표의 추정 행 수 머리 옆 "?" | 통계 추정치 안내 툴팁 |
 | 기간 유지 | DB 테이블 탭에서 서비스와 요청 탭으로 | URL의 `range=last7d`가 그대로 적용 |

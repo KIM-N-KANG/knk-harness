@@ -2205,20 +2205,20 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | CloudWatch와 ECS에서 값을 받은 시각 |
+| `asOf` | `string` | CloudWatch와 ECS에서 값을 받은 시각<br>캐시로 응답하면 그 캐시를 만든 시각 |
 | `from`, `to` | `string` | 적용한 KST 날짜 |
 | `periodSeconds` | `integer` | 점 하나의 집계 간격(초)<br>기간 2일 이하 `300`, 7일 이하 `900`, 그보다 길면 `3600`<br>조회 시작이 63일보다 오래되면 기간과 무관하게 `3600` |
 | `ecs` | `object / null` | ECS 서비스 지표<br>클러스터나 서비스 설정이 비어 있으면 `null` |
 | `ecs.services` | `object[]` | 설정한 서비스 순서 |
 | `ecs.services[].name` | `string` | 설정의 표시 키<br>운영은 `server`, `ai`, `notification` |
-| `ecs.services[].runningTasks` | `integer` | 지금 실행 중인 태스크 수 |
-| `ecs.services[].desiredTasks` | `integer` | 지금 목표 태스크 수 |
-| `ecs.services[].pendingTasks` | `integer` | 지금 시작 중인 태스크 수 |
+| `ecs.services[].runningTasks` | `integer` | 조회 시각(`asOf`)에 실행 중인 태스크 수 |
+| `ecs.services[].desiredTasks` | `integer` | 조회 시각의 목표 태스크 수 |
+| `ecs.services[].pendingTasks` | `integer` | 조회 시각에 시작 중인 태스크 수 |
 | `ecs.services[].cpu` | 점 목록 | `AWS/ECS` `CPUUtilization` 평균(%) |
 | `ecs.services[].memory` | 점 목록 | `AWS/ECS` `MemoryUtilization` 평균(%) |
 | `alb` | `object / null` | ALB 지표<br>설정이 비어 있으면 `null` |
 | `alb.requests` | 점 목록 | `AWS/ApplicationELB` `RequestCount` 합(회) |
-| `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>대상에 닿지 못해 ALB가 만든 5xx |
+| `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>ALB가 생성한 5xx이며 대상이 반환한 5xx는 제외 |
 | `alb.target5xx` | 점 목록 | `HTTPCode_Target_5XX_Count` 합(회)<br>서버가 돌려준 5xx |
 | `alb.responseTimeP95Ms` | 점 목록 | `TargetResponseTime`의 `p95`(밀리초) |
 | `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있으면 `null` |
@@ -2246,7 +2246,7 @@ Authorization: Bearer {adminToken}
 
 - 점은 시각 오름차순이다.
 - 건수 지표(`alb.requests`, `alb.elb5xx`, `alb.target5xx`)는 CloudWatch가 값이 없는 구간을 빼고 주므로 서버가 조회 범위의 모든 구간을 0으로 채운다. 나머지 지표는 CloudWatch가 값을 준 구간만 담고 빈 구간을 채우지 않는다.
-- 태스크 수는 현재 값이라 기간과 무관하다.
+- 태스크 수는 조회 시각(`asOf`) 기준 값이라 기간과 무관하다.
 - 리소스 이름과 계정 ID는 응답에 넣지 않는다. Redis 노드만 노드를 구분하려고 캐시 클러스터 ID를 넣는다.
 
 <br>
@@ -2256,7 +2256,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 31일 초과 |
-| 503 | `SERVICE_UNAVAILABLE` | 리소스 설정이 모두 비어 있음<br>CloudWatch나 ECS 호출 실패, 권한 거부, 호출 제한, 시간 초과, 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 리소스 설정이 모두 비어 있음<br>CloudWatch나 ECS 호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 시간 초과, 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
