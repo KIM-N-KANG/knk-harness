@@ -13,7 +13,7 @@
 | 목적 | 점수 순위가 사용자 선택과 일치하는지 확인 | 운영에 사용할 모델과 추론 강도 선정 |
 | 대상 | 사용자가 선택한 기록이 있는 스토리라인 후보 | 고정한 스토리라인 프롬프트에서 configuration별로 생성한 후보 |
 | 평가 단위 | 같은 요청에서 생성된 후보 3편과 사용자 선택 | 생성 요청 1건의 후보 3편 |
-| 채점 단위 | 후보 세트 2개(스토리라인 본문 6편)를 함께 채점 | 후보 세트 2개(스토리라인 본문 6편)를 함께 채점 |
+| 채점 단위 | 후보 세트 1개(스토리라인 본문 3편)를 채점 | 후보 세트 1개(스토리라인 본문 3편)를 채점 |
 | 결과 | 사용자 선택과 점수 순위의 일치 여부 | 후보별 점수, 요청별 최고 점수와 평균 점수, 출력 실패율, 생성 시간과 비용 |
 
 <br>
@@ -816,8 +816,8 @@ xychart-beta horizontal
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
 flowchart LR
     P["<b>평가 모델 프롬프트</b><br/>평가 기준과 채점 지시"] --- J["<b>평가 모델</b><br/>gpt-6-astra · high<br/>후보 세트당 독립 호출 3회"]
-    S["<b>후보 세트 2개 · 본문 6편</b><br/>후보별 sample_id"] --- J
-    J --> O["<b>호출 1회당 JSON 채점 결과 6개</b><br/>results 배열<br/>sample_id: 후보 식별자<br/>score: 0~100점 정수<br/>reason: 채점 이유<br/>evidence: 본문 근거 문자열"]
+    S["<b>후보 세트 1개 · 본문 3편</b><br/>후보별 식별자"] --- J
+    J --> O["<b>채점 결과 3개</b><br/>후보별 식별자<br/>0~100점 정수 점수<br/>채점 이유와 본문 근거"]
     classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class P,S,O data
@@ -837,9 +837,9 @@ flowchart LR
 **평가 모델 일치율 측정**
 
 ```mermaid
-%%{init: {"flowchart": {"curve": "linear", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
+%%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
-    D["<b>고정 데이터셋</b><br/>train 또는 test<br/>후보 세트 2개 · 본문 6편"] --- J
+    D["<b>고정 데이터셋</b><br/>train 또는 test<br/>후보 세트 1개 · 본문 3편"] --- J
     P["<b>평가 모델의 프롬프트</b><br/>비교할 버전"] --- J
     J["<b>평가 모델</b><br/>모델과 추론 강도 고정<br/>후보 세트당 독립 채점 3회"] --> V
     L["<b>사용자 선택 라벨</b><br/>선택 1, 미선택 0"] --> V
@@ -860,50 +860,17 @@ flowchart LR
 
 | 항목 | 기준 |
 |---|---|
-| 호출 방식 | 호출당 후보 세트 2개(6편) 입력 <br> 각 후보 세트의 3회 채점은 순차 실행하며 회차마다 독립 호출 <br> 각 후보 세트 안에서 후보 제시 순서는 회차마다 한 칸씩 순환 <br> 이전 회차의 채점 결과와 사용자 선택 라벨은 전달하지 않음 |
-| test 분리 | 오케스트레이션 AI에 test 본문, 라벨, 점수와 기각 사유를 전달하지 않음 <br> 별도 실행기가 test 평가와 채택 판정 수행 |
+| 채점 조건 | 후보 세트 1개(스토리라인 본문 3편)씩 독립 평가 <br> 각 후보 세트를 3회 채점하며 후보 제시 순서는 회차마다 한 칸씩 순환 <br> 이전 회차의 채점 결과와 사용자 선택 라벨은 전달하지 않음 |
+| test 분리 | 오케스트레이션 AI에 test 본문, 라벨, 점수와 기각 사유를 전달하지 않음 |
 
 <br>
 
-**평가 모델 개선 사이클**
-
-```mermaid
-%%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 48}}}%%
-flowchart LR
-    A["<b>평가 모델 프롬프트 수정</b>"] --> B["<b>train 평가</b><br/>후보 세트당 독립 호출 3회"]
-    B --> C["<b>test 평가 진행 여부 판단</b>"]
-    C -->|검증 진행| D["<b>test 평가</b><br/>같은 수정본 사용"]
-    C -->|기각| F["<b>수정본 기각</b><br/>기존 버전 유지"]
-    D --> G["<b>채택 여부 판단</b>"]
-    G -->|채택| E["<b>정식 버전 채택</b><br/>즉시 종료"]
-    G -->|기각| F
-    F -->|실험 계속| A
-    F -->|종료 조건 충족| H["<b>종료</b><br/>기존 버전 유지"]
-    classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
-    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
-    classDef check fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
-    class A,B,D task
-    class C,G check
-    class E,F,H data
-```
+**평가 모델 개선 기준**
 
 | 항목 | 기준 |
 |---|---|
-| 가설 수립 | 오케스트레이션 AI가 담당 |
 | 개선 입력 | 정식 프롬프트, train 데이터와 채점 피드백, train에서 기각된 아이디어 기록 |
 | 수정 범위 | 평가 모델의 프롬프트에서 평가 기준 패턴을 추가, 수정, 삭제 <br> 나머지 지시와 출력 형식은 유지 |
-| 실패 기록 | train에서 기각된 아이디어와 기준 버전, 후보의 일치율 보존 |
-
-<br>
-
-**autoresearch 설정**
-
-| 항목 | 설정값 |
-|---|---|
-| 오케스트레이션 AI 모델 | `gpt-6-astra`, 추론 강도 `xhigh` |
-| 호출 타임아웃 | 5분 |
-| 실패 시 최대 재시도 횟수 | 3회 |
-| 동시 채점 호출 수 | 3개(후보 세트 6개, 총 18편) |
 
 <br>
 
