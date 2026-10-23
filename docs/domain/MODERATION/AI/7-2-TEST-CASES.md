@@ -68,14 +68,19 @@
 
 ### 7-2-6 실제 모델 통합
 
-승인·반려 라벨이 있는 이미지로 프롬프트 조립부터 실제 모델 호출과 응답 해석까지 검증한다.
-
 | ID | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| INT-01 | 승인·반려 이미지 데이터셋 | 판정 불가, 반려 누락, 승인 오반려 모두 0건 |
-| INT-02 | 테스트 활성화 후 승인 또는 반려 데이터 없음 | 건너뛰지 않고 실패 |
+| INT-01 | 승인·반려 이미지 데이터셋 | 미탐 0건 |
 
-AI 레포 루트에서 Docker, 공급자 키와 승인·반려 이미지 데이터셋을 준비한 뒤 실행한다.
+<br>
+
+**데이터셋 규모 (2026-10-23 기준)**
+
+| 구분 | 이미지 수 | AI 레포 기준 경로 |
+|---|---:|---|
+| 승인 | 112장 | `evaluation/moderation/datasets/images/approve/` |
+| 반려 | 93장 | `evaluation/moderation/datasets/images/reject/` |
+| 합계 | 205장 | — |
 
 ```bash
 RUN_MODERATION_DATASET=1 ./scripts/test.sh --live tests/integration/test_moderation_dataset_live.py
