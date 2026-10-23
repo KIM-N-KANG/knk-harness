@@ -358,7 +358,7 @@ Authorization: Bearer {adminToken}
 | `chartId` | `category` | `label` | `unit` | `link` |
 |---|---|---|---|---|
 | `genre-depth` | `engagement` | 범위 안에 생성된 채팅이 있는 장르 정식 이름 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
-| `turns` | `engagement` | `0`, `1`, `2`, `3~4`, `5~6`, `7~9`, `10~14`, `15~19`, `20~29`, `30~49`, `50+` | `개` | `chats`<br>`turnBucket`(0부터 10), `from`, `to` |
+| `turns` | `engagement` | `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7~9`, `10~14`, `15~19`, `20~29`, `30~49`, `50+` | `개` | `chats`<br>`turnBucket`(0부터 12), `from`, `to` |
 | `started-as` | `users` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
 | `member-chats` | `users` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
 | `first-message` | `engagement` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
@@ -420,7 +420,18 @@ Authorization: Bearer {adminToken}
       "unit": "개",
       "points": [
         { "label": "0", "value": 41, "link": { "list": "chats", "params": { "turnBucket": "0", "from": "2026-10-15", "to": "2026-10-21" } } },
-        { "label": "1", "value": 37, "link": { "list": "chats", "params": { "turnBucket": "1", "from": "2026-10-15", "to": "2026-10-21" } } }
+        { "label": "1", "value": 37, "link": { "list": "chats", "params": { "turnBucket": "1", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "2", "value": 28, "link": { "list": "chats", "params": { "turnBucket": "2", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "3", "value": 22, "link": { "list": "chats", "params": { "turnBucket": "3", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "4", "value": 19, "link": { "list": "chats", "params": { "turnBucket": "4", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "5", "value": 17, "link": { "list": "chats", "params": { "turnBucket": "5", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "6", "value": 15, "link": { "list": "chats", "params": { "turnBucket": "6", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "7~9", "value": 24, "link": { "list": "chats", "params": { "turnBucket": "7", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "10~14", "value": 18, "link": { "list": "chats", "params": { "turnBucket": "8", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "15~19", "value": 9, "link": { "list": "chats", "params": { "turnBucket": "9", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "20~29", "value": 7, "link": { "list": "chats", "params": { "turnBucket": "10", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "30~49", "value": 4, "link": { "list": "chats", "params": { "turnBucket": "11", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "50+", "value": 2, "link": { "list": "chats", "params": { "turnBucket": "12", "from": "2026-10-15", "to": "2026-10-21" } } }
       ]
     }
   ]
@@ -589,7 +600,7 @@ Authorization: Bearer {adminToken}
 | `storyId` | `string` | 선택 | 스토리 공개 식별자 |
 | `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
 | `startedAs` | `string` | 선택 | `GUEST`, `MEMBER` |
-| `turnBucket` | `integer` | 선택 | 0~10<br>턴 수 분포 차트의 구간 순서 |
+| `turnBucket` | `integer` | 선택 | 0~12<br>턴 수 분포 차트의 구간 순서 |
 | `hasFirstMessage` | `boolean` | 선택 | `true`는 생성 뒤 900초 안에 첫 사용자 메시지가 있는 채팅<br>`false`는 그 외 |
 | `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅 |
 | `from`, `to` | `string` | 선택 | 채팅 생성일 |
@@ -634,7 +645,7 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/chats?turnBucket=3&from=2026-10-15&to=2026-10-21&size=1
+GET /api/v1/admin/chats?turnBucket=4&from=2026-10-15&to=2026-10-21&size=1
 Authorization: Bearer {adminToken}
 ```
 
