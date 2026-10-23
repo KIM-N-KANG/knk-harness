@@ -648,7 +648,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | 소유자 | 소유 회원 닉네임과 회원 상세 링크 |
 | 반려 사유 | 첫 위반 항목의 이유와 기준 표시 이름 목록<br>2건 이상이면 "외 {N}건"<br>위반 항목이 없으면 빈칸 |
 | 보류 사유 또는 실패 원인 | 보류면 `holdReason`, 실패면 `errorCode`의 표시 이름 |
-| 검수 회차 | `attempt` |
+| 검수 회차 | `attempt`<br>열 머리 옆 "?" 툴팁에 회차의 뜻 |
 | 판정 시각 (KST) | `decidedAt`<br>판정 전이면 빈칸 |
 | 보류 시각 (KST) | `heldAt`<br>보류가 아니면 빈칸 |
 | 동작 | 보류 행만 해제 버튼 |
@@ -663,7 +663,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | 위반 항목 | 위치, 유형(글, 이미지), 기준 표시 이름, 이유<br>모든 항목 |
 | 이미지 결과 | 이미지(표지 또는 이미지 이름), 검수 상태, 이미지 오류 |
 
-- 위치는 필드 이름을 표시 이름으로 바꾼다. 아래 표에 없는 경로는 경로 그대로 보인다.
+- 위치는 경로를 표시 이름으로 바꾸되 하위 필드를 남긴다. 상위 항목의 번호는 1부터 센다. 아래 표에 없는 경로는 경로 그대로 보인다.
 - 설정 본문, 시작 설정, 주요 사건은 상세에 없다. 그 필드의 위반 항목은 위치와 이유로만 보인다.
 
 | 경로 | 표시 이름 |
@@ -672,14 +672,20 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | `oneLineIntro` | 한 줄 소개 |
 | `description` | 소개 |
 | `protagonistName` | 기본 주인공 이름 |
+| `thumbnailUrl` | 표지 |
 | `storySettings.worldSetting` | 세계관 설정 |
 | `storySettings.characterSetting` | 인물 설정 |
 | `storySettings.userRoleSetting` | 주인공 역할 설정 |
 | `storySettings.ruleSetting` | 전개 규칙 |
-| `startSettings[n]` 아래 | 시작 설정 {n+1} |
-| `mainEvents[n]` 아래 | 주요 사건 {n+1} |
-| `characters[n]` 아래 | 인물 {n+1} |
-| `thumbnailUrl` | 표지 |
+| `characters[n].name` | 인물 {n+1} 이름 |
+| `characters[n].description` | 인물 {n+1} 설명 |
+| `characters[n].images[m]` 아래 | 인물 {n+1} 이미지 {m+1} |
+| `startSettings[n].name` | 시작 설정 {n+1} 이름 |
+| `startSettings[n].prologue` | 시작 설정 {n+1} 프롤로그 |
+| `startSettings[n].startSituation` | 시작 설정 {n+1} 시작 상황 |
+| `mainEvents[n].name` | 주요 사건 {n+1} 이름 |
+| `mainEvents[n].description` | 주요 사건 {n+1} 설명 |
+| `mainEvents[n].keySentence` | 주요 사건 {n+1} 핵심 문장 |
 
 **3. 표시 이름**
 
@@ -699,12 +705,13 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | 보류 사유와 실패 원인 | `IMAGE_DOWNLOAD_FAILED` | 이미지 내려받기 실패 |
 | 보류 사유와 실패 원인 | `MODEL_CALL_FAILED` | 검수 모델 호출 실패 |
 | 보류 사유와 실패 원인 | `MODERATION_UNAVAILABLE` | 검수 서버 응답 실패 |
-| 보류 사유와 실패 원인 | `IMAGE_INVALID` | 이미지 형식 오류 |
+| 보류 사유와 실패 원인 | `IMAGE_INVALID` | 이미지 형식 또는 크기 오류 |
 | 보류 사유와 실패 원인 | `IMAGE_UNREADABLE` | 이미지 판독 불가 |
 | 보류 사유와 실패 원인 | `APPLY_FAILED` | 승인 뒤 적용 실패 |
 | 이미지 검수 상태 | `APPROVED` | 통과 |
 | 이미지 검수 상태 | `REJECTED` | 반려 |
-| 이미지 검수 상태 | `PENDING` | 검수 전 |
+| 이미지 검수 상태 | `ERROR` | 오류 |
+| 이미지 검수 상태 | `PENDING` | 판정 전 |
 
 - 표에 없는 코드는 코드 그대로 보인다. 위반 기준의 뜻은 MODERATION AI 계약의 위반 기준 코드 표를 따른다.
 
@@ -744,6 +751,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | 새 스토리 표시 | 새 스토리 |
 | 반려 사유 여러 건 | 외 {N}건 |
 | 반려 사유 열 도움말 | 검수에서 찾은 위반 항목입니다. 사용자가 고쳐 다시 제출하며 관리자는 판정을 바꾸지 않습니다. |
+| 검수 회차 열 도움말 | 접수 때 1이고 선점과 재제출마다 늘어나는 실행 구분 번호입니다. 실행 횟수와 다릅니다. |
 | 보류 사유 열 도움말 | 보류는 마지막 검수 실행이 실패한 원인이고 실패는 실행이 끝난 원인입니다. 보류는 원인을 조치한 뒤 해제해 주세요. |
 | 빈 목록 | 조건에 맞는 검수 제출이 없습니다. |
 | 해제 버튼 | 해제 |

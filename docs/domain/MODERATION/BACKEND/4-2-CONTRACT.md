@@ -639,7 +639,7 @@ Content-Type: application/json
 | `order` | `string` | 선택 | 기본 `desc` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
-- `decidedAt`이나 `heldAt`으로 정렬하면 그 값이 없는 행은 방향과 무관하게 뒤에 둔다. 같은 값은 `id` 내림차순이다.
+- `decidedAt`이나 `heldAt`으로 정렬하면 그 값이 없는 행은 방향과 무관하게 뒤에 둔다. 정렬 값이 같거나 함께 없는 행은 관리자 목록 공통 규칙대로 제출본 공개 식별자 오름차순이다.
 
 <br>
 
@@ -660,7 +660,7 @@ Content-Type: application/json
 | `items[].firstIssueReason` | `string / null` | 첫 위반 항목의 이유<br>위반 항목이 없으면 `null` |
 | `items[].holdReason` | `string / null` | 보류 원인 코드<br>보류가 아니면 `null` |
 | `items[].errorCode` | `string / null` | 실행 실패 코드<br>실패가 아니면 `null` |
-| `items[].attempt` | `integer` | 회차 |
+| `items[].attempt` | `integer` | 회차<br>접수 때 1이고 선점과 재제출마다 1씩 늘어나는 실행 구분 번호라 실행 횟수와 다름 |
 | `items[].createdAt` | `string` | 접수 시각 |
 | `items[].decidedAt` | `string / null` | 판정 시각 |
 | `items[].heldAt` | `string / null` | 보류 시각 |
@@ -704,7 +704,7 @@ Authorization: Bearer {adminToken}
       "firstIssueReason": "신체 훼손을 상세히 묘사합니다.",
       "holdReason": null,
       "errorCode": null,
-      "attempt": 1,
+      "attempt": 2,
       "createdAt": "2026-10-16T01:23:45.678Z",
       "decidedAt": "2026-10-16T01:25:10.123Z",
       "heldAt": null
@@ -755,8 +755,8 @@ Authorization: Bearer {adminToken}
 | `imageResults` | `object[]` | 폼의 이미지마다 한 항목 |
 | `imageResults[].path` | `string` | 폼 기준 이미지 필드 경로 |
 | `imageResults[].label` | `string` | 표지는 `표지`, 인물 이미지는 그 이미지 이름 |
-| `imageResults[].moderationStatus` | `string` | `APPROVED`, `REJECTED`, `PENDING` |
-| `imageResults[].errorCode` | `string / null` | 그 이미지의 이미지 오류 코드 |
+| `imageResults[].moderationStatus` | `string` | 그 이미지의 검수 결과<br>폼에 담긴 상태 값을 쓰지 않고 아래 순서로 정함<br>재대응한 위반 항목 가운데 이 경로의 `IMAGE` 항목이 있으면 `REJECTED`<br>재대응한 이미지 오류 가운데 이 경로의 항목이 있으면 `ERROR`<br>제출본이 `APPROVED`나 `REJECTED`면 `APPROVED`<br>그 밖(`PENDING`, `HELD`, `FAILED`)은 `PENDING` |
+| `imageResults[].errorCode` | `string / null` | 그 이미지의 이미지 오류 코드<br>`ERROR`일 때만 값이 있음 |
 | `retryCount` | `integer` | 예약한 자동 재시도 횟수 |
 | `updatedAt` | `string` | 마지막 변경 시각 |
 
@@ -797,7 +797,7 @@ Authorization: Bearer {adminToken}
   "firstIssueReason": "신체 훼손을 상세히 묘사합니다.",
   "holdReason": null,
   "errorCode": null,
-  "attempt": 1,
+  "attempt": 2,
   "createdAt": "2026-10-16T01:23:45.678Z",
   "decidedAt": "2026-10-16T01:25:10.123Z",
   "heldAt": null,

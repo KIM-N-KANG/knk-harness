@@ -225,21 +225,23 @@
 | 링크 조건 | URL에 `storyId`와 `memberId` | 두 조건이 요청에 실리고 필터 줄에 지울 수 있는 조건으로 보임 |
 | 정렬 | 판정 시각 머리글 누름 | `sort=decidedAt` |
 | 반려된 새 스토리 | `kind` `CREATE`, `status` `REJECTED`, `story.storyId` `null`, 위반 2건 | 종류 "등록", 상태 "반려", 제목 옆 "새 스토리", 반려 사유가 첫 이유와 "외 1건", 기준 표시 이름 |
+| 검수 회차 도움말 | 검수 회차 머리 옆 "?" | "접수 때 1이고 선점과 재제출마다 늘어나는 실행 구분 번호입니다. 실행 횟수와 다릅니다." |
 | 보류 행 | `status` `HELD`, `holdReason` `MODERATION_UNAVAILABLE` | 상태 "보류", "검수 서버 응답 실패", 해제 버튼 |
-| 실패 행 | `status` `FAILED`, `errorCode` `IMAGE_INVALID` | 상태 "실패", "이미지 형식 오류", 해제 버튼 없음 |
+| 실패 행 | `status` `FAILED`, `errorCode` `IMAGE_INVALID` | 상태 "실패", "이미지 형식 또는 크기 오류", 해제 버튼 없음 |
 | 모르는 코드 | 기준 `NEW_RULE`, 원인 `NEW_CODE` | 코드 그대로 |
 | 빈 목록 | `items` 빈 배열 | "조건에 맞는 검수 제출이 없습니다." |
 | 행 이동 | 행 누름 | `/moderation/submissions/{submissionId}` 상세 |
 | 상세 | 반려된 등록본 상세 | 검수 대상 필드 7개, 위반 항목의 위치 "세계관 설정"과 기준 "극단적인 잔혹 표현", 이미지 결과의 표지 "통과" |
+| 이미지 검수 상태 | `imageResults`의 `moderationStatus` `APPROVED`, `REJECTED`, `ERROR`와 `errorCode` `IMAGE_UNREADABLE`, `PENDING` | "통과", "반려", "오류"와 "이미지 판독 불가", "판정 전" |
 | 상세 범위 | 상세 화면 | 설정 본문, 시작 설정, 주요 사건 본문이 없음 |
-| 경로 표시 | 위치 `characters[1].images[0].imageUrl`, `unknownField` | "인물 2", `unknownField` |
+| 경로 표시 | 위치 `characters[1].images[0].imageUrl`, `characters[1].description`, `startSettings[0].prologue`, `mainEvents[2].keySentence`, `characters[0].unknown`, `unknownField` | "인물 2 이미지 1", "인물 2 설명", "시작 설정 1 프롤로그", "주요 사건 3 핵심 문장", `characters[0].unknown`, `unknownField` |
 | 상세 없음 | 서버가 404 | "제출본을 찾을 수 없습니다." |
 | 사유 검증 | 빈 사유, 공백만, 501자 | 확인 버튼 비활성 또는 "처리 사유를 입력해 주세요.", 요청 없음 |
-| 해제 성공 | 목록의 보류 행에서 사유 "AI 서버 복구 확인"으로 확인 | `POST /api/moderation/holds/{submissionId}/release`에 본문 `{"reason":"AI 서버 복구 확인"}`, 대화상자 닫힘, 목록 다시 요청, "보류를 해제했습니다." 알림 |
+| 해제 성공 | 목록의 보류 행에서 사유 "AI 서버 복구 확인"으로 확인 | `POST /api/moderation/holds/{submissionId}/release`에 본문 `{"reason":"AI 서버 복구 확인"}`, 대화상자 닫힘, 목록과 그 제출본 상세의 캐시 무효화와 목록 다시 요청, 그 상세를 열면 새로 요청, "보류를 해제했습니다." 알림 |
 | 상세에서 해제 | 보류 상세에서 해제 성공 | 상세와 목록 다시 요청, 상태가 "대기" |
 | 처리 중 | 응답 대기 | 두 버튼과 입력 칸 비활성, "처리 중…", Esc와 바깥 누름으로 닫히지 않음 |
 | 409 | 서버가 409 | 대화상자에 "이미 보류가 풀린 제출본입니다. 목록을 새로 불러왔습니다.", 목록과 상세 다시 요청 |
-| 404 | 서버가 404 | "제출본을 찾을 수 없습니다. 목록을 새로 불러왔습니다.", 목록 다시 요청 |
+| 404 | 서버가 404 | "제출본을 찾을 수 없습니다. 목록을 새로 불러왔습니다.", 목록과 그 상세의 캐시 무효화와 다시 요청<br>상세에서 받았으면 상세가 "제출본을 찾을 수 없습니다."로 바뀌고 캐시에 옛 상세가 남지 않음 |
 | 서버 오류 | 서버가 500 | "보류를 해제하지 못했습니다. 잠시 후 다시 시도해 주세요.", 대화상자 유지 |
 | 초점 | 대화상자 열기와 취소 | 사유 입력 칸에 초점, 닫으면 해제 버튼으로 초점 |
 | 스토리 상세 링크 | 스토리 상세<br>검수 상태 `HELD`인 스토리 상세 | "제출 이력"이 `/moderation/submissions?storyId={ID}`<br>"검수 보류 보기"가 `storyId`와 `status=HELD` |

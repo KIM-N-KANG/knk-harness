@@ -165,10 +165,12 @@
 | 위반 요약 | 위반 항목 3개(기준 `DRUGS`, `EXTREME_GORE`, `DRUGS`) | `issueCount` 3, `issueRules` `["DRUGS","EXTREME_GORE"]`, `firstIssueReason`이 첫 항목 이유 |
 | 보류와 실패 코드 | 보류 1건과 실패 1건 | 보류는 `holdReason`과 `heldAt`, 실패는 `errorCode`와 `decidedAt` |
 | 정렬 | `sort=decidedAt&order=asc`, 판정 전 행 포함 | 판정 시각 오름차순, 판정 전 행은 맨 뒤 |
+| 동률 정렬 | 같은 접수 시각 3건과 판정 시각이 없는 2건, `size` 2로 `sort=createdAt`과 `sort=decidedAt` | 같은 시각과 값 없는 행이 제출본 공개 식별자 오름차순<br>페이지를 넘겨도 중복과 누락 없음 |
 | 필터 | `memberId`, `storyId`, `from`과 `to`, `q`에 제출본 식별자와 제목 일부 | 각각 그 조건의 제출본만 |
 | 쿼리 오류 | `status=DRAFT`, `sort=updatedAt`, `memberId=abc`, `page=0` | 400 |
 | 목록 범위 | 응답 본문 | 설정 본문, 검수 폼, 이미지 URL, 객체 키 없음 |
 | 상세 | 반려된 등록본 | `fields`의 제목, 한 줄 소개, 소개, 기본 주인공 이름, 장르, 공개 범위, 인물 이름, 위반 항목 전체, 이미지 결과 |
+| 이미지 검수 상태 | 승인 제출본, 표지에 `IMAGE` 위반이 있는 반려 제출본, 인물 이미지에 `IMAGE_INVALID`가 있는 실패 제출본, 대기와 보류 제출본 | 승인은 모두 `APPROVED`<br>반려는 표지 `REJECTED`, 다른 이미지 `APPROVED`<br>실패는 그 이미지 `ERROR`와 `errorCode`, 다른 이미지 `PENDING`<br>대기와 보류는 모두 `PENDING`<br>폼의 상태 값과 무관 |
 | 상세 범위 | 응답 본문 | 설정 본문, 시작 설정, 주요 사건, 인물 설명, 이미지 URL, 객체 키 없음 |
 | 상세 재대응 | 대상 인물이 사라진 위반 항목이 있는 수정 제출본 | 상세 `issues`에서 빠지고 목록 `issueCount`는 저장된 수 |
 | 상세 없음 | 없는 식별자, 형식 오류 | 404 |
