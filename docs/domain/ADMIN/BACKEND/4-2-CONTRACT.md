@@ -572,7 +572,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `retention` | `object[]` | 기준 턴 도달률<br>`turn`이 1, 3, 5, 10, 20인 항목 5개 |
+| `retention` | `object[]` | 기준 턴 도달률<br>`turn`이 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50인 항목 12개, 오름차순 |
 | `retention[].turn` | `integer` | 기준 턴 |
 | `retention[].rate` | `number` | 삭제되지 않은 채팅 중 현재 턴이 기준 턴 이상인 비율<br>0~1<br>채팅이 없으면 0 |
 | `recentChats` | `object[]` | 최근 생성된 채팅 5개<br>채팅 목록 항목 구조 |
@@ -2030,7 +2030,7 @@ Authorization: Bearer {adminToken}
 | `segments` | `object[]` | `all`, `guest`, `member` 세 항목<br>범위 안에 생성된 삭제되지 않은 채팅을 현재 소유자 유형으로 나눔 |
 | `segments[].segment` | `string` | `all`, `guest`, `member` |
 | `segments[].chats` | `integer` | 채팅 수 |
-| `segments[].reached` | `object[]` | 기준 턴 1, 5, 10, 20의 항목 4개 |
+| `segments[].reached` | `object[]` | 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50의 항목 12개, 오름차순<br>턴 수 분포 13구간에서 0을 뺀 구간 시작 턴 |
 | `segments[].reached[].turn` | `integer` | 기준 턴 |
 | `segments[].reached[].chats` | `integer` | 현재 턴이 기준 이상인 채팅 수 |
 | `segments[].reached[].rate` | `number` | `chats`로 나눈 0~1<br>채팅이 없으면 0 |
@@ -2126,6 +2126,7 @@ Authorization: Bearer {adminToken}
 | `daily[].chats` | `integer` | 채팅 수 |
 | `daily[].withPersona` | `integer` | 페르소나 이름 스냅샷이 있는 채팅 수 |
 | `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 `chat_models.code`의 값 |
+| `daily[].turnsByModel` | `object` | 채팅 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 그 채팅의 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 모델의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 모델은 키 없음 |
 
 <br>
 
@@ -2222,6 +2223,8 @@ Authorization: Bearer {adminToken}
 | `ecs.services[].pendingTasks` | `integer` | 조회 시각에 시작 중인 태스크 수 |
 | `ecs.services[].cpu` | 점 목록 | `AWS/ECS` `CPUUtilization` 평균(%) |
 | `ecs.services[].memory` | 점 목록 | `AWS/ECS` `MemoryUtilization` 평균(%) |
+| `ecs.services[].cpuMax` | 점 목록 | `CPUUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
+| `ecs.services[].memoryMax` | 점 목록 | `MemoryUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
 | `alb` | `object / null` | ALB 지표<br>설정이 비어 있으면 `null` |
 | `alb.requests` | 점 목록 | `AWS/ApplicationELB` `RequestCount` 합(회) |
 | `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>ALB가 생성한 5xx이며 대상이 반환한 5xx는 제외 |
@@ -2294,7 +2297,9 @@ Authorization: Bearer {adminToken}
         "desiredTasks": 2,
         "pendingTasks": 0,
         "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 7.4 }, { "at": "2026-10-22T15:05:00Z", "value": 8.1 }],
-        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 41.2 }, { "at": "2026-10-22T15:05:00Z", "value": 41.5 }]
+        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 41.2 }, { "at": "2026-10-22T15:05:00Z", "value": 41.5 }],
+        "cpuMax": [{ "at": "2026-10-22T15:00:00Z", "value": 21.0 }, { "at": "2026-10-22T15:05:00Z", "value": 12.3 }],
+        "memoryMax": [{ "at": "2026-10-22T15:00:00Z", "value": 44.0 }, { "at": "2026-10-22T15:05:00Z", "value": 44.1 }]
       }
     ]
   },

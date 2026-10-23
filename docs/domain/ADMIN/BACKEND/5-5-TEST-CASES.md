@@ -127,7 +127,7 @@
 | 이미지 호출 필터 | 채팅 목록 `aiFeature=chat_image&aiStatus=FAILED` | 실패한 `chat_image` 기록이 연결된 채팅만 |
 | 스토리 검색 | 제목 일부, 소유자 닉네임 일부, 스토리 공개 식별자 | 각각 일치하는 스토리 |
 | 삭제 스토리 | 삭제된 스토리 목록과 상세 | 목록 제외<br>404 |
-| 기준 턴 도달률 | 채팅 턴 0, 1, 5, 12 | `turn` 1은 0.75, 3은 0.5, 5는 0.5, 10은 0.25, 20은 0 |
+| 기준 턴 도달률 | 채팅 턴 0, 1, 5, 12 | 항목 12개가 `turn` 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50 순서<br>`turn` 1은 0.75, 2부터 5까지 0.5, 6부터 10까지 0.25, 15 이상은 0 |
 | 최근 채팅 | 채팅 7개 | `recentChats` 5개 생성 시각 내림차순 |
 | 채팅 게스트 여부 | 게스트 채팅<br>이관된 채팅 | `GUEST`<br>`MEMBER` |
 | 턴 구간 필터 | `turnBucket=12`<br>`turnBucket=5`와 `6` | 현재 턴 50 이상만<br>각각 현재 턴 5만, 6만 |
@@ -277,13 +277,14 @@
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
 | 게스트 한도 퍼널 | 구글 퍼널 2단계 6과 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[1].users` 6, `steps[2].users` 7로 앞 단계보다 커도 그대로, `event` `login_succeeded` |
 | 퍼널 기간 | 31일<br>32일, 모르는 퍼널 이름 | 200<br>400 |
-| 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `all` `chats` 4, 턴 1 비율 0.75, 턴 5는 0.75, 턴 10은 0.5, 턴 20은 0.25, `guest`와 `member` 각 2 |
+| 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `reached` 12개<br>`all` `chats` 4, 턴 1부터 5까지 비율 0.75, 6부터 10까지 0.5, 15와 20은 0.25, 30과 50은 0<br>`guest`와 `member`의 `chats` 각 2 |
 | 게스트에서 회원으로 | 이관 시각 전 생성 채팅 턴 5와 7, 이관 뒤 생성 채팅 턴 8 | `chatsReached5` 2, `chatsReached6` 1, `rate` 0.5 |
 | 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 12회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 7개), `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 기능 사용 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
+| 모델별 턴 수 | 10-21에 `AURORA` 채팅의 AI 응답 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 `LITE` 채팅의 10-21 AI 응답 3개, 삭제된 `LITE` 채팅의 10-21 AI 응답 1개, 팀 계정 채팅의 AI 응답 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 4}`<br>합 6이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
 | AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
 | 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
 | 실시간 이미지 비용 | 장당 원가 48원, 모델 없는 `chat_image` 성공 3회와 실패 1회, 입력 단가 1,000원과 출력 단가 4,000원 모델의 `chat_response` 성공 1회(입력 1,000토큰, 출력 500토큰) | `chat_image` 항목의 `calls` 3, `costKrw` 144, `inputTokens`와 `outputTokens` 0, `callsWithoutTokens` 0<br>`totals.costKrw` 147, `costPerTurnKrw` 3, `chatImageUnitCostKrw` 48<br>`unpricedModels`에 영향 없음 |
@@ -332,7 +333,7 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 구성 | 운영과 같은 설정(서비스 3개, Redis 노드 2개, 모든 리소스) | `GetMetricData` 질의 23개, 지표와 통계와 차원이 계약의 표와 같음<br>`TargetResponseTime`은 `p95`<br>`DescribeServices` 한 번에 서비스 3개 |
+| 조회 구성 | 운영과 같은 설정(서비스 3개, Redis 노드 2개, 모든 리소스) | `GetMetricData` 질의 29개(ECS는 서비스마다 CPU와 메모리의 `Average`와 `Maximum`), 지표와 통계와 차원이 계약의 표와 같음<br>`TargetResponseTime`은 `p95`<br>`DescribeServices` 한 번에 서비스 3개 |
 | 기본 기간 | 쿼리 없음, 고정 시계 2026-10-23 09:00 KST | `from`과 `to`가 2026-10-23, 조회 시작 2026-10-23 00:00 KST, 끝 09:00 KST, `periodSeconds` 300 |
 | 지난 날짜 끝 | `from=2026-10-20&to=2026-10-21` | 조회 끝이 2026-10-22 00:00 KST |
 | 집계 간격 | 기간 2일, 3일, 7일, 8일, 31일 | `periodSeconds` 300, 900, 900, 3600, 3600 |
@@ -342,6 +343,7 @@
 | 건수 0 채움 | 2시간 범위의 300초 간격에서 `RequestCount`가 24구간 중 3구간만 옴 | `requests` 점 24개, 나머지 21개는 0 |
 | 비건수 빈 구간 | `CPUUtilization`이 24구간 중 20구간만 옴 | `cpu` 점 20개, 채우지 않음 |
 | 태스크 수 | 대역이 `server` 실행 2, 목표 2, 시작 중 0 | `ecs.services[0]`의 `runningTasks` 2, `desiredTasks` 2, `pendingTasks` 0 |
+| 최댓값 통계 | `CPUUtilization`의 `Average` 7.4, `Maximum` 21.0 | `cpu` 7.4, `cpuMax` 21.0 |
 | 서비스 실패 항목 | `DescribeServices`의 `failures`에 `ai` | 503, `reason` `aws_error`, `service` `ecs` |
 | 묶음 설정 없음 | Redis 노드 설정만 빈 값 | `redis`가 `null`, Redis 질의 없음, 나머지 묶음 정상 |
 | 계정 ID 없음 | OpenSearch 도메인은 있고 계정 ID가 빈 값 | `opensearch`가 `null` |

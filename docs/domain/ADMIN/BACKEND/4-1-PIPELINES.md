@@ -215,7 +215,7 @@ CHAT`"]
 | 보류 상태 | 그 스토리를 대상으로 하는 대기 상태이면서 보류 시각이 있는 제출본이 있으면 `HELD` |
 | 채팅 수와 턴 합 | 삭제되지 않은 채팅<br>`chatFrom` 또는 `chatTo`가 있으면 지정된 경계 안에 생성된 채팅만 |
 | AI 호출 필터 | AI 호출 기록의 스토리 ID로 연결<br>조건에 맞는 기록이 하나 이상인 스토리 |
-| 기준 턴 도달률 | 기준 턴 1, 3, 5, 10, 20마다 현재 턴이 기준 이상인 채팅 수를 채팅 수로 나눔 |
+| 기준 턴 도달률 | 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50마다 현재 턴이 기준 이상인 채팅 수를 채팅 수로 나눔<br>기준 턴은 전환의 채팅 턴 도달률과 같음 |
 | 최근 채팅 | 생성 시각 내림차순 5개<br>채팅 목록 항목과 같은 조립 |
 
 <br>
@@ -522,7 +522,7 @@ Amplitude 퍼널은 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | `story-creation` | `client_storyCreate_storyGeneration_requested` → `client_storyCreate_storylineOption_selected` → `client_storyCreate_storyCompletion_requested` → `client_storyCreate_completed`, 1회 |
 | `story-detail-chat` | 캠페인 상세 진입 퍼널과 같은 7단계에서 캠페인 조건을 빼고 `storyId`가 있을 때만 1단계와 2단계에 `story_id` 필터, 1회 |
 | `guest-limit-login` | `client_guestLimitDialog_shown` → `client_guestLimitDialog_loginButton_clicked` → 로그인 성공<br>마지막 단계는 구글과 카카오 로그인 성공 이벤트로 퍼널을 2회 조회해 1단계와 2단계는 첫 조회 값, 3단계는 두 조회의 합<br>같은 사용자가 두 경로로 로그인하면 두 번 셈 |
-| 턴 도달률 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `user_id` 유무로 게스트와 회원으로 나누고 `current_turn`이 1, 5, 10, 20 이상인 수를 셈<br>팀 계정 제외 목록 적용 |
+| 턴 도달률 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `user_id` 유무로 게스트와 회원으로 나누고 `current_turn`이 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50 이상인 수를 각각 셈<br>팀 계정 제외 목록 적용 |
 | 게스트에서 회원으로 | 소유 회원의 `users.migrated_at`이 있고 채팅 `created_at`이 그보다 이른 채팅 중 `current_turn`이 5 이상인 수와 6 이상인 수<br>채팅별 이관 시각이 없어 회원의 이관 시각으로 판정 |
 
 <br>
@@ -536,7 +536,7 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 기능 사용 조회 | 채팅 메시지 전송 이벤트 합계 1회와 이벤트 속성 `input_mode`가 `choice`, `plain`, `block`인 이벤트 필터를 하나씩 건 합계 3회<br>`client_chat_streamError_shown` 합계 1회<br>`client_chat_loadError_shown`, `client_storyList_loadError_shown`, `client_storyCreate_completeError_shown`, `client_creditShortageDialog_shown`, `client_creditCharge_viewed`, `client_creditCharge_attendanceButton_clicked`, `client_invite_codeInput_succeeded` 고유 사용자 7회<br>모든 조회의 이벤트 필터에 사용자 지표의 국가 조건을 넣고 `platform`이 `web`이나 `android`이면 플랫폼 조건을 더함 |
 | 입력 방식 | `choice`, `plain`, `block`은 각 필터 조회의 합계<br>`unknown`은 전송 합계에서 세 값을 뺀 값 |
 | 오류율 | 날짜마다 스트림 오류 합계를 전송 합계로 나눔 |
-| 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>팀 계정 제외 목록 적용 |
+| 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>모델별 턴 수는 범위 안에 생성된 AI 응답 메시지를 메시지 `created_at`의 KST 날짜와 그 채팅의 `model_code`로 묶어 셈<br>재생성 판본은 세지 않고 채팅의 삭제 여부와 생성일은 보지 않음<br>팀 계정 제외 목록 적용 |
 | AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>`model`이 `NULL`인 기록은 한 묶음으로 두고 토큰 수가 `NULL`이면 0으로 더하며 그런 호출 수를 따로 셈<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 토큰 합에 곱한 뒤 1,000,000으로 나눔<br>단가가 없는 모델과 `model`이 `NULL`인 묶음은 비용 `null`이고 단가가 없는 모델 이름만 응답의 `unpricedModels`에 적음<br>`chat_image`는 토큰과 모델 단가를 쓰지 않고 날짜와 모델로 묶은 성공 호출 수에 실시간 이미지 장당 원가를 곱함<br>그 항목의 토큰 합은 0이고 토큰 수가 없는 호출 수와 단가 없는 모델에 세지 않음<br>턴당 원가와 스토리당 원가의 분자와 분모에 넣지 않음 |
 
 <br>
@@ -739,7 +739,7 @@ ECS DescribeServices**
 |---|---|
 | 대상 | 설정값의 ECS 클러스터와 서비스, ALB, RDS 인스턴스, Redis 노드, OpenSearch 도메인과 계정 ID ([6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿))<br>설정이 빈 리소스 묶음은 조회하지 않고 응답에서 `null`<br>모두 비면 호출 없이 사용 불가 |
 | 인증 | 서버 태스크 역할의 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
-| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>`TargetResponseTime`은 확장 통계 `p95`<br>운영 질의 수는 ECS 6, ALB 4, RDS 5, Redis 6, OpenSearch 2로 23개<br>응답에 `NextToken`이 있으면 이어 받음 |
+| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>`TargetResponseTime`은 확장 통계 `p95`<br>ECS의 CPU와 메모리는 `Average`와 `Maximum` 두 통계를 따로 질의<br>운영 질의 수는 ECS 12, ALB 4, RDS 5, Redis 6, OpenSearch 2로 29개<br>응답에 `NextToken`이 있으면 이어 받음 |
 | 결과 확인 | 이어 받은 뒤 질의마다 `StatusCode`가 `Complete`이고 `Messages`에 오류가 없는지 확인<br>`Complete`가 아니거나(`PartialData`, `InternalError`, `Forbidden`) 오류가 있으면 그 질의가 속한 묶음의 조회 실패이며 0으로 채우지 않음<br>`GetMetricData` 한 번이 모든 묶음을 담으므로 응답 전체를 호출 실패와 같이 처리하고 캐시를 갱신하지 않음 |
 | 차원 | ECS는 `ClusterName`과 `ServiceName`<br>ALB는 `LoadBalancer`(ALB ARN 접미사)<br>RDS는 `DBInstanceIdentifier`<br>Redis는 `CacheClusterId`<br>OpenSearch는 `DomainName`과 `ClientId`(계정 ID) |
 | 태스크 수 | `DescribeServices` 한 번으로 설정한 서비스 전부의 `runningCount`, `desiredCount`, `pendingCount`<br>설정한 서비스가 응답의 `failures`에 있으면 실패로 봄 |
@@ -749,7 +749,7 @@ ECS DescribeServices**
 | 빈 구간 | 건수 지표만 조회 범위의 모든 구간을 0으로 채움<br>`Complete`인 결과에만 적용<br>그 밖의 지표는 받은 구간만 |
 | 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>태스크마다 따로이고 키는 최근 100개 |
 | 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 두 호출을 합친 시간 한도 5초 초과는 그 키에 60초 쿨다운 |
-| 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 23개라 캐시를 거치지 않은 요청 1,000번에 약 0.23달러<br>`DescribeServices`는 무료 |
+| 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 29개라 캐시를 거치지 않은 요청 1,000번에 약 0.29달러<br>Container Insights는 켜지 않음<br>`DescribeServices`는 무료 |
 | 집계와의 분리 | 다른 대시보드 응답과 별도 엔드포인트라 AWS 호출 장애가 DB 지표와 DB 테이블 크기에 영향을 주지 않음 |
 
 <br>

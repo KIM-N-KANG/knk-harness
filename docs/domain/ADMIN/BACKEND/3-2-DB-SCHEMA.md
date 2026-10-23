@@ -205,7 +205,7 @@ Amplitude에서 받은 지표 값을 저장한다. 조회 흐름과 유효 판�
 | `social_accounts` | `user_id`, `email`, `provider`, `connected_at`, `deleted_at` | 회원 목록의 이메일 정확 일치 검색<br>신규 가입자의 가입 경로 |
 | `story_chats` | `id`, `public_id`, `story_id`, `user_id`, `current_turn`, `persona_name_snapshot`, `model_code`, `created_at`, `updated_at`, `deleted_at` | 채팅 시작 수, 채팅 목록과 상세, 턴 분포, 기준 턴 도달률, 턴 도달률과 게스트 이관 비율, 페르소나와 모델 비중, 회원의 채팅 수와 최근 활동 |
 | `chat_models` | `code` | 모델 비중의 키 |
-| `story_messages` | `chat_id`, `role`, `created_at` | 채팅 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
+| `story_messages` | `chat_id`, `role`, `created_at` | 채팅 턴 수, 모델별 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
 | `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
 | `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
