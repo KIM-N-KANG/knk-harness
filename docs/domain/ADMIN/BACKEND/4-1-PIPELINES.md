@@ -537,7 +537,7 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 입력 방식 | `choice`, `plain`, `block`은 각 필터 조회의 합계<br>`unknown`은 전송 합계에서 세 값을 뺀 값 |
 | 오류율 | 날짜마다 스트림 오류 합계를 전송 합계로 나눔 |
 | 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>팀 계정 제외 목록 적용 |
-| AI 비용 | 상태가 성공이고 `feature`가 `chat_image`가 아닌 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>`model`이 `NULL`인 기록은 한 묶음으로 두고 토큰 수가 `NULL`이면 0으로 더하며 그런 호출 수를 따로 셈<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 토큰 합에 곱한 뒤 1,000,000으로 나눔<br>단가가 없는 모델과 `model`이 `NULL`인 묶음은 비용 `null`이고 단가가 없는 모델 이름만 응답의 `unpricedModels`에 적음 |
+| AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 `input_token_count`와 `output_token_count`를 더함<br>`model`이 `NULL`인 기록은 한 묶음으로 두고 토큰 수가 `NULL`이면 0으로 더하며 그런 호출 수를 따로 셈<br>단가 표에서 모델 이름으로 입력과 출력 백만 토큰당 원을 찾아 토큰 합에 곱한 뒤 1,000,000으로 나눔<br>단가가 없는 모델과 `model`이 `NULL`인 묶음은 비용 `null`이고 단가가 없는 모델 이름만 응답의 `unpricedModels`에 적음<br>`chat_image`는 토큰과 모델 단가를 쓰지 않고 날짜와 모델로 묶은 성공 호출 수에 실시간 이미지 장당 원가를 곱함<br>그 항목의 토큰 합은 0이고 토큰 수가 없는 호출 수와 단가 없는 모델에 세지 않음<br>턴당 원가와 스토리당 원가의 분자와 분모에 넣지 않음 |
 
 <br>
 

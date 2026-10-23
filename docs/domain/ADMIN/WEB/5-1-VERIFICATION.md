@@ -151,6 +151,7 @@
 | 모르는 모델 | 모델 코드 `NOVA` | `NOVA` 그대로 |
 | 채팅 없음 | 채팅 수 합 0 | 비중 자리 "채팅 없음" |
 | AI 비용 | `totals.costKrw` 6, `costPerTurnKrw` 3 | 총 AI 비용 6원, 턴당 원가 3원 |
+| 실시간 이미지 비용 | `chatImageUnitCostKrw` 48, `chat_image` 항목 `calls` 3과 `costKrw` 144, `totals.costKrw` 147, `costPerTurnKrw` 3 | 총 AI 비용 147원, 턴당 원가 3원<br>비용 차트에 실시간 이미지 생성 계열 144원<br>비용 표의 실시간 이미지 생성 행 토큰 칸 "해당 없음"<br>출처 툴팁 "실시간 이미지는 장당 48원으로 계산하며…" |
 | 단가 없음 | `costKrw`가 `null`이고 모델 있음 | "단가 없음", 0원으로 표시하지 않음 |
 | 모델 정보 없음 | `model`이 `null` | "모델 정보 없음"과 누락 안내 |
 | 토큰 없음 | `callsWithoutTokens` 1 | 토큰 없음 안내 |

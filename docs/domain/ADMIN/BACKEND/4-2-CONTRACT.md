@@ -2143,7 +2143,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버 DB의 AI 호출 기록으로 계산한다. 팀 계정 제외 목록은 적용하지 않는다. 토큰 단가는 설정 파일 고정값이다.
+서버 DB의 AI 호출 기록으로 계산한다. 팀 계정 제외 목록은 적용하지 않는다. 토큰 단가와 실시간 이미지 장당 원가는 설정 파일 고정값이다.
 
 **1. 쿼리**
 
@@ -2157,24 +2157,26 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
 | `currency` | `string` | 항상 `KRW` |
+| `chatImageUnitCostKrw` | `number` | 실시간 이미지 장당 원가<br>설정값이며 초기값 48 |
 | `daily` | `object[]` | 날짜 오름차순<br>AI 호출 기록 생성일 기준 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목 |
-| `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `storyline_generation`, `story_completion` |
+| `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
 | `daily[].byFeature[].model` | `string / null` | 기록의 모델 이름<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
 | `daily[].byFeature[].calls` | `integer` | 성공 호출 수 |
-| `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수 |
-| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | 토큰 합<br>토큰 수가 없는 호출은 0으로 더함 |
-| `daily[].byFeature[].costKrw` | `number / null` | `(inputTokens × 입력 단가 + outputTokens × 출력 단가) / 1,000,000`<br>단가는 백만 토큰당 원<br>`model`이 `null`이거나 단가가 없는 모델은 `null` |
+| `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수<br>`chat_image`는 항상 0 |
+| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | 토큰 합<br>토큰 수가 없는 호출은 0으로 더함<br>`chat_image`는 항상 0 |
+| `daily[].byFeature[].costKrw` | `number / null` | `(inputTokens × 입력 단가 + outputTokens × 출력 단가) / 1,000,000`<br>단가는 백만 토큰당 원<br>`model`이 `null`이거나 단가가 없는 모델은 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 `model`과 무관하게 `null`이 아님 |
 | `totals` | `object` | 범위 합계 |
-| `totals.costKrw` | `number` | `costKrw`가 `null`이 아닌 항목의 합 |
+| `totals.costKrw` | `number` | `costKrw`가 `null`이 아닌 항목의 합<br>`chat_image` 항목 포함 |
 | `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 단가 유무와 무관한 전체 호출 수<br>호출이 0이면 `null` |
 | `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
-| `unpricedModels` | `string[]` | 범위 안에 호출이 있는데 단가가 없는 모델 이름<br>`model`이 `null`인 기록은 넣지 않음 |
+| `unpricedModels` | `string[]` | 범위 안에 호출이 있는데 단가가 없는 모델 이름<br>`model`이 `null`인 기록과 `chat_image` 기록은 넣지 않음 |
 
 - 비용은 백만 토큰당 단가로 계산한다. 입력 단가 1,000원, 출력 단가 4,000원인 모델의 입력 2,000토큰과 출력 1,000토큰은 (2,000 × 1,000 + 1,000 × 4,000) / 1,000,000 = 6원이다.
 - 모델 미상, 단가 없음, 토큰 미수집인 호출은 비용 합에서 빠지거나 0으로 더해지므로 `totals`와 원가는 그만큼 작다. 빠진 정도는 `unpricedModels`, `model`이 `null`인 항목, `callsWithoutTokens`로 알 수 있다.
-- 이미지 생성 비용은 포함하지 않는다. 실시간 이미지의 `chat_image` 기록은 토큰이 없어 집계 대상에서 빼며 `callsWithoutTokens`에도 세지 않는다. 장당 단가로 넣는 방식은 결정 21의 제안이다.
+- 실시간 이미지(`chat_image`)는 토큰이 없어 성공 호출 수에 장당 원가를 곱한다. 장당 원가 48원인 날 성공 3장은 144원이다. 턴당 원가와 스토리당 원가에는 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다.
+- 표지와 인물 이미지 같은 스토리 제작의 이미지 생성 비용은 AI 호출 기록에 없어 포함하지 않는다.
 
 <br>
 

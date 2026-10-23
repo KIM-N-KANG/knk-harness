@@ -286,7 +286,7 @@
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | AI 비용 | 입력 단가 1,000원, 출력 단가 4,000원(백만 토큰당)인 모델의 `chat_response` 성공 2회(각 입력 1,000토큰과 출력 500토큰), 단가 없는 모델의 `story_completion` 성공 1회 | `chat_response` 항목의 `costKrw` 6, `costPerTurnKrw` 3<br>단가 없는 항목은 `costKrw` `null`이고 `unpricedModels`에 그 모델 |
 | 모델과 토큰 없음 | 모델이 없는 `chat_response` 성공 1회<br>모델은 있고 출력 토큰 수가 없는 `chat_response` 성공 1회 | `model` `null` 항목의 `costKrw` `null`, `unpricedModels`에 없음<br>그 모델 항목의 `callsWithoutTokens` 1, `outputTokens`에 0으로 더함<br>`costPerTurnKrw`의 분모는 두 호출을 포함한 `chat_response` 호출 수 |
-| 이미지 비용 제외 | `chat_image` 성공 3회와 `chat_response` 성공 1회 | `byFeature`에 `chat_image` 항목 없음, `callsWithoutTokens`와 `unpricedModels`에 영향 없음 |
+| 실시간 이미지 비용 | 장당 원가 48원, 모델 없는 `chat_image` 성공 3회와 실패 1회, 입력 단가 1,000원과 출력 단가 4,000원 모델의 `chat_response` 성공 1회(입력 1,000토큰, 출력 500토큰) | `chat_image` 항목의 `calls` 3, `costKrw` 144, `inputTokens`와 `outputTokens` 0, `callsWithoutTokens` 0<br>`totals.costKrw` 147, `costPerTurnKrw` 3, `chatImageUnitCostKrw` 48<br>`unpricedModels`에 영향 없음 |
 | AI 비용 범위 | 실패 호출과 팀 계정 회원의 호출 | 실패는 제외, 팀 계정은 포함 |
 | DB 지표 기간 | 366일<br>367일 | 200<br>400 |
 | 격리 | 대역 500 상태에서 DB 지표 호출 | 모두 200 |
