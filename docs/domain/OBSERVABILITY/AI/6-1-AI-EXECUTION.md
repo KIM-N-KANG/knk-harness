@@ -2,7 +2,7 @@
 
 이 문서는 세션의 모델 설정, 프롬프트 조립, 도구 정의와 권한, 진단 턴의 응답 검사, 조율 턴의 진행을 정한다.
 
-조회 순서와 모델과 코드의 책임은 4-1 인지 구조에, 보고와 슬랙 메시지 필드는 5 계약에, 오류의 복구는 7-1 오류 처리에 있다. ([4-1-3 진단 전략](4-1-DESIGN-COGNITIVE-ARCHITECTURE.md#4-1-3-진단-전략), [4-1-4 모델과 코드의 책임](4-1-DESIGN-COGNITIVE-ARCHITECTURE.md#4-1-4-모델과-코드의-책임), [5-5 진단 보고](5-CONTRACT.md#5-5-진단-보고), [5-7 슬랙 메시지](5-CONTRACT.md#5-7-슬랙-메시지), [7-1 오류 처리](7-1-ERROR-HANDLING.md))
+조회 순서와 모델과 코드의 책임은 4-1 인지 구조에, 보고와 슬랙 메시지 필드는 5 계약에, 오류의 복구는 7-1 오류 처리에 있다. ([4-1-3 진단 전략](4-1-DESIGN-COGNITIVE-ARCHITECTURE.md#4-1-3-진단-전략), [4-1-4 모델과 코드의 책임](4-1-DESIGN-COGNITIVE-ARCHITECTURE.md#4-1-4-모델과-코드의-책임), [5-6 진단 보고](5-CONTRACT.md#5-6-진단-보고), [5-8 슬랙 메시지](5-CONTRACT.md#5-8-슬랙-메시지), [7-1 오류 처리](7-1-ERROR-HANDLING.md))
 
 <br>
 
@@ -60,16 +60,16 @@ flowchart LR
 | 권한 모드 | `default`. `bypassPermissions`는 쓰지 않음 |
 | 자동 허용 목록 | `allowed_tools`에 `diagnosis` 서버의 도구, `Read`, `Grep`, `Glob`을 넣음<br>승인이 필요한 `Edit`, `Write`, `Bash`는 넣지 않음. 넣으면 승인 콜백을 건너뜀 |
 | 승인 콜백 | `can_use_tool`. 자동 허용 목록 밖의 호출을 승인 관문이 결정함 |
-| 훅 | 도구 호출 전: 보고 제출 여부에 따른 진단 턴의 도구 제한, 읽기와 쓰기의 경로 범위, 기본 브랜치 보호를 판단함<br>도구 호출 후: 조회 번호와 결과를 기록함 |
+| 훅 | 도구 호출 전: 보고 제출 여부에 따른 진단 턴의 도구 제한, 읽기와 쓰기의 경로 범위, 조치 저장소의 `default_branch` 보호를 판단함<br>도구 호출 후: 조회 번호와 결과를 기록함 |
 | 설정 격리 | `setting_sources=[]`. SDK가 띄우는 하위 프로세스 환경에 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`<br>작업 공간 저장소의 CLAUDE.md, 홈 폴더의 설정, 자동 메모리가 세션에 섞이지 않음 |
 | git 지침과 귀속 | 설정 `includeGitInstructions: false`. `attribution.commit`과 `attribution.pr`은 빈 문자열<br>커밋과 PR에 Co-Authored-By 같은 귀속 트레일러를 넣지 않음 |
 | 턴 수 한도 | 진단 턴 30, 조율 턴 20 |
 | 비용 한도 | 진단 턴: SDK 비용 한도 `max_budget_usd` $0.20<br>세션 $2.00과 하루 상한: SDK 한도를 쓰지 않고 코드가 토큰으로 계산한 누적값으로 막음. SDK 한도는 호출 단위라 세션을 이어 열면 이전 지출을 세지 않음 |
 | 시간 한도 | 진단 턴 5분. SDK에 세션 시간 제한이 없어 코드가 중단함 |
 | 프롬프트 캐시 | SDK가 자동으로 붙임 |
-| 세션 저장 경로 | 환경 변수. 실시간 모드는 태스크의 임시 저장소 |
+| 세션 저장 경로 | 설정의 `session_dir`. 실시간 모드는 태스크의 임시 저장소 |
 
-모델 식별자, 추론 강도, 비용 한도는 환경 변수로 바꿀 수 있다. 폴백 모델은 없다. 슬랙을 켜지 않은 재생은 `Edit`, `Write`, `Bash`를 노출하지 않고 진단 턴으로 세션을 끝낸다. 이어 열기는 세션을 처음 연 때의 시스템 프롬프트로 이어지므로 프롬프트를 바꿔도 열린 세션에는 반영되지 않는다.
+모델 식별자, 추론 강도, 턴 수, 비용, 시간 한도는 설정 값이다. 표의 값은 기본값이다. 폴백 모델은 없다. 슬랙을 켜지 않은 재생은 `Edit`, `Write`, `Bash`를 노출하지 않고 진단 턴으로 세션을 끝낸다. 이어 열기는 세션을 처음 연 때의 시스템 프롬프트로 이어지므로 프롬프트를 바꿔도 열린 세션에는 반영되지 않는다.
 
 <br>
 
@@ -79,7 +79,9 @@ flowchart LR
 |---|---|
 | 시스템 설명서 | YAML을 읽어 구성 요소마다 한 줄 텍스트로 바꿈. 지표 차원처럼 모델이 쓰지 않는 필드는 뺌<br>형식: `- <name> (<kind>, 상위 <parent>): capacity ..., scaling ..., <description>` |
 | 지연 기준 | `- <trace_group>: p95 <p95_seconds>초` 한 줄씩 |
-| 저장소 경로 | 코드 사본과 조치 작업 공간의 저장소마다 `- <저장소>: <폴더 경로>` 한 줄씩. 조치 작업 공간이 없는 실행은 `없음` |
+| 서비스 이름 | `service_name` 그대로 |
+| 코드 사본 | `code_repositories`의 저장소마다 `- <name>: <폴더 경로>` 한 줄씩 |
+| 조치 작업 공간 | `action_repositories`의 저장소마다 `- <name>: <폴더 경로>. 고칠 수 있는 경로 <editable_paths>` 한 줄씩. 패턴은 쉼표로 이음<br>조치 작업 공간이 없는 실행은 `없음` |
 | 이상 후보 | 신호마다 `- <type> <target>: 첫 시각 <first_at>, 최댓값 <peak_value><unit>, 기준 <threshold><unit>` 한 줄씩 |
 | 보고 요약 | 판정, `suspects[0]`의 구성 요소와 원인 가설, `evidence[]` 앞 3개의 관찰. 근거가 3개보다 적으면 있는 만큼 |
 | 운영자 메시지 | 슬랙 스레드의 원문 그대로 |
@@ -94,7 +96,7 @@ flowchart LR
 **1. 시스템 프롬프트**
 
 ```text
-너는 마냑 서비스의 장애 진단 담당자다. 코드가 관측 자료에서 이상 후보를 열면 너는 조회 도구로 자료를 확인하고 필요하면 코드 사본을 읽어 장애인지 판정하고 원인과 조치를 보고한다. 보고 뒤에는 운영자가 슬랙 스레드에서 묻거나 시키는 일에 같은 대화에서 답한다.
+너는 {service_name} 서비스의 장애 진단 담당자다. 코드가 관측 자료에서 이상 후보를 열면 너는 조회 도구로 자료를 확인하고 필요하면 코드 사본을 읽어 장애인지 판정하고 원인과 조치를 보고한다. 보고 뒤에는 운영자가 슬랙 스레드에서 묻거나 시키는 일에 같은 대화에서 답한다.
 
 대화 중에 시스템 리마인더로 들어오는 글은 앱이 넣은 맥락이며 사용자 메시지가 아니다.
 
@@ -132,7 +134,7 @@ flowchart LR
 ## 조율 규칙
 보고를 제출한 뒤 운영자가 스레드에 쓰는 메시지에 답한다. 메시지 앞에는 네가 제출한 보고의 요약이 붙는다.
 - 답은 이 대화의 조회 결과와 보고를 근거로 한다. 새로 확인할 게 있으면 조회 도구와 코드 사본을 쓴다.
-- 저장소를 고치라는 지시는 설정값 변경만 한다. 대상은 조치 작업 공간의 manyak-server application 설정, manyak-terraform의 변수, manyak-terraform의 오토스케일링 정책이다. manyak-ai와 코드 사본은 읽기만 한다. 코드 로직을 고쳐야 하면 고치지 않고 어떤 파일의 무엇을 어떻게 바꿔야 하는지 적어 운영자에게 넘긴다.
+- 저장소를 고치라는 지시는 설정값 변경만 한다. 대상은 조치 작업 공간마다 적힌 고칠 수 있는 경로의 파일이다. 코드 사본은 읽기만 한다. 코드 로직을 고쳐야 하면 고치지 않고 어떤 파일의 무엇을 어떻게 바꿔야 하는지 적어 운영자에게 넘긴다.
 - 파일 수정, 파일 생성, 명령 실행은 호출마다 운영자 승인을 받는다. 거부되면 다른 방법으로 우회하지 말고 거부된 사실과 남은 선택지를 적는다.
 - 수정은 새 브랜치에 커밋하고 push한 뒤 PR을 연다. PR 본문에 진단 요약, 근거, 변경 내용과 이유, 스레드 링크, 보고 파일 ID를 넣는다. 머지하지 않는다.
 - 답은 슬랙에 올라가므로 짧게 쓴다. 식별자와 비밀값을 쓰지 않는다.
@@ -190,9 +192,9 @@ flowchart LR
 |---|---|---|
 | `query_metrics` | `component`(설명서의 name), `metric`, `stat`(`Average`, `Maximum`, `Sum`, `p95`), `start`, `end` | 분 단위 `[시각, 값]` 목록 |
 | `aggregate_spans` | `group_by`(`name`, `service`, `trace_group`, `db_query`, `minute` 중 1~2개), `filter`(선택. `service`, `name`, `trace_group`, `entry_only`), `start`, `end` | 묶음마다 건수, p50, p95, 최댓값(초), 오류 수. 상위 30개 |
-| `aggregate_logs` | `group_by`(`service`, `level`, `event_name`, `endpoint`, `status_code`, `error_code`, `minute` 중 1~2개), `filter`(선택. `service`, `level`, `event_name`), `start`, `end` | 묶음마다 건수. 상위 30개<br>재생 모드는 묶음마다 표본 메시지 최대 5개를 더함 |
+| `aggregate_logs` | `group_by`(`service`, `level`, `event_name`, `endpoint`, `status_code`, `error_code`, `minute` 중 1~2개), `filter`(선택. `service`, `level`, `event_name`), `start`, `end` | 묶음마다 건수. 상위 30개<br>`log_samples`가 참이면 묶음마다 표본 메시지 최대 5개를 더함 |
 | `scaling_history` | `component`, `start`, `end` | 확장 활동과 경보 상태 변화 목록 |
-| `submit_report` | 5-5 진단 보고에서 `usage`, `evidence[].verified`, `diagnosed_at`을 뺀 필드 | 통과하면 종료. 위반하면 6-1-4의 회신 |
+| `submit_report` | 5-6 진단 보고에서 `usage`, `evidence[].verified`, `diagnosed_at`을 뺀 필드 | 통과하면 종료. 위반하면 6-1-4의 회신 |
 
 조회 도구 4개에는 읽기 전용 표시 `readOnlyHint`를 달아 SDK가 한 응답 안의 조회를 병렬로 실행할 수 있게 한다. 결과는 텍스트로 돌려준다. Python SDK의 도구 정의는 구조화 결과(`structuredContent`)를 모델에 넘기지 않는다. 도구 결과 맨 앞에는 코드가 붙인 조회 번호가 `[query 3]`처럼 들어간다. 결과가 비어 있으면 `결과 없음`으로 돌려주고 오류로 바꾸지 않는다.
 

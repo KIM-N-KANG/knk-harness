@@ -1,8 +1,8 @@
 # 5. 계약
 
-이 문서는 에이전트가 읽는 자료 원천, 시스템 설명서, 이상 후보와 진단 보고의 필드, 실행 폴더의 파일, 슬랙 메시지와 조치 PR의 내용을 정한다.
+이 문서는 에이전트가 읽는 설정 파일, 자료 원천, 시스템 설명서, 이상 후보와 진단 보고의 필드, 실행 폴더의 파일, 슬랙 메시지와 조치 PR의 내용을 정한다.
 
-필드의 의미는 3 태스크 정의에 있다. ([3-3 이상 후보](3-TASK-DEFINITION.md#3-3-이상-후보), [3-4 진단](3-TASK-DEFINITION.md#3-4-진단), [3-5 조율](3-TASK-DEFINITION.md#3-5-조율))
+필드의 의미는 3 태스크 정의에, 설정 파일 위치와 비밀값 출처는 7-4 배포에 있다. ([3-3 이상 후보](3-TASK-DEFINITION.md#3-3-이상-후보), [3-4 진단](3-TASK-DEFINITION.md#3-4-진단), [3-5 조율](3-TASK-DEFINITION.md#3-5-조율), [7-4-4 환경 변수와 비밀 정보](7-4-DEPLOYMENT.md#7-4-4-환경-변수와-비밀-정보))
 
 시각은 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고에는 그대로 옮긴다.
 
@@ -15,54 +15,220 @@
 | OpenSearch | 읽기 | 검색 API에 집계 질의 | 재생: 재생용 OpenSearch 관리자 계정<br>실시간: 운영 OpenSearch의 읽기 전용 사용자 |
 | CloudWatch 지표 | 읽기 | 재생: 보관 파일<br>실시간: 지표 조회 API | 실시간: 태스크 역할의 지표 읽기 |
 | Application Auto Scaling, CloudWatch 경보 | 읽기 | 재생: 보관 파일<br>실시간: 확장 활동과 경보 이력 조회 API | 실시간: 태스크 역할의 이력 읽기 |
-| Secrets Manager | 읽기 | 실시간: 시작 때 비밀 하나를 읽음<br>재생: 같은 키를 담은 비밀 파일을 읽음 | 실시간: 태스크 역할의 그 비밀 읽기 |
+| Parameter Store | 읽기 | `ssm:` 위치를 받은 실행이 시작 때 설정 파일이나 시스템 설명서를 담은 파라미터를 읽음 | 실시간: 태스크 역할의 그 두 파라미터 읽기 |
+| Secrets Manager | 읽기 | 비밀값 출처가 Secrets Manager인 실행이 시작 때 비밀 하나를 읽음<br>출처가 비밀 파일이면 같은 키를 담은 파일을 읽음 | 실시간: 태스크 역할의 그 비밀 읽기 |
 | 모델 API | 호출 | Claude Agent SDK의 세션 | API 키 |
-| 슬랙 | 양방향 | 소켓 모드. 채널 하나에 알림을 올리고 스레드 메시지와 버튼 응답을 받음 | 봇 토큰과 앱 토큰. 채널 쓰기, 스레드 읽기 |
-| 코드 저장소 | 읽기와 쓰기 | manyak-server와 manyak-ai를 코드 사본으로 받음<br>manyak-server와 manyak-terraform을 조치 작업 공간으로 받아 브랜치를 push하고 PR을 만듦 | 토큰. manyak-ai 내용 읽기<br>manyak-server와 manyak-terraform의 내용 쓰기와 PR 생성 |
+| 슬랙 | 양방향 | 소켓 모드. `slack.channel` 채널 하나에 알림을 올리고 스레드 메시지와 버튼 응답을 받음 | 봇 토큰과 앱 토큰. 채널 쓰기, 스레드 읽기 |
+| 코드 저장소 | 읽기와 쓰기 | `code_repositories`의 저장소를 코드 사본으로 받음<br>`action_repositories`의 저장소를 조치 작업 공간으로 받아 브랜치를 push하고 PR을 만듦 | 토큰. `code_repositories`에만 있는 저장소는 내용 읽기<br>`action_repositories`의 저장소는 내용 쓰기와 PR 생성 |
 | 운영자 | 출력 | 실행 폴더의 파일과 슬랙 | 파일 쓰기 |
 
 <br>
 
-### 5-2 자료 원천
+### 5-2 설정 파일
+
+대상 서비스와 운영 환경에 맞춰 바꾸는 값은 YAML 설정 파일 하나로 받는다. 비밀값은 설정 파일에 두지 않는다.
+
+<br>
+
+**1. 읽기와 덮어쓰기**
+
+| 항목 | 규칙 |
+|---|---|
+| 위치 | 환경 변수 `DIAG_CONFIG`로 받음. 파일 경로이거나 `ssm:` 뒤에 Parameter Store 파라미터 이름 |
+| 상대 경로 | 파일 경로 값이 상대 경로면 설정 파일이 있는 폴더 기준. 환경 변수로 덮어쓴 값도 같음<br>설정 위치가 `ssm:`이면 상대 경로를 받지 않음 |
+| 우선순위 | 환경 변수, 설정 파일, 코드 기본값 순 |
+| 덮어쓰기 이름 | 키 경로의 점을 밑줄로 바꾸고 대문자로 바꾼 뒤 앞에 `DIAG_`를 붙임. `limits.queries`는 `DIAG_LIMITS_QUERIES`<br>`DIAG_CONFIG`, `DIAG_SECRET_ID`, `DIAG_SECRETS_FILE`은 덮어쓰기가 아님 |
+| 덮어쓰기 대상 | 문자열, 숫자, 불리언 값만. 배열과 배열 안의 값은 설정 파일에서만 바꿈 |
+| 값 변환 | 환경 변수의 문자열을 키의 타입으로 바꿈. 불리언은 `true`, `false`만 받음 |
+| 받지 않는 값 | 아래 항목 표와 5-3 표에 없는 키<br>그 키와 이름이 맞지 않는 `DIAG_` 환경 변수<br>키의 타입으로 바꿀 수 없는 값<br>빠진 필수 항목 |
+| 시스템 설명서 | 대상 시스템의 구성과 설계값은 `system_description`이 가리키는 별도 파일(5-4)에 둠. 재생 구간마다 설명서만 바꾸고 같은 설정 파일을 쓰게 하려고 따로 둠 |
+
+<br>
+
+**2. 항목**
+
+코드 기본값은 마냑에서 쓰는 값이다. 환경마다 달라 기본값을 둘 수 없는 항목은 필수다.
+
+| 키 | 타입 | 기본값 | 의미 | 덮어쓰는 환경 변수 |
+|---|---|---|---|---|
+| `service_name` | 문자열 | 필수 | 시스템 프롬프트에 넣는 대상 서비스 이름 | `DIAG_SERVICE_NAME` |
+| `system_description` | 문자열 | 필수 | 시스템 설명서 위치. 파일 경로이거나 `ssm:` 뒤에 파라미터 이름 | `DIAG_SYSTEM_DESCRIPTION` |
+| `aws.region` | 문자열 | `ap-northeast-2` | CloudWatch, Application Auto Scaling, Secrets Manager, Parameter Store를 부르는 지역 | `DIAG_AWS_REGION` |
+| `opensearch.url` | 문자열 | 필수 | OpenSearch 주소 | `DIAG_OPENSEARCH_URL` |
+| `opensearch.user` | 문자열 | 필수 | OpenSearch 사용자. 비밀번호는 비밀값 `OPENSEARCH_PASSWORD` | `DIAG_OPENSEARCH_USER` |
+| `opensearch.log_index` | 문자열 | 필수 | 로그 인덱스 패턴 | `DIAG_OPENSEARCH_LOG_INDEX` |
+| `opensearch.span_index` | 문자열 | `otel-v1-apm-span-*` | 스팬 인덱스 패턴 | `DIAG_OPENSEARCH_SPAN_INDEX` |
+| `fields.log.<항목>` | 문자열 | 5-3의 로그 인덱스 표 | 로그 필드 이름 대응표 | 항목마다. `DIAG_FIELDS_LOG_TIMESTAMP` 등 |
+| `fields.span.<항목>` | 문자열 | 5-3의 스팬 인덱스 표 | 스팬 필드 이름 대응표 | 항목마다. `DIAG_FIELDS_SPAN_DURATION` 등 |
+| `redact_fields` | 문자열 배열 | `device_id_hash`, `session_id`, `request_id` | 조회에서 요청하지 않고 표본 메시지에서 값을 빼는 로그 필드 이름 | 없음 |
+| `log_samples` | 불리언 | 재생 `true`<br>실시간 `false` | 로그 집계에 묶음마다 표본 메시지 최대 5개를 더함 | `DIAG_LOG_SAMPLES` |
+| `detection.queue_spans` | 문자열 배열 | 빈 배열 | 대기 스팬으로 보는 스팬 이름. 비어 있으면 대기 지연 신호를 판정하지 않음 | 없음 |
+| `detection.queue_latency_seconds` | 숫자 | `1` | 대기 지연 신호의 1분 p95 기준 | `DIAG_DETECTION_QUEUE_LATENCY_SECONDS` |
+| `detection.failure_ratio` | 숫자 | `0.01` | 실패율 신호 기준 | `DIAG_DETECTION_FAILURE_RATIO` |
+| `detection.error_level` | 문자열 | `ERROR` | 오류 로그로 세는 `fields.log.level` 값 | `DIAG_DETECTION_ERROR_LEVEL` |
+| `detection.error_logs_per_minute` | 정수 | `10` | 오류 로그 신호의 서비스별 1분 건수 기준 | `DIAG_DETECTION_ERROR_LOGS_PER_MINUTE` |
+| `detection.saturation_percent` | 숫자 | `70` | 자원 포화 신호 기준 | `DIAG_DETECTION_SATURATION_PERCENT` |
+| `detection.min_samples` | 정수 | `20` | 진입 지연, 대기 지연, 실패율 신호를 판정하는 그 분의 최소 건수 | `DIAG_DETECTION_MIN_SAMPLES` |
+| `detection.confirm_window_minutes` | 정수 | `5` | 신호 확정에 보는 최근 분 수 | `DIAG_DETECTION_CONFIRM_WINDOW_MINUTES` |
+| `detection.confirm_minutes` | 정수 | `3` | 그 안에서 조건을 넘어야 확정하는 분 수 | `DIAG_DETECTION_CONFIRM_MINUTES` |
+| `detection.close_quiet_minutes` | 정수 | `10` | 모든 신호가 조건을 넘지 않은 채 지나면 이상 후보를 닫는 분 수 | `DIAG_DETECTION_CLOSE_QUIET_MINUTES` |
+| `model.id` | 문자열 | `claude-opus-5-5` | 모델 식별자 | `DIAG_MODEL_ID` |
+| `model.effort` | 문자열 | `medium` | 추론 강도. `low`, `medium`, `high` | `DIAG_MODEL_EFFORT` |
+| `limits.queries` | 정수 | `25` | 진단 턴의 조회 횟수 | `DIAG_LIMITS_QUERIES` |
+| `limits.diagnosis_seconds` | 정수 | `300` | 진단 턴 시간 | `DIAG_LIMITS_DIAGNOSIS_SECONDS` |
+| `limits.diagnosis_turns` | 정수 | `30` | 진단 턴의 SDK 턴 수 | `DIAG_LIMITS_DIAGNOSIS_TURNS` |
+| `limits.coordination_turns` | 정수 | `20` | 조율 턴의 SDK 턴 수 | `DIAG_LIMITS_COORDINATION_TURNS` |
+| `limits.diagnosis_usd` | 숫자 | `0.20` | 진단 턴의 SDK 비용 한도 | `DIAG_LIMITS_DIAGNOSIS_USD` |
+| `limits.session_usd` | 숫자 | `2.00` | 세션 비용 한도 | `DIAG_LIMITS_SESSION_USD` |
+| `limits.daily_usd` | 숫자 | `5.00` | 실시간 모드의 하루 비용 상한 | `DIAG_LIMITS_DAILY_USD` |
+| `limits.approval_wait_seconds` | 정수 | `7200` | 승인 대기 | `DIAG_LIMITS_APPROVAL_WAIT_SECONDS` |
+| `limits.session_lifetime_hours` | 정수 | `24` | 실시간 모드에서 이상 후보를 닫은 뒤 세션이 운영자 메시지를 받는 시간 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
+| `session_dir` | 문자열 | 필수 | SDK 세션 파일 폴더 | `DIAG_SESSION_DIR` |
+| `slack.channel` | 문자열 | 슬랙을 켠 실행은 필수 | 알림 채널 ID | `DIAG_SLACK_CHANNEL` |
+| `code_repositories[]` | 배열 | 필수. 1개 이상 | 코드 사본으로 받는 저장소 | 없음 |
+| `code_repositories[].name` | 문자열 | 필수 | 보고의 `code_ref.repo` 값 | 없음 |
+| `code_repositories[].clone_url` | 문자열 | 필수 | clone 주소 | 없음 |
+| `code_repositories[].branch` | 문자열 | 필수 | 실시간 모드가 진단 턴마다 맞추는 브랜치. 운영에 배포되는 브랜치 | 없음 |
+| `action_repositories[]` | 배열 | 슬랙을 켠 실행은 필수. 1개 이상 | 조치 작업 공간으로 받는 저장소 | 없음 |
+| `action_repositories[].name` | 문자열 | 필수 | `actions.jsonl`의 `repo` 값 | 없음 |
+| `action_repositories[].clone_url` | 문자열 | 필수 | clone 주소 | 없음 |
+| `action_repositories[].default_branch` | 문자열 | 필수 | 조치 PR의 대상 브랜치. 도구 호출 전 훅이 이 브랜치로의 push와 머지를 거부함 | 없음 |
+| `action_repositories[].editable_paths[]` | 문자열 배열 | 필수. 1개 이상 | 조치에서 고칠 수 있는 파일의 glob 패턴. 저장소 루트 기준이고 `**`는 여러 단계 폴더<br>시스템 프롬프트로 모델에 알림 | 없음 |
+
+<details>
+<summary><b>설정 파일 예시(재생 구간)</b></summary>
+
+<br>
+
+공개 저장소에 두는 예시 설정 파일이다. 슬랙 채널 ID는 합성 값이다.
+
+```yaml
+service_name: 마냑
+system_description: systems/R1.yaml
+aws:
+  region: ap-northeast-2
+opensearch:
+  url: https://localhost:9200
+  user: admin
+  log_index: manyak-logs-loadtest-*
+  span_index: otel-v1-apm-span-*
+fields:
+  log:
+    timestamp: "@timestamp"
+    service: service
+    level: level
+    event_name: event_name
+    endpoint: endpoint
+    http_method: http_method
+    status_code: status_code
+    duration: duration_ms
+    error_code: error_code
+    message: message
+    trace_id: traceId
+  span:
+    start_time: startTime
+    end_time: endTime
+    service: serviceName
+    name: name
+    trace_group: traceGroup
+    parent_span_id: parentSpanId
+    duration: durationInNanos
+    duration_unit: nanoseconds
+    status_code: status.code
+    db_statement: "span.attributes.jdbc@query[0]"
+    trace_id: traceId
+redact_fields: [device_id_hash, session_id, request_id]
+log_samples: true
+detection:
+  queue_spans: [chat.turn.queue]
+  queue_latency_seconds: 1
+  failure_ratio: 0.01
+  error_level: ERROR
+  error_logs_per_minute: 10
+  saturation_percent: 70
+  min_samples: 20
+  confirm_window_minutes: 5
+  confirm_minutes: 3
+  close_quiet_minutes: 10
+model:
+  id: claude-opus-5-5
+  effort: medium
+limits:
+  queries: 25
+  diagnosis_seconds: 300
+  diagnosis_turns: 30
+  coordination_turns: 20
+  diagnosis_usd: 0.20
+  session_usd: 2.00
+  daily_usd: 5.00
+  approval_wait_seconds: 7200
+  session_lifetime_hours: 24
+session_dir: runs/sessions
+slack:
+  channel: C0123456789
+code_repositories:
+  - { name: manyak-server, clone_url: "https://github.com/KIM-N-KANG/manyak-server.git", branch: main }
+  - { name: manyak-ai, clone_url: "https://github.com/KIM-N-KANG/manyak-ai.git", branch: main }
+action_repositories:
+  - name: manyak-server
+    clone_url: https://github.com/KIM-N-KANG/manyak-server.git
+    default_branch: dev
+    editable_paths: ["src/main/resources/application*.yml"]
+  - name: manyak-terraform
+    clone_url: https://github.com/KIM-N-KANG/manyak-terraform.git
+    default_branch: dev
+    editable_paths: ["**/variables.tf", "**/*.tfvars", "**/autoscaling.tf"]
+```
+
+</details>
+
+<br>
+
+### 5-3 자료 원천
+
+필드 이름은 설정의 `fields.log`, `fields.span`으로 받는다. 표의 기본값은 마냑 자료의 값이다.
+
+<br>
 
 **1. 로그 인덱스**
 
-인덱스 이름은 `manyak-logs-<환경>-<yyyy.MM.dd>`다. 재생용 OpenSearch에는 보관한 `manyak-logs-loadtest-*` 인덱스를 같은 이름으로 적재한다. 실시간 모드는 운영의 `manyak-logs-prod-*`를 읽는다.
+인덱스 패턴은 `opensearch.log_index`로 받는다. 마냑의 로그 인덱스 이름은 `manyak-logs-<환경>-<yyyy.MM.dd>`이고 재생용 OpenSearch에는 보관한 `manyak-logs-loadtest-*` 인덱스를 같은 이름으로 적재한다.
 
-| 필드 | 타입 | 쓰임 |
-|---|---|---|
-| `@timestamp` | 시각 | 분 묶음 |
-| `service` | 문자열 | 서비스별 묶음. 시스템 설명서의 `log_service` 값 |
-| `level` | 문자열 | 오류 로그 신호. `ERROR`, `WARN`, `INFO` |
-| `event_name` | 문자열 | 사건 이름별 묶음 |
-| `endpoint` | 문자열 | 요청 경로별 묶음 |
-| `http_method` | 문자열 | 요청 경로와 함께 묶음 |
-| `status_code` | 정수 | 상태 코드별 묶음 |
-| `duration_ms` | 정수 | 요청 처리 시간 집계 |
-| `error_code` | 문자열 | 오류 코드별 묶음 |
-| `message` | 문자열 | 표본 메시지. 재생 모드에서만 읽음 |
-| `traceId` | 문자열 | 스팬 인덱스와 연결 |
+| 키 | 기본값 | 타입 | 쓰임 |
+|---|---|---|---|
+| `fields.log.timestamp` | `@timestamp` | 시각 | 분 묶음 |
+| `fields.log.service` | `service` | 문자열 | 서비스별 묶음. 시스템 설명서의 `log_service` 값 |
+| `fields.log.level` | `level` | 문자열 | 오류 로그 신호. 값이 `detection.error_level`과 같으면 오류 로그 |
+| `fields.log.event_name` | `event_name` | 문자열 | 사건 이름별 묶음 |
+| `fields.log.endpoint` | `endpoint` | 문자열 | 요청 경로별 묶음 |
+| `fields.log.http_method` | `http_method` | 문자열 | 요청 경로와 함께 묶음 |
+| `fields.log.status_code` | `status_code` | 정수 | 상태 코드별 묶음 |
+| `fields.log.duration` | `duration_ms` | 정수 | 요청 처리 시간 집계 |
+| `fields.log.error_code` | `error_code` | 문자열 | 오류 코드별 묶음 |
+| `fields.log.message` | `message` | 문자열 | 표본 메시지. `log_samples`가 참일 때만 읽음 |
+| `fields.log.trace_id` | `traceId` | 문자열 | 스팬 인덱스와 연결 |
 
-`device_id_hash`, `session_id`, `request_id`는 조회 결과에서 뺀다.
+`redact_fields`에 적은 필드는 조회 결과에서 뺀다.
 
 <br>
 
 **2. 스팬 인덱스**
 
-인덱스 이름은 `otel-v1-apm-span-*`다.
+인덱스 패턴은 `opensearch.span_index`로 받는다.
 
-| 필드 | 타입 | 쓰임 |
-|---|---|---|
-| `startTime` | 시각 | 분 묶음 |
-| `serviceName` | 문자열 | 서비스별 묶음. 시스템 설명서의 `span_service` 값 |
-| `name` | 문자열 | 스팬 이름별 묶음 |
-| `traceGroup` | 문자열 | 진입 스팬 이름. 요청 경로별 묶음 |
-| `parentSpanId` | 문자열 | 비어 있으면 진입 스팬 |
-| `endTime` | 시각 | 상한 시각 자르기 |
-| `durationInNanos` | 정수 | 지연 집계 |
-| `status.code` | 정수 | 2이면 오류 |
-| `span.attributes.jdbc@query[0]` | 문자열 | DB 쿼리문별 묶음 |
-| `traceId` | 문자열 | 로그 인덱스와 연결 |
+| 키 | 기본값 | 타입 | 쓰임 |
+|---|---|---|---|
+| `fields.span.start_time` | `startTime` | 시각 | 분 묶음 |
+| `fields.span.service` | `serviceName` | 문자열 | 서비스별 묶음. 시스템 설명서의 `span_service` 값 |
+| `fields.span.name` | `name` | 문자열 | 스팬 이름별 묶음 |
+| `fields.span.trace_group` | `traceGroup` | 문자열 | 진입 스팬 이름. 요청 경로별 묶음 |
+| `fields.span.parent_span_id` | `parentSpanId` | 문자열 | 비어 있으면 진입 스팬 |
+| `fields.span.end_time` | `endTime` | 시각 | 상한 시각 자르기 |
+| `fields.span.duration` | `durationInNanos` | 정수 | 지연 집계 |
+| `fields.span.duration_unit` | `nanoseconds` | 문자열 | `fields.span.duration`의 단위. `nanoseconds`, `microseconds`, `milliseconds` |
+| `fields.span.status_code` | `status.code` | 정수 | 2이면 오류 |
+| `fields.span.db_statement` | `span.attributes.jdbc@query[0]` | 문자열 | DB 쿼리문별 묶음 |
+| `fields.span.trace_id` | `traceId` | 문자열 | 로그 인덱스와 연결 |
 
 <br>
 
@@ -89,9 +255,9 @@
 
 <br>
 
-### 5-3 시스템 설명서
+### 5-4 시스템 설명서
 
-운영자가 관리하는 YAML 파일이다. 재생 구간마다 하나를 두고 운영 환경에 하나를 따로 둔다. 에이전트는 시작할 때 실행 인자로 받은 파일을 한 번 읽는다.
+운영자가 관리하는 YAML 파일이다. 재생 구간마다 하나를 두고 운영 환경에 하나를 따로 둔다. 에이전트는 시작할 때 한 번 읽는다.
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
@@ -99,14 +265,14 @@
 | `components[].name` | 문자열 | 필수 | 보고에서 지목하는 이름 |
 | `components[].kind` | 문자열 | 필수 | `service`, `executor`, `database`, `cache`, `load_balancer`, `autoscaling` |
 | `components[].parent` | 문자열 | 선택 | 실행기와 오토스케일링이 속한 서비스의 `name` |
-| `components[].log_service` | 문자열 | 선택 | 로그 `service` 값 |
-| `components[].span_service` | 문자열 | 선택 | 스팬 `serviceName` 값 |
+| `components[].log_service` | 문자열 | 선택 | 로그 `fields.log.service` 필드의 값 |
+| `components[].span_service` | 문자열 | 선택 | 스팬 `fields.span.service` 필드의 값 |
 | `components[].metric_dimensions` | 객체 | 선택 | 지표 차원 이름과 값 |
 | `components[].capacity` | 객체 | 선택 | `tasks`, `cpu`, `memory_mb`, `concurrency`, `queue_capacity` 중 해당하는 값 |
 | `components[].scaling` | 객체 | 선택 | 오토스케일링에만. `metric`, `target_percent`, `min_tasks`, `max_tasks`, `evaluation_minutes` |
 | `components[].description` | 문자열 | 선택 | 모델에 전달하는 한 줄 설명 |
 | `latency_slo[]` | 배열 | 필수 | 요청 경로별 지연 기준 |
-| `latency_slo[].trace_group` | 문자열 | 필수 | 스팬 `traceGroup` 값 |
+| `latency_slo[].trace_group` | 문자열 | 필수 | 스팬 `fields.span.trace_group` 필드의 값 |
 | `latency_slo[].p95_seconds` | 숫자 | 필수 | 1분 p95 기준 |
 
 <details>
@@ -225,7 +391,7 @@ latency_slo:
 
 <br>
 
-### 5-4 이상 후보
+### 5-5 이상 후보
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
@@ -244,7 +410,7 @@ latency_slo:
 
 <br>
 
-### 5-5 진단 보고
+### 5-6 진단 보고
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
@@ -263,7 +429,7 @@ latency_slo:
 | `evidence[].query_ref` | 정수 | 조건부 | 조회 근거의 조회 기록 번호. 코드 근거면 `null` |
 | `evidence[].value` | 숫자 | 조건부 | 조회 근거에서 조회 결과에 있는 값. 코드 근거면 `null` |
 | `evidence[].code_ref` | 객체 | 조건부 | 코드 근거의 위치. 조회 근거면 `null` |
-| `evidence[].code_ref.repo` | 문자열 | 필수 | `manyak-server`, `manyak-ai` |
+| `evidence[].code_ref.repo` | 문자열 | 필수 | `code_repositories[].name` 중 하나 |
 | `evidence[].code_ref.path` | 문자열 | 필수 | 저장소 루트 기준 파일 경로 |
 | `evidence[].code_ref.start_line` | 정수 | 필수 | 인용 범위의 첫 줄. 1부터 셈 |
 | `evidence[].code_ref.end_line` | 정수 | 필수 | 인용 범위의 끝 줄. `start_line` 이상 |
@@ -341,13 +507,13 @@ latency_slo:
 
 <br>
 
-### 5-6 실행 폴더
+### 5-7 실행 폴더
 
 실행 하나가 폴더 하나를 만든다. 폴더는 실행 인자로 받은 상위 경로 아래에 두고 이름은 실행 모드와 시작 시각이다. 상위 경로는 재생이면 운영자 PC의 폴더이고 실시간이면 태스크의 임시 저장소다.
 
 | 파일 | 내용 | 쓰는 때 |
 |---|---|---|
-| `run.json` | 실행 모드, 슬랙 연결 여부, 감시 구간, 시스템 설명서 경로와 해시, 코드 사본의 저장소별 커밋, 모델 식별자, 추론 강도, 조회, 시간, 비용 예산, 프롬프트 해시 | 시작 때 |
+| `run.json` | 실행 모드, 슬랙 연결 여부, 감시 구간, 설정 파일과 시스템 설명서의 위치와 해시, 적용한 설정 값 전체와 덮어쓴 환경 변수 이름, 코드 사본의 저장소별 커밋, 프롬프트 해시 | 시작 때 |
 | `candidates.jsonl` | 이상 후보의 상태 한 건에 한 줄. 같은 ID는 마지막 줄이 최신 상태 | 열 때, 진단을 생략할 때, 신호가 붙거나 최댓값이 바뀔 때, 닫을 때, 열린 채 실행이 끝날 때 덧붙임 |
 | `reports/<candidate_id>.json` | 진단 보고 | 진단이 끝날 때 |
 | `queries/<candidate_id>.jsonl` | 모델 메시지와 조회 한 건에 한 줄. 조회는 번호, 도구, 인자, 결과 | 메시지와 조회마다 |
@@ -394,15 +560,15 @@ latency_slo:
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
 | `session_id` | 문자열 | 필수 | |
-| `repo` | 문자열 | 필수 | `manyak-server`, `manyak-terraform` |
+| `repo` | 문자열 | 필수 | `action_repositories[].name` 중 하나 |
 | `pr_url` | 문자열 | 필수 | |
 | `created_at` | 시각 | 필수 | |
 
 <br>
 
-### 5-7 슬랙 메시지
+### 5-8 슬랙 메시지
 
-채널은 환경 변수로 정한 하나다. 메시지에는 집계값과 구성 요소 이름만 들어가고 식별자는 들어가지 않는다.
+채널은 설정의 `slack.channel` 하나다. 메시지에는 집계값과 구성 요소 이름만 들어가고 식별자는 들어가지 않는다.
 
 **1. 알림 메시지**
 
@@ -425,7 +591,7 @@ latency_slo:
 |---|---|
 | 운영자 → 에이전트 | 스레드의 사람 메시지 원문을 조율 턴의 사용자 메시지로 넘김. 봇 자신의 메시지는 넘기지 않음 |
 | 에이전트 → 운영자 | 조율 턴의 답변 글을 스레드에 올림 |
-| 코드 → 운영자 | 세션 종료(24시간 경과, 비용 초과), 조율 턴 실패, PR 생성 실패를 한 줄로 올림 |
+| 코드 → 운영자 | 세션 종료(수명 경과, 비용 초과), 조율 턴 실패, PR 생성 실패를 한 줄로 올림 |
 
 **3. 승인 메시지**
 
@@ -436,17 +602,17 @@ latency_slo:
 | 도구 이름 | `Edit`, `Write`, `Bash` |
 | 대상 | 파일 경로와 변경 요약, 또는 명령 전문 |
 | 버튼 | 승인, 거부 |
-| 결과 | 버튼을 누르면 메시지를 승인자와 시각이 든 결과로 바꿈. 2시간 안에 응답이 없으면 거부로 바꿈 |
+| 결과 | 버튼을 누르면 메시지를 승인자와 시각이 든 결과로 바꿈. `limits.approval_wait_seconds` 안에 응답이 없으면 거부로 바꿈 |
 
 <br>
 
-### 5-8 조치 PR
+### 5-9 조치 PR
 
 | 항목 | 내용 |
 |---|---|
-| 대상 저장소 | manyak-server와 manyak-terraform |
-| 대상 브랜치 | manyak-server는 `dev`. manyak-terraform은 그 저장소의 기본 브랜치 |
+| 대상 저장소 | `action_repositories`의 저장소 |
+| 대상 브랜치 | 그 저장소의 `default_branch` |
 | 작업 브랜치 | 이름에 `candidate_id`를 넣음 |
-| 변경 | 설정값만. 저장소당 PR 하나 |
+| 변경 | `editable_paths`에 맞는 파일의 설정값만. 저장소당 PR 하나 |
 | 본문 | 진단 요약(판정, 1순위 의심 구성 요소, 원인 가설)<br>근거 목록<br>변경 내용과 이유<br>슬랙 스레드 링크<br>보고 파일 ID |
 | 귀속 | 커밋 메시지와 PR 본문에 Co-Authored-By 같은 귀속 트레일러를 넣지 않음 |
