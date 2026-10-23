@@ -355,13 +355,15 @@ Authorization: Bearer {adminToken}
 | `distributions[].points` | `object[]` | 막대 하나가 한 항목 |
 | `distributions[].points[].label` | `string` | 막대 이름 |
 | `distributions[].points[].value` | `number` | 값<br>비율은 0~100의 백분율 |
+| `distributions[].points[].chats` | `integer` | `genre-depth`에만 있음<br>그 장르의 채팅 수 |
+| `distributions[].points[].totalTurns` | `integer` | `genre-depth`에만 있음<br>그 장르 채팅의 현재 턴 합<br>`value`는 `totalTurns`를 `chats`로 나눈 값 |
 | `distributions[].points[].link` | `object` | 막대를 눌렀을 때 열 목록 |
 | `distributions[].points[].link.list` | `string` | `stories`, `chats`, `members`, `credit-transactions` |
 | `distributions[].points[].link.params` | `object` | 그 목록의 쿼리 이름과 값<br>값은 모두 문자열 |
 
 | `chartId` | `category` | `label` | `unit` | `link` |
 |---|---|---|---|---|
-| `genre-depth` | `engagement` | 범위 안에 생성된 채팅이 있는 장르 정식 이름 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
+| `genre-depth` | `engagement` | 범위 안에 생성된 채팅이 있는 장르 정식 이름<br>`value` 내림차순, 같으면 이름 순<br>채팅 수와 무관하게 모든 장르 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
 | `turns` | `engagement` | `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7~9`, `10~14`, `15~19`, `20~29`, `30~49`, `50+` | `개` | `chats`<br>`turnBucket`(0부터 12), `from`, `to` |
 | `started-as` | `users` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
 | `member-chats` | `users` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
