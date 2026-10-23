@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-10-08 |
+| 수정일 | 2026-10-23 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 채팅 목록·채팅 화면의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]` |
@@ -54,7 +54,7 @@
 | CHAT-LIST-19 | P1  | 회원 채팅 카드                                               | 옵션 시트 → "신고하기"        | 옵션 시트가 닫히고 스토리 신고 시트가 열림. 대상은 카드의 참조 스토리 `storyId`(`POST /stories/{storyId}/reports`). 시트 동작은 STORY-DETAIL-29~31 | ✅ e2e `chats/chat-list`     | §3-1-3 스토리 신고, KNK-1186    |
 | CHAT-LIST-20 | P2 | 회원, 공백 없는 긴 영문·숫자 제목과 미리보기의 채팅 | 채팅 목록 카드 확인 | 제목과 미리보기가 카드 폭 안에서 한 줄 말줄임으로 끝나고 옆으로 잘리지 않음 | ✅ e2e `chats/chat-list` | FE-SCREEN-004 |
 | CHAT-LIST-03 | P0  | CHAT-LIST-01                                                 | 카드 탭                              | 해당 채팅 화면(`/chats/{id}`)으로 이동                                                                              | ✅ e2e `chats/chat-list`     | US-5-2                        |
-| CHAT-LIST-04 | P1  | 게스트, 로컬 채팅 ID·스토리 ID 모두 없음(온보딩은 열람 처리) | `/chats` 진입                        | 앱과 같이 가운데 한 줄 보조 안내(§3-1-3 빈 상태 문구)만 표시. 버튼·CTA 없음                                          | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3, KNK-1355        |
+| CHAT-LIST-04 | P1  | 게스트, 로컬 채팅 ID와 스토리 ID 모두 없음 | `/chats` 진입                        | 앱과 같이 가운데 한 줄 보조 안내(§3-1-3 빈 상태 문구)만 표시. 버튼·CTA 없음                                          | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3, KNK-1355        |
 | CHAT-LIST-05 | P1  | 게스트, 채팅 ID 없음 + 스토리 ID 있음                        | `/chats` 진입                        | CHAT-LIST-04와 같은 한 줄 안내만(스토리 유무로 분기하지 않음)                                                        | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3, KNK-1355        |
 | CHAT-LIST-06 | P1  | 게스트, 채팅 ID 있음                                         | 배치 조회가 5xx로 실패               | "채팅을 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                               | 수동                         | US-2-6 유형, §3-1-3             |
 | CHAT-LIST-07 | P2  | 게스트, 채팅 ID 있음                                         | 진입 직후(하이드레이션·조회 중) 관찰 | 빈 상태 깜빡임 없이 실제 카드와 같은 가로 16px·세로 8px 패딩, 56px·12px 곡률 썸네일, 제목·미리보기·메타 행의 지연 스켈레톤 → 목록 전환 | ✅ e2e `chats/chat-list`      | §3-1-3·[웹 저장소 3-state](../spec/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
@@ -270,9 +270,9 @@
 
 | ID            | P   | 사전조건                                            | 절차                   | 기대 결과                                                                                                                   | 자동화                          | 근거                                      |
 | ------------ | --- | ------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------- | ------------------------------- |
-| SHARE-VIEW-01 | P0  | 유효한 공유 링크, 로그아웃 상태     | 링크 진입                    | 스토리 제목(헤더) + 본문 최상단 중앙 AI 생성 안내 문구(§3-1-5 렌더 순서와 같은 문구) 안내 + 프롤로그 → 사용자 입력 → AI 출력 순 말풍선 표시. 온보딩으로 튕기지 않음 | ✅ e2e `share/shared-chat`  | 구현(`shared-chat-screen`)      |
+| SHARE-VIEW-01 | P0  | 유효한 공유 링크, 로그아웃 상태     | 링크 진입                    | 스토리 제목(헤더) + 본문 최상단 중앙 AI 생성 안내 문구(§3-1-5 렌더 순서와 같은 문구) 안내 + 프롤로그 → 사용자 입력 → AI 출력 순 말풍선 표시 | ✅ e2e `share/shared-chat`  | 구현(`shared-chat-screen`)      |
 | SHARE-VIEW-02 | P1  | SHARE-VIEW-01                        | 화면 구성 확인               | 입력창·선택지·재생성 버튼 없음(읽기 전용). 헤더 좌측에 마냑 로고(홈 링크)와 스토리 제목이 나란히. 하단에 "나만의 스토리 만들고 채팅하기" CTA | ✅ e2e `visual/share-visual` | 구현(`shared-chat-view`)        |
-| SHARE-VIEW-03 | P1  | SHARE-VIEW-01                        | 헤더 마냑 로고 탭            | 홈(`/`)으로 이동. CTA와 달리 온보딩 게이트를 닫지 않으므로 신규 방문자는 온보딩을 거침                  | ✅ e2e `share/shared-chat`  | 구현(`shared-chat-view`)        |
+| SHARE-VIEW-03 | P1  | SHARE-VIEW-01                        | 헤더 마냑 로고 탭            | 홈(`/`)으로 이동 | ✅ e2e `share/shared-chat`  | 구현(`shared-chat-view`)        |
 | SHARE-VIEW-04 | P2  | SHARE-VIEW-01                        | 본문을 탭하거나 스크롤       | 헤더·CTA는 채팅방과 같이 위아래에 고정된 채 반응하지 않고 본문만 스크롤됨. 스크롤바가 헤더·CTA에 가려지지 않고, 본문 하단 fade 바로 아래에 추가 상단 패딩 없이 CTA 푸터가 붙음 | ✅ e2e `share/shared-chat` | 구현(`shared-chat-view`), KNK-1012 |
 | SHARE-VIEW-05 | P0  | 잘못됐거나 삭제된 링크(404)          | 링크 진입                    | "공유된 채팅을 찾을 수 없어요" + "삭제되었거나 잘못된 링크예요" + "마냑 둘러보기" 버튼                          | ✅ e2e `share/shared-chat`  | 구현(`shared-chat-screen`)      |
 | SHARE-VIEW-06 | P1  | 공유한 뒤 원본 채팅을 삭제           | 이미 보낸 링크로 진입        | SHARE-VIEW-05와 같은 화면(원본을 지우면 공유도 함께 사라짐)                                             | 수동                         | 백엔드 확인(2026-07-29)         |
@@ -281,7 +281,7 @@
 | SHARE-VIEW-09 | P2  | 유효한 공유 링크                     | 페이지 소스의 robots 메타 확인 | `noindex`가 없고 검색 색인이 허용됨                                                                  | 수동                         | 구현(`generateMetadata`)        |
 | SHARE-VIEW-09A | P2 | 잘못됐거나 삭제된 링크 또는 메타데이터 조회 실패 | 페이지 소스의 robots 메타 확인 | `noindex, nofollow` 메타 반환(검색 엔진 반영 시점은 이 테스트의 판정 대상 아님) | 수동 | 구현(`generateMetadata`) |
 | SHARE-VIEW-10 | P2  | 유효한 공유 링크                     | 브라우저 탭 제목 확인        | 데이터 도착 후 `스토리 제목 - 마냑`. 서버 메타데이터 조회가 실패해도 채팅 화면과 같은 형식으로 맞춰짐   | ✅ e2e `share/shared-chat`   | 구현(`shared-chat-screen`)      |
-| SHARE-VIEW-11 | P1  | 공유 링크로 처음 방문(쿠키 없음)     | CTA "나만의 스토리 만들고 채팅하기" 탭 | 스토리 생성 퍼널(`/studio/story/simple`)로 바로 이동. 이후 홈에 들어가도 온보딩이 뜨지 않음(열람 화면에서 이미 서비스를 봤으므로) | ✅ e2e `share/shared-chat`  | 설계 결정                       |
+| SHARE-VIEW-11 | P1  | 공유 링크로 처음 방문(쿠키 없음)     | CTA "나만의 스토리 만들고 채팅하기" 탭 | 동의 시트 없이 스토리 생성 퍼널(`/studio/story/simple`)로 바로 이동 | ✅ e2e `share/shared-chat`  | 설계 결정                       |
 | SHARE-VIEW-12 | P1  | SHARE-VIEW-11 직후                   | 생성 퍼널에서 뒤로가기       | 진입 경로와 관계없이 제작(`/studio`) 화면으로 이동                                                                            | 수동                         | 구현(`use-story-create-funnel`), KNK-988 |
 | SHARE-VIEW-13 | P1  | 프롤로그에 장면 이미지 마커가 있는 채팅의 공유 링크 | `/share/[shareId]` 열람, 링크 미리보기 확인 | 프롤로그 버블에 채팅방과 같은 위치로 장면 이미지 표시. 링크 미리보기 설명에는 마커 줄과 URL이 없음 | ✅ e2e `share/shared-chat` + unit `share-description` | §3-1-5 장면 이미지 렌더·링크 미리보기, KNK-1545 |
 

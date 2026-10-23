@@ -6,13 +6,13 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-10-08 |
+| 수정일 | 2026-10-23 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 스토리 목록·제작·상세의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 홈 공개 스토리 목록 `/`(FE-SCREEN-001), 제작 내 스토리 목록 `/studio`(FE-SCREEN-013), 스토리 생성 퍼널 `/studio/story/simple`(FE-SCREEN-002), 스토리 상세 `/stories/[id]`(FE-SCREEN-003), 스토리 수정 `/stories/[id]/edit`(FE-SCREEN-009) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [`3-1-client-spec.md §3-1-3·§3-1-4·§3-1-8`](../spec/3-1-client-spec.md), [`2-user-stories.md §2-2·§2-3·§2-4`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts`, `manyak-web/e2e/stories/story-persona.spec.ts` |
+| 관련 E2E | `manyak-web/e2e/stories/story-list.spec.ts`, `manyak-web/e2e/stories/story-create.spec.ts`, `manyak-web/e2e/stories/story-detail.spec.ts`, `manyak-web/e2e/visual/stories-visual.spec.ts`, `manyak-web/e2e/stories/story-guest-limit.spec.ts`, `manyak-web/e2e/stories/story-create-limit.spec.ts`, `manyak-web/e2e/stories/story-create-draft.spec.ts`, `manyak-web/e2e/stories/story-create-recovery.spec.ts`, `manyak-web/e2e/seo/crawler-indexing.spec.ts`(색인), `manyak-web/e2e/stories/story-edit.spec.ts`, `manyak-web/e2e/stories/story-persona.spec.ts`, `manyak-web/e2e/stories/story-create-tutorial.spec.ts` |
 
 ## 읽는 순서
 
@@ -27,6 +27,7 @@
 - [STORY-LINE — 생성 퍼널 2단계: 스토리라인 생성·선택·평가](#story-line--생성-퍼널-2단계-스토리라인-생성선택평가)
 - [STORY-INFO — 생성 퍼널 3단계: 추가 정보](#story-info--생성-퍼널-3단계-추가-정보)
 - [STORY-FINAL — 생성 퍼널 제출 후: 완성·완료](#story-final--생성-퍼널-제출-후-완성완료)
+- [STORY-TUTORIAL — 간편 제작 첫 진입 안내](#story-tutorial--간편-제작-첫-진입-안내)
 - [STORY-RECOVER — 생성 퍼널 백그라운드 복귀](#story-recover--생성-퍼널-백그라운드-복귀)
 - [STORY-GUARD — 생성 퍼널 이탈 가드](#story-guard--생성-퍼널-이탈-가드)
 - [STORY-DRAFT — 제작 임시 저장·재개 `/studio/story/simple` (KNK-648·994·1455)](#story-draft--제작-임시-저장재개-studiostorysimple-knk-6489941455)
@@ -239,6 +240,25 @@
 | STORY-FINAL-05 | P2  | 회원 완성 성공                    | 저장 상태 확인       | 로컬 미저장, 회원 스토리 쿼리 무효화로 서버 목록에 반영. 체험 잔여를 다시 조회. 채팅 ID는 상세에서 채팅을 시작해야 생김(제작은 회원 전용) | 수동                          | §3-1-6 쓰기, 구현(`use-creation-progress-polling`)     |
 | STORY-FINAL-08 | P0 | 완성 중 카드 표시됨 | FAB로 새 제작 진입 → 키워드 → 스토리라인 → 추가 정보 → 완성 | 확인 없이 빈 키워드에서 시작. 두 번째 완성 제출 뒤 제작 탭에 완성 중 카드 2장과 FAB 표시. 다른 세션의 초안 카드가 있었다면 그대로 남음. 첫 요청은 유지 | ✅ e2e `stories/story-create` | §3-1-4 제작 카드와 다중 완성 진행, KNK-1316 |
 
+## STORY-TUTORIAL — 간편 제작 첫 진입 안내
+
+기준: [웹 첫 진입 안내](../spec/3-2-web-spec.md#간편-제작-첫-진입-안내). 기본 E2E 픽스처는 안내를 끈 상태로 시작하므로 이 절의 자동화만 안내를 켭니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| STORY-TUTORIAL-01 | P0 | 이 기기에서 안내를 끝내지 않음 | 간편 제작 진입 | 키워드 단계 위로 딤과 하단 카드가 열리고 이름 "마냑", 1단계 문구, "건너뛰기", "시작하기"가 보임. 카드 좌상단 둥근 프로필에서 마스코트가 말하듯 움직이고 버튼에 초점 링이 보이지 않음 | ✅ e2e `stories/story-create-tutorial` | US-3-14, 웹 첫 진입 안내 |
+| STORY-TUTORIAL-02 | P0 | STORY-TUTORIAL-01 | "시작하기" 탭 | 대화창이 닫히지 않고 2단계 문구(1인칭 설명 포함)와 "확인" 하나로 바뀜. "확인"을 누르면 닫히고 키워드를 고를 수 있음 | ✅ e2e `stories/story-create-tutorial` | 같음 |
+| STORY-TUTORIAL-03 | P0 | 2단계를 마침 | 장르 둘 이상과 주인공을 골라 스토리라인 생성 | 생성이 끝나 선택 화면이 보이면 3단계가 열리고 문구에 고른 장르가 순서대로 쉼표로 이어짐. 마지막 장르의 받침에 맞춰 "으로" 또는 "로"가 붙음 | ✅ e2e `stories/story-create-tutorial`, unit `create-tutorial` | 같음 |
+| STORY-TUTORIAL-04 | P0 | 3단계를 마침 | 스토리라인 "선택하기" | 추가 정보 단계에서 4단계가 열림 | ✅ e2e `stories/story-create-tutorial` | 같음 |
+| STORY-TUTORIAL-05 | P0 | 4단계를 마침 | 스토리 완성 제출 뒤 제작 탭 관찰, "오리지널 스토리 보기" 탭 | 완성 중 카드 위로 5단계와 "닫기", "오리지널 스토리 보기"가 보임. 누르면 하단 탭처럼 홈 탭으로 바뀌고 이후 간편 제작에 다시 들어가도 안내가 열리지 않음 | ✅ e2e `stories/story-create-tutorial` | 같음, US-8-3 |
+| STORY-TUTORIAL-06 | P1 | STORY-TUTORIAL-01 | "건너뛰기" 탭 | 대화창이 닫히고 이후 스토리라인, 추가 정보, 제작 탭 단계가 모두 열리지 않음 | ✅ e2e `stories/story-create-tutorial` | 같음, US-8-3 |
+| STORY-TUTORIAL-07 | P1 | 2단계 표시 | 브라우저나 기기 뒤로가기 | 간편 제작 화면을 떠나지 않고 대화창만 닫힘. 새로고침해도 2단계를 다시 열지 않음 | ✅ e2e `stories/story-create-tutorial` | 같음, [화면 전환 규칙](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| STORY-TUTORIAL-08 | P1 | 신규 가입 초대 코드 시트가 남은 회원 | 간편 제작 진입 | 초대 코드 시트가 닫힐 때까지 안내를 열지 않음 | 수동 | 같음 |
+| STORY-TUTORIAL-09 | P1 | 1단계를 마치지 않음, 스토리라인 선택 단계 초안 있음 | 제작 탭 "이어서 만들기" | 스토리라인 선택 단계에서 안내를 열지 않음. 새 제작을 키워드 단계부터 시작하면 1단계가 열림 | ◐ unit `create-tutorial-storage` | 같음 |
+| STORY-TUTORIAL-10 | P2 | 1단계 표시, 화면을 한 번도 누르지 않음 | 브라우저 뒤로가기 | 간편 제작 화면을 떠남. 다음 진입에서 1단계를 다시 엶 | 수동 | 같음 |
+| STORY-TUTORIAL-11 | P2 | OS 모션 감소 설정 | 간편 제작 진입 | 마스코트가 서 있는 자세로 멈추고 대화창은 이동 없이 나타남 | ◐ unit `draw-tutorial-mascot-stage`(멈춘 자세) | 같음 |
+| STORY-TUTORIAL-12 | P2 | 다크 모드 | 1단계부터 5단계까지 진행 | 대화창 배경, 테두리, 글자, 마스코트 색이 테마를 따름 | 수동 | 같음 |
+
 ## STORY-RECOVER — 생성 퍼널 백그라운드 복귀
 
 기준: [계약·구조](../spec/3-2-web-spec.md#웹-제작-흐름).
@@ -339,7 +359,7 @@
 | STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
 | STORY-GATE-05 | — | (폐기, KNK-1355) 채팅 빈 상태의 "스토리 만들기" CTA를 없애 진입 경로가 사라짐. 제작 진입은 STORY-GATE-01·02로 검증 | — | — | — | — |
 | STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | US-9-13 |
-| STORY-GATE-07 | P1 | 게스트, 온보딩 스토리 만들기 섹션 버튼 / 공유 열람 CTA | 각각 탭 | 모두 동의 시트 없이 제작 입력 화면으로 이동. 공유 CTA도 온보딩 열람 처리 | ✅ e2e `smoke/onboarding`·`share/shared-chat` | US-9-13, 웹 온보딩·문서 열람 |
+| STORY-GATE-07 | P1 | 게스트, 공유 열람 화면 | 하단 제작 CTA 탭 | 동의 시트 없이 제작 입력 화면으로 이동 | ✅ e2e `share/shared-chat` | US-9-13, 웹 문서 열람 |
 | STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
 
 ## STORY-LIMIT — 회원 이프 게이팅
