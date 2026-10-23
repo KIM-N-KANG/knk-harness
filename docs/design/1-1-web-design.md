@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.2 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-19 |
+| 수정일 | 2026-10-23 |
 | 대상 | manyak-web |
 | 작성 목적 | 웹의 현재 요청·라우팅·인증·관측 구조를 설명합니다. |
 | 기준 코드 | [manyak-web](../../../manyak-web) |
@@ -49,7 +49,7 @@ graph LR
     BFF -->|서버 전용 API_BASE_URL| API[백엔드]
 ```
 
-브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)).
+브라우저 요청은 BFF를 통합니다. 서버 직접 조회는 `API_BASE_URL` 절대 URL과 생성 URL 빌더를 사용합니다. Orval도 Next.js 환경 변수 우선순위로 같은 값의 `/v3/api-docs`를 읽습니다. 읽은 스펙은 [stabilize-operation-ids](../../../manyak-web/tools/orval/stabilize-operation-ids.ts)가 서로 겹치는 operationId(Springdoc의 `get`, `get_1` 같은 순번 이름)만 HTTP 메서드와 경로 이름(`/api/v1` 제외, 경로 변수는 `By` 접두어)으로 바꾼 뒤 생성합니다. 예를 들어 `GET /api/v1/stories/genres`는 `useGetStoriesGenres`가 됩니다. 겹치지 않는 이름은 그대로 둡니다(이유는 [W-035](../adr/1-2-web-adr.md#w-035)). 공용 요청 계층([custom-instance](../../../manyak-web/src/api/mutator/custom-instance.ts))이 2xx가 아닌 응답을 `FetchError`로 던지므로, 생성 응답 타입은 `forceSuccessResponse`로 2xx 응답만 담습니다. 에러 응답은 호출부에서 `FetchError`의 `status`로 구분합니다.
 
 ### SSE 클라이언트 구현 (웹)
 
@@ -80,8 +80,8 @@ graph LR
 | 저장소 | 값·소유 코드 |
 | --- | --- |
 | localStorage 스토리·채팅 ID | `manyak:created-story-ids`·`manyak:created-chat-ids`, 최신순 JSON 배열. [스토리 저장소](../../../manyak-web/src/features/stories/_shared/utils/story-id-storage.ts)·[채팅 저장소](../../../manyak-web/src/features/chats/_shared/utils/chat-id-storage.ts) |
-| localStorage 안내 | `manyak:onboarding-seen`의 `'1'`, `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
-| localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
+| localStorage 안내 | 간편 제작 첫 진입 안내에서 마지막으로 마친 단계 `manyak:create-tutorial-stage`(끝까지 보거나 건너뛰면 `done`), `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
+| localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). 채팅 모델과 긴 응답은 서버가 채팅마다 저장하므로 기기에 두지 않는다. [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
 | IndexedDB 제작 | Dexie DB `manyak-creation`의 `pendingCreations`, `storyCompletions`, `metadata`. [DB 정의](../../../manyak-web/src/features/stories/_shared/utils/creation-db.ts), [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts). 일반 제작 `GENERAL_DRAFT`는 서버 초안으로 옮기기 전의 레거시만 남음. 회원 간편 제작 서버 세션의 사용자 저장은 서버 초안이고, 이 DB에는 진행 기록과 기기 안 세션의 초안만 남음 |
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
 | sessionStorage 채팅 열기 의도 | `manyak:pending-chat-open`의 `{storyId, chatId, at}`. 일반 제작 승인이 상세로 바꾸기 직전에 기록하고 상세가 마운트될 때 한 번 읽어 지운 뒤 채팅방을 연다. 30초가 지나면 무시 |
@@ -173,7 +173,6 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | 스토리·채팅 삭제 성공 | [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 각각 제작 탭·채팅 탭. Navigation API `entries()`에서 가장 가까운 아래 탭 기록을 찾아 `history.go`로 되돌아가고, 다른 탭이면 이어서 `push`, 찾지 못하거나 그 기록이 이전 문서에 있으면 `replace`; 목록 삭제는 현재 화면 유지 |
 | 하단 탭 | `Link replace scroll={false}`, 정확한 pathname 일치로 `aria-current="page"`. `(main)` 레이아웃이 [use-scroll-restoration](../../../manyak-web/src/hooks/use-scroll-restoration.ts)으로 탭별 스크롤 위치를 경로 키로 기억했다가 돌아올 때 되돌립니다(문서 단위 Map, 내용이 짧으면 ResizeObserver로 최대 2초 재시도) |
 | 퍼널 X·브라우저 back | 예약 저장 flush와 더미 기록 정리 후 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭 |
-| 온보딩 완료 | 열람 저장 후 목적지로 `replace` |
 | 마이 → 서비스 안내·법적 문서 | 새 탭 |
 | 시트·다이얼로그 열림 | 아래 히스토리 레이어 매니저의 `close` 레이어. 뒤로가기면 소비자의 `onOpenChange(false)`를 부르고, 소비자가 열림을 유지하면(처리 중 잠금) 더미를 다시 쌓음 |
 | 시트 안 이동 | `returnToMainTab`, `useStartChat`의 이동, `startSocialLogin`, 옵션 시트의 수정하기 `push`가 `leaveLayers`로 더미를 먼저 소비한 뒤 이동 |
@@ -190,7 +189,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 문서의 `html`과 `body`는 `globals.css`에서 `bg-background`를 사용합니다. `body`의 절대 위치 가상 요소 두 개가 `--container-md`를 넘는 좌우 여백만 `bg-border`로 칠하고 포인터 입력은 통과시킵니다. 앱 프레임의 `max-w-md`와 같은 너비 토큰을 사용하며, 화면 폭이 그 이하이면 여백 너비는 0입니다. 루트 오류 화면도 같은 전역 스타일을 공유합니다.
 
-- 상세·피드백·공유는 `scroll-fade-b`; 온보딩은 기능 소개마다 갤러리와 함께 붙는 섹션 버튼을 두고 본문 끝에 푸터를 두며, 하단 페이드와 고정 CTA를 두지 않습니다.
+- 상세, 피드백, 공유는 `scroll-fade-b`를 씁니다.
 - 제작 단계 푸터의 키워드·비용 행은 공용 상단 슬롯을 씁니다. 텍스트 입력 포커스가 있고 `VisualViewport`(대체 `innerHeight`)가 기준보다 120px 이상 줄면 푸터를 숨기고 복원 시 다시 표시합니다. 포커스만으로 숨기지 않습니다.
 - Drawer는 앱 프레임에 포털하고 투어는 `body`에 포털합니다. 투어 카드 좌표는 앱 프레임 폭·하이라이트 변을 기준으로 제한하며 세로 가용 공간을 `max-height`로 설정합니다. 채팅방 헤더는 flex 형제가 아니라 스크롤 영역 위 `absolute` 오버레이입니다. 탭으로 숨기고 나타날 때 스크롤 영역 높이가 바뀌면 읽던 위치가 튀기 때문입니다. 높이는 화면 루트의 `--chat-header-height` 하나로 정하고 헤더 `h-`와 메시지 목록 `pt-`가 같은 변수를 씁니다(목록 위 여백은 메시지 스크롤러의 시작 정렬 기준에도 반영됩니다). 탭 판정은 [header-toggle-tap](../../../manyak-web/src/features/chats/room/utils/header-toggle-tap.ts)이 조작 요소와 텍스트 선택을 걸러 내고, 포인터가 눌릴 때 입력 요소에 포커스가 있었으면(키보드 닫기 탭) 전환하지 않으며 투어 중에는 항상 표시합니다. 숨긴 헤더는 `invisible`로 접근·포커스 대상에서도 제외하고 200ms 페이드이며, 데스크톱 스크롤바 트랙 위쪽 끝은 헤더에 가려집니다. 공유 열람은 헤더·CTA를 in-flow로 항상 고정합니다.
 
@@ -214,7 +213,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 - Android 앱 열기는 `intent://manyak.app{경로}#Intent;scheme=manyak;package=app.manyak;S.market_referrer=...;end`(앱이 받는 전용 스킴 `manyak://manyak.app{경로}`) 링크(`<a href>`)입니다. `browser_fallback_url`을 두지 않아 앱이 없으면 브라우저가 플레이스토어를 엽니다. 인스타그램처럼 앱이 없을 때 intent 링크를 버리는 인앱 브라우저가 있어, 누른 뒤 0.7초 안에 문서가 한 번도 숨겨지지 않으면 `ANDROID_PLAY_STORE_URL`(`https://play.google.com/store/apps/details?id=app.manyak`, 같은 referrer)로 직접 이동합니다. 앱이 열리거나 브라우저가 플레이스토어를 열면 문서가 숨겨져 이동을 취소합니다([W-041](../adr/1-2-web-adr.md#w-041)). 앱 쪽 진입은 [Android Design](1-2-android-design.md)을 따릅니다.
 - iOS 인앱은 [external-browser-escape](../../../manyak-web/src/lib/external-browser-escape.ts)의 `openExternalBrowser`로 전환을 시도하고, 1.5초 안에 문서가 한 번도 숨겨지지 않으면 실패로 보고 안내 시트를 엽니다. 다시 누르면 이전 대기를 취소하므로 실패 안내 이벤트는 한 번만 나갑니다.
 - 닫기를 누르면 루트의 화면 영역 래퍼(`APP_SCREEN_ID`)에 임시 `tabindex=-1`을 주고 포커스를 옮깁니다. 닫기 버튼이 사라지며 포커스가 문서 처음으로 가지 않게 하려는 것이며, 블러되면 tabindex를 지웁니다.
-- 문구는 [constants/app-banner](../../../manyak-web/src/constants/app-banner.ts)에 있습니다. 배너 첫 줄의 앱 이름은 [constants/site](../../../manyak-web/src/constants/site.ts)의 `SITE_NAME`이고, 아이콘은 웹 앱 매니페스트와 같은 `public/icons/icon-192.png`를 장식 이미지(`alt=""`)로 씁니다. 안내 시트는 앱 프레임에 포털한 `Drawer`라 뒤로가기로 닫힙니다. 홈 화면 추가 안내는 `supportsHomeScreenImageGuide`(UA `iPhone`과 `Version/` 주 버전 26 이상)가 참이면 `public/app-banner/ios-safari-step-{1..4}.webp` 스크린샷을 온보딩과 같은 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(브라우저 기본 가로 스크롤 스냅, 점 표시, 마우스 끌기)으로, 아니면 텍스트 단계를 보여줍니다. 스트립을 감싼 요소의 `data-base-ui-swipe-ignore`로 가로 넘기기가 시트 끌어 닫기로 이어지지 않게 합니다. iOS 26 Safari는 UA의 OS 버전을 고정하므로 Safari 버전으로 판정합니다.
+- 문구는 [constants/app-banner](../../../manyak-web/src/constants/app-banner.ts)에 있습니다. 배너 첫 줄의 앱 이름은 [constants/site](../../../manyak-web/src/constants/site.ts)의 `SITE_NAME`이고, 아이콘은 웹 앱 매니페스트와 같은 `public/icons/icon-192.png`를 장식 이미지(`alt=""`)로 씁니다. 안내 시트는 앱 프레임에 포털한 `Drawer`라 뒤로가기로 닫힙니다. 홈 화면 추가 안내는 `supportsHomeScreenImageGuide`(UA `iPhone`과 `Version/` 주 버전 26 이상)가 참이면 `public/app-banner/ios-safari-step-{1..4}.webp` 스크린샷을 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(브라우저 기본 가로 스크롤 스냅, 점 표시, 마우스 끌기)으로, 아니면 텍스트 단계를 보여줍니다. 스트립을 감싼 요소의 `data-base-ui-swipe-ignore`로 가로 넘기기가 시트 끌어 닫기로 이어지지 않게 합니다. iOS 26 Safari는 UA의 OS 버전을 고정하므로 Safari 버전으로 판정합니다.
 - E2E 기본 fixture는 닫기 표식을 심어 배너를 숨기고, 배너 스펙만 `test.use({ appBanner: true })`로 켭니다.
 
 ### 상단 헤더·하단 네비게이션
@@ -255,7 +254,7 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 ### 법적 콘텐츠 소스 (웹)
 
-[terms-content.ts](../../../manyak-web/src/features/legal/content/terms-content.ts)·[privacy-content.ts](../../../manyak-web/src/features/legal/content/privacy-content.ts)가 시행일·버전·본문의 정본입니다. Android `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`/privacy`를 만들고 `LegalDocumentScreen` WebView가 같은 본문을 표시합니다. 미래 시행일을 현재 시행본으로 부르지 않습니다. 문서 버전을 개정할 때는 백엔드 `MANYAK_LEGAL_TERMS_VERSION`과 `MANYAK_LEGAL_PRIVACY_VERSION`의 요구 버전을 공개 본문에 맞춰야 합니다. 프런트엔드 본문 변경만으로 서버의 재동의 요구 버전은 바뀌지 않습니다. 공지 기간과 실제 공개일을 확인한 뒤 시행일을 확정합니다.
+[terms-content.ts](../../../manyak-web/src/features/legal/content/terms-content.ts)·[privacy-content.ts](../../../manyak-web/src/features/legal/content/privacy-content.ts)가 시행일·버전·본문의 정본입니다. Android `LegalUrlProvider`가 `WEB_BASE_URL/terms`·`/privacy`를 만들고 `LegalDocumentScreen` WebView가 같은 본문을 표시합니다. 미래 시행일을 현재 시행본으로 부르지 않습니다. 공개 본문의 버전과 백엔드 `MANYAK_LEGAL_TERMS_VERSION`, `MANYAK_LEGAL_PRIVACY_VERSION`의 동의 요구 버전은 분리합니다. 재동의가 필요한 개정만 요구 버전을 올리고, 그 밖의 개정은 공지 후 시행일부터 적용합니다([W-043](../adr/1-2-web-adr.md#w-043)). 프런트엔드 본문 변경만으로 서버의 재동의 요구 버전은 바뀌지 않습니다. 공지 기간과 실제 공개일을 확인한 뒤 시행일을 확정합니다.
 
 ### 게스트 동의 시트 (웹)
 
@@ -267,26 +266,15 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 
 `X-Manyak-Device-Id`는 공통 mutator의 기존 분석 식별자 헤더를 재사용합니다. 동의 전용 식별자를 만들지 않습니다. production에서는 Amplitude SDK 또는 기존 식별자 쿠키, development에서는 기존 개발용 폴백을 사용합니다. 식별자 누락으로 서버가 오류를 반환하면 조회 오류로 차단합니다. 기존 `manyak:guest-consent` 로컬 기록과 메모리 폴백은 더 이상 읽거나 쓰지 않습니다. 서버 API는 `guestPrivacy`만 기록하며 회원 동의로 이관하거나 다른 게스트 API의 요청을 차단하지 않습니다.
 
-### 온보딩 소개 이미지 (웹)
+### 간편 제작 첫 진입 안내 (웹)
 
-[온보딩 상수](../../../manyak-web/src/features/onboarding/constants.ts)의 `ONBOARDING_FEATURES`가 기능 소개 제목과 카드 문구, 카드별 이미지 경로와 자를 위치(`cropTop`)를 관리하고, 문구 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다.
+노출과 문구 계약은 [웹 간편 제작 첫 진입 안내](../spec/3-2-web-spec.md#간편-제작-첫-진입-안내)를 따릅니다. 퍼널과 제작 탭이 함께 쓰므로 문구, 판정, 훅, 대화창을 `stories/_shared`에 둡니다.
 
-- **스크롤 구간 크기**: 화면 셸의 `main` 스크롤 영역을 `container-type: size`로 두고, 첫 화면은 `130cqh`(붙는 카드는 `100cqh`), 갤러리 구간은 헤더를 뺀 붙는 영역 높이에 카드 사이마다 `80cqh`를 더한 높이로 잡습니다. 기능 소개 하나에 카드를 3장씩만 두어 한 갤러리에 붙어 있는 시간이 길어지지 않게 합니다. 카드 폭은 스크롤 영역 폭의 80%와 높이에서 캡션 자리를 뺀 값에 맞춘 3:4 박스 중 작은 쪽이고, 카드 사이 간격은 폭의 3%입니다. 그래서 화면이 낮은 기기에서도 카드와 캡션이 한 화면에 들어가고, 갤러리 위아래 빈 공간이 섹션 간격 역할을 합니다. 뷰포트 단위 대신 스크롤 영역 크기를 쓰므로 앱 안내 배너가 있어도 맞습니다.
-- **휠 스크롤**: [use-smooth-scroll](../../../manyak-web/src/hooks/use-smooth-scroll.ts)이 게이트 통과 뒤 `main`에 Lenis를 붙입니다. 위치를 `main`의 `scrollTop`으로 움직여 motion `useScroll`과 로고·스크롤 신호의 네이티브 `scrollTo`가 그대로 동작합니다. 터치는 Lenis가 가로채지 않아 기기 관성을 쓰고, 모션 감소 설정이면 Lenis가 보간을 끕니다. 콘텐츠를 감싼 단일 요소가 없어 `naiveDimensions`로 끝 위치를 매번 `main`에서 읽습니다.
-- **헤더**: `onboarding-header`는 로고만 둔 `absolute` 오버레이이며 높이는 화면 루트의 `--onboarding-header-height` 하나로 정합니다. 갤러리의 붙는 영역은 같은 변수만큼 아래(`top`)에서 붙고 그만큼 높이를 줄입니다. 첫 화면 구간이 맨 위에서 스크롤 영역 위로 완전히 지나갈 때까지의 진행률을 헤더 투명도에 직접 묶고(95%에서 완전히 보임), 투명도가 0이면 `visibility: hidden`으로 포커스 대상에서도 뺍니다. 범위 기반 `useTransform`은 motion이 브라우저 스크롤 타임라인으로 넘기며 범위 밖에서 값을 유지하지 않아, 함수 기반 변환을 씁니다.
-- **첫 화면**: `onboarding-hero`가 motion `useScroll`로 첫 화면 구간의 진행률을 받아 카드 여백(사방 32px에서 0)과 모서리(28px에서 0)에 직접 묶습니다. 제목과 설명 글자 크기는 카드 안쪽 폭에 맞춰 줄어들어, 제목은 320px 폭까지 두 줄, 설명은 360px 폭까지 한 줄을 유지합니다. 이미지 5장(`hero-1`~`hero-5.webp`, Android `bg_login_*` 원본)은 모두 겹쳐 두고, 새 장만 위에서 투명도로 나타나게 해 전환 중 밝기가 출렁이지 않게 합니다. 바로 아래 장은 불투명하게 유지합니다.
-- **갤러리 위치**: `onboarding-feature`가 갤러리 구간 진행률을 [onboarding-gallery](../../../manyak-web/src/features/onboarding/utils/onboarding-gallery.ts)의 `getGalleryPosition`으로 카드 위치(소수)로 바꿉니다. 카드 사이 구간의 앞뒤 20%는 카드가 가운데에 멈춰 있고 나머지에서만 넘어가, 스크롤을 멈춘 자리가 대부분 카드 한 장의 가운데가 됩니다. 각 카드는 카드 순번과 이 값의 차이를 `getSlideMotionStyle`에 넘겨 받은 `transform`, 투명도, 캡션 투명도에 직접 묶여 움직이고, 가장 가까운 카드에 `aria-current="step"`을 둡니다. 섹션 데이터의 `motion`이 전환 방식(`gallery`, `deck`, `stack`)을 정하며, 겹치는 `deck`은 앞 카드가, `stack`은 뒤 카드가 위에 오도록 `z-index`를 줍니다. 카드가 움직이는 갤러리 칸은 넘치는 부분을 잘라, 올라오는 `stack` 카드가 아래 점과 버튼을 덮지 않게 합니다. 칸 위에는 겹친 카드가 비칠 여백을 두고, 카드 칸 높이는 캡션 자리까지 고정합니다. `stack`의 다음 카드는 칸 아래에 잘려 기다리므로, 바로 다음 카드만 지연 로딩 대신 미리 불러와 올라올 때 빈 화면이 보이지 않게 합니다.
-- **잘라 보이기**: 카드 안 화면 칸은 위쪽만 둥근 패널이며 아래로 박스를 넘쳐 잘립니다. 스크린샷을 칸 폭에 맞춘 뒤 `cropTop / 원본 높이`만큼 `translateY`로 올려 필요한 부분이 보이게 하며, 원본 높이의 약 70%가 보입니다.
-- **줄바꿈**: 어절 단위 줄바꿈은 앱 전역 기본 규칙([웹 표현 값](#웹-표현-값)의 줄바꿈)을 따르고, 가운데 정렬 설명과 카드 설명은 `text-wrap: balance`로 줄 길이를 고르게 맞춥니다. 서비스 용어(이미지 스타일, 썸네일 이미지, 오리지널 스토리, 새 채팅 시작하기)처럼 한 덩어리로 읽혀야 하는 말은 상수 문구에서 `\u00a0`으로 붙입니다.
-- **테마별 원본**: `public/onboarding/*-light.webp`와 `*-dark.webp`는 786×1704 원본입니다. 제작과 채팅 화면은 PNG를 무손실과 품질 90 손실 변환 중 작은 쪽으로, 오리지널 스토리 화면은 받은 WebP를 그대로 저장했습니다. 카드마다 `next/image` 두 장 중 `next-themes`가 적용한 `.dark` 클래스에 맞는 한 장만 CSS로 표시합니다. 별도 테마 상태나 마운트 대기 없이 첫 표시와 테마 전환을 처리하며, 숨긴 이미지는 접근성 트리에서도 빠지고 내려받지 않습니다. 화면 밖 카드는 가장자리가 보이기 시작할 때 지연 로딩됩니다.
-
-### 온보딩 진입 게이트 (웹)
-
-노출 계약은 [웹 온보딩](../spec/3-2-web-spec.md#fe-screen-007-온보딩-페이지)을 따릅니다.
-
-1. `proxy.ts`가 메인 4탭에서 열람·NextAuth 쿠키 모두 없으면 원본 쿼리 전체와 `from`을 보존해 `/onboarding`으로 보냅니다. 쿠키 유무는 인증 확정 판정이 아닙니다.
-2. 페이지 가드가 세션·로컬 ID·열람 상태를 읽습니다. 대상이 아니면 열람 쿠키를 복구하고 허용된 메인 탭 `from`(기본 홈)으로 돌아갑니다. 열람은 localStorage·쿠키에 함께 기록해 루프를 막습니다.
-3. 검색봇·링크 스크래퍼는 게이트만 우회합니다. `daumoa`·`kakaotalk-scrap` 등 구체 UA로 앱 UA와 구분합니다. AI/LLM 크롤러 허용을 이 목록에서 추정하지 않습니다.
+- **진행 판정.** [create-tutorial-storage](../../../manyak-web/src/features/stories/_shared/utils/create-tutorial-storage.ts)가 localStorage에서 마지막으로 마친 단계를 읽어 다음 단계를 구하고, 화면이 받을 수 있는 상태(키워드, 스토리라인, 추가 정보, 완성 중)와 같을 때만 그 단계를 고릅니다. 키워드 화면은 인사와 키워드 안내를 함께 받습니다. 서버 렌더링에서는 끝난 것으로 보고, 저장소가 막히면 처음부터 봅니다.
+- **열림 상태.** [use-create-tutorial](../../../manyak-web/src/features/stories/_shared/hooks/use-create-tutorial.ts)이 열 단계가 생기면 200ms 뒤에 열고 단계 노출 이벤트를 보냅니다. 버튼으로 닫을 때 마친 단계를 기록하고, "시작하기"는 대화창을 닫지 않고 키워드 단계로 바꿉니다. 세션의 `inviteOnboardingPending`이 참이면 열지 않습니다. 퍼널은 진입 판정, 로그인 필요 시트, 임시 저장 충돌, 완성 요청 진행 여부와 단계로 화면 상태를 정하고, 제작 탭은 완성 중 카드가 있으면 완성 중 상태를 넘깁니다.
+- **대화창.** [create-tutorial-dialog](../../../manyak-web/src/features/stories/_shared/components/create-tutorial-dialog.tsx)는 열려 있을 때만 마운트하고 앱 프레임에 `absolute inset-0 z-60`으로 포털합니다. 카드는 모서리 20px의 `bg-background`이고 다크 모드에서만 `border`를 둡니다. 이름은 `text-primary` 14px, 대사는 16px(행간 24px), 버튼은 채팅 첫 진입 안내와 같은 `ghost`(보조)와 기본 변형(주)이되 크기는 기본(높이 40px)입니다. 초점은 `tabIndex={-1}`인 카드에 두어 터치 기기에서 버튼에 초점 링이 남지 않게 합니다. 뒤로가기는 `useBackLayer`로 받으며 조작 없이 연 단계는 히스토리 레이어 규칙대로 더미를 쌓지 않습니다. 제작 탭의 "오리지널 스토리 보기"는 `leaveLayers`로 더미를 먼저 소비한 뒤 하단 탭처럼 홈으로 `replace` 합니다.
+- **마스코트.** 카드 좌상단의 48px 둥근 프로필(`primary` 10% 바탕)에 공용 `MascotStage`를 두고 [draw-tutorial-mascot-stage](../../../manyak-web/src/features/stories/_shared/utils/draw-tutorial-mascot-stage.ts)가 그립니다. 음절마다 몸을 무대 폭의 3.5%까지 띄워 늘이고 좌우로 3도까지 기울이는 말하기 두 번(동그란 눈, 웃는 눈) 사이에 쉼을 두어 한 바퀴 5초입니다. 원 모서리에 몸이 잘리지 않게 무대 폭의 66% 크기로 그리고, 바탕 점과 그림자는 그리지 않으며, 동작 줄이기에서는 서 있는 첫 자세로 멈춥니다.
+- **E2E.** 기본 `context` 픽스처가 저장값을 `done`으로 심어 다른 스펙에 대화창이 뜨지 않게 하고, `createTutorial` 옵션을 켠 스펙만 안내를 봅니다.
 
 ### 스토리 신고 진입점 (웹)
 

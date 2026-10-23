@@ -65,14 +65,15 @@ Fluent Bit`"]
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
-| 정책 기동 적재 | 기동 직후<br>평문 INFO `credit_policy_effective` | 7종의 현재 유효값 |
+| 정책 기동 적재 | 기동 직후<br>평문 INFO `credit_policy_effective` | 정책 키 6종의 현재 유효값 |
 | 정책 변경 | 갱신에서 값이 바뀐 키<br>평문 INFO `credit_policy_changed` | `key`, `from`, `to`<br>종료 시각 만료도 다음 갱신에서 드러남 |
 | 정책 적재 실패 | 갱신 실패<br>평문 WARN `credit_policy_load_failed` | 예외 |
 | 정책 오버라이드 제외 | 갱신마다 한 번<br>평문 WARN `credit_policy_override_unknown_key`, `credit_policy_override_rejected` | `key`, `amount`, 유효한 키 목록 또는 `minimum`과 기본값 |
-| 대사 보정 | 환불을 발행한 실행<br>`credit_reconciliation_refunded` | `groups_scanned`, `refunds_emitted` |
+| 대사 보정 | 환불을 발행한 실행<br>`credit_reconciliation_refunded` | `groups_scanned`, `charges_scanned`, `refunds_emitted`<br>`charges_scanned`는 후보 조회로 읽은 `CHAT_TURN` 참조 차감 수 |
 | 대사 실행 실패 | 실행 전체 예외<br>`credit_reconciliation_failed` | `error` |
 | 대사 그룹 실패 | 그룹 처리 예외<br>`credit_reconciliation_group_failed` | `user_id`, `ref_type`, `ref_id`, `error` |
-| 혼합 단가 환불 | 단가가 섞인 그룹에 실제 환불<br>WARN `credit_reconciliation_mixed_unit_amount` | `user_id`, `ref_type`, `ref_id`, `min_unit_amount`, `max_unit_amount`, `refunds_emitted` |
+| 대사 차감 행 실패 | 채팅 턴 차감 행 처리 예외<br>`credit_reconciliation_charge_failed` | `user_id`, `transaction_id`, `error` |
+| 혼합 단가 환불 | 단가가 섞인 그룹 단위 대사에 실제 환불<br>WARN `credit_reconciliation_mixed_unit_amount`<br>행 단위로 대사하는 채팅 턴에서는 발생하지 않음 | `user_id`, `ref_type`, `ref_id`, `min_unit_amount`, `max_unit_amount`, `refunds_emitted` |
 | 웹훅 수신 | 서명 검증 뒤<br>평문 DEBUG | 이벤트 종류, 멱등 키 헤더 |
 | 웹훅 무시 | 본문 불일치<br>평문 WARN | 무시 사유 |
 | 역순 환불 금액 불일치 | 완료 처리<br>평문 WARN | 주문 내부 ID |
@@ -102,7 +103,7 @@ Fluent Bit`"]
 |---|---|
 | 그로블 결제 | 지표 `manyak.payment.groble.webhook`의 `result` 분포<br>웹훅 무시 WARN의 사유 |
 | 결제 환불 | 웹훅 지표의 `refunded`<br>회수 부족분 WARN |
-| 선차감과 환불 | 대사 로그 `credit_reconciliation_refunded`가 반복되면 호출 도메인의 환불 경로 점검<br>혼합 단가 WARN |
+| 선차감과 환불 | 대사 로그 `credit_reconciliation_refunded`가 반복되면 호출 도메인의 환불 경로 점검<br>간편 제작의 혼합 단가 WARN<br>채팅 턴은 `credit_reconciliation_charge_failed` |
 | 정책값 | 기동 로그 `credit_policy_effective`, 변경 로그, 오버라이드 제외 WARN<br>누가 바꿨는지는 관리자 도메인의 감사 로그 |
 | 관리자 지급과 회수 | 감사 로그 조회<br>요청 로그의 `/api/v1/admin/credits/adjustments` 상태 분포 |
 | 체험 | Redis 장애 WARN<br>요청 로그의 `/api/v1/users/me/trials` 500 비율 |
@@ -154,7 +155,7 @@ Fluent Bit`"]
 | 웹훅 시크릿 | 로그, Sentry, 지표에 기록하지 않음 |
 | 웹훅 본문 | 기록하지 않음<br>이벤트 종류와 무시 사유만 기록 |
 | 그로블 거래 식별자, 이벤트 ID | 로그에 기록하지 않음 |
-| 디바이스 ID | 해시만 기록 |
+| 디바이스 ID | 해시만 기록<br>원문은 분석 이벤트의 `device_id`로만 Amplitude에 전달<br>분석 이벤트 경로에서는 원문을 저장하지 않음 |
 | 금액 | 대사 로그의 단가와 회수 부족분은 기록 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
@@ -191,7 +192,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | 공통 프로퍼티 | 값 |
 |---|---|
 | `user_id` | 회원 공개 식별자<br>웹훅은 주문 소유자의 공개 식별자 |
-| `device_id` | 디바이스 해시<br>실제 해시가 있을 때만 포함하고 없으면 생략<br>웹훅은 생략 |
+| `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 생략<br>웹훅은 생략 |
 | `session_id` | 정수 문자열일 때만 포함<br>웹훅은 생략 |
 | `request_id`, `is_logged_in` | 요청 문맥<br>웹훅은 주문 소유자에게 붙이는 회원 이벤트이므로 `is_logged_in`은 `true` |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |

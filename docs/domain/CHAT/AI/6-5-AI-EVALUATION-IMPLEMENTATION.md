@@ -40,7 +40,7 @@ flowchart LR
 | 배포 | 배포 이미지에 포함하지 않음<br>Dockerfile은 `src`와 `prompt`만 복사 |
 | 평가 데이터 | `evaluation/datasets/train/`, `evaluation/datasets/test/`<br>Git 제외 |
 | 실행 결과 | `evaluation/runs/`<br>Git 제외 |
-| 채점 프롬프트 | `evaluation/` 안에 고정본으로 보관<br>버전과 해시를 결과에 기록 |
+| 평가 모델 프롬프트 | `evaluation/` 안에 고정본으로 보관<br>버전과 해시를 결과에 기록 |
 
 <br>
 
@@ -101,7 +101,7 @@ flowchart LR
 
 | 항목 | 내용 |
 |---|---|
-| 채점 설정 | 6-4-1의 평가 모델, 채점 프롬프트와 반복 횟수 사용 |
+| 채점 설정 | 6-4-1의 평가 모델, 평가 모델 프롬프트와 반복 횟수 사용 |
 | 호출 경로 | Astra는 Codex CLI, Fable은 Claude CLI 사용<br>채점 1회마다 별도 세션으로 호출 |
 | 채점 입력 | 생성한 답변을 붙인 N턴 대화의 `sample_id`, `prologue`, `turns` |
 | 출력 검사 | `results` 배열의 결과 1개를 검사<br>입력과 같은 `sample_id`, 0~100 정수 `score`, 비어 있지 않은 `reason`, 0 이상 정수 `turn_number`를 담은 `evidence` 목록 필수 |
@@ -121,4 +121,4 @@ flowchart LR
 | 호출 기록 | 실패한 최초 호출과 재생성을 포함해 호출별 시간과 비용을 각각 기록<br>입력별 전체 소요 시간과 합산 비용도 기록 |
 | 요약 | configuration별 채팅 재미 점수, 턴당 본문 생성 비용, 본문 생성 시간 p95, 재생성 횟수와 실패 입력 수 |
 | TTFT | 생성 시 호출별 첫 본문 도착 시간 저장<br>길이별 재측정과 공급자 로그 복구 결과는 별도 취합<br>평균, short, mid, long은 기본 TSV와 HTML 보고서에 자동 집계하지 않음 |
-| 버전 | 실행 ID, `manyak-ai` 커밋, 데이터셋 이름과 입력 해시, 채점 프롬프트 버전과 해시 |
+| 버전 | 실행 ID, `manyak-ai` 커밋, 데이터셋 이름과 입력 해시, 평가 모델 프롬프트 버전과 해시 |

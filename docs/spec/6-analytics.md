@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.35 |
+| 버전 | v0.36 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-19 |
+| 수정일 | 2026-10-23 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -220,10 +220,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P0 `Phase 1 · 구현` | server | `server_login_migration_processed_failed`                |
 | P0                  | client | `client_feedback_viewed`                                 |
 | P0                  | client | `client_feedback_form_submitted`                         |
-| P1                  | client | `client_onboarding_viewed`                               |
-| P1                  | client | `client_onboarding_createButton_clicked`                 |
-| P1                  | client | `client_onboarding_browseButton_clicked`                 |
-| P2                  | client | `client_onboarding_playStoreBadge_clicked`               |
+| P2                  | client | `client_storyCreate_tutorialStep_viewed`                 |
+| P2                  | client | `client_storyCreate_tutorialSkipButton_clicked`          |
+| P2                  | client | `client_storyCreate_tutorial_completed`                  |
 | P1                  | client | `client_storyList_storyCard_clicked`                     |
 | P1                  | client | `client_storyList_storyCard_impressed`                   |
 | P1 `Phase 1 · 구현` | client | `client_storyList_loginButton_clicked`                   |
@@ -324,16 +323,15 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 각 이벤트 표에는 공통 프로퍼티를 제외한 고유 프로퍼티만 적습니다. 필수는 `필수`, 선택은 `선택`으로 표기합니다.
 
-#### 6-4-2-1. 온보딩
+#### 6-4-2-1. 간편 제작 첫 진입 안내
 
-첫 방문자에게 노출되는 온보딩 랜딩 페이지(FE-SCREEN-007)입니다. 간편 제작으로 가는 버튼과 홈으로 가는 버튼은 기능 소개 섹션 아래에만 있고, `section`으로 어느 섹션인지 남깁니다. `source`는 헤더(`header`)와 본문 끝(`bottom`) 버튼이 있던 이전 기록과 같은 축으로 비교하려고 `section` 값으로 유지합니다(KNK-1185, KNK-1644).
+간편 제작과 제작 탭에서 단계마다 여는 하단 대화창입니다. ([웹 간편 제작 첫 진입 안내](3-2-web-spec.md#간편-제작-첫-진입-안내)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 셉니다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있습니다.
 
-| 이벤트                                   | 우선순위 | 발생 시점               | 고유 프로퍼티 |
-| ---------------------------------------- | -------- | ----------------------- | ------------- |
-| `client_onboarding_viewed`               | P1       | 온보딩 페이지 노출      | 없음          |
-| `client_onboarding_createButton_clicked` | P1       | 스토리 만들기, 스토리라인과 이미지 스타일, 스토리 완성 섹션 아래 버튼 클릭 | `source` (string, 필수: `section`), `section` (string, 필수: `create` / `storyline` / `complete`). 헤더 버튼(`header`)과 본문 끝 버튼(`bottom`)은 KNK-1644에서 섹션 버튼으로 바뀌며 사라짐 |
-| `client_onboarding_browseButton_clicked` | P1       | 채팅, 오리지널 스토리 섹션 아래 버튼 탭(홈으로 이탈. 헤더 "둘러보기"는 KNK-1644에서 사라짐. 기존 `client_onboarding_logo_clicked`를 대체 — 로고 홈 이동 제거, KNK-1185; 그 전엔 `client_onboarding_skipButton_clicked`, KNK-1004) | `source` (string, 필수: `section`), `section` (string, 필수: `chat` / `originals`, KNK-1644) |
-| `client_onboarding_playStoreBadge_clicked` | P2 | 푸터 Google Play 배지 클릭(Play 스토어 앱 페이지를 새 탭으로 엶. 실제 설치는 Play Console 획득 보고서의 `utm_medium=onboarding_footer`로 확인) | 없음 |
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyCreate_tutorialStep_viewed` | P2 | 안내 단계 노출 | `stage` (string, 필수: `intro` / `keyword` / `storyline` / `additional-info` / `completing`) |
+| `client_storyCreate_tutorialSkipButton_clicked` | P2 | 첫 단계의 "건너뛰기" 클릭 또는 뒤로가기 | `stage` (string, 필수: 건너뛴 시점의 단계) |
+| `client_storyCreate_tutorial_completed` | P2 | 마지막 단계를 버튼이나 뒤로가기로 닫음 | `action` (string, 필수: `originals`(오리지널 스토리 보기) / `close`(닫기, 뒤로가기)) |
 
 #### 6-4-2-2. 홈·제작 스토리 목록
 
@@ -670,12 +668,12 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개, `client_inappBrowser_loginHandoffCreated`와 §6-4-2-12의 폐기 이벤트 4개는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
-**앱 비적용(웹 전용) 9개** — 앱에 해당 화면·상태가 없습니다.
+**앱 비적용(웹 전용) 8개** — 앱에 해당 화면·상태가 없습니다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 인앱 브라우저 (1)   | `client_inappBrowser_detected`                                                                                                                                     | 네이티브 앱에 개념 없음       |
-| 온보딩 (4)          | `client_onboarding_*`                                                                                                                                              | 앱에 온보딩 화면 없음         |
+| 간편 제작 첫 진입 안내 (3) | `client_storyCreate_tutorial*` 3개 | 웹 전용 안내 |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked` · `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 공유 열람 (2) | `client_chatShare_*` 2개 | 공유 링크 열람은 웹 화면에서 수행 |
 
@@ -838,7 +836,7 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 
 | 영역        | 지표                           | 계산식                                                                                                                                                                     |
 | ----------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 온보딩      | 제작 시작 전환율               | `client_onboarding_createButton_clicked` 수 / `client_onboarding_viewed` 수                                                                                                |
+| 간편 제작 첫 진입 안내 | 안내 시작률 | `client_storyCreate_tutorialStep_viewed`(`stage=keyword`) 수 / `client_storyCreate_tutorialStep_viewed`(`stage=intro`) 수 |
 | 스토리 목록 | 스토리 카드 클릭률             | `client_storyList_storyCard_clicked` 수 / `client_storyList_storyCard_impressed` 수                                                                                        |
 | 스토리 목록 | 제작 시작률                    | `client_storyList_createButton_clicked` 수 / `client_storyList_viewed` 수                                                                                                  |
 | 스토리 제작 | 생성 요청률                    | `client_storyCreate_storyGeneration_requested` 수 / `client_storyCreate_viewed` 수                                                                                         |

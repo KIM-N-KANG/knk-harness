@@ -40,7 +40,7 @@
 | `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별 | 게스트 동의는 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별<br>서버 분석 이벤트의 `device_id` | 게스트 동의는 필수 |
 | `X-Manyak-Consent-Token` | 문자열 | 동의 완료 전용 대기 코드 | 동의 완료는 필수 |
 | `X-Manyak-Link-Code` | 문자열 | 계정 연동 | 연동은 필수 |
 

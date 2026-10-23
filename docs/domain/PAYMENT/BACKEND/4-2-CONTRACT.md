@@ -41,7 +41,7 @@
 | `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 게스트의 체험 카운터 식별 | 게스트의 체험 조회는 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 게스트의 체험 카운터 식별<br>서버 분석 이벤트의 `device_id` | 게스트의 체험 조회는 필수 |
 | `X-Groble-Timestamp` | 초 단위 Unix 시각 | 웹훅 서명 대상과 재전송 방지 | 웹훅은 필수 |
 | `X-Groble-Signature` | 16진수 64자 | 웹훅 서명 | 웹훅은 필수 |
 | `X-Groble-Signature-Previous` | 16진수 64자 | 시크릿 교체 기간의 이전 서명 | 선택 |
@@ -156,10 +156,10 @@ GET /api/v1/credits/products
 | `inviteMonthlyCap` | `integer` | 초대자 보상의 KST 월 횟수 상한<br>제출자 몫에는 적용하지 않음 |
 | `attendanceReward` | `integer` | 출석 보상 이프 |
 | `storyCreationCost` | `integer` | 간편 제작 소모 이프<br>회원 체험을 소진한 뒤 적용 |
-| `chatTurnCost` | `integer` | 채팅 턴 소모 이프, 재생성 포함<br>회원 체험을 소진한 뒤 적용 |
+| `chatTurnCost` | `integer` | deprecated<br>라이트(`LITE`) 모델의 턴당 소모 이프<br>모델별 가격은 CHAT의 모델 목록이 기준이며 다음 릴리스에서 제거 ([4-2-14 모델 목록](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-14-모델-목록)) |
 | `chatImageCost` | `integer` | 채팅 이미지 소모 이프<br>0이면 체험 소진 뒤에도 무료 |
 
-- 한 응답의 값은 같은 시점의 정책 스냅샷이다. 오버라이드 변경은 갱신 주기 안에 반영된다. 클라이언트는 이 값을 표시하고 하드코딩하지 않는다.
+- 한 응답의 값은 `chatTurnCost`를 제외하면 같은 시점의 정책 스냅샷이다. 오버라이드 변경은 갱신 주기 안에 반영된다. `chatTurnCost`는 모델 표를 요청마다 읽는다. 클라이언트는 이 값을 표시하고 하드코딩하지 않는다.
 
 <br>
 
@@ -208,7 +208,7 @@ GET /api/v1/credits/policies
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `chatTurn` | `object` | 채팅 턴 |
+| `chatTurn` | `object` | 채팅 턴<br>회원은 라이트(`LITE`) 턴에만 적용 |
 | `chatImage` | `object` | 채팅 이미지 |
 | `storyCreation` | `object` | 간편 제작 |
 | `storylineGeneration` | `object` | 스토리라인 생성 |
@@ -812,7 +812,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `items` | `object[]` | 정책 키 7종<br>저장 키 순서 |
+| `items` | `object[]` | 정책 키 6종<br>저장 키 순서 |
 | `items[].policyKey` | `string` | 저장 키<br>snake_case |
 | `items[].defaultAmount` | `integer` | 기본값 |
 | `items[].effectiveAmount` | `integer` | 현재 적용 중인 값<br>스냅샷 기준 |
@@ -867,7 +867,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `policyKey` | 경로 | 필수 | 저장 키 7종 중 하나<br>목록과 키별 최솟값은 정책 오버라이드 표 ([3-2-6 정책 오버라이드](3-2-DB-SCHEMA.md#3-2-6-정책-오버라이드)) |
+| `policyKey` | 경로 | 필수 | 저장 키 6종 중 하나<br>목록과 키별 최솟값은 정책 오버라이드 표 ([3-2-6 정책 오버라이드](3-2-DB-SCHEMA.md#3-2-6-정책-오버라이드)) |
 | `amount` | `integer` | 필수 | 그 키의 최솟값 이상 10,000 이하<br>최솟값은 조회 응답의 `minimum`과 같음 |
 | `effectiveUntil` | `string` | 선택 | 종료 시각<br>현재 이후<br>생략하면 상시 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
@@ -927,7 +927,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `policyKey` | 경로 | 필수 | 저장 키 7종 중 하나<br>목록은 정책 오버라이드 표와 같음 |
+| `policyKey` | 경로 | 필수 | 저장 키 6종 중 하나<br>목록은 정책 오버라이드 표와 같음 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 삭제 뒤 갱신 주기 안에 기본값으로 돌아간다.
@@ -949,7 +949,7 @@ Content-Type: application/json
 |---|---|---|
 | ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 체험 스냅샷 완료 시각 기록, 회원 조회 |
 | STORY | 체험 예약과 복원, 선차감, 환불, 정책값 `story_creation_cost`, 잔액 부족과 한도 소진 예외 | 간편 제작 진행의 상태와 스토리 참조, 스토리 제목과 읽기 판정 |
-| CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_turn_cost`, `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조 |
+| CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조, 라이트(`LITE`)의 턴 가격 |
 | NOTIFICATION | 출석 보상 멱등 키의 존재 | 없음 |
 | ADMIN | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 | 관리자 요청자와 변경 감사 기록 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
@@ -959,7 +959,7 @@ Content-Type: application/json
 | 연산 | 입력 | 결과 |
 |---|---|---|
 | 적립 | 회원, 양수 금액, 사유, 멱등 키, 참조, 월 상한 조건 | 적립 여부, 잔액, 상한 도달 여부 |
-| 차감 | 회원, 항목 목록(양수 금액, 사유, 참조) | 잔액, 항목별 소모 행<br>부족하면 잔액 부족 예외 |
+| 차감 | 회원, 항목 목록(양수 금액, 사유, 참조) | 잔액, 항목별 소모 행<br>부족하면 잔액 부족 예외<br>채팅 턴 항목의 참조 종류 `CHAT_TURN`이 행 단위 대사의 대상 기준 |
 | 잔액 | 회원 | 만료되지 않은 잔액 |
 | 멱등 키 존재 | 멱등 키 | 존재 여부 |
 | 기간별 보상 횟수 | 회원, 사유, 기간, 키 패턴 | 횟수 |
