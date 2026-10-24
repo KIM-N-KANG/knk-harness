@@ -2444,7 +2444,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-관리자 캠페인과 서비스 알림마다 웹에서 푸시와 알림 내역 링크로 연 열람 수를 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
+관리자 캠페인과 활동 알림마다 웹에서 푸시를 눌러 연 열람 수를 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성과 측정 상태 판정은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
 
 **1. 쿼리**
 
@@ -2462,8 +2462,9 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf` | `string` | 분석 지표와 같음 |
-| `pendingDates` | `string[]` | 분석 지표와 같음<br>있으면 열람 수와 열람률은 준비된 날짜만의 값 |
+| `pendingDates` | `string[]` | 분석 지표와 같음<br>있으면 열람 수는 준비된 날짜만 더한 값이고 열람률은 그 열람 수를 전체 도달 회원 수로 나눈 값 |
 | `from`, `to` | `string` | 캠페인 추이와 같음 |
+| `measuredFrom` | `string / null` | 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
 | `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순 |
 | `campaigns[].campaignId` | `string` | 캠페인 공개 식별자 |
 | `campaigns[].kind` | `string` | `SERVICE`, `MARKETING` |
@@ -2471,15 +2472,16 @@ Authorization: Bearer {adminToken}
 | `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
 | `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
-| `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>측정할 수 없는 캠페인은 `null` |
+| `campaigns[].openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정 시작 전<br>`NO_LINK` 딥링크 없이 발송해 측정 불가 |
+| `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `MEASURED`가 아니면 `null` |
 | `campaigns[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
-| `campaigns[].inboxOpens` | `integer / null` | 알림 내역 열람 수<br>측정할 수 없는 캠페인은 `null` |
-| `serviceTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목 |
-| `serviceTypes[].type` | `string` | 시나리오 식별자 |
-| `serviceTypes[].deliveredMembers` | `integer` | 범위 날짜별 도달 회원 수의 합 |
-| `serviceTypes[].pushOpens` | `integer` | 푸시 열람 수 |
-| `serviceTypes[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`deliveredMembers`가 0이면 `null` |
-| `serviceTypes[].inboxOpens` | `integer` | 알림 내역 열람 수 |
+| `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 측정 시작일 중 늦은 날<br>집계 구간이 없으면 `null` |
+| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목 |
+| `activityTypes[].type` | `string` | 시나리오 식별자 |
+| `activityTypes[].deliveredMembers` | `integer` | 종류와 날짜마다 중복 없이 센 도달 회원 수의 합<br>`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체 |
+| `activityTypes[].openState` | `string` | `MEASURED`, `BEFORE_MEASUREMENT` |
+| `activityTypes[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `BEFORE_MEASUREMENT`면 `null` |
+| `activityTypes[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
 
 - 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 서버는 값을 자르지 않는다.
 - Android 앱에서 연 알림은 열람 수에 들어가지 않고 도달 회원 수에는 들어간다.
@@ -2507,12 +2509,15 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
+측정 시작일이 2026-10-21인 경우다.
+
 ```json
 {
   "asOf": "2026-10-24T05:10:00Z",
   "pendingDates": [],
   "from": "2026-10-18",
   "to": "2026-10-24",
+  "measuredFrom": "2026-10-21",
   "campaigns": [
     {
       "campaignId": "4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37",
@@ -2521,26 +2526,38 @@ Authorization: Bearer {adminToken}
       "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
       "startedAt": "2026-10-23T02:00:31Z",
       "deliveredMembers": 412,
+      "openState": "MEASURED",
       "pushOpens": 58,
-      "pushOpenRate": 0.1408,
-      "inboxOpens": 21
+      "pushOpenRate": 0.1408
     },
     {
       "campaignId": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
       "kind": "MARKETING",
       "title": "가을 이벤트 안내",
       "noticeId": null,
-      "startedAt": "2026-10-20T10:00:12Z",
+      "startedAt": "2026-10-22T10:00:12Z",
       "deliveredMembers": 230,
+      "openState": "NO_LINK",
       "pushOpens": null,
-      "pushOpenRate": null,
-      "inboxOpens": null
+      "pushOpenRate": null
+    },
+    {
+      "campaignId": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b",
+      "kind": "MARKETING",
+      "title": "주말 출석 이벤트",
+      "noticeId": null,
+      "startedAt": "2026-10-19T03:00:05Z",
+      "deliveredMembers": 198,
+      "openState": "BEFORE_MEASUREMENT",
+      "pushOpens": null,
+      "pushOpenRate": null
     }
   ],
-  "serviceTypes": [
-    { "type": "STORY_COMPLETED", "deliveredMembers": 96, "pushOpens": 41, "pushOpenRate": 0.4271, "inboxOpens": 9 },
-    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 18, "pushOpens": 6, "pushOpenRate": 0.3333, "inboxOpens": 4 },
-    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 2104, "pushOpens": 187, "pushOpenRate": 0.0889, "inboxOpens": 12 }
+  "activityFrom": "2026-10-21",
+  "activityTypes": [
+    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "pushOpenRate": 0.4426 },
+    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "pushOpenRate": 0.3636 },
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "pushOpenRate": 0.0862 }
   ]
 }
 ```

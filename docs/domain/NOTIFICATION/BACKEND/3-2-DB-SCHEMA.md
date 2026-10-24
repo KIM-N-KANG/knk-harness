@@ -148,6 +148,7 @@ erDiagram
 | `sent_count` | integer | | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수 |
 | `skipped_count` | integer | | 사용하지 않음 |
 | `started_at` | timestamptz | | 선점 시각<br>전송 중 시간 초과 판정의 기준 |
+| `deep_link_included` | boolean | | 마지막 회차의 발송 요청에 딥링크를 넣었는지<br>회차 전은 NULL |
 | `finished_at` | timestamptz | | 회차 종료 시각 |
 
 | 인덱스 | 컬럼 |

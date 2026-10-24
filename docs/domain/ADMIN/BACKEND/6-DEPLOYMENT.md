@@ -83,6 +83,7 @@
 | `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
 | `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>분석 지표 세분화 조회의 세그먼트 `userdata_cohort` 제외 조건에 사용<br>비어 있으면 제외 없이 조회 |
 | `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
+| `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 빈 값 | 개발과 운영 태스크 정의에 직접 기록 | 푸시 열람 측정 시작일 KST `YYYY-MM-DD`<br>푸시 딥링크에 UTM을 붙인 서버를 운영에 배포한 날<br>비어 있으면 분석 도구를 조회하지 않고 모든 열람을 측정 시작 전으로 응답 |
 | `MANYAK_PLAY_STATS_SA_KEY_BASE64` | 빈 값 | 운영 Secrets Manager `manyak/prod/app`만<br>개발은 주입 없음 | Play 보고서 읽기 전용 서비스 계정 키 JSON의 base64<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨<br>개발 서버는 설치 지표가 사용 불가 |
 
 <br>

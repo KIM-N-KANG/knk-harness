@@ -248,15 +248,19 @@
 | 캠페인 없음 | 목록에 종료일 없는 항목이 없고 `campaign` 생략<br>101자 `campaign` | 400 |
 | 저장 키 | 같은 범위에 다른 `campaign` 두 번 | 대역 호출 두 묶음, 캠페인 값이 다른 매개변수 해시 |
 | 지난 기간 | 그저께까지의 범위를 한 번 조회한 뒤 10분 뒤, 25시간 뒤, 30일 뒤에 다시 호출 | 대역 재호출 없음 |
-| 푸시 열람 조회 | `days` 7 | 대역에 세분화 조회 2회, 이벤트 필터 `utm_source` `is` `["push"]`와 `["inbox"]`, 이벤트 묶음 `utm_campaign` 하나, `limit` 1000, `s`와 `country`와 `platform` 조건 없음, 예산 계수기 350 증가 |
+| 푸시 열람 조회 | 측정 시작일이 범위 첫날 이전, `days` 7 | 대역에 세분화 조회 1회, 이벤트 필터 `utm_source` `is` `["push"]`, 이벤트 묶음 `utm_campaign` 하나, `limit` 1000, `s`와 `country`와 `platform` 조건 없음, 예산 계수기 175 증가 |
 | 푸시 열람 대응 | 묶음 값이 캠페인 공개 식별자, `attendance_reminder`, `KR_META_WEB_ACTIVATION_COLD_202610`, `(none)` | 앞의 둘만 그 캠페인과 출석 리마인드에 들고 나머지는 버림 |
-| 푸시 열람 날짜 합 | 캠페인 하나의 푸시 열람 10-23 30명, 10-24 5명, 도달 100명 | `pushOpens` 35, `pushOpenRate` 0.35 |
+| 푸시 열람 날짜 합 | 캠페인 하나의 푸시 열람 10-23 30명, 10-24 5명, 도달 100명 | `openState` `MEASURED`, `pushOpens` 35, `pushOpenRate` 0.35 |
 | 열람률 1 초과 | 도달 2명, 날짜별 열람 합 3 | `pushOpenRate` 1.5 |
-| 측정 불가 캠페인 | 공지와 이동 대상 스토리가 없는 프로모션 | `pushOpens`, `pushOpenRate`, `inboxOpens` `null`, `deliveredMembers`는 값 |
-| 도달 없음 | 서비스 알림 도달 0, 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
+| 딥링크 없는 발송 | 마지막 회차의 딥링크 포함 여부가 거짓인 프로모션 | `openState` `NO_LINK`, `pushOpens`와 `pushOpenRate` `null`, `deliveredMembers`는 값 |
+| 측정 시작 전 캠페인 | 측정 시작일 10-21, 마지막 회차 선점 10-19 | `openState` `BEFORE_MEASUREMENT`, `pushOpens` `null` |
+| 측정 시작일 미설정 | 설정값 비어 있음 | 대역 호출 없음, 200, `measuredFrom`과 `activityFrom` `null`, 모든 `openState` `BEFORE_MEASUREMENT`, 활동 알림의 `deliveredMembers`는 범위 전체 |
+| 활동 알림 집계 구간 | 범위 10-18~10-24, 측정 시작일 10-21 | 대역 조회 날짜는 10-21~10-24, `activityFrom` 10-21, 활동 알림의 `deliveredMembers`도 10-21~10-24 |
+| 활동 알림 도달 중복 | 같은 회원에게 10-23 스토리 완성 3건 도달 | 그날 도달 회원 1 |
+| 도달 없음 | 활동 알림 도달 0, 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
 | 캠페인 범위 | 선점 시각이 범위 전날인 캠페인, 선점 전에 취소한 캠페인 | 둘 다 `campaigns`에 없음 |
-| 서비스 알림 항목 | 열람과 도달이 모두 없음 | `serviceTypes` 3항목이 고정 순서, 값 0, `pushOpenRate` `null` |
-| 푸시 열람 부분 응답 | 예산이 3일치만 남음 | 최근 3일만 조회, 나머지 날짜는 `pendingDates`, 열람 수는 준비된 날짜의 합, `deliveredMembers`는 범위 전체 |
+| 활동 알림 항목 | 열람과 도달이 모두 없음 | `activityTypes` 3항목이 고정 순서, `openState` `MEASURED`, 값 0, `pushOpenRate` `null` |
+| 푸시 열람 부분 응답 | 예산이 3일치만 남음 | 최근 3일만 조회, 나머지 날짜는 `pendingDates`, 열람 수는 준비된 날짜의 합, `deliveredMembers`는 집계 구간 전체 |
 | 푸시 열람 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 비용 예산 | 빈 저장소에서 5분 안에 예산을 450 소비한 뒤 추이 7일 갱신(하루 14) | 남은 50으로 최근 3일만 조회해 200, 나머지 4일은 `pendingDates`<br>예산을 490 소비한 뒤에는 하루치도 예약하지 못해 대역 호출 없이 503, `reason` `budget_exceeded`, 그 키에 60초 쿨다운 |
 | 기본 예산 | 설정값 없음 | 태스크 예산 500 |
