@@ -16,8 +16,8 @@
 | [`chats.md`](chats.md)           | 채팅 목록 · 채팅 화면 · 공유 열람              |
 | [`stories.md`](stories.md)       | 스토리 목록 · 상세 · 생성 퍼널                 |
 | [`auth.md`](auth.md)             | 로그인 · 세션 · 데이터 이관 · 로그아웃         |
-| [`my.md`](my.md)                 | 마이 · 회원 탈퇴 · 피드백 · 초대 · 서비스 안내 · 하단 탭 |
-| [`onboarding.md`](onboarding.md) | 신규 가입 초대 코드 다이얼로그, 앱 안내 배너 |
+| [`my.md`](my.md)                 | 마이 · 회원 탈퇴 · 피드백 · 초대 · 서비스 안내 · 공지사항 · 하단 탭 |
+| [`onboarding.md`](onboarding.md) | 신규 가입 초대 코드 다이얼로그, 앱 안내 배너, 앱 공유 링크 |
 | [`legal.md`](legal.md)           | 약관 · 개인정보 처리방침                       |
 
 ## 케이스 작성 규칙
