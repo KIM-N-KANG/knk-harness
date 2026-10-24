@@ -821,6 +821,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `creditBalance` | `integer` | 만료되지 않은 이프 잔액 |
 | `storyCount` | `integer` | 삭제되지 않은 소유 스토리 수 |
+| `turnCount` | `integer` | 누적 턴 수<br>소유 채팅의 AI 응답 메시지 수이며 재생성 판본은 세지 않음<br>삭제된 채팅과 게스트 때 만들어 이관된 채팅 포함<br>대시보드 채팅 턴 수와 같은 정의이고 팀 계정 제외 없음 |
 | `deletedAt` | `string / null` | 탈퇴 시각 |
 
 - 상세 조회는 접속 기록으로 감사 로그에 남는다.
@@ -863,6 +864,7 @@ Authorization: Bearer {adminToken}
   "periodChatCount": null,
   "creditBalance": 1230,
   "storyCount": 4,
+  "turnCount": 312,
   "deletedAt": null
 }
 ```
