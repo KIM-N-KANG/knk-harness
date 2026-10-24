@@ -23,6 +23,7 @@
 
 - [ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩](#onbd-invite--신규-가입회원-초대-코드-온보딩)
 - [ONBD-BANNER — 앱 안내 배너](#onbd-banner--앱-안내-배너)
+- [ONBD-APPLINK — 앱 공유 링크](#onbd-applink--앱-공유-링크)
 - [⚠️ 확인 필요](#️-확인-필요)
 
 ---
@@ -70,6 +71,18 @@
 | ONBD-BANNER-18 | P2 | Android Chrome, 배너 표시 | 키보드나 스크린 리더로 닫기 | 배너가 사라지고 포커스가 배너 아래 화면으로 이동 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-19 | P2 | iOS 인앱 | 열기를 1.5초 안에 여러 번 누르기, 또는 전환된 뒤 1.5초 안에 돌아오기 | 실패 안내 이벤트는 한 번만 나가고, 전환됐다 돌아온 경우에는 실패 안내 시트를 띄우지 않음 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-20 | P0 | Android 인스타그램 인앱, 앱 미설치 | 앱 열기 후 0.7초 대기 | 플레이스토어 앱의 마냑 페이지가 열림. 카카오톡, Chrome에서는 플레이스토어가 한 번만 열림 | ◐ e2e `smoke/app-banner`(이동과 취소만) | 같음, [W-041](../adr/1-2-web-adr.md#w-041) |
+
+## ONBD-APPLINK — 앱 공유 링크
+
+기준: [앱 공유 링크](../spec/3-2-web-spec.md#앱-공유-링크). Mobile Chrome 프로젝트는 Pixel 5라 Android UA이므로 데스크톱 케이스는 UA를 따로 지정합니다.
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ONBD-APPLINK-01 | P1 | 데스크톱 또는 iOS 브라우저 | `/app` 열기 | 웹 홈(`/`)으로 교체 이동하고 뒤로가기가 `/app`으로 돌아오지 않음 | ✅ e2e `smoke/app-share` | [앱 공유 링크](../spec/3-2-web-spec.md#앱-공유-링크) |
+| ONBD-APPLINK-02 | P0 | 카카오톡 스크래퍼 UA(`kakaotalk-scrap`) | `/app` 첫 HTML 요청 | `og:title`·`og:description`·`og:image`(절대 URL)·`og:url`(`/app`)·`twitter:card`가 들어 있고 `robots`는 `noindex, follow` | ✅ e2e `smoke/app-share` | 같음 |
+| ONBD-APPLINK-03 | P0 | Android, 앱 미설치 | `/app` 열기 후 0.7초 대기 | 플레이스토어의 마냑 페이지가 열림(귀속값 `utm_medium=share_link`). 카카오톡 인앱은 외부 브라우저 열기를 거쳐 1.4초 안에 열림 | ◐ e2e `smoke/app-share`(카카오톡 UA의 이동만) | 같음 |
+| ONBD-APPLINK-04 | P1 | Android, 앱 설치 | `/app` 열기 | 앱 홈이 열리고 플레이스토어는 열리지 않음. 앱에서 돌아오면 `/app`에 머물며 "Google Play에서 받기" 버튼이 보임 | ◐ e2e `smoke/app-share`(머무는 화면만) | 같음 |
+| ONBD-APPLINK-05 | P2 | 실기기 카카오톡 대화방 | `https://manyak.app/app` 보내기 | 제목 "마냑", 홈 설명, 브랜드 이미지로 미리보기가 그려짐 | 수동 | 같음 |
 
 ## ⚠️ 확인 필요
 

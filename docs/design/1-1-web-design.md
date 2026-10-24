@@ -217,6 +217,14 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 - 문구는 [constants/app-banner](../../../manyak-web/src/constants/app-banner.ts)에 있습니다. 배너 첫 줄의 앱 이름은 [constants/site](../../../manyak-web/src/constants/site.ts)의 `SITE_NAME`이고, 아이콘은 웹 앱 매니페스트와 같은 `public/icons/icon-192.png`를 장식 이미지(`alt=""`)로 씁니다. 안내 시트는 앱 프레임에 포털한 `Drawer`라 뒤로가기로 닫힙니다. 홈 화면 추가 안내는 `supportsHomeScreenImageGuide`(UA `iPhone`과 `Version/` 주 버전 26 이상)가 참이면 `public/app-banner/ios-safari-step-{1..4}.webp` 스크린샷을 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(브라우저 기본 가로 스크롤 스냅, 점 표시, 마우스 끌기)으로, 아니면 텍스트 단계를 보여줍니다. 스트립을 감싼 요소의 `data-base-ui-swipe-ignore`로 가로 넘기기가 시트 끌어 닫기로 이어지지 않게 합니다. iOS 26 Safari는 UA의 OS 버전을 고정하므로 Safari 버전으로 판정합니다.
 - E2E 기본 fixture는 닫기 표식을 심어 배너를 숨기고, 배너 스펙만 `test.use({ appBanner: true })`로 켭니다.
 
+### 앱 공유 링크 (웹)
+
+`/app`은 [(share)/app/page](../../../manyak-web/src/app/(share)/app/page.tsx)가 서버에서 미리보기 메타데이터(루트 Open Graph 이미지 상속, 홈 설명, `noindex`)를 만들고 [app-share-screen](../../../manyak-web/src/features/app/components/app-share-screen.tsx)을 그립니다. 계약은 [웹 Spec](../spec/3-2-web-spec.md#앱-공유-링크)을 따릅니다. 서버(middleware) 리다이렉트는 쓰지 않습니다. 스크래퍼가 HTML과 메타를 받아야 하기 때문입니다.
+
+- 자동 이동은 [lib/app-share](../../../manyak-web/src/lib/app-share.ts)의 `startAppShareRedirect`가 맡고 화면은 첫 마운트 때 한 번만 부릅니다. sessionStorage `manyak:app-share:redirected`로 탭마다 한 번만 실행해 앱에서 돌아오거나 새로고침해도 반복하지 않고, bfcache 복원(`pageshow`의 `persisted`)에서는 남은 폴백을 취소합니다.
+- Android는 `window.location.href`로 배너와 같은 `buildAppIntentUrl`(앱 홈, 공유용 `S.market_referrer`)에 보내고, 배너와 공유하는 `scheduleEscapeFallback`(0.7초 안에 문서가 숨겨지지 않으면 실패)으로 `buildPlayStoreUrl`의 공유용 플레이스토어 주소에 `location.replace`합니다. 카카오톡 인앱은 폴백에서 먼저 `openExternalBrowser`로 플레이스토어를 외부 브라우저에 열고 같은 대기를 한 번 더 거칩니다. Android가 아니면 홈으로 `location.replace`합니다. `replace`를 쓰는 이유는 `/app`이 히스토리에 남아 뒤로가기마다 다시 이동하는 루프를 막기 위해서입니다.
+- 문구는 [features/app/constants](../../../manyak-web/src/features/app/constants.ts)에 있고 버튼은 공유용 플레이스토어 주소로 가는 링크입니다. 배너 판정의 제외 경로에 `/app`을 넣어 배너를 겹쳐 보이지 않습니다.
+
 ### 상단 헤더·하단 네비게이션
 
 메인 헤더는 현재 섹션을 표시하며 홈만 로고와 스크린 리더용 `h1` "홈"을 사용합니다. 홈·채팅·제작의 로그인 버튼은 세션이 게스트로 확정된 뒤 표시하고 마이 헤더에는 두지 않습니다. 하단 4탭의 라벨·경로는 웹 Spec을 따릅니다.
