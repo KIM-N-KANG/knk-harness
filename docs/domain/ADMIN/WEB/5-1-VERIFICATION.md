@@ -54,6 +54,7 @@
 | 활성 메뉴 | `/analytics/users?tab=retention` | 사용자 메뉴 활성, 대시보드 구역 펼침 |
 | 개요 활성 | `/dashboard/analytics` | 분석만 활성, 개요는 비활성 |
 | 워드마크 | 사이드바 | 접근성 이름 "마냑 관리자" |
+| 외부 도구 | 사이드바의 외부 도구 열기 | Amplitude, OpenSearch 로그, Sentry, Langfuse, Google Play Console, 그로블 순서<br>Google Play Console은 `https://play.google.com/console/developers/7346202752431827582/app-list`를 새 탭에서 엶 |
 | 요약 카드 | 요약, 차트, 분석 지표, 설치 지표 응답 | 카드 10개가 오늘 활성 사용자, 가입자, 채팅 시작, 턴, 스토리, 이프 적립, 이프 소모, 결제 건수, 결제 금액 (환불 포함), 앱 설치(Android) 순서<br>서버 DB 카드 8개는 누적 큰 숫자, 오늘 줄, 기간 합계 줄<br>Amplitude 사용자 지표 구역과 설치 차트 없음 |
 | 카드 격자 | 너비 1280px | 5열 2행 |
 | 가입자 카드 | `members.total` 1300, `active` 1240, `withdrawn` 60, `joinedToday` 12 | 큰 숫자 1,300명, 오늘 줄 12명<br>"?" 툴팁 "탈퇴한 회원을 포함한 누적 가입자 수입니다. 현재 회원 1,240명, 누적 탈퇴 60명이며 팀 계정은 제외합니다."<br>누르면 `excludeDeleted` 없는 회원 목록 |

@@ -38,7 +38,18 @@
 | 활성 메뉴 | 개요는 경로가 정확히 같을 때만<br>그 밖의 메뉴는 경로가 같거나 그 경로의 하위일 때<br>상세 화면에서는 그 목록 메뉴 |
 | 이동 | `/`는 쿼리를 유지해 `/dashboard`로<br>`/campaigns`는 `/notifications/campaigns`로 |
 | 워드마크 | 사이드바 위와 로그인 화면에 174×32 크기의 마냑 심볼과 워드마크, 회색 "관리자" 글자<br>접근성 이름은 "마냑 관리자" |
-| 사이드바 아래 | 외부 도구 열기 버튼, 관리자 닉네임, 로그아웃<br>외부 도구는 Amplitude, OpenSearch 로그, Sentry, Langfuse, 그로블 순서로 새 탭에서 엶<br>고정 데이터 미리보기에서는 닉네임 "미리보기"와 "고정 데이터 미리보기"를 표시하고 로그아웃을 숨김 |
+| 사이드바 아래 | 외부 도구 열기 버튼, 관리자 닉네임, 로그아웃<br>외부 도구는 Amplitude, OpenSearch 로그, Sentry, Langfuse, Google Play Console, 그로블 순서로 새 탭에서 엶<br>고정 데이터 미리보기에서는 닉네임 "미리보기"와 "고정 데이터 미리보기"를 표시하고 로그아웃을 숨김 |
+
+| 외부 도구 | 여는 주소 |
+|---|---|
+| Amplitude | `https://app.amplitude.com/analytics/young-pond-673966` |
+| OpenSearch 로그 | 운영 OpenSearch 도메인의 Dashboards 주소 |
+| Sentry | `https://manyak.sentry.io` |
+| Langfuse | `https://jp.cloud.langfuse.com` |
+| Google Play Console | `https://play.google.com/console/developers/7346202752431827582/app-list`<br>개발자 계정의 앱 목록 |
+| 그로블 | `https://www.groble.im/manage/store/operation` |
+
+- 주소는 관리자 저장소의 외부 링크 설정 하나에 모은다.
 
 - 유입 분석의 광고 캠페인은 광고 링크의 UTM 캠페인이고 알림 구역의 캠페인은 푸시 발송 캠페인이다. 두 화면은 데이터와 경로가 다르다.
 
