@@ -2192,6 +2192,7 @@ Authorization: Bearer {adminToken}
 - 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
 - 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.
 - 보관 기간 밖 날짜는 서버가 미리 저장한 값으로만 응답한다. 배치가 날짜마다 확정 값을 저장하므로 배포 뒤 날짜는 보관 기간이 지나도 값이 남는다.
+- 범위의 모든 날짜가 `retentionStartDate` 전이면 Langfuse를 호출하지 않으므로 설정 없음, 쿨다운, 호출 제한과 무관하게 200이다. 저장 값이 없는 날짜는 `expiredDates`다.
 
 <br>
 
@@ -2200,7 +2201,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
-| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 보관 기간 안 날짜의 저장 값도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 범위에 저장 값이 하나도 없음<br>두 경우 모두 범위의 모든 날짜가 `retentionStartDate` 전이면 503이 아니라 200 |
 
 <br>
 
