@@ -90,7 +90,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 빈 값 | 개발과 운영 태스크 정의에 환경별 값을 직접 기록 | 오리지널 필터의 공식 계정 |
+| `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 빈 값 | 개발과 운영 태스크 정의에 환경별 값을 직접 기록 | 오리지널 필터와 관리자 오리지널 API의 공식 계정<br>비어 있으면 관리자 오리지널 등록이 사용 불가 |
 | `MANYAK_CREDIT_STORY_CREATION_COST` | 250 | 주입 없음 | 런타임 값은 PAYMENT 정책이 우선 |
 | `MANYAK_GUEST_TRIAL_STORYLINE_LIMIT` | 5 | 주입 없음 | |
 | `MANYAK_GUEST_TRIAL_STORY_CREATION_LIMIT` | 1 | 주입 없음 | |

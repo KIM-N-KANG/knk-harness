@@ -1,8 +1,8 @@
 # 4-2 계약
 
-이 문서는 PAYMENT 도메인 백엔드와 클라이언트, 결제 제공자, 다른 도메인 사이의 계약을 정한다. 엔드포인트별 요청 필드, 성공과 실패 응답의 필드와 예시, 도메인 경계를 다룬다.
+이 문서는 PAYMENT 도메인 백엔드와 클라이언트, 결제 제공자, 관리자 페이지, 다른 도메인 사이의 계약을 정한다. 엔드포인트별 요청 필드, 성공과 실패 응답의 필드와 예시, 도메인 경계를 다룬다.
 
-처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 비밀값 취급은 보안에 있다. ([4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-7 비밀값과 개인정보](5-1-SECURITY.md#5-1-7-비밀값과-개인정보))
+처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 비밀값 취급은 보안에, 관리자 토큰과 권한 판정은 관리자 계약에 있다. ([4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-7 비밀값과 개인정보](5-1-SECURITY.md#5-1-7-비밀값과-개인정보), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 <br>
 
@@ -16,19 +16,21 @@
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
 | 금액 | 정수<br>이프는 단위 없는 수량, 가격은 원 |
-| 식별자 | 주문은 UUID 공개 식별자<br>원장과 로트의 식별자는 노출하지 않음 |
+| 식별자 | 주문과 회원은 UUID 공개 식별자<br>원장과 로트의 식별자는 노출하지 않음 |
 | 사유와 상태 | 대문자 enum 문자열 |
+| 사유 문장 | 관리자 변경 작업의 요청 본문에 `reason` 필수 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
 <br>
 
 **2. 인증 수준**
 
-| 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
-|---|---|---|
-| `불필요` | 익명으로 처리 | 회원으로 처리<br>탈퇴 계정은 거절 |
-| `필수` | 거절 | 회원으로 처리 |
-| `서명` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>웹훅 서명으로 인증 |
+| 수준 | 토큰 없음 또는 무효 | 유효한 앱 접근 토큰 | 관리자 토큰 |
+|---|---|---|---|
+| `불필요` | 익명으로 처리 | 회원으로 처리<br>탈퇴 계정은 거절 | 익명으로 처리 |
+| `필수` | 거절 | 회원으로 처리 | 거절 |
+| `서명` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>웹훅 서명으로 인증 | 토큰을 읽지 않음 |
+| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 통과 |
 
 <br>
 
@@ -36,7 +38,7 @@
 
 | 요청 헤더 | 값 형식 | 쓰임 | 필수 |
 |---|---|---|---|
-| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
+| `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
 | `X-Manyak-Device-Id` | 문자열 | 게스트의 체험 카운터 식별<br>서버 분석 이벤트의 `device_id` | 게스트의 체험 조회는 필수 |
@@ -79,8 +81,8 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 401 | `UNAUTHORIZED` | 인증 필수 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정 |
-| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403 |
+| 401 | `UNAUTHORIZED` | 인증 필수 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>관리자 경로의 토큰 누락, 만료, 위조, 관리자 표식 없음 |
+| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴, 회원 없음 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
 
@@ -389,8 +391,8 @@ Authorization: Bearer {accessToken}
 | `type` | 포함하는 `reason` |
 |---|---|
 | `SPEND` | `STORY_CREATION`, `CHAT_TURN`, `CHAT_IMAGE` |
-| `EARN` | `SIGNUP_REWARD`, `ATTENDANCE_REWARD`, `INVITE_REWARD`, `REFUND`, `PURCHASE` |
-| `EXPIRE` | `EXPIRE`, `PURCHASE_REVERSAL` |
+| `EARN` | `SIGNUP_REWARD`, `ATTENDANCE_REWARD`, `INVITE_REWARD`, `REFUND`, `PURCHASE`, `ADMIN_GRANT` |
+| `EXPIRE` | `EXPIRE`, `PURCHASE_REVERSAL`, `ADMIN_REVOKE` |
 
 - 커서는 불투명 문자열이다. 같은 위치를 가리켜도 발급할 때마다 값이 다르다. 클라이언트는 커서를 해석하거나 조립하지 않는다.
 
@@ -695,14 +697,262 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-11 다른 도메인과의 경계
+### 4-2-11 이프 조정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/credits/adjustments` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `memberId` | `string` | 필수 | 회원 공개 식별자 |
+| `type` | `string` | 필수 | `GRANT`는 지급<br>`REVOKE`는 회수 |
+| `amount` | `integer` | 필수 | 1~100,000 |
+| `expiresInDays` | `integer` | 선택 | 지급 로트의 유효기간 일수<br>1~365, 생략하면 30<br>회수에서는 무시 |
+| `idempotencyKey` | `string` | 필수 | 1~64자<br>영문, 숫자, 하이픈<br>관리자 페이지가 요청마다 새로 만들고 재시도에는 같은 값 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `memberId` | `string` | 회원 공개 식별자 |
+| `type` | `string` | 적용된 종류 |
+| `requestedAmount` | `integer` | 요청 금액 |
+| `appliedAmount` | `integer` | 실제 적립 또는 회수한 금액<br>회수에서 잔액이 모자라면 잔액 |
+| `shortfall` | `integer` | 회수에서 돌려받지 못한 금액<br>지급은 0 |
+| `balance` | `integer` | 적용 뒤 잔액 |
+| `duplicated` | `boolean` | 같은 멱등 키의 재요청이라 적용하지 않고 저장된 처음 결과를 돌려줬으면 `true` |
+| `expiresAt` | `string / null` | 지급 로트의 만료 시각<br>적립 시각에 유효기간 일수를 더한 값<br>회수는 `null` |
+
+- 같은 멱등 키의 재요청은 회원, 종류, 금액, 유효기간이 모두 같을 때만 저장된 처음 결과를 `duplicated` `true`로 돌려준다. 그 사이 잔액이 바뀌어도 응답의 `balance`는 처음 적용 뒤 잔액이다. 하나라도 다르면 거절한다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 필드 누락, 범위 밖 금액, 범위 밖 `expiresInDays`, 멱등 키 형식 오류, 지원하지 않는 `type`, `memberId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 회원 |
+| 409 | `CONFLICT` | 탈퇴 계정 |
+| 409 | `IDEMPOTENCY_KEY_CONFLICT` | 같은 멱등 키에 회원, 종류, 금액, 유효기간 중 하나라도 다른 요청 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/credits/adjustments
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{
+  "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "type": "GRANT",
+  "amount": 5000,
+  "expiresInDays": 90,
+  "idempotencyKey": "7f3c2a1e-9b8d-4c6f-a5e4-d3c2b1a09f8e",
+  "reason": "결제 오류 보상"
+}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "type": "GRANT",
+  "requestedAmount": 5000,
+  "appliedAmount": 5000,
+  "shortfall": 0,
+  "balance": 6230,
+  "duplicated": false,
+  "expiresAt": "2027-01-19T01:23:45.678Z"
+}
+```
+
+**3) 200 Response body, 잔액보다 큰 회수**
+
+```json
+{
+  "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "type": "REVOKE",
+  "requestedAmount": 10000,
+  "appliedAmount": 6230,
+  "shortfall": 3770,
+  "balance": 0,
+  "duplicated": false,
+  "expiresAt": null
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-12 정책 오버라이드 조회
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/credits/policies` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 정책 키 6종<br>저장 키 순서 |
+| `items[].policyKey` | `string` | 저장 키<br>snake_case |
+| `items[].defaultAmount` | `integer` | 기본값 |
+| `items[].effectiveAmount` | `integer` | 현재 적용 중인 값<br>스냅샷 기준 |
+| `items[].minimum` | `integer` | 키별 최솟값 |
+| `items[].override` | `object / null` | 오버라이드 행<br>없으면 `null` |
+| `items[].override.amount` | `integer` | |
+| `items[].override.effectiveUntil` | `string / null` | `null`은 상시 |
+| `items[].override.updatedAt` | `string` | |
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/credits/policies
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    { "policyKey": "signup_reward", "defaultAmount": 1000, "effectiveAmount": 1000, "minimum": 1, "override": null },
+    { "policyKey": "attendance_reward", "defaultAmount": 250, "effectiveAmount": 500, "minimum": 1, "override": { "amount": 500, "effectiveUntil": "2026-10-31T15:00:00Z", "updatedAt": "2026-10-21T01:00:00Z" } }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-13 정책 오버라이드 기록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `PUT /admin/credits/policies/{policyKey}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>정책 오버라이드 조회의 항목 구조 |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `policyKey` | 경로 | 필수 | 저장 키 6종 중 하나<br>목록과 키별 최솟값은 정책 오버라이드 표 ([3-2-6 정책 오버라이드](3-2-DB-SCHEMA.md#3-2-6-정책-오버라이드)) |
+| `amount` | `integer` | 필수 | 그 키의 최솟값 이상 10,000 이하<br>최솟값은 조회 응답의 `minimum`과 같음 |
+| `effectiveUntil` | `string` | 선택 | 종료 시각<br>현재 이후<br>생략하면 상시 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 키당 한 행이며 이미 있으면 덮어쓴다. 응답의 `effectiveAmount`는 갱신 전 스냅샷 값일 수 있다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 범위 밖 `amount`, 과거 `effectiveUntil`, `reason` 누락 |
+| 404 | `NOT_FOUND` | 없는 정책 키 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+PUT /api/v1/admin/credits/policies/attendance_reward
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "amount": 500, "effectiveUntil": "2026-10-31T15:00:00Z", "reason": "할로윈 출석 이벤트" }
+```
+
+**2) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T01:23:45.678Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "attendance_reward는 1 이상 10000 이하여야 합니다.",
+  "path": "/api/v1/admin/credits/policies/attendance_reward",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-14 정책 오버라이드 삭제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `DELETE /admin/credits/policies/{policyKey}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>정책 오버라이드 조회의 항목 구조 |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `policyKey` | 경로 | 필수 | 저장 키 6종 중 하나<br>목록은 정책 오버라이드 표와 같음 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 삭제 뒤 갱신 주기 안에 기본값으로 돌아간다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reason` 누락 |
+| 404 | `NOT_FOUND` | 없는 정책 키<br>오버라이드 행 없음 |
+
+<br>
+
+### 4-2-15 다른 도메인과의 경계
 
 | 도메인 | PAYMENT가 제공하는 것 | PAYMENT가 사용하는 것 |
 |---|---|---|
-| ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 체험 스냅샷 완료 시각 기록 |
+| ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 체험 스냅샷 완료 시각 기록, 회원 조회 |
 | STORY | 체험 예약과 복원, 선차감, 환불, 정책값 `story_creation_cost`, 잔액 부족과 한도 소진 예외 | 간편 제작 진행의 상태와 스토리 참조, 스토리 제목과 읽기 판정 |
 | CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조, 라이트(`LITE`)의 턴 가격 |
-| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
+| NOTIFICATION | 출석 보상 멱등 키의 존재 | 없음 |
+| ADMIN | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 | 관리자 요청자와 변경 감사 기록 |
+| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다. 상태 코드 변환은 호출 도메인이 한다.
 
@@ -718,6 +968,8 @@ Content-Type: application/json
 | 복원 | 기기 식별자 또는 회원, 카운터 | 회원 복원은 성공 여부 |
 | 체험 스냅샷 | 회원, 기기 식별자 | 완료 여부 |
 | 정책값 | 정책 키 | 현재 유효값 |
+| 완료와 환불 주문 조회 | 필터, 정렬, 페이지 | 전체 건수와 현재 페이지의 주문 |
+| 지급과 소진 집계 | 시각 범위 | 지급 사유 합계와 소모 사유 합계의 절댓값 |
 
 | 예외 | 앱 코드 | 의미 |
 |---|---|---|

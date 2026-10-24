@@ -12,9 +12,9 @@
 
 | 규칙 | 내용 |
 |---|---|
-| 식별자 | 내부 PK는 `bigint` 자동 증가<br>주문은 외부 노출용 `public_id uuid`를 따로 둠<br>원장과 로트의 내부 ID는 응답에 노출하지 않음 |
+| 식별자 | 내부 PK는 `bigint` 자동 증가<br>주문은 외부 노출용 `public_id uuid`를 따로 둠<br>원장, 로트, 관리자 조정의 내부 ID는 응답에 노출하지 않음 |
 | 시각 | `timestamp with time zone`<br>`created_at`의 기본값은 `now()`이며 아래 표에서는 표시하지 않음 |
-| 삭제 | 원장, 로트, 주문은 삭제 경로 없음<br>환불 표식은 처리가 끝나면 물리 삭제 |
+| 삭제 | 원장, 로트, 주문, 관리자 조정은 삭제 경로 없음<br>환불 표식은 처리가 끝나면 물리 삭제 |
 | FK | 지갑, 원장, 로트는 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>주문은 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 | 금액 | 모든 금액은 `bigint`, 단위는 이프 또는 원 |
 
@@ -59,6 +59,15 @@ erDiagram
         varchar provider_ref
         bigint credit_transaction_id FK
     }
+    users ||--o{ credit_admin_adjustments : "ACCOUNT, 관리자 조정"
+    credit_admin_adjustments |o--o| credit_transactions : "만든 원장 행"
+    credit_admin_adjustments {
+        bigint id PK
+        varchar idempotency_key
+        bigint user_id FK
+        varchar type
+        bigint applied_amount
+    }
     credit_policies {
         varchar policy_key PK
         bigint amount
@@ -100,7 +109,7 @@ erDiagram
 | `reason` | varchar(30) | NOT NULL, CHECK 아래 목록 | 증감 사유 |
 | `ref_type` | varchar(30) | | 참조 종류<br>아래 목록 |
 | `ref_id` | bigint | | 참조 대상의 내부 ID |
-| `idempotency_key` | varchar(255) | UNIQUE | 보상, 구매, 요청 안 환불, 채팅 턴 차감의 대사 환불의 멱등 키<br>소모, 만료, 회수, 그룹 단위 대사 환불은 NULL |
+| `idempotency_key` | varchar(255) | UNIQUE | 보상, 구매, 요청 안 환불, 채팅 턴 차감의 대사 환불, 관리자 지급과 회수의 멱등 키<br>소모, 만료, 결제 환불 회수, 그룹 단위 대사 환불은 NULL |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -119,8 +128,10 @@ erDiagram
 | `STORY_CREATION` | `-` | 간편 제작 소모 |
 | `CHAT_TURN` | `-` | 채팅 턴 소모, 재생성 포함<br>금액은 그 턴의 모델 가격이라 같은 채팅 안에서 섞일 수 있음 |
 | `CHAT_IMAGE` | `-` | 채팅 이미지 소모 |
+| `ADMIN_GRANT` | `+` | 관리자 지급 |
 | `EXPIRE` | `-` | 로트 만료 회수 |
 | `PURCHASE_REVERSAL` | `-` | 결제 환불 회수 |
+| `ADMIN_REVOKE` | `-` | 관리자 회수 |
 
 | `ref_type` | `ref_id` | 쓰는 행 |
 |---|---|---|
@@ -159,7 +170,7 @@ erDiagram
 
 **`credit_policies`**
 
-기본값과 다르게 적용할 정책값만 담는다. 행이 없으면 기본값을 적용한다. 운영자가 직접 기록한다.
+기본값과 다르게 적용할 정책값만 담는다. 행이 없으면 기본값을 적용한다. 관리자 API가 기록하고 삭제한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -255,12 +266,41 @@ erDiagram
 
 <br>
 
-### 3-2-11 데이터 수명
+### 3-2-11 관리자 조정
+
+**`credit_admin_adjustments`**
+
+관리자 지급과 회수 요청 1건의 처리 결과가 한 행이다. 적용액이 0이어도 기록한다. 멱등 판정과 재요청 응답의 원본이다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `idempotency_key` | varchar(64) | NOT NULL, UNIQUE | 관리자 페이지가 보낸 멱등 키 원문 |
+| `admin_user_id` | bigint | NOT NULL, FK `users.id` | 처리 관리자 |
+| `user_id` | bigint | NOT NULL, FK `users.id` | 대상 회원 |
+| `type` | varchar(10) | NOT NULL, CHECK `GRANT` `REVOKE` | |
+| `requested_amount` | bigint | NOT NULL, CHECK `> 0` | 요청 금액 |
+| `applied_amount` | bigint | NOT NULL, CHECK `>= 0` | 실제 적립 또는 회수한 금액 |
+| `shortfall` | bigint | NOT NULL, CHECK `>= 0` | 회수에서 돌려받지 못한 금액<br>지급은 0 |
+| `balance_after` | bigint | NOT NULL | 적용 뒤 잔액 |
+| `expires_in_days` | integer | CHECK `GRANT`이면 NOT NULL | 지급 유효기간 일수 |
+| `expires_at` | timestamptz | | 지급 로트의 만료 시각<br>회수는 NULL |
+| `transaction_id` | bigint | FK `credit_transactions.id` | 만든 원장 행<br>적용액 0이면 NULL |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_credit_admin_adjustments_user` | `user_id`, `created_at DESC` |
+
+<br>
+
+### 3-2-12 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
 | 지갑, 원장, 로트 | 없음 |
 | 주문 | 없음 |
 | 환불 표식 | 잠금용 행은 처리 트랜잭션 끝에 삭제<br>완료보다 먼저 온 환불 금액이 있는 행은 주문과 맞는 완료 처리까지 보존 |
-| 정책 오버라이드 | 운영자가 삭제 |
+| 정책 오버라이드 | 관리자 API로 삭제 |
+| 관리자 조정 | 없음 |
+| 관리자 조정 | 없음 |
 | 체험 카운터 | 없음 |

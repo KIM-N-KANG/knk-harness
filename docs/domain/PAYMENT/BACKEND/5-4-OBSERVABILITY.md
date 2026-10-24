@@ -104,7 +104,8 @@ Fluent Bit`"]
 | 그로블 결제 | 지표 `manyak.payment.groble.webhook`의 `result` 분포<br>웹훅 무시 WARN의 사유 |
 | 결제 환불 | 웹훅 지표의 `refunded`<br>회수 부족분 WARN |
 | 선차감과 환불 | 대사 로그 `credit_reconciliation_refunded`가 반복되면 호출 도메인의 환불 경로 점검<br>간편 제작의 혼합 단가 WARN<br>채팅 턴은 `credit_reconciliation_charge_failed` |
-| 정책값 | 기동 로그 `credit_policy_effective`, 변경 로그, 오버라이드 제외 WARN |
+| 정책값 | 기동 로그 `credit_policy_effective`, 변경 로그, 오버라이드 제외 WARN<br>누가 바꿨는지는 관리자 도메인의 감사 로그 |
+| 관리자 지급과 회수 | 감사 로그 조회<br>요청 로그의 `/api/v1/admin/credits/adjustments` 상태 분포 |
 | 체험 | Redis 장애 WARN<br>요청 로그의 `/api/v1/users/me/trials` 500 비율 |
 | 잔액과 내역 | 요청 로그의 `/api/v1/users/me/credits/transactions` 400 비율 |
 

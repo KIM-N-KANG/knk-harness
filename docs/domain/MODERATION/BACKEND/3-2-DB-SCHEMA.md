@@ -63,7 +63,7 @@ erDiagram
 | `retry_count` | integer | NOT NULL, 기본 0, CHECK 0~2 | 예약한 자동 재시도 횟수<br>재제출 시 0 |
 | `next_attempt_at` | timestamptz | | 다음 자동 재시도 가능 시각<br>선점 시 NULL |
 | `held_at` | timestamptz | CHECK 보류 두 컬럼이 함께 NULL이거나 함께 NOT NULL이면서 `PENDING`이고 `next_attempt_at`이 NULL | 보류 시각 |
-| `hold_reason` | text | | 보류 원인 코드<br>마지막 실행 실패의 오류 코드<br>사용자에게 노출하지 않음 |
+| `hold_reason` | text | | 보류 원인 코드<br>마지막 실행 실패의 오류 코드<br>회원 응답에는 노출하지 않고 관리자 보류 목록과 관리자 제출본 목록, 상세에만 |
 | `dispatched_at` | timestamptz | | NULL은 미선점<br>값은 마지막 선점의 임대 시작 시각 |
 | `created_at` | timestamptz | NOT NULL, 기본 `now()` | 접수 시각<br>목록 정렬 기준 |
 | `updated_at` | timestamptz | NOT NULL, 기본 `now()` | |

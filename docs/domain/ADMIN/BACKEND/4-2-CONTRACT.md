@@ -1,0 +1,2597 @@
+# 4-2 계약
+
+이 문서는 ADMIN 도메인 백엔드와 관리자 페이지, 다른 도메인 사이의 계약을 정한다. 관리자 API 공통 규칙, 엔드포인트별 요청 필드, 성공과 실패 응답의 필드와 예시, 도메인 경계를 다룬다.
+
+처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 토큰과 개인정보 취급은 보안에 있다. ([4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-6 비밀값과 개인정보](5-1-SECURITY.md#5-1-6-비밀값과-개인정보))
+
+<br>
+
+### 4-2-1 공통 규칙과 헤더
+
+이 절의 인증 수준, 헤더, 공통 실패 응답은 다른 도메인의 관리자 API에도 그대로 적용된다.
+
+**1. 공통 규칙**
+
+| 항목 | 규칙 |
+|---|---|
+| 경로 | `/api/v1`을 생략해 적음<br>관리자 API는 모두 `/admin/` 아래 |
+| JSON 필드 이름 | camelCase |
+| 시각 | ISO 8601 UTC 문자열<br>날짜 필드는 `YYYY-MM-DD`이며 기준 시간대는 각 절에 적음 |
+| 식별자 | 회원, 감사 로그, 주문, 스토리, 채팅은 UUID 공개 식별자<br>내부 PK는 노출하지 않음 |
+| 채팅 대화 원문 | 어떤 관리자 응답에도 사용자 메시지, AI 응답, 추천 입력을 싣지 않음 |
+| 호출 주체 | 관리자 페이지의 서버 측 처리기<br>브라우저가 직접 호출하지 않으므로 관리자 페이지 주소는 CORS 허용 목록에 없음 |
+| 사유 | 변경 작업의 요청 본문에 `reason` 필수 |
+| 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
+
+<br>
+
+**2. 인증 수준**
+
+| 수준 | 토큰 없음 또는 무효 | 앱 접근 토큰 | 관리자 토큰 |
+|---|---|---|---|
+| `불필요` | 처리 | 처리 | 처리 |
+| `관리자` | 거절 | 거절 | 역할과 계정 상태를 다시 확인해 통과<br>역할 없음, 정지, 탈퇴는 거절 |
+
+<br>
+
+**3. 요청 헤더**
+
+| 요청 헤더 | 값 형식 | 쓰임 | 필수 |
+|---|---|---|---|
+| `Authorization` | `Bearer {adminToken}` | 관리자 식별 | 인증 수준에 따름 |
+| `X-Manyak-Request-Id` | 1~64자의 영문, 숫자, 하이픈, 밑줄 | 로그 연결과 감사 로그의 요청 ID<br>없거나 조건에 어긋나면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
+
+<br>
+
+**4. 관리자 토큰**
+
+| 항목 | 값 |
+|---|---|
+| 형식 | HS256 JWT<br>앱 접근 토큰과 같은 대칭키 |
+| 클레임 | 발급자 `manyak`, 주체는 회원 공개 식별자, 대상 `manyak-admin`, 발급 시각, 만료 |
+| 수명 | 2시간<br>갱신 없음 |
+| 구분 | 대상 클레임이 `manyak-admin`을 포함하면 관리자 토큰<br>앱 경로는 대상 클레임이 있는 토큰을 회원으로 식별하지 않음 |
+
+<br>
+
+**5. 앱 경로의 관리자 토큰**
+
+| 앱 경로의 인증 수준 | 관리자 토큰 |
+|---|---|
+| 토큰을 읽지 않는 경로 | 읽지 않으므로 처리 |
+| 선택 인증 경로 | 유효하지 않은 토큰과 같이 익명으로 처리<br>회원으로 식별하지 않음 |
+| 인증 필수 경로 | 인증 실패로 거절 |
+
+<br>
+
+**6. 공통 실패 응답**
+
+실패 응답은 모두 같은 형식이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `timestamp` | `string` | 응답 생성 시각 |
+| `status` | `integer` | HTTP 상태 |
+| `code` | `string` | HTTP 상태 이름 또는 앱 코드 |
+| `message` | `string` | 안내 문구 |
+| `path` | `string` | 요청 경로 |
+| `details` | `object[]` | 선언적 필드 검증 실패나 쿼리와 경로 변수의 타입 변환 실패 시 `field`와 `message` 포함<br>그 외는 빈 배열 |
+
+| `details[].field` 규칙 | 값 |
+|---|---|
+| 필드 검증 | 필드명 |
+| 본문 파싱 실패 | 빈 `details` |
+
+각 절의 실패 표에는 해당 엔드포인트에서 발생하는 상태와 `code`를 적는다. 다음 공통 실패는 각 절에서 생략한다.
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 401 | `UNAUTHORIZED` | 관리자 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 관리자 표식 없음 |
+| 403 | `FORBIDDEN` | 관리자 표식이 있는 토큰이지만 역할 없음, 정지, 탈퇴, 회원 없음 |
+| 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
+
+<br>
+
+**7. 공통 응답 구조**
+
+회원 목록 항목, 스토리와 채팅의 소유자, 주문과 이프 내역의 회원, 감사 로그의 처리자는 같은 회원 요약 구조를 쓴다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `memberId` | `string` | 회원 공개 식별자 |
+| `nickname` | `string` | 탈퇴 계정은 익명화된 이름 |
+| `status` | `string` | `ACTIVE`, `SUSPENDED`, `DELETED` |
+| `isAdmin` | `boolean` | 관리자 역할 보유 여부 |
+| `createdAt` | `string` | 가입 시각 |
+
+관리자 목록은 모두 같은 페이지 쿼리와 페이지 구조를 쓴다. 다른 도메인의 관리자 목록도 같다.
+
+| 쿼리 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `page` | `integer` | 선택 | 1부터 시작하는 페이지 번호<br>기본 1<br>전체 페이지 수를 넘으면 빈 `items` |
+| `size` | `integer` | 선택 | 페이지 크기<br>1~100<br>기본 20 |
+| `sort` | `string` | 선택 | 정렬 열<br>허용 값과 기본값은 각 절 |
+| `order` | `string` | 선택 | `asc` 또는 `desc`<br>기본 `desc` |
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 현재 페이지의 항목 |
+| `page` | `integer` | 요청한 페이지 번호 |
+| `size` | `integer` | 요청한 페이지 크기 |
+| `totalElements` | `integer` | 필터를 적용한 전체 건수 |
+| `totalPages` | `integer` | 전체 페이지 수<br>건수가 0이면 0 |
+
+- 정렬 열의 값이 같은 항목은 그 항목의 공개 식별자 오름차순으로 순서를 고정한다. `null`은 방향과 무관하게 마지막이다.
+- `page`와 `size`가 정수가 아니거나 범위 밖이면 400이다. 허용하지 않는 `sort`와 `order` 값도 400이다. `cursor`와 `limit`는 받지 않으며 보내면 400이다.
+
+목록의 검색어와 날짜 필터는 다음 규칙을 공유한다. 검색어, 필터, 정렬은 모두 AND로 적용한다.
+
+| 쿼리 | 규칙 |
+|---|---|
+| `q` | 1~50자<br>앞뒤 공백을 지우고 연속 공백을 하나로 줄인 뒤 대소문자를 무시해 비교<br>부분 일치 대상과 정확 일치 대상은 각 절<br>정규화 뒤 빈 값은 400 |
+| 날짜 | `YYYY-MM-DD` 형식의 KST 달력 날짜<br>`from`과 `to`는 양 끝 포함이고 한쪽만 지정 가능<br>`from`이 `to`보다 뒤이거나 형식이 틀리면 400 |
+| 필터 enum | 허용 값 밖은 400 |
+
+목록 항목의 스토리 요약은 다음 구조다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `storyId` | `string` | 스토리 공개 식별자 |
+| `title` | `string` | 제목<br>이름 토큰 원문 |
+| `genre` | `string` | 장르 정식 이름을 `, `로 이은 문자열 |
+
+<br>
+
+### 4-2-2 관리자 로그인
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/auth/login/google` |
+| 인증 | 불필요 |
+| 성공 | 200 |
+
+**1. 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `idToken` | `string` | 필수 | Google이 발급한 OIDC ID 토큰 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `accessToken` | `string` | 관리자 토큰 |
+| `expiresIn` | `integer` | 만료까지 남은 초 |
+| `tokenType` | `string` | 항상 `Bearer` |
+| `admin` | `object` | 회원 요약 구조 |
+
+- 갱신 토큰은 없다. 만료되면 다시 로그인한다. 로그아웃 엔드포인트는 없으며 관리자 페이지가 쿠키를 지운다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `idToken` 누락 |
+| 401 | `UNAUTHORIZED` | 신원 증명 검증 실패 |
+| 403 | `FORBIDDEN` | 회원 없음, 관리자 역할 없음, 정지, 탈퇴<br>사유를 구분하지 않음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/auth/login/google
+Content-Type: application/json
+
+{ "idToken": "{googleIdToken}" }
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "accessToken": "{adminToken}",
+  "expiresIn": 7200,
+  "tokenType": "Bearer",
+  "admin": {
+    "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+    "nickname": "차분한 등대",
+    "status": "ACTIVE",
+    "isAdmin": true,
+    "createdAt": "2026-07-01T09:00:00Z"
+  }
+}
+```
+
+**3) 403 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T01:23:45.678Z",
+  "status": 403,
+  "code": "FORBIDDEN",
+  "message": "관리자 권한이 없습니다.",
+  "path": "/api/v1/admin/auth/login/google",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-3 대시보드 요약
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/summary` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 집계 기준 시각 |
+| `todayStartsAt` | `string` | 오늘 범위의 시작인 KST 자정 |
+| `members` | `object` | 회원 |
+| `members.total` | `integer` | 누적 가입자 수<br>탈퇴 회원을 포함한 전체 회원 수 |
+| `members.active` | `integer` | 현재 회원 수<br>탈퇴하지 않은 회원 수이며 정지 회원 포함 |
+| `members.withdrawn` | `integer` | 누적 탈퇴 수<br>`status`가 `DELETED`인 회원 수 |
+| `members.joinedToday` | `integer` | 오늘 가입 |
+| `chats` | `object` | 채팅 |
+| `chats.startedTotal` | `integer` | 채팅 시작 누적 |
+| `chats.startedToday` | `integer` | 오늘 채팅 시작 |
+| `chats.turnsTotal` | `integer` | 턴 누적 |
+| `chats.turnsToday` | `integer` | 오늘 턴 |
+| `stories` | `object` | 스토리 |
+| `stories.total` | `integer` | 스토리 누적 |
+| `stories.createdToday` | `integer` | 오늘 생성 |
+| `credits` | `object` | 이프 |
+| `credits.grantedTotal` | `integer` | 누적 적립 |
+| `credits.grantedToday` | `integer` | 오늘 적립 |
+| `credits.spentTotal` | `integer` | 누적 소모 |
+| `credits.spentToday` | `integer` | 오늘 소모 |
+| `payments` | `object` | 결제 |
+| `payments.completedTotal` | `integer` | 결제 건수 누적 |
+| `payments.completedToday` | `integer` | 오늘 결제 건수 |
+| `payments.amountKrwTotal` | `integer` | 결제 금액 누적 |
+| `payments.amountKrwToday` | `integer` | 오늘 결제 금액 |
+
+<br>
+
+- `members.total`은 `members.active`와 `members.withdrawn`의 합이다. 세 값 모두 팀 계정 제외 목록을 뺀다.
+- 관리자 페이지는 가입자 카드를 탈퇴 회원을 포함한 회원 목록(`excludeDeleted` 없음)에 잇는다. 회원 목록은 팀 계정을 제외하지 않아 건수가 카드와 다를 수 있다.
+- 관리자 페이지는 이프 적립 카드는 `direction=granted`로, 이프 소모 카드는 `direction=spent`로 이프 내역에 잇는다. ([4-2-13 이프 내역](#4-2-13-이프-내역))
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/summary
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-10-21T05:12:00Z",
+  "todayStartsAt": "2026-10-20T15:00:00Z",
+  "members": { "total": 1300, "active": 1240, "withdrawn": 60, "joinedToday": 12 },
+  "chats": { "startedTotal": 8210, "startedToday": 64, "turnsTotal": 96320, "turnsToday": 710 },
+  "stories": { "total": 1530, "createdToday": 9 },
+  "credits": { "grantedTotal": 2480000, "grantedToday": 6250, "spentTotal": 1902400, "spentToday": 14200 },
+  "payments": { "completedTotal": 41, "completedToday": 1, "amountKrwTotal": 312800, "amountKrwToday": 4800 }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-4 대시보드 차트
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/charts` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+지표 정의와 팀 계정 제외 규칙은 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 집계 기준 시각 |
+| `from` | `string` | 범위 첫날의 KST 날짜 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 있고 없는 날은 0 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].joined` | `integer` | 가입 |
+| `daily[].chats` | `integer` | 채팅 시작 |
+| `daily[].turns` | `integer` | 턴 |
+| `daily[].stories` | `integer` | 스토리 생성 |
+| `daily[].granted` | `integer` | 이프 적립 |
+| `daily[].spent` | `integer` | 이프 소모 |
+| `daily[].payments` | `integer` | 결제 건수 |
+| `daily[].revenue` | `integer` | 결제 금액 |
+| `daily[].attendance` | `integer` | 출석 회원 수 |
+| `distributions` | `object[]` | 분포 차트<br>아래 표의 순서로 항상 8개 |
+| `distributions[].chartId` | `string` | 차트 식별자 |
+| `distributions[].category` | `string` | 분석 화면의 구역<br>`users`, `engagement`, `content`, `ai-quality` |
+| `distributions[].title` | `string` | 제목 |
+| `distributions[].description` | `string` | 집계 기준 설명<br>첫 사용자 입력까지 걸린 시간은 제외한 채팅 수 포함 |
+| `distributions[].unit` | `string` | 값의 단위 |
+| `distributions[].points` | `object[]` | 막대 하나가 한 항목 |
+| `distributions[].points[].label` | `string` | 막대 이름 |
+| `distributions[].points[].value` | `number` | 값<br>비율은 0~100의 백분율 |
+| `distributions[].points[].chats` | `integer` | `genre-depth`에만 있음<br>그 장르의 채팅 수 |
+| `distributions[].points[].totalTurns` | `integer` | `genre-depth`에만 있음<br>그 장르 채팅의 현재 턴 합<br>`value`는 `totalTurns`를 `chats`로 나눈 값 |
+| `distributions[].points[].link` | `object` | 막대를 눌렀을 때 열 목록 |
+| `distributions[].points[].link.list` | `string` | `stories`, `chats`, `members`, `credit-transactions` |
+| `distributions[].points[].link.params` | `object` | 그 목록의 쿼리 이름과 값<br>값은 모두 문자열 |
+
+| `chartId` | `category` | `label` | `unit` | `link` |
+|---|---|---|---|---|
+| `genre-depth` | `engagement` | 범위 안에 생성된 채팅이 있는 장르 정식 이름<br>`value` 내림차순, 같으면 이름 순<br>채팅 수와 무관하게 모든 장르 | `턴` | `stories`<br>`genre`, `chatFrom`, `chatTo` |
+| `turns` | `engagement` | `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7~9`, `10~14`, `15~19`, `20~29`, `30~49`, `50+` | `개` | `chats`<br>`turnBucket`(0부터 12), `from`, `to` |
+| `started-as` | `users` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
+| `member-chats` | `users` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
+| `first-message` | `engagement` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
+| `ai-latency` | `ai-quality` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
+| `ai-success` | `ai-quality` | 같음 | `%` | 같은 목록<br>`aiFeature`, `aiStatus=FINISHED`, `aiFrom`, `aiTo` |
+| `characters` | `content` | `0명`부터 `5명`<br>간편 제작별 직접 입력한 주변 인물 수 | `건` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
+
+일별 추이의 한 날짜를 눌렀을 때 여는 목록은 관리자 페이지가 다음 쿼리로 만든다.
+
+| `daily` 필드 | 목록 | 쿼리 |
+|---|---|---|
+| `joined` | `members` | `from`과 `to`에 그 날짜 |
+| `chats` | `chats` | `from`과 `to`에 그 날짜 |
+| `turns` | `chats` | `turnDate` |
+| `stories` | `stories` | `from`과 `to`에 그 날짜 |
+| `granted`, `spent` | `credit-transactions` | `direction`에 `granted` 또는 `spent`, `date` |
+| `payments`, `revenue` | `payments` | `from`과 `to`에 그 날짜 |
+| `attendance` | `members` | `attendanceDate` |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/charts?from=2026-10-15&to=2026-10-21
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 2개와 `distributions`의 차트 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-21T05:12:00Z",
+  "from": "2026-10-15",
+  "to": "2026-10-21",
+  "daily": [
+    { "date": "2026-10-15", "joined": 9, "chats": 58, "turns": 640, "stories": 7, "granted": 5250, "spent": 12800, "payments": 1, "revenue": 4800, "attendance": 21 },
+    { "date": "2026-10-16", "joined": 11, "chats": 61, "turns": 702, "stories": 5, "granted": 6000, "spent": 14040, "payments": 0, "revenue": 0, "attendance": 24 }
+  ],
+  "distributions": [
+    {
+      "chartId": "turns",
+      "category": "engagement",
+      "title": "턴 수 분포",
+      "description": "채팅 생성일을 기준으로 구간별 채팅 수 집계",
+      "unit": "개",
+      "points": [
+        { "label": "0", "value": 41, "link": { "list": "chats", "params": { "turnBucket": "0", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "1", "value": 37, "link": { "list": "chats", "params": { "turnBucket": "1", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "2", "value": 28, "link": { "list": "chats", "params": { "turnBucket": "2", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "3", "value": 22, "link": { "list": "chats", "params": { "turnBucket": "3", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "4", "value": 19, "link": { "list": "chats", "params": { "turnBucket": "4", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "5", "value": 17, "link": { "list": "chats", "params": { "turnBucket": "5", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "6", "value": 15, "link": { "list": "chats", "params": { "turnBucket": "6", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "7~9", "value": 24, "link": { "list": "chats", "params": { "turnBucket": "7", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "10~14", "value": 18, "link": { "list": "chats", "params": { "turnBucket": "8", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "15~19", "value": 9, "link": { "list": "chats", "params": { "turnBucket": "9", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "20~29", "value": 7, "link": { "list": "chats", "params": { "turnBucket": "10", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "30~49", "value": 4, "link": { "list": "chats", "params": { "turnBucket": "11", "from": "2026-10-15", "to": "2026-10-21" } } },
+        { "label": "50+", "value": 2, "link": { "list": "chats", "params": { "turnBucket": "12", "from": "2026-10-15", "to": "2026-10-21" } } }
+      ]
+    }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-5 스토리 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/stories` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `q` | `string` | 선택 | 제목과 소유 회원 닉네임 부분 일치<br>스토리 공개 식별자 정확 일치 |
+| `scope` | `string` | 선택 | `original`은 공식 계정 소유<br>`user`는 그 외 회원과 게스트 소유 |
+| `genre` | `string` | 선택 | 장르 정식 이름 하나<br>스토리 장르 문자열에 포함된 스토리 |
+| `visibility` | `string` | 선택 | `PUBLIC`, `PRIVATE` |
+| `moderationStatus` | `string` | 선택 | `HELD`는 보류 중인 제출본이 있는 스토리<br>`APPROVED`는 그 외 |
+| `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
+| `supportingCharacterCount` | `integer` | 선택 | 0~5<br>제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>이름, 성별, 특징 태그가 모두 빈 자리는 세지 않음<br>제작 세션이 없는 스토리는 어떤 값에도 해당하지 않음 |
+| `from`, `to` | `string` | 선택 | 스토리 생성일 |
+| `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatCount`와 `totalTurns`를 그 기간의 채팅으로만 세고 기간에 채팅이 없는 스토리는 제외 |
+| `creationFrom`, `creationTo` | `string` | 선택 | 제작 세션 생성일 |
+| `aiFrom`, `aiTo` | `string` | 선택 | AI 호출 기록 생성일 |
+| `aiFeature` | `string` | 선택 | `storyline_generation`, `story_completion` |
+| `aiStatus` | `string` | 선택 | `SUCCEEDED`, `FAILED`, `STARTED`<br>`FINISHED`는 성공과 실패 |
+| `hasLatency` | `boolean` | 선택 | 지연 값이 있는 호출만 |
+| `sort` | `string` | 선택 | `createdAt`, `chatCount`, `totalTurns`<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+- `ai`로 시작하는 쿼리 중 하나라도 있으면 조건에 맞는 AI 호출 기록이 연결된 스토리만 남긴다.
+
+<br>
+
+**2. 응답**
+
+항목은 스토리 요약 구조에 다음 필드를 더한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].description` | `string / null` | 주요 내용 |
+| `items[].scope` | `string` | `original`, `user` |
+| `items[].visibility` | `string` | `PUBLIC`, `PRIVATE` |
+| `items[].moderationStatus` | `string` | `HELD`, `APPROVED` |
+| `items[].tags` | `string[]` | 제작 세션에서 선택한 태그 이름<br>장르, 주인공, 주변 인물 특징 순<br>제작 세션이 없으면 빈 배열 |
+| `items[].supportingCharacterCount` | `integer / null` | 제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>제작 세션이 없으면 `null` |
+| `items[].owner` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트 소유는 `null` |
+| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
+| `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 수 합계 |
+| `items[].createdAt` | `string` | 생성 시각 |
+
+- 삭제된 스토리는 싣지 않는다. 팀 계정 제외는 적용하지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`memberId`가 UUID 형식이 아님 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/stories?genre=판타지&chatFrom=2026-10-15&chatTo=2026-10-21&sort=totalTurns&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "storyId": "7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d",
+      "title": "{username}의 계약서",
+      "genre": "판타지, 미스터리",
+      "description": "계약 마법이 지배하는 왕국에서 잃어버린 기억을 추적한다.",
+      "scope": "user",
+      "visibility": "PUBLIC",
+      "moderationStatus": "APPROVED",
+      "tags": ["판타지", "기억을 잃은", "과묵한 조력자"],
+      "supportingCharacterCount": 1,
+      "owner": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
+      "chatCount": 42,
+      "totalTurns": 388,
+      "createdAt": "2026-09-30T12:00:00Z"
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 17,
+  "totalPages": 17
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-6 스토리 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/stories/{storyId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `storyId` | 경로 | 필수 | 스토리 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+스토리 목록 항목에 다음 필드를 더한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `retention` | `object[]` | 기준 턴 도달률<br>`turn`이 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50인 항목 12개, 오름차순 |
+| `retention[].turn` | `integer` | 기준 턴 |
+| `retention[].rate` | `number` | 삭제되지 않은 채팅 중 현재 턴이 기준 턴 이상인 비율<br>0~1<br>채팅이 없으면 0 |
+| `recentChats` | `object[]` | 최근 생성된 채팅 5개<br>채팅 목록 항목 구조 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `storyId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리 |
+
+<br>
+
+### 4-2-7 채팅 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/chats` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `q` | `string` | 선택 | 스토리 제목과 회원 닉네임 부분 일치<br>채팅 공개 식별자 정확 일치 |
+| `storyId` | `string` | 선택 | 스토리 공개 식별자 |
+| `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
+| `startedAs` | `string` | 선택 | `GUEST`, `MEMBER` |
+| `turnBucket` | `integer` | 선택 | 0~12<br>턴 수 분포 차트의 구간 순서 |
+| `hasFirstMessage` | `boolean` | 선택 | `true`는 생성 뒤 900초 안에 첫 사용자 메시지가 있는 채팅<br>`false`는 그 외 |
+| `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅 |
+| `from`, `to` | `string` | 선택 | 채팅 생성일 |
+| `aiFrom`, `aiTo` | `string` | 선택 | AI 호출 기록 생성일 |
+| `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation`, `chat_image` |
+| `aiStatus` | `string` | 선택 | 스토리 목록과 같음 |
+| `hasLatency` | `boolean` | 선택 | 스토리 목록과 같음 |
+| `sort` | `string` | 선택 | `startedAt`, `lastActiveAt`, `turnCount`, `creditsSpent`<br>기본 `startedAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].chatId` | `string` | 채팅 공개 식별자 |
+| `items[].story` | `object` | 스토리 요약 구조 |
+| `items[].member` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트는 `null` |
+| `items[].startedAs` | `string` | 현재 소유자 유형이며 시작 당시 유형이 아님<br>소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅은 `MEMBER` |
+| `items[].turnCount` | `integer` | 현재 턴 수 |
+| `items[].startedAt` | `string` | 생성 시각 |
+| `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
+| `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
+| `items[].firstMessageSeconds` | `integer / null` | 생성부터 첫 사용자 메시지까지 초<br>사용자 메시지가 없으면 `null` |
+
+- 삭제된 채팅은 싣지 않는다. 메시지 원문은 어떤 필드에도 없다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`storyId` 또는 `memberId`가 UUID 형식이 아님 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/chats?turnBucket=4&from=2026-10-15&to=2026-10-21&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "chatId": "c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f",
+      "story": { "storyId": "7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d", "title": "{username}의 계약서", "genre": "판타지, 미스터리" },
+      "member": null,
+      "startedAs": "GUEST",
+      "turnCount": 4,
+      "startedAt": "2026-10-20T13:02:11Z",
+      "lastActiveAt": "2026-10-20T13:31:40Z",
+      "creditsSpent": 0,
+      "firstMessageSeconds": 42
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 96,
+  "totalPages": 96
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-8 채팅 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/chats/{chatId}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>채팅 목록 항목 구조 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `chatId` | 경로 | 필수 | 채팅 공개 식별자 |
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `chatId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 채팅 |
+
+<br>
+
+### 4-2-9 회원 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/members` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `q` | `string` | 선택 | 닉네임 부분 일치<br>회원 공개 식별자와 활성 소셜 연동 이메일 정확 일치<br>이메일은 소문자로 바꿔 비교 |
+| `status` | `string` | 선택 | `ACTIVE`, `SUSPENDED`, `DELETED` |
+| `excludeDeleted` | `boolean` | 선택 | `true`면 탈퇴 회원 제외 |
+| `from`, `to` | `string` | 선택 | 가입일 |
+| `chatBucket` | `integer` | 선택 | 0~4<br>회원별 채팅 생성 횟수 차트의 구간 순서<br>채팅이 없는 회원은 어떤 값에도 해당하지 않음 |
+| `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatBucket` 판정과 `periodChatCount`를 그 기간으로 세고 기간에 채팅이 없는 회원은 제외 |
+| `creditDirection` | `string` | 선택 | `granted`, `spent`<br>그 방향의 원장 행이 있는 회원 |
+| `creditDate` | `string` | 선택 | 원장 기록일<br>`creditDirection`과 함께만 |
+| `attendanceDate` | `string` | 선택 | 그 KST 날짜에 출석 보상을 받은 회원 |
+| `sort` | `string` | 선택 | `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+항목은 회원 요약 구조에 다음 필드를 더한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].lastActiveAt` | `string / null` | 삭제되지 않은 채팅의 마지막 갱신, 원장 기록, 스토리 생성 중 가장 최근 시각<br>없으면 `null` |
+| `items[].creditsSpent` | `integer` | 누적 이프 소모량<br>소모 사유 원장 행 합계의 절댓값이며 환불을 빼지 않음 |
+| `items[].paidKrw` | `integer` | 완료 상태 주문의 금액 합<br>환불된 주문 제외 |
+| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
+| `items[].periodChatCount` | `integer / null` | `chatFrom` 또는 `chatTo`를 지정했을 때 그 기간의 채팅 수<br>지정하지 않으면 `null` |
+
+- `q`가 있으면 접속 기록으로 감사 로그에 남는다. 이메일은 검색에만 쓰고 응답에는 없다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`creditDate`만 지정 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/members?q=등대&sort=creditsSpent&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+      "nickname": "차분한 등대",
+      "status": "ACTIVE",
+      "isAdmin": false,
+      "createdAt": "2026-07-01T09:00:00Z",
+      "lastActiveAt": "2026-10-21T04:58:12Z",
+      "creditsSpent": 18640,
+      "paidKrw": 9600,
+      "chatCount": 17,
+      "periodChatCount": null
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-10 회원 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/members/{memberId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `memberId` | 경로 | 필수 | 회원 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+회원 목록 항목에 다음 필드를 더한다. `periodChatCount`는 항상 `null`이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `creditBalance` | `integer` | 만료되지 않은 이프 잔액 |
+| `storyCount` | `integer` | 삭제되지 않은 소유 스토리 수 |
+| `turnCount` | `integer` | 누적 턴 수<br>소유 채팅의 AI 응답 메시지 수이며 재생성 판본은 세지 않음<br>삭제된 채팅과 게스트 때 만들어 이관된 채팅 포함<br>대시보드 채팅 턴 수와 같은 정의이고 팀 계정 제외 없음 |
+| `deletedAt` | `string / null` | 탈퇴 시각 |
+
+- 상세 조회는 접속 기록으로 감사 로그에 남는다.
+- 이 회원의 결제, 채팅, 스토리는 각 목록을 `memberId`로 조회한다. 이프 내역과 출석은 다음 두 절이다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `memberId`가 UUID 형식이 아님<br>`details[].field`는 `memberId` |
+| 404 | `NOT_FOUND` | 없는 회원 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/members/3f2504e0-4f89-41d3-9a0c-0305e82c3301
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "nickname": "차분한 등대",
+  "status": "ACTIVE",
+  "isAdmin": false,
+  "createdAt": "2026-07-01T09:00:00Z",
+  "lastActiveAt": "2026-10-21T04:58:12Z",
+  "creditsSpent": 18640,
+  "paidKrw": 9600,
+  "chatCount": 17,
+  "periodChatCount": null,
+  "creditBalance": 1230,
+  "storyCount": 4,
+  "turnCount": 312,
+  "deletedAt": null
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-11 회원 이프 내역
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/members/{memberId}/transactions` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 경로와 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `memberId` | 경로 | 필수 | 회원 공개 식별자 |
+| `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].amount` | `integer` | 부호 있는 수량 |
+| `items[].reason` | `string` | 원장 사유 |
+| `items[].balanceAfter` | `integer` | 기록 시각과 내부 ID 오름차순으로 이 행까지 `amount`를 합한 원장 누계<br>만료와 로트 상태를 반영한 사용 가능 잔액(`creditBalance`)과 다름 |
+| `items[].createdAt` | `string` | 기록 시각 |
+
+- 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 정렬은 기록 시각과 내부 ID를 `order` 방향으로 함께 적용해 기본 `desc`에서는 같은 시각의 행도 내부 ID 내림차순이다.
+- 조회는 회원 상세와 같은 접속 기록을 남긴다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `memberId`가 UUID 형식이 아님<br>공통 페이지 쿼리 오류 |
+| 404 | `NOT_FOUND` | 없는 회원 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/members/3f2504e0-4f89-41d3-9a0c-0305e82c3301/transactions?size=2
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    { "amount": -20, "reason": "CHAT_TURN", "balanceAfter": 1230, "createdAt": "2026-10-21T04:58:12Z" },
+    { "amount": 250, "reason": "ATTENDANCE_REWARD", "balanceAfter": 1250, "createdAt": "2026-10-20T15:00:03Z" }
+  ],
+  "page": 1,
+  "size": 2,
+  "totalElements": 318,
+  "totalPages": 159
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-12 회원 출석 기록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/members/{memberId}/attendance` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 경로와 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `memberId` | 경로 | 필수 | 회원 공개 식별자 |
+| `sort` | `string` | 선택 | `date`만 허용<br>기본 `date` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].date` | `string` | 출석 보상을 받은 KST 날짜 |
+| `items[].creditAmount` | `integer` | 받은 이프 |
+
+- 조회는 회원 상세와 같은 접속 기록을 남긴다.
+
+<br>
+
+**3. 실패 응답**
+
+회원 이프 내역과 같다.
+
+<br>
+
+### 4-2-13 이프 내역
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/credits/transactions` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `direction` | `string` | 선택 | `granted`는 적립 사유의 양수 행, `spent`는 소모 사유의 음수 행<br>정의는 대시보드의 이프 적립과 소모와 같음<br>생략하면 모든 원장 행 |
+| `date` | `string` | 선택 | 원장 기록일 |
+| `sort` | `string` | 선택 | `createdAt`만 허용<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].amount` | `integer` | 부호 있는 수량 |
+| `items[].reason` | `string` | 원장 사유 |
+| `items[].createdAt` | `string` | 기록 시각 |
+| `items[].member` | `object` | 회원 요약 구조 |
+
+- 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서의 역순이다.
+- 회원별 누계와 회원 필터는 없다. 한 회원의 원장 행은 회원 이프 내역에서 본다. ([4-2-11 회원 이프 내역](#4-2-11-회원-이프-내역))
+- 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 적립량과 소모량과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
+- 접속 기록을 남기지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `direction` 허용 값 밖, 날짜 형식 오류, 공통 페이지 쿼리 오류 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/credits/transactions?direction=spent&date=2026-10-21&size=2
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    { "amount": -20, "reason": "CHAT_TURN", "createdAt": "2026-10-21T04:58:12Z", "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" } },
+    { "amount": -250, "reason": "STORY_CREATION", "createdAt": "2026-10-21T04:40:02Z", "member": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고", "status": "ACTIVE", "isAdmin": true, "createdAt": "2026-07-01T09:00:00Z" } }
+  ],
+  "page": 1,
+  "size": 2,
+  "totalElements": 713,
+  "totalPages": 357
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-14 결제 내역
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/payments/orders` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `q` | `string` | 선택 | 회원 닉네임 부분 일치<br>주문과 회원 공개 식별자 정확 일치 |
+| `status` | `string` | 선택 | `COMPLETED`, `REFUNDED` |
+| `memberId` | `string` | 선택 | 주문 회원 공개 식별자 |
+| `from`, `to` | `string` | 선택 | 완료일 |
+| `sort` | `string` | 선택 | `completedAt`, `refundedAt`, `priceKrw`, `creditAmount`<br>기본 `completedAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].orderId` | `string` | 주문 공개 식별자 |
+| `items[].member` | `object` | 회원 요약 구조 |
+| `items[].productId` | `string` | 상품 ID |
+| `items[].status` | `string` | `COMPLETED`<br>`REFUNDED` |
+| `items[].priceKrw` | `integer` | 결제 금액 |
+| `items[].creditAmount` | `integer` | 구매로 적립된 이프 수량 |
+| `items[].completedAt` | `string` | 완료 시각 |
+| `items[].refundedAt` | `string / null` | 환불 시각 |
+| `items[].reversalShortfall` | `integer / null` | 구매 환불 회수에서 돌려받지 못한 이프 수량<br>환불 전은 `null` |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 검색어, 날짜, enum, 공통 페이지 쿼리 오류<br>`memberId`가 UUID 형식이 아님 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/payments/orders?status=COMPLETED&from=2026-10-01&to=2026-10-21&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "orderId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+      "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
+      "productId": "if_5000",
+      "status": "COMPLETED",
+      "priceKrw": 4800,
+      "creditAmount": 5000,
+      "completedAt": "2026-10-21T01:22:03Z",
+      "refundedAt": null,
+      "reversalShortfall": null
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 12,
+  "totalPages": 12
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-15 결제 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/payments/orders/{orderId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `orderId` | 경로 | 필수 | 주문 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+결제 내역 항목에 다음 필드를 더한다. 전후 비교의 기준은 그 회원의 완료 시각이 있는 주문 가운데 가장 이른 완료 시각이며 환불된 주문도 포함한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `firstPaidAt` | `string` | 회원의 완료 시각이 있는 주문 가운데 가장 이른 완료 시각<br>환불된 주문도 포함 |
+| `before` | `object` | 기준 시각 전 |
+| `before.turns` | `integer` | 이프가 소모된 채팅 처리 횟수<br>채팅 턴 사유 원장 행 수이며 재생성 포함, 무료 체험 제외 |
+| `before.stories` | `integer` | 이프가 소모된 간편 제작 횟수<br>간편 제작 사유 원장 행 수 |
+| `before.creditsSpent` | `integer` | 환불을 반영한 이프 순소모량<br>소모 사유 합계의 절댓값에서 AI 실패 환불 합계를 뺀 값 |
+| `after` | `object` | 기준 시각 이후<br>`before`와 같은 세 필드 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `orderId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없는 주문<br>완료 시각이 없는 대기 주문 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/payments/orders/7c9e6679-7425-40de-944b-e07fc1f90ae7
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "orderId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "member": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
+  "productId": "if_5000",
+  "status": "COMPLETED",
+  "priceKrw": 4800,
+  "creditAmount": 5000,
+  "completedAt": "2026-10-21T01:22:03Z",
+  "refundedAt": null,
+  "reversalShortfall": null,
+  "firstPaidAt": "2026-09-01T03:00:00Z",
+  "before": { "turns": 112, "stories": 2, "creditsSpent": 2740 },
+  "after": { "turns": 795, "stories": 5, "creditsSpent": 17150 }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-16 감사 로그 조회
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/audit-logs` |
+| 인증 | 관리자 |
+| 성공 | 200<br>페이지 구조 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `adminId` | `string` | 선택 | 처리자의 회원 공개 식별자 |
+| `action` | `string` | 선택 | 작업 이름 |
+| `targetType` | `string` | 선택 | 대상 종류 |
+| `targetId` | `string` | 선택 | 대상 식별자<br>`targetType`과 함께 지정 |
+| `q` | `string` | 선택 | 처리자 닉네임, 작업 이름, 사유 부분 일치<br>감사 로그 공개 식별자와 대상 식별자 정확 일치 |
+| `from`, `to` | `string` | 선택 | 기록일 |
+| `category` | `string` | 선택 | 작업 분류<br>`CHANGE`, `ACCESS` |
+| `sort` | `string` | 선택 | `createdAt`, `category`, `action`, `targetType`, `admin`<br>`admin`은 처리자 닉네임<br>기본 `createdAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].auditLogId` | `string` | 감사 로그 공개 식별자 |
+| `items[].admin` | `object` | 처리자의 회원 요약 구조 |
+| `items[].category` | `string` | 작업 분류<br>`CHANGE`<br>`ACCESS` |
+| `items[].action` | `string` | 작업 이름 |
+| `items[].targetType` | `string` | 대상 종류 |
+| `items[].targetId` | `string` | 대상 식별자 |
+| `items[].reason` | `string / null` | 사유<br>조회 기록은 `null` |
+| `items[].before` | `object / null` | 변경 전 값 |
+| `items[].after` | `object / null` | 변경 후 값 |
+| `items[].requestId` | `string` | 요청 ID |
+| `items[].createdAt` | `string` | 기록 시각 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `adminId`가 UUID 형식이 아님, `targetId`만 지정, 검색어, 날짜, enum, 공통 페이지 쿼리 오류 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/audit-logs?action=CREDIT_GRANTED&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "auditLogId": "0b7f6b1a-2c3d-4e5f-8a9b-0c1d2e3f4a5b",
+      "admin": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고", "status": "ACTIVE", "isAdmin": true, "createdAt": "2026-07-01T09:00:00Z" },
+      "category": "CHANGE",
+      "action": "CREDIT_GRANTED",
+      "targetType": "MEMBER",
+      "targetId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+      "reason": "결제 오류 보상",
+      "before": { "balance": 1230 },
+      "after": { "balance": 6230, "amount": 5000 },
+      "requestId": "req_0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "createdAt": "2026-10-21T01:23:45.678Z"
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-17 분석 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/analytics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>오늘을 포함한 최근 N일<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+- 지난 날짜 값은 서버 DB에 저장되어 있어 비어 있는 날짜만 분석 도구에서 받는다. 비어 있는 날짜가 비용 예산보다 많으면 받은 날짜만 응답하고 나머지는 `pendingDates`에 넣는다. 관리자 페이지는 `pendingDates`가 비어 있지 않으면 60초 뒤 같은 요청을 다시 보낸다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 응답에 쓴 값을 분석 도구에서 받은 시각<br>오늘과 어제처럼 확정 전 값이 있으면 그 가운데 가장 이른 시각, 확정 값만이면 그 가운데 가장 늦은 시각<br>갱신 중이나 쿨다운 중에는 오늘 값이 10분보다 오래될 수 있음 |
+| `pendingDates` | `string[]` | 준비 중 날짜<br>아직 값을 받지 못해 `daily`에서 뺀 KST 날짜, 오름차순<br>비어 있으면 범위 전체가 준비됨 |
+| `from` | `string` | 범위 첫날의 KST 날짜 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
+| `todayActiveUsers` | `object / null` | 오늘 활성 사용자 수<br>플랫폼 값 구조<br>범위와 무관하게 KST 오늘 날짜의 값이며 10분마다 다시 받음<br>오늘 값을 아직 받지 못했으면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeUsers` | `object` | 그날 이벤트가 있는 고유 사용자 수<br>플랫폼 값 구조 |
+| `daily[].newUsers` | `object` | 그날 처음 이벤트가 있었던 고유 사용자 수<br>플랫폼 값 구조 |
+
+플랫폼 값 구조는 다음 세 정수다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `total` | `integer` | `web`과 `android`의 합 |
+| `web` | `integer` | 웹 조건의 고유 사용자 수 |
+| `android` | `integer` | 활성 사용자는 앱·국내와 앱·해외 로그인의 조건별 고유 사용자 수의 합<br>신규 사용자는 앱·국내 조회 값 |
+
+- `total`과 `android`는 조건별 고유 사용자 수의 합이다. 같은 사람이 같은 날 웹과 앱에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 두 번 든다. 같은 날 국내와 해외에서 앱을 쓰면 `android`에 두 번 든다.
+- 조회 조건은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
+- 값은 분석 도구가 집계한 것이며 코호트 ID가 설정돼 있으면 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 허용하지 않는 `days`, `days`와 `from` 또는 `to` 동시 지정, 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 366일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 준비된 날짜가 하나도 없는데 자격 증명 미설정, 호출 실패, 호출 한도 초과, 비용 예산 부족, 실패 뒤 쿨다운, 다른 요청의 갱신 중이라 값을 받지 못함 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/analytics?from=2026-10-15&to=2026-10-21
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-21T05:10:00Z",
+  "from": "2026-10-15",
+  "to": "2026-10-21",
+  "todayActiveUsers": { "total": 203, "web": 186, "android": 19 },
+  "pendingDates": [],
+  "daily": [
+    {
+      "date": "2026-10-15",
+      "activeUsers": { "total": 211, "web": 195, "android": 18 },
+      "newUsers": { "total": 31, "web": 28, "android": 3 }
+    },
+    {
+      "date": "2026-10-16",
+      "activeUsers": { "total": 198, "web": 181, "android": 19 },
+      "newUsers": { "total": 27, "web": 25, "android": 2 }
+    }
+  ]
+}
+```
+
+**3) 503 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T05:10:00.000Z",
+  "status": 503,
+  "code": "SERVICE_UNAVAILABLE",
+  "message": "분석 지표를 가져올 수 없습니다.",
+  "path": "/api/v1/admin/dashboard/analytics",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-18 설치 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/dashboard/play-installs` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 집계 기준 날짜 `YYYY-MM-DD`<br>월별 보고서 전체에서 날짜가 가장 늦은 행의 날짜<br>Play 기준 날짜라 KST로 바꾸지 않으며 캐시한 시각이 아님 |
+| `totalInstalls` | `integer` | Android 누적 기기 설치 수<br>보고서 전체 기간의 일별 기기 설치 수 합이며 고유 설치 사용자 수가 아님 |
+| `activeDevices` | `integer` | 날짜가 가장 늦은 행의 활성 기기 수 |
+| `daily` | `object[]` | 보고서 첫 날짜부터 마지막 날짜까지 모든 날이 한 항목씩<br>날짜 오름차순<br>보고서에 행이 없는 날도 채움 |
+| `daily[].date` | `string` | Play 기준 날짜 |
+| `daily[].installs` | `integer` | 그날 기기 설치 수<br>행이 없는 날은 0 |
+| `daily[].uninstalls` | `integer` | 그날 앱 삭제 수<br>행이 없는 날은 0 |
+| `daily[].cumulativeInstalls` | `integer` | 첫날부터 그날까지의 기기 설치 누계<br>행이 없는 날은 전날 값<br>마지막 항목은 `totalInstalls`와 같음 |
+| `daily[].activeDevices` | `integer / null` | 그날의 활성 기기 수<br>행이 없는 날은 `null` |
+
+- 값은 Play Console 일괄 보고서가 집계한 것이며 보고서는 며칠 늦게 채워진다. 보고서가 2026년 9월부터라 행 수가 작아 기간 쿼리는 없다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 503 | `SERVICE_UNAVAILABLE` | 서비스 계정 키 미설정<br>보고서 저장소 호출 실패, 보고서 없음, 해석 실패, 실패 뒤 쿨다운, 다른 요청이 갱신 중인데 캐시도 없음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/dashboard/play-installs
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-17",
+  "totalInstalls": 31,
+  "activeDevices": 11,
+  "daily": [
+    { "date": "2026-10-16", "installs": 1, "uninstalls": 0, "cumulativeInstalls": 29, "activeDevices": 10 },
+    { "date": "2026-10-17", "installs": 2, "uninstalls": 1, "cumulativeInstalls": 31, "activeDevices": 11 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-19 캠페인 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+캠페인 목록은 설정 파일 고정값이다. 항목을 더하거나 고치려면 배포한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 시작일 오름차순 |
+| `items[].key` | `string` | 항목 식별자<br>`meta-web-1`부터 `meta-web-4` |
+| `items[].name` | `string` | 표시 이름<br>`1차`부터 `4차` |
+| `items[].campaign` | `string` | UTM 캠페인 값 |
+| `items[].startDate` | `string` | 시작 KST 날짜 |
+| `items[].endDate` | `string / null` | 종료 KST 날짜<br>진행 중이면 `null` |
+| `items[].storyId` | `string / null` | 상세 진입 퍼널의 기본 대상 스토리 공개 식별자 |
+
+| `key` | `campaign` | `startDate` | `endDate` | `storyId` |
+|---|---|---|---|---|
+| `meta-web-1` | `KR_META_WEB_ACTIVATION_COLD_202607` | `2026-07-21` | `2026-07-31` | `null` |
+| `meta-web-2` | `KR_META_WEB_ACTIVATION_COLD_202608` | `2026-08-21` | `2026-09-16` | `null` |
+| `meta-web-3` | `KR_META_WEB_ACTIVATION_COLD_202609` | `2026-09-17` | `2026-10-21` | `cca6358a-0ef3-4709-88d1-100b9faeeca8` |
+| `meta-web-4` | `KR_META_WEB_ACTIVATION_COLD_202610` | `2026-10-22` | `null` | `cca6358a-0ef3-4709-88d1-100b9faeeca8` |
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<br>
+
+### 4-2-20 캠페인 추이
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/analytics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+캠페인 분석은 분석 도구 Amplitude에서 광고 캠페인의 유입과 가입, 이용 횟수를 계산해 돌려준다. 광고 구분 조건과 이벤트 정의는 제품 제약에 있고 값 저장과 비용 예산, 기간 상한의 근거는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | UTM 캠페인 값, 1~100자<br>캠페인 목록에 없는 값도 허용<br>생략하면 캠페인 목록에서 종료일이 없는 마지막 항목의 값 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 관리자 페이지는 캠페인 목록의 시작일과 종료일로 범위를 미리 채운다.
+
+<br>
+
+**2. 응답**
+
+세그먼트 묶음 구조는 `all`(전체 Web), `ads`(광고 유입), `nonAds`(광고 외 유입)의 세 정수다. `nonAds`는 `all`에서 `ads`를 뺀 값이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 분석 지표와 같음 |
+| `pendingDates` | `string[]` | 분석 지표와 같음 |
+| `from` | `string` | 범위 첫날의 KST 날짜 |
+| `to` | `string` | 범위 마지막 날의 KST 날짜 |
+| `campaign` | `string` | 적용한 캠페인 값 |
+| `daily` | `object[]` | 날짜 오름차순 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeUsers` | `integer` | 웹 DAU<br>그날 활성 이벤트가 있는 고유 사용자 수 |
+| `daily[].newVisitors` | `object` | 신규 방문자<br>세그먼트 묶음 구조 |
+| `daily[].newVisitorsBySource` | `object` | 유입 소스별 신규 방문자 |
+| `daily[].newVisitorsBySource.ads` | `integer` | 광고 유입<br>`newVisitors.ads`와 같음 |
+| `daily[].newVisitorsBySource.instagram` | `integer` | 캠페인이 아니면서 소스가 인스타그램 |
+| `daily[].newVisitorsBySource.threads` | `integer` | 캠페인이 아니면서 소스가 쓰레드 |
+| `daily[].newVisitorsBySource.dcinside` | `integer` | 캠페인이 아니면서 소스가 디시인사이드 |
+| `daily[].newVisitorsBySource.other` | `integer` | 캠페인이 아니면서 소스 목록 밖 |
+| `daily[].signups` | `object` | 신규 가입자<br>세그먼트 묶음 구조 |
+| `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 `signups` 누계<br>세그먼트 묶음 구조 |
+| `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
+| `daily[].completionRequests` | `integer` | 간편 제작 요청 횟수 |
+| `daily[].chatMessages` | `integer` | 채팅 메시지 전송 횟수 |
+| `totals` | `object` | 준비된 날짜의 합계<br>`pendingDates`가 있으면 범위 일부의 값 |
+| `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
+| `totals.newVisitors` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.signups` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.adsShare` | `number / null` | `totals.newVisitors.ads`를 `totals.newVisitors.all`로 나눈 0~1<br>`all`이 0이면 `null` |
+| `totals.storylineRequests`, `totals.completionRequests`, `totals.chatMessages` | `integer` | 일별 합 |
+
+- 팀 계정 코호트 제외는 적용하지 않는다. 캠페인 분석은 광고가 데려온 사용자를 보는 것이 목적이고 원본 차트에도 제외가 없다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days`, `campaign` 길이 오류, `campaign`이 없고 캠페인 목록에 종료일 없는 항목도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/analytics?from=2026-10-22&to=2026-10-23
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-23T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-23",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "pendingDates": [],
+  "daily": [
+    {
+      "date": "2026-10-22",
+      "activeUsers": 162,
+      "newVisitors": { "all": 162, "ads": 152, "nonAds": 10 },
+      "newVisitorsBySource": { "ads": 152, "instagram": 4, "threads": 2, "dcinside": 1, "other": 3 },
+      "signups": { "all": 21, "ads": 18, "nonAds": 3 },
+      "cumulativeSignups": { "all": 21, "ads": 18, "nonAds": 3 },
+      "storylineRequests": 40,
+      "completionRequests": 17,
+      "chatMessages": 231
+    }
+  ],
+  "totals": {
+    "activeUsersAverage": 150.5,
+    "newVisitors": { "all": 301, "ads": 280, "nonAds": 21 },
+    "signups": { "all": 39, "ads": 33, "nonAds": 6 },
+    "adsShare": 0.93,
+    "storylineRequests": 71,
+    "completionRequests": 30,
+    "chatMessages": 402
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-21 캠페인 간편 제작 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/funnels/creation` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `steps` | `object[]` | 단계 순서<br>6개 |
+| `steps[].event` | `string` | 단계의 이벤트 이름 |
+| `steps[].users` | `object` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
+
+- 단계 사이 전환율은 관리자 페이지가 앞 단계로 나눠 만든다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 20일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/funnels/creation?from=2026-10-22&to=2026-10-28
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 처음 두 단계만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-29T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-28",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "steps": [
+    { "event": "client_onboarding_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
+    { "event": "client_onboarding_createButton_clicked", "users": { "all": 188, "ads": 171, "nonAds": 17 } }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-22 캠페인 상세 진입 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/funnels/story-detail` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `storyId` | `string` | 선택 | 대상 스토리 공개 식별자<br>생략하면 적용한 캠페인과 값이 같은 캠페인 목록 항목의 `storyId`<br>그것도 없으면 400 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `storyId` | `string` | 적용한 대상 스토리 |
+| `steps` | `object[]` | 단계 순서<br>7개 |
+| `steps[].event` | `string` | 단계의 이벤트 이름 |
+| `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호 1~5<br>그 외 `null` |
+| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>전체 세그먼트만 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과, `storyId`가 UUID 형식이 아님, 대상 스토리가 요청과 목록 모두에 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<br>
+
+### 4-2-23 캠페인 유입 소스
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/sources` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 10일 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다. 캠페인 값은 받지 않으며 모든 유입을 보여 준다.
+- 두 표 모두 값이 열린 묶음 조회라 하루 비용이 커서 기간이 짧다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to` | | 캠페인 추이와 같음 |
+| `sources` | `object[]` | 첫 유입 소스별 신규 방문자<br>`newVisitors` 내림차순 |
+| `sources[].source` | `string / null` | 사용자 속성 `gp:initial_utm_source`<br>없으면 `null` |
+| `sources[].newVisitors` | `integer` | 범위 안 `_new` 고유 사용자 수 |
+| `posts` | `object[]` | 커뮤니티와 SNS 게시글별 방문자<br>`visitors` 내림차순 |
+| `posts[].content` | `string / null` | 이벤트 속성 `utm_content`<br>없으면 `null` |
+| `posts[].visitors` | `integer` | 이벤트 속성 `utm_medium`이 `community` 또는 `social`인 페이지 조회의 고유 사용자 수 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 10일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<br>
+
+### 4-2-24 사용자 활동
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/activity` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 Android 외 조회 값에 `android`를 더한 값이다. `android`는 활성 사용자가 앱·국내와 앱·해외 로그인의 합이고 신규 방문자와 사용자당 전송 수는 앱·국내 값이다. 합은 조건별 고유 사용자 수의 합이라 같은 날 여러 조건으로 활동한 사용자는 조건마다 한 번씩 든다. Web과 플랫폼 없음에서 함께 활동한 사용자는 `all`에 한 번만 들어 나머지 셋의 합이 `all`보다 클 수 있다. Android와 다른 플랫폼에서 함께 활동한 사용자는 `all`에 두 번 든다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 Android 외, 앱·국내, 앱·해외 로그인 세분화 응답의 `seriesCollapsed` 값의 합이며 일별 값의 합이 아님<br>30일 안에 조건을 넘나든 사용자는 조건마다 한 번씩 듦<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
+| `daily[].newVisitors` | `object` | 신규 방문자<br>플랫폼 묶음 구조 |
+| `daily[].cumulativeNewVisitors` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 누계<br>플랫폼 묶음 구조 |
+| `daily[].messagesPerUser` | `object` | 사용자당 채팅 메시지 전송 수<br>`web`과 `android`만 값이 있는 소수이고 `all`과 `unknown`은 `null` |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-25 사용자 리텐션
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/retention` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하<br>`to`는 어제 이하 |
+| `days` | `integer` | 선택 | `7`만 허용<br>어제를 끝으로 하는 최근 7일<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 어제를 끝으로 하는 최근 7일이다. 범위는 신규 방문일 기준이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 분석 지표와 같음 |
+| `pendingDates` | `string[]` | 아직 값을 받지 못해 `cohorts`에서 뺀 코호트 날짜<br>그 밖은 분석 지표와 같음 |
+| `platforms` | `object[]` | `all`, `web`, `android` 세 항목 |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 플랫폼 조건 없는 국내 조건 코호트<br>`web`은 웹 조건, `android`는 앱·국내 조건 코호트이며 시작과 복귀가 같은 플랫폼일 때만 복귀로 셈 |
+| `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `platforms[].cohorts[].date` | `string` | 신규 방문일 |
+| `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
+| `platforms[].cohorts[].d1`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았으면 `null` |
+| `platforms[].summary` | `object` | 범위 전체의 가중 평균 `d1`, `d7`, `d30`<br>계산 가능한 코호트만 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, `to`가 어제보다 뒤, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-26 사용자 세션
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/sessions` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `14` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 14일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null`<br>`all`과 `android`는 국내 조건의 사용자만 |
+
+- 세션 정의는 분석 도구의 기본 세션이다. 사용자당 세션 수는 제공하지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-27 신규 가입자
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/signups` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 대시보드 차트와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].signups` | `object` | 그날 생성된 회원 수 |
+| `daily[].signups.total` | `integer` | 전체 |
+| `daily[].signups.google` | `integer` | 첫 소셜 연동이 구글 |
+| `daily[].signups.kakao` | `integer` | 첫 소셜 연동이 카카오 |
+| `daily[].signups.other` | `integer` | 그 외 연동 또는 연동 없음 |
+| `daily[].cumulativeSignups` | `integer` | 서비스 시작부터 그날까지 생성된 회원 수<br>범위 첫날 전의 가입과 탈퇴 회원을 포함한 전체 누계<br>범위 끝이 오늘이면 마지막 값이 같은 시점 대시보드 요약의 `members.total`과 같음 |
+| `daily[].migratedFromGuest` | `integer` | 그날 생성된 회원 중 게스트 데이터를 이관한 회원 수 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
+
+<br>
+
+### 4-2-28 전환 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/conversion/funnels/{funnel}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로와 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `funnel` | 경로 | 필수 | `web-first-visit`, `android-first-visit`, `story-creation`, `story-detail-chat`, `guest-limit-login` |
+| `platform` | `string` | 선택 | `web`, `android`<br>`story-creation`, `story-detail-chat`, `guest-limit-login`에서만 받으며 기본 `web`<br>첫 접속 퍼널 둘은 이름에 플랫폼이 있어 받지 않음 |
+| `storyId` | `string` | 선택 | `story-detail-chat`에서만<br>지정하면 1단계와 2단계를 그 스토리로 한정, 생략하면 모든 스토리 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다. 단계 정의는 제품 제약에 있다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to` | | 분석 지표와 같음 |
+| `funnel` | `string` | 요청한 퍼널 |
+| `platform` | `string` | 적용한 플랫폼 |
+| `storyId` | `string / null` | 적용한 대상 스토리 |
+| `steps` | `object[]` | 단계 순서 |
+| `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 구글과 카카오 로그인 성공 두 이벤트의 합이라 `login_succeeded` |
+| `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호<br>그 외 `null` |
+| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>`guest-limit-login`의 마지막 단계만 예외로 두 로그인 경로 퍼널 결과의 합 |
+
+- `guest-limit-login`의 마지막 단계는 구글과 카카오 경로를 모두 거친 사용자를 두 번 세는 근사치라 앞 단계보다 클 수 있다. 관리자 페이지가 앞 단계로 나눈 전환율도 1을 넘을 수 있으며 서버는 값을 고치지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 31일 초과, 허용하지 않는 `funnel`과 `platform`과 `days`, 퍼널이 받지 않는 쿼리 지정, `storyId`가 UUID 형식이 아님 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-29 채팅 턴 도달률
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/conversion/turn-reach` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+
+**1. 쿼리**
+
+신규 가입자와 같다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `segments` | `object[]` | `all`, `guest`, `member` 세 항목<br>범위 안에 생성된 삭제되지 않은 채팅을 현재 소유자 유형으로 나눔 |
+| `segments[].segment` | `string` | `all`, `guest`, `member` |
+| `segments[].chats` | `integer` | 채팅 수 |
+| `segments[].reached` | `object[]` | 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50의 항목 12개, 오름차순<br>턴 수 분포 13구간에서 0을 뺀 구간 시작 턴 |
+| `segments[].reached[].turn` | `integer` | 기준 턴 |
+| `segments[].reached[].chats` | `integer` | 현재 턴이 기준 이상인 채팅 수 |
+| `segments[].reached[].rate` | `number` | `chats`로 나눈 0~1<br>채팅이 없으면 0 |
+| `guestToMember` | `object` | 게스트로 시작해 회원이 된 뒤 이어 간 채팅 |
+| `guestToMember.chatsReached5` | `integer` | 소유 회원의 게스트 이관 시각보다 먼저 생성됐고 현재 턴이 5 이상인 채팅 수 |
+| `guestToMember.chatsReached6` | `integer` | 그중 현재 턴이 6 이상인 채팅 수 |
+| `guestToMember.rate` | `number` | `chatsReached6`을 `chatsReached5`로 나눈 0~1<br>0이면 0 |
+
+<br>
+
+**3. 실패 응답**
+
+신규 가입자와 같다.
+
+<br>
+
+### 4-2-30 기능 사용과 안정성
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/quality/client` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+기능과 품질 메뉴의 Amplitude 지표다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱·국내와 앱·해외 로그인의 합, `all`은 Android 외와 `android`의 합<br>건수는 조건별 건수의 합이고 사용자 수는 조건별 고유 사용자 수의 합 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `platform` | `string` | 적용한 플랫폼 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수<br>`unknown`은 전송 합계에서 나머지 셋을 뺀 값 |
+| `daily[].streamErrors` | `integer` | 스트림 오류 표시 횟수 |
+| `daily[].streamErrorRate` | `number / null` | `streamErrors`를 전송 합계로 나눈 0 이상의 값<br>두 이벤트의 단순 건수 비율이라 한 전송에 오류가 여러 번 표시되면 1을 넘을 수 있음<br>전송이 0이면 `null` |
+| `daily[].users` | `object` | 그날 이벤트가 있었던 고유 사용자 수 |
+| `daily[].users.chatLoadError` | `integer` | 채팅 불러오기 오류 |
+| `daily[].users.storyListLoadError` | `integer` | 스토리 목록 불러오기 오류 |
+| `daily[].users.storyCompleteError` | `integer` | 간편 제작 오류 |
+| `daily[].users.creditShortage` | `integer` | 이프 부족 안내 |
+| `daily[].users.creditChargeViewed` | `integer` | 충전 화면 조회 |
+| `daily[].users.attendanceClicked` | `integer` | 충전 화면의 출석 버튼 클릭 |
+| `daily[].users.inviteSucceeded` | `integer` | 초대 코드 입력 성공 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `platform`과 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-31 채팅 옵션 비중
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/quality/chat-options` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+
+**1. 쿼리**
+
+신규 가입자와 같다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위 안에 생성된 삭제되지 않은 채팅 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].chats` | `integer` | 채팅 수 |
+| `daily[].withPersona` | `integer` | 페르소나 이름 스냅샷이 있는 채팅 수 |
+| `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 채팅의 현재 선택 모델 `chat_models.code`<br>모델을 바꾼 채팅은 바꾼 모델로 셈 |
+| `daily[].turnsByModel` | `object` | 청구 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 메시지에 기록한 청구 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>게스트 턴은 채팅 모델과 무관하게 `LITE`<br>모델 기록 전의 메시지는 키 `UNRECORDED`<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 키의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 키는 없음 |
+
+<br>
+
+**3. 실패 응답**
+
+신규 가입자와 같다.
+
+<br>
+
+### 4-2-32 AI 비용
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/quality/ai-cost` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+금액은 Langfuse가 모델 설정의 단가로 계산한 비용을 Metrics API로 받아 원화로 바꾼다. 호출 수와 토큰 수는 서버 DB의 AI 호출 기록으로 센다. 실시간 이미지는 설정 파일의 장당 원가로 계산한다. 팀 계정 제외 목록은 적용하지 않는다. ([4-1-23 AI 비용의 Langfuse 조회](4-1-PIPELINES.md#4-1-23-ai-비용의-langfuse-조회))
+
+**1. 쿼리**
+
+신규 가입자와 같다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음<br>`asOf`는 응답에 쓴 Langfuse 값을 받은 시각 가운데 가장 이른 시각<br>Langfuse 값을 하나도 쓰지 않았으면 `asOf`는 `null` |
+| `pendingDates` | `string[]` | 보관 기간 안에서 Langfuse 값을 아직 받지 못해 `daily`의 비용을 비운 KST 날짜<br>오름차순, 보관 기간 밖 날짜는 넣지 않음 |
+| `expiredDates` | `string[]` | Langfuse 보관 기간이 지나 조회하지 않았고 저장 값도 없어 `daily`의 비용을 비운 KST 날짜<br>오름차순 |
+| `retentionDays` | `integer` | Langfuse 보관 일수<br>설정값 |
+| `retentionStartDate` | `string` | Langfuse에 조회하는 가장 이른 KST 날짜<br>오늘에서 (`retentionDays` − 2)일 전 |
+| `currency` | `string` | 항상 `KRW` |
+| `usdKrwRate` | `number` | Langfuse 비용(USD)을 원화로 바꾼 환율<br>설정값 |
+| `chatImageUnitCostKrw` | `number` | 실시간 이미지 장당 원가<br>설정값이며 초기값 48 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목<br>AI 호출 기록과 Langfuse 가운데 한쪽에만 있는 조합도 항목 |
+| `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
+| `daily[].byFeature[].model` | `string / null` | 모델 이름<br>AI 호출 기록의 `model`과 Langfuse의 모델 이름이 같으면 한 항목<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
+| `daily[].byFeature[].calls` | `integer` | AI 호출 기록의 성공 호출 수<br>Langfuse에만 있는 조합은 0 |
+| `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수<br>`chat_image`는 항상 0 |
+| `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | AI 호출 기록의 토큰 합<br>토큰 수가 없는 호출은 0으로 더함<br>`chat_image`는 항상 0 |
+| `daily[].byFeature[].costKrw` | `number / null` | Langfuse 비용 합 × `usdKrwRate`<br>Langfuse에 그 조합의 비용이 없으면 `null`<br>그 날짜가 `pendingDates`나 `expiredDates`에 있으면 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 Langfuse를 쓰지 않음 |
+| `unmapped` | `object[]` | 기능 매핑 표에 없는 Langfuse 추적 이름의 범위 비용 |
+| `unmapped[].traceName` | `string` | Langfuse 추적 이름 |
+| `unmapped[].costKrw` | `number` | 범위 비용 합 × `usdKrwRate` |
+| `totals` | `object` | 범위 합계 |
+| `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합<br>`pendingDates`와 `expiredDates`의 날짜는 실시간 이미지 비용만 더해짐 |
+| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 호출 수이며 `pendingDates`와 `expiredDates` 날짜의 호출은 뺌<br>호출이 0이면 `null` |
+| `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
+| `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량(토큰 합)은 있으나 비용 합이 0인 모델 이름<br>단가가 없는지, 정상 0원인지, 일부 관측의 비용이 빠졌는지는 구별하지 않음<br>이름은 호환을 위해 유지 |
+
+- 비용은 Langfuse가 입력, 출력, 캐시 입력 토큰을 모델 설정의 단가로 계산한 값이다. 서버는 단가를 갖지 않는다.
+- 금액에는 실패한 AI 호출 과정에서 생긴 관측 비용도 들어간다. 호출 수, 토큰 수, 원가의 분모는 성공한 AI 호출 기록이다.
+- 간편 제작의 표지와 인물 이미지 생성 비용은 `스토리 컴파일` 추적에 들어 있어 `story_completion`에 포함된다. 채팅의 실시간 이미지 생성 관측은 Langfuse 합에서 빼고 장당 원가로 더한다.
+- 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
+- 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.
+- 보관 기간 밖 날짜는 서버가 미리 저장한 값으로만 응답한다. 배치가 날짜마다 확정 값을 저장하므로 배포 뒤 날짜는 보관 기간이 지나도 값이 남는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
+| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 보관 기간 안 날짜의 저장 값도 없음 |
+
+<br>
+
+### 4-2-33 인프라 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/infra/metrics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버가 태스크 역할로 CloudWatch와 ECS를 불러 운영 AWS 리소스의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | KST 날짜 `YYYY-MM-DD`, 양 끝 포함<br>둘 다 주거나 둘 다 생략<br>`to`는 오늘 이하, 기간은 1일 이상 31일 이하 |
+
+- 둘 다 없으면 KST 오늘 하루다.
+- 조회 시작은 `from`의 KST 자정이고 끝은 `to` 다음 날 KST 자정과 현재 시각 가운데 이른 쪽이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | CloudWatch와 ECS에서 값을 받은 시각<br>캐시로 응답하면 그 캐시를 만든 시각 |
+| `from`, `to` | `string` | 적용한 KST 날짜 |
+| `periodSeconds` | `integer` | 점 하나의 집계 간격(초)<br>기간 2일 이하 `300`, 7일 이하 `900`, 그보다 길면 `3600`<br>조회 시작이 63일보다 오래되면 기간과 무관하게 `3600` |
+| `ecs` | `object / null` | ECS 서비스 지표<br>클러스터나 서비스 설정이 비어 있으면 `null` |
+| `ecs.services` | `object[]` | 설정한 서비스 순서 |
+| `ecs.services[].name` | `string` | 설정의 표시 키<br>운영은 `server`, `ai`, `notification` |
+| `ecs.services[].runningTasks` | `integer` | 조회 시각(`asOf`)에 실행 중인 태스크 수 |
+| `ecs.services[].desiredTasks` | `integer` | 조회 시각의 목표 태스크 수 |
+| `ecs.services[].pendingTasks` | `integer` | 조회 시각에 시작 중인 태스크 수 |
+| `ecs.services[].cpu` | 점 목록 | `AWS/ECS` `CPUUtilization` 평균(%) |
+| `ecs.services[].memory` | 점 목록 | `AWS/ECS` `MemoryUtilization` 평균(%) |
+| `ecs.services[].cpuMax` | 점 목록 | `CPUUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
+| `ecs.services[].memoryMax` | 점 목록 | `MemoryUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
+| `alb` | `object / null` | ALB 지표<br>설정이 비어 있으면 `null` |
+| `alb.requests` | 점 목록 | `AWS/ApplicationELB` `RequestCount` 합(회) |
+| `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>ALB가 생성한 5xx이며 대상이 반환한 5xx는 제외 |
+| `alb.target5xx` | 점 목록 | `HTTPCode_Target_5XX_Count` 합(회)<br>서버가 돌려준 5xx |
+| `alb.responseTimeP95Ms` | 점 목록 | `TargetResponseTime`의 `p95`(밀리초) |
+| `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있으면 `null` |
+| `rds.cpu` | 점 목록 | `AWS/RDS` `CPUUtilization` 평균(%) |
+| `rds.freeStorageBytes` | 점 목록 | `FreeStorageSpace` 최솟값(바이트) |
+| `rds.connections` | 점 목록 | `DatabaseConnections` 최댓값(개) |
+| `rds.readLatencyMs` | 점 목록 | `ReadLatency` 평균(밀리초) |
+| `rds.writeLatencyMs` | 점 목록 | `WriteLatency` 평균(밀리초) |
+| `redis` | `object / null` | ElastiCache Redis 노드 지표<br>설정이 비어 있으면 `null` |
+| `redis.nodes` | `object[]` | 설정한 노드 순서 |
+| `redis.nodes[].id` | `string` | 캐시 클러스터 ID |
+| `redis.nodes[].cpu` | 점 목록 | `AWS/ElastiCache` `EngineCPUUtilization` 평균(%) |
+| `redis.nodes[].memory` | 점 목록 | `DatabaseMemoryUsagePercentage` 평균(%) |
+| `redis.nodes[].connections` | 점 목록 | `CurrConnections` 최댓값(개) |
+| `opensearch` | `object / null` | OpenSearch 도메인 지표<br>도메인이나 계정 ID 설정이 비어 있으면 `null` |
+| `opensearch.freeStorageBytes` | 점 목록 | `AWS/ES` `FreeStorageSpace` 최솟값(바이트)<br>CloudWatch 값이 MB라 1,048,576을 곱함 |
+| `opensearch.jvmMemoryPressure` | 점 목록 | `JVMMemoryPressure` 최댓값(%) |
+
+점 목록은 다음 구조의 배열이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `[].at` | `string` | 집계 구간이 시작하는 시각 |
+| `[].value` | `number` | 그 구간의 값 |
+
+- 점은 시각 오름차순이다.
+- 건수 지표(`alb.requests`, `alb.elb5xx`, `alb.target5xx`)는 CloudWatch가 값이 없는 구간을 빼고 주므로 서버가 조회 범위의 모든 구간을 0으로 채운다. 나머지 지표는 CloudWatch가 값을 준 구간만 담고 빈 구간을 채우지 않는다.
+- 태스크 수는 조회 시각(`asOf`) 기준 값이라 기간과 무관하다.
+- 리소스 이름과 계정 ID는 응답에 넣지 않는다. Redis 노드만 노드를 구분하려고 캐시 클러스터 ID를 넣는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 31일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 리소스 설정이 모두 비어 있음<br>CloudWatch나 ECS 호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 시간 초과, 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/infra/metrics?from=2026-10-23&to=2026-10-23
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 점 목록마다 점 1~2개만 표시하고 `ai`와 `notification` 서비스, 두 번째 Redis 노드를 줄였다.
+
+```json
+{
+  "asOf": "2026-10-23T01:12:40Z",
+  "from": "2026-10-23",
+  "to": "2026-10-23",
+  "periodSeconds": 300,
+  "ecs": {
+    "services": [
+      {
+        "name": "server",
+        "runningTasks": 2,
+        "desiredTasks": 2,
+        "pendingTasks": 0,
+        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 7.4 }, { "at": "2026-10-22T15:05:00Z", "value": 8.1 }],
+        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 41.2 }, { "at": "2026-10-22T15:05:00Z", "value": 41.5 }],
+        "cpuMax": [{ "at": "2026-10-22T15:00:00Z", "value": 21.0 }, { "at": "2026-10-22T15:05:00Z", "value": 12.3 }],
+        "memoryMax": [{ "at": "2026-10-22T15:00:00Z", "value": 44.0 }, { "at": "2026-10-22T15:05:00Z", "value": 44.1 }]
+      }
+    ]
+  },
+  "alb": {
+    "requests": [{ "at": "2026-10-22T15:00:00Z", "value": 312 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "elb5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 0 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "target5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 1 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
+    "responseTimeP95Ms": [{ "at": "2026-10-22T15:00:00Z", "value": 182.0 }]
+  },
+  "rds": {
+    "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 4.9 }],
+    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 18253611008 }],
+    "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 21 }],
+    "readLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 0.8 }],
+    "writeLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 1.6 }]
+  },
+  "redis": {
+    "nodes": [
+      {
+        "id": "manyak-prod-redis-rg-001",
+        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 1.2 }],
+        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 3.4 }],
+        "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 18 }]
+      }
+    ]
+  },
+  "opensearch": {
+    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 6442450944 }],
+    "jvmMemoryPressure": [{ "at": "2026-10-22T15:00:00Z", "value": 58.0 }]
+  }
+}
+```
+
+**3) 503 Response body**
+
+```json
+{
+  "timestamp": "2026-10-23T01:12:40.000Z",
+  "status": 503,
+  "code": "SERVICE_UNAVAILABLE",
+  "message": "인프라 지표를 가져올 수 없습니다.",
+  "path": "/api/v1/admin/infra/metrics",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-34 DB 테이블 크기
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/infra/db-tables` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+서버의 PostgreSQL 카탈로그에서 데이터베이스 크기와 테이블별 크기를 읽어 큰 순서로 응답한다. 기간과 무관한 현재 값이다. ([4-1-22 DB 테이블 크기](4-1-PIPELINES.md#4-1-22-db-테이블-크기))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `limit` | `integer` | 선택 | 응답할 테이블 수<br>1~100, 기본 20 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 카탈로그를 읽은 시각 |
+| `databaseBytes` | `integer` | 현재 데이터베이스 전체 크기(바이트) |
+| `tableCount` | `integer` | 집계 대상 테이블 수 |
+| `tables` | `object[]` | `totalBytes` 내림차순, 최대 `limit`개<br>같으면 `schema`, `name` 오름차순 |
+| `tables[].schema` | `string` | 스키마 이름 |
+| `tables[].name` | `string` | 테이블 이름 |
+| `tables[].totalBytes` | `integer` | 테이블, 인덱스, TOAST를 합한 크기 |
+| `tables[].tableBytes` | `integer` | 본 테이블만의 크기 |
+| `tables[].indexBytes` | `integer` | 그 테이블 인덱스의 합 |
+| `tables[].estimatedRows` | `integer` | 통계가 추정한 살아 있는 행 수<br>정확한 개수가 아니며 통계 수집 전이면 0 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `limit`가 정수가 아니거나 1~100 밖 |
+
+- DB 오류는 공통 처리를 따른다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/infra/db-tables?limit=2
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-10-23T01:12:40Z",
+  "databaseBytes": 1288490188,
+  "tableCount": 74,
+  "tables": [
+    { "schema": "public", "name": "chat_messages", "totalBytes": 402653184, "tableBytes": 301989888, "indexBytes": 83886080, "estimatedRows": 412380 },
+    { "schema": "public", "name": "ai_call_logs", "totalBytes": 268435456, "tableBytes": 209715200, "indexBytes": 50331648, "estimatedRows": 520117 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-35 푸시 열람
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/push-opens` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+관리자 캠페인과 활동 알림마다 웹에서 푸시를 눌러 연 열람 수를 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성과 측정 상태 판정은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+- 측정 시작일이 비었거나 범위 전체가 측정 시작일보다 앞서면 분석 도구를 조회하지 않고 200으로 응답한다. 이때 `asOf`는 `null`, `pendingDates`는 빈 배열이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string / null` | 분석 지표와 같음<br>측정 구간이 없어 조회하지 않았으면 `null` |
+| `pendingDates` | `string[]` | 분석 지표와 같음<br>측정 시작 전 날짜는 넣지 않고 측정 구간이 없으면 빈 배열<br>있으면 열람 수는 준비된 날짜만 더한 값이고 열람률은 그 열람 수를 전체 도달 회원 수로 나눈 값 |
+| `from`, `to` | `string` | 캠페인 추이와 같음 |
+| `measuredFrom` | `string / null` | 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
+| `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순 |
+| `campaigns[].campaignId` | `string` | 캠페인 공개 식별자 |
+| `campaigns[].kind` | `string` | `SERVICE`, `MARKETING` |
+| `campaigns[].title` | `string` | 광고 표기 없는 제목 |
+| `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
+| `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
+| `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
+| `campaigns[].openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정 시작 전<br>`NO_LINK` 딥링크를 넣은 발송 요청이 없어 측정 불가<br>`PENDING` 발송 요청 기록이 아직 없음 |
+| `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `MEASURED`가 아니면 `null` |
+| `campaigns[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
+| `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 측정 시작일 중 늦은 날<br>집계 구간이 없으면 `null` |
+| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목 |
+| `activityTypes[].type` | `string` | 시나리오 식별자 |
+| `activityTypes[].deliveredMembers` | `integer` | 종류와 날짜마다 중복 없이 센 도달 회원 수의 합<br>`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체 |
+| `activityTypes[].openState` | `string` | `MEASURED`, `BEFORE_MEASUREMENT` |
+| `activityTypes[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `BEFORE_MEASUREMENT`면 `null` |
+| `activityTypes[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
+
+- 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 서버는 값을 자르지 않는다.
+- Android 앱에서 연 알림은 열람 수에 들어가지 않고 도달 회원 수에는 들어간다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/push-opens?from=2026-10-18&to=2026-10-24
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+측정 시작일이 2026-10-21인 경우다.
+
+```json
+{
+  "asOf": "2026-10-24T05:10:00Z",
+  "pendingDates": [],
+  "from": "2026-10-18",
+  "to": "2026-10-24",
+  "measuredFrom": "2026-10-21",
+  "campaigns": [
+    {
+      "campaignId": "4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37",
+      "kind": "SERVICE",
+      "title": "10월 25일 새벽 점검 안내",
+      "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
+      "startedAt": "2026-10-23T02:00:31Z",
+      "deliveredMembers": 412,
+      "openState": "MEASURED",
+      "pushOpens": 58,
+      "pushOpenRate": 0.1408
+    },
+    {
+      "campaignId": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+      "kind": "MARKETING",
+      "title": "가을 이벤트 안내",
+      "noticeId": null,
+      "startedAt": "2026-10-22T10:00:12Z",
+      "deliveredMembers": 230,
+      "openState": "NO_LINK",
+      "pushOpens": null,
+      "pushOpenRate": null
+    },
+    {
+      "campaignId": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b",
+      "kind": "MARKETING",
+      "title": "주말 출석 이벤트",
+      "noticeId": null,
+      "startedAt": "2026-10-19T03:00:05Z",
+      "deliveredMembers": 198,
+      "openState": "BEFORE_MEASUREMENT",
+      "pushOpens": null,
+      "pushOpenRate": null
+    }
+  ],
+  "activityFrom": "2026-10-21",
+  "activityTypes": [
+    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "pushOpenRate": 0.4426 },
+    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "pushOpenRate": 0.3636 },
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "pushOpenRate": 0.0862 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-36 다른 도메인과의 경계
+
+| 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
+|---|---|---|
+| ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
+| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
+| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 종류별 날짜별 도달 회원 수 |
+| NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
+| MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
+| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
+| CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
+| Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
+| Langfuse | 없음 | Metrics API의 관측 비용 합 |
+| Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
+| AWS CloudWatch, ECS | 없음 | CloudWatch `GetMetricData` 지표 조회, ECS `DescribeServices` 태스크 수 조회 |
+| 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
+
+다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.
+
+| 연산 | 입력 | 결과 |
+|---|---|---|
+| 관리자 요청자 | 현재 요청 | 관리자의 회원 내부 ID<br>필터가 확정한 값 |
+| 변경 감사 기록 | 관리자, 작업 이름, 대상 종류, 대상 식별자, 사유, 변경 전 값, 변경 후 값 | 감사 로그 행<br>호출자의 트랜잭션에 참여하고 트랜잭션이 없으면 거부 |
+| 접속 기록 | 관리자, 작업 이름, 대상 종류, 대상 식별자 | 감사 로그 행<br>독립 트랜잭션 |
