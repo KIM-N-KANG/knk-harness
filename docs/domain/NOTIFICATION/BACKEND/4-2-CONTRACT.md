@@ -15,7 +15,7 @@
 | 경로 | 회원 API와 관리자 API는 `/api/v1`을 생략해 적음<br>내부 API는 전체 경로 |
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
-| 식별자 | 회원, 캠페인, 공지는 UUID 공개 식별자<br>토큰 행 ID와 템플릿 행 ID는 노출하지 않음 |
+| 식별자 | 회원, 캠페인, 공지, 알림 내역은 UUID 공개 식별자<br>토큰 행 ID와 템플릿 행 ID는 노출하지 않음 |
 | 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수 |
 | 푸시 데이터 값 | 모두 문자열 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
@@ -49,6 +49,7 @@
 | 요청 | 정지 계정 | 탈퇴 계정 |
 |---|---|---|
 | 토큰 등록, 토큰 삭제, 수신 동의 조회, 수신 동의 변경 | 403 | 401 |
+| 알림 내역 목록, 안 읽은 알림 수, 알림 읽음, 모든 알림 읽음 | 403 | 401 |
 
 <br>
 
@@ -733,7 +734,7 @@ Content-Type: application/json
   "date": "2026-10-16",
   "title": "(광고) 이프 250이 도착했어요 🍃",
   "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
-  "deepLink": "https://manyak.app/my/credits?tab=free"
+  "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=push&utm_medium=push&utm_campaign=attendance_reminder&utm_content=attendance_reminder"
 }
 ```
 
@@ -1332,7 +1333,270 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-22 다른 도메인과의 경계
+### 4-2-22 알림 내역 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /users/me/notifications` |
+| 인증 | 필수 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 쿼리 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `category` | `string` | 선택 | `NEWS` 또는 `ACTIVITY`<br>생략하면 전체 |
+| `limit` | `integer` | 선택 | 기본값 20, 1~50으로 보정 |
+| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor`<br>같은 `category`를 함께 보냄 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 알림 내역<br>생성 시각 내림차순 |
+| `nextCursor` | `string / null` | 다음 페이지 커서<br>마지막 페이지는 `null` |
+
+| `items[]` 필드명 | 타입 | 의미 |
+|---|---|---|
+| `notificationId` | `string` | 알림 식별자 |
+| `category` | `string` | `NEWS`, `ACTIVITY` |
+| `type` | `string` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>모르는 값은 클라이언트가 기본 표시로 처리 |
+| `title` | `string` | 표시 제목<br>광고 알림은 광고 표기 포함 |
+| `body` | `string` | 표시 본문 |
+| `deepLink` | `string / null` | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 `null` |
+| `storyId` | `string / null` | 관련 스토리 공개 식별자 |
+| `noticeId` | `string / null` | 관련 공지 공개 식별자 |
+| `createdAt` | `string` | 기록 시각 |
+| `readAt` | `string / null` | 읽은 시각<br>`null`이면 안 읽음 |
+
+- 종류와 분류의 대응은 처리 흐름이 정한다. ([4-1-18 알림 내역 기록](4-1-PIPELINES.md#4-1-18-알림-내역-기록))
+- 보관 기간이 없어 커서로 가장 오래된 내역까지 내려 볼 수 있다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 모르는 `category`, `limit`이 숫자가 아님<br>UUID가 아닌 커서, 없거나 다른 회원의 알림 식별자인 커서 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/users/me/notifications?category=ACTIVITY&limit=2
+Authorization: Bearer {accessToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "notificationId": "5d8e2f10-6b3a-4c1e-9f7a-2a1b3c4d5e6f",
+      "category": "ACTIVITY",
+      "type": "STORY_MODERATION_COMPLETED",
+      "title": "검수를 통과했어요",
+      "body": "「달빛 아래의 약속」의 등록이 완료됐어요. 지금 확인해 보세요.",
+      "deepLink": "https://manyak.app/studio?utm_source=inbox&utm_medium=inbox&utm_campaign=story_moderation_completed&utm_content=story_moderation_completed",
+      "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+      "noticeId": null,
+      "createdAt": "2026-10-24T09:12:30Z",
+      "readAt": null
+    },
+    {
+      "notificationId": "0a7c4e21-93d5-4b8f-a6e2-71c0d9b8f3a4",
+      "category": "ACTIVITY",
+      "type": "ATTENDANCE_REMINDER",
+      "title": "(광고) 이프 250이 도착했어요 🍃",
+      "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
+      "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=inbox&utm_medium=inbox&utm_campaign=attendance_reminder&utm_content=attendance_reminder",
+      "storyId": null,
+      "noticeId": null,
+      "createdAt": "2026-10-24T00:00:05Z",
+      "readAt": "2026-10-24T01:03:11Z"
+    }
+  ],
+  "nextCursor": "0a7c4e21-93d5-4b8f-a6e2-71c0d9b8f3a4"
+}
+```
+
+**3) 400 Response body**
+
+다른 회원의 알림 식별자를 커서로 보낸 경우다.
+
+```json
+{
+  "timestamp": "2026-10-24T09:20:00.000Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "커서 형식이 올바르지 않습니다.",
+  "path": "/api/v1/users/me/notifications",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-23 안 읽은 알림 수
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /users/me/notifications/unread-count` |
+| 인증 | 필수 |
+| 성공 | 200 |
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `total` | `integer` | 안 읽은 내역 전체 수 |
+| `news` | `integer` | `NEWS` 분류의 안 읽은 수 |
+| `activity` | `integer` | `ACTIVITY` 분류의 안 읽은 수 |
+
+- `total`은 분류별 수의 합이다. 상한 없이 실제 수를 준다. 표시 상한은 클라이언트가 정한다.
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/users/me/notifications/unread-count
+Authorization: Bearer {accessToken}
+```
+
+**2) 200 Response body**
+
+```json
+{ "total": 3, "news": 1, "activity": 2 }
+```
+
+</details>
+
+<br>
+
+### 4-2-24 알림 읽음
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /users/me/notifications/{notificationId}/read` |
+| 인증 | 필수 |
+| 성공 | 204, 본문 없음 |
+
+**1. 경로**
+
+| 경로값 | 타입 | 의미 |
+|---|---|---|
+| `notificationId` | `string` | 알림 식별자 |
+
+- 이미 읽은 알림도 204이며 처음 읽은 시각을 유지한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | UUID가 아닌 식별자 |
+| 404 | `NOT_FOUND` | 없거나 다른 회원의 알림<br>두 경우를 구분하지 않음 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/users/me/notifications/5d8e2f10-6b3a-4c1e-9f7a-2a1b3c4d5e6f/read
+Authorization: Bearer {accessToken}
+```
+
+**2) 204 Response**
+
+본문 없음
+
+**3) 404 Response body**
+
+```json
+{
+  "timestamp": "2026-10-24T09:21:00.000Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "알림을 찾을 수 없습니다.",
+  "path": "/api/v1/users/me/notifications/5d8e2f10-6b3a-4c1e-9f7a-2a1b3c4d5e6f/read",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-25 모든 알림 읽음
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /users/me/notifications/read-all` |
+| 인증 | 필수 |
+| 성공 | 204, 본문 없음 |
+
+**1. 쿼리**
+
+| 쿼리 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `category` | `string` | 선택 | `NEWS` 또는 `ACTIVITY`<br>생략하면 전체 |
+
+- 요청 시점에 안 읽은 내역을 읽음으로 바꾼다. 이미 읽은 내역의 시각은 바꾸지 않는다.
+- 안 읽은 내역이 없어도 204다. 반복해도 결과가 같다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 모르는 `category` |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/users/me/notifications/read-all?category=NEWS
+Authorization: Bearer {accessToken}
+```
+
+**2) 204 Response**
+
+본문 없음
+
+</details>
+
+<br>
+
+### 4-2-26 다른 도메인과의 경계
 
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|
@@ -1340,7 +1604,7 @@ Authorization: Bearer {adminToken}
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
 | NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
 | ADMIN | 없음 | 관리자 요청자와 변경 감사 기록 |
-| ACCOUNT | 회원의 토큰 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
+| ACCOUNT | 회원의 토큰 전부 삭제 연산<br>회원의 알림 내역 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
 | PAYMENT | 없음 | 출석 보상 멱등 키의 존재 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
@@ -1352,3 +1616,4 @@ Authorization: Bearer {adminToken}
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 공지 발송 요청 | 공지 공개 식별자, 제목, 본문 300자 이내, 종류, 딥링크 | 예약 시각이 현재인 캠페인 1건<br>호출자의 트랜잭션에 참여하고 같은 공지의 두 번째 요청은 유니크 위반 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
+| 회원 알림 내역 전부 삭제 | 회원 내부 ID | 삭제 행 수<br>탈퇴 트랜잭션에 참여 |

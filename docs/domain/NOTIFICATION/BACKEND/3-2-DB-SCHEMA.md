@@ -12,10 +12,10 @@
 
 | 규칙 | 내용 |
 |---|---|
-| 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
+| 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인과 알림 내역은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
 | 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
-| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스, 발송 결과는 삭제 경로 없음<br>템플릿은 종료 시각만 갱신 |
-| FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>발송 결과의 회원과 캠페인은 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
+| 삭제 | 토큰과 알림 내역은 물리 삭제<br>템플릿, 캠페인, 아웃박스, 발송 결과는 삭제 경로 없음<br>템플릿은 종료 시각만 갱신 |
+| FK | 토큰과 알림 내역은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>알림 내역의 스토리와 공지는 공개 식별자 사본이라 FK 없음<br>발송 결과의 회원과 캠페인은 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
 
@@ -31,6 +31,14 @@ erDiagram
         bigint user_id FK
         varchar token
         varchar platform
+    }
+    users ||--o{ user_notifications : "ACCOUNT, 받는 회원"
+    user_notifications {
+        bigint id PK
+        uuid public_id
+        bigint user_id FK
+        varchar message_key
+        varchar category
     }
     push_message_templates {
         bigint id PK
@@ -196,11 +204,44 @@ erDiagram
 
 <br>
 
-### 3-2-9 참조하는 다른 도메인의 컬럼
+### 3-2-9 알림 내역
+
+**`user_notifications`**
+
+회원이 받은 알림 1건이 한 행이다. 시나리오별 기록 시점에 서버가 추가하고 푸시 설정이나 토큰 보유와 무관하게 남긴다. ([4-1-18 알림 내역 기록](4-1-PIPELINES.md#4-1-18-알림-내역-기록))
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | 같은 생성 시각 안의 정렬 기준 |
+| `public_id` | uuid | NOT NULL, UNIQUE | 응답의 알림 식별자<br>읽음 처리 경로값과 목록 커서 |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
+| `message_key` | varchar(255) | NOT NULL | 큐 메시지와 같은 규칙의 메시지 식별자<br>발송 모드와 무관하게 같은 값 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `NOTICE` `ATTENDANCE_REMINDER` `PROMOTION` | 시나리오 식별자 |
+| `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>기록 시 종류에서 정함 |
+| `title` | varchar(120) | NOT NULL | 표시 제목<br>광고 알림은 광고 표기 포함 |
+| `body` | varchar(300) | NOT NULL | 표시 본문 |
+| `deep_link` | varchar(512) | | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 NULL |
+| `story_public_id` | uuid | | 관련 스토리 공개 식별자<br>FK 없음 |
+| `notice_public_id` | uuid | | 관련 공지 공개 식별자<br>FK 없음 |
+| `read_at` | timestamptz | | 읽은 시각<br>`NULL`이면 안 읽음 |
+
+| 제약과 인덱스 | 컬럼 | 쓰임 |
+|---|---|---|
+| `uk_user_notifications_user_message` | `user_id`, `message_key` UNIQUE | 같은 알림의 중복 기록 방지 |
+| `idx_user_notifications_user_created` | `user_id`, `created_at DESC`, `id DESC` | 전체 목록 |
+| `idx_user_notifications_user_category_created` | `user_id`, `category`, `created_at DESC`, `id DESC` | 분류별 목록 |
+| `idx_user_notifications_unread` | `user_id`, `category` WHERE `read_at IS NULL` | 분류별 안 읽은 수와 모두 읽음 |
+
+- 행은 기록 시점의 사본이다. 원본 스토리나 공지가 바뀌거나 사라져도 고치지 않는다.
+- 같은 회차의 행은 생성 시각이 같아 `id`로 순서를 정한다. 정렬 방향을 목록과 같게 두어 커서 조회가 인덱스 범위 조회로 끝난다.
+
+<br>
+
+### 3-2-10 참조하는 다른 도메인의 컬럼
 
 | 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
 |---|---|---|
-| `users` | `status` | 발송 자격 판정 |
+| `users` | `status` | 발송 자격 판정<br>알림 내역 대상과 요청자 상태 판정 |
 | `users` | `public_id` | 수신자 식별자<br>발송 결과의 수신 회원 해석 |
 | `users` | `reward_identity_user_id` | 출석 미수령 판정 |
 | `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
@@ -209,7 +250,7 @@ erDiagram
 
 <br>
 
-### 3-2-10 Redis 키
+### 3-2-11 Redis 키
 
 `push:` 키는 서버가 쓴다. `notification:` 키는 알림 서비스가 쓴다.
 
@@ -221,7 +262,7 @@ erDiagram
 
 <br>
 
-### 3-2-11 메시지 큐
+### 3-2-12 메시지 큐
 
 | 큐 | 내용 | 설정 |
 |---|---|---|
@@ -230,10 +271,11 @@ erDiagram
 
 <br>
 
-### 3-2-12 데이터 수명
+### 3-2-13 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
 | 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
 | 수신 동의 | 없음<br>철회는 값을 비움 |
 | 문구 템플릿, 캠페인, 아웃박스, 발송 결과 | 없음 |
+| 알림 내역 | 탈퇴<br>보관 기간과 정리 작업 없음 |
