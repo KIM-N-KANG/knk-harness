@@ -269,6 +269,7 @@
 | MY-NOTICES-11 | P2 | 헤더 점 표시 중, 안 읽은 공지 1건 | 푸시 딥링크로 그 공지 상세 직접 진입 → 홈 복귀 | 그 공지가 읽음으로 기록되고 헤더 점과 마이 배지가 사라짐 | 수동 | FE-SCREEN-014 안 읽은 공지 표시 |
 | MY-NOTICES-12 | P2 | 주소로 바로 연 `/notices` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-NOTICES-14 | P1 | 공지 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 홈과 같은 표시자("당겨서 새로고침" → "놓으면 새로고침" → "새로고침 중")로 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지 | ✅ e2e `notices/notices` | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| MY-NOTICES-15 | P2 | 공지 목록과 상세 조회 성공 | 목록과 상세 주소로 직접 진입, 홈 공지 버튼에서 목록으로 이동한 뒤 상세 열기와 뒤로가기 | 모든 진입과 이동에서 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notices/notices` | [문서 열람과 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 
 Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다. 기준: [Android 공지사항](../spec/3-3-android-spec.md#마이법적-문서), [Android 구조](../design/1-2-android-design.md#1-2-4-내비게이션과-화면).
 
@@ -300,6 +301,7 @@ Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다
 | MY-INBOX-09 | P1 | `deepLink`가 서비스 origin이 아닌 알림, `noticeId`·`storyId` 없음 | 카드 탭 | 이동 없이 읽음만 기록(카드는 링크가 아닌 버튼) | ◐ 단위 `tests/features/notifications/inbox/utils/notification-link` | FE-SCREEN-015 읽음과 이동 |
 | MY-INBOX-10 | P2 | 주소로 바로 연 `/notifications` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-INBOX-11 | P1 | 목록이 맨 위 | 아래로 당겼다 놓기 | 홈과 같은 표시자로 그 탭의 첫 페이지부터 다시 조회 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| MY-INBOX-12 | P2 | 회원, 알림함 조회 성공 | 알림함 주소로 직접 진입, 홈 헤더 종 버튼으로 알림함 열기 | 두 진입 모두 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notifications/notifications` | [문서 열람과 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 
 Android(KNK-1827)는 미착수입니다.
 

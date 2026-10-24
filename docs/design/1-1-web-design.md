@@ -154,6 +154,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 라우트 그룹은 권한이 아닌 셸을 나눕니다. `(main)`만 헤더·하단 탭을 공유하며 `(story)`·`(chat)`은 별도 레이아웃 없이 루트를 상속합니다. 그 밖의 화면은 자체 헤더를 사용하고 법적 문서·서비스 안내는 링크 없는 로고 헤더(`LogoHeader`)를 공유합니다.
 
 - 루트 제목 템플릿은 `%s - 마냑`이며 기본값은 `src/constants/site.ts`입니다. 법적 문서·서비스 안내는 콘텐츠 제목, 스토리·채팅·공유는 조회한 제목을 사용합니다. 클라이언트 조회 전에는 서버 제목을 유지합니다.
+- 알림함, 공지사항 목록과 상세의 페이지는 별도 제목 메타데이터 없이 루트의 기본 제목을 상속합니다.
 - 홈 메타데이터는 홈 `page.tsx`가 `HOME_DESCRIPTION`([site.ts](../../../manyak-web/src/constants/site.ts))과 홈 canonical을 선언합니다. 루트 메타데이터에 canonical을 두지 않으며 다른 화면의 공통 설명은 그대로 상속합니다.
 - 상세 메타데이터와 본문은 [backend-story-client](../../../manyak-web/src/lib/stories/backend-story-client.ts)의 `fetchOriginalStoryOnServer`를 공유합니다. React `cache`는 한 렌더 요청 안에서 조회를 재사용합니다. 공개 오리지널 목록에 포함된 ID만 5초 제한의 인증 없는 `no-store` 상세 조회를 하고, 응답 ID와 `PUBLISHED`, `PUBLIC`을 확인합니다. 실패하거나 현재 공개가 아니면 `noindex, nofollow`로 클라이언트 조회에 넘깁니다. 성공하면 동일한 상세의 제목, 소개, canonical, Open Graph와 Twitter를 선언하고 이미지가 없으면 파일 기반 브랜드 이미지를 사용합니다.
 - 서버는 상세 화면에 쓰는 공개 필드만 명시적으로 골라 `StoryDetail.initialStory`로 전달합니다. 시작 상황은 ID, 이름, 상황 설명, 엔딩 이름만 전달하고 제작자는 닉네임만 전달합니다. 전체 응답이나 개인화 값은 RSC 페이로드로 보내지 않습니다. 공개 초기값은 Query 캐시에 넣지 않아 브라우저가 즉시 인증된 상세를 다시 조회합니다. 조회 전에는 기존 본문을 렌더링하고 채팅 시작과 좋아요를 비활성화한 채 표시하며, 소유자 기능은 응답 뒤에 표시합니다. SSR 실패와 익명 404를 페이지 `notFound()`로 바꾸지 않는 이유는 [W-029](../adr/1-2-web-adr.md#w-029)를 따릅니다.
