@@ -83,6 +83,7 @@ graph LR
 | localStorage 안내 | 간편 제작 첫 진입 안내에서 마지막으로 마친 단계 `manyak:create-tutorial-stage`(끝까지 보거나 건너뛰면 `done`), `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
 | localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). 채팅 모델과 긴 응답은 서버가 채팅마다 저장하므로 기기에 두지 않는다. [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
 | IndexedDB 제작 | Dexie DB `manyak-creation`의 `pendingCreations`, `storyCompletions`, `metadata`. [DB 정의](../../../manyak-web/src/features/stories/_shared/utils/creation-db.ts), [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts). 일반 제작 `GENERAL_DRAFT`는 서버 초안으로 옮기기 전의 레거시만 남음. 회원 간편 제작 서버 세션의 사용자 저장은 서버 초안이고, 이 DB에는 진행 기록과 기기 안 세션의 초안만 남음 |
+| localStorage 공지 읽음 기록 | `manyak:notice-read-ids`의 공지 ID JSON 배열(최신순, 최대 100개). 상세가 공지를 받으면 그 ID를 맨 앞에 넣는다. 안 읽음 판정은 "게시 30일 안이고 이 목록에 없음"이며 헤더 버튼의 점, 마이 메뉴 배지, 목록 줄 제목 끝의 점이 모두 이 판정을 쓴다. [공지 읽음 저장소](../../../manyak-web/src/features/notices/_shared/utils/notice-read-storage.ts) |
 | localStorage 제작 세대 | `manyak:creation-epoch`의 정수. 세션 종료를 비동기 DB 삭제보다 먼저 알리고 이전 세대의 작업을 차단함. 초안 본문은 보관하지 않음 |
 | sessionStorage 채팅 열기 의도 | `manyak:pending-chat-open`의 `{storyId, chatId, at}`. 일반 제작 승인이 상세로 바꾸기 직전에 기록하고 상세가 마운트될 때 한 번 읽어 지운 뒤 채팅방을 연다. 30초가 지나면 무시 |
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 진행 카드가 이동 전에 기록하고 퍼널이 진입 시 한 번 읽어 그 레코드만 복원. 없으면 새 세션 |
@@ -220,6 +221,8 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 메인 헤더는 현재 섹션을 표시하며 홈만 로고와 스크린 리더용 `h1` "홈"을 사용합니다. 홈·채팅·제작의 로그인 버튼은 세션이 게스트로 확정된 뒤 표시하고 마이 헤더에는 두지 않습니다. 하단 4탭의 라벨·경로는 웹 Spec을 따릅니다.
 
+홈·채팅·제작 헤더의 오른쪽 묶음은 [main-header](../../../manyak-web/src/components/layout/main-header.tsx)가 그리며 게스트의 로그인 버튼 오른쪽에 [notice-header-button](../../../manyak-web/src/features/notices/_shared/components/notice-header-button.tsx)을 둡니다. 버튼은 생성 훅 `useGetNotices()`로 첫 페이지(20건)를 받아 [notice-read-storage](../../../manyak-web/src/features/notices/_shared/utils/notice-read-storage.ts)의 읽은 ID 목록과 30일 기간으로 안 읽은 공지가 있는지 판정해 빨간 점과 접근 이름을 정합니다. 저장소는 `useSyncExternalStore`로 구독해 상세를 열어 기록이 바뀌면 열린 목록 줄과 돌아온 헤더가 다시 읽지 않아도 갱신됩니다. 마이 알림 섹션의 [notice-menu-item](../../../manyak-web/src/features/notices/_shared/components/notice-menu-item.tsx)은 같은 훅으로 `MyMenuItem`의 `badge`("새 공지")를 켭니다.
+
 일반 하위 화면의 `BackHeader`는 고정 제목과 뒤로가기만 담당합니다. `fallbackHref`가 있으면 상세 헤더와 같은 앱 안 이동 판정으로 바로 진입일 때만 그 화면으로 교체합니다. 로그인은 홈, 마이 하위 화면은 마이 탭, 페르소나 생성은 페르소나 관리를 지정합니다. 이프 충전은 결제 복귀 되감기 뒤 다른 문서의 기록으로 돌아가야 하므로 `fallbackWhen="no-history"`로 아래 기록이 전혀 없을 때(`hasHistoryBelow`가 거짓)만 마이 탭으로 교체합니다. 없는 경로 화면은 [go-back-button](../../../manyak-web/src/components/common/go-back-button.tsx)이 `hasHistoryBelow`를 `useSyncExternalStore`로 읽어 같은 사이트의 이전 기록이 있을 때만 "이전 화면으로"를 보입니다(없는 경로는 Next가 전체 이동으로 열어 늘 새 문서)(문구는 [not-found 상수](../../../manyak-web/src/constants/not-found.ts)).
 
 상세 헤더는 히어로 위 absolute입니다. 스크롤 비율로 배경·전경색을 보간하고 본문 `h1`이 가려지면 제목을 표시합니다. 실제 DOM 마운트를 effect 의존성에 포함해 지연 스켈레톤 뒤에도 listener·IntersectionObserver를 연결합니다.
@@ -275,6 +278,10 @@ passive listener·requestAnimationFrame·ResizeObserver로 스크롤·크기 변
 - **대화창.** [create-tutorial-dialog](../../../manyak-web/src/features/stories/_shared/components/create-tutorial-dialog.tsx)는 열려 있을 때만 마운트하고 앱 프레임에 `absolute inset-0 z-60`으로 포털합니다. 카드는 모서리 20px의 `bg-background`이고 다크 모드에서만 `border`를 둡니다. 이름은 `text-primary` 14px, 대사는 16px(행간 24px), 버튼은 채팅 첫 진입 안내와 같은 `ghost`(보조)와 기본 변형(주)이되 크기는 기본(높이 40px)입니다. 초점은 `tabIndex={-1}`인 카드에 두어 터치 기기에서 버튼에 초점 링이 남지 않게 합니다. 뒤로가기는 `useBackLayer`로 받으며 조작 없이 연 단계는 히스토리 레이어 규칙대로 더미를 쌓지 않습니다. 제작 탭의 "오리지널 스토리 보기"는 `leaveLayers`로 더미를 먼저 소비한 뒤 하단 탭처럼 홈으로 `replace` 합니다.
 - **마스코트.** 카드 좌상단의 48px 둥근 프로필(`primary` 10% 바탕)에 공용 `MascotStage`를 두고 [draw-tutorial-mascot-stage](../../../manyak-web/src/features/stories/_shared/utils/draw-tutorial-mascot-stage.ts)가 그립니다. 음절마다 몸을 무대 폭의 3.5%까지 띄워 늘이고 좌우로 3도까지 기울이는 말하기 두 번(동그란 눈, 웃는 눈) 사이에 쉼을 두어 한 바퀴 5초입니다. 원 모서리에 몸이 잘리지 않게 무대 폭의 66% 크기로 그리고, 바탕 점과 그림자는 그리지 않으며, 동작 줄이기에서는 서 있는 첫 자세로 멈춥니다.
 - **E2E.** 기본 `context` 픽스처가 저장값을 `done`으로 심어 다른 스펙에 대화창이 뜨지 않게 하고, `createTutorial` 옵션을 켠 스펙만 안내를 봅니다.
+
+### 공지사항 (웹)
+
+`features/notices`는 `_shared`(문구 상수·읽음 저장소·헤더 버튼), `list`, `detail` 유닛으로 나뉘고 페이지는 `app/(notices)/notices`와 `[noticeId]` 아래에 `BackHeader`를 감싼 얇은 서버 컴포넌트입니다. 목록은 [use-notices](../../../manyak-web/src/features/notices/list/hooks/use-notices.ts)가 이프 내역과 같은 커서 무한 목록 패턴(`useInfiniteQuery`, `nextCursor` 되돌리기, 끝 sentinel 교차 관찰, 다음 페이지 실패 시 자동 재요청 중단)으로 받고, 읽은 ID 목록을 구독해 줄마다 안 읽음을 판정합니다. 상세는 생성 훅 `useGetNoticesByNoticeId`를 쓰고 공지를 받으면 `markNoticeRead`로 읽음을 기록하며 `FetchError` 404를 미존재 안내로 구분하고, 본문은 `whitespace-pre-wrap`으로 줄바꿈만 살립니다. 문구 정본은 [notices/_shared/constants](../../../manyak-web/src/features/notices/_shared/constants.ts)입니다. 공지 게시 푸시의 딥링크가 `https://manyak.app/notices/{noticeId}`로 고정돼 있어 경로를 마이 아래에 두지 않습니다.
 
 ### 스토리 신고 진입점 (웹)
 

@@ -9,10 +9,10 @@
 | 수정일 | 2026-10-19 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
-| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`·프로필 수정 `/my/profile/edit`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
+| 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`·프로필 수정 `/my/profile/edit`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 공지사항 `/notices`·`/notices/[noticeId]`(FE-SCREEN-014), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
-| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
-| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/my/personas.spec.ts`, `e2e/my/profile.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
+| 관련 스펙 | [`3-1-client-spec.md §3-1-3(FE-SCREEN-006·008·011·014)·§3-1-8`](../spec/3-1-client-spec.md), [`3-2-web-spec.md §3-2-4·§3-2-5·§3-2-6`](../spec/3-2-web-spec.md), [`2-user-stories.md §2-7·§2-8·§2-9·§2-10`](../spec/2-user-stories.md) |
+| 관련 E2E | `manyak-web/e2e/my/my-page.spec.ts`, `e2e/my/account-deletion.spec.ts`, `e2e/my/invite.spec.ts`, `e2e/my/credits.spec.ts`, `e2e/my/service-info.spec.ts`, `e2e/my/login-page.spec.ts`, `e2e/feedback/feedback.spec.ts`, `e2e/stories/story-persona.spec.ts`, `e2e/my/personas.spec.ts`, `e2e/my/profile.spec.ts`, `e2e/notices/notices.spec.ts`, `e2e/smoke/navigation.spec.ts`, `e2e/smoke/ios-input-zoom-lock.spec.ts`, `manyak-web/e2e/visual/my-visual.spec.ts` |
 
 ## 읽는 순서
 
@@ -31,6 +31,7 @@
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
 - [MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011)](#my-info--서비스-안내-about-fe-screen-011)
+- [MY-NOTICES — 공지사항 `/notices` (FE-SCREEN-014, KNK-1817)](#my-notices--공지사항-notices-fe-screen-014-knk-1817)
 - [MY-NAV — 하단 탭 네비게이션·상단 헤더](#my-nav--하단-탭-네비게이션상단-헤더)
 - [⚠️ 확인 필요](#️-확인-필요)
 
@@ -47,10 +48,10 @@
 | ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
 | ------------ | --- | ------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
 | MY-MENU-01 | P0 | 게스트 | `/my` 진입 | 프로필 영역에 "게스트" 표시 + 로그인 버튼. 로그아웃 버튼 없음 | ✅ e2e `my/my-page` | FE-SCREEN-008, [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
-| MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
+| MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·알림(공지사항만, 알림 설정 없음)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
 | MY-MENU-03   | P0  | 게스트                                            | 로그인 버튼 탭         | `/login`으로 이동(마이 → 로그인 진입점)                                                                                 | ✅ e2e `my/login-page`                         | US-9-1, FE-SCREEN-008 진입점                 |
 | MY-MENU-04   | P0  | 회원 로그인 상태                                  | `/my` 진입             | 닉네임 표시 + 로그아웃·회원 탈퇴 메뉴 표시. 로그인 버튼 없음                                                            | ✅ e2e `my/my-page`·`my/account-deletion`     | FE-SCREEN-008                                |
-| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 알림(알림 설정) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 5개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
+| MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 알림(알림 설정 → 공지사항 순) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 5개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
 | MY-MENU-06   | P2  | 회원, `me` 응답에 `profileThumbnailBase64` 있음   | 프로필 이미지 확인     | base64 썸네일(`data:image/png;base64,...`)을 세션 이미지보다 우선해 원형으로 렌더                                       | ✅ e2e `my/my-page`                            | 구현(`profile-header`)                       |
 | MY-MENU-07 | P1 | 회원 | 닉네임 아래 영역 확인 | 닉네임 아래 google → kakao 순서로 Chip 표시. Google만 연동이면 점선 "카카오 연동하기", 둘 다 연동이면 Chip 2개만 표시. 연동 실행·오류는 AUTH-LINK 담당 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 계정 연동, KNK-740 |
 | MY-MENU-08   | P2  | 회원, `me` 응답의 `linkedProviders`가 비었거나 없음 | 닉네임 아래 영역 확인  | 연동 Chip 행 자체를 렌더하지 않음(연동 버튼 2개가 잠깐 보이는 오해 방지)                                                | 수동                                           | FE-SCREEN-008 계정 연동, KNK-740             |
@@ -246,6 +247,26 @@
 
 <a id="my-nav--하단-탭-네비게이션상단-헤더-3-2-3"></a>
 
+## MY-NOTICES — 공지사항 `/notices` (FE-SCREEN-014, KNK-1817)
+
+기준: [계약](../spec/3-1-client-spec.md#fe-screen-014-공지사항), [웹 헤더·경로](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸), [구조](../design/1-1-web-design.md#공지사항-웹).
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-NOTICES-01 | P0 | 게스트, 30일 안에 게시된 공지 있음, 읽음 기록 없음 | 홈 진입 → 헤더 확인 | 오른쪽에 secondary 로그인 버튼, 그 오른쪽에 종(알림) 아이콘 버튼(접근 이름 "새 공지사항 있음")과 아이콘 오른쪽 위 빨간 점 | ✅ e2e `notices/notices` | FE-SCREEN-014 진입점·안 읽은 공지 표시 |
+| MY-NOTICES-02 | P0 | 회원 | 채팅·제작·마이 진입 → 헤더 확인 | 채팅·제작에는 로그인 버튼 없이 공지 버튼만, 마이 헤더에는 공지 버튼 없음 | ✅ e2e `notices/notices` | [웹 상단 헤더](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| MY-NOTICES-13 | P0 | 게스트/회원, 읽음 기록 없음, 공지 있음 | 마이 > 알림 섹션 확인 → "공지사항" 메뉴 탭 → 목록만 보고 뒤로가기 | 알림 설정(회원만) 아래 확성기 아이콘 "공지사항" 메뉴와 라벨 오른쪽 연한 빨간 "새 공지" 배지. 탭하면 `/notices`, 목록만 보고 돌아오면 배지가 그대로 남음 | ✅ e2e `notices/notices` | FE-SCREEN-014 진입점·안 읽은 공지 표시 |
+| MY-NOTICES-03 | P0 | 읽음 기록 없음, 공지 2건(모두 30일 안) | 헤더 공지 버튼 탭 → 목록 확인 → 첫 줄 탭 → 뒤로가기 → 뒤로가기 | `/notices`로 이동, "공지사항" 뒤로가기 헤더, 줄마다 제목·게시일(`YYYY-MM-DD`)이 좌우를 채우고 두 줄 모두 굵은 제목과 제목 끝 작은 빨간 점(sr 텍스트 "새 공지"). 상세를 열면 `manyak:notice-read-ids`에 그 ID가 기록되고 목록으로 돌아오면 그 줄만 점이 꺼짐. 홈으로 돌아와도 안 읽은 공지가 남아 헤더 점 유지 | ✅ e2e `notices/notices` | FE-SCREEN-014 안 읽은 공지 표시·목록 |
+| MY-NOTICES-04 | P1 | 첫 공지는 읽음 기록 있음, 둘째는 없음, 셋째는 게시 30일 초과 | `/notices` 진입 → 둘째 줄 탭 → 홈까지 뒤로가기 | 둘째 공지에만 점. 둘째를 읽고 홈으로 돌아오면 헤더 버튼 접근 이름이 "공지사항"으로 바뀌고 점 없음 | ✅ e2e `notices/notices` | FE-SCREEN-014 안 읽은 공지 표시 |
+| MY-NOTICES-05 | P0 | `nextCursor`가 있는 20건 | 목록 끝까지 스크롤 | 받은 `nextCursor`를 그대로 실어 다음 페이지를 요청하고 아래에 이어 붙임. "더 보기" 버튼 없음 | ✅ e2e `notices/notices` | FE-SCREEN-014 목록, [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹) |
+| MY-NOTICES-06 | P1 | 다음 페이지 조회 실패 | 목록 끝까지 스크롤 | 기존 목록을 유지하고 아래 재시도 버튼만 표시, 자동 재요청 중단 | 수동 | FE-SCREEN-014 상태 |
+| MY-NOTICES-07 | P1 | 공지 0건 / 첫 조회 5xx | `/notices` 진입 | 0건이면 "아직 등록된 공지가 없어요"와 헤더 점 없음. 5xx면 "공지사항을 불러오지 못했어요" + "다시 시도하기", 탭하면 다시 조회해 목록 표시 | ✅ e2e `notices/notices` | FE-SCREEN-014 상태 |
+| MY-NOTICES-08 | P0 | 목록 표시됨, 상세 200 | 첫 줄 탭 | `/notices/{noticeId}`로 이동. "공지사항" 뒤로가기 헤더 아래 `h1` 제목, "게시 YYYY-MM-DD", 줄바꿈을 살린 평문 본문(`white-space: pre-wrap`). 게시일과 같은 날 수정이면 "수정" 표시 없음 | ✅ e2e `notices/notices` | FE-SCREEN-014 상세 |
+| MY-NOTICES-09 | P1 | `updatedAt`이 게시일 다음 날 | 상세 주소 직접 진입 → 뒤로가기 | "게시 …" 옆에 "수정 YYYY-MM-DD" 표시. 주소로 바로 연 상세의 뒤로가기는 `/notices`로 교체 이동 | ✅ e2e `notices/notices` | FE-SCREEN-014 상세, [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+| MY-NOTICES-10 | P1 | 상세 404 | 상세 주소 직접 진입 | "공지를 찾을 수 없어요" + "공지사항 목록으로" 링크, 탭하면 `/notices` | ✅ e2e `notices/notices` | FE-SCREEN-014 상태 |
+| MY-NOTICES-11 | P2 | 헤더 점 표시 중, 안 읽은 공지 1건 | 푸시 딥링크로 그 공지 상세 직접 진입 → 홈 복귀 | 그 공지가 읽음으로 기록되고 헤더 점과 마이 배지가 사라짐 | 수동 | FE-SCREEN-014 안 읽은 공지 표시 |
+| MY-NOTICES-12 | P2 | 주소로 바로 연 `/notices` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+
 ## MY-NAV — 하단 탭 네비게이션·상단 헤더
 
 기준: [계약·구조](../spec/3-2-web-spec.md#화면-전환-규칙).
@@ -256,7 +277,7 @@
 | MY-NAV-02 | P0 | 홈에서 시작 | 탭으로 홈 → 채팅 → 제작 → 마이 → 홈 순회 | 각 경로(`/`·`/chats`·`/studio`·`/my`)로 이동. 홈은 로고만, 나머지는 섹션 라벨이 표시됨 | ✅ e2e `smoke/navigation` | US-8-1, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸), KNK-988·994·1012 |
 | MY-NAV-03 | P1 | 임의 탭 화면 | 활성 탭 표시 확인 | 모든 아이콘·라벨에 같은 전경색을 적용. 현재 경로와 정확히 일치하는 탭에만 filled 아이콘·`aria-current="page"`를 적용하고 나머지는 outline 아이콘 | ✅ e2e `smoke/navigation` | [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸), KNK-988 |
 | MY-NAV-04 | P1 | 홈 → 채팅 → 제작 → 마이 순 탭 이동 | 브라우저 뒤로가기 | 탭 이동은 `replace`라 히스토리에 쌓이지 않음(탭 전환 이력을 되짚지 않고 탭 진입 이전 화면·이탈로 이동) | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
-| MY-NAV-05 | P1 | 각 탭 화면 | 상단 헤더 확인 | 홈은 로고만 보이고 `h1` "홈"은 `sr-only`. 채팅·제작·마이는 20px semibold 섹션 라벨을 보더 없이 표시. 게스트의 홈·채팅·제작에는 오른쪽 secondary 로그인 버튼을 표시하고 마이에는 표시하지 않음 | ✅ e2e `smoke/navigation`·`stories/story-list` | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션), KNK-988·1012 |
+| MY-NAV-05 | P1 | 각 탭 화면 | 상단 헤더 확인 | 홈은 로고만 보이고 `h1` "홈"은 `sr-only`. 채팅·제작·마이는 20px semibold 섹션 라벨을 보더 없이 표시. 게스트의 홈·채팅·제작에는 오른쪽 secondary 로그인 버튼과 그 오른쪽 공지사항 아이콘 버튼을, 회원에게는 공지사항 버튼만 표시하고 마이에는 둘 다 표시하지 않음(공지 케이스는 MY-NOTICES) | ✅ e2e `smoke/navigation`·`stories/story-list` | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션), KNK-988·1012 |
 | MY-NAV-06 | P1 | `/my/feedback`·`/my/invite`·`/my/account-deletion`·`/login` | 각 화면 진입 | 상단 헤더·하단 탭 없이 뒤로가기 헤더만 표시 | 수동 | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-07 | P2 | 하단 안전 영역이 있는 기기(iOS 등) | 하단 탭 확인 | 링크 상하 패딩 16px + `safe-area-inset-bottom` 추가 확보로 탭이 잘리지 않음 | ◐ e2e `smoke/navigation`(패딩만) | [웹 검수](../spec/3-2-web-spec.md#3-2-7-검수) |
 | MY-NAV-08 | P2 | 구경로 `/more`·`/more/invite`·`/more/feedback` 진입 | 관찰 | 리다이렉트 없이 Not Found 표시(구경로 shim을 두지 않는 방침) | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
