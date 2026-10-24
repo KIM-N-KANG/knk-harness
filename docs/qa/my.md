@@ -255,7 +255,7 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| MY-NOTICES-01 | P0 | 게스트, 30일 안에 게시된 공지 있음, 읽음 기록 없음 | 홈 진입 → 헤더 확인 | 오른쪽에 secondary 로그인 버튼, 그 오른쪽에 종(알림) 아이콘 버튼(접근 이름 "새 공지사항 있음")과 아이콘 오른쪽 위 빨간 점 | ✅ e2e `notices/notices` | FE-SCREEN-014 진입점·안 읽은 공지 표시 |
+| MY-NOTICES-01 | P0 | 게스트, 30일 안에 게시된 공지 있음, 읽음 기록 없음 | 홈 진입 → 헤더 확인 | 오른쪽에 secondary 로그인 버튼, 그 오른쪽에 확성기 아이콘 버튼(접근 이름 "새 공지사항 있음")과 아이콘 오른쪽 위 빨간 점 | ✅ e2e `notices/notices` | FE-SCREEN-014 진입점·안 읽은 공지 표시 |
 | MY-NOTICES-02 | P0 | 회원, 안 읽은 알림 0건 | 채팅·제작·마이 진입 → 헤더 확인 | 채팅·제작에는 로그인 버튼 없이 종 버튼(접근 이름 "알림", `/notifications`로 이동)만, 마이 헤더에는 종 버튼 없음. 회원 헤더에서 공지사항으로 바로 가는 버튼은 없음 | ✅ e2e `notices/notices` | [웹 상단 헤더](../spec/3-2-web-spec.md#화면-전환-규칙), FE-SCREEN-015 진입점 |
 | MY-NOTICES-13 | P0 | 게스트/회원, 읽음 기록 없음, 공지 있음 | 마이 > 알림 섹션 확인 → "공지사항" 메뉴 탭 → 목록만 보고 뒤로가기 | 알림 설정(회원만) 아래 확성기 아이콘 "공지사항" 메뉴와 라벨 오른쪽 연한 빨간 "새 공지" 배지. 탭하면 `/notices`, 목록만 보고 돌아오면 배지가 그대로 남음 | ✅ e2e `notices/notices` | FE-SCREEN-014 진입점·안 읽은 공지 표시 |
 | MY-NOTICES-03 | P0 | 게스트, 읽음 기록 없음, 공지 2건(모두 30일 안, 태그 UPDATE·MAINTENANCE) | 헤더 공지 버튼 탭 → 목록 확인 → 첫 줄 탭 → 뒤로가기 → 뒤로가기 | `/notices`로 이동, "공지사항" 뒤로가기 헤더, 줄마다 태그 배지("업데이트" 보조색, "점검" 주의색)·제목·게시일(`YYYY-MM-DD`)이 좌우를 채우고 두 줄 모두 굵은 제목과 제목 끝 작은 빨간 점(sr 텍스트 "새 공지"). 상세를 열면 `manyak:notice-read-ids`에 그 ID가 기록되고 목록으로 돌아오면 그 줄만 점이 꺼짐. 홈으로 돌아와도 안 읽은 공지가 남아 헤더 점 유지 | ✅ e2e `notices/notices` | FE-SCREEN-014 안 읽은 공지 표시·목록 |
@@ -289,7 +289,7 @@ Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| MY-INBOX-01 | P0 | 게스트 | `/notifications` 직접 진입 → 홈 헤더 확인 | 로그인 화면으로 교체 이동. 홈 헤더 종 버튼은 `/notices`로 가는 공지사항 버튼 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점 |
+| MY-INBOX-01 | P0 | 게스트 | `/notifications` 직접 진입 → 홈 헤더 확인 | 로그인 화면으로 교체 이동. 홈 헤더에는 `/notices`로 가는 확성기 아이콘 공지사항 버튼 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점 |
 | MY-INBOX-02 | P0 | 회원, 안 읽은 수 total 2(소식 1·활동 1) | 홈 진입 → 헤더 종 버튼 탭 | 종 버튼 접근 이름 "새 알림 있음"과 오른쪽 위 빨간 점, 로그인 버튼 없음. 탭하면 `/notifications`, "알림" 뒤로가기 헤더, 소식 탭이 선택되고 두 탭 라벨 옆에 점 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점·구성 |
 | MY-INBOX-03 | P0 | 소식 2건(안 읽은 공지 알림 태그 UPDATE, 읽은 이벤트 알림) | 소식 탭 카드 확인 | 카드마다 분류 라벨(공지는 "업데이트", 이벤트는 "이벤트")·상대 시각·제목·본문. 안 읽은 카드만 굵은 제목과 제목 끝 빨간 점(sr "안 읽음"), 읽은 카드는 보조색 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 카드 |
 | MY-INBOX-04 | P0 | 안 읽은 공지 알림, 상세 200 | 카드 탭 → 뒤로가기 | `POST .../{notificationId}/read` 1회 뒤 `/notices/{noticeId}` 상세로 이동. 돌아오면 그 카드의 점이 꺼지고 소식 탭 라벨 점도 꺼짐 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 읽음과 이동 |
