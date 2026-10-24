@@ -282,14 +282,15 @@
 |---|---|---|
 | 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 14회(`_active` 5, `_new` 4, 평균 2, MAU 3), 사용자 수 조회 없음<br>MAU는 `_active` 3회이고 `start` 09-22, `end` 10-21, Android 외와 앱·국내와 앱·해외 로그인 조건<br>앱·해외 로그인 조건은 `_active`와 MAU에만 있음<br>세분화에는 `g`와 `s`가 없음 |
 | MAU 값 | MAU 세분화 응답의 `seriesCollapsed` Android 외 1100, 앱·국내 90, 앱·해외 로그인 10, 일별 `series` 합 3000 | `monthlyActiveUsers` 1200 |
+| MAU 기간 중 조건 변경 | 30일 가운데 앞 10일은 국내 웹, 뒤 20일은 해외 로그인 앱으로 활동한 사용자 하나 | Android 외 1, 앱·해외 로그인 1이라 `monthlyActiveUsers`에 2로 듦 |
 | MAU 비용과 키 | 같은 `to`로 두 번 요청 | 처음에만 MAU 조회 비용 90 예약<br>범위 지표 키는 MAU 조회 정의와 09-22, 10-21 |
 | 세션 날짜 형식 | 세션 응답 `xValues`가 `2026-10-22T00:00:00` | 그 값이 2026-10-22 항목에 들어감 |
 | 리텐션 코호트 키 | 리텐션 응답의 코호트 키 `Oct 23, 2026` | 코호트 날짜 2026-10-23으로 저장하고 응답 |
 | 플랫폼별 값 | `_active` Android 외 11, 웹 10, 앱·국내 2, 앱·해외 로그인 1, 플랫폼 없음 2<br>`_new` Android 외 5, 앱·국내 1 | `activeUsers`의 `all` 14, `web` 10, `android` 3, `unknown` 2<br>`newVisitors`의 `all` 6, `android` 1<br>셋의 합 15와 `all`이 달라도 그대로 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 366일<br>367일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`와 `platform` `is not` `Android`, Web은 `country`와 `platform` `Web`, Android는 `country`와 `platform` `Android`, `user_id` 조건 없음, 예산 계수기 168 증가 |
-| 리텐션 전체 합 | 같은 코호트의 인덱스 1이 Android 외 `count` 4와 `outof` 15, 앱·국내 `count` 1과 `outof` 5 | `all`의 `d1` 0.25 |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`만, Web은 `country`와 `platform` `Web`, Android는 `country`와 `platform` `Android`, `user_id` 조건 없음, 예산 계수기 168 증가 |
+| 플랫폼 전환 복귀 | 10-20에 웹에서 처음 방문하고 10-21에 앱으로만 활동한 국내 사용자 | 10-20 코호트의 `all` `d1`에 복귀로 듦<br>`web` `d1`에는 복귀로 들지 않고 `android` 코호트에는 없음 |
 | 리텐션 인덱스 | 코호트 배열의 인덱스 1이 `count` 5와 `outof` 20, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d7` `null`, `d30` `null` |
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `user_id` 조건 없음, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
@@ -299,6 +300,7 @@
 | 누적 가입자 | 범위 첫날 전에 가입한 회원 5명(그중 탈퇴 1), 범위 첫날 2명, 둘째 날 1명(탈퇴), 팀 계정 1명<br>끝 날짜가 오늘 | `cumulativeSignups` 7, 8<br>마지막 값이 같은 데이터의 요약 `members.total` 8과 같음 |
 | 가입 경로 | 연동이 없는 회원 | `other` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
+| 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |
 | 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `country`와 `platform` `Android`, `user_id` 조건 없음<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
@@ -358,6 +360,8 @@
 | 다른 태스크가 먼저 저장 | 예산 예약 뒤 호출 직전에 다른 서비스 인스턴스가 같은 키의 날짜를 저장 | 그 날짜는 조회하지 않음 |
 | 배포 후 유지 | 서비스 인스턴스를 새로 만들어 메모리 상태 없이 같은 지난 범위 요청 | 대역 호출 없이 저장 값으로 200, `admin_analytics_refreshed` 기록 없음 |
 | 정의 변경 | 코호트 ID 설정을 바꾼 뒤 같은 범위 요청 | 매개변수 해시가 달라 새 키로 다시 조회, 옛 행은 남음 |
+| 같은 사용자의 국내와 해외 | 한 앱 사용자가 같은 날 국가 한국 이벤트와 국가 미국 로그인 이벤트를 남김, 웹 활동 없음 | 앱·국내 1, 앱·해외 로그인 1이라 `android` 2, `total` 2 |
+| 합을 이루는 조회 하나 실패 | 빈 저장소에서 앱·해외 로그인 `_active` 조회만 대역 500, 나머지 조회 성공 | 나머지 값은 저장, 준비된 날짜가 없어 503<br>`android`와 `total`을 앱·국내 값만으로 내지 않음<br>쿨다운 뒤 실패한 조회부터 다시 보냄 |
 | 국가 조건 변경 뒤 | 결정 29 전 조건으로 저장된 분석 지표 행이 있는 범위 요청 | 웹과 앱·국내 행은 해시가 같아 그대로 쓰고 앱·해외 로그인 조회만 새 키로 받음 |
 | 저장 실패 | upsert 예외 | 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |

@@ -1336,9 +1336,9 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `total` | `integer` | `web`과 `android`의 합 |
 | `web` | `integer` | 웹 조건의 고유 사용자 수 |
-| `android` | `integer` | 활성 사용자는 앱·국내와 앱·해외 로그인 조회의 합<br>신규 사용자는 앱·국내 조회 값 |
+| `android` | `integer` | 활성 사용자는 앱·국내와 앱·해외 로그인의 조건별 고유 사용자 수의 합<br>신규 사용자는 앱·국내 조회 값 |
 
-- 같은 사람이 같은 날 두 플랫폼에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 두 번 든다.
+- `total`과 `android`는 조건별 고유 사용자 수의 합이다. 같은 사람이 같은 날 웹과 앱에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 두 번 든다. 같은 날 국내와 해외에서 앱을 쓰면 `android`에 두 번 든다.
 - 조회 조건은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
 - 값은 분석 도구가 집계한 것이며 코호트 ID가 설정돼 있으면 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
 
@@ -1795,7 +1795,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 Android 외 조회 값에 `android`를 더한 값이다. `android`는 활성 사용자가 앱·국내와 앱·해외 로그인의 합이고 신규 방문자와 사용자당 전송 수는 앱·국내 값이다. Web과 플랫폼 없음에서 함께 활동한 사용자는 `all`에 한 번만 들어 나머지 셋의 합이 `all`보다 클 수 있다. Android와 다른 플랫폼에서 함께 활동한 사용자는 `all`에 두 번 든다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 Android 외 조회 값에 `android`를 더한 값이다. `android`는 활성 사용자가 앱·국내와 앱·해외 로그인의 합이고 신규 방문자와 사용자당 전송 수는 앱·국내 값이다. 합은 조건별 고유 사용자 수의 합이라 같은 날 여러 조건으로 활동한 사용자는 조건마다 한 번씩 든다. Web과 플랫폼 없음에서 함께 활동한 사용자는 `all`에 한 번만 들어 나머지 셋의 합이 `all`보다 클 수 있다. Android와 다른 플랫폼에서 함께 활동한 사용자는 `all`에 두 번 든다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
@@ -1813,7 +1813,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 Android 외, 앱·국내, 앱·해외 로그인 세분화 응답의 `seriesCollapsed` 값의 합이며 일별 값의 합이 아님<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 Android 외, 앱·국내, 앱·해외 로그인 세분화 응답의 `seriesCollapsed` 값의 합이며 일별 값의 합이 아님<br>30일 안에 조건을 넘나든 사용자는 조건마다 한 번씩 듦<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
@@ -1858,7 +1858,7 @@ Authorization: Bearer {adminToken}
 | `asOf`, `from`, `to` | | 분석 지표와 같음 |
 | `pendingDates` | `string[]` | 아직 값을 받지 못해 `cohorts`에서 뺀 코호트 날짜<br>그 밖은 분석 지표와 같음 |
 | `platforms` | `object[]` | `all`, `web`, `android` 세 항목 |
-| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 Android 외 코호트와 앱·국내 코호트의 `count`와 `outof`를 더해 계산<br>`android`는 앱·국내 코호트 |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 플랫폼 조건 없는 국내 조건 코호트<br>`web`은 웹 조건, `android`는 앱·국내 조건 코호트이며 시작과 복귀가 같은 플랫폼일 때만 복귀로 셈 |
 | `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `platforms[].cohorts[].date` | `string` | 신규 방문일 |
 | `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
@@ -2065,7 +2065,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱·국내와 앱·해외 로그인의 합, `all`은 Android 외와 `android`의 합 |
+| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱·국내와 앱·해외 로그인의 합, `all`은 Android 외와 `android`의 합<br>건수는 조건별 건수의 합이고 사용자 수는 조건별 고유 사용자 수의 합 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
