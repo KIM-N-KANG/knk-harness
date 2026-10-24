@@ -422,8 +422,9 @@ Content-Type: application/json
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - `title`, `body`, `tag`, `notificationTitle`, `notificationBody` 중 하나는 있어야 한다. `null`은 생략과 같다.
-- 알림 문구가 `null`인 공지에 알림 문구를 넣을 때는 `notificationTitle`과 `notificationBody`를 함께 보낸다.
 - 알림 문구는 `notifiedAt`이 `null`인 공지에서만 바꾼다. 이미 요청한 알림은 공지를 수정해도 바뀌지 않는다.
+- 알림 문구 검사는 `null`을 생략으로 처리한 뒤 남은 `notificationTitle`, `notificationBody` 값에 적용한다. 길이와 공백의 형식 검사가 먼저이고 그다음 공지 상태를 본다.
+- 남은 값이 있고 공지의 `notifiedAt`이 있으면 409다. `notifiedAt`이 `null`이고 기존 알림 문구도 `null`인데 둘 중 하나만 남았으면 400이다.
 
 <br>
 
@@ -431,9 +432,9 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 다섯 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, 알림 문구가 `null`인 공지에 알림 제목이나 본문 하나만 보냄, `reason` 누락 또는 `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 다섯 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, `notifiedAt`과 기존 알림 문구가 모두 `null`인 공지에 알림 제목이나 본문 하나만 보냄, `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
-| 409 | `CONFLICT` | `notifiedAt`이 있는 공지에 `notificationTitle`이나 `notificationBody`를 보냄 |
+| 409 | `CONFLICT` | `null`을 생략으로 처리한 뒤 `notificationTitle`이나 `notificationBody` 값이 남았고 `notifiedAt`이 있는 공지 |
 
 <br>
 
