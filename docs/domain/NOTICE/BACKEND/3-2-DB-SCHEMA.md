@@ -52,6 +52,8 @@ erDiagram
 | `title` | varchar(100) | NOT NULL | |
 | `body` | text | NOT NULL, CHECK 길이 1~5000 | 줄바꿈이 있는 평문 |
 | `tag` | varchar(16) | NOT NULL, CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 태그<br>컬럼 추가 마이그레이션이 기존 행을 `SERVICE`로 채우며 기본값은 두지 않음 |
+| `notification_title` | varchar(100) | CHECK 알림 본문과 함께 NULL이거나 함께 값 | 알림 제목<br>광고 표기 없이 저장<br>이 열을 더하기 전에 만든 공지는 NULL |
+| `notification_body` | varchar(300) | | 알림 본문<br>이 열을 더하기 전에 만든 공지는 NULL |
 | `status` | varchar(10) | NOT NULL, 기본 `DRAFT`, CHECK `DRAFT` `PUBLISHED` | |
 | `published_at` | timestamptz | CHECK `PUBLISHED`이면 NOT NULL | 마지막 게시 시각<br>게시 해제해도 남고 다시 게시하면 갱신 |
 | `notified_at` | timestamptz | | 알림을 요청한 시각<br>NULL이면 요청한 적 없음 |

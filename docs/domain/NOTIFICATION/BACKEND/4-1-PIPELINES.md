@@ -586,7 +586,7 @@ flowchart LR
 | `STORY_COMPLETED` | 완성 요청 행의 완료 기록 | 제작 회원 | `스토리가 완성됐어요`<br>스토리 제목 | `/stories/{storyId}` | 스토리 |
 | `STORY_MODERATION_COMPLETED` | 제출본의 종료 기록 | 제출 회원 | 결과별 문구([4-2-10 푸시 데이터](4-2-CONTRACT.md#4-2-10-푸시-데이터)) | `/studio` | 스토리가 있을 때만 |
 | `ATTENDANCE_REMINDER` | 출석 회차 | 활성, 광고 동의, 당일 출석 미수령 | 광고 표기가 붙은 템플릿 문구 | `/my/credits?tab=free` | 없음 |
-| `NOTICE` | 서비스 종류 캠페인 회차 | 활성 회원 전원 | 공지 제목<br>본문 앞 300자 | `/notices/{noticeId}` | 공지와 공지 태그 |
+| `NOTICE` | 서비스 종류 캠페인 회차 | 활성 회원 전원 | 공지의 알림 제목<br>알림 본문 | `/notices/{noticeId}` | 공지와 공지 태그 |
 | `PROMOTION` | 광고 종류 캠페인 회차 | 활성, 광고 동의 | 광고 표기가 붙은 제목<br>본문 | 광고성 공지는 `/notices/{noticeId}`<br>이동 대상 스토리는 `/stories/{storyId}`<br>둘 다 없으면 없음 | 광고성 공지는 공지와 공지 태그<br>그 외는 스토리 |
 
 **2. 종류와 분류**

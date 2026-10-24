@@ -85,6 +85,8 @@
 | `title` | `string` | |
 | `tag` | `string` | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`([4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시)) |
 | `body` | `string` | 목록에서는 생략 |
+| `notificationTitle` | `string / null` | 알림 제목<br>목록에서는 생략<br>알림 문구가 생기기 전에 만든 공지는 `null` |
+| `notificationBody` | `string / null` | 알림 본문<br>목록에서는 생략<br>`notificationTitle`과 함께 `null` |
 | `status` | `string` | `DRAFT`<br>`PUBLISHED` |
 | `publishedAt` | `string / null` | 마지막 게시 시각<br>게시한 적 없으면 `null` |
 | `notifiedAt` | `string / null` | 알림 요청 시각<br>요청한 적 없으면 `null` |
@@ -339,9 +341,12 @@ Authorization: Bearer {adminToken}
 | `title` | `string` | 필수 | 1~100자 |
 | `body` | `string` | 필수 | 1~5,000자 |
 | `tag` | `string` | 필수 | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION` |
+| `notificationTitle` | `string` | 필수 | 알림 제목, 1~100자<br>광고 표기 없이 |
+| `notificationBody` | `string` | 필수 | 알림 본문, 1~300자 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 생성된 공지는 초안이다.
+- 푸시와 알림 내역의 제목과 본문은 알림 문구를 그대로 쓴다. 광고성 태그면 알림 도메인이 제목 앞에 광고 표기를 붙인다.
 
 <br>
 
@@ -368,6 +373,8 @@ Content-Type: application/json
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
   "tag": "SERVICE",
+  "notificationTitle": "새로운 점검 안내가 도착했어요",
+  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "reason": "정기 점검 공지"
 }
 ```
@@ -380,6 +387,8 @@ Content-Type: application/json
   "title": "10월 25일 새벽 점검 안내",
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
+  "notificationTitle": "새로운 점검 안내가 도착했어요",
+  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "status": "DRAFT",
   "publishedAt": null,
   "notifiedAt": null,
@@ -408,10 +417,13 @@ Content-Type: application/json
 | `title` | `string` | 선택 | 1~100자<br>생략하면 유지 |
 | `body` | `string` | 선택 | 1~5,000자<br>생략하면 유지 |
 | `tag` | `string` | 선택 | 다섯 태그 중 하나<br>생략하면 유지 |
+| `notificationTitle` | `string` | 선택 | 1~100자<br>생략하면 유지 |
+| `notificationBody` | `string` | 선택 | 1~300자<br>생략하면 유지 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- `title`, `body`, `tag` 중 하나는 있어야 한다. `null`은 생략과 같다.
-- 게시된 공지의 태그를 바꿔도 이미 요청한 알림은 바뀌지 않는다.
+- `title`, `body`, `tag`, `notificationTitle`, `notificationBody` 중 하나는 있어야 한다. `null`은 생략과 같다.
+- 알림 문구가 `null`인 공지에 알림 문구를 넣을 때는 `notificationTitle`과 `notificationBody`를 함께 보낸다.
+- 알림 문구는 `notifiedAt`이 `null`인 공지에서만 바꾼다. 이미 요청한 알림은 공지를 수정해도 바뀌지 않는다.
 
 <br>
 
@@ -419,8 +431,9 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 세 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, `reason` 누락 또는 `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 다섯 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, 알림 문구가 `null`인 공지에 알림 제목이나 본문 하나만 보냄, `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
+| 409 | `CONFLICT` | `notifiedAt`이 있는 공지에 `notificationTitle`이나 `notificationBody`를 보냄 |
 
 <br>
 
@@ -458,7 +471,7 @@ Content-Type: application/json
 |---|---|---|
 | 400 | `BAD_REQUEST` | `reason` 누락 |
 | 404 | `NOT_FOUND` | 없는 공지 |
-| 409 | `CONFLICT` | 이미 게시된 공지 |
+| 409 | `CONFLICT` | 이미 게시된 공지<br>`notifiedAt`이 `null`이고 알림 문구가 `null`인 공지 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -483,6 +496,8 @@ Content-Type: application/json
   "title": "10월 25일 새벽 점검 안내",
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
+  "notificationTitle": "새로운 점검 안내가 도착했어요",
+  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "status": "PUBLISHED",
   "publishedAt": "2026-10-21T02:00:00Z",
   "notifiedAt": "2026-10-21T02:00:00Z",
@@ -575,5 +590,5 @@ Content-Type: application/json
 
 | 연산 | 입력 | 결과 |
 |---|---|---|
-| 공지 발송 요청 | 공지 공개 식별자, 제목, 알림 본문, 유형, 태그, 딥링크 | 캠페인 1건<br>호출자의 트랜잭션에 참여 |
+| 공지 발송 요청 | 공지 공개 식별자, 알림 제목, 알림 본문, 유형, 태그, 딥링크 | 캠페인 1건<br>호출자의 트랜잭션에 참여 |
 | 변경 감사 기록 | 관리자, 작업 이름, 대상 종류 `NOTICE`, 공지 공개 식별자, 사유, 변경 전후 값 | 감사 로그 행 |
