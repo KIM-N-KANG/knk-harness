@@ -36,7 +36,7 @@
 | Amplitude 키 | 둘 중 하나라도 비면 분석 도구 지표는 저장 값만 응답하고 저장 값도 없으면 사용 불가<br>기동은 정상 |
 | Amplitude | 연결할 수 없으면 분석 도구 지표의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답 |
 | Langfuse 키와 환경 이름 | 하나라도 비면 AI 비용만 사용 불가<br>기동은 정상 |
-| Langfuse | 연결할 수 없으면 AI 비용의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답 |
+| Langfuse | 연결할 수 없으면 AI 비용의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답<br>보관 기간(기본 30일)이 지난 날짜는 다시 받을 수 없어 배치가 매일 저장 |
 | Play 서비스 계정 키 | 비면 설치 지표만 사용 불가<br>기동은 정상<br>키는 첫 보고서 조회 때 해석하므로 base64나 서비스 계정 JSON이 아니어도 기동은 정상이고 설치 지표만 사용 불가<br>그때 로그 `reason`은 HTTP 상태 없는 `http_error` |
 | Google Cloud Storage | 연결할 수 없으면 설치 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
 | CloudWatch, ECS | 권한이 없거나 연결할 수 없으면 인프라 지표만 사용 불가<br>기동은 정상<br>그 범위의 캐시가 있으면 캐시로 응답 |
@@ -96,6 +96,7 @@
 | `MANYAK_ADMIN_LANGFUSE_PUBLIC_KEY` | 빈 값 | 같은 시크릿의 `AI_LANGFUSE_PUBLIC_KEY` | 공개 API 키 |
 | `MANYAK_ADMIN_LANGFUSE_SECRET_KEY` | 빈 값 | 같은 시크릿의 `AI_LANGFUSE_SECRET_KEY` | 비밀 키<br>로그와 응답에 넣지 않음 |
 | `MANYAK_ADMIN_LANGFUSE_ENVIRONMENT` | 빈 값 | 운영 태스크 정의에 직접 기록 | Langfuse 관측의 환경 이름<br>운영 AI가 Langfuse에 남기는 환경 이름과 같아야 함 |
+| `MANYAK_ADMIN_LANGFUSE_RETENTION_DAYS` | `30` | 주입 없음 | Langfuse 요금제의 데이터 보관 일수<br>보관 시작일 계산에 쓰고 요금제를 바꾸면 함께 바꿈 |
 
 - 개발 서버는 주입하지 않아 AI 비용이 사용 불가다.
 - 태스크 정의에 세 시크릿 참조와 환경 이름을 추가해야 주입된다.
@@ -231,6 +232,7 @@
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 `ecs.services` 3개의 `runningTasks` 1 이상, 모든 묶음이 `null` 아님<br>사용 불가면 `admin_infra_metrics_fetch_failed`의 `reason` |
 | AI 비용 | 기본 범위의 AI 비용 응답 | 성공 응답, `unmapped` 빈 배열, 비용이 있는 날짜의 `costKrw`가 `null`이 아님<br>사용 불가면 `admin_ai_cost_fetch_failed`의 `reason` |
+| AI 비용 백필 | 배포 뒤 첫 몇 실행의 Langfuse 호출과 저장 행 | 보관 시작일부터 KST 오늘 − 2일까지 모든 날짜에 `langfuse_ai_cost` 확정 행이 있음<br>`admin_ai_cost_fetch_failed`의 `status` 400이 없음 |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
 
 <br>
@@ -249,5 +251,6 @@
 | 설치 지표가 계속 사용 불가 | `admin_play_stats_fetch_failed`의 `reason`과 `status` | `no_credentials`면 운영 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 권한 거부 상태면 서비스 계정의 버킷 읽기 권한<br>`http_error`에 상태가 없으면 키의 base64와 JSON 형식, 그다음 저장소 연결<br>`no_reports`면 Play Console의 보고서 생성 여부와 패키지 이름<br>`parse_error`면 보고서 형식 변경 |
 | 인프라 지표가 계속 사용 불가 | `admin_infra_metrics_fetch_failed`의 `reason`, `service`, `error_code` | `not_configured`면 운영 태스크 정의의 인프라 지표 환경 변수<br>`access_denied`면 서버 태스크 역할의 정책과 `service`의 권한<br>`throttled`면 60초 뒤 다시 시도<br>`incomplete`면 `error_code`를 보고 60초 뒤 다시 시도하며 `Forbidden`이면 태스크 역할 정책<br>`timeout`이나 `aws_error`면 NAT 경로와 AWS 상태 |
 | AI 비용이 계속 사용 불가 | `admin_ai_cost_fetch_failed`의 `reason`과 `status` | `not_configured`면 운영 태스크 정의의 Langfuse 시크릿 참조와 환경 이름<br>`http_error`에 401이면 키 값<br>`rate_limited`면 호출 제한이 풀린 뒤 다시 시도<br>`parse_error`면 Metrics API 응답 형식과 서버 구현 |
+| AI 비용 조회가 400 | `admin_ai_cost_fetch_failed`의 `status` 400과 요청 구간 | 보관 일수 설정이 실제 Langfuse 보관 기간보다 길면 보관 시작일이 너무 이름<br>`MANYAK_ADMIN_LANGFUSE_RETENTION_DAYS`를 줄임 |
 | AI 비용이 0이거나 `unmapped`만 있음 | 응답의 `unmapped`와 Langfuse 추적 이름 | 환경 이름 설정과 추적 이름 매핑 표 |
 | 인프라 지표의 한 묶음만 비어 있음 | 응답에서 `null`인 묶음 | 그 묶음의 환경 변수, OpenSearch는 계정 ID까지 |

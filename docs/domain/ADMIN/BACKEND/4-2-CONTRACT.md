@@ -2160,8 +2160,11 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf`, `from`, `to` | | 대시보드 차트와 같음<br>`asOf`는 Langfuse 값을 받은 시각 가운데 가장 이른 시각 |
-| `pendingDates` | `string[]` | Langfuse 값을 아직 받지 못해 `daily`의 비용을 비운 KST 날짜<br>오름차순, 비어 있으면 범위 전체가 준비됨 |
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음<br>`asOf`는 응답에 쓴 Langfuse 값을 받은 시각 가운데 가장 이른 시각<br>Langfuse 값을 하나도 쓰지 않았으면 `asOf`는 `null` |
+| `pendingDates` | `string[]` | 보관 기간 안에서 Langfuse 값을 아직 받지 못해 `daily`의 비용을 비운 KST 날짜<br>오름차순, 보관 기간 밖 날짜는 넣지 않음 |
+| `expiredDates` | `string[]` | Langfuse 보관 기간이 지나 조회하지 않았고 저장 값도 없어 `daily`의 비용을 비운 KST 날짜<br>오름차순 |
+| `retentionDays` | `integer` | Langfuse 보관 일수<br>설정값 |
+| `retentionStartDate` | `string` | Langfuse에 조회하는 가장 이른 KST 날짜<br>오늘에서 (`retentionDays` − 2)일 전 |
 | `currency` | `string` | 항상 `KRW` |
 | `usdKrwRate` | `number` | Langfuse 비용(USD)을 원화로 바꾼 환율<br>설정값 |
 | `chatImageUnitCostKrw` | `number` | 실시간 이미지 장당 원가<br>설정값이며 초기값 48 |
@@ -2173,13 +2176,13 @@ Authorization: Bearer {adminToken}
 | `daily[].byFeature[].calls` | `integer` | AI 호출 기록의 성공 호출 수<br>Langfuse에만 있는 조합은 0 |
 | `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수<br>`chat_image`는 항상 0 |
 | `daily[].byFeature[].inputTokens`, `outputTokens` | `integer` | AI 호출 기록의 토큰 합<br>토큰 수가 없는 호출은 0으로 더함<br>`chat_image`는 항상 0 |
-| `daily[].byFeature[].costKrw` | `number / null` | Langfuse 비용 합 × `usdKrwRate`<br>Langfuse에 그 조합의 비용이 없으면 `null`<br>그 날짜가 `pendingDates`에 있으면 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 Langfuse를 쓰지 않음 |
+| `daily[].byFeature[].costKrw` | `number / null` | Langfuse 비용 합 × `usdKrwRate`<br>Langfuse에 그 조합의 비용이 없으면 `null`<br>그 날짜가 `pendingDates`나 `expiredDates`에 있으면 `null`<br>`chat_image`는 `calls × chatImageUnitCostKrw`이고 Langfuse를 쓰지 않음 |
 | `unmapped` | `object[]` | 기능 매핑 표에 없는 Langfuse 추적 이름의 범위 비용 |
 | `unmapped[].traceName` | `string` | Langfuse 추적 이름 |
 | `unmapped[].costKrw` | `number` | 범위 비용 합 × `usdKrwRate` |
 | `totals` | `object` | 범위 합계 |
-| `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합 |
-| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 전체 호출 수<br>호출이 0이면 `null` |
+| `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합<br>`pendingDates`와 `expiredDates`의 날짜는 실시간 이미지 비용만 더해짐 |
+| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 호출 수이며 `pendingDates`와 `expiredDates` 날짜의 호출은 뺌<br>호출이 0이면 `null` |
 | `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
 | `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량(토큰 합)은 있으나 비용 합이 0인 모델 이름<br>단가가 없는지, 정상 0원인지, 일부 관측의 비용이 빠졌는지는 구별하지 않음<br>이름은 호환을 위해 유지 |
 
@@ -2188,6 +2191,7 @@ Authorization: Bearer {adminToken}
 - 간편 제작의 표지와 인물 이미지 생성 비용은 `스토리 컴파일` 추적에 들어 있어 `story_completion`에 포함된다. 채팅의 실시간 이미지 생성 관측은 Langfuse 합에서 빼고 장당 원가로 더한다.
 - 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
 - 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.
+- 보관 기간 밖 날짜는 서버가 미리 저장한 값으로만 응답한다. 배치가 날짜마다 확정 값을 저장하므로 배포 뒤 날짜는 보관 기간이 지나도 값이 남는다.
 
 <br>
 
@@ -2196,7 +2200,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
-| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 범위의 저장 값도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | Langfuse 키나 환경 설정이 비어 있음<br>Langfuse 호출 실패, 호출 제한, 시간 초과, 응답 형식 오류, 실패 뒤 쿨다운 중이고 보관 기간 안 날짜의 저장 값도 없음 |
 
 <br>
 
