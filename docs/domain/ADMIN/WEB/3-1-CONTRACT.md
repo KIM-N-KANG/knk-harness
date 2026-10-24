@@ -21,6 +21,7 @@
 | 유입 분석 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-21 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-간편-제작-퍼널) |
 | 유입 분석 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-22 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-상세-진입-퍼널) |
 | 유입 분석 유입 소스 | `GET /api/campaigns/sources` | [4-2-23 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-유입-소스) |
+| 유입 분석 푸시 열람 | `GET /api/campaigns/push-opens` | [4-2-35 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-35-푸시-열람) |
 | 사용자 활동 | `GET /api/users/activity` | [4-2-24 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-24-사용자-활동) |
 | 리텐션 | `GET /api/users/retention` | [4-2-25 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-리텐션) |
 | 세션 | `GET /api/users/sessions` | [4-2-26 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-세션) |

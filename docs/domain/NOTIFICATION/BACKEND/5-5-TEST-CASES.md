@@ -238,6 +238,8 @@
 | 로컬 모드 | 로컬 모드 완성 알림 발송 | 서버 안 발송기가 결과 행 기록 |
 | 캠페인 집계 | 캠페인 메시지 3건이 도달 2건(기기 3)과 폐기 1건 | 목록과 상세의 `deliveredMembers` 2, `deliveredDevices` 3, `failedDevices` 0 |
 | 캠페인 상세 | 있는 식별자, 없는 식별자, UUID 아님 | 200, 404, 400 |
+| 캠페인 도달 요약 | 선점 시각이 범위 안인 캠페인 2건, 범위 밖 1건, 선점 전에 취소한 1건 | 2건, 도달 회원 수는 캠페인 상세의 `deliveredMembers`와 같음 |
+| 종류별 도달 회원 수 | 출석 리마인드 10-23 도달 3명, 10-24 도달 2명과 폐기 1건 | 10-23 3, 10-24 2 |
 | 시나리오별 날짜별 집계 | 10-20 KST 23:30 `NOTICE` 도달, 10-21 KST 00:10 `NOTICE` 도달, 10-21 `ATTENDANCE_REMINDER` 폐기 | 10-21 `NOTICE` 1건 도달, 10-21 `ATTENDANCE_REMINDER` 요청 1 도달 0, 10-20 `NOTICE` 1건 |
 | 기본 기간 | `from`과 `to` 생략<br>366일 | 오늘까지 7일<br>200과 날짜 행 |
 | 종류 필터 | `kind=MARKETING` | `PROMOTION`과 `ATTENDANCE_REMINDER` 행만 |

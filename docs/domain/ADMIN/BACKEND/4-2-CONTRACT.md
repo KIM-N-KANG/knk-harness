@@ -2436,13 +2436,127 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-35 다른 도메인과의 경계
+### 4-2-35 푸시 열람
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/push-opens` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+관리자 캠페인과 서비스 알림마다 웹에서 푸시와 알림 내역 링크로 연 열람 수를 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 분석 지표와 같음 |
+| `pendingDates` | `string[]` | 분석 지표와 같음<br>있으면 열람 수와 열람률은 준비된 날짜만의 값 |
+| `from`, `to` | `string` | 캠페인 추이와 같음 |
+| `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순 |
+| `campaigns[].campaignId` | `string` | 캠페인 공개 식별자 |
+| `campaigns[].kind` | `string` | `SERVICE`, `MARKETING` |
+| `campaigns[].title` | `string` | 광고 표기 없는 제목 |
+| `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
+| `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
+| `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
+| `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>측정할 수 없는 캠페인은 `null` |
+| `campaigns[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
+| `campaigns[].inboxOpens` | `integer / null` | 알림 내역 열람 수<br>측정할 수 없는 캠페인은 `null` |
+| `serviceTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목 |
+| `serviceTypes[].type` | `string` | 시나리오 식별자 |
+| `serviceTypes[].deliveredMembers` | `integer` | 범위 날짜별 도달 회원 수의 합 |
+| `serviceTypes[].pushOpens` | `integer` | 푸시 열람 수 |
+| `serviceTypes[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`deliveredMembers`가 0이면 `null` |
+| `serviceTypes[].inboxOpens` | `integer` | 알림 내역 열람 수 |
+
+- 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 서버는 값을 자르지 않는다.
+- Android 앱에서 연 알림은 열람 수에 들어가지 않고 도달 회원 수에는 들어간다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/push-opens?from=2026-10-18&to=2026-10-24
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-10-24T05:10:00Z",
+  "pendingDates": [],
+  "from": "2026-10-18",
+  "to": "2026-10-24",
+  "campaigns": [
+    {
+      "campaignId": "4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37",
+      "kind": "SERVICE",
+      "title": "10월 25일 새벽 점검 안내",
+      "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
+      "startedAt": "2026-10-23T02:00:31Z",
+      "deliveredMembers": 412,
+      "pushOpens": 58,
+      "pushOpenRate": 0.1408,
+      "inboxOpens": 21
+    },
+    {
+      "campaignId": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+      "kind": "MARKETING",
+      "title": "가을 이벤트 안내",
+      "noticeId": null,
+      "startedAt": "2026-10-20T10:00:12Z",
+      "deliveredMembers": 230,
+      "pushOpens": null,
+      "pushOpenRate": null,
+      "inboxOpens": null
+    }
+  ],
+  "serviceTypes": [
+    { "type": "STORY_COMPLETED", "deliveredMembers": 96, "pushOpens": 41, "pushOpenRate": 0.4271, "inboxOpens": 9 },
+    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 18, "pushOpens": 6, "pushOpenRate": 0.3333, "inboxOpens": 4 },
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 2104, "pushOpens": 187, "pushOpenRate": 0.0889, "inboxOpens": 12 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-36 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
 | ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
 | PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
-| NOTIFICATION, NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
+| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 종류별 날짜별 도달 회원 수 |
+| NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |

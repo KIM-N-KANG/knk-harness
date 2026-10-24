@@ -138,6 +138,7 @@ NOTIFICATION 패키지는 다른 도메인의 백엔드와 하나의 서버 이�
 | ACCOUNT → NOTIFICATION | 탈퇴 시 토큰과 알림 내역 삭제 호출 |
 | NOTICE → NOTIFICATION | 공지 발송 요청 연산<br>호출자의 트랜잭션에 참여 |
 | NOTIFICATION → ADMIN | 관리자 요청자와 변경 감사 기록 |
+| ADMIN → NOTIFICATION | 푸시 열람 지표의 도달 집계 읽기 조회 |
 | NOTIFICATION → ACCOUNT | 회원 상태와 공개 식별자 조회 |
 | NOTIFICATION → PAYMENT | 출석 멱등 키 존재 판정 |
 | 외부 시스템 | FCM 클라이언트와 발행 포트는 주입으로 분리<br>테스트는 고정 응답 구현으로 대체 |

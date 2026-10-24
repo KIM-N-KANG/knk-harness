@@ -163,7 +163,7 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `params_hash` | char(64) | NOT NULL | 조회 정의의 매개변수를 정해진 순서로 직렬화한 JSON의 SHA-256 16진 문자열 |
 | `params` | jsonb | NOT NULL | 해시를 만든 매개변수 원문<br>운영자가 행의 의미를 확인하는 용도 |
 | `metric_date` | date | NOT NULL | KST 날짜<br>리텐션은 코호트 날짜 |
-| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열<br>`langfuse_ai_cost`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체 배열이고 정상 조회에 데이터가 없던 날은 빈 배열 |
+| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>푸시 열람은 `utm_campaign` 값과 고유 사용자 수 객체 배열<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열<br>`langfuse_ai_cost`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체 배열이고 정상 조회에 데이터가 없던 날은 빈 배열 |
 | `fetched_at` | timestamptz | NOT NULL | Amplitude나 Langfuse에서 받은 시각 |
 | `finalized_at` | timestamptz | | 확정한 시각<br>NULL이면 다시 받을 수 있음 |
 
