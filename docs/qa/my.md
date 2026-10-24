@@ -290,7 +290,7 @@ Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
 | MY-INBOX-01 | P0 | 게스트 | `/notifications` 직접 진입 → 홈 헤더 확인 | 로그인 화면으로 교체 이동. 홈 헤더에는 `/notices`로 가는 확성기 아이콘 공지사항 버튼 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점 |
-| MY-INBOX-02 | P0 | 회원, 안 읽은 수 total 2(소식 1·활동 1) | 홈 진입 → 헤더 종 버튼 탭 | 종 버튼 접근 이름 "새 알림 있음"과 오른쪽 위 빨간 점, 로그인 버튼 없음. 탭하면 `/notifications`, "알림" 뒤로가기 헤더, 소식 탭이 선택되고 두 탭 라벨 옆에 점 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점·구성 |
+| MY-INBOX-02 | P0 | 회원, 안 읽은 수 total 2(소식 1·활동 1) | 홈 진입 → 헤더 종 버튼 탭 | 종 버튼 접근 이름 "새 알림 있음"과 오른쪽 위 빨간 점, 로그인 버튼 없음. 탭하면 `/notifications`, "알림" 뒤로가기 헤더 오른쪽에 보조 버튼 "모두 읽음"과 톱니 아이콘(접근 이름 "알림 설정", `/my/notifications`로 이동), 소식 탭이 선택되고 두 탭 라벨 옆에 점 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 진입점·구성 |
 | MY-INBOX-03 | P0 | 소식 2건(안 읽은 공지 알림 태그 UPDATE, 읽은 이벤트 알림) | 소식 탭 카드 확인 | 카드마다 분류 라벨(공지는 "업데이트", 이벤트는 "이벤트")·상대 시각·제목·본문. 안 읽은 카드만 굵은 제목과 제목 끝 빨간 점(sr "안 읽음"), 읽은 카드는 보조색 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 카드 |
 | MY-INBOX-04 | P0 | 안 읽은 공지 알림, 상세 200 | 카드 탭 → 뒤로가기 | `POST .../{notificationId}/read` 1회 뒤 `/notices/{noticeId}` 상세로 이동. 돌아오면 그 카드의 점이 꺼지고 소식 탭 라벨 점도 꺼짐 | ✅ e2e `notifications/notifications` | FE-SCREEN-015 읽음과 이동 |
 | MY-INBOX-05 | P0 | 활동 2건(안 읽은 완성, 읽은 검토 결과) | 활동 탭 탭 → 카드 확인 → "모두 읽음" 탭 → 뒤로가기 | "스토리 완성"·"검토 결과" 라벨 카드. 모두 읽음은 `POST .../read-all` 1회, 두 탭의 점과 카드 점이 꺼지고 버튼은 비활성. 홈으로 돌아오면 헤더 점이 없고 접근 이름 "알림" | ✅ e2e `notifications/notifications` | FE-SCREEN-015 읽음과 이동 |
