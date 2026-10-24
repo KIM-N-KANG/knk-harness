@@ -2454,6 +2454,7 @@ Authorization: Bearer {adminToken}
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
+- 측정 시작일이 비었거나 범위 전체가 측정 시작일보다 앞서면 분석 도구를 조회하지 않고 200으로 응답한다. 이때 `asOf`는 `null`, `pendingDates`는 빈 배열이다.
 
 <br>
 
@@ -2461,8 +2462,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | 분석 지표와 같음 |
-| `pendingDates` | `string[]` | 분석 지표와 같음<br>있으면 열람 수는 준비된 날짜만 더한 값이고 열람률은 그 열람 수를 전체 도달 회원 수로 나눈 값 |
+| `asOf` | `string / null` | 분석 지표와 같음<br>측정 구간이 없어 조회하지 않았으면 `null` |
+| `pendingDates` | `string[]` | 분석 지표와 같음<br>측정 시작 전 날짜는 넣지 않고 측정 구간이 없으면 빈 배열<br>있으면 열람 수는 준비된 날짜만 더한 값이고 열람률은 그 열람 수를 전체 도달 회원 수로 나눈 값 |
 | `from`, `to` | `string` | 캠페인 추이와 같음 |
 | `measuredFrom` | `string / null` | 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
 | `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순 |
@@ -2472,7 +2473,7 @@ Authorization: Bearer {adminToken}
 | `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
 | `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
-| `campaigns[].openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정 시작 전<br>`NO_LINK` 딥링크 없이 발송해 측정 불가 |
+| `campaigns[].openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정 시작 전<br>`NO_LINK` 딥링크를 넣은 발송 요청이 없어 측정 불가<br>`PENDING` 발송 요청 기록이 아직 없음 |
 | `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `MEASURED`가 아니면 `null` |
 | `campaigns[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
 | `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 측정 시작일 중 늦은 날<br>집계 구간이 없으면 `null` |

@@ -111,7 +111,8 @@
 | 상위 20개 | 소스 30개 | 차트 20개, 수치 표 30개 |
 | 푸시 열람 기본 | 진행 중 캠페인 없음, URL에 `tab=push`만 | 광고 캠페인 선택 숨김, 캠페인 목록을 기다리지 않고 최근 7일로 요청, 출처 표시 "Amplitude" |
 | 푸시 열람 값 | 공지 알림 캠페인 `deliveredMembers` 412, `openState` `MEASURED`, `pushOpens` 58, `pushOpenRate` 0.1408 | "공지" 배지, 정보성, 도달 회원 412명, 푸시 열람 58명, 열람률 14.1% |
-| 측정 상태 | `openState` `NO_LINK`인 캠페인, `BEFORE_MEASUREMENT`인 캠페인 | 푸시 열람과 열람률 칸에 "측정 불가", "측정 시작 전" |
+| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`인 캠페인 | 푸시 열람과 열람률 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음" |
+| 측정 구간 없음 | `asOf` `null`, `pendingDates` 빈 배열 | 집계 기준 시각 표시 없음, 부분 집계 안내 없음, 다시 요청하지 않음 |
 | 열람률 없음 | `openState` `MEASURED`, `pushOpenRate` `null` | "계산할 수 없음" |
 | 열람률 1 초과 | `pushOpenRate` 1.5 | 150.0% |
 | 활동 알림 집계 시작 | `from` 2026-10-18, `activityFrom` 2026-10-21 | 활동 알림 표 위에 "2026-10-21부터 집계했습니다. 그 전은 측정 시작 전입니다." |

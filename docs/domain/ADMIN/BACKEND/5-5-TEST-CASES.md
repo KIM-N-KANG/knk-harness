@@ -252,10 +252,12 @@
 | 푸시 열람 대응 | 묶음 값이 캠페인 공개 식별자, `attendance_reminder`, `KR_META_WEB_ACTIVATION_COLD_202610`, `(none)` | 앞의 둘만 그 캠페인과 출석 리마인드에 들고 나머지는 버림 |
 | 푸시 열람 날짜 합 | 캠페인 하나의 푸시 열람 10-23 30명, 10-24 5명, 도달 100명 | `openState` `MEASURED`, `pushOpens` 35, `pushOpenRate` 0.35 |
 | 열람률 1 초과 | 도달 2명, 날짜별 열람 합 3 | `pushOpenRate` 1.5 |
-| 딥링크 없는 발송 | 마지막 회차의 딥링크 포함 여부가 거짓인 프로모션 | `openState` `NO_LINK`, `pushOpens`와 `pushOpenRate` `null`, `deliveredMembers`는 값 |
+| 딥링크 없는 발송 | 딥링크 포함 여부가 거짓인 프로모션 | `openState` `NO_LINK`, `pushOpens`와 `pushOpenRate` `null`, `deliveredMembers`는 값 |
 | 측정 시작 전 캠페인 | 측정 시작일 10-21, 마지막 회차 선점 10-19 | `openState` `BEFORE_MEASUREMENT`, `pushOpens` `null` |
-| 측정 시작일 미설정 | 설정값 비어 있음 | 대역 호출 없음, 200, `measuredFrom`과 `activityFrom` `null`, 모든 `openState` `BEFORE_MEASUREMENT`, 활동 알림의 `deliveredMembers`는 범위 전체 |
-| 활동 알림 집계 구간 | 범위 10-18~10-24, 측정 시작일 10-21 | 대역 조회 날짜는 10-21~10-24, `activityFrom` 10-21, 활동 알림의 `deliveredMembers`도 10-21~10-24 |
+| 발송 기록 없음 | 딥링크 포함 여부가 `null`인 캠페인(회차 진행 중이거나 커밋 전 실패) | `openState` `PENDING`, `pushOpens`와 `pushOpenRate` `null`, `MEASURED`가 아님 |
+| 측정 시작일 미설정 | 설정값 비어 있음 | 대역 호출 없음, 200, `asOf`와 `measuredFrom`과 `activityFrom` `null`, `pendingDates` 빈 배열, 모든 `openState` `BEFORE_MEASUREMENT`, 활동 알림의 `deliveredMembers`는 범위 전체 |
+| 범위 전체가 측정 전 | 측정 시작일 10-21, 범위 10-10~10-16 | 대역 호출 없음, 200, `asOf` `null`, `pendingDates` 빈 배열, `activityFrom` `null` |
+| 활동 알림 집계 구간 | 범위 10-18~10-24, 측정 시작일 10-21, 예산 부족 없음 | 대역 조회 날짜는 10-21~10-24, `activityFrom` 10-21, 활동 알림의 `deliveredMembers`도 10-21~10-24, `pendingDates`에 10-18~10-20 없음 |
 | 활동 알림 도달 중복 | 같은 회원에게 10-23 스토리 완성 3건 도달 | 그날 도달 회원 1 |
 | 도달 없음 | 활동 알림 도달 0, 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
 | 캠페인 범위 | 선점 시각이 범위 전날인 캠페인, 선점 전에 취소한 캠페인 | 둘 다 `campaigns`에 없음 |
