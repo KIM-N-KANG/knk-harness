@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | 미기재 |
 | 작성일 | 미기재 |
-| 수정일 | 2026-10-19 |
+| 수정일 | 2026-10-24 |
 | 대상 | 마냑 웹 프론트엔드 |
 | 작성 목적 | 마이 메뉴와 계정·이프·초대 기능의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 마이 메뉴 `/my`·회원 탈퇴 `/my/account-deletion`·친구 초대 `/my/invite`·이프 충전 `/my/credits`·페르소나 관리와 생성 `/my/personas`·프로필 수정 `/my/profile/edit`(FE-SCREEN-008), 피드백 `/my/feedback`(FE-SCREEN-006), 서비스 안내 `/about`(FE-SCREEN-011), 공지사항 `/notices`·`/notices/[noticeId]`(FE-SCREEN-014), 하단 탭 네비게이션([§3-2-4](../spec/3-2-web-spec.md)) |
@@ -266,6 +266,18 @@
 | MY-NOTICES-10 | P1 | 상세 404 | 상세 주소 직접 진입 | "공지를 찾을 수 없어요" + "공지사항 목록으로" 링크, 탭하면 `/notices` | ✅ e2e `notices/notices` | FE-SCREEN-014 상태 |
 | MY-NOTICES-11 | P2 | 헤더 점 표시 중, 안 읽은 공지 1건 | 푸시 딥링크로 그 공지 상세 직접 진입 → 홈 복귀 | 그 공지가 읽음으로 기록되고 헤더 점과 마이 배지가 사라짐 | 수동 | FE-SCREEN-014 안 읽은 공지 표시 |
 | MY-NOTICES-12 | P2 | 주소로 바로 연 `/notices` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
+
+Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다. 기준: [Android 공지사항](../spec/3-3-android-spec.md#마이법적-문서), [Android 구조](../design/1-2-android-design.md#1-2-4-내비게이션과-화면).
+
+| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MY-NOTICES-A01 | P0 | Android 회원, 30일 안에 게시된 공지 있음, 읽음 기록 없음 | 홈·채팅·제작 탭 헤더 확인 → 마이 탭 헤더 확인 | 홈·채팅·제작 헤더 오른쪽에 종 아이콘 버튼(접근 이름 "새 공지사항 있음")과 오른쪽 위 빨간 점. 마이 헤더에는 없음 | ✅ 수동(에뮬레이터, `captures/KNK-1819`) | FE-SCREEN-014 진입점 |
+| MY-NOTICES-A02 | P0 | Android 회원, 안 읽은 공지 있음 | 마이 > 알림 섹션 확인 | 알림 설정 아래 확성기 아이콘 "공지사항" 메뉴와 라벨 오른쪽 연한 빨간 "새 공지" 배지. 탭하면 목록 | ✅ 수동(에뮬레이터) | FE-SCREEN-014 진입점 |
+| MY-NOTICES-A03 | P0 | Android, 읽음 기록 없음, 공지 3건 | 헤더 공지 버튼 탭 → 첫 줄 탭 → 뒤로가기 → 뒤로가기 → 모든 줄을 열고 홈 복귀 | 목록은 굵은 제목과 제목 끝 빨간 점(보조 기술 이름 "새 공지"), 줄을 누르면 앱 공통 리플, 상세는 제목·"게시 YYYY-MM-DD"·줄바꿈 살린 본문. 돌아오면 연 줄만 점이 꺼지고 홈 헤더 점은 유지, 모두 열면 헤더 점과 마이 배지가 꺼짐 | ✅ 수동(에뮬레이터) · unit `notice/NoticeViewModelsTest`·`NoticeUnreadTest` | FE-SCREEN-014 안 읽은 공지 표시 |
+| MY-NOTICES-A04 | P1 | Android, 앱 종료 상태 | 공지 게시 푸시 탭(또는 `manyak://manyak.app/notices/{noticeId}` 앱 열기 링크) → 뒤로가기 | 그 공지 상세가 열리고 읽음으로 기록. 뒤로가기는 공지 목록, 다시 뒤로가기는 홈 | ✅ 수동(에뮬레이터, `am start -a VIEW`) · unit `app/ExternalEntryTest`·`navigation/DeepLinkTest` | [Android 알림](../spec/3-3-android-spec.md#3-3-5-알림) |
+| MY-NOTICES-A05 | P1 | Android, 없는 `noticeId` | 딥링크로 상세 진입 → "공지사항 목록으로" 탭 | "공지를 찾을 수 없어요" + 보조 안내 + "공지사항 목록으로" 버튼, 탭하면 목록. 읽음 기록 없음 | ✅ 수동(에뮬레이터) · unit `NoticeViewModelsTest` | FE-SCREEN-014 상태 |
+| MY-NOTICES-A06 | P1 | Android, 앱 실행 뒤 비행기 모드 | 헤더 공지 버튼 탭 → 비행기 모드 해제 → "다시 시도" 탭 | "공지사항을 불러오지 못했어요" + "다시 시도"(앱 공통 문구). 재시도하면 목록 표시. 안 읽음 점은 조회 실패 동안 꺼짐 | ✅ 수동(에뮬레이터) | FE-SCREEN-014 상태, [Android 공지사항](../spec/3-3-android-spec.md#마이법적-문서) |
+| MY-NOTICES-A07 | P2 | Android, `nextCursor`가 있는 21건 이상 | 목록 끝까지 스크롤, 다음 페이지 실패 유도 | 끝에 닿으면 다음 페이지를 이어 붙이고, 실패하면 기존 목록 아래 "다시 시도"만 표시하고 자동 재요청 없음 | ◐ unit `NoticeViewModelsTest`(dev에 3건뿐이라 화면은 미확인) | FE-SCREEN-014 목록·상태 |
 
 ## MY-NAV — 하단 탭 네비게이션·상단 헤더
 

@@ -60,7 +60,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 
 ### 모듈 구성과 의존 방향
 
-17개 Gradle 모듈과 별도 included build인 `build-logic`을 사용합니다. `app`만 Application이며 `common`도 Android 기반 MVI·리소스·저장을 포함하는 Android Library입니다. `entity/domain/data/presentation`은 필요한 모듈 내부의 패키지이며 별도 Gradle 모듈이 아닙니다.
+18개 Gradle 모듈과 별도 included build인 `build-logic`을 사용합니다. `app`만 Application이며 `common`도 Android 기반 MVI·리소스·저장을 포함하는 Android Library입니다. `entity/domain/data/presentation`은 필요한 모듈 내부의 패키지이며 별도 Gradle 모듈이 아닙니다.
 
 | 모듈 | 책임·허용 의존 |
 | --- | --- |
@@ -72,7 +72,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | `analytics` | 관측 어댑터. `common`에 의존하며 기능 모델 대신 자체 값·기본 타입을 받음 |
 | `auth` | 인증·토큰·세션. `common`, `network`에 의존 |
 | `report` | 신고 흐름·`StoryReportController`. `common`, `network`, `designsystem`, `analytics`에 의존 |
-| `home`, `chat`, `studio`, `story`, `create`, `my`, `login`, `legal`, `notification` | 기능 소유권. 필요한 공통 모듈·`auth`를 사용하고 HTTP 의존은 data로 제한. 신고 소비 기능만 `report` 사용 |
+| `home`, `chat`, `studio`, `story`, `create`, `my`, `login`, `legal`, `notification`, `notice` | 기능 소유권. 필요한 공통 모듈·`auth`를 사용하고 HTTP 의존은 data로 제한. 신고 소비 기능만 `report` 사용 |
 
 기능은 실제 책임에 필요한 내부 패키지만 만들고 단순 위임 UseCase·빈 계층·하위 UI 전용 ViewModel을 추가하지 않습니다. `create/presentation/state`는 공유 퍼널 상태를, `my/data`는 profile·invite의 저장 인스턴스 구성을 소유합니다.
 
@@ -128,6 +128,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
 - 상세의 페르소나 셀렉트는 `StoryPersonaControl`이 소유합니다. 내 페르소나 목록과 상세에서 만든 페르소나(`CreatedPersona`)는 `PersonaAccess`의 메모리 StateFlow를 관찰하고, 직접 고른 값은 컨트롤 안의 장부에 둬 고른 직후의 채팅 시작이 이벤트 채널보다 앞선 값을 읽습니다. 화면이 보일 때마다 목록을 다시 읽고, 목록에 없는 선택은 기본 주인공으로 돌아갑니다. "페르소나 생성하기"는 `ManyakSelectField`의 동작 항목(`ManyakSelectAction`)이며 `app`이 `PersonaCreateRoute(originStoryId)`를 쌓습니다. 생성에 성공하면 저장소가 그 스토리의 미리 선택을 남기고, 다른 주인공을 고르거나 채팅을 시작하면 지웁니다. 채팅을 시작할 때 고른 주인공은 직접 고른 값으로 굳혀, 백스택에 남은 상세가 채팅방에서 돌아왔을 때 같은 선택을 보입니다. 하단 CTA는 라벨 아래 `labelTiny` 한 줄로 고른 페르소나와 시작 상황을 요약하며, 두 줄이 하트 버튼과 같은 48dp 안에 들도록 버튼의 세로 안쪽 여백을 걷습니다.
 - 마이의 페르소나 관리(`MyPersonasRoute`), 생성(`PersonaCreateRoute`), 수정(`PersonaEditRoute(personaId)`)은 `my/persona`가 소유합니다. 목록 ViewModel은 저장소 목록을 관찰하고 진입 때 다시 읽으며, 옵션 시트와 삭제 확인의 대상을 `optionsTarget`, `deleteTarget`으로 둡니다. 줄은 채팅 카드, 내 스토리 카드와 같이 줄 전체가 펼치기이고 이름 줄 오른쪽 더보기와 길게 누르기가 같은 옵션 시트를 엽니다. 줄 펼침은 화면의 `rememberSaveable`입니다. 생성과 수정은 같은 `PersonaFormViewModel`이고 소개 글(`# 주인공`, `## 성별`, 성별 값, 특징)의 조립과 분해는 `my/persona/domain`의 순수 함수입니다. 저장소는 성공한 변경을 응답으로 먼저 목록에 반영한 뒤 서버 목록을 다시 읽어, 다시 읽기가 실패해도 상세가 새 페르소나를 미리 선택할 수 있습니다. 회원 귀속 메모리라 `UserScopedStore`로 로그아웃 정리에 참여합니다.
+- 공지사항 목록(`NoticeListRoute`)과 상세(`NoticeDetailRoute(noticeId)`)는 `notice`가 소유합니다. `NoticeApi`는 공개 API라 `@PlainClient`로 토큰 없이 부르고, 읽은 공지 ID는 `NoticeReadStore`가 기기 귀속 `@DeviceDataStore`의 `notice_read_ids` 키에 최신순 JSON 배열(최대 100개)로 두며 `UserScopedStore`에 참여하지 않습니다. 안 읽음 판정(`notice/domain`의 `isUnread`: 게시 30일 안이고 읽은 목록에 없음)은 `NoticeUnreadViewModel`이 소유하고 `app`의 `MainTabsScreen`이 셸 수명으로 들어 `ON_RESUME`마다 첫 페이지를 다시 읽습니다. 셸은 그 값으로 홈·채팅·제작 헤더의 `NoticeHeaderButton`(`designsystem` 헤더의 `actions` 슬롯) 점과 `MyScreen`의 "새 공지" 배지를 함께 그립니다. `NoticeListViewModel`은 커서 페이지를 이어 붙이고 읽은 ID 흐름을 관찰해 상세에서 돌아온 줄의 점만 끄며, `NoticeDetailViewModel`은 공지를 받으면 `markRead`를 호출하고 404는 읽음으로 기록하지 않습니다. 게시일·수정일은 `formatNoticeDate`가 KST `yyyy-MM-dd`로 그립니다.
 - 마이의 프로필 수정(`ProfileEditRoute`)은 `my/profile`이 소유합니다. 진입은 `ProfileHeader`의 행 전체 클릭이고, 안쪽 연동 버튼은 자기 클릭이 먼저 받습니다. `ProfileEditViewModel`은 수정 전 값을 `UserProfileRepository.profile` 캐시에서 한 번만 가져오고(비었으면 `refresh()`), 입력, 고른 프리셋, 시트와 이탈 확인 다이얼로그 열림을 상태로 둡니다. 바뀐 내용과 닉네임 사전 검사(`my/profile/domain`의 순수 함수)는 이 상태에서 판정하고, 뒤로가기는 화면의 `BackHandler`와 헤더 버튼이 같은 인텐트로 보냅니다. 저장은 `ProfileEditRepository`가 `PATCH /users/me`에 바뀐 필드만 싣고, 200 응답(`MeResponse`)을 세션 세대가 같을 때만 `ProfileCacheStore`에 써서 마이와 프로필을 관찰하는 화면이 다시 읽지 않고 갱신됩니다. 프리셋 목록(`GET /profile-presets`)은 시트를 처음 열 때 받아 화면이 사는 동안 쓰고, 시트는 `ManyakBottomSheet` 안에 4열 줄을 직접 나눠 그리고, 격자만 화면 높이의 70%로 묶어 스크롤해 시트가 화면 꼭대기까지 차오르지 않게 합니다. 홈 `HomeViewModel`은 프로필의 닉네임이 바뀌면(첫 값 제외) 첫 페이지를 조용히 다시 읽어 카드 작성자 표시를 맞춥니다. 스토리 상세는 열 때마다 서버에서 읽어 따로 처리하지 않습니다.
 - 표지 없는 상세 히어로와 홈, 제작, 채팅 카드는 공용 `StoryCover`에서 초안과 같은 `ic_manyak_symbol`, `backgroundNeutral`, `textDisabled`를 사용합니다. 상세 헤더는 표지 유무와 무관하게 히어로 위에서 투명하게 시작해 스크롤에 따라 surface로 전환합니다. 표지가 없으면 아이콘은 처음부터 text 색을 사용하고, 별도 헤더 그라데이션은 두지 않습니다.
 - 상세 하단은 `StoryFooterBackground`가 목록의 메타 정보 위치로 전환 진행률을 계산합니다. CTA와 페이드는 메타 정보가 보이기 시작할 때부터 surface에서 backgroundNeutral로 전환하고, 200ms 애니메이션으로 진행률을 따라가며 스크롤 끝에서 메타 정보와 같은 배경색이 됩니다. 상세 색상과 모션 규격은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
@@ -250,7 +251,7 @@ payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프
 
 ### 알림 진입과 권한
 
-`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리는 무시, 무료 탭이 기본), `/studio`→제작 탭이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
+`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리는 무시, 무료 탭이 기본), `/studio`→제작 탭, `/notices`→공지 목록, `/notices/{noticeId}`→공지 상세(`openExternalDestination`이 `NoticeListRoute`를 먼저 쌓아 뒤로가기가 목록으로 감)이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
 
 웹 앱 안내 배너의 앱 열기는 `MainActivity`의 전용 스킴 intent-filter(`manyak://manyak.app`, VIEW와 BROWSABLE)로 들어옵니다. `PushEntry.readAppLinkFrom`이 VIEW 인텐트의 주소를 `TYPE_APP_LINK` 진입으로 바꾸고 경로를 같은 주소의 https로 옮겨 `DeepLink`로 해석합니다. 이 진입은 수신자를 비교하지 않고 회원과 프로필 확인 뒤 소비하며, 푸시 진입 extra가 있으면 푸시를 먼저 읽습니다([A-071](../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기)).
 
