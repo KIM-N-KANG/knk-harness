@@ -98,6 +98,7 @@
 | MY-NOTIFICATIONS-08 | P1 | iOS Safari 탭(비설치본) | 배너 확인 | 홈 화면 추가 안내 배너, 버튼 없음, 스위치 줄 비활성 | 수동(실기기) | 웹 PWA 푸시 |
 | MY-NOTIFICATIONS-09 | P2 | 회원, 광고 켜짐 | 야간 광고 허용 탭 | 야간만 `true`인 본문 전송, "야간 광고 알림 수신 동의 완료" 통지 | 수동 | 웹 PWA 푸시 |
 | MY-NOTIFICATIONS-10 | P1 | 푸시 활성 빌드, 회원, 알림 권한 허용, 오프라인 | 열린 화면에서 토큰 동기화 시도 후 네트워크 연결 복구 | 오프라인에서는 Firebase 토큰 발급을 건너뜀. 복구 후 회원 상태와 권한이 유효하면 토큰 발급과 PUT을 자동 재시도. 복구 전에 로그아웃한 경우 등록하지 않음 | ◐ 단위 `tests/lib/push/messaging.test.ts`(발급 차단과 복구 후 직접 재호출), 이벤트와 실기기 동작은 수동 | [웹 PWA 푸시 토큰 등록](../spec/3-2-web-spec.md#pwa-푸시) |
+| MY-NOTIFICATIONS-11 | P1 | 푸시 활성 빌드, 회원, 앱 창이 이미 열려 있음(iOS 홈 화면 설치본 포함) | 백그라운드 푸시 알림 탭 | 새 창 없이 열린 창이 `deepLink`(쿼리 유지)로 이동하고 앞으로 옴. 창이 없으면 새 창으로 연다. 링크가 없거나 다른 origin이면 앱 홈 | ◐ 단위 `tests/lib/push/firebase-messaging-sw.test.ts`(창 이동·새 창·origin 검사), 실기기 동작은 수동 | [웹 PWA 푸시 표시](../spec/3-2-web-spec.md#pwa-푸시) |
 
 ## MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)
 
