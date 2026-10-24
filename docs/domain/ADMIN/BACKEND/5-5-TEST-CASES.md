@@ -183,19 +183,20 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 | 빈 저장소에서 `days` 7 | 대역에 세분화 조회 6회(`_active`와 `_new` 각각 합계, Web, Android), `m=uniques`, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`<br>`daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목의 `activeUsers`와 같음 |
-| 조건 | 위 요청 | 모든 이벤트 필터에 `subprop_type` `user`의 `country` `South Korea`, `(none)` 조건<br>합계 조회는 `platform` `Web`, `Android`, 플랫폼별 조회는 그 값 하나<br>`platform` `(none)` 조회 없음 |
-| 플랫폼 값 | 그날 `_active` 합계 217, Web 200, Android 20 | `activeUsers`의 `total` 217, `web` 200, `android` 20<br>`web + android` 220이 `total`과 달라도 그대로 |
-| 과거 범위 | `from`과 `to`가 지난달 | `daily`는 그 범위, `todayActiveUsers`는 오늘 날짜 `_active` 세 조회 값 |
+| 조회 | 빈 저장소에서 `days` 7 | 대역에 세분화 조회 4회(`_active`와 `_new` 각각 Web, Android), `m=uniques`, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`<br>`daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목의 `activeUsers`와 같음 |
+| 조건 | 위 요청 | Web 조회의 이벤트 필터에 `platform` `Web`과 `subprop_type` `user`의 `country` `South Korea`, `(none)` 조건<br>Android 조회는 `platform` `Android`만이고 `country` 조건 없음<br>합계 조회와 `platform` `(none)` 조회 없음 |
+| 플랫폼 값 | 그날 `_active` Web 200, Android 20 | `activeUsers`의 `total` 220, `web` 200, `android` 20 |
+| 한국 밖 Android | 국가가 `United States`인 Android 사용자 1명과 Web 사용자 1명이 그날 활동 | Android 사용자는 `android`와 `total`에 들고 Web 사용자는 어디에도 들지 않음 |
+| 과거 범위 | `from`과 `to`가 지난달 | `daily`는 그 범위, `todayActiveUsers`는 오늘 날짜 `_active` 두 조회 값과 그 합 |
 | 코호트 제외 | 코호트 ID 설정 있음<br>빈 값 | 모든 세분화 요청의 `s`에 `userdata_cohort`와 `is not`과 코호트 ID<br>`s` 없음 |
-| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 6회뿐<br>오늘 날짜만 다시 조회 |
+| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 4회뿐<br>오늘 날짜만 다시 조회 |
 | 자정 경계 | 오늘을 포함한 범위를 KST 23:55에 조회한 뒤 다음 날 00:01에 같은 `from`, `to`로 조회<br>00:01 조회 때 대역이 500 | 00:01 조회는 어제가 된 날짜와 새 오늘 날짜를 조회<br>대역 500이면 `todayActiveUsers` `null`, 전날 값을 오늘 값으로 주지 않음 |
-| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 30일 범위 갱신<br>같은 설정의 빈 저장소에서 60일 범위 갱신 | 예산 계수기 360 증가, `pendingDates` 빈 배열<br>최근 41일만 받아 492 증가, 나머지 19일은 `pendingDates` |
+| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 30일 범위 갱신<br>같은 설정의 빈 저장소에서 90일 범위 갱신 | 예산 계수기 240 증가, `pendingDates` 빈 배열<br>최근 62일만 받아 496 증가, 나머지는 `pendingDates` |
 | 실패 | 대역이 500, 429, 5초 무응답<br>저장 값 없음 | 503, `admin_analytics_fetch_failed`의 `reason` 각각 `http_error`, `rate_limited`, `timeout` |
 | 실패와 저장 값 | 오늘 값이 만료된 상태에서 대역 500 | 200, 만료된 오늘 값을 그대로 쓰고 `asOf`는 그 값을 받은 시각 |
 | 쿨다운 | 실패 뒤 30초 안에 재요청<br>61초 뒤 재요청 | 대역 호출 없이 저장 값 또는 503<br>대역 재호출 |
-| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 갱신 요청은 1건이고 그 요청의 대역 조회는 오늘 날짜의 세분화 6회<br>나머지 2건은 기다리지 않고 저장 값으로 응답 |
-| 부분 실패 | 빈 저장소에서 `_active` 세 조회 성공, `_new` 합계 조회 실패 | `_active` 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 `_new` 세 조회만 보냄 |
+| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 갱신 요청은 1건이고 그 요청의 대역 조회는 오늘 날짜의 세분화 4회<br>나머지 2건은 기다리지 않고 저장 값으로 응답 |
+| 부분 실패 | 빈 저장소에서 `_active` 두 조회 성공, `_new` Web 조회 실패 | `_active` 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 `_new` 두 조회만 보냄 |
 | 자격 증명 없음 | 키 빈 값, 저장 값 없음 | 대역 호출 없이 503, `reason` `no_credentials` |
 | 기간 오류 | `days` 10, 367일 범위, `to` 내일, `days`와 `from` 동시 | 400 |
 | 격리 | 대역 500 상태에서 요약과 차트 호출 | 200 |
@@ -279,18 +280,19 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 11회, 사용자 수 조회 없음<br>그중 MAU는 `_active` 1회이고 `start` 09-22, `end` 10-21, 이벤트 필터에 `country` 조건<br>세분화에는 `g`와 `s`가 없음 |
-| MAU 값 | MAU 세분화 응답의 `seriesCollapsed` 1200, 일별 `series` 합 3000 | `monthlyActiveUsers` 1200 |
-| MAU 비용과 키 | 같은 `to`로 두 번 요청 | 처음에만 MAU 조회 비용 30 예약<br>범위 지표 키는 MAU 조회 정의와 09-22, 10-21 |
+| 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 12회, 사용자 수 조회 없음<br>그중 MAU는 `_active` 2회이고 `start` 09-22, `end` 10-21, 하나는 `country`와 `platform` `is not` `Android`, 하나는 `platform` `Android`만<br>전체 조회는 `country`와 `platform` `is not` `Android`, Android 조회는 `country` 없음<br>세분화에는 `g`와 `s`가 없음 |
+| MAU 값 | MAU 세분화 응답의 `seriesCollapsed` Android 외 1100과 Android 100, 일별 `series` 합 3000 | `monthlyActiveUsers` 1200 |
+| MAU 비용과 키 | 같은 `to`로 두 번 요청 | 처음에만 MAU 조회 비용 60 예약<br>범위 지표 키는 MAU 조회 정의와 09-22, 10-21 |
 | 세션 날짜 형식 | 세션 응답 `xValues`가 `2026-10-22T00:00:00` | 그 값이 2026-10-22 항목에 들어감 |
 | 리텐션 코호트 키 | 리텐션 응답의 코호트 키 `Oct 23, 2026` | 코호트 날짜 2026-10-23으로 저장하고 응답 |
-| 플랫폼별 값 | `_active` 전체 13, Web 10, Android 3, 플랫폼 없음 2 | `activeUsers`의 `all` 13, `web` 10, `android` 3, `unknown` 2<br>셋의 합 15와 `all`이 달라도 그대로 |
+| 플랫폼별 값 | `_active` Android 외 11, Web 10, Android 3, 플랫폼 없음 2 | `activeUsers`의 `all` 14, `web` 10, `android` 3, `unknown` 2<br>셋의 합 15와 `all`이 달라도 그대로 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 366일<br>367일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 `country`와 `platform`, 예산 계수기 168 증가 |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`와 `platform` `is not` `Android`, Web은 `country`와 `platform` `Web`, Android는 `platform` `Android`만, 예산 계수기 168 증가 |
+| 리텐션 전체 합 | 같은 코호트의 인덱스 1이 Android 외 `count` 4와 `outof` 15, Android `count` 1과 `outof` 5 | `all`의 `d1` 0.25 |
 | 리텐션 인덱스 | 코호트 배열의 인덱스 1이 `count` 5와 `outof` 20, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d7` `null`, `d30` `null` |
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
-| 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
+| 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web이 `country`와 `platform`, Android가 `platform`만, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 392 증가 |
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |
 | 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
 | 신규 가입자 | 회원 3명(구글 2, 카카오 1), 그중 1명 `migrated_at` 있음, 팀 계정 1명 | `signups.total` 3, `google` 2, `kakao` 1, `migratedFromGuest` 1, 팀 계정 제외 |
@@ -298,13 +300,14 @@
 | 가입 경로 | 연동이 없는 회원 | `other` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
 | 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
-| 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `platform` `Android`<br>400 |
+| 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `platform` `Android`만이고 `country` 없음<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
 | 게스트 한도 퍼널 | 구글 퍼널 2단계 6과 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[1].users` 6, `steps[2].users` 7로 앞 단계보다 커도 그대로, `event` `login_succeeded` |
 | 퍼널 기간 | 31일<br>32일, 모르는 퍼널 이름 | 200<br>400 |
 | 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `reached` 12개<br>`all` `chats` 4, 턴 1부터 5까지 비율 0.75, 6부터 10까지 0.5, 15와 20은 0.25, 30과 50은 0<br>`guest`와 `member`의 `chats` 각 2 |
 | 게스트에서 회원으로 | 이관 시각 전 생성 채팅 턴 5와 7, 이관 뒤 생성 채팅 턴 8 | `chatsReached5` 2, `chatsReached6` 1, `rate` 0.5 |
 | 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 12회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 7개), `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
+| 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 세분화 12회, `platform` `Android`만이고 `country` 없음<br>Android 외 12회와 Android 12회, 응답 값은 두 조회의 합 |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 기능 사용 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
@@ -355,6 +358,7 @@
 | 다른 태스크가 먼저 저장 | 예산 예약 뒤 호출 직전에 다른 서비스 인스턴스가 같은 키의 날짜를 저장 | 그 날짜는 조회하지 않음 |
 | 배포 후 유지 | 서비스 인스턴스를 새로 만들어 메모리 상태 없이 같은 지난 범위 요청 | 대역 호출 없이 저장 값으로 200, `admin_analytics_refreshed` 기록 없음 |
 | 정의 변경 | 코호트 ID 설정을 바꾼 뒤 같은 범위 요청 | 매개변수 해시가 달라 새 키로 다시 조회, 옛 행은 남음 |
+| 국가 조건 변경 뒤 | 변경 전 조건으로 저장된 분석 지표 행이 있는 범위 요청 | Web 행은 해시가 같아 그대로 쓰고 Android 조회만 새 키로 다시 받음 |
 | 저장 실패 | upsert 예외 | 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |
 | 새벽 배치 시작 | 고정 시계 KST 02:55와 03:00에 배치 실행 | 02:55는 새벽 배치 조회 없음<br>03:00부터 기본 지표 키의 어제 날짜 조회 |

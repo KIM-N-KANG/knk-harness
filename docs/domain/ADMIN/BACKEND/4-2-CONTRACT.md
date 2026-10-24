@@ -1334,12 +1334,12 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `total` | `integer` | 플랫폼이 Web 또는 Android인 고유 사용자 수 |
-| `web` | `integer` | 플랫폼이 Web인 고유 사용자 수 |
-| `android` | `integer` | 플랫폼이 Android인 고유 사용자 수 |
+| `total` | `integer` | `web`과 `android`의 합 |
+| `web` | `integer` | 플랫폼이 Web이고 국가가 한국이거나 없는 고유 사용자 수 |
+| `android` | `integer` | 플랫폼이 Android인 고유 사용자 수<br>국가와 무관 |
 
-- 같은 사람이 같은 날 두 플랫폼에서 활동하면 `web`과 `android`에 한 번씩, `total`에는 한 번만 들어가므로 `web + android`가 `total`과 다를 수 있다.
-- 사용자 속성 `country`가 `South Korea` 또는 `(none)`이고 `platform`이 `Web` 또는 `Android`인 사용자만 센다. 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
+- 같은 사람이 같은 날 두 플랫폼에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 두 번 든다.
+- Web은 사용자 속성 `country`가 `South Korea` 또는 `(none)`인 사용자만, Android는 국가와 무관하게 센다. 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
 - 값은 분석 도구가 집계한 것이며 코호트 ID가 설정돼 있으면 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
 
 <br>
@@ -1795,7 +1795,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수이며 넷을 각각 따로 조회한다. 한 사용자가 같은 날 여러 플랫폼에서 활동하면 플랫폼마다 한 번씩 세고 `all`에는 한 번만 세므로 나머지 셋의 합이 `all`보다 클 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 Android 외 조회 값에 `android`를 더한 값이고 `web`, `android`, `unknown`은 각각 따로 조회한다. Web과 플랫폼 없음에서 함께 활동한 사용자는 `all`에 한 번만 들어 나머지 셋의 합이 `all`보다 클 수 있다. Android와 다른 플랫폼에서 함께 활동한 사용자는 `all`에 두 번 든다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
@@ -1813,7 +1813,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 세분화 응답의 `seriesCollapsed` 값이며 일별 값의 합이 아님<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 Android 외와 Android 세분화 응답의 `seriesCollapsed` 값의 합이며 일별 값의 합이 아님<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
@@ -1858,7 +1858,7 @@ Authorization: Bearer {adminToken}
 | `asOf`, `from`, `to` | | 분석 지표와 같음 |
 | `pendingDates` | `string[]` | 아직 값을 받지 못해 `cohorts`에서 뺀 코호트 날짜<br>그 밖은 분석 지표와 같음 |
 | `platforms` | `object[]` | `all`, `web`, `android` 세 항목 |
-| `platforms[].platform` | `string` | `all`, `web`, `android` |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 Android 외 코호트와 Android 코호트의 `count`와 `outof`를 더해 계산 |
 | `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `platforms[].cohorts[].date` | `string` | 신규 방문일 |
 | `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
@@ -1902,7 +1902,7 @@ Authorization: Bearer {adminToken}
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null` |
+| `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null`<br>`all`은 국가가 한국이거나 없는 사용자만이라 한국 밖 Android 세션은 `android`에만 듦 |
 
 - 세션 정의는 분석 도구의 기본 세션이다. 사용자당 세션 수는 제공하지 않는다.
 
@@ -2065,7 +2065,7 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all` |
+| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 국가가 한국이거나 없는 사용자만, `android`는 국가와 무관, `all`은 Android 외와 `android`의 합 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
