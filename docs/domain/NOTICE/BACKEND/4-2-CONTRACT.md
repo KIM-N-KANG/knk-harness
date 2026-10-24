@@ -83,6 +83,7 @@
 |---|---|---|
 | `noticeId` | `string` | 공지 공개 식별자 |
 | `title` | `string` | |
+| `tag` | `string` | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`([4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시)) |
 | `body` | `string` | 목록에서는 생략 |
 | `status` | `string` | `DRAFT`<br>`PUBLISHED` |
 | `publishedAt` | `string / null` | 마지막 게시 시각<br>게시한 적 없으면 `null` |
@@ -114,8 +115,9 @@
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
+| `tag` | `string` | 선택 | 이 태그의 공지만<br>생략하면 전체 |
 | `limit` | `integer` | 선택 | 페이지 크기<br>1~50으로 보정<br>기본 20 |
-| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로 |
+| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor` 그대로<br>같은 `tag`를 함께 보냄 |
 
 <br>
 
@@ -125,6 +127,7 @@
 |---|---|---|
 | `items[].noticeId` | `string` | 공지 공개 식별자 |
 | `items[].title` | `string` | |
+| `items[].tag` | `string` | 공지 태그 |
 | `items[].publishedAt` | `string` | 게시 시각 |
 
 <br>
@@ -133,7 +136,7 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 형식 오류인 `cursor` 또는 `limit` 타입 오류 |
+| 400 | `BAD_REQUEST` | 형식 오류인 `cursor`, `limit` 타입 오류, 모르는 `tag` |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -151,8 +154,8 @@ GET /api/v1/notices?limit=2
 ```json
 {
   "items": [
-    { "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d", "title": "10월 25일 새벽 점검 안내", "publishedAt": "2026-10-21T02:00:00Z" },
-    { "noticeId": "8e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b", "title": "이프 충전 상품 변경 안내", "publishedAt": "2026-10-18T09:00:00Z" }
+    { "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d", "title": "10월 25일 새벽 점검 안내", "tag": "SERVICE", "publishedAt": "2026-10-21T02:00:00Z" },
+    { "noticeId": "8e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b", "title": "이프 충전 상품 변경 안내", "tag": "UPDATE", "publishedAt": "2026-10-18T09:00:00Z" }
   ],
   "nextCursor": "MjAyNi0xMC0xOFQwOTowMDowMFp8MTI"
 }
@@ -184,6 +187,7 @@ GET /api/v1/notices?limit=2
 |---|---|---|
 | `noticeId` | `string` | 공지 공개 식별자 |
 | `title` | `string` | |
+| `tag` | `string` | 공지 태그 |
 | `body` | `string` | |
 | `publishedAt` | `string` | 게시 시각 |
 | `updatedAt` | `string` | 마지막 수정 시각 |
@@ -213,6 +217,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 {
   "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
   "title": "10월 25일 새벽 점검 안내",
+  "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
   "publishedAt": "2026-10-21T02:00:00Z",
   "updatedAt": "2026-10-21T02:00:00Z"
@@ -333,6 +338,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `title` | `string` | 필수 | 1~100자 |
 | `body` | `string` | 필수 | 1~5,000자 |
+| `tag` | `string` | 필수 | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION` |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 생성된 공지는 초안이다.
@@ -343,7 +349,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 공백만, 길이 초과 |
+| 400 | `BAD_REQUEST` | 필드 누락, 공백만, 길이 초과, 모르는 태그 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -359,7 +365,9 @@ Content-Type: application/json
 
 {
   "title": "10월 25일 새벽 점검 안내",
+  "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
+  "tag": "SERVICE",
   "reason": "정기 점검 공지"
 }
 ```
@@ -370,6 +378,7 @@ Content-Type: application/json
 {
   "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
   "title": "10월 25일 새벽 점검 안내",
+  "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
   "status": "DRAFT",
   "publishedAt": null,
@@ -398,9 +407,11 @@ Content-Type: application/json
 |---|---|---|---|
 | `title` | `string` | 선택 | 1~100자<br>생략하면 유지 |
 | `body` | `string` | 선택 | 1~5,000자<br>생략하면 유지 |
+| `tag` | `string` | 선택 | 다섯 태그 중 하나<br>생략하면 유지 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- `title`과 `body` 중 하나는 있어야 한다. `null`은 생략과 같다.
+- `title`, `body`, `tag` 중 하나는 있어야 한다. `null`은 생략과 같다.
+- 게시된 공지의 태그를 바꿔도 이미 요청한 알림은 바뀌지 않는다.
 
 <br>
 
@@ -408,7 +419,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 둘 다 없음, 공백만, 길이 초과, `reason` 누락 또는 `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 세 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
 
 <br>
@@ -425,9 +436,9 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `notify` | `boolean` | 필수 | 알림을 함께 요청할지 |
-| `notificationKind` | `string` | `notify`가 `true`면 필수 | `SERVICE`는 정보성<br>`MARKETING`은 광고성 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 게시하면 항상 알림을 요청하고 알림 유형은 공지 태그에서 정한다. 예전 본문의 `notify`와 `notificationKind`는 받지 않으며 보내도 값과 무관하게 무시한다.
 
 <br>
 
@@ -437,7 +448,7 @@ Content-Type: application/json
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `notified` | `boolean` | 이번 게시로 알림을 요청했는지<br>이미 요청한 적 있거나 `notify`가 `false`면 `false` |
+| `notified` | `boolean` | 이번 게시로 알림을 요청했는지<br>이미 요청한 적 있는 공지의 재게시면 `false` |
 
 <br>
 
@@ -445,7 +456,7 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `notify` 누락, `notify`가 `true`인데 `notificationKind` 없음, 지원하지 않는 유형, `reason` 누락 |
+| 400 | `BAD_REQUEST` | `reason` 누락 |
 | 404 | `NOT_FOUND` | 없는 공지 |
 | 409 | `CONFLICT` | 이미 게시된 공지 |
 
@@ -461,7 +472,7 @@ POST /api/v1/admin/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d/publish
 Authorization: Bearer {adminToken}
 Content-Type: application/json
 
-{ "notify": true, "notificationKind": "SERVICE", "reason": "점검 공지 게시" }
+{ "reason": "점검 공지 게시" }
 ```
 
 **2) 200 Response body**
@@ -470,6 +481,7 @@ Content-Type: application/json
 {
   "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
   "title": "10월 25일 새벽 점검 안내",
+  "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
   "status": "PUBLISHED",
   "publishedAt": "2026-10-21T02:00:00Z",
@@ -563,5 +575,5 @@ Content-Type: application/json
 
 | 연산 | 입력 | 결과 |
 |---|---|---|
-| 공지 발송 요청 | 공지 공개 식별자, 제목, 알림 본문, 유형, 딥링크 | 캠페인 1건<br>호출자의 트랜잭션에 참여 |
+| 공지 발송 요청 | 공지 공개 식별자, 제목, 알림 본문, 유형, 태그, 딥링크 | 캠페인 1건<br>호출자의 트랜잭션에 참여 |
 | 변경 감사 기록 | 관리자, 작업 이름, 대상 종류 `NOTICE`, 공지 공개 식별자, 사유, 변경 전후 값 | 감사 로그 행 |

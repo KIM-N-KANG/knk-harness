@@ -138,6 +138,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
 | `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함 |
 | `notice_id` | bigint | FK `notices.id`, UNIQUE | 공지 알림이면 그 공지<br>프로모션은 NULL |
+| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 게시 시점의 공지 태그<br>프로모션은 NULL |
 | `story_id` | bigint | FK `stories.id` | 이동 대상 스토리<br>없으면 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
@@ -223,6 +224,7 @@ erDiagram
 | `deep_link` | varchar(512) | | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 NULL |
 | `story_public_id` | uuid | | 관련 스토리 공개 식별자<br>FK 없음 |
 | `notice_public_id` | uuid | | 관련 공지 공개 식별자<br>FK 없음 |
+| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 캠페인의 공지 태그<br>그 외 NULL |
 | `read_at` | timestamptz | | 읽은 시각<br>`NULL`이면 안 읽음 |
 
 | 제약과 인덱스 | 컬럼 | 쓰임 |

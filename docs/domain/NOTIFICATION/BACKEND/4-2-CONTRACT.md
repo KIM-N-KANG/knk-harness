@@ -673,6 +673,7 @@ Content-Type: application/json
 | `STORY_MODERATION_COMPLETED` | `body` | `string` | 결과별 본문 |
 | `NOTICE` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `NOTICE` | `noticeId` | `string` | 공지 공개 식별자 |
+| `NOTICE` | `noticeTag` | `string` | 공지 태그<br>`SERVICE`, `UPDATE`, `MAINTENANCE` |
 | `NOTICE` | `title` | `string` | 공지 제목<br>광고 표기 없음 |
 | `NOTICE` | `body` | `string` | 공지 본문의 앞 300자 |
 | `NOTICE` | `deepLink` | `string` | `/notices/{noticeId}` |
@@ -684,6 +685,7 @@ Content-Type: application/json
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
 | `PROMOTION` | `body` | `string` | 본문 |
 | `PROMOTION` | `noticeId` | `string` | 광고성 공지일 때만<br>공지 공개 식별자 |
+| `PROMOTION` | `noticeTag` | `string` | 광고성 공지일 때만<br>`EVENT`, `PROMOTION` |
 | `PROMOTION` | `storyId` | `string` | 이동 대상 스토리가 있을 때만<br>스토리 공개 식별자 |
 | `PROMOTION` | `deepLink` | `string` | 광고성 공지는 `/notices/{noticeId}`<br>이동 대상 스토리는 `/stories/{storyId}`<br>둘 다 없으면 필드 없음 |
 
@@ -1368,6 +1370,7 @@ Authorization: Bearer {adminToken}
 | `deepLink` | `string / null` | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 `null` |
 | `storyId` | `string / null` | 관련 스토리 공개 식별자 |
 | `noticeId` | `string / null` | 관련 공지 공개 식별자 |
+| `noticeTag` | `string / null` | 공지 알림이면 공지 태그<br>`SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`<br>그 외 `null` |
 | `createdAt` | `string` | 기록 시각 |
 | `readAt` | `string / null` | 읽은 시각<br>`null`이면 안 읽음 |
 
@@ -1408,6 +1411,7 @@ Authorization: Bearer {accessToken}
       "deepLink": "https://manyak.app/studio?utm_source=inbox&utm_medium=inbox&utm_campaign=story_moderation_completed&utm_content=story_moderation_completed",
       "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
       "noticeId": null,
+      "noticeTag": null,
       "createdAt": "2026-10-24T09:12:30Z",
       "readAt": null
     },
@@ -1420,6 +1424,7 @@ Authorization: Bearer {accessToken}
       "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=inbox&utm_medium=inbox&utm_campaign=attendance_reminder&utm_content=attendance_reminder",
       "storyId": null,
       "noticeId": null,
+      "noticeTag": null,
       "createdAt": "2026-10-24T00:00:05Z",
       "readAt": "2026-10-24T01:03:11Z"
     }
@@ -1614,6 +1619,6 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
-| 공지 발송 요청 | 공지 공개 식별자, 제목, 본문 300자 이내, 종류, 딥링크 | 예약 시각이 현재인 캠페인 1건<br>호출자의 트랜잭션에 참여하고 같은 공지의 두 번째 요청은 유니크 위반 |
+| 공지 발송 요청 | 공지 공개 식별자, 제목, 본문 300자 이내, 종류, 공지 태그, 딥링크 | 예약 시각이 현재인 캠페인 1건<br>호출자의 트랜잭션에 참여하고 같은 공지의 두 번째 요청은 유니크 위반 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
 | 회원 알림 내역 전부 삭제 | 회원 내부 ID | 삭제 행 수<br>탈퇴 트랜잭션에 참여 |

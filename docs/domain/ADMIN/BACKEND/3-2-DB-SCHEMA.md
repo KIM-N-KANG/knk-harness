@@ -135,10 +135,10 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `PUSH_CAMPAIGN_CANCELED`, `PUSH_CAMPAIGN_RETRIED` | `status`, `scheduledAt` | `status`, `scheduledAt` |
 | `PUSH_TEMPLATE_UPSERTED` | 없음 | `templateKey`, `title`, `body`, `effectiveFrom`, `effectiveUntil` |
 | `PUSH_TEMPLATE_RESET` | `templateKey`와 종료한 행마다 `title`, `body`, `effectiveFrom`, `effectiveUntil` | 없음 |
-| `NOTICE_CREATED` | 없음 | `title`, `status` |
-| `NOTICE_UPDATED` | `title`, `status` | `title`, `status` |
+| `NOTICE_CREATED` | 없음 | `title`, `tag`, `status` |
+| `NOTICE_UPDATED` | `title`, `tag`, `status` | `title`, `tag`, `status` |
 | `NOTICE_PUBLISHED`, `NOTICE_UNPUBLISHED` | `status`, `publishedAt`, `notifiedAt` | `status`, `publishedAt`, `notifiedAt` |
-| `NOTICE_DELETED` | `title`, `status` | 없음 |
+| `NOTICE_DELETED` | `title`, `tag`, `status` | 없음 |
 | `SUBMISSION_HOLD_RELEASED` | `holdReason`, `attempt` | 없음 |
 | `ORIGINAL_CREATED` | 없음 | `status`, `visibility`, `title`, `genres` |
 | `ORIGINAL_UPDATED` | `status`, `visibility`, `title`, `genres` | `status`, `visibility`, `title`, `genres` |

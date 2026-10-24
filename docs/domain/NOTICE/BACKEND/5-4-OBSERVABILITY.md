@@ -60,7 +60,7 @@ Fluent Bit`"]
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`<br>5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
-| 게시 | 게시 커밋 뒤<br>`notice_published` | `notice_id`, `notified`, `notification_kind`<br>알림을 요청하지 않으면 `notification_kind` 없음 |
+| 게시 | 게시 커밋 뒤<br>`notice_published` | `notice_id`, `notified`, `notification_kind`<br>재게시로 알림을 요청하지 않으면 `notification_kind` 없음 |
 
 <br>
 

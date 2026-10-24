@@ -51,6 +51,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 외부 노출 식별자<br>딥링크의 경로값 |
 | `title` | varchar(100) | NOT NULL | |
 | `body` | text | NOT NULL, CHECK 길이 1~5000 | 줄바꿈이 있는 평문 |
+| `tag` | varchar(16) | NOT NULL, CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 태그<br>컬럼 추가 마이그레이션이 기존 행을 `SERVICE`로 채우며 기본값은 두지 않음 |
 | `status` | varchar(10) | NOT NULL, 기본 `DRAFT`, CHECK `DRAFT` `PUBLISHED` | |
 | `published_at` | timestamptz | CHECK `PUBLISHED`이면 NOT NULL | 마지막 게시 시각<br>게시 해제해도 남고 다시 게시하면 갱신 |
 | `notified_at` | timestamptz | | 알림을 요청한 시각<br>NULL이면 요청한 적 없음 |
@@ -61,6 +62,8 @@ erDiagram
 |---|---|
 | `idx_notices_published` | `published_at DESC`<br>`id DESC` WHERE `status = 'PUBLISHED'` |
 | `idx_notices_created` | `created_at DESC`<br>`id DESC` |
+
+- 태그 필터는 게시 공지 인덱스를 따라 읽으며 거른다. 공지 수가 적어 태그 인덱스는 두지 않는다.
 
 <br>
 
