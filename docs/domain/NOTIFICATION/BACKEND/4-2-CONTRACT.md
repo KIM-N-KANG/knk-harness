@@ -564,7 +564,7 @@ Content-Type: application/json
     "type": "STORY_COMPLETED",
     "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
     "title": "달빛 아래의 약속",
-    "deepLink": "https://manyak.app/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7"
+    "deepLink": "https://manyak.app/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7?utm_source=push&utm_medium=push&utm_campaign=story_completed&utm_content=story_completed"
   }
 }
 ```
@@ -631,7 +631,7 @@ Content-Type: application/json
     "type": "STORY_COMPLETED",
     "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
     "title": "달빛 아래의 약속",
-    "deepLink": "https://manyak.app/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7"
+    "deepLink": "https://manyak.app/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7?utm_source=push&utm_medium=push&utm_campaign=story_completed&utm_content=story_completed"
   },
   "requestId": "req_0f1e2d3c4b5a69788796a5b4c3d2e1f0",
   "sessionId": "unknown",
@@ -653,7 +653,7 @@ Content-Type: application/json
 |---|---|---|
 | `type` | `string` | 시나리오 식별자 |
 | `recipientId` | `string` | 수신 회원 공개 식별자<br>발송기가 항상 덧붙이며 시나리오 값보다 우선 |
-| `deepLink` | `string` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로를 붙임<br>없는 시나리오도 있음 |
+| `deepLink` | `string` | 알림을 눌렀을 때 열 절대 URL<br>운영 웹 주소에 경로와 UTM 쿼리를 붙임<br>없는 시나리오도 있음 |
 
 <br>
 
@@ -694,7 +694,25 @@ Content-Type: application/json
 
 <br>
 
-**3. 플랫폼별 구성**
+**3. 딥링크 UTM 쿼리**
+
+딥링크가 있는 모든 시나리오는 경로 뒤에 팀 UTM 규격의 네 필드를 붙인다. 경로에 이미 쿼리가 있으면 `&`로 잇고 없으면 `?`로 시작한다. 값은 URL 인코딩하고 순서는 `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`다.
+
+| `type` | `utm_source` | `utm_medium` | `utm_campaign` | `utm_content` |
+|---|---|---|---|---|
+| `STORY_COMPLETED` | `push` | `push` | `story_completed` | `story_completed` |
+| `STORY_MODERATION_COMPLETED` | `push` | `push` | `story_moderation_completed` | `story_moderation_completed` |
+| `ATTENDANCE_REMINDER` | `push` | `push` | `attendance_reminder` | `attendance_reminder` |
+| `NOTICE` | `push` | `push` | 캠페인 공개 식별자 | `notice` |
+| `PROMOTION` | `push` | `push` | 캠페인 공개 식별자 | `promotion` |
+
+- 관리자 캠페인으로 보내는 공지와 프로모션은 캠페인 공개 식별자, 캠페인이 없는 서비스 알림과 출석 리마인드는 `type`을 소문자로 바꾼 종류 코드를 캠페인 값으로 쓴다.
+- 딥링크가 없는 프로모션은 UTM도 없다.
+- 예: 출석 리마인드는 `https://manyak.app/my/credits?tab=free&utm_source=push&utm_medium=push&utm_campaign=attendance_reminder&utm_content=attendance_reminder`, 공지 알림은 `https://manyak.app/notices/{noticeId}?utm_source=push&utm_medium=push&utm_campaign={campaignId}&utm_content=notice`다.
+
+<br>
+
+**4. 플랫폼별 구성**
 
 | 플랫폼 | 구성 |
 |---|---|

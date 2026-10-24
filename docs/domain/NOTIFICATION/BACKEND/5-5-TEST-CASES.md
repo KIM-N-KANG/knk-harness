@@ -89,7 +89,7 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 로컬 모드 완성 | 회원 완성, 서비스 켜짐 | 커밋 후 발송기 1회, 데이터에 `type`, `storyId`, `title`, `deepLink`, `recipientId` |
+| 로컬 모드 완성 | 회원 완성, 서비스 켜짐 | 커밋 후 발송기 1회, 데이터에 `type`, `storyId`, `title`, `deepLink`, `recipientId`<br>`deepLink`가 `/stories/{storyId}?utm_source=push&utm_medium=push&utm_campaign=story_completed&utm_content=story_completed` |
 | 서비스 꺼짐 | 서비스 알림 끈 회원 | 발송 없음 |
 | 게스트 완성 | 게스트 제작 | 이벤트 없음 |
 | 재처리 | 같은 요청 ID 재요청 | 발송 없음 |
@@ -210,6 +210,10 @@
 | 기본 문구 복귀 | 유효한 행 1개와 예약된 행 1개 | 200, 유효한 행은 종료 시각이 현재, 예약된 행은 종료 시각이 시작 시각, 응답의 `effective.isDefault` true, 감사 로그 `PUSH_TEMPLATE_RESET` |
 | 복귀 대상 없음 | 오버라이드 없음 | 200 |
 | 공지 발송 요청 | 공지 식별자, 종류 `SERVICE`, 딥링크 | 캠페인 1건, `kind` `SERVICE`, 예약 시각 현재, 공지 참조 |
+| 딥링크 UTM | 공지 알림 발송, 프로모션의 이동 대상 스토리 발송, 검수 완료 | 공지는 `utm_campaign`이 캠페인 공개 식별자와 `utm_content=notice`<br>프로모션은 캠페인 공개 식별자와 `utm_content=promotion`<br>검수 완료는 `utm_campaign=story_moderation_completed`<br>모두 `utm_source=push&utm_medium=push`이고 네 필드 순서 고정 |
+| 기존 쿼리 결합 | 출석 리마인드 | `/my/credits?tab=free&utm_source=push&...`처럼 `&`로 이어지고 `?`가 두 번 나오지 않음 |
+| UTM 인코딩 | 캠페인 값에 공백이나 `&`가 든 대역 값 | URL 인코딩된 값 |
+| 딥링크 없는 프로모션 | 공지와 스토리 없는 프로모션 | `deepLink`와 UTM 없음 |
 | 공지 중복 요청 | 같은 공지로 두 번 | 두 번째는 유니크 위반 예외 |
 
 <br>
