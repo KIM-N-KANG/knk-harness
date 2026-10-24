@@ -200,7 +200,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 
 `next-themes`가 기기 선택값과 시스템 테마를 적용합니다. 레이아웃·키보드·안전 영역 계약은 [웹 Spec](../spec/3-2-web-spec.md#3-2-5-반응형접근성브라우저-지원)을 따릅니다.
 
-메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용, 네이티브 터치 리스너만 두고 마우스·펜 포인터 경로는 없음)이며 이프 충전의 무료 충전·내역 탭도 같은 컴포넌트가 스크롤러입니다. 새로고침이 끝나도 표시자는 마스코트 애니메이션 주기 경계(최소 한 주기)까지 기다린 뒤 닫아, 회전이 중간에 끊기거나 되감기지 않게 합니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 두고 네이티브 터치 리스너를 연결하지 않습니다. 활성 화면으로 돌아오면 리스너를 다시 연결합니다. 비활성화 시 진행 중인 당김은 복원하되 이미 시작한 새로고침은 완료까지 유지합니다. 스크롤 상태(`MainScrollProvider`)는 홈과 제작에서만 컴포넌트의 `onScroll`로 받습니다. 홈 필터 바는 컴포넌트의 `header` 슬롯으로 넘겨 당김에 밀리지 않는 스크롤러의 첫 자식(sticky)으로 두고, 표시자는 그 아래 콘텐츠 상자의 맨 위에 나타납니다. 홈은 필터 바의 스크롤 방향을, 제작은 FAB 축소 여부만 계산하며 탭 전환 시 유지되는 스크롤러의 실제 위치와 표시 상태를 동기화합니다.
+메인 레이아웃의 스크롤러는 `components/motion/pull-to-refresh`(beui 이식, `LazyMotion strict`에 맞춰 `m` 컴포넌트 사용, 네이티브 터치 리스너만 두고 마우스·펜 포인터 경로는 없음)이며 이프 충전의 무료 충전·내역 탭과 공지사항 목록([notice-list-screen](../../../manyak-web/src/features/notices/list/components/notice-list-screen.tsx))도 같은 컴포넌트가 스크롤러입니다. 새로고침이 끝나도 표시자는 마스코트 애니메이션 주기 경계(최소 한 주기)까지 기다린 뒤 닫아, 회전이 중간에 끊기거나 되감기지 않게 합니다. 새로고침은 `useRefreshActiveQueries`가 `queryClient.refetchQueries({ type: 'active' })`로 화면이 구독 중인 쿼리만 다시 읽고, 마이 탭은 `disabled`로 두고 네이티브 터치 리스너를 연결하지 않습니다. 활성 화면으로 돌아오면 리스너를 다시 연결합니다. 비활성화 시 진행 중인 당김은 복원하되 이미 시작한 새로고침은 완료까지 유지합니다. 스크롤 상태(`MainScrollProvider`)는 홈과 제작에서만 컴포넌트의 `onScroll`로 받습니다. 홈 필터 바는 컴포넌트의 `header` 슬롯으로 넘겨 당김에 밀리지 않는 스크롤러의 첫 자식(sticky)으로 두고, 표시자는 그 아래 콘텐츠 상자의 맨 위에 나타납니다. 홈은 필터 바의 스크롤 방향을, 제작은 FAB 축소 여부만 계산하며 탭 전환 시 유지되는 스크롤러의 실제 위치와 표시 상태를 동기화합니다.
 
 앱 안내 배너의 홈 화면 추가 안내는 공용 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(82% 폭 카드, 점 표시)을 씁니다. 가로 스크롤 영역(`overflow-x-auto` + `scrollbar-none`)의 마우스 드래그는 [use-drag-scroll](../../../manyak-web/src/hooks/use-drag-scroll.ts)이 반환한 포인터 핸들러를 스크롤 컨테이너에 펼쳐 처리합니다. `pointerType`이 `mouse`인 주 버튼만 다루고 터치·펜은 네이티브 스크롤에 맡깁니다. 5px 이상 움직여야 드래그로 보고, 그 뒤의 클릭은 캡처 단계에서 한 번 막습니다. 스냅 컨테이너는 드래그 중 `scroll-snap-type`을 끄고, 놓으면 스크롤 범위 안에서 가장 가까운 `snap-start` 지점으로 부드럽게 이동한 뒤 그 지점에 도착한 `scrollend`에서 스냅을 되돌립니다(놓치면 최대 1초 뒤). 바로 되돌리면 브라우저가 순간 이동으로 스냅하고, WebKit은 이동 중에 되돌리면 맞추지 않은 채 멈출 수 있기 때문입니다. 커서는 `pointerenter`마다 넘침을 재서 컨테이너에 `data-drag-scrollable`(`grab`)을 두고, 드래그 중에는 문서 루트의 `data-drag-scrolling`으로 모든 요소에 `grabbing`을 적용합니다(`globals.css`). 루트에 두는 이유는 포인터가 영역 밖으로 나가도 커서를 유지하기 위해서입니다.
 
@@ -216,6 +216,14 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 - 닫기를 누르면 루트의 화면 영역 래퍼(`APP_SCREEN_ID`)에 임시 `tabindex=-1`을 주고 포커스를 옮깁니다. 닫기 버튼이 사라지며 포커스가 문서 처음으로 가지 않게 하려는 것이며, 블러되면 tabindex를 지웁니다.
 - 문구는 [constants/app-banner](../../../manyak-web/src/constants/app-banner.ts)에 있습니다. 배너 첫 줄의 앱 이름은 [constants/site](../../../manyak-web/src/constants/site.ts)의 `SITE_NAME`이고, 아이콘은 웹 앱 매니페스트와 같은 `public/icons/icon-192.png`를 장식 이미지(`alt=""`)로 씁니다. 안내 시트는 앱 프레임에 포털한 `Drawer`라 뒤로가기로 닫힙니다. 홈 화면 추가 안내는 `supportsHomeScreenImageGuide`(UA `iPhone`과 `Version/` 주 버전 26 이상)가 참이면 `public/app-banner/ios-safari-step-{1..4}.webp` 스크린샷을 [snap-strip](../../../manyak-web/src/components/common/snap-strip.tsx)(브라우저 기본 가로 스크롤 스냅, 점 표시, 마우스 끌기)으로, 아니면 텍스트 단계를 보여줍니다. 스트립을 감싼 요소의 `data-base-ui-swipe-ignore`로 가로 넘기기가 시트 끌어 닫기로 이어지지 않게 합니다. iOS 26 Safari는 UA의 OS 버전을 고정하므로 Safari 버전으로 판정합니다.
 - E2E 기본 fixture는 닫기 표식을 심어 배너를 숨기고, 배너 스펙만 `test.use({ appBanner: true })`로 켭니다.
+
+### 앱 공유 링크 (웹)
+
+`/app`은 [(share)/app/page](../../../manyak-web/src/app/(share)/app/page.tsx)가 서버에서 미리보기 메타데이터(루트 Open Graph 이미지 상속, 홈 설명, `noindex`)를 만들고 [app-share-screen](../../../manyak-web/src/features/app/components/app-share-screen.tsx)을 그립니다. 계약은 [웹 Spec](../spec/3-2-web-spec.md#앱-공유-링크)을 따릅니다. 서버(middleware) 리다이렉트는 쓰지 않습니다. 스크래퍼가 HTML과 메타를 받아야 하기 때문입니다.
+
+- 자동 이동은 [lib/app-share](../../../manyak-web/src/lib/app-share.ts)의 `startAppShareRedirect`가 맡고 화면은 첫 마운트 때 한 번만 부릅니다. sessionStorage `manyak:app-share:redirected`로 탭마다 한 번만 실행해 앱에서 돌아오거나 새로고침해도 반복하지 않고, bfcache 복원(`pageshow`의 `persisted`)에서는 남은 폴백을 취소합니다.
+- Android는 `window.location.href`로 배너와 같은 `buildAppIntentUrl`(앱 홈, 공유용 `S.market_referrer`)에 보내고, 배너와 공유하는 `scheduleEscapeFallback`(0.7초 안에 문서가 숨겨지지 않으면 실패)으로 `buildPlayStoreUrl`의 공유용 플레이스토어 주소에 `location.replace`합니다. 카카오톡 인앱은 폴백에서 먼저 `openExternalBrowser`로 플레이스토어를 외부 브라우저에 열고 같은 대기를 한 번 더 거칩니다. Android가 아니면 홈으로 `location.replace`합니다. `replace`를 쓰는 이유는 `/app`이 히스토리에 남아 뒤로가기마다 다시 이동하는 루프를 막기 위해서입니다.
+- 문구는 [features/app/constants](../../../manyak-web/src/features/app/constants.ts)에 있고 버튼은 공유용 플레이스토어 주소로 가는 링크입니다. 배너 판정의 제외 경로에 `/app`을 넣어 배너를 겹쳐 보이지 않습니다.
 
 ### 상단 헤더·하단 네비게이션
 
