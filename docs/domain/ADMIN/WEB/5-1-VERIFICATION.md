@@ -266,7 +266,7 @@
 | 상세 | 반려된 등록본 상세 | 검수 대상 필드 7개, 위반 항목의 위치 "세계관 설정"과 기준 "극단적인 잔혹 표현", 이미지 결과의 표지 "통과" |
 | 이미지 검수 상태 | `imageResults`의 `moderationStatus` `APPROVED`, `REJECTED`, `ERROR`와 `errorCode` `IMAGE_UNREADABLE`, `PENDING` | "통과", "반려", "오류"와 "이미지 판독 불가", "판정 전" |
 | 상세 범위 | 상세 화면 | 설정 본문, 시작 설정, 주요 사건 본문이 없음 |
-| 경로 표시 | 위치 `characters[1].images[0].imageUrl`, `characters[1].description`, `startSettings[0].prologue`, `mainEvents[2].keySentence`, `characters[0].unknown`, `unknownField` | "인물 2 이미지 1", "인물 2 설명", "시작 설정 1 프롤로그", "주요 사건 3 핵심 문장", `characters[0].unknown`, `unknownField` |
+| 경로 표시 | 위치 `characters[1].images[0].imageUrl`, `characters[1].description`, `startSettings[0].prologue`, `mainEvents[2].keySentence`, `characters[0].unknown`, `unknownField` | "인물 2 이미지 1", "인물 2 소개", "시작 설정 1 프롤로그", "주요 사건 3 키 문장", `characters[0].unknown`, `unknownField` |
 | 상세 없음 | 서버가 404 | "제출본을 찾을 수 없습니다." |
 | 사유 검증 | 빈 사유, 공백만, 501자 | 확인 버튼 비활성 또는 "처리 사유를 입력해 주세요.", 요청 없음 |
 | 해제 성공 | 목록의 보류 행에서 사유 "AI 서버 복구 확인"으로 확인 | `POST /api/moderation/holds/{submissionId}/release`에 본문 `{"reason":"AI 서버 복구 확인"}`, 대화상자 닫힘, 목록과 그 제출본 상세의 캐시 무효화와 목록 다시 요청, 그 상세를 열면 새로 요청, "보류를 해제했습니다." 알림 |

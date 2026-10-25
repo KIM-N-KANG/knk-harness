@@ -709,7 +709,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 |---|---|
 | 머리 | 제출본 ID, 종류, 상태, 소유자 링크, 스토리 링크(있을 때), 목록으로 돌아가는 링크<br>보류면 해제 버튼 |
 | 처리 경과 | 접수 시각, 판정 시각, 보류 시각, 마지막 변경 시각, 검수 회차, 자동 재시도 횟수, 보류 사유, 실패 원인 |
-| 검수 대상 필드 | 제목, 한 줄 소개, 소개, 기본 주인공 이름, 장르, 공개 범위, 인물 이름 |
+| 검수 대상 필드 | 제목, 한 줄 소개, 주요 내용, 기본 주인공 이름, 장르, 공개 범위, 인물 이름 |
 | 위반 항목 | 위치, 유형(글, 이미지), 기준 표시 이름, 이유<br>모든 항목 |
 | 이미지 결과 | 이미지(표지 또는 이미지 이름), 검수 상태, 이미지 오류 |
 
@@ -720,7 +720,7 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 |---|---|
 | `title` | 제목 |
 | `oneLineIntro` | 한 줄 소개 |
-| `description` | 소개 |
+| `description` | 주요 내용 |
 | `protagonistName` | 기본 주인공 이름 |
 | `thumbnailUrl` | 표지 |
 | `storySettings.worldSetting` | 세계관 설정 |
@@ -728,14 +728,14 @@ Amplitude의 기능 사용과 안정성, 서버 DB의 채팅 옵션 비중, Lang
 | `storySettings.userRoleSetting` | 주인공 역할 설정 |
 | `storySettings.ruleSetting` | 전개 규칙 |
 | `characters[n].name` | 인물 {n+1} 이름 |
-| `characters[n].description` | 인물 {n+1} 설명 |
+| `characters[n].description` | 인물 {n+1} 소개 |
 | `characters[n].images[m]` 아래 | 인물 {n+1} 이미지 {m+1} |
-| `startSettings[n].name` | 시작 설정 {n+1} 이름 |
+| `startSettings[n].name` | 시작 설정 {n+1} 상황 이름 |
 | `startSettings[n].prologue` | 시작 설정 {n+1} 프롤로그 |
 | `startSettings[n].startSituation` | 시작 설정 {n+1} 시작 상황 |
 | `mainEvents[n].name` | 주요 사건 {n+1} 이름 |
 | `mainEvents[n].description` | 주요 사건 {n+1} 설명 |
-| `mainEvents[n].keySentence` | 주요 사건 {n+1} 핵심 문장 |
+| `mainEvents[n].keySentence` | 주요 사건 {n+1} 키 문장 |
 
 **3. 표시 이름**
 

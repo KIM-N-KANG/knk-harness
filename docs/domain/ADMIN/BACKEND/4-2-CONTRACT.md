@@ -626,7 +626,7 @@ STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].
 | `storySettings.ruleSetting` | `string / null` | 전개 규칙 |
 | `startSettings` | `object[]` | 시작 설정<br>등록 순서, 없으면 빈 배열 |
 | `startSettings[].id` | `string` | 시작 설정 공개 식별자 |
-| `startSettings[].name` | `string` | 시작 장면 이름 |
+| `startSettings[].name` | `string` | 상황 이름 |
 | `startSettings[].prologue` | `string / null` | 프롤로그 |
 | `startSettings[].startSituation` | `string / null` | 시작 상황 |
 | `startSettings[].suggestedInputs` | `string[]` | 추천 입력<br>입력 순서, 없으면 빈 배열 |
@@ -645,11 +645,11 @@ STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].
 | `thumbnailUrl` | `string / null` | 현재 표지<br>업로드 또는 생성 URL, 없으면 프리셋 키의 URL, 둘 다 없으면 `null`<br>검수 상태와 무관 |
 | `thumbnailModerationStatus` | `string` | 표지 검수 상태<br>`APPROVED`, `PENDING`, `REJECTED` |
 | `characters` | `object[]` | 인물<br>저장 순서, 없으면 빈 배열 |
-| `characters[].id` | `string` | 인물 공개 식별자 |
+| `characters[].id` | `string` | 인물 공개 식별자<br>현재 저장값만 응답하므로 `null` 없음 |
 | `characters[].name` | `string` | 인물 이름 |
 | `characters[].description` | `string / null` | 인물 소개 |
 | `characters[].images` | `object[]` | 그 인물의 이미지 전부<br>표시 순서, 검수 상태와 무관, 없으면 빈 배열 |
-| `characters[].images[].id` | `string` | 이미지 공개 식별자 |
+| `characters[].images[].id` | `string` | 이미지 공개 식별자<br>현재 저장값만 응답하므로 `null` 없음 |
 | `characters[].images[].imageName` | `string` | 인물 이미지 이름 |
 | `characters[].images[].imageUrl` | `string` | 이미지 제공 URL |
 | `characters[].images[].moderationStatus` | `string` | 이미지 검수 상태<br>`APPROVED`, `PENDING`, `REJECTED` |
