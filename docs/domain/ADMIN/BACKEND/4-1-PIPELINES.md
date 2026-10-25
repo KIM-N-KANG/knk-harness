@@ -201,10 +201,13 @@ ACCOUNT`"]
     A -->|상세| F["`**기준 턴 도달률과 최근 채팅**
 CHAT`"]
     F --> E
+    B -->|설정| G["`**수정 폼 조립**
+STORY, 소유자 검사 없음`"]
+    G --> E
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class A,C,E comp
-    class B,D,F task
+    class B,D,F,G task
 ```
 
 | 항목 | 규칙 |
@@ -218,6 +221,7 @@ CHAT`"]
 | AI 호출 필터 | AI 호출 기록의 스토리 ID로 연결<br>조건에 맞는 기록이 하나 이상인 스토리 |
 | 기준 턴 도달률 | 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50마다 현재 턴이 기준 이상인 채팅 수를 채팅 수로 나눔<br>기준 턴은 전환의 채팅 턴 도달률과 같음 |
 | 최근 채팅 | 생성 시각 내림차순 5개<br>채팅 목록 항목과 같은 조립 |
+| 설정 | 삭제되지 않은 스토리를 공개 식별자로 찾아 STORY 세트 수정 폼의 현재 저장값 조립을 소유자 검사 없이 씀<br>승인 전 제출본은 반영하지 않음<br>`submission`과 인물 이미지의 `objectKey`를 빼고 응답<br>접속 기록 없음 |
 
 <br>
 

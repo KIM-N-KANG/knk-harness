@@ -18,7 +18,7 @@
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열<br>날짜 필드는 `YYYY-MM-DD`이며 기준 시간대는 각 절에 적음 |
 | 식별자 | 회원, 감사 로그, 주문, 스토리, 채팅은 UUID 공개 식별자<br>내부 PK는 노출하지 않음 |
-| 채팅 대화 원문 | 어떤 관리자 응답에도 사용자 메시지, AI 응답, 추천 입력을 싣지 않음 |
+| 채팅 대화 원문 | 어떤 관리자 응답에도 채팅의 사용자 메시지, AI 응답, 추천 입력을 싣지 않음<br>시작 설정의 추천 입력은 제작 입력이라 스토리 설정 응답에만 실음 |
 | 호출 주체 | 관리자 페이지의 서버 측 처리기<br>브라우저가 직접 호출하지 않으므로 관리자 페이지 주소는 CORS 허용 목록에 없음 |
 | 사유 | 변경 작업의 요청 본문에 `reason` 필수 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
@@ -269,7 +269,7 @@ Content-Type: application/json
 
 - `members.total`은 `members.active`와 `members.withdrawn`의 합이다. 세 값 모두 팀 계정 제외 목록을 뺀다.
 - 관리자 페이지는 가입자 카드를 탈퇴 회원을 포함한 회원 목록(`excludeDeleted` 없음)에 잇는다. 회원 목록은 팀 계정을 제외하지 않아 건수가 카드와 다를 수 있다.
-- 관리자 페이지는 이프 적립 카드는 `direction=granted`로, 이프 소모 카드는 `direction=spent`로 이프 내역에 잇는다. ([4-2-13 이프 내역](#4-2-13-이프-내역))
+- 관리자 페이지는 이프 적립 카드는 `direction=granted`로, 이프 소모 카드는 `direction=spent`로 이프 내역에 잇는다. ([4-2-14 이프 내역](#4-2-14-이프-내역))
 
 <br>
 
@@ -590,7 +590,152 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-7 채팅 목록
+### 4-2-7 스토리 설정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/stories/{storyId}/settings` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+제작자가 저장한 설정을 읽기 전용으로 돌려준다. 대상은 삭제되지 않은 모든 스토리이며 초안 여부, 공개 범위, 보류 여부, 소유자(회원, 게스트, 공식 계정)를 가리지 않는다. 값은 현재 저장값이고 승인 전 제출본의 내용은 반영하지 않는다. 텍스트 필드는 이름 토큰을 치환하지 않은 원문이다. 표지와 인물 이미지에는 공개 노출의 검수 게이트를 적용하지 않고 검수 상태와 무관하게 전부 싣는다.
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `storyId` | 경로 | 필수 | 스토리 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].images[].objectKey`를 뺀 구조다. ([STORY 4-2-16 수정 폼](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-16-수정-폼))
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `title` | `string` | 제목 |
+| `oneLineIntro` | `string / null` | 한 줄 소개 |
+| `description` | `string / null` | 주요 내용 |
+| `protagonistName` | `string / null` | 기본 주인공 이름<br>기존 스토리는 `null` |
+| `genres` | `string[]` | 장르 정식 이름<br>저장 순서 |
+| `storySettings` | `object` | 스토리 설정 통글 4필드<br>저장 행이 없으면 네 필드 모두 `null` |
+| `storySettings.worldSetting` | `string / null` | 세계관 |
+| `storySettings.characterSetting` | `string / null` | 등장인물 |
+| `storySettings.userRoleSetting` | `string / null` | 이름을 제외한 주인공 설명 |
+| `storySettings.ruleSetting` | `string / null` | 전개 규칙 |
+| `startSettings` | `object[]` | 시작 설정<br>등록 순서, 없으면 빈 배열 |
+| `startSettings[].id` | `string` | 시작 설정 공개 식별자 |
+| `startSettings[].name` | `string` | 시작 장면 이름 |
+| `startSettings[].prologue` | `string / null` | 프롤로그 |
+| `startSettings[].startSituation` | `string / null` | 시작 상황 |
+| `startSettings[].suggestedInputs` | `string[]` | 추천 입력<br>입력 순서, 없으면 빈 배열 |
+| `startSettings[].endings` | `object[]` | 활성 엔딩만, 표시 순서<br>없으면 빈 배열 |
+| `startSettings[].endings[].name` | `string` | 엔딩 이름 |
+| `startSettings[].endings[].requirement` | `object` | 엔딩 조건 |
+| `startSettings[].endings[].requirement.minTurns` | `integer` | 최소 턴 수 |
+| `startSettings[].endings[].requirement.achievementCondition` | `string` | 달성 조건 |
+| `startSettings[].endings[].epilogue` | `string` | 엔딩 에필로그 |
+| `mainEvents` | `object[]` | 주요 사건<br>`sortOrder` 오름차순, 없으면 빈 배열 |
+| `mainEvents[].name` | `string` | 사건 이름 |
+| `mainEvents[].description` | `string` | 사건 설명 |
+| `mainEvents[].keySentence` | `string` | 키 문장 |
+| `mainEvents[].sortOrder` | `integer` | 표시 순서<br>0부터 |
+| `visibility` | `string` | `PUBLIC`, `PRIVATE` |
+| `thumbnailUrl` | `string / null` | 현재 표지<br>업로드 또는 생성 URL, 없으면 프리셋 키의 URL, 둘 다 없으면 `null`<br>검수 상태와 무관 |
+| `thumbnailModerationStatus` | `string` | 표지 검수 상태<br>`APPROVED`, `PENDING`, `REJECTED` |
+| `characters` | `object[]` | 인물<br>저장 순서, 없으면 빈 배열 |
+| `characters[].id` | `string` | 인물 공개 식별자 |
+| `characters[].name` | `string` | 인물 이름 |
+| `characters[].description` | `string / null` | 인물 소개 |
+| `characters[].images` | `object[]` | 그 인물의 이미지 전부<br>표시 순서, 검수 상태와 무관, 없으면 빈 배열 |
+| `characters[].images[].id` | `string` | 이미지 공개 식별자 |
+| `characters[].images[].imageName` | `string` | 인물 이미지 이름 |
+| `characters[].images[].imageUrl` | `string` | 이미지 제공 URL |
+| `characters[].images[].moderationStatus` | `string` | 이미지 검수 상태<br>`APPROVED`, `PENDING`, `REJECTED` |
+
+- 검수 경과는 MODERATION 세트의 관리자 제출본 상세에서 본다. ([MODERATION 4-2-9 관리자 제출본 상세](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-9-관리자-제출본-상세))
+- 화풍은 스토리에 저장되지 않아 응답에 없다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `storyId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/stories/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/settings
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+회원이 소유한 비공개 스토리이며 인물 이미지 한 장의 검수 상태가 `PENDING`이다.
+
+```json
+{
+  "title": "{username}의 계약서",
+  "oneLineIntro": "기억을 잃은 마법사 {username}이가 금지된 숲에서 과거를 추적한다",
+  "description": "계약 마법이 지배하는 왕국에서 잃어버린 기억과 사라진 가족의 비밀을 추적한다.",
+  "protagonistName": "서린",
+  "genres": ["판타지", "미스터리"],
+  "storySettings": {
+    "worldSetting": "# 세계관\n계약 마법이 지배하는 왕국. 계약서는 서명자의 기억을 담보로 잡는다.",
+    "characterSetting": "# 도윤\n침착한 도서관 사서. 계약서의 출처를 알고 있다.",
+    "userRoleSetting": "# 주인공\n기억을 잃은 마법사. 자신의 이름이 적힌 계약서를 발견했다.",
+    "ruleSetting": "# 전개 규칙\n사용자의 행동에 따라 단서를 공개한다."
+  },
+  "startSettings": [
+    {
+      "id": "5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e",
+      "name": "선왕의 장례식 날",
+      "prologue": "잿빛 비가 사흘째 왕성을 적신다.",
+      "startSituation": "장례식이 끝난 늦은 밤, 기사단 숙소.",
+      "suggestedInputs": ["편지를 열어본다", "창밖의 인기척을 확인한다", "여관 주인을 찾아간다"],
+      "endings": [
+        {
+          "name": "왕좌를 되찾다",
+          "requirement": { "minTurns": 10, "achievementCondition": "주인공이 반란군을 규합해 왕좌를 되찾는다." },
+          "epilogue": "주인공이 왕좌에 오르는 대관식을 장엄하게 묘사한다."
+        }
+      ]
+    }
+  ],
+  "mainEvents": [
+    { "name": "잃어버린 편지를 발견한다", "description": "주인공이 다락방에서 어머니가 남긴 봉인된 편지를 찾아낸다.", "keySentence": "봉인된 편지를 열어 어머니의 비밀을 마주한다.", "sortOrder": 0 }
+  ],
+  "visibility": "PRIVATE",
+  "thumbnailUrl": "https://cdn.example.com/thumbnails/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
+  "thumbnailModerationStatus": "APPROVED",
+  "characters": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "도윤",
+      "description": "기록을 지키는 과묵한 사서.",
+      "images": [
+        { "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e", "imageName": "도윤_기본", "imageUrl": "https://cdn.example.com/characters/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/5d0f3c8b-2e4a-4b6c-9d7e-0f1a2b3c4d5e.webp", "moderationStatus": "APPROVED" },
+        { "id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f", "imageName": "도윤_놀람", "imageUrl": "https://cdn.example.com/characters/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/6e1a4d9c-3f5b-4c7d-8e9f-1a2b3c4d5e6f.webp", "moderationStatus": "PENDING" }
+      ]
+    }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-8 채팅 목록
 
 | 항목 | 값 |
 |---|---|
@@ -683,7 +828,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-8 채팅 상세
+### 4-2-9 채팅 상세
 
 | 항목 | 값 |
 |---|---|
@@ -708,7 +853,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-9 회원 목록
+### 4-2-10 회원 목록
 
 | 항목 | 값 |
 |---|---|
@@ -797,7 +942,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-10 회원 상세
+### 4-2-11 회원 상세
 
 | 항목 | 값 |
 |---|---|
@@ -873,7 +1018,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-11 회원 이프 내역
+### 4-2-12 회원 이프 내역
 
 | 항목 | 값 |
 |---|---|
@@ -943,7 +1088,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-12 회원 출석 기록
+### 4-2-13 회원 출석 기록
 
 | 항목 | 값 |
 |---|---|
@@ -978,7 +1123,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-13 이프 내역
+### 4-2-14 이프 내역
 
 | 항목 | 값 |
 |---|---|
@@ -1007,7 +1152,7 @@ Authorization: Bearer {adminToken}
 | `items[].member` | `object` | 회원 요약 구조 |
 
 - 원장 행에는 공개 식별자가 없어 항목에 식별자가 없다. 같은 시각의 행은 내부 기록 순서의 역순이다.
-- 회원별 누계와 회원 필터는 없다. 한 회원의 원장 행은 회원 이프 내역에서 본다. ([4-2-11 회원 이프 내역](#4-2-11-회원-이프-내역))
+- 회원별 누계와 회원 필터는 없다. 한 회원의 원장 행은 회원 이프 내역에서 본다. ([4-2-12 회원 이프 내역](#4-2-12-회원-이프-내역))
 - 팀 계정 제외를 적용하지 않으므로 대시보드 카드와 추이의 적립량과 소모량과 이 목록의 합계는 팀 계정의 행만큼 다를 수 있다.
 - 접속 기록을 남기지 않는다.
 
@@ -1050,7 +1195,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-14 결제 내역
+### 4-2-15 결제 내역
 
 | 항목 | 값 |
 |---|---|
@@ -1133,7 +1278,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-15 결제 상세
+### 4-2-16 결제 상세
 
 | 항목 | 값 |
 |---|---|
@@ -1206,7 +1351,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-16 감사 로그 조회
+### 4-2-17 감사 로그 조회
 
 | 항목 | 값 |
 |---|---|
@@ -1296,7 +1441,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-17 분석 지표
+### 4-2-18 분석 지표
 
 | 항목 | 값 |
 |---|---|
@@ -1406,7 +1551,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-18 설치 지표
+### 4-2-19 설치 지표
 
 | 항목 | 값 |
 |---|---|
@@ -1470,7 +1615,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-19 캠페인 목록
+### 4-2-20 캠페인 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1507,7 +1652,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-20 캠페인 추이
+### 4-2-21 캠페인 추이
 
 | 항목 | 값 |
 |---|---|
@@ -1625,7 +1770,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-21 캠페인 간편 제작 퍼널
+### 4-2-22 캠페인 간편 제작 퍼널
 
 | 항목 | 값 |
 |---|---|
@@ -1699,7 +1844,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-22 캠페인 상세 진입 퍼널
+### 4-2-23 캠페인 상세 진입 퍼널
 
 | 항목 | 값 |
 |---|---|
@@ -1743,7 +1888,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-23 캠페인 유입 소스
+### 4-2-24 캠페인 유입 소스
 
 | 항목 | 값 |
 |---|---|
@@ -1787,7 +1932,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-24 사용자 활동
+### 4-2-25 사용자 활동
 
 | 항목 | 값 |
 |---|---|
@@ -1832,7 +1977,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-25 사용자 리텐션
+### 4-2-26 사용자 리텐션
 
 | 항목 | 값 |
 |---|---|
@@ -1876,7 +2021,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-26 사용자 세션
+### 4-2-27 사용자 세션
 
 | 항목 | 값 |
 |---|---|
@@ -1917,7 +2062,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-27 신규 가입자
+### 4-2-28 신규 가입자
 
 | 항목 | 값 |
 |---|---|
@@ -1961,7 +2106,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-28 전환 퍼널
+### 4-2-29 전환 퍼널
 
 | 항목 | 값 |
 |---|---|
@@ -2010,7 +2155,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-29 채팅 턴 도달률
+### 4-2-30 채팅 턴 도달률
 
 | 항목 | 값 |
 |---|---|
@@ -2051,7 +2196,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-30 기능 사용과 안정성
+### 4-2-31 기능 사용과 안정성
 
 | 항목 | 값 |
 |---|---|
@@ -2104,7 +2249,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-31 채팅 옵션 비중
+### 4-2-32 채팅 옵션 비중
 
 | 항목 | 값 |
 |---|---|
@@ -2140,7 +2285,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-32 AI 비용
+### 4-2-33 AI 비용
 
 | 항목 | 값 |
 |---|---|
@@ -2205,7 +2350,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-33 인프라 지표
+### 4-2-34 인프라 지표
 
 | 항목 | 값 |
 |---|---|
@@ -2368,7 +2513,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-34 DB 테이블 크기
+### 4-2-35 DB 테이블 크기
 
 | 항목 | 값 |
 |---|---|
@@ -2441,7 +2586,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-35 푸시 열람
+### 4-2-36 푸시 열람
 
 | 항목 | 값 |
 |---|---|
@@ -2572,7 +2717,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-36 다른 도메인과의 경계
+### 4-2-37 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
@@ -2581,7 +2726,7 @@ Authorization: Bearer {adminToken}
 | NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 종류별 날짜별 도달 회원 수 |
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
-| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 공식 계정 식별 |
+| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 수정 폼의 현재 저장값 조립, 공식 계정 식별 |
 | CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |

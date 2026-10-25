@@ -1,6 +1,6 @@
 # 3-1 계약
 
-이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면이 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
+이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리 상세의 스토리 설정 구역이 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
 
 요청과 응답 필드, 실패 응답의 기준은 BACKEND 계약에, BFF의 검증과 전달은 데이터 연동에 있다. ([BACKEND 4-2 계약](../BACKEND/4-2-CONTRACT.md), [3-2 데이터 연동](3-2-DATA-INTEGRATION.md))
 
@@ -14,31 +14,32 @@
 |---|---|---|
 | 개요 요약 카드 | `GET /api/dashboard/summary` | [4-2-3 대시보드 요약](../BACKEND/4-2-CONTRACT.md#4-2-3-대시보드-요약) |
 | 개요 일별 추이, 분석 | `GET /api/dashboard/charts` | [4-2-4 대시보드 차트](../BACKEND/4-2-CONTRACT.md#4-2-4-대시보드-차트) |
-| 개요 오늘 활성 사용자 카드 | `GET /api/dashboard/analytics` | [4-2-17 분석 지표](../BACKEND/4-2-CONTRACT.md#4-2-17-분석-지표) |
-| 개요 앱 설치 카드, 유입 분석 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-18 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-18-설치-지표) |
-| 유입 분석 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-19 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-19-캠페인-목록) |
-| 유입 분석 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-20 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-추이) |
-| 유입 분석 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-21 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-간편-제작-퍼널) |
-| 유입 분석 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-22 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-상세-진입-퍼널) |
-| 유입 분석 유입 소스 | `GET /api/campaigns/sources` | [4-2-23 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-유입-소스) |
-| 유입 분석 푸시 열람 | `GET /api/campaigns/push-opens` | [4-2-35 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-35-푸시-열람) |
-| 사용자 활동 | `GET /api/users/activity` | [4-2-24 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-24-사용자-활동) |
-| 리텐션 | `GET /api/users/retention` | [4-2-25 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-리텐션) |
-| 세션 | `GET /api/users/sessions` | [4-2-26 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-세션) |
-| 신규 가입자 | `GET /api/users/signups` | [4-2-27 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-27-신규-가입자) |
-| 전환 퍼널 | `GET /api/conversion/funnels/{funnel}` | [4-2-28 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-28-전환-퍼널) |
-| 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-29 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-29-채팅-턴-도달률) |
-| 기능 사용과 안정성 | `GET /api/quality/client` | [4-2-30 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-30-기능-사용과-안정성) |
-| 채팅 옵션 비중 | `GET /api/quality/chat-options` | [4-2-31 채팅 옵션 비중](../BACKEND/4-2-CONTRACT.md#4-2-31-채팅-옵션-비중) |
-| AI 비용 | `GET /api/quality/ai-cost` | [4-2-32 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-32-ai-비용) |
-| 인프라 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-33 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-33-인프라-지표) |
-| 인프라 DB 테이블 | `GET /api/infra/db-tables` | [4-2-34 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-34-db-테이블-크기) |
-| 이프 내역 | `GET /api/credits/transactions` | [4-2-13 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-13-이프-내역) |
+| 개요 오늘 활성 사용자 카드 | `GET /api/dashboard/analytics` | [4-2-18 분석 지표](../BACKEND/4-2-CONTRACT.md#4-2-18-분석-지표) |
+| 개요 앱 설치 카드, 유입 분석 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-19 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-19-설치-지표) |
+| 유입 분석 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-20 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-목록) |
+| 유입 분석 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-21 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-추이) |
+| 유입 분석 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-22 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-간편-제작-퍼널) |
+| 유입 분석 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-23 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-상세-진입-퍼널) |
+| 유입 분석 유입 소스 | `GET /api/campaigns/sources` | [4-2-24 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-24-캠페인-유입-소스) |
+| 유입 분석 푸시 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
+| 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
+| 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |
+| 세션 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
+| 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
+| 전환 퍼널 | `GET /api/conversion/funnels/{funnel}` | [4-2-29 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-29-전환-퍼널) |
+| 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
+| 기능 사용과 안정성 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
+| 채팅 옵션 비중 | `GET /api/quality/chat-options` | [4-2-32 채팅 옵션 비중](../BACKEND/4-2-CONTRACT.md#4-2-32-채팅-옵션-비중) |
+| AI 비용 | `GET /api/quality/ai-cost` | [4-2-33 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-33-ai-비용) |
+| 인프라 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-34 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-34-인프라-지표) |
+| 인프라 DB 테이블 | `GET /api/infra/db-tables` | [4-2-35 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-35-db-테이블-크기) |
+| 이프 내역 | `GET /api/credits/transactions` | [4-2-14 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-14-이프-내역) |
 | 검수 제출 목록 | `GET /api/moderation/submissions` | [MODERATION 4-2-8 관리자 제출본 목록](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-8-관리자-제출본-목록) |
 | 검수 제출 상세 | `GET /api/moderation/submissions/{submissionId}` | [MODERATION 4-2-9 관리자 제출본 상세](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-9-관리자-제출본-상세) |
 | 검수 보류 해제 | `POST /api/moderation/holds/{submissionId}/release` | [MODERATION 4-2-7 보류 해제](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-7-보류-해제) |
+| 스토리 상세의 스토리 설정 | `GET /api/stories/{storyId}/settings` | [4-2-7 스토리 설정](../BACKEND/4-2-CONTRACT.md#4-2-7-스토리-설정) |
 
-- 검수 제출의 세 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
+- 검수 제출의 세 경로와 스토리 설정 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
 
 <br>
 
