@@ -95,7 +95,7 @@ erDiagram
 | `id` | bigint | PK | |
 | `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder` 하나 |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
-| `body` | varchar(300) | NOT NULL | |
+| `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
 | `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용 |
 
@@ -116,7 +116,7 @@ erDiagram
 | `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
-| `body` | varchar(300) | NOT NULL | |
+| `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
 | `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | |
 | `target_count` | integer | | 마지막 회차에서 조회된 대상 수 |
