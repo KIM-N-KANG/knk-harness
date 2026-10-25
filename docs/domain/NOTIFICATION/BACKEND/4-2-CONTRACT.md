@@ -648,7 +648,7 @@ Content-Type: application/json
 | `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
 | `CREDIT_EXPIRY_REMINDER` | `title` | `string` | 템플릿 제목<br>광고 표기 없음 |
 | `CREDIT_EXPIRY_REMINDER` | `body` | `string` | 템플릿 본문 |
-| `CREDIT_EXPIRY_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
+| `CREDIT_EXPIRY_REMINDER` | `deepLink` | `string` | `/my/credits?tab=history` |
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
 | `PROMOTION` | `body` | `string` | 수신거부 안내가 붙은 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
@@ -659,7 +659,8 @@ Content-Type: application/json
 | `REJECTED` | 검수에서 반려됐어요 | 「{스토리 제목}」의 내용을 수정해 다시 제출해 주세요. |
 | `FAILED` | 검수를 진행하지 못했어요 | 「{스토리 제목}」의 검수 중 문제가 생겼어요. 잠시 후 다시 제출해 주세요. |
 
-- `CREDIT_EXPIRY_REMINDER`에는 금액, 수량, 만료 시각 필드가 없다. 회원이 이프 화면에서 확인한다. 알림 내역의 제목, 본문, 딥링크도 이 데이터와 같다.
+- `CREDIT_EXPIRY_REMINDER`에는 금액, 수량, 만료 시각 필드가 없다. 회원이 이프 내역 탭에서 만료 예정일을 확인한다. 알림 내역의 제목, 본문, 딥링크도 이 데이터와 같다.
+- `tab` 값은 `purchase`, `free`, `history`다. 모르는 값을 받은 클라이언트는 이프 화면의 기본 탭을 연다.
 
 <br>
 
@@ -696,7 +697,7 @@ Content-Type: application/json
   "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
   "title": "이프 만료 예정 안내",
   "body": "곧 만료되는 이프가 있어요",
-  "deepLink": "https://manyak.app/my/credits?tab=free"
+  "deepLink": "https://manyak.app/my/credits?tab=history"
 }
 ```
 
