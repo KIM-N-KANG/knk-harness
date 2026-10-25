@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>캠페인은 외부 노출용 `public_id uuid`를 따로 둠<br>토큰 행 ID는 노출하지 않음 |
 | 시각 | `timestamp with time zone`<br>`created_at`은 아래 표에 표시하지 않으며 기본값은 `now()`<br>아웃박스의 `created_at`만 기본값 없이 기록 시점을 넣음 |
-| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스는 삭제 경로 없음 |
+| 삭제 | 토큰은 물리 삭제<br>템플릿, 캠페인, 아웃박스, 발송 결과는 삭제 경로 없음<br>알림 내역은 회원 삭제 시 함께 삭제 |
 | FK | 토큰은 회원 삭제 시 함께 삭제(`ON DELETE CASCADE`)<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -195,4 +195,61 @@ erDiagram
 |---|---|
 | 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
 | 수신 동의 | 없음<br>철회는 값을 비움 |
-| 문구 템플릿, 캠페인, 아웃박스 | 없음 |
+| 문구 템플릿, 캠페인, 아웃박스, 발송 결과 | 없음 |
+| 알림 내역 | 회원 행 삭제 시 연쇄 삭제 |
+
+<br>
+
+### 3-2-12 알림 내역과 발송 결과
+
+**`user_notifications`**
+
+회원이 받은 알림의 사본 1건이 한 행이다. 알림함이 읽는다. 이프 소멸 예정 알림은 회차 트랜잭션에서 대상 회원마다 기록한다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `public_id` | uuid | NOT NULL, UNIQUE | 알림함 API의 식별자 |
+| `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
+| `message_key` | varchar(255) | NOT NULL | 메시지 식별자와 같은 값 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`는 CHECK 확장 마이그레이션이 필요 |
+| `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>`CREDIT_EXPIRY_REMINDER`는 `ACTIVITY` |
+| `title` | varchar(120) | NOT NULL | |
+| `body` | varchar(300) | NOT NULL | |
+| `deep_link` | varchar(512) | | |
+| `story_public_id` | uuid | | 이프 소멸 예정 알림은 NULL |
+| `notice_public_id` | uuid | | 이프 소멸 예정 알림은 NULL |
+| `notice_tag` | varchar(16) | | 이프 소멸 예정 알림은 NULL |
+| `read_at` | timestamptz | | 읽음 시각 |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `uk_user_notifications_user_message` | `user_id`, `message_key` UNIQUE |
+| `idx_user_notifications_user_created` | `user_id`, `created_at DESC`, `id DESC` |
+| `idx_user_notifications_user_category_created` | `user_id`, `category`, `created_at DESC`, `id DESC` |
+| `idx_user_notifications_unread` | `user_id`, `category` WHERE `read_at IS NULL` |
+
+<br>
+
+**`push_delivery_results`**
+
+메시지 식별자별 최종 발송 결과 1건이 한 행이다. 알림 서비스의 보고와 로컬 모드 발송기가 기록한다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `message_id` | varchar(255) | NOT NULL, UNIQUE | 메시지 식별자 |
+| `type` | varchar(40) | NOT NULL | 시나리오 식별자<br>허용 값은 발송 결과 보고의 `type`과 같음 |
+| `kind` | varchar(16) | NOT NULL, CHECK `SERVICE` `MARKETING` | |
+| `campaign_id` | bigint | FK `push_campaigns.id` | 캠페인 발송만 |
+| `user_id` | bigint | FK `users.id` | 보고 시점에 존재한 회원만 |
+| `outcome` | varchar(16) | NOT NULL, CHECK `DELIVERED` `UNDELIVERED` `DISCARDED` | |
+| `reason` | varchar(40) | NOT NULL | 발송 응답의 `reason` 값 |
+| `delivered_devices` | integer | NOT NULL, CHECK `>= 0` | |
+| `failed_devices` | integer | NOT NULL, CHECK `>= 0` | |
+| `completed_at` | timestamptz | NOT NULL | |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_push_delivery_results_campaign` | `campaign_id` WHERE `campaign_id IS NOT NULL` |
+| `idx_push_delivery_results_type_completed` | `type`, `completed_at` |

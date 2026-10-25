@@ -28,7 +28,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 미정으로 표시된 항목을 추측으로 채우지 않는다.
-- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-11 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-11-다른-도메인과의-경계))
+- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-13 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-13-다른-도메인과의-경계))
 
 <br>
 
@@ -60,12 +60,13 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
-| 회원 API와 내부 API | [push/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/controller/) | 4-2-2~4-2-7 |
+| 회원 API, 내부 API, 문구 템플릿 API | [push/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/controller/) | 4-2-2~4-2-7, 4-2-11, 4-2-12 |
 | 토큰, 동의, 자격, 발송기, 출석, 이프 소멸 예정, 프로모션, 템플릿 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-2~4-1-5, 4-1-8~4-1-10, 4-1-13, 4-1-15 |
 | 완성 리스너 | [push/event/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/event/), [push/outbox/StoryCompletionOutboxListener.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/outbox/StoryCompletionOutboxListener.kt) | 4-1-6 |
 | 검수 리스너 | [story/submission/ModerationPushListeners.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/ModerationPushListeners.kt) | 4-1-7 |
 | 아웃박스, 릴레이, 발행 어댑터 | [push/outbox/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/outbox/) | 4-1-11, 4-2-9, 5-2-4 |
 | 스케줄러 | [push/scheduler/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/scheduler/) | 4-1-8~4-1-10, 4-1-15 |
+| 알림 내역 | [push/inbox/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/inbox/) | 3-2-12, 4-1-15 |
 | 모델 | [push/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/entity/), [push/repository/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/repository/), [auth/entity/User.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/entity/User.kt) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
 | 발송 대상 조회 | [auth/repository/UserRepository.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/repository/UserRepository.kt) | 4-1-8, 4-1-9, 4-1-15 |
 | 설정과 내부 인증 | [push/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/config/), [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/), [application.yml](../../../../../manyak-server/src/main/resources/application.yml) | 5-1-6, 6-3 |
