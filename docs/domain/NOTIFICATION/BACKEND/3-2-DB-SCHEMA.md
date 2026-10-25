@@ -88,12 +88,12 @@ erDiagram
 
 **`push_message_templates`**
 
-출석 리마인드 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 운영자가 직접 기록한다.
+출석 리마인드와 이프 소멸 예정 알림 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 운영자가 직접 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
-| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder` 하나 |
+| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder`, `credit_expiry_reminder` |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행 |
@@ -161,6 +161,8 @@ erDiagram
 | `users` | `public_id` | 수신자 식별자 |
 | `users` | `reward_identity_user_id` | 출석 미수령 판정 |
 | `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
+| `credit_lots` | `remaining` | 잔여가 있는 로트만 만료 예정 판정 |
+| `credit_lots` | `expires_at` | 만료 예정 판정과 발송 요청의 유효 기한 |
 
 <br>
 
@@ -171,6 +173,8 @@ erDiagram
 | 키 | 값 | 삭제 |
 |---|---|---|
 | `push:attendance-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
+| `push:credit-expiry-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
+| `push:credit-expiry-reminder:cooldown:{회원 내부 ID}` | `1` | 쿨다운 수명 만료 |
 | `notification:processed:{메시지 식별자}` | 처리 중이면 소유자 값, 완료면 `done` | 처리 중 선점 수명 만료<br>완료 후 멱등 기록 수명 만료 |
 | `notification:sent:{메시지 식별자}` | 성공한 토큰의 SHA-256 해시 집합 | 멱등 기록 수명 만료 |
 

@@ -567,9 +567,9 @@ Content-Type: application/json
 | `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에도 바뀌지 않음 |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
-| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
+| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
 | `data` | `object` | 필수 | 푸시 데이터<br>동의와 토큰을 담지 않음 |
-| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>생략하면 만료 없음 |
+| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>이프 소멸 예정 알림은 회원의 창 안 로트 중 가장 늦은 만료 시각<br>생략하면 만료 없음 |
 | `requestId` | `string` | 필수 | 발행 원인의 요청 ID<br>없으면 `unknown` |
 | `sessionId` | `string` | 필수 | 발행 원인의 세션 ID<br>없으면 `unknown` |
 | `schemaVersion` | `integer` | 필수 | `1` |
@@ -579,10 +579,11 @@ Content-Type: application/json
 | `STORY_COMPLETED` | `SERVICE` | `story-completed:{완성 요청 ID}` |
 | `STORY_MODERATION_COMPLETED` | `SERVICE` | `story-moderation:{제출본 ID}:{회차}` |
 | `ATTENDANCE_REMINDER` | `MARKETING` | `attendance:{회원 공개 식별자}:{KST 날짜}` |
+| `CREDIT_EXPIRY_REMINDER` | `SERVICE` | `credit-expiry:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
 - 추적 헤더 `traceparent`, `tracestate`는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
-- 출석 리마인드와 프로모션은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
+- 출석 리마인드, 이프 소멸 예정 알림, 프로모션은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>
 <summary><b>메시지 예시</b></summary>
@@ -644,6 +645,9 @@ Content-Type: application/json
 | `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
 | `ATTENDANCE_REMINDER` | `body` | `string` | 템플릿 본문 |
 | `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
+| `CREDIT_EXPIRY_REMINDER` | `title` | `string` | 템플릿 제목<br>광고 표기 없음 |
+| `CREDIT_EXPIRY_REMINDER` | `body` | `string` | 템플릿 본문 |
+| `CREDIT_EXPIRY_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
 | `PROMOTION` | `body` | `string` | 본문 |
@@ -654,13 +658,15 @@ Content-Type: application/json
 | `REJECTED` | 검수에서 반려됐어요 | 「{스토리 제목}」의 내용을 수정해 다시 제출해 주세요. |
 | `FAILED` | 검수를 진행하지 못했어요 | 「{스토리 제목}」의 검수 중 문제가 생겼어요. 잠시 후 다시 제출해 주세요. |
 
+- `CREDIT_EXPIRY_REMINDER`에는 금액, 수량, 만료 시각 필드가 없다. 회원이 이프 화면에서 확인한다.
+
 <br>
 
 **3. 플랫폼별 구성**
 
 | 플랫폼 | 구성 |
 |---|---|
-| Android | 데이터만<br>서비스 알림은 높은 우선순위, 광고 알림은 보통<br>출석 리마인드는 당일 KST 자정까지의 TTL |
+| Android | 데이터만<br>서비스 알림은 높은 우선순위, 광고 알림은 보통<br>유효 기한이 있는 시나리오는 유효 기한까지의 TTL |
 | 웹 | 데이터와 함께 제목, 본문, 아이콘, 클릭 링크의 알림 구성<br>스토리 완성은 제목 `스토리가 완성됐어요`, 본문은 스토리 제목<br>그 외는 데이터의 `title`과 `body`<br>클릭 링크는 `deepLink`, 없으면 운영 웹 주소 |
 
 <details>
@@ -681,6 +687,18 @@ Content-Type: application/json
 }
 ```
 
+**2) `CREDIT_EXPIRY_REMINDER` 푸시 데이터**
+
+```json
+{
+  "type": "CREDIT_EXPIRY_REMINDER",
+  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "title": "이프 소멸 예정 안내",
+  "body": "곧 소멸되는 이프가 있어요",
+  "deepLink": "https://manyak.app/my/credits?tab=free"
+}
+```
+
 </details>
 
 <br>
@@ -692,7 +710,7 @@ Content-Type: application/json
 | STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트 |
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
-| PAYMENT | 없음 | 출석 보상 멱등 키의 존재 |
+| PAYMENT | 없음 | 출석 보상 멱등 키의 존재, 만료 창 안에 잔여 있는 로트를 가진 회원 조회 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
 
 다른 도메인이 호출하거나 발행하는 연산의 입력과 결과는 다음과 같다.
