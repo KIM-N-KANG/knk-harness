@@ -74,7 +74,7 @@
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_ENABLED` | `true` | 주입 없음 | |
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_CRON` | `0 0 9 * * *` | 주입 없음 | KST 기준 |
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_TITLE` | 설정 파일의 기본 문구 | 주입 없음 | 광고 표기 제외 |
-| `MANYAK_PUSH_ATTENDANCE_REMINDER_BODY` | 설정 파일의 기본 문구 | 주입 없음 | |
+| `MANYAK_PUSH_ATTENDANCE_REMINDER_BODY` | 설정 파일의 기본 문구 | 주입 없음 | 수신거부 안내 제외 |
 | `MANYAK_PUSH_CREDIT_EXPIRY_REMINDER_ENABLED` | `true` | 주입 없음 | |
 | `MANYAK_PUSH_CREDIT_EXPIRY_REMINDER_CRON` | `0 0 10 * * *` | 주입 없음 | KST 기준 |
 | `MANYAK_PUSH_CREDIT_EXPIRY_REMINDER_TITLE` | `이프 만료 예정 안내` | 주입 없음 | |

@@ -644,14 +644,14 @@ Content-Type: application/json
 | `STORY_MODERATION_COMPLETED` | `body` | `string` | 결과별 본문 |
 | `ATTENDANCE_REMINDER` | `date` | `string` | KST 날짜 |
 | `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
-| `ATTENDANCE_REMINDER` | `body` | `string` | 템플릿 본문 |
+| `ATTENDANCE_REMINDER` | `body` | `string` | 수신거부 안내가 붙은 템플릿 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 | `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
 | `CREDIT_EXPIRY_REMINDER` | `title` | `string` | 템플릿 제목<br>광고 표기 없음 |
 | `CREDIT_EXPIRY_REMINDER` | `body` | `string` | 템플릿 본문 |
 | `CREDIT_EXPIRY_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
-| `PROMOTION` | `body` | `string` | 본문 |
+| `PROMOTION` | `body` | `string` | 수신거부 안내가 붙은 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 
 | `status` | `title` | `body` |
 |---|---|---|
@@ -683,7 +683,7 @@ Content-Type: application/json
   "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
   "date": "2026-10-16",
   "title": "(광고) 이프 250이 도착했어요 🍃",
-  "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
+  "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?\n수신거부: 마이 > 알림 설정",
   "deepLink": "https://manyak.app/my/credits?tab=free"
 }
 ```
