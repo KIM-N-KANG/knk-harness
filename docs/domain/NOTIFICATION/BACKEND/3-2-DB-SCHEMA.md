@@ -88,7 +88,7 @@ erDiagram
 
 **`push_message_templates`**
 
-출석 리마인드와 이프 소멸 예정 알림 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 운영자가 직접 기록한다.
+출석 리마인드와 이프 만료 예정 알림 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 운영자가 직접 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -204,7 +204,7 @@ erDiagram
 
 **`user_notifications`**
 
-회원이 받은 알림의 사본 1건이 한 행이다. 알림함이 읽는다. 이프 소멸 예정 알림은 회차 트랜잭션에서 대상 회원마다 기록한다.
+회원이 받은 알림의 사본 1건이 한 행이다. 알림함이 읽는다. 이프 만료 예정 알림은 회차 트랜잭션에서 대상 회원마다 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
@@ -217,9 +217,9 @@ erDiagram
 | `title` | varchar(120) | NOT NULL | |
 | `body` | varchar(300) | NOT NULL | |
 | `deep_link` | varchar(512) | | |
-| `story_public_id` | uuid | | 이프 소멸 예정 알림은 NULL |
-| `notice_public_id` | uuid | | 이프 소멸 예정 알림은 NULL |
-| `notice_tag` | varchar(16) | | 이프 소멸 예정 알림은 NULL |
+| `story_public_id` | uuid | | 이프 만료 예정 알림은 NULL |
+| `notice_public_id` | uuid | | 이프 만료 예정 알림은 NULL |
+| `notice_tag` | varchar(16) | | 이프 만료 예정 알림은 NULL |
 | `read_at` | timestamptz | | 읽음 시각 |
 
 | 인덱스 | 컬럼 |

@@ -414,7 +414,7 @@ FCM`"]
 
 <br>
 
-### 4-1-15 이프 소멸 예정 알림
+### 4-1-15 이프 만료 예정 알림
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
