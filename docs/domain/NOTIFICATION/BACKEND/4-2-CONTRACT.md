@@ -642,11 +642,11 @@ Content-Type: application/json
 | `STORY_MODERATION_COMPLETED` | `body` | `string` | 결과별 본문 |
 | `ATTENDANCE_REMINDER` | `date` | `string` | KST 날짜 |
 | `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
-| `ATTENDANCE_REMINDER` | `body` | `string` | 수신거부 안내가 붙은 템플릿 본문 |
+| `ATTENDANCE_REMINDER` | `body` | `string` | 수신거부 안내가 붙은 템플릿 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 | `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
-| `PROMOTION` | `body` | `string` | 수신거부 안내가 붙은 본문 |
+| `PROMOTION` | `body` | `string` | 수신거부 안내가 붙은 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 
 | `status` | `title` | `body` |
 |---|---|---|
