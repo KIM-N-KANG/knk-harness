@@ -228,6 +228,7 @@
 | 앱·해외 로그인 조건 | 배포 뒤 첫 분석 지표 갱신의 앱·해외 로그인 `_active` 응답과 같은 날짜의 Amplitude 차트 값(국가 한국 밖, 플랫폼 Android, 사용자 속성 `user_id` 있음) | 두 값이 같음<br>대역이 필터를 거절하면 그 조회를 빼지 않고 공통 실패 규칙(저장 값, 준비 중 날짜, 503)대로 응답<br>값이 다르거나 거절되면 필터 표현을 고친 뒤 같은 날짜를 다시 받아 대조 |
 | 캠페인 분석 | 캠페인 목록과 기본값의 추이 응답 | 성공 응답과 `campaign`이 목록의 진행 중 항목<br>`budget_exceeded`가 반복되면 호출 묶음 재검토 |
 | 사용자, 전환, 기능 지표 | 기본 범위의 사용자 활동, 전환 퍼널 하나, 기능 사용 응답과 DB 지표 응답 | 성공 응답 |
+| 사용자 리텐션 | 기본 범위의 리텐션 `all` 응답과 같은 조건의 Amplitude 리텐션 차트(New User에서 Any Active, N-Day, 국내 조건)<br>운영 DB의 `users_retention` 확정 행 | 코호트마다 `users`가 차트의 코호트 인원, `d1`이 차트의 Day 1과 같음<br>배포 다음 날 `admin_analytics_backfill`이 `phase` `backfill`, `result` `done`이 된 뒤 서비스 시작일 이후 확정 행이 모두 인덱스 0~31을 갖고 어느 것도 `incomplete` 아님 |
 | 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 `ecs.services` 3개의 `runningTasks` 1 이상, 모든 묶음이 `null` 아님<br>사용 불가면 `admin_infra_metrics_fetch_failed`의 `reason` |
