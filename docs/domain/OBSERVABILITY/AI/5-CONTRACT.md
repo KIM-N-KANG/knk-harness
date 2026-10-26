@@ -79,7 +79,7 @@
 | `limits.diagnosis_seconds` | 정수 | `300` | 진단 턴 시간 | `DIAG_LIMITS_DIAGNOSIS_SECONDS` |
 | `limits.diagnosis_turns` | 정수 | `30` | 진단 턴의 SDK 턴 수 | `DIAG_LIMITS_DIAGNOSIS_TURNS` |
 | `limits.conversation_turns` | 정수 | `20` | 대화 턴의 SDK 턴 수 | `DIAG_LIMITS_CONVERSATION_TURNS` |
-| `limits.diagnosis_usd` | 숫자 | `0.20` | 진단 턴의 SDK 비용 한도 | `DIAG_LIMITS_DIAGNOSIS_USD` |
+| `limits.diagnosis_usd` | 숫자 | `0.50` | 진단 턴의 SDK 비용 한도 | `DIAG_LIMITS_DIAGNOSIS_USD` |
 | `limits.session_usd` | 숫자 | `2.00` | 세션 비용 한도 | `DIAG_LIMITS_SESSION_USD` |
 | `limits.daily_usd` | 숫자 | `5.00` | 하루 비용 상한 | `DIAG_LIMITS_DAILY_USD` |
 | `limits.session_lifetime_hours` | 정수 | `24` | 세션이 운영자 메시지를 받는 시간. 이상 후보는 닫은 뒤부터, 운영자 요청은 보고를 올린 뒤부터 셈 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
@@ -154,7 +154,7 @@ limits:
   diagnosis_seconds: 300
   diagnosis_turns: 30
   conversation_turns: 20
-  diagnosis_usd: 0.20
+  diagnosis_usd: 0.50
   session_usd: 2.00
   daily_usd: 5.00
   session_lifetime_hours: 24

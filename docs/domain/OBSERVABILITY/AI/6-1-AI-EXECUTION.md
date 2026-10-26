@@ -63,7 +63,7 @@ MCP 서버나 확장 이력 도구,
 | 설정 격리 | `setting_sources=[]`. SDK가 띄우는 하위 프로세스 환경에 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`<br>코드 사본 저장소의 CLAUDE.md, 홈 폴더의 설정, 자동 메모리가 세션에 섞이지 않음 |
 | git 지침과 귀속 | 설정 `includeGitInstructions: false`. `attribution.commit`과 `attribution.pr`은 빈 문자열 |
 | 턴 수 한도 | 진단 턴 30, 대화 턴 20 |
-| 비용 한도 | 진단 턴: SDK 비용 한도 `max_budget_usd` $0.20<br>세션 $2.00과 하루 상한: SDK 한도를 쓰지 않고 코드가 토큰으로 계산한 누적값으로 막음. SDK 한도는 호출 단위라 세션을 이어 열면 이전 지출을 세지 않음 |
+| 비용 한도 | 진단 턴: SDK 비용 한도 `max_budget_usd` $0.50<br>세션 $2.00과 하루 상한: SDK 한도를 쓰지 않고 코드가 토큰으로 계산한 누적값으로 막음. SDK 한도는 호출 단위라 세션을 이어 열면 이전 지출을 세지 않음 |
 | 시간 한도 | 진단 턴 5분. SDK에 세션 시간 제한이 없어 코드가 중단함 |
 | 프롬프트 캐시 | SDK가 자동으로 붙임 |
 | 세션 저장 경로 | 설정의 `session_dir` |
