@@ -45,14 +45,14 @@
 | 배포 방식 | 이전 태스크를 멈춘 뒤 새 태스크를 띄움(최소 정상 비율 0%, 최대 비율 100%). 슬랙 소켓 연결과 감시가 두 태스크에서 함께 돌지 않게 함 |
 | 네트워크 | 운영 앱 사설 서브넷. 공개 IP 없음. 보안 그룹은 들어오는 규칙 없이 HTTPS 나가는 연결만 허용 |
 | 이미지 | ECR 저장소 `manyak-diagnosis`의 `:latest`. 같은 이미지에 커밋 해시 태그를 함께 붙임 |
-| 설정 | 운영 설정 파일은 manyak-terraform 저장소에 두고 terraform이 Parameter Store 파라미터 `/manyak/prod/diagnosis/config`로 올림<br>태스크 정의의 `DIAG_CONFIG`가 그 파라미터를 `ssm:` 위치로 가리킴<br>운영 설정 변경도 운영 정의처럼 PR 검토와 적용 이력을 남기려고 manyak-terraform이 관리함 |
+| 설정 | 운영 설정 파일은 manyak-terraform 저장소에 두고 terraform이 Parameter Store 파라미터 `/manyak/prod/diagnosis/config`로 올림<br>태스크 정의의 `DIAG_CONFIG`가 그 파라미터를 `ssm:` 위치로 가리킴 |
 | 실행 인자 | 실행 폴더 상위 경로 |
 | 로그 | 표준 출력과 표준 오류를 CloudWatch Logs 로그 그룹 `/ecs/manyak-prod-diagnosis`로 보냄. 보관 7일 |
 | 헬스 체크 | 없음 |
 
 | 역할 | 권한 |
 |---|---|
-| 태스크 역할 | `cloudwatch:GetMetricData`와 `cloudwatch:ListMetrics`(지표 읽기)<br>`cloudwatch:DescribeAlarms`와 `cloudwatch:DescribeAlarmHistory`(경보 읽기)<br>`application-autoscaling:DescribeScalingActivities`(확장 이력 읽기)<br>`prometheus.workspace_url`을 채울 때 그 AMP 작업 공간의 질의 권한<br>진단 비밀 하나의 `secretsmanager:GetSecretValue`<br>진단 설정 파라미터 하나의 `ssm:GetParameter` |
+| 태스크 역할 | `cloudwatch:GetMetricData`와 `cloudwatch:ListMetrics`(지표 읽기)<br>`cloudwatch:DescribeAlarms`와 `cloudwatch:DescribeAlarmHistory`(경보 읽기)<br>`application-autoscaling:DescribeScalingActivities`(확장 이력 읽기)<br>운영 AMP 작업 공간의 질의 권한<br>진단 비밀 하나의 `secretsmanager:GetSecretValue`<br>진단 설정 파라미터 하나의 `ssm:GetParameter` |
 | 실행 역할 | ECS 기본 실행 정책. 이미지 받기와 로그 쓰기 |
 
 태스크 역할에는 CloudWatch Logs 읽기 권한을 주지 않는다. 로그 원문은 FLS를 거치는 OpenSearch로만 읽는다. 로그는 FireLens로 OpenSearch에 보내지 않는다. FireLens는 태스크 역할에 OpenSearch 쓰기 권한을 붙여야 해서 관측 저장소를 읽기만 한다는 제약을 어긴다.
@@ -64,9 +64,10 @@
 | `aws.profile` | 빈 값 |
 | `opensearch.url` | 운영 OpenSearch 주소 |
 | `opensearch.user` | 운영 OpenSearch의 에이전트용 읽기 전용 사용자 |
-| `prometheus.workspace_url` | KNK-1797로 앱 지표 전송이 AMP로 전환된 뒤 운영 AMP 작업 공간 주소. 그 전에는 빈 값 |
+| `prometheus.workspace_url` | 운영 AMP 작업 공간 주소 |
 | `session_dir` | 태스크 임시 저장소의 폴더 |
 | `slack.channel` | 운영 알림 채널 ID |
+| `slack.timezone` | `Asia/Seoul` |
 
 1단계 설정 파일은 운영자 PC에 둔다. `aws.profile`은 운영자 PC의 읽기 전용 프로필 이름이고 `session_dir`은 운영자 PC의 폴더다. 나머지 값은 운영 설정 파일과 같다.
 

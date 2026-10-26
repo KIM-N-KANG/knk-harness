@@ -4,7 +4,7 @@
 
 필드의 의미는 3 태스크 정의에, 모델이 부르는 도구의 정의는 6-1 AI 실행에, 설정 파일 위치와 비밀값 출처는 7-4 배포에 있다. ([3-3 이상 후보](3-TASK-DEFINITION.md#3-3-이상-후보), [3-4 운영자 요청](3-TASK-DEFINITION.md#3-4-운영자-요청), [3-5 진단](3-TASK-DEFINITION.md#3-5-진단), [3-6 대화](3-TASK-DEFINITION.md#3-6-대화), [6-1-5 도구 정의와 권한](6-1-AI-EXECUTION.md#6-1-5-도구-정의와-권한), [7-4-4 환경 변수와 비밀 정보](7-4-DEPLOYMENT.md#7-4-4-환경-변수와-비밀-정보))
 
-시각은 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고에는 그대로 옮긴다. 슬랙 메시지의 시각만 5-9대로 바꿔 보인다.
+시각 필드는 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고의 시각 필드에는 그대로 옮긴다. 보고 문장 안의 시각과 슬랙 메시지의 시각은 `slack.timezone`의 `HH:MM`으로 쓴다. ([6-1-4 프롬프트](6-1-AI-EXECUTION.md#6-1-4-프롬프트), [5-9 슬랙 메시지](#5-9-슬랙-메시지))
 
 <br>
 
@@ -85,7 +85,7 @@
 | `limits.session_lifetime_hours` | 정수 | `24` | 세션이 운영자 메시지를 받는 시간. 이상 후보는 닫은 뒤부터, 운영자 요청은 보고를 올린 뒤부터 셈 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
 | `session_dir` | 문자열 | 필수 | SDK 세션 파일 폴더 | `DIAG_SESSION_DIR` |
 | `slack.channel` | 문자열 | 필수 | 알림 채널 ID. 멘션도 이 채널에서만 받음 | `DIAG_SLACK_CHANNEL` |
-| `slack.timezone` | 문자열 | `UTC` | 슬랙 메시지에 보이는 시각의 시간대. IANA 시간대 이름. 5-9 | `DIAG_SLACK_TIMEZONE` |
+| `slack.timezone` | 문자열 | `UTC` | 슬랙 메시지와 보고 문장에 쓰는 시각의 시간대. IANA 시간대 이름. 5-9와 6-1-4 | `DIAG_SLACK_TIMEZONE` |
 | `code_repositories[]` | 배열 | 필수. 1개 이상 | 코드 사본으로 받는 저장소 | 없음 |
 | `code_repositories[].name` | 문자열 | 필수 | 보고의 `code_ref.repo` 값과 서비스 지도의 저장소 이름 | 없음 |
 | `code_repositories[].clone_url` | 문자열 | 필수 | clone 주소 | 없음 |
@@ -251,7 +251,7 @@ FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지
 
 **5. 앱 지표**
 
-`prometheus.workspace_url`이 있으면 Prometheus MCP 서버가 그 AMP 작업 공간을 PromQL로 읽는다. 마냑은 KNK-1797로 앱 지표 전송이 AMP로 전환된 뒤 이 값을 채운다. 값이 비어 있으면 앱 지표 없이 진단한다. 탐지기는 앱 지표를 읽지 않는다.
+`prometheus.workspace_url`이 있으면 Prometheus MCP 서버가 그 AMP 작업 공간을 PromQL로 읽는다. 마냑은 앱 지표를 AMP로 보내고 운영 설정에 이 값을 채운다. 값이 비어 있으면 앱 지표 없이 진단한다. 탐지기는 앱 지표를 읽지 않는다.
 
 <br>
 
@@ -292,7 +292,7 @@ FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지
 
 <br>
 
-지표 차원은 운영 계정에서 확인한 값이고 파일 위치는 각 저장소의 운영 반영 브랜치에서 확인한 경로다.
+지표 차원은 운영 계정에서 확인한 값이고 파일 위치는 각 저장소의 운영 반영 브랜치에서 확인한 경로다. 지연 기준은 운영 진입 스팬 p95 기준선의 약 1.5배이고 기준선이 1초보다 짧은 요청은 1~2초를 둔다.
 
 ```yaml
 service_map:
@@ -358,8 +358,8 @@ service_map:
       metric_dimensions: { LoadBalancer: app/manyak-prod-alb/6bff84d38528448d }
       paths: [manyak-terraform/terraform/modules/edge/main.tf]
   latency_slo:
-    - { trace_group: "http post /api/v1/chats/{chatId}/turns/stream", p95_seconds: 15 }
-    - { trace_group: "http post /api/v1/chats/{chatId}/turns/{turnId}/choices", p95_seconds: 15 }
+    - { trace_group: "http post /api/v1/chats/{chatId}/turns/stream", p95_seconds: 45 }
+    - { trace_group: "http post /api/v1/chats/{chatId}/turns/{turnId}/choices", p95_seconds: 5 }
     - { trace_group: "http post /api/v1/chats", p95_seconds: 2 }
     - { trace_group: "http get /api/v1/stories", p95_seconds: 1 }
 ```
@@ -403,18 +403,26 @@ service_map:
 
 ### 5-7 진단 보고
 
+문장으로 쓰는 필드의 수치 단위와 시각 표기는 6-1-4의 보고 규칙을 따른다.
+
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
 | `diagnosis_id` | 문자열 | 필수 | 진단 요청의 ID. 이상 후보는 `candidate_id`, 운영자 요청은 `mention_id` |
 | `diagnosed_at` | 시각 | 필수 | 진단을 끝낸 실제 시각 |
 | `verdict` | 문자열 | 필수 | `incident`, `not_incident`, `undetermined` |
+| `headline` | 객체 | 필수 | 슬랙 보고 메시지의 짧은 칸. 5-9 |
+| `headline.impact` | 문자열 | 조건부 | 영향 칸. 영향받은 경로와 수치와 기준. `incident`일 때 필수, 아니면 `null` |
+| `headline.cause` | 문자열 | 조건부 | 원인 칸. 원인을 줄인 명사구. `incident`일 때와 의심 구성 요소가 있는 `undetermined`일 때 필수, 아니면 `null` |
+| `headline.scope` | 문자열 | 조건부 | 확인한 범위 칸. 확인한 요청 경로와 구간. `not_incident`와 `undetermined`일 때 필수, 아니면 `null` |
+| `headline.figures` | 문자열 | 조건부 | 주요 수치 칸. 판정을 받치는 수치와 기준. `not_incident`와 `undetermined`일 때 필수, 아니면 `null` |
 | `impact` | 객체 | 조건부 | `incident`일 때 필수, 아니면 `null` |
 | `impact.trace_groups[]` | 배열 | 필수 | 영향받은 진입 스팬 이름 |
-| `impact.summary` | 문자열 | 필수 | 수치가 든 한두 문장 |
+| `impact.summary` | 문자열 | 필수 | 수치가 든 한 문장 |
 | `first_anomaly_at` | 시각 | 조건부 | `incident`일 때 필수, 아니면 `null` |
 | `suspects[]` | 배열 | 조건부 | `incident`일 때 1~3개. `undetermined`는 0~3개. `not_incident`는 빈 배열 |
 | `suspects[].component` | 문자열 | 필수 | 서비스 지도의 `components[].name` |
-| `suspects[].hypothesis` | 문자열 | 필수 | 원인 가설 |
+| `suspects[].hypothesis` | 문자열 | 필수 | 원인 가설 한 문장 |
+| `ruled_out[]` | 문자열 배열 | 필수 | 조회로 정상임을 확인해 원인에서 뺀 것. 항목마다 짧은 이름. 0개 이상 |
 | `evidence[]` | 배열 | 조건부 | `incident`와 `not_incident`는 1개 이상. 근거 하나에 `query_ref`와 `code_ref` 중 하나만 둠 |
 | `evidence[].observation` | 문자열 | 필수 | 관찰 한 문장 |
 | `evidence[].query_ref` | 정수 | 조건부 | 조회 근거의 조회 기록 번호. 코드 근거면 `null` |
@@ -427,8 +435,8 @@ service_map:
 | `evidence[].code_ref.quote` | 문자열 | 필수 | 범위 안에 그대로 있는 문장 |
 | `evidence[].verified` | 불리언 | 필수 | 보고 검사기가 채움 |
 | `actions` | 객체 | 조건부 | `incident`일 때 필수, 아니면 `null` |
-| `actions.immediate[]` | 배열 | 필수 | 즉시 완화. 1개 이상 |
-| `actions.improvement[]` | 배열 | 필수 | 개선 방향. 1개 이상 |
+| `actions.immediate[]` | 배열 | 필수 | 즉시 완화. 1개 이상. 첫 항목이 1순위 |
+| `actions.improvement[]` | 배열 | 필수 | 개선 방향. 1개 이상. 첫 항목이 1순위 |
 | `usage` | 객체 | 필수 | 진단 실행기가 채움 |
 | `usage.model` | 문자열 | 필수 | 모델 식별자 |
 | `usage.queries` | 정수 | 필수 | 조회 횟수 |
@@ -437,59 +445,58 @@ service_map:
 | `usage.cost_usd` | 숫자 | 필수 | |
 | `usage.elapsed_seconds` | 숫자 | 필수 | |
 
+글자 상한은 `headline`의 칸과 `ruled_out[]`을 `, `로 이은 글이 40자이고 `actions`의 항목이 60자다. 글자 수는 유니코드 문자 단위로 센다. 상한은 제출 입력 스키마에 두지 않고 출력 간 조건으로도 검사하지 않는다. 넘은 값은 보고에 그대로 기록하고 슬랙 연결기가 메시지에서만 줄인다(5-9). 메시지에 보이는 길이 때문에 진단이 실행 실패로 끝나지 않게 하려는 것이다.
+
 <details>
-<summary><b>진단 보고 예시(채팅 턴 큐 대기 장애)</b></summary>
+<summary><b>진단 보고 예시(LLM 응답 대기 장애)</b></summary>
 
 <br>
 
-보고는 합성 예시다. 수치는 KNK-1598의 부하 테스트 측정값이고 코드 근거는 그 시각 manyak-server 커밋 `118b584`의 코드다. 비용은 예시의 토큰 수에 `claude-sonnet-5-5`의 단가를 곱한 값이다.
+운영 진단 보고 하나를 이 계약의 지연 기준과 보고 규칙에 맞춰 고쳐 쓴 예시다. 문장 안의 시각은 `slack.timezone` `Asia/Seoul` 기준이다. 근거의 `value`는 조회 결과에 있는 나노초 값 그대로이고 관찰 문장은 초와 ms로 바꿔 썼다. 비용은 토큰 수에 `claude-sonnet-5-5`의 단가를 곱한 값이다.
 
 ```json
 {
-  "diagnosis_id": "c-202610080450",
-  "diagnosed_at": "2026-10-15T09:12:41+09:00",
+  "diagnosis_id": "m-20261026101712",
+  "diagnosed_at": "2026-10-26T10:18:02Z",
   "verdict": "incident",
+  "headline": {
+    "impact": "채팅 턴 p95 68초 (기준 45초)",
+    "cause": "LLM 응답 대기(gemini)",
+    "scope": null,
+    "figures": null
+  },
   "impact": {
     "trace_groups": ["http post /api/v1/chats/{chatId}/turns/stream"],
-    "summary": "채팅 턴 스트림 p95가 04:46Z부터 16.2초로 기준 15초를 넘고 04:50Z에 41.7초에 이름. 읽기 요청은 p95 0.05초 이하로 영향 없음."
+    "summary": "채팅 턴 스트림 p95가 18:16부터 기준 45초를 넘어 18:50 구간에 68초에 이르렀고 다른 경로는 기준 안이며 실패는 없다."
   },
-  "first_anomaly_at": "2026-10-08T04:46:00Z",
+  "first_anomaly_at": "2026-10-26T09:16:00Z",
   "suspects": [
     {
-      "component": "manyak-server 채팅 턴 실행기",
-      "hypothesis": "태스크당 동시 실행 4개가 상한이라 동시 사용자 25명부터 턴이 큐에서 대기함. CPU에 여유가 있어 자원 문제가 아니라 설정 상한 문제."
+      "component": "manyak-ai",
+      "hypothesis": "턴 스트림 시간 대부분을 manyak-ai의 llm.stream 스팬이 외부 LLM 제공자의 스트리밍 응답을 기다리는 데 써서 서버 자원이나 큐와 무관하게 기준을 넘는다."
     }
   ],
+  "ruled_out": ["큐 대기", "CPU", "오류"],
   "evidence": [
-    { "observation": "chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초", "query_ref": 2, "value": 41.2, "code_ref": null, "verified": true },
-    { "observation": "같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음", "query_ref": 3, "value": 10.4, "code_ref": null, "verified": true },
-    {
-      "observation": "채팅 턴 실행기의 동시 실행 수가 코드에 4로 고정됨",
-      "query_ref": null,
-      "value": null,
-      "code_ref": {
-        "repo": "manyak-server",
-        "path": "src/main/kotlin/com/knk/manyak/chat/config/ChatSseConfig.kt",
-        "start_line": 15,
-        "end_line": 17,
-        "quote": "corePoolSize = 4"
-      },
-      "verified": true
-    },
-    { "observation": "manyak-server CPU 최댓값 36%", "query_ref": 5, "value": 36, "code_ref": null, "verified": true },
-    { "observation": "manyak-server 확장 활동 0건", "query_ref": 6, "value": 0, "code_ref": null, "verified": true }
+    { "observation": "채팅 턴 스트림 p95가 18:50 구간에 68.3초", "query_ref": 1, "value": 68348337740, "code_ref": null, "verified": true },
+    { "observation": "스토리 목록 p95는 최대 63ms로 기준 1초 안", "query_ref": 1, "value": 62659445, "code_ref": null, "verified": true },
+    { "observation": "chat.turn.queue 스팬 평균 2.4ms로 실행기 대기는 원인이 아님", "query_ref": 3, "value": 2353175.785714286, "code_ref": null, "verified": true },
+    { "observation": "manyak-ai POST /api/v1/chat/turns 평균 34.0초로 서버 스트림 평균과 거의 같음", "query_ref": 5, "value": 34008976481.90625, "code_ref": null, "verified": true },
+    { "observation": "manyak-ai llm.stream 스팬 평균 21.4초", "query_ref": 5, "value": 21417135902.28125, "code_ref": null, "verified": true },
+    { "observation": "채팅 턴 실행기 활성 스레드 최댓값 1로 동시 실행 상한에 닿지 않음", "query_ref": 6, "value": 1, "code_ref": null, "verified": true },
+    { "observation": "manyak-server CPU 최댓값 12.9%", "query_ref": 7, "value": 12.895404487848284, "code_ref": null, "verified": true }
   ],
   "actions": {
-    "immediate": ["manyak-server 태스크 수를 2에서 4로 올려 동시 실행 수를 8에서 16으로 늘림"],
-    "improvement": ["ChatSseConfig.kt 15~17줄의 고정값 corePoolSize 4를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림", "큐 대기 p95를 경보 조건에 추가함"]
+    "immediate": ["LLM 제공자 상태와 gemini 지연 확인", "지연이 큰 모델을 쓰는 채팅은 빠른 모델로 일시 전환"],
+    "improvement": ["llm.stream 모델별 p95 경보", "llm.stream 종료 뒤 요청 종료까지 구간에 스팬 추가", "제공자 지연 때 대체 모델로 넘기는 정책 검토"]
   },
   "usage": {
     "model": "claude-sonnet-5-5",
     "queries": 7,
-    "input_tokens": 41200,
-    "output_tokens": 2310,
-    "cost_usd": 0.106,
-    "elapsed_seconds": 94.2
+    "input_tokens": 271422,
+    "output_tokens": 4610,
+    "cost_usd": 0.222,
+    "elapsed_seconds": 49.0
   }
 }
 ```
@@ -542,75 +549,101 @@ service_map:
 
 채널은 설정의 `slack.channel` 하나다. 메시지에는 집계값, 구성 요소 이름, 파일 위치만 들어가고 식별자는 들어가지 않는다. 보고 파일 이름인 `diagnosis_id`도 올리지 않는다. 보고 파일은 실행 폴더에서 찾는다.
 
-코드가 메시지에 넣는 시각은 `slack.timezone` 시간대로 바꿔 `HH:MM`만 보인다. 모델이 쓴 문장 안의 시각은 바꾸지 않는다. 금액은 달러를 소수 둘째 자리로 반올림해 `$0.11`처럼 쓴다.
+코드가 메시지에 넣는 시각은 `slack.timezone` 시간대로 바꿔 `HH:MM`만 보인다. 모델이 쓴 글 안의 시각은 모델이 같은 시간대의 `HH:MM`으로 쓰고(6-1-4) 코드는 바꾸지 않는다. 금액은 달러를 소수 둘째 자리로 반올림해 `$0.11`처럼 쓴다.
 
 **1. 보고 메시지**
 
 진단 보고 하나에 보고 메시지 하나를 올린다. 이상 후보의 보고는 채널에 새 메시지로 올리고 그 메시지 아래가 세션의 스레드가 된다. 운영자 요청의 보고는 그 요청의 `thread_ts` 스레드에 답글로 올린다.
 
-보고 메시지는 아래 줄을 위에서부터 차례로 쓴 슬랙 mrkdwn 글 하나다. 판정에 따라 보이는 줄이 다르다. 보이지 않는 줄은 빼고 묶음 사이에는 빈 줄을 하나 둔다.
+보고 메시지는 아래 Block Kit 블록을 위에서부터 차례로 쓴다. 알림 미리보기에 보이는 대체 글 `text`에는 머리 줄을 넣는다. 판정에 따라 보이는 블록과 칸이 다르고 보이지 않는 것은 뺀다.
 
-| 줄 | 출처와 형식 | 보이는 판정 |
+| 순서 | 블록 | 내용 | 보이는 판정 |
+|---|---|---|---|
+| 1 | `header` | 머리 줄. 아래 판정 표의 머리 표시. `suspects[0].component`가 있으면 `<머리 표시> · <component>`로 붙임 | 모두 |
+| 2 | `section`의 `fields` | 판정 표의 칸을 차례로 하나씩 넣음. 칸마다 mrkdwn `*<칸 이름>:* <값>`이고 두 칸씩 한 줄로 보임 | 모두 |
+| 3 | `section`의 `text` | mrkdwn 두 줄 `*지금 할 일:* <actions.immediate[0]>`과 `*개선 방향:* <actions.improvement[0]>` | `incident` |
+| 4 | `context` | mrkdwn 한 줄 `<근거 요약> · 조회 <usage.queries>회 · <usage.elapsed_seconds>초 · $<usage.cost_usd>`. 경과 시간은 반올림한 정수 초 | 모두 |
+
+| `verdict` | 머리 표시 | 칸과 순서 |
 |---|---|---|
-| 머리 줄 | 아래 표의 `verdict` 머리 표시. `suspects[0].component`가 있으면 `<머리 표시> · <component>`로 붙임 | 모두 |
-| `영향` | `impact.summary`에서 끝의 마침표를 뗀 글 뒤에 `, 첫 이상 <HH:MM>`을 붙임. 시각은 `first_anomaly_at` | `incident` |
-| `원인` | `suspects[0].hypothesis` | `incident`<br>`undetermined`는 의심 구성 요소가 있을 때 |
-| `근거` 묶음 | 제목 줄 `근거` 아래 근거마다 `evidence[].observation` 한 줄<br>`verified`가 참이면 앞에 `✓`를 붙이고 거짓이면 `⚠ (검증 실패)`를 붙임 | `incident`는 전부<br>`not_incident`와 `undetermined`는 앞 3개. 근거가 없으면 묶음을 뺌 |
-| `지금 할 일` 묶음 | 제목 줄 아래 `actions.immediate[]`의 항목마다 `•` 한 줄 | `incident` |
-| `개선 방향` 묶음 | 제목 줄 아래 `actions.improvement[]`의 항목마다 `•` 한 줄 | `incident` |
-| 비용 줄 | `조회 <usage.queries>회 · <usage.elapsed_seconds>초 · $<usage.cost_usd>`. 경과 시간은 반올림한 정수 초 | 모두 |
+| `incident` | `🔴 장애` | 영향, 원인, 첫 이상, 배제한 원인 |
+| `not_incident` | `🟢 이상 없음` | 확인한 범위와 주요 수치 |
+| `undetermined` | `🟡 판단 불가` | 확인한 범위, 주요 수치, 원인 |
 
-| `verdict` | 머리 표시 |
+| 칸 | 값의 출처 |
 |---|---|
-| `incident` | `🔴 장애` |
-| `not_incident` | `🟢 이상 없음` |
-| `undetermined` | `🟡 판단 불가` |
+| 영향 | `headline.impact` |
+| 원인 | `headline.cause`. `undetermined`는 값이 있을 때만 보임 |
+| 첫 이상 | `first_anomaly_at`을 `slack.timezone`으로 바꾼 `HH:MM` |
+| 배제한 원인 | `ruled_out[]`을 `, `로 이은 글. 비어 있으면 칸을 뺌 |
+| 확인한 범위 | `headline.scope` |
+| 주요 수치 | `headline.figures` |
+
+| 근거 | 근거 요약 |
+|---|---|
+| 모든 근거의 `verified`가 참 | `근거 <근거 수>개 중 <근거 수>개 검증` |
+| `verified`가 거짓인 근거가 있음 | `⚠ 근거 <근거 수>개 중 <거짓인 근거 수>개 검증 실패` |
+| 근거 없음 | 근거 요약과 뒤의 ` · `를 빼고 줄이 `조회`로 시작함 |
+
+칸과 할 일 줄의 값이 5-7의 글자 상한을 넘으면 상한보다 한 자 적게 남기고 끝에 `…`를 붙인다. 보고 파일의 값은 그대로 둔다. `impact.summary`, 원인 가설 문장, 근거의 관찰, 두 번째부터의 조치는 메시지에 넣지 않는다. 운영자가 스레드에서 자세히 물으면 대화 턴이 보고 요약으로 풀어 답한다. ([6-1-7 대화 턴](6-1-AI-EXECUTION.md#6-1-7-대화-턴))
 
 <details>
 <summary><b>보고 메시지 예시</b></summary>
 
 <br>
 
-장애 예시는 5-7 예시 보고를 기본 시간대 `UTC`로 옮긴 것이다.
+장애 예시는 5-7 예시 보고를 `slack.timezone` `Asia/Seoul`로 올린 메시지다.
 
-```text
-🔴 장애 · manyak-server 채팅 턴 실행기
-영향  채팅 턴 스트림 p95가 04:46Z부터 16.2초로 기준 15초를 넘고 04:50Z에 41.7초에 이름. 읽기 요청은 p95 0.05초 이하로 영향 없음, 첫 이상 04:46
-원인  태스크당 동시 실행 4개가 상한이라 동시 사용자 25명부터 턴이 큐에서 대기함. CPU에 여유가 있어 자원 문제가 아니라 설정 상한 문제.
-
-근거
- ✓ chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초
- ✓ 같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음
- ✓ 채팅 턴 실행기의 동시 실행 수가 코드에 4로 고정됨
- ✓ manyak-server CPU 최댓값 36%
- ✓ manyak-server 확장 활동 0건
-
-지금 할 일
- • manyak-server 태스크 수를 2에서 4로 올려 동시 실행 수를 8에서 16으로 늘림
-
-개선 방향
- • ChatSseConfig.kt 15~17줄의 고정값 corePoolSize 4를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림
- • 큐 대기 p95를 경보 조건에 추가함
-
-조회 7회 · 94초 · $0.11
+```json
+{
+  "text": "🔴 장애 · manyak-ai",
+  "blocks": [
+    { "type": "header", "text": { "type": "plain_text", "text": "🔴 장애 · manyak-ai" } },
+    {
+      "type": "section",
+      "fields": [
+        { "type": "mrkdwn", "text": "*영향:* 채팅 턴 p95 68초 (기준 45초)" },
+        { "type": "mrkdwn", "text": "*원인:* LLM 응답 대기(gemini)" },
+        { "type": "mrkdwn", "text": "*첫 이상:* 18:16" },
+        { "type": "mrkdwn", "text": "*배제한 원인:* 큐 대기, CPU, 오류" }
+      ]
+    },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*지금 할 일:* LLM 제공자 상태와 gemini 지연 확인\n*개선 방향:* llm.stream 모델별 p95 경보" } },
+    { "type": "context", "elements": [{ "type": "mrkdwn", "text": "근거 7개 중 7개 검증 · 조회 7회 · 49초 · $0.22" }] }
+  ]
+}
 ```
 
-장애 아님 예시는 근거 4개 가운데 앞 3개를 보인 합성 예시다. 셋째 근거의 `verified`는 거짓이다.
+슬랙에서는 아래처럼 보인다.
+
+```text
+🔴 장애 · manyak-ai
+영향: 채팅 턴 p95 68초 (기준 45초)     원인: LLM 응답 대기(gemini)
+첫 이상: 18:16                        배제한 원인: 큐 대기, CPU, 오류
+지금 할 일: LLM 제공자 상태와 gemini 지연 확인
+개선 방향: llm.stream 모델별 p95 경보
+근거 7개 중 7개 검증 · 조회 7회 · 49초 · $0.22
+```
+
+장애 아님 예시는 근거 4개 가운데 하나의 `verified`가 거짓인 합성 예시다. 블록 형식은 장애 예시와 같아 보이는 모습만 적는다.
 
 ```text
 🟢 이상 없음
+확인한 범위: 18:00~19:00 채팅 턴, 스토리 목록     주요 수치: 채팅 턴 p95 31초 (기준 45초)
+⚠ 근거 4개 중 1개 검증 실패 · 조회 4회 · 38초 · $0.05
+```
 
-근거
- ✓ 채팅 턴 스트림 p95 9.8초로 기준 15초 안
- ✓ 스토리 목록 조회 p95 0.4초로 기준 1초 안
- ⚠ (검증 실패) manyak-ai CPU 최댓값 66%
+판단 불가 예시는 의심 구성 요소와 근거가 없는 합성 예시다.
 
-조회 4회 · 38초 · $0.05
+```text
+🟡 판단 불가
+확인한 범위: 18:10~18:40 전체 진입 스팬     주요 수치: 18:22 이후 스팬 0건
+조회 3회 · 31초 · $0.04
 ```
 
 </details>
 
-실행 실패는 보고 메시지 대신 실패 단계와 사유를 `❌ 실행 실패 · <stage> · <reason>` 한 줄로 올린다. 이상 후보의 실패는 채널에, 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 시각을 `⏸ 진단 생략 · 하루 비용 상한 $<limits.daily_usd> · <HH:MM>에 다시 시작` 한 줄로 채널에 올린다. 다시 시작하는 시각은 다음 UTC 0시이고 `slack.timezone`이 `Asia/Seoul`이면 `09:00`이다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다.
+실행 실패는 보고 메시지 대신 실패 단계와 사유를 `❌ 실행 실패 · <stage> · <reason>` 한 줄로 올린다. 이상 후보의 실패는 채널에, 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 시각을 `⏸ 진단 생략 · 하루 비용 상한 $<limits.daily_usd> · <HH:MM>에 다시 시작` 한 줄로 채널에 올린다. 다시 시작하는 시각은 다음 UTC 0시이고 `slack.timezone`이 `Asia/Seoul`이면 `09:00`이다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다. 이 한 줄 안내와 2의 메시지는 블록 없이 mrkdwn 글로 올린다.
 
 **2. 멘션과 스레드 메시지**
 
