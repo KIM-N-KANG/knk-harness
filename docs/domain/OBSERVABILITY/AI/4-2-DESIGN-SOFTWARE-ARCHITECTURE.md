@@ -12,12 +12,12 @@
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 28, "rankSpacing": 48}}}%%
 flowchart LR
     subgraph EXT["관측 저장소"]
+        AMP["`**AMP**
+앱 지표`"]
         OS["`**OpenSearch**
 로그 인덱스, 스팬 인덱스`"]
         CW["`**CloudWatch**
 지표, 경보`"]
-        AMP["`**AMP**
-앱 지표`"]
         AS["`**Application Auto Scaling**
 확장 활동`"]
     end
@@ -26,9 +26,9 @@ flowchart LR
 1단계: 파일
 2단계: Parameter Store`"]
     subgraph MCP["MCP 서버 프로세스"]
+        MP["`**Prometheus MCP**`"]
         MO["`**OpenSearch MCP**`"]
         MC["`**CloudWatch MCP**`"]
-        MP["`**Prometheus MCP**`"]
     end
     subgraph PROC["에이전트 프로세스"]
         DA["`**자료 접근기**`"]
@@ -40,42 +40,40 @@ flowchart LR
         DX["`**진단 실행기**
 Agent SDK 세션`"]
         RC["`**보고 검사기**`"]
-        SC["`**슬랙 연결기**`"]
-        SM["`**세션 관리자**`"]
         RW["`**보고 기록기**
 후보, 요청, 보고, 조회, 세션`"]
+        SC["`**슬랙 연결기**`"]
+        SM["`**세션 관리자**`"]
     end
-    CC["`**코드 사본**`"]
     LLM["`**모델 API**`"]
-    SL["`**슬랙**`"]
     RF["`**실행 폴더**`"]
+    SL["`**슬랙**`"]
+    CC["`**코드 사본**`"]
+    %% 되돌아오는 두 선을 먼저 적어야 선이 겹치지 않게 배치된다
+    SM -->|"`세션 이어가기`"| DX
+    SC -->|"`운영자 요청`"| DX
+    GH -->|"`clone, fetch`"| RS
+    RS --> CC
+    AS --> IN
+    IN <-->|"`도구 호출`"| DX
     OS --> DA
     CW --> DA
-    CFG --> DT
     DA --> DT
     DT --> CM
     CM -->|"`이상 후보`"| DX
+    AMP --> MP
     OS --> MO
     CW --> MC
-    AMP --> MP
-    AS --> IN
-    MO <-->|"`도구 호출`"| DX
-    MC <-->|"`도구 호출`"| DX
-    MP <-->|"`도구 호출`"| DX
-    IN <-->|"`도구 호출`"| DX
-    GH -->|"`clone, fetch`"| RS
-    RS --> CC
+    MCP <-->|"`도구 호출`"| DX
+    CFG --> PROC
     DX -->|"`읽기`"| CC
-    CFG --> DX
     DX <-->|"`모델 호출`"| LLM
     DX --> RC
     RC --> RW
     RW --> RF
     RC -->|"`보고`"| SC
     SC <-->|"`보고, 답변, 멘션, 스레드 메시지`"| SL
-    SC -->|"`운영자 요청`"| DX
     SC --> SM
-    SM -->|"`세션 이어가기`"| DX
     classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef model fill:#F5D9C9,stroke:#B97450,color:#452B1D
     classDef code fill:#F4F6F4,stroke:#9BA99E,color:#253C2C

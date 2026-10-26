@@ -30,12 +30,12 @@ flowchart LR
     O["`**운영자 메시지**
 질문`"]
     T["`**대화**`"]
+    M --> A
+    S --- A
     S --- W
     L --- W
     W --> C
     C --> A
-    M --> A
-    S --- A
     L -.-|도구로 조회| A
     G -.-|읽기| A
     A --> R
@@ -104,6 +104,7 @@ flowchart LR
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 48}}}%%
 flowchart LR
     subgraph IN["입력"]
+        direction LR
         C["`**진단 요청**
 이상 후보의 신호 목록이나
 운영자 요청의 문장과 시각`"]
@@ -118,6 +119,7 @@ manyak-terraform`"]
     end
     A["`**진단**`"]
     subgraph OUT["출력"]
+        direction LR
         V["`**판정**`"]
         I["`**영향 범위와 첫 이상 시각**`"]
         P["`**의심 구성 요소와 원인 가설**`"]
@@ -125,16 +127,8 @@ manyak-terraform`"]
         X["`**제안 조치**`"]
         H["`**배제한 원인과 요약 칸**`"]
     end
-    C --- A
-    S --- A
-    T --- A
-    K --- A
-    A --> V
-    A --> I
-    A --> P
-    A --> E
-    A --> X
-    A --> H
+    IN --- A
+    A --> OUT
     classDef data fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef model fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class C,S,T,K,V,I,P,E,X,H data
