@@ -60,6 +60,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 검수 제출 목록과 상세 | `features/moderation/` | 2-1-11 |
 | 공지 태그와 게시 | `features/notices/` | 2-1-13, 5-1-11 |
 | 스토리 상세의 스토리 설정 | `features/stories/` | 2-1-14, 5-1-12 |
+| 스토리와 채팅의 삭제 필터와 삭제 표시 | `features/shared/` | 2-1-15, 5-1-13 |
 | 화면 경로 | `app/(admin)/` | 2-1-1 |
 | BFF route handler와 서버 전달 | `app/api/`, `api/` | 3-1, 3-2 |
 | 생성 Zod와 연산 목록 | `api/generated/` | 3-1 |

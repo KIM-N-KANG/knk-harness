@@ -465,6 +465,7 @@ Authorization: Bearer {adminToken}
 | `genre` | `string` | 선택 | 장르 정식 이름 하나<br>스토리 장르 문자열에 포함된 스토리 |
 | `visibility` | `string` | 선택 | `PUBLIC`, `PRIVATE` |
 | `moderationStatus` | `string` | 선택 | `HELD`는 보류 중인 제출본이 있는 스토리<br>`APPROVED`는 그 외 |
+| `deleted` | `string` | 선택 | 삭제된 스토리의 포함 여부<br>없으면 삭제된 스토리 제외<br>`include`는 삭제된 스토리도 포함<br>`only`는 삭제된 스토리만 |
 | `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
 | `supportingCharacterCount` | `integer` | 선택 | 0~5<br>제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>이름, 성별, 특징 태그가 모두 빈 자리는 세지 않음<br>제작 세션이 없는 스토리는 어떤 값에도 해당하지 않음 |
 | `from`, `to` | `string` | 선택 | 스토리 생성일 |
@@ -494,11 +495,12 @@ Authorization: Bearer {adminToken}
 | `items[].tags` | `string[]` | 제작 세션에서 선택한 태그 이름<br>장르, 주인공, 주변 인물 특징 순<br>제작 세션이 없으면 빈 배열 |
 | `items[].supportingCharacterCount` | `integer / null` | 제작 세션에서 사용자가 직접 입력한 주변 인물 수<br>제작 세션이 없으면 `null` |
 | `items[].owner` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트 소유는 `null` |
-| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
+| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수<br>스토리가 삭제돼도 같음 |
 | `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 수 합계 |
 | `items[].createdAt` | `string` | 생성 시각 |
+| `items[].deletedAt` | `string / null` | 삭제 시각<br>삭제되지 않았으면 `null` |
 
-- 삭제된 스토리는 싣지 않는다. 팀 계정 제외는 적용하지 않는다.
+- 삭제된 스토리는 `deleted`에 따라 싣는다. 팀 계정 제외는 적용하지 않는다.
 
 <br>
 
@@ -538,7 +540,8 @@ Authorization: Bearer {adminToken}
       "owner": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
       "chatCount": 42,
       "totalTurns": 388,
-      "createdAt": "2026-09-30T12:00:00Z"
+      "createdAt": "2026-09-30T12:00:00Z",
+      "deletedAt": null
     }
   ],
   "page": 1,
@@ -577,7 +580,9 @@ Authorization: Bearer {adminToken}
 | `retention` | `object[]` | 기준 턴 도달률<br>`turn`이 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50인 항목 12개, 오름차순 |
 | `retention[].turn` | `integer` | 기준 턴 |
 | `retention[].rate` | `number` | 삭제되지 않은 채팅 중 현재 턴이 기준 턴 이상인 비율<br>0~1<br>채팅이 없으면 0 |
-| `recentChats` | `object[]` | 최근 생성된 채팅 5개<br>채팅 목록 항목 구조 |
+| `recentChats` | `object[]` | 삭제되지 않은 채팅 중 최근 생성된 5개<br>채팅 목록 항목 구조 |
+
+- 삭제된 스토리도 응답한다. `retention`과 `recentChats`는 삭제되지 않은 스토리와 같은 정의다.
 
 <br>
 
@@ -586,7 +591,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `storyId`가 UUID 형식이 아님 |
-| 404 | `NOT_FOUND` | 없거나 삭제된 스토리 |
+| 404 | `NOT_FOUND` | 없는 스토리 |
 
 <br>
 
@@ -598,7 +603,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-제작자가 저장한 설정을 읽기 전용으로 돌려준다. 대상은 삭제되지 않은 모든 스토리이며 초안 여부, 공개 범위, 보류 여부, 소유자(회원, 게스트, 공식 계정)를 가리지 않는다. 값은 현재 저장값이고 승인 전 제출본의 내용은 반영하지 않는다. 텍스트 필드는 이름 토큰을 치환하지 않은 원문이다. 표지와 인물 이미지에는 공개 노출의 검수 게이트를 적용하지 않고 검수 상태와 무관하게 전부 싣는다.
+제작자가 저장한 설정을 읽기 전용으로 돌려준다. 대상은 모든 스토리이며 초안 여부, 공개 범위, 보류 여부, 소유자(회원, 게스트, 공식 계정), 삭제 여부를 가리지 않는다. 값은 현재 저장값이고 승인 전 제출본의 내용은 반영하지 않는다. 텍스트 필드는 이름 토큰을 치환하지 않은 원문이다. 표지와 인물 이미지에는 공개 노출의 검수 게이트를 적용하지 않고 검수 상태와 무관하게 전부 싣는다.
 
 **1. 경로**
 
@@ -610,7 +615,7 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].images[].objectKey`를 뺀 구조다. ([STORY 4-2-16 수정 폼](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-16-수정-폼))
+STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].images[].objectKey`를 빼고 `deletedAt`을 더한 구조다. ([STORY 4-2-16 수정 폼](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-16-수정-폼))
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -653,6 +658,7 @@ STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].
 | `characters[].images[].imageName` | `string` | 인물 이미지 이름 |
 | `characters[].images[].imageUrl` | `string` | 이미지 제공 URL |
 | `characters[].images[].moderationStatus` | `string` | 이미지 검수 상태<br>`APPROVED`, `PENDING`, `REJECTED` |
+| `deletedAt` | `string / null` | 스토리 삭제 시각<br>삭제되지 않았으면 `null` |
 
 - 검수 경과는 MODERATION 세트의 관리자 제출본 상세에서 본다. ([MODERATION 4-2-9 관리자 제출본 상세](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-9-관리자-제출본-상세))
 - 화풍은 스토리에 저장되지 않아 응답에 없다.
@@ -664,7 +670,7 @@ STORY 세트 수정 폼의 현재 저장값에서 `submission`과 `characters[].
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `storyId`가 UUID 형식이 아님 |
-| 404 | `NOT_FOUND` | 없거나 삭제된 스토리 |
+| 404 | `NOT_FOUND` | 없는 스토리 |
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
@@ -727,7 +733,8 @@ Authorization: Bearer {adminToken}
         { "id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f", "imageName": "도윤_놀람", "imageUrl": "https://cdn.example.com/characters/uploaded/3f2504e0-4f89-41d3-9a0c-0305e82c3301/6e1a4d9c-3f5b-4c7d-8e9f-1a2b3c4d5e6f.webp", "moderationStatus": "PENDING" }
       ]
     }
-  ]
+  ],
+  "deletedAt": null
 }
 ```
 
@@ -759,6 +766,7 @@ Authorization: Bearer {adminToken}
 | `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation`, `chat_image` |
 | `aiStatus` | `string` | 선택 | 스토리 목록과 같음 |
 | `hasLatency` | `boolean` | 선택 | 스토리 목록과 같음 |
+| `deleted` | `string` | 선택 | 삭제된 채팅의 포함 여부<br>값은 스토리 목록과 같음<br>스토리의 삭제 여부와 무관 |
 | `sort` | `string` | 선택 | `startedAt`, `lastActiveAt`, `turnCount`, `creditsSpent`<br>기본 `startedAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
@@ -777,8 +785,9 @@ Authorization: Bearer {adminToken}
 | `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
 | `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
 | `items[].firstMessageSeconds` | `integer / null` | 생성부터 첫 사용자 메시지까지 초<br>사용자 메시지가 없으면 `null` |
+| `items[].deletedAt` | `string / null` | 삭제 시각<br>삭제되지 않았으면 `null` |
 
-- 삭제된 채팅은 싣지 않는다. 메시지 원문은 어떤 필드에도 없다.
+- 삭제된 채팅은 `deleted`에 따라 싣는다. 메시지 원문은 어떤 필드에도 없다.
 
 <br>
 
@@ -814,7 +823,8 @@ Authorization: Bearer {adminToken}
       "startedAt": "2026-10-20T13:02:11Z",
       "lastActiveAt": "2026-10-20T13:31:40Z",
       "creditsSpent": 0,
-      "firstMessageSeconds": 42
+      "firstMessageSeconds": 42,
+      "deletedAt": null
     }
   ],
   "page": 1,
@@ -842,6 +852,8 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `chatId` | 경로 | 필수 | 채팅 공개 식별자 |
 
+- 삭제된 채팅도 응답한다.
+
 <br>
 
 **2. 실패 응답**
@@ -849,7 +861,7 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `chatId`가 UUID 형식이 아님 |
-| 404 | `NOT_FOUND` | 없거나 삭제된 채팅 |
+| 404 | `NOT_FOUND` | 없는 채팅 |
 
 <br>
 

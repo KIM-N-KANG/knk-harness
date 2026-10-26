@@ -1,6 +1,6 @@
 # 2-5 상태 관리
 
-이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면의 상태를 URL, 서버 상태, 브라우저 저장으로 나눠 저장 위치와 수명, 복원 방식을 정한다.
+이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리와 채팅 목록의 삭제 필터가 쓰는 상태를 URL, 서버 상태, 브라우저 저장으로 나눠 저장 위치와 수명, 복원 방식을 정한다.
 
 조회와 재요청 설정은 데이터 연동에, 기간과 조건의 기본값은 정보 구조에 있다. ([3-2 데이터 연동](3-2-DATA-INTEGRATION.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
 
@@ -27,6 +27,8 @@
 | `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt` |
 | `status` | 검수 제출 | `PENDING`, `HELD`, `APPROVED`, `REJECTED`, `FAILED`<br>없으면 전체 |
 | `from`, `to`, `q`, `memberId`, `storyId` | 검수 제출 | 접수일 범위, 검색어, 소유 회원과 스토리 공개 식별자 |
+| `deleted` | 스토리 목록, 채팅 목록 | 삭제 필터의 `include`, `only`<br>없으면 제외 |
+| `storiesDeleted`, `chatsDeleted` | 회원 상세, 스토리 상세 | 범위 목록의 삭제 필터<br>값은 `deleted`와 같음 |
 
 | 상황 | 처리 |
 |---|---|
@@ -34,7 +36,7 @@
 | 기간 선택 | `range`, `from`, `to`, `days`를 지우고 새 값만 씀 |
 | 탭 전환 | `tab`만 바꾸고 기간과 조건은 유지 |
 | 광고 캠페인 변경 | `campaign`을 바꾸고 `range`, `from`, `to`, `storyId`를 지움 |
-| 잘못된 값 | 알 수 없는 `tab`, `funnel`, `platform`, `segment`는 기본값으로 화면을 그림 |
+| 잘못된 값 | 알 수 없는 `tab`, `funnel`, `platform`, `segment`는 기본값으로 화면을 그림<br>알 수 없는 삭제 필터 값은 제외로 그리고 요청에 싣지 않음 |
 | 뒤로 가기 | 쿼리 변경은 기록에 남아 뒤로 가기로 앞의 선택으로 돌아감<br>`days` 교체만 기록에 남기지 않음 |
 
 <br>
