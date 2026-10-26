@@ -117,7 +117,7 @@ MCP 서버나
 {latency_slo}
 
 ## 자료 위치
-조회 도구로 읽는 인덱스와 필드 이름이다. 집계 질의로 필요한 묶음만 가져오고 문서를 그대로 많이 가져오지 않는다.
+조회 도구로 읽는 인덱스와 필드 이름이다.
 {data_sources}
 
 ## 코드 사본
@@ -133,6 +133,11 @@ MCP 서버나
 6. 확장: 확장 이력과 경보 이력을 조회해 확장이 일어났는지, 안 일어났다면 terraform의 확장 정책 중 무엇 때문인지 본다.
 7. 반증: 다른 구성 요소가 정상이었다는 관찰을 하나 이상 확보한다.
 앞 단계에서 원인이 분명하면 뒤 단계를 줄여도 된다. 조회는 {query_limit}회까지이고 저장소 읽기는 횟수에 들지 않는다.
+
+## 조회 규칙
+- 로그와 스팬은 문서 검색보다 집계 질의를 먼저 쓴다. 건수, 백분위, 서비스별이나 경로별 terms 묶음을 aggs로 받고 SearchIndexTool의 size 인자는 0으로 준다. query_dsl 안에 적은 size는 이 인자로 덮인다.
+- 개별 문서가 필요하면 size 인자를 5 이하로 주고 query_dsl의 _source에 필요한 필드만 적는다.
+- 같은 조회를 되풀이하지 않는다. 앞에서 받은 값은 그 결과의 [query N]으로 근거를 쓴다.
 
 ## 보고 규칙
 - 판정은 incident, not_incident, undetermined 중 하나다. 지연 기준 초과나 실패가 자료로 확인될 때만 incident다. 부하가 높아도 기준 안이면 not_incident다. 자료가 비어 있거나 모순되어 정할 수 없으면 undetermined다.
@@ -227,11 +232,11 @@ MCP 서버나
 
 | 서버 키 | 패키지 | 활성화할 도구 | 넘기는 값 |
 |---|---|---|---|
-| `opensearch` | `opensearch-mcp-server-py`(opensearch-project의 Apache 2.0 패키지) | `ListIndexTool`, `IndexMappingTool`, `SearchIndexTool`, `CountTool`, `MsearchTool` | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`<br>도구 필터 `OPENSEARCH_DISABLED_TOOLS`에 `GenericOpenSearchApiTool`, `ExplainTool`, `GetShardsTool`, `ClusterHealthTool`<br>`OPENSEARCH_SETTINGS_ALLOW_WRITE`는 `false` |
-| `cloudwatch` | `awslabs.cloudwatch-mcp-server`(awslabs/mcp) | `get_metric_data`, `get_metric_metadata`, `get_active_alarms`, `get_alarm_history` | AWS 지역과 읽기 전용 자격 |
+| `opensearch` | `opensearch-mcp-server-py`(opensearch-project의 Apache 2.0 패키지) | `IndexMappingTool`, `SearchIndexTool`, `CountTool` | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`<br>도구 필터 `OPENSEARCH_DISABLED_TOOLS`에 `ListIndexTool`, `MsearchTool`, `GenericOpenSearchApiTool`, `ExplainTool`, `GetShardsTool`, `ClusterHealthTool`<br>`OPENSEARCH_SETTINGS_ALLOW_WRITE`는 `false` |
+| `cloudwatch` | `awslabs.cloudwatch-mcp-server`(awslabs/mcp) | `get_metric_data`, `get_active_alarms`, `get_alarm_history` | AWS 지역과 읽기 전용 자격 |
 | `prometheus` | `awslabs.prometheus-mcp-server`(awslabs/mcp) | `ExecuteQuery`, `ExecuteRangeQuery`, `ListMetrics` | 인자 `--url`에 `prometheus.workspace_url`과 `--region`에 `aws.region`<br>읽기 전용 자격 |
 
-`cloudwatch` 서버의 CloudWatch Logs 도구는 메시지 원문을 FLS 없이 돌려줄 수 있어 켜지 않는다. `opensearch` 서버의 도구 필터는 서버 자체에서 도구를 제외하고 나머지 두 서버는 `disallowed_tools`로 뺀다.
+`cloudwatch` 서버의 CloudWatch Logs 도구는 메시지 원문을 FLS 없이 돌려줄 수 있어 켜지 않는다. `ListIndexTool`, `MsearchTool`, `get_metric_metadata`는 진단에 필요하지 않고 도구 정의만 진단마다 맥락에 들어가 켜지 않는다. 인덱스 패턴과 필드 이름은 시스템 프롬프트의 자료 위치로 받는다. `opensearch` 서버의 도구 필터는 서버 자체에서 도구를 제외하고 나머지 두 서버는 `disallowed_tools`로 뺀다.
 
 <br>
 

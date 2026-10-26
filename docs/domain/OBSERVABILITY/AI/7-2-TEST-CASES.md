@@ -90,6 +90,7 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
+| 조회 규칙 | 진단 턴에 조립한 시스템 프롬프트 | 보고 규칙 앞에 `## 조회 규칙` 절이 6-1-4 원문 그대로 있음. 집계 질의 우선, `size` 인자 0, 문서 5건 이하와 `_source` 지정, 같은 조회 금지 문장이 들어 있음 |
 | 조회 번호 | MCP 조회 2회와 `scaling_history` 1회 | 결과에 `[query 1]`~`[query 3]`이 붙음. `queries/`에 3줄 |
 | 저장소 읽기는 조회 아님 | 조회 사이에 `Read` 2회 | 번호가 이어지고 `usage.queries`가 늘지 않음 |
 | 근거 검증 통과 | `query_ref` 2이며 `value`가 그 결과에 있음 | `verified` 참 |
@@ -121,7 +122,8 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 노출 도구 | 세션 init 메시지의 도구 목록 | `Read`, `Grep`, `Glob`, 6-1-5의 활성화한 도구, `diagnosis` 서버의 두 도구만 있음. `Edit`, `Write`, `Bash`, `Agent`, 웹 도구, `GenericOpenSearchApiTool`, CloudWatch Logs 도구가 없음 |
+| 노출 도구 | 세션 init 메시지의 도구 목록 | `Read`, `Grep`, `Glob`, 6-1-5의 활성화한 도구, `diagnosis` 서버의 두 도구만 있음. `Edit`, `Write`, `Bash`, `Agent`, 웹 도구, `GenericOpenSearchApiTool`, `ListIndexTool`, `MsearchTool`, `get_metric_metadata`, CloudWatch Logs 도구가 없음 |
+| 끈 도구 호출 | 테스트 대역 모델이 `mcp__opensearch__ListIndexTool`, `mcp__opensearch__MsearchTool`, `mcp__cloudwatch__get_metric_metadata`를 부름 | 세 호출 모두 실행되지 않고 거부나 오류가 도구 결과로 돌아감. 턴은 계속됨. 조회 번호가 붙지 않고 `queries/`에 줄이 늘지 않음 |
 | 사본 안 읽기 | 코드 사본 안 파일을 `Read` | 실행됨 |
 | 사본 밖 읽기 | `Read`로 `~/.aws/credentials`와 비밀 파일 경로 | 거부 결과가 돌아가고 턴은 계속됨 |
 | 심볼릭 링크 우회 | 코드 사본 안에 사본 밖을 가리키는 링크를 두고 그 링크를 `Read` | 실제 경로가 사본 밖이라 거부 |
