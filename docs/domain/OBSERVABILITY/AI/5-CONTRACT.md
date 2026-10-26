@@ -4,7 +4,7 @@
 
 필드의 의미는 3 태스크 정의에, 모델이 부르는 도구의 정의는 6-1 AI 실행에, 설정 파일 위치와 비밀값 출처는 7-4 배포에 있다. ([3-3 이상 후보](3-TASK-DEFINITION.md#3-3-이상-후보), [3-4 운영자 요청](3-TASK-DEFINITION.md#3-4-운영자-요청), [3-5 진단](3-TASK-DEFINITION.md#3-5-진단), [3-6 대화](3-TASK-DEFINITION.md#3-6-대화), [6-1-5 도구 정의와 권한](6-1-AI-EXECUTION.md#6-1-5-도구-정의와-권한), [7-4-4 환경 변수와 비밀 정보](7-4-DEPLOYMENT.md#7-4-4-환경-변수와-비밀-정보))
 
-시각은 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고에는 그대로 옮긴다.
+시각은 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고에는 그대로 옮긴다. 슬랙 메시지의 시각만 5-9대로 바꿔 보인다.
 
 <br>
 
@@ -41,7 +41,7 @@
 | 덮어쓰기 이름 | 키 경로의 점을 밑줄로 바꾸고 대문자로 바꾼 뒤 앞에 `DIAG_`를 붙임. `limits.queries`는 `DIAG_LIMITS_QUERIES`<br>`DIAG_CONFIG`, `DIAG_SECRET_ID`, `DIAG_SECRETS_FILE`은 덮어쓰기가 아님 |
 | 덮어쓰기 대상 | 문자열, 숫자, 불리언 값만. 배열과 배열 안의 값은 설정 파일에서만 바꿈 |
 | 값 변환 | 환경 변수의 문자열을 키의 타입으로 바꿈. 불리언은 `true`와 `false`만 받음 |
-| 받지 않는 값 | 아래 항목 표, 5-3 표, 5-4 표에 없는 키<br>그 키와 이름이 맞지 않는 `DIAG_` 환경 변수<br>키의 타입으로 바꿀 수 없는 값<br>빠진 필수 항목 |
+| 받지 않는 값 | 아래 항목 표, 5-3 표, 5-4 표에 없는 키<br>그 키와 이름이 맞지 않는 `DIAG_` 환경 변수<br>키의 타입으로 바꿀 수 없는 값<br>IANA 시간대 이름이 아닌 `slack.timezone`<br>빠진 필수 항목 |
 
 <br>
 
@@ -85,6 +85,7 @@
 | `limits.session_lifetime_hours` | 정수 | `24` | 세션이 운영자 메시지를 받는 시간. 이상 후보는 닫은 뒤부터, 운영자 요청은 보고를 올린 뒤부터 셈 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
 | `session_dir` | 문자열 | 필수 | SDK 세션 파일 폴더 | `DIAG_SESSION_DIR` |
 | `slack.channel` | 문자열 | 필수 | 알림 채널 ID. 멘션도 이 채널에서만 받음 | `DIAG_SLACK_CHANNEL` |
+| `slack.timezone` | 문자열 | `UTC` | 슬랙 메시지에 보이는 시각의 시간대. IANA 시간대 이름. 5-9 | `DIAG_SLACK_TIMEZONE` |
 | `code_repositories[]` | 배열 | 필수. 1개 이상 | 코드 사본으로 받는 저장소 | 없음 |
 | `code_repositories[].name` | 문자열 | 필수 | 보고의 `code_ref.repo` 값과 서비스 지도의 저장소 이름 | 없음 |
 | `code_repositories[].clone_url` | 문자열 | 필수 | clone 주소 | 없음 |
@@ -160,6 +161,7 @@ limits:
 session_dir: runs/sessions
 slack:
   channel: C0123456789
+  timezone: UTC
 code_repositories:
   - { name: manyak-server, clone_url: "https://github.com/KIM-N-KANG/manyak-server.git", branch: main }
   - { name: manyak-ai, clone_url: "https://github.com/KIM-N-KANG/manyak-ai.git", branch: main }
@@ -538,31 +540,85 @@ service_map:
 
 ### 5-9 슬랙 메시지
 
-채널은 설정의 `slack.channel` 하나다. 메시지에는 집계값, 구성 요소 이름, 파일 위치만 들어가고 식별자는 들어가지 않는다.
+채널은 설정의 `slack.channel` 하나다. 메시지에는 집계값, 구성 요소 이름, 파일 위치만 들어가고 식별자는 들어가지 않는다. 보고 파일 이름인 `diagnosis_id`도 올리지 않는다. 보고 파일은 실행 폴더에서 찾는다.
+
+코드가 메시지에 넣는 시각은 `slack.timezone` 시간대로 바꿔 `HH:MM`만 보인다. 모델이 쓴 문장 안의 시각은 바꾸지 않는다. 금액은 달러를 소수 둘째 자리로 반올림해 `$0.11`처럼 쓴다.
 
 **1. 보고 메시지**
 
 진단 보고 하나에 보고 메시지 하나를 올린다. 이상 후보의 보고는 채널에 새 메시지로 올리고 그 메시지 아래가 세션의 스레드가 된다. 운영자 요청의 보고는 그 요청의 `thread_ts` 스레드에 답글로 올린다.
 
-| 항목 | 출처 |
-|---|---|
-| 판정 | `verdict` |
-| 영향 | `impact.summary`. `incident`가 아니면 없음 |
-| 첫 이상 시각 | `first_anomaly_at` |
-| 1순위 의심 구성 요소와 원인 가설 | `suspects[0]` |
-| 즉시 완화 | `actions.immediate[]` |
-| 개선 방향 | `actions.improvement[]` |
-| 보고 파일 ID | `diagnosis_id` |
+보고 메시지는 아래 줄을 위에서부터 차례로 쓴 슬랙 mrkdwn 글 하나다. 판정에 따라 보이는 줄이 다르다. 보이지 않는 줄은 빼고 묶음 사이에는 빈 줄을 하나 둔다.
 
-실행 실패는 보고 메시지 대신 실패 단계와 사유를 한 줄로 올린다. 이상 후보의 실패는 채널에, 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 UTC 시각을 채널에 한 줄로 올린다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다.
+| 줄 | 출처와 형식 | 보이는 판정 |
+|---|---|---|
+| 머리 줄 | 아래 표의 `verdict` 머리 표시. `suspects[0].component`가 있으면 `<머리 표시> · <component>`로 붙임 | 모두 |
+| `영향` | `impact.summary`에서 끝의 마침표를 뗀 글 뒤에 `, 첫 이상 <HH:MM>`을 붙임. 시각은 `first_anomaly_at` | `incident` |
+| `원인` | `suspects[0].hypothesis` | `incident`<br>`undetermined`는 의심 구성 요소가 있을 때 |
+| `근거` 묶음 | 제목 줄 `근거` 아래 근거마다 `evidence[].observation` 한 줄<br>`verified`가 참이면 앞에 `✓`를 붙이고 거짓이면 `⚠ (검증 실패)`를 붙임 | `incident`는 전부<br>`not_incident`와 `undetermined`는 앞 3개. 근거가 없으면 묶음을 뺌 |
+| `지금 할 일` 묶음 | 제목 줄 아래 `actions.immediate[]`의 항목마다 `•` 한 줄 | `incident` |
+| `개선 방향` 묶음 | 제목 줄 아래 `actions.improvement[]`의 항목마다 `•` 한 줄 | `incident` |
+| 비용 줄 | `조회 <usage.queries>회 · <usage.elapsed_seconds>초 · $<usage.cost_usd>`. 경과 시간은 반올림한 정수 초 | 모두 |
+
+| `verdict` | 머리 표시 |
+|---|---|
+| `incident` | `🔴 장애` |
+| `not_incident` | `🟢 이상 없음` |
+| `undetermined` | `🟡 판단 불가` |
+
+<details>
+<summary><b>보고 메시지 예시</b></summary>
+
+<br>
+
+장애 예시는 5-7 예시 보고를 기본 시간대 `UTC`로 옮긴 것이다.
+
+```text
+🔴 장애 · manyak-server 채팅 턴 실행기
+영향  채팅 턴 스트림 p95가 04:46Z부터 16.2초로 기준 15초를 넘고 04:50Z에 41.7초에 이름. 읽기 요청은 p95 0.05초 이하로 영향 없음, 첫 이상 04:46
+원인  태스크당 동시 실행 4개가 상한이라 동시 사용자 25명부터 턴이 큐에서 대기함. CPU에 여유가 있어 자원 문제가 아니라 설정 상한 문제.
+
+근거
+ ✓ chat.turn.queue 스팬 p95가 04:46Z~04:50Z 구간에서 41.2초
+ ✓ 같은 구간 manyak-ai POST /api/v1/chat/turns p95는 10.4초로 부하 전과 같음
+ ✓ 채팅 턴 실행기의 동시 실행 수가 코드에 4로 고정됨
+ ✓ manyak-server CPU 최댓값 36%
+ ✓ manyak-server 확장 활동 0건
+
+지금 할 일
+ • manyak-server 태스크 수를 2에서 4로 올려 동시 실행 수를 8에서 16으로 늘림
+
+개선 방향
+ • ChatSseConfig.kt 15~17줄의 고정값 corePoolSize 4를 설정으로 빼고 기본값을 CPU 여유에 맞게 올림
+ • 큐 대기 p95를 경보 조건에 추가함
+
+조회 7회 · 94초 · $0.11
+```
+
+장애 아님 예시는 근거 4개 가운데 앞 3개를 보인 합성 예시다. 셋째 근거의 `verified`는 거짓이다.
+
+```text
+🟢 이상 없음
+
+근거
+ ✓ 채팅 턴 스트림 p95 9.8초로 기준 15초 안
+ ✓ 스토리 목록 조회 p95 0.4초로 기준 1초 안
+ ⚠ (검증 실패) manyak-ai CPU 최댓값 66%
+
+조회 4회 · 38초 · $0.05
+```
+
+</details>
+
+실행 실패는 보고 메시지 대신 실패 단계와 사유를 `❌ 실행 실패 · <stage> · <reason>` 한 줄로 올린다. 이상 후보의 실패는 채널에, 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 시각을 `⏸ 진단 생략 · 하루 비용 상한 $<limits.daily_usd> · <HH:MM>에 다시 시작` 한 줄로 채널에 올린다. 다시 시작하는 시각은 다음 UTC 0시이고 `slack.timezone`이 `Asia/Seoul`이면 `09:00`이다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다.
 
 **2. 멘션과 스레드 메시지**
 
 | 방향 | 내용 |
 |---|---|
 | 운영자 → 에이전트 | 세션 스레드 밖에서 봇을 멘션한 사람 메시지는 운영자 요청<br>세션 스레드 안의 사람 메시지는 멘션 여부와 관계없이 대화 턴의 사용자 메시지<br>봇 자신의 메시지는 넘기지 않음 |
-| 에이전트 → 운영자 | 대화 턴의 답변 글을 스레드에 올림 |
-| 코드 → 운영자 | 세션 종료(수명 경과, 비용 초과)와 대화 턴 실패를 한 줄로 올림 |
+| 에이전트 → 운영자 | 대화 턴의 답변 글을 스레드에 올림<br>코드가 답변 끝에 비용 줄 `이번 답변 $<턴 비용> · 세션 누적 $<세션 비용>`을 붙임. 턴 비용은 그 대화 턴의 결과 메시지 사용량으로 계산한 비용이고 세션 비용은 그 턴을 더해 `sessions.jsonl`에 쓴 `cost_usd` |
+| 코드 → 운영자 | 세션 종료(수명 경과, 비용 초과)와 대화 턴 실패를 한 줄로 올림. 비용 초과와 대화 턴 실패는 실행 실패 `session`이라 1의 실행 실패 형식을 씀 |
 
 **3. 반응**
 
