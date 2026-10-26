@@ -71,7 +71,7 @@
 | `detection.min_samples` | 정수 | `20` | 진입 지연, 대기 지연, 실패율 신호를 판정하는 해당 분의 최소 건수 | `DIAG_DETECTION_MIN_SAMPLES` |
 | `detection.confirm_window_minutes` | 정수 | `5` | 신호 확정에 사용하는 최근 분 수 | `DIAG_DETECTION_CONFIRM_WINDOW_MINUTES` |
 | `detection.confirm_minutes` | 정수 | `3` | 확정 구간 안에서 조건을 넘어야 신호를 확정하는 분 수 | `DIAG_DETECTION_CONFIRM_MINUTES` |
-| `detection.close_quiet_minutes` | 정수 | `10` | 모든 신호가 조건을 넘지 않은 채 지나면 이상 후보를 닫는 분 수 | `DIAG_DETECTION_CLOSE_QUIET_MINUTES` |
+| `detection.close_quiet_minutes` | 정수 | `10` | 모든 신호가 조건을 넘지 않은 채 지나면 이상 후보를 닫는 분 수. 판정하지 않은 분이 끼면 다시 셈. 4-1-2 | `DIAG_DETECTION_CLOSE_QUIET_MINUTES` |
 | `service_map` | 객체 | 필수 | 서비스 지도. 5-4 | 5-4 표 |
 | `model.id` | 문자열 | `claude-sonnet-5-5` | 진단 턴과 대화 턴의 모델 식별자 | `DIAG_MODEL_ID` |
 | `model.effort` | 문자열 | `medium` | 추론 강도. `low`, `medium`, `high` | `DIAG_MODEL_EFFORT` |
