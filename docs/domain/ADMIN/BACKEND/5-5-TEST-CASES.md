@@ -310,7 +310,8 @@
 | 활동 기간 | 366일<br>367일 | 200<br>400 |
 | 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`만, Web은 `country`와 `platform` `Web`, Android는 `country`와 `platform` `Android`, `user_id` 조건 없음, 예산 계수기 168 증가 |
 | 플랫폼 전환 복귀 | 10-20에 웹에서 처음 방문하고 10-21에 앱으로만 활동한 국내 사용자 | 10-20 코호트의 `all` `d1`에 복귀로 듦<br>`web` `d1`에는 복귀로 들지 않고 `android` 코호트에는 없음 |
-| 리텐션 인덱스 | 코호트 배열의 인덱스 1이 `count` 5와 `outof` 20, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d7` `null`, `d30` `null` |
+| 리텐션 인덱스 | 코호트 배열의 인덱스 1부터 5까지가 `outof` 20에 `count` 5, 4, 3, 2, 1, 인덱스 6이 `outof` 0, 인덱스 7이 `incomplete`, 길이가 10이라 인덱스 30 없음 | `d1` 0.25, `d2` 0.2, `d3` 0.15, `d4` 0.1, `d5` 0.05, `d6` `null`, `d7` `null`, `d30` `null` |
+| 리텐션 요약 | 고정 시계 KST 10-26, 범위 10-21~10-23<br>인덱스 3이 10-21 코호트는 `count` 1과 `outof` 10, 10-22 코호트는 `count` 9와 `outof` 30, 10-23 코호트는 `count` 5와 `outof` 5 | `summary.d3` 0.25<br>10-23 코호트의 `d3`은 10-26이 끝나지 않아 `null`이고 요약에 들지 않음 |
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `user_id` 조건 없음, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |

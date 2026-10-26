@@ -2019,8 +2019,8 @@ Authorization: Bearer {adminToken}
 | `platforms[].cohorts` | `object[]` | 신규 방문일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `platforms[].cohorts[].date` | `string` | 신규 방문일 |
 | `platforms[].cohorts[].users` | `integer` | 그날 신규 방문자 수 |
-| `platforms[].cohorts[].d1`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았으면 `null` |
-| `platforms[].summary` | `object` | 범위 전체의 가중 평균 `d1`, `d7`, `d30`<br>계산 가능한 코호트만 |
+| `platforms[].cohorts[].d1`, `d2`, `d3`, `d4`, `d5`, `d6`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 2일, 3일, 4일, 5일, 6일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았거나 분석 도구 값이 없거나 집계 중이거나 분모가 0이면 `null` |
+| `platforms[].summary` | `object` | 범위 전체의 가중 평균 `d1`, `d2`, `d3`, `d4`, `d5`, `d6`, `d7`, `d30`<br>필드마다 값이 `null`이 아닌 코호트를 그 분모로 가중<br>그런 코호트가 없으면 `null` |
 
 <br>
 
