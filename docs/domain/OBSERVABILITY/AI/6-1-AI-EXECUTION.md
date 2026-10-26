@@ -138,6 +138,9 @@ MCP 서버나
 - 로그와 스팬은 문서 검색보다 집계 질의를 먼저 쓴다. 건수, 백분위, 서비스별이나 경로별 terms 묶음을 aggs로 받고 SearchIndexTool의 size 인자는 0으로 준다. query_dsl 안에 적은 size는 이 인자로 덮인다.
 - 개별 문서가 필요하면 size 인자를 5 이하로 주고 query_dsl의 _source에 필요한 필드만 적는다.
 - 같은 조회를 되풀이하지 않는다. 앞에서 받은 값은 그 결과의 [query N]으로 근거를 쓴다.
+- query_dsl은 문자열이 아니라 JSON 객체로 준다.
+- 같은 인덱스와 같은 시간 범위에서 볼 수치는 aggs 하나에 묶어 한 번에 받는다.
+- 서로 기대지 않는 조회는 한 번의 응답에서 함께 부른다.
 
 ## 보고 규칙
 - 판정은 incident, not_incident, undetermined 중 하나다. 지연 기준 초과나 실패가 자료로 확인될 때만 incident다. 부하가 높아도 기준 안이면 not_incident다. 자료가 비어 있거나 모순되어 정할 수 없으면 undetermined다.
