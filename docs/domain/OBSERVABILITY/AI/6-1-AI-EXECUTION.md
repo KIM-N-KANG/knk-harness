@@ -52,7 +52,7 @@ MCP 서버나
 
 ### 6-1-2 모델과 세션 설정
 
-세션은 Claude Agent SDK로 연다. 진단 턴과 대화 턴은 한도 밖의 설정이 같다.
+세션은 Claude Agent SDK로 연다. 진단 턴과 대화 턴은 한도를 제외한 설정이 같다.
 
 | 항목 | 값 |
 |---|---|
@@ -61,20 +61,20 @@ MCP 서버나
 | 시스템 프롬프트 | 6-1-4의 문자열로 전부 대체. SDK의 기본 프롬프트를 붙이지 않음 |
 | 도구 노출 | 외부 MCP 서버 `opensearch`, `cloudwatch`, `prometheus`. `prometheus`는 `prometheus.workspace_url`이 있을 때만<br>프로세스 안 MCP 서버 `diagnosis`<br>내장 도구는 `tools` 옵션으로 `Read`, `Grep`, `Glob`만 노출함. `Edit`, `Write`, `Bash`, 웹 도구, 서브에이전트 같은 나머지 내장 도구는 노출하지 않음 |
 | 권한 모드 | `dontAsk`. 허용 목록에 없는 호출은 묻지 않고 거부됨 |
-| 허용 목록 | `allowed_tools`에 6-1-5의 켠 도구와 `Read`, `Grep`, `Glob`을 넣음 |
+| 허용 목록 | `allowed_tools`에 6-1-5의 활성화한 도구와 `Read`, `Grep`, `Glob`을 넣음 |
 | 제외 목록 | `disallowed_tools`에 `cloudwatch`와 `prometheus` 서버의 켜지 않은 도구를 넣어 모델 맥락에서 뺌 |
 | 승인 콜백 | 쓰지 않음. `can_use_tool`을 넘기지 않음 |
 | 훅 | 도구 호출 전: `Read`, `Grep`, `Glob`의 경로가 코드 사본 폴더 밖이면 거부함. `opensearch` 서버 도구의 입력에 연결 인자(`opensearch_url`, `opensearch_username`, `opensearch_password` 등)가 있으면 거부함. 대화 턴의 `submit_report`를 거부함<br>도구 호출 후: 조회 도구 결과에 조회 번호를 붙이고 기록함 |
 | 작업 폴더 | `cwd`는 코드 사본을 모은 폴더 |
 | 설정 격리 | `setting_sources=[]`. SDK가 띄우는 하위 프로세스 환경에 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`<br>코드 사본 저장소의 CLAUDE.md, 홈 폴더의 설정, 자동 메모리가 세션에 섞이지 않음 |
 | git 지침과 귀속 | 설정 `includeGitInstructions: false`. `attribution.commit`과 `attribution.pr`은 빈 문자열 |
-| 턴 수 한도 | 진단 턴 30, 대화 턴 20 |
+| 턴 수 한도 | 진단 턴 30과 대화 턴 20 |
 | 비용 한도 | 진단 턴: SDK 비용 한도 `max_budget_usd` $0.50<br>세션 $2.00과 하루 상한: SDK 한도를 쓰지 않고 코드가 토큰으로 계산한 누적값으로 막음. SDK 한도는 호출 단위라 세션을 이어 열면 이전 지출을 세지 않음 |
 | 시간 한도 | 진단 턴 5분. SDK에 세션 시간 제한이 없어 코드가 중단함 |
 | 프롬프트 캐시 | SDK가 자동으로 붙임 |
 | 세션 저장 경로 | 설정의 `session_dir` |
 
-모델 식별자, 추론 강도, 턴 수, 비용, 시간 한도는 설정 값이다. 표의 값은 기본값이다. 폴백 모델은 없다. 이어 열기는 세션을 처음 연 때의 시스템 프롬프트로 이어지므로 프롬프트를 바꿔도 열린 세션에는 반영되지 않는다.
+모델 식별자, 추론 강도, 턴 수, 비용, 시간 한도는 설정값이다. 표의 값은 기본값이다. 폴백 모델은 없다. 세션을 이어 열 때는 처음 열었을 때의 시스템 프롬프트를 사용하므로 프롬프트를 바꿔도 열린 세션에는 반영되지 않는다.
 
 <br>
 
@@ -196,7 +196,7 @@ MCP 서버나
 
 **5. 대화 턴의 사용자 메시지**
 
-대화 턴이 길어지면 SDK가 앞선 대화를 요약해 진단 보고의 세부가 흐려질 수 있다. 그래서 대화 턴마다 보고 요약을 운영자 메시지 앞에 다시 붙인다. 요약에는 보고의 필드가 모두 들어 있어 슬랙 메시지에 보이지 않는 근거와 조치도 이 요약으로 답한다.
+대화 턴이 길어지면 SDK가 앞선 대화를 요약해 진단 보고의 세부 내용이 불분명해질 수 있다. 대화 턴마다 보고 요약을 운영자 메시지 앞에 다시 붙인다. 요약에는 보고의 필드가 모두 들어 있어 슬랙 메시지에 보이지 않는 근거와 조치도 이 요약으로 답한다.
 
 ```text
 ## 진단 보고 요약
@@ -221,17 +221,17 @@ MCP 서버나
 
 ### 6-1-5 도구 정의와 권한
 
-모델이 보는 도구 이름은 `mcp__<서버 키>__<도구>`다. 외부 MCP 서버는 세션마다 별도 프로세스로 stdio로 띄우고 각 서버가 쓰는 자격은 그 서버 설정의 `env`와 인자로만 넘긴다.
+모델에 노출하는 도구 이름은 `mcp__<서버 키>__<도구>`다. 외부 MCP 서버는 세션마다 stdio 방식의 별도 프로세스로 실행하고 각 서버가 쓰는 자격은 그 서버 설정의 `env`와 인자로만 넘긴다.
 
 **1. 외부 MCP 서버**
 
-| 서버 키 | 패키지 | 켜는 도구 | 넘기는 값 |
+| 서버 키 | 패키지 | 활성화할 도구 | 넘기는 값 |
 |---|---|---|---|
-| `opensearch` | `opensearch-mcp-server-py`(opensearch-project, Apache 2.0) | `ListIndexTool`, `IndexMappingTool`, `SearchIndexTool`, `CountTool`, `MsearchTool` | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`<br>도구 필터 `OPENSEARCH_DISABLED_TOOLS`에 `GenericOpenSearchApiTool`, `ExplainTool`, `GetShardsTool`, `ClusterHealthTool`<br>`OPENSEARCH_SETTINGS_ALLOW_WRITE`는 `false` |
+| `opensearch` | `opensearch-mcp-server-py`(opensearch-project의 Apache 2.0 패키지) | `ListIndexTool`, `IndexMappingTool`, `SearchIndexTool`, `CountTool`, `MsearchTool` | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`<br>도구 필터 `OPENSEARCH_DISABLED_TOOLS`에 `GenericOpenSearchApiTool`, `ExplainTool`, `GetShardsTool`, `ClusterHealthTool`<br>`OPENSEARCH_SETTINGS_ALLOW_WRITE`는 `false` |
 | `cloudwatch` | `awslabs.cloudwatch-mcp-server`(awslabs/mcp) | `get_metric_data`, `get_metric_metadata`, `get_active_alarms`, `get_alarm_history` | AWS 지역과 읽기 전용 자격 |
-| `prometheus` | `awslabs.prometheus-mcp-server`(awslabs/mcp) | `ExecuteQuery`, `ExecuteRangeQuery`, `ListMetrics` | 인자 `--url`에 `prometheus.workspace_url`, `--region`에 `aws.region`<br>읽기 전용 자격 |
+| `prometheus` | `awslabs.prometheus-mcp-server`(awslabs/mcp) | `ExecuteQuery`, `ExecuteRangeQuery`, `ListMetrics` | 인자 `--url`에 `prometheus.workspace_url`과 `--region`에 `aws.region`<br>읽기 전용 자격 |
 
-`cloudwatch` 서버의 CloudWatch Logs 도구는 메시지 원문을 FLS 없이 돌려줄 수 있어 켜지 않는다. `opensearch` 서버의 도구 필터는 그 서버가 스스로 도구를 빼고 나머지 두 서버는 `disallowed_tools`로 뺀다.
+`cloudwatch` 서버의 CloudWatch Logs 도구는 메시지 원문을 FLS 없이 돌려줄 수 있어 켜지 않는다. `opensearch` 서버의 도구 필터는 서버 자체에서 도구를 제외하고 나머지 두 서버는 `disallowed_tools`로 뺀다.
 
 <br>
 
@@ -250,7 +250,7 @@ MCP 서버나
 
 **3. 조회 번호**
 
-조회 도구는 외부 MCP 서버의 켠 도구와 `scaling_history`다. 도구 호출 후 훅이 조회 도구 결과마다 세션 안에서 이어지는 번호를 올리고 `additionalContext`로 `[query 3]` 같은 번호를 결과에 덧붙인다. 같은 훅이 번호, 도구, 인자, 결과를 `queries/` 파일에 쓴다. 보고 검사기는 이 기록에서 근거의 값을 찾는다.
+조회 도구는 외부 MCP 서버에서 활성화한 도구와 `scaling_history`다. 도구 호출 후 훅이 조회 도구 결과마다 세션 안에서 이어지는 번호를 올리고 `additionalContext`로 `[query 3]` 같은 번호를 결과에 덧붙인다. 같은 훅이 번호, 도구, 인자, 결과를 `queries/` 파일에 쓴다. 보고 검사기는 이 기록에서 근거의 값을 찾는다.
 
 <br>
 
@@ -258,7 +258,7 @@ MCP 서버나
 
 | 도구 | 진단 턴 | 대화 턴 | 허용 범위 |
 |---|---|---|---|
-| 외부 MCP 서버의 켠 도구 | 자동 허용 | 자동 허용 | 각 서버가 받은 읽기 자격의 범위 |
+| 외부 MCP 서버의 활성화한 도구 | 자동 허용 | 자동 허용 | 각 서버가 받은 읽기 자격의 범위 |
 | `scaling_history` | 자동 허용 | 자동 허용 | |
 | `submit_report` | 자동 허용 | 거부 | |
 | `Read`, `Grep`, `Glob` | 자동 허용 | 자동 허용 | 코드 사본 폴더 안 |
@@ -287,4 +287,4 @@ MCP 서버나
 | 조회 | 조회 도구와 저장소 읽기는 진단 턴과 같음. 조회 번호는 세션 안에서 이어서 붙임 |
 | 끝 | 모델의 마지막 글을 스레드에 올림. 세션 누적 비용을 갱신함 |
 
-대화 턴에는 응답 검사가 없다. 모델의 글이 그대로 답변이다.
+대화 턴에는 응답 검사가 없다. 모델이 작성한 글을 그대로 답변으로 사용한다.

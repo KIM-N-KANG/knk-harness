@@ -4,7 +4,7 @@
 
 필드의 의미는 3 태스크 정의에, 모델이 부르는 도구의 정의는 6-1 AI 실행에, 설정 파일 위치와 비밀값 출처는 7-4 배포에 있다. ([3-3 이상 후보](3-TASK-DEFINITION.md#3-3-이상-후보), [3-4 운영자 요청](3-TASK-DEFINITION.md#3-4-운영자-요청), [3-5 진단](3-TASK-DEFINITION.md#3-5-진단), [3-6 대화](3-TASK-DEFINITION.md#3-6-대화), [6-1-5 도구 정의와 권한](6-1-AI-EXECUTION.md#6-1-5-도구-정의와-권한), [7-4-4 환경 변수와 비밀 정보](7-4-DEPLOYMENT.md#7-4-4-환경-변수와-비밀-정보))
 
-시각 필드는 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장돼 있고 보고의 시각 필드에는 그대로 옮긴다. 보고 문장 안의 시각과 슬랙 메시지의 시각은 `slack.timezone`의 `HH:MM`으로 쓴다. ([6-1-4 프롬프트](6-1-AI-EXECUTION.md#6-1-4-프롬프트), [5-9 슬랙 메시지](#5-9-슬랙-메시지))
+시각 필드는 모두 ISO 8601에 시간대 오프셋을 붙여 쓴다. 자료 원천의 시각은 UTC로 저장되어 있고 보고의 시각 필드에는 그대로 옮긴다. 보고 문장 안의 시각과 슬랙 메시지의 시각은 `slack.timezone`의 `HH:MM`으로 쓴다. ([6-1-4 프롬프트](6-1-AI-EXECUTION.md#6-1-4-프롬프트)와 [5-9 슬랙 메시지](#5-9-슬랙-메시지))
 
 <br>
 
@@ -27,7 +27,7 @@
 
 ### 5-2 설정 파일
 
-대상 서비스와 운영 환경에 맞춰 바꾸는 값은 YAML 설정 파일 하나로 받는다. 서비스 지도도 이 파일의 한 절이다. 비밀값은 설정 파일에 두지 않는다.
+대상 서비스와 운영 환경에 맞춰 바꾸는 값은 YAML 설정 파일 하나로 받는다. 서비스 지도도 이 파일의 한 절에 둔다. 비밀값은 설정 파일에 두지 않는다.
 
 <br>
 
@@ -41,7 +41,7 @@
 | 덮어쓰기 이름 | 키 경로의 점을 밑줄로 바꾸고 대문자로 바꾼 뒤 앞에 `DIAG_`를 붙임. `limits.queries`는 `DIAG_LIMITS_QUERIES`<br>`DIAG_CONFIG`, `DIAG_SECRET_ID`, `DIAG_SECRETS_FILE`은 덮어쓰기가 아님 |
 | 덮어쓰기 대상 | 문자열, 숫자, 불리언 값만. 배열과 배열 안의 값은 설정 파일에서만 바꿈 |
 | 값 변환 | 환경 변수의 문자열을 키의 타입으로 바꿈. 불리언은 `true`와 `false`만 받음 |
-| 받지 않는 값 | 아래 항목 표, 5-3 표, 5-4 표에 없는 키<br>그 키와 이름이 맞지 않는 `DIAG_` 환경 변수<br>키의 타입으로 바꿀 수 없는 값<br>IANA 시간대 이름이 아닌 `slack.timezone`<br>빠진 필수 항목 |
+| 받지 않는 값 | 아래 항목 표, 5-3 표, 5-4 표에 없는 키<br>해당 키와 이름이 일치하지 않는 `DIAG_` 환경 변수<br>키의 타입으로 바꿀 수 없는 값<br>IANA 시간대 이름이 아닌 `slack.timezone`<br>빠진 필수 항목 |
 
 <br>
 
@@ -61,16 +61,16 @@
 | `prometheus.workspace_url` | 문자열 | 빈 값 | AMP 작업 공간 주소. 빈 값이면 Prometheus MCP 서버를 띄우지 않음 | `DIAG_PROMETHEUS_WORKSPACE_URL` |
 | `fields.log.<항목>` | 문자열 | 5-3의 로그 인덱스 표 | 로그 필드 이름 대응표 | 항목마다. `DIAG_FIELDS_LOG_TIMESTAMP` 등 |
 | `fields.span.<항목>` | 문자열 | 5-3의 스팬 인덱스 표 | 스팬 필드 이름 대응표 | 항목마다. `DIAG_FIELDS_SPAN_DURATION` 등 |
-| `redact_fields` | 문자열 배열 | `message`, `device_id_hash`, `session_id`, `request_id`, `span.attributes.http@url` | 식별자 제거 목록. 모델이 보면 안 되는 로그와 스팬의 필드 경로<br>OpenSearch 읽기 사용자의 역할이 이 필드를 FLS로 빼고 시작 검사가 그 결과를 확인함<br>`message`는 운영 로그의 메시지 원문, `span.attributes.http@url`은 채팅 ID 같은 경로 식별자가 든 요청 주소 | 없음 |
+| `redact_fields` | 문자열 배열 | `message`, `device_id_hash`, `session_id`, `request_id`, `span.attributes.http@url` | 식별자 제거 목록. 모델이 보면 안 되는 로그와 스팬의 필드 경로<br>OpenSearch 읽기 사용자의 역할이 이 필드를 FLS로 빼고 시작 검사가 그 결과를 확인함<br>`message`는 운영 로그의 메시지 원문이며 `span.attributes.http@url`은 채팅 ID 같은 경로 식별자가 든 요청 주소 | 없음 |
 | `detection.queue_spans` | 문자열 배열 | 빈 배열 | 대기 스팬으로 보는 스팬 이름. 비어 있으면 대기 지연 신호를 판정하지 않음 | 없음 |
 | `detection.queue_latency_seconds` | 숫자 | `1` | 대기 지연 신호의 1분 p95 기준 | `DIAG_DETECTION_QUEUE_LATENCY_SECONDS` |
 | `detection.failure_ratio` | 숫자 | `0.01` | 실패율 신호 기준 | `DIAG_DETECTION_FAILURE_RATIO` |
 | `detection.error_level` | 문자열 | `ERROR` | 오류 로그로 세는 `fields.log.level` 값 | `DIAG_DETECTION_ERROR_LEVEL` |
 | `detection.error_logs_per_minute` | 정수 | `10` | 오류 로그 신호의 서비스별 1분 건수 기준 | `DIAG_DETECTION_ERROR_LOGS_PER_MINUTE` |
 | `detection.saturation_percent` | 숫자 | `70` | 자원 포화 신호 기준 | `DIAG_DETECTION_SATURATION_PERCENT` |
-| `detection.min_samples` | 정수 | `20` | 진입 지연, 대기 지연, 실패율 신호를 판정하는 그 분의 최소 건수 | `DIAG_DETECTION_MIN_SAMPLES` |
-| `detection.confirm_window_minutes` | 정수 | `5` | 신호 확정에 보는 최근 분 수 | `DIAG_DETECTION_CONFIRM_WINDOW_MINUTES` |
-| `detection.confirm_minutes` | 정수 | `3` | 그 안에서 조건을 넘어야 확정하는 분 수 | `DIAG_DETECTION_CONFIRM_MINUTES` |
+| `detection.min_samples` | 정수 | `20` | 진입 지연, 대기 지연, 실패율 신호를 판정하는 해당 분의 최소 건수 | `DIAG_DETECTION_MIN_SAMPLES` |
+| `detection.confirm_window_minutes` | 정수 | `5` | 신호 확정에 사용하는 최근 분 수 | `DIAG_DETECTION_CONFIRM_WINDOW_MINUTES` |
+| `detection.confirm_minutes` | 정수 | `3` | 확정 구간 안에서 조건을 넘어야 신호를 확정하는 분 수 | `DIAG_DETECTION_CONFIRM_MINUTES` |
 | `detection.close_quiet_minutes` | 정수 | `10` | 모든 신호가 조건을 넘지 않은 채 지나면 이상 후보를 닫는 분 수 | `DIAG_DETECTION_CLOSE_QUIET_MINUTES` |
 | `service_map` | 객체 | 필수 | 서비스 지도. 5-4 | 5-4 표 |
 | `model.id` | 문자열 | `claude-sonnet-5-5` | 진단 턴과 대화 턴의 모델 식별자 | `DIAG_MODEL_ID` |
@@ -82,7 +82,7 @@
 | `limits.diagnosis_usd` | 숫자 | `0.50` | 진단 턴의 SDK 비용 한도 | `DIAG_LIMITS_DIAGNOSIS_USD` |
 | `limits.session_usd` | 숫자 | `2.00` | 세션 비용 한도 | `DIAG_LIMITS_SESSION_USD` |
 | `limits.daily_usd` | 숫자 | `5.00` | 하루 비용 상한 | `DIAG_LIMITS_DAILY_USD` |
-| `limits.session_lifetime_hours` | 정수 | `24` | 세션이 운영자 메시지를 받는 시간. 이상 후보는 닫은 뒤부터, 운영자 요청은 보고를 올린 뒤부터 셈 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
+| `limits.session_lifetime_hours` | 정수 | `24` | 세션이 운영자 메시지를 받는 시간. 이상 후보는 닫은 뒤부터 세고 운영자 요청은 보고를 올린 뒤부터 셈 | `DIAG_LIMITS_SESSION_LIFETIME_HOURS` |
 | `session_dir` | 문자열 | 필수 | SDK 세션 파일 폴더 | `DIAG_SESSION_DIR` |
 | `slack.channel` | 문자열 | 필수 | 알림 채널 ID. 멘션도 이 채널에서만 받음 | `DIAG_SLACK_CHANNEL` |
 | `slack.timezone` | 문자열 | `UTC` | 슬랙 메시지와 보고 문장에 쓰는 시각의 시간대. IANA 시간대 이름. 5-9와 6-1-4 | `DIAG_SLACK_TIMEZONE` |
@@ -229,7 +229,7 @@ service_map:
 | 필드 수준 보안 | 역할에 FLS 제외 필드 목록을 둠. 목록은 `redact_fields`와 같음 |
 | 클러스터 권한 | 쓰기와 설정 변경 권한 없음 |
 
-FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지 않는다. 그래서 MCP 서버가 문서를 그대로 돌려줘도 메시지 원문과 식별자는 모델에 가지 않는다.
+FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지 않는다. MCP 서버가 문서를 그대로 반환해도 메시지 원문과 식별자는 모델에 전달되지 않는다.
 
 <br>
 
@@ -239,9 +239,9 @@ FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지
 
 | 네임스페이스 | 지표 | 차원 | 통계 |
 |---|---|---|---|
-| `AWS/ECS` | `CPUUtilization`, `MemoryUtilization` | `ClusterName`, `ServiceName` | Average, Maximum |
+| `AWS/ECS` | `CPUUtilization`과 `MemoryUtilization` | `ClusterName`과 `ServiceName` | Average와 Maximum |
 | `AWS/RDS` | `CPUUtilization`, `DatabaseConnections`, `FreeableMemory`, `ReadLatency`, `WriteLatency`, `DiskQueueDepth` | `DBInstanceIdentifier` | Maximum |
-| `AWS/ElastiCache` | `EngineCPUUtilization`, `CurrConnections` | `CacheClusterId` | Maximum |
+| `AWS/ElastiCache` | `EngineCPUUtilization`과 `CurrConnections` | `CacheClusterId` | Maximum |
 | `AWS/ApplicationELB` | `RequestCount`, `HTTPCode_Target_5XX_Count`, `HTTPCode_ELB_5XX_Count` | `LoadBalancer` | Sum |
 | `AWS/ApplicationELB` | `TargetResponseTime` | `LoadBalancer` | p95 |
 
@@ -395,7 +395,7 @@ service_map:
 | `text` | 문자열 | 필수 | 멘션 표기를 뺀 메시지 원문 |
 | `requested_at` | 시각 | 필수 | 멘션 메시지의 슬랙 시각 |
 | `channel` | 문자열 | 필수 | 슬랙 채널 ID |
-| `thread_ts` | 문자열 | 필수 | 보고를 올릴 스레드의 키. 멘션 메시지가 스레드 안에 있으면 그 스레드의 첫 메시지 타임스탬프, 아니면 멘션 메시지의 타임스탬프 |
+| `thread_ts` | 문자열 | 필수 | 보고를 올릴 스레드의 키. 멘션 메시지가 스레드 안에 있으면 그 스레드의 첫 메시지 타임스탬프이며 그렇지 않으면 멘션 메시지의 타임스탬프 |
 | `skip_reason` | 문자열 | 선택 | 진단을 부르지 않은 이유. `daily_budget_exceeded`. 진단했으면 `null` |
 
 
@@ -407,18 +407,18 @@ service_map:
 
 | 필드 | 타입 | 필수 | 의미 |
 |---|---|---|---|
-| `diagnosis_id` | 문자열 | 필수 | 진단 요청의 ID. 이상 후보는 `candidate_id`, 운영자 요청은 `mention_id` |
+| `diagnosis_id` | 문자열 | 필수 | 진단 요청의 ID. 이상 후보는 `candidate_id`이고 운영자 요청은 `mention_id` |
 | `diagnosed_at` | 시각 | 필수 | 진단을 끝낸 실제 시각 |
 | `verdict` | 문자열 | 필수 | `incident`, `not_incident`, `undetermined` |
 | `headline` | 객체 | 필수 | 슬랙 보고 메시지의 짧은 칸. 5-9 |
-| `headline.impact` | 문자열 | 조건부 | 영향 칸. 영향받은 경로와 수치와 기준. `incident`일 때 필수, 아니면 `null` |
-| `headline.cause` | 문자열 | 조건부 | 원인 칸. 원인을 줄인 명사구. `incident`일 때와 의심 구성 요소가 있는 `undetermined`일 때 필수, 아니면 `null` |
-| `headline.scope` | 문자열 | 조건부 | 확인한 범위 칸. 확인한 요청 경로와 구간. `not_incident`와 `undetermined`일 때 필수, 아니면 `null` |
-| `headline.figures` | 문자열 | 조건부 | 주요 수치 칸. 판정을 받치는 수치와 기준. `not_incident`와 `undetermined`일 때 필수, 아니면 `null` |
-| `impact` | 객체 | 조건부 | `incident`일 때 필수, 아니면 `null` |
+| `headline.impact` | 문자열 | 조건부 | 영향 칸. 영향받은 경로와 수치와 기준. `incident`일 때 필수이며 그렇지 않으면 `null` |
+| `headline.cause` | 문자열 | 조건부 | 원인 칸. 원인을 요약한 명사구. `incident`일 때와 의심 구성 요소가 있는 `undetermined`일 때 필수이며 그렇지 않으면 `null` |
+| `headline.scope` | 문자열 | 조건부 | 확인한 범위 칸. 확인한 요청 경로와 구간. `not_incident`와 `undetermined`일 때 필수이며 그렇지 않으면 `null` |
+| `headline.figures` | 문자열 | 조건부 | 주요 수치 칸. 판정을 뒷받침하는 수치와 기준. `not_incident`와 `undetermined`일 때 필수이며 그렇지 않으면 `null` |
+| `impact` | 객체 | 조건부 | `incident`일 때 필수이며 그렇지 않으면 `null` |
 | `impact.trace_groups[]` | 배열 | 필수 | 영향받은 진입 스팬 이름 |
 | `impact.summary` | 문자열 | 필수 | 수치가 든 한 문장 |
-| `first_anomaly_at` | 시각 | 조건부 | `incident`일 때 필수, 아니면 `null` |
+| `first_anomaly_at` | 시각 | 조건부 | `incident`일 때 필수이며 그렇지 않으면 `null` |
 | `suspects[]` | 배열 | 조건부 | `incident`일 때 1~3개. `undetermined`는 0~3개. `not_incident`는 빈 배열 |
 | `suspects[].component` | 문자열 | 필수 | 서비스 지도의 `components[].name` |
 | `suspects[].hypothesis` | 문자열 | 필수 | 원인 가설 한 문장 |
@@ -434,7 +434,7 @@ service_map:
 | `evidence[].code_ref.end_line` | 정수 | 필수 | 인용 범위의 끝 줄. `start_line` 이상 |
 | `evidence[].code_ref.quote` | 문자열 | 필수 | 범위 안에 그대로 있는 문장 |
 | `evidence[].verified` | 불리언 | 필수 | 보고 검사기가 채움 |
-| `actions` | 객체 | 조건부 | `incident`일 때 필수, 아니면 `null` |
+| `actions` | 객체 | 조건부 | `incident`일 때 필수이며 그렇지 않으면 `null` |
 | `actions.immediate[]` | 배열 | 필수 | 즉시 완화. 1개 이상. 첫 항목이 1순위 |
 | `actions.improvement[]` | 배열 | 필수 | 개선 방향. 1개 이상. 첫 항목이 1순위 |
 | `usage` | 객체 | 필수 | 진단 실행기가 채움 |
@@ -445,7 +445,7 @@ service_map:
 | `usage.cost_usd` | 숫자 | 필수 | |
 | `usage.elapsed_seconds` | 숫자 | 필수 | |
 
-글자 상한은 `headline`의 칸과 `ruled_out[]`을 `, `로 이은 글이 40자이고 `actions`의 항목이 60자다. 글자 수는 유니코드 문자 단위로 센다. 상한은 제출 입력 스키마에 두지 않고 출력 간 조건으로도 검사하지 않는다. 넘은 값은 보고에 그대로 기록하고 슬랙 연결기가 메시지에서만 줄인다(5-9). 메시지에 보이는 길이 때문에 진단이 실행 실패로 끝나지 않게 하려는 것이다.
+글자 상한은 `headline`의 칸과 `ruled_out[]`을 `, `로 이은 글이 40자이고 `actions`의 항목이 60자다. 글자 수는 유니코드 문자 단위로 센다. 상한은 제출 입력 스키마에 두지 않고 출력 간 조건으로도 검사하지 않는다. 넘은 값은 보고에 그대로 기록하고 슬랙 연결기가 메시지에서만 줄인다(5-9). 메시지의 표시 길이 때문에 진단이 실행 실패로 끝나는 것을 막기 위해서다.
 
 <details>
 <summary><b>진단 보고 예시(LLM 응답 대기 장애)</b></summary>
@@ -507,11 +507,11 @@ service_map:
 
 ### 5-8 실행 폴더
 
-실행 하나가 폴더 하나를 만든다. 폴더는 실행 인자로 받은 상위 경로 아래에 두고 이름은 시작 시각이다. 상위 경로는 1단계면 운영자 PC의 폴더이고 2단계면 태스크의 임시 저장소다.
+실행마다 폴더 하나를 만든다. 폴더는 실행 인자로 받은 상위 경로 아래에 두고 이름은 시작 시각이다. 상위 경로는 1단계면 운영자 PC의 폴더이고 2단계면 태스크의 임시 저장소다.
 
 | 파일 | 내용 | 쓰는 때 |
 |---|---|---|
-| `run.json` | 실행 단계, 설정 위치와 해시, 적용한 설정 값 전체와 덮어쓴 환경 변수 이름, 코드 사본의 저장소별 커밋, MCP 서버 패키지 버전, 프롬프트 해시 | 시작 때 |
+| `run.json` | 실행 단계, 설정 위치와 해시, 적용한 설정값 전체와 덮어쓴 환경 변수 이름, 코드 사본의 저장소별 커밋, MCP 서버 패키지 버전, 프롬프트 해시 | 시작 때 |
 | `candidates.jsonl` | 이상 후보의 상태 한 건에 한 줄. 같은 ID는 마지막 줄이 최신 상태 | 열 때, 진단을 생략할 때, 신호가 붙거나 최댓값이 바뀔 때, 닫을 때, 열린 채 실행이 끝날 때 덧붙임 |
 | `mentions.jsonl` | 운영자 요청 한 건에 한 줄 | 멘션을 받을 때 |
 | `reports/<diagnosis_id>.json` | 진단 보고 | 진단이 끝날 때 |
@@ -538,7 +538,7 @@ service_map:
 | `diagnosis_id` | 문자열 | 필수 | 진단 요청의 ID |
 | `session_id` | 문자열 | 필수 | Agent SDK가 준 세션 ID |
 | `channel` | 문자열 | 필수 | 슬랙 채널 ID |
-| `thread_ts` | 문자열 | 필수 | 스레드의 키. 이상 후보는 알림 메시지의 타임스탬프, 운영자 요청은 그 요청의 `thread_ts` |
+| `thread_ts` | 문자열 | 필수 | 스레드의 키. 이상 후보는 알림 메시지의 타임스탬프이며 운영자 요청은 그 요청의 `thread_ts` |
 | `opened_at` | 시각 | 필수 | 보고를 올린 실제 시각 |
 | `closed_at` | 시각 | 선택 | 세션을 끝낸 실제 시각. 열려 있으면 `null` |
 | `cost_usd` | 숫자 | 필수 | 세션 누적 비용 |
@@ -549,13 +549,13 @@ service_map:
 
 채널은 설정의 `slack.channel` 하나다. 메시지에는 집계값, 구성 요소 이름, 파일 위치만 들어가고 식별자는 들어가지 않는다. 보고 파일 이름인 `diagnosis_id`도 올리지 않는다. 보고 파일은 실행 폴더에서 찾는다.
 
-코드가 메시지에 넣는 시각은 `slack.timezone` 시간대로 바꿔 `HH:MM`만 보인다. 모델이 쓴 글 안의 시각은 모델이 같은 시간대의 `HH:MM`으로 쓰고(6-1-4) 코드는 바꾸지 않는다. 금액은 달러를 소수 둘째 자리로 반올림해 `$0.11`처럼 쓴다.
+코드가 메시지에 넣는 시각은 `slack.timezone` 시간대로 바꿔 `HH:MM`만 보인다. 모델이 작성한 글의 시각은 모델이 같은 시간대의 `HH:MM`으로 쓰고(6-1-4) 코드는 바꾸지 않는다. 금액은 달러를 소수 둘째 자리로 반올림해 `$0.11`처럼 쓴다.
 
 **1. 보고 메시지**
 
 진단 보고 하나에 보고 메시지 하나를 올린다. 이상 후보의 보고는 채널에 새 메시지로 올리고 그 메시지 아래가 세션의 스레드가 된다. 운영자 요청의 보고는 그 요청의 `thread_ts` 스레드에 답글로 올린다.
 
-보고 메시지는 아래 Block Kit 블록을 위에서부터 차례로 쓴다. 알림 미리보기에 보이는 대체 글 `text`에는 머리 줄을 넣는다. 판정에 따라 보이는 블록과 칸이 다르고 보이지 않는 것은 뺀다.
+보고 메시지는 아래 Block Kit 블록을 위에서부터 차례로 쓴다. 알림 미리보기에 보이는 대체 텍스트 `text`에는 머리 줄을 넣는다. 판정에 따라 보이는 블록과 칸이 다르고 보이지 않는 것은 뺀다.
 
 | 순서 | 블록 | 내용 | 보이는 판정 |
 |---|---|---|---|
@@ -625,7 +625,7 @@ service_map:
 근거 7개 중 7개 검증 · 조회 7회 · 49초 · $0.22
 ```
 
-장애 아님 예시는 근거 4개 가운데 하나의 `verified`가 거짓인 합성 예시다. 블록 형식은 장애 예시와 같아 보이는 모습만 적는다.
+장애 아님 예시는 근거 4개 가운데 하나의 `verified`가 거짓인 합성 예시다. 블록 형식은 장애 예시와 같으므로 표시 결과만 적는다.
 
 ```text
 🟢 이상 없음
@@ -643,7 +643,7 @@ service_map:
 
 </details>
 
-실행 실패는 보고 메시지 대신 실패 단계와 사유를 `❌ 실행 실패 · <stage> · <reason>` 한 줄로 올린다. 이상 후보의 실패는 채널에, 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 시각을 `⏸ 진단 생략 · 하루 비용 상한 $<limits.daily_usd> · <HH:MM>에 다시 시작` 한 줄로 채널에 올린다. 다시 시작하는 시각은 다음 UTC 0시이고 `slack.timezone`이 `Asia/Seoul`이면 `09:00`이다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다. 이 한 줄 안내와 2의 메시지는 블록 없이 mrkdwn 글로 올린다.
+실행 실패는 보고 메시지 대신 실패 단계와 사유를 `❌ 실행 실패 · <stage> · <reason>` 한 줄로 올린다. 이상 후보의 실패는 채널에 올리고 운영자 요청의 실패는 그 스레드에 올린다. 하루 비용 상한을 넘어 이상 후보의 진단을 그날 처음 생략할 때는 상한 금액과 진단을 다시 시작하는 시각을 `⏸ 진단 생략 · 하루 비용 상한 $<limits.daily_usd> · <HH:MM>에 다시 시작` 한 줄로 채널에 올린다. 다시 시작하는 시각은 다음 UTC 0시이고 `slack.timezone`이 `Asia/Seoul`이면 `09:00`이다. 같은 날 다음 생략에는 올리지 않는다. 운영자 요청을 하루 상한 때문에 생략하면 같은 내용을 그 스레드에 매번 올린다. 이 한 줄 안내와 2의 메시지는 블록 없이 mrkdwn 글로 올린다.
 
 **2. 멘션과 스레드 메시지**
 
@@ -651,11 +651,11 @@ service_map:
 |---|---|
 | 운영자 → 에이전트 | 세션 스레드 밖에서 봇을 멘션한 사람 메시지는 운영자 요청<br>세션 스레드 안의 사람 메시지는 멘션 여부와 관계없이 대화 턴의 사용자 메시지<br>봇 자신의 메시지는 넘기지 않음 |
 | 에이전트 → 운영자 | 대화 턴의 답변 글을 스레드에 올림<br>코드가 답변 끝에 비용 줄 `이번 답변 $<턴 비용> · 세션 누적 $<세션 비용>`을 붙임. 턴 비용은 그 대화 턴의 결과 메시지 사용량으로 계산한 비용이고 세션 비용은 그 턴을 더해 `sessions.jsonl`에 쓴 `cost_usd` |
-| 코드 → 운영자 | 세션 종료(수명 경과, 비용 초과)와 대화 턴 실패를 한 줄로 올림. 비용 초과와 대화 턴 실패는 실행 실패 `session`이라 1의 실행 실패 형식을 씀 |
+| 코드 → 운영자 | 세션 종료(수명 경과나 비용 초과)와 대화 턴 실패를 한 줄로 올림. 비용 초과와 대화 턴 실패는 실행 실패 `session`이라 1의 실행 실패 형식을 씀 |
 
 **3. 반응**
 
-운영자 요청의 멘션 메시지에만 반응을 달아 진행 상태를 보인다. 이상 후보의 보고에는 사람 메시지가 없고 세션 스레드 안의 대화 턴 메시지에는 답변이 바로 오므로 반응을 달지 않는다. 반응은 보조 표시라서 달거나 지우지 못해도 진단과 보고를 계속한다.
+운영자 요청의 멘션 메시지에만 반응을 달아 진행 상태를 보인다. 이상 후보의 보고에는 사람 메시지가 없고 세션 스레드 안의 대화 턴 메시지에는 답변이 바로 오므로 반응을 달지 않는다. 반응은 보조 표시이므로 추가나 삭제에 실패해도 진단과 보고를 계속한다.
 
 | 때 | 반응 |
 |---|---|
