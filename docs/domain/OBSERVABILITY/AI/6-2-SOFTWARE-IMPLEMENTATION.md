@@ -94,7 +94,7 @@ flowchart LR
 | 항목 | 내용 |
 |---|---|
 | 등록 | 세션 옵션의 `mcp_servers`에 6-1-5의 서버를 stdio 설정(`command`, `args`, `env`)으로 넣음. `prometheus.workspace_url`이 비어 있으면 `prometheus`를 넣지 않음 |
-| 실행 명령 | 각 패키지를 `uvx`로 고정 버전을 지정해 실행함. 버전은 `run.json`에 남김 |
+| 실행 명령 | 각 패키지는 `pyproject.toml`에 고정 버전으로 적어 에이전트와 같은 Python 가상 환경에 설치함. 현재 인터프리터와 같은 bin 폴더의 실행 파일을 `command`로 직접 띄우고 uv와 uvx는 쓰지 않음. 운영자 PC에 별도 도구가 필요 없고 설치 버전이 하나로 정해짐<br>등록할 서버의 실행 파일이 없거나 실행 권한이 없으면 시작 검사에서 그 이름을 알리고 시작을 거부함(7-1)<br>`run.json`에는 설치된 패키지 메타데이터의 버전을 남김 |
 | `opensearch` 환경 | 주소, 읽기 사용자, 비밀번호, 도구 필터, 쓰기 금지 값만 넣음 |
 | AWS 서버 환경 | 지역과 자격을 얻는 값만 넣음. 1단계는 `AWS_PROFILE`에 `aws.profile`, 2단계는 ECS가 준 태스크 역할 자격 주소 변수 `AWS_CONTAINER_CREDENTIALS_RELATIVE_URI` |
 | 연결 확인 | 세션의 init 메시지에서 등록한 서버의 상태를 봄. 하나라도 `failed`나 `needs-auth`면 진단을 시작하지 않음(7-1) |

@@ -44,6 +44,7 @@
 | 서비스 이름 | `service_name` `예시몰` | 시스템 프롬프트 첫 문장이 `너는 예시몰 서비스의 장애 진단 담당자다.` |
 | 앱 지표 꺼짐 | `prometheus.workspace_url`이 빈 값 | 세션의 `mcp_servers`에 `prometheus`가 없음. 시스템 프롬프트 자료 위치에 앱 지표 줄이 없음 |
 | 앱 지표 켜짐 | `prometheus.workspace_url`이 있음 | `prometheus` 서버가 `--url`에 그 값을 받아 등록됨 |
+| MCP 실행 파일 없음 | 인터프리터와 같은 bin 폴더에 `awslabs.cloudwatch-mcp-server`가 없음 | 시작 검사 실패. 실행 폴더 없음. 표준 오류에 `awslabs.cloudwatch-mcp-server` |
 
 <br>
 
