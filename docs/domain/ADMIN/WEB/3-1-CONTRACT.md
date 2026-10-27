@@ -62,7 +62,8 @@
 | 유입 분석 유입 소스 | 기간만 |
 | 전환 퍼널 | 퍼널 다섯 개를 경로의 `funnel`마다 따로 동시에 요청<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 조건 줄의 값<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
 | 채팅 턴 도달률, 채팅 옵션 비중 | 기간과 `segment`<br>`segment`는 조건 줄의 `all`, `guest`, `member`이고 `all`이어도 보냄 |
-| 기능 사용과 안정성 | `platform`의 `all`, `web`, `android` |
+| 기능 사용과 안정성 | `platform`의 `all`, `web`, `android`<br>`segment`의 `all`, `guest`, `member`이고 `all`이어도 보냄 |
+| 사용자 세션 | 기간과 `segment`<br>`segment`는 `all`이어도 보냄 |
 | 리텐션 | 기간만<br>플랫폼은 응답의 세 항목 가운데 화면에서 고름 |
 | 인프라 지표 | 기간만 |
 | DB 테이블 크기 | `limit=20` |
@@ -91,7 +92,7 @@
 | 인프라 지표와 DB 테이블 크기의 `asOf` | 출처 툴팁의 "{받은 시각} KST"<br>캐시로 응답한 값이면 그 캐시를 만든 시각 |
 | 설치 지표의 `asOf` | Play 기준 날짜를 바꾸지 않고 "집계 기준 날짜 {날짜} (Play 기준 태평양 시간)" |
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |
-| `campaign`, `storyId`, `platform`, `segment` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 채팅 턴 도달률과 채팅 옵션 비중에서만 대상으로 표시하고 유입 분석의 광고 구분과 섞지 않음 |
+| `campaign`, `storyId`, `platform`, `segment` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 세션, 채팅 턴 도달률, 기능 사용과 안정성, 채팅 옵션 비중에서만 대상으로 표시하고 유입 분석의 광고 구분과 섞지 않음 |
 | 신규 가입자 응답의 `signups.other` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 플랫폼별 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
 | 회원의 `turnCount`, `periodTurnCount` | 정보 구조의 누적 턴 표시 ([2-1-12 회원 목록과 상세의 누적 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-12-회원-목록과-상세의-누적-턴))<br>`periodTurnCount`가 `null`이면 기간 표시 없음 |
