@@ -66,7 +66,7 @@
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
 | 검수 제출 목록 | `status`, `from`, `to`, `q`, `memberId`, `storyId`, `page`, `size`, `sort`, `order`<br>값이 있는 것만<br>기본 `page=1`, `size=20`, `sort=createdAt`, `order=desc` |
 | 검수 보류 해제 | 본문 `reason`<br>앞뒤 공백을 지운 1~500자 |
-| 스토리 공개 중단 | 본문 `reasonCode`와 `memo`<br>`memo`는 앞뒤 공백을 지운 1~500자일 때만 싣고 비면 뺌 |
+| 스토리 공개 중단 | 본문 `reasonCode`, `reasonDetail`, `memo`<br>`reasonDetail`은 `ETC`일 때만 앞뒤 공백을 지운 1~100자로 싣고 그 밖의 분류에서는 뺌<br>`memo`는 앞뒤 공백을 지운 1~500자일 때만 싣고 비면 뺌 |
 | 스토리 목록, 채팅 목록, 범위 목록의 삭제 필터 | 포함은 `deleted=include`<br>삭제된 스토리만과 삭제된 채팅만은 `deleted=only`<br>제외는 `deleted`를 보내지 않음<br>범위 목록은 `memberId`나 `storyId`와 함께 보냄 |
 
 - 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
@@ -87,5 +87,5 @@
 | 설치 지표의 `asOf` | Play 기준 날짜를 바꾸지 않고 "집계 기준 날짜 {날짜} (Play 기준 태평양 시간)" |
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |
 | `campaign`, `storyId`, `platform` | 서버가 적용한 값을 화면의 조건 표시에 씀 |
-| 스토리의 `takenDownAt`, `takedownReason` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
+| 스토리의 `takenDownAt`, `takedownReason`, `takedownReasonDetail` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김<br>`ETC`면 사유에 `takedownReasonDetail`을 함께 보임 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
 | 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-15 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-15-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |
