@@ -88,7 +88,7 @@ erDiagram
 | `users` | `status` | 접수와 결과 반영 전 계정 상태 확인<br>공개 중단 알림 전 소유 회원의 탈퇴 확인 |
 | `stories` | `public_id`, `user_id`, `deleted_at`, `visibility`, `status` | 소유 판정, 삭제 확인, 수정 폼 조립, 공개 범위 변경 허용 판정 |
 | `stories` | `thumbnail_image_url` | 수정 폼의 표지 URL |
-| `stories` | `taken_down_at`, `takedown_reason` | 공개 중단 기록과 승인 시 해제<br>공개 범위 단독 변경의 검수 여부 판정 |
+| `stories` | `taken_down_at`, `takedown_reason`, `takedown_reason_detail` | 공개 중단 기록과 승인 시 해제<br>공개 범위 단독 변경의 검수 여부 판정 |
 | `story_characters` | `public_id`, `name` | 수정 폼 조립과 인물 대응 |
 | `story_character_images` | `public_id`, `image_name`, `image_url` | 수정 폼 조립과 유지 이미지 대응 |
 

@@ -16,7 +16,7 @@
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
 | 식별자 | 제출본, 스토리, 회원은 UUID 공개 식별자<br>내부 PK와 임대는 노출하지 않음<br>회차와 재시도 상태는 관리자 API에만 노출 |
-| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수<br>공개 중단은 `reason` 대신 사유 분류 `reasonCode`가 필수이고 메모 `memo`는 선택 |
+| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수<br>공개 중단은 `reason` 대신 사유 분류 `reasonCode`가 필수이고 `ETC`면 입력 사유 `reasonDetail`도 필수이며 메모 `memo`는 선택 |
 | 위치 | 위반 항목과 이미지 오류의 `path`는 응답 폼 기준의 필드 경로<br>배열 인덱스는 0부터 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
@@ -843,7 +843,8 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `storyId` | 경로 | 필수 | 스토리 공개 식별자 |
 | `reasonCode` | `string` | 필수 | 사유 분류<br>`SEXUAL_CONTENT`, `COPYRIGHT_INFRINGEMENT`, `HATE_SPEECH`, `ETC` |
-| `memo` | `string` | 선택 | 감사 로그에만 남기는 메모<br>보내면 1~500자이고 공백만은 거절<br>생략과 `null`은 메모 없음 |
+| `reasonDetail` | `string` | 조건부 | 소유자에게 보이는 입력 사유<br>`reasonCode`가 `ETC`면 필수<br>1~100자이고 공백만은 거절<br>그 밖의 분류에서 값을 보내면 거절<br>생략과 `null`은 같음 |
+| `memo` | `string` | 선택 | 감사 로그에만 남기는 내부 메모<br>보내면 1~500자이고 공백만은 거절<br>생략과 `null`은 메모 없음 |
 
 | `reasonCode` | 표시 이름 |
 |---|---|
@@ -852,7 +853,8 @@ Authorization: Bearer {adminToken}
 | `HATE_SPEECH` | 혐오 표현 |
 | `ETC` | 기타 |
 
-- 표시 이름은 감사 로그의 사유와 소유자 알림 본문에 쓴다.
+- 소유자에게 보이는 사유는 사유 분류의 표시 이름이고 `ETC`는 표시 이름 대신 `reasonDetail`이다. 이 사유를 감사 로그의 사유와 소유자 알림 본문에 쓴다.
+- `reasonDetail`은 알림 본문의 "{사유} 사유로" 자리에 그대로 들어가므로 짧은 명사구로 적는다.
 
 <br>
 
@@ -863,6 +865,7 @@ Authorization: Bearer {adminToken}
 | `storyId` | `string` | 스토리 공개 식별자 |
 | `visibility` | `string` | 항상 `PRIVATE` |
 | `takedownReason` | `string` | 요청한 사유 분류 |
+| `takedownReasonDetail` | `string / null` | 입력 사유<br>`takedownReason`이 `ETC`가 아니면 `null` |
 | `takenDownAt` | `string` | 공개 중단 시각 |
 
 <br>
@@ -871,7 +874,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | `reasonCode` 누락이나 허용 값 밖, `memo`가 공백만이거나 500자 초과, `storyId` 형식 오류 |
+| 400 | `BAD_REQUEST` | `reasonCode` 누락이나 허용 값 밖<br>`ETC`인데 `reasonDetail` 누락, 공백만, 100자 초과<br>`ETC`가 아닌데 `reasonDetail`에 값이 있음<br>`memo`가 공백만이거나 500자 초과<br>`storyId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 스토리 |
 | 409 | `CONFLICT` | 이미 공개 중단된 스토리, 삭제된 스토리, 공식 계정 소유 스토리, 소유 회원이 없는 스토리 |
 
@@ -893,10 +896,16 @@ Content-Type: application/json
 **2) 200 Response body**
 
 ```json
-{ "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7", "visibility": "PRIVATE", "takedownReason": "COPYRIGHT_INFRINGEMENT", "takenDownAt": "2026-10-27T02:00:00Z" }
+{ "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7", "visibility": "PRIVATE", "takedownReason": "COPYRIGHT_INFRINGEMENT", "takedownReasonDetail": null, "takenDownAt": "2026-10-27T02:00:00Z" }
 ```
 
-**3) 409 Response body**
+**3) 기타 사유 Request body**
+
+```json
+{ "reasonCode": "ETC", "reasonDetail": "실존 인물 비방" }
+```
+
+**4) 409 Response body**
 
 ```json
 {
@@ -933,8 +942,8 @@ Content-Type: application/json
 | 대기 중 존재 확인 | 스토리 내부 ID | 대기 중 제출본이 있으면 거절 예외 |
 | 수정 폼 메타데이터 | 스토리 공개 식별자, 회원 내부 ID | 최신 미승인 제출본의 식별자, 상태, 위반 항목, 오류 코드, 이미지 오류 또는 `null` |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 상태, 회차, 제목 | NOTIFICATION의 발송 경로 |
-| 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 공개 중단 시각 | NOTIFICATION의 알림 내역 기록과 발송 경로<br>공개 중단 트랜잭션에 참여 |
-| 공개 중단 적용 | 잠근 스토리, 사유 분류, 공개 중단 시각 | STORY가 공개 스냅샷 갱신, 비공개 전환, 공개 중단 시각과 사유 분류 기록<br>커밋 후 색인 이벤트 |
+| 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 기타의 입력 사유, 공개 중단 시각 | NOTIFICATION의 알림 내역 기록과 발송 경로<br>공개 중단 트랜잭션에 참여 |
+| 공개 중단 적용 | 잠근 스토리, 사유 분류, 입력 사유, 공개 중단 시각 | STORY가 공개 스냅샷 갱신, 비공개 전환, 공개 중단 시각, 사유 분류, 입력 사유 기록<br>커밋 후 색인 이벤트 |
 | 회원 제출본 전부 삭제 | 회원 내부 ID | 없음 |
 | 스토리 제출본 전부 삭제 | 스토리 내부 ID | 없음 |
 | 보류 중 제출본 수 | 없음 | 대기 상태이고 보류 시각이 있는 제출본 수 |

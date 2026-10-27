@@ -100,7 +100,8 @@
 | 원격 모드 기록 실패 | 아웃박스 삽입 예외 | 완료 표시도 롤백 |
 | 검수 완료 | 통과, 반려, 실패 | 결과별 문구, `deepLink`는 내 제작 목록, 메시지 식별자에 회차 |
 | 검수 재회차 | 같은 제출본의 다른 회차 | 별도 메시지 |
-| 공개 중단 로컬 모드 | 서비스 켜진 소유 회원의 스토리 공개 중단, 사유 `HATE_SPEECH` | 커밋 후 발송기 1회, 데이터에 `type` `STORY_TAKEN_DOWN`, `storyId`, `title` `스토리 공개가 중단됐어요`, 본문에 이름 토큰을 치환한 스토리 제목과 `혐오 표현`, `recipientId`<br>`deepLink`가 `/studio?utm_source=push&utm_medium=push&utm_campaign=story_taken_down&utm_content=story_taken_down`<br>메모 없음 |
+| 공개 중단 로컬 모드 | 서비스 켜진 소유 회원의 스토리 공개 중단, 사유 `HATE_SPEECH` | 커밋 후 발송기 1회, 데이터에 `type` `STORY_TAKEN_DOWN`, `storyId`, `title` `스토리 공개가 제한됐어요`, 본문에 이름 토큰을 치환한 스토리 제목과 `혐오 표현`, `recipientId`<br>`deepLink`가 `/studio?utm_source=push&utm_medium=push&utm_campaign=story_taken_down&utm_content=story_taken_down`<br>메모 없음 |
+| 공개 중단 문구 | 제목이 "달빛 아래의 약속", "푸른 바다", "Love 2"인 스토리<br>`ETC`와 입력 사유 "실존 인물 비방" | 본문이 `」은`, `」는`, `」은(는)`으로 이어짐<br>본문의 사유 자리에 "실존 인물 비방", 기타라는 말 없음 |
 | 공개 중단 서비스 꺼짐 | 서비스 알림 끈 소유 회원 | 발송 없음, 알림 내역 1행 |
 | 공개 중단 원격 모드 | 소유 회원의 스토리 공개 중단 | 같은 트랜잭션에 아웃박스 행, `kind` `SERVICE`, 메시지 식별자 `story-taken-down:{스토리 공개 식별자}:{epoch 밀리초}` |
 | 공개 중단 기록 실패 | 원격 모드 아웃박스 삽입 예외 | 공개 중단, 감사 로그, 알림 내역 모두 롤백 |
@@ -267,7 +268,7 @@
 | 탈퇴 뒤 완성 | 스토리 저장, 탈퇴 커밋, 완료 기록과 완성 이벤트 순서 | 내역 행 없음, 탈퇴의 삭제 유지 |
 | 완성 중 탈퇴 | 완료 기록 트랜잭션이 사용자 행을 잡은 동안 탈퇴 요청 | 탈퇴가 기다린 뒤 새 내역까지 삭제 |
 | 검수 기록 | 통과, 반려, 실패 각각과 같은 제출본의 재검수 | 결과별 제목과 본문, `ACTIVITY`, 회차마다 행 1개 |
-| 공개 중단 기록 | 서비스 알림을 끄고 토큰이 없는 소유 회원, 정지된 소유 회원 | 각각 행 1개, `STORY_TAKEN_DOWN`, `ACTIVITY`, 사유 분류 문구, `storyId`, `deepLink`는 `/studio`와 `utm_source=inbox&utm_medium=inbox&utm_campaign=story_taken_down&utm_content=story_taken_down` |
+| 공개 중단 기록 | 서비스 알림을 끄고 토큰이 없는 소유 회원, 정지된 소유 회원 | 각각 행 1개, `STORY_TAKEN_DOWN`, `ACTIVITY`, 푸시와 같은 제목과 본문, `storyId`, `deepLink`는 `/studio`와 `utm_source=inbox&utm_medium=inbox&utm_campaign=story_taken_down&utm_content=story_taken_down` |
 | 탈퇴 뒤 공개 중단 | 소유 회원 탈퇴 커밋 뒤 공개 중단<br>공개 중단 트랜잭션이 소유 회원 행을 잡은 동안 탈퇴 요청 | 내역 행 없음<br>탈퇴가 기다린 뒤 새 내역까지 삭제 |
 | 출석 기록 | 광고 동의하고 토큰 없는 미수령 회원, 광고 미동의 회원, 당일 수령 회원, 정지 회원 | 첫 회원만 행 1개, `ATTENDANCE_REMINDER`, `ACTIVITY`, 광고 표기 제목 |
 | 출석 반복 | 같은 날 회차 서비스를 두 번 호출 | 회원당 행 1개 |

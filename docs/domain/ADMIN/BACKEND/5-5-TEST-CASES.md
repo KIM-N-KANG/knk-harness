@@ -132,7 +132,7 @@
 | 범위 목록 삭제 필터 | 회원 A의 삭제된 스토리 1과 삭제되지 않은 스토리 1, 다른 회원의 삭제된 스토리 1<br>`memberId`가 A이고 `deleted=only` | 회원 A의 삭제된 스토리 1건 |
 | 삭제 필터 오류 | 스토리 목록 `deleted=all`과 `deleted=exclude`<br>채팅 목록 `deleted=INCLUDE` | 400 |
 | 삭제 스토리 상세 | 삭제된 스토리의 상세 | 200<br>`deletedAt`이 삭제 시각 |
-| 공개 중단 표시 | 공개 중단된 스토리와 그렇지 않은 스토리의 목록과 상세 | 앞 스토리만 `takenDownAt`과 `takedownReason`, 나머지는 둘 다 `null` |
+| 공개 중단 표시 | 공개 중단된 스토리와 그렇지 않은 스토리의 목록과 상세 | 앞 스토리만 `takenDownAt`과 `takedownReason`, 나머지는 셋 다 `null`<br>`ETC`로 공개 중단된 스토리만 `takedownReasonDetail` |
 | 삭제 스토리 집계 | 삭제된 스토리에 삭제되지 않은 채팅 2개(턴 3, 5)와 삭제된 채팅 1개(턴 10) | `deleted=include` 목록 항목과 상세의 `chatCount` 2, `totalTurns` 8<br>`retention`은 두 채팅으로 계산하고 `recentChats`는 삭제되지 않은 채팅 2개 |
 | 기준 턴 도달률 | 채팅 턴 0, 1, 5, 12 | 항목 12개가 `turn` 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50 순서<br>`turn` 1은 0.75, 2부터 5까지 0.5, 6부터 10까지 0.25, 15 이상은 0 |
 | 최근 채팅 | 채팅 7개 | `recentChats` 5개 생성 시각 내림차순 |

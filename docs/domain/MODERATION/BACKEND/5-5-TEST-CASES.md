@@ -110,7 +110,7 @@
 |---|---|---|
 | 승인 등록 | 승인 응답, 등록 종류 | 스토리 생성, 복사본 URL 저장, 승인 표시, 완료 이벤트 |
 | 승인 수정 | 승인 응답, 수정 종류 | 현재 스토리 적용, 스냅샷 갱신, 승인 표시 |
-| 공개 중단 해제 | 공개 중단된 스토리에 `visibility` `PUBLIC` 단독 수정 접수 뒤 승인<br>같은 스토리에 공개 범위 없는 수정 접수 뒤 승인 | 공개 중단 표시가 비고 `PUBLIC`, `story_takedown_cleared` 로그, 완료 이벤트<br>공개 중단 표시가 비고 `PRIVATE` 유지 |
+| 공개 중단 해제 | 공개 중단된 스토리에 `visibility` `PUBLIC` 단독 수정 접수 뒤 승인<br>같은 스토리에 공개 범위 없는 수정 접수 뒤 승인 | 공개 중단 세 컬럼이 비고 `PUBLIC`, `story_takedown_cleared` 로그, 완료 이벤트<br>공개 중단 표시가 비고 `PRIVATE` 유지 |
 | 공개 중단 해제 실패 | 공개 중단된 스토리의 수정이 반려 | 공개 중단 표시와 `PRIVATE` 유지 |
 | 반려 | 위반 항목 1개 | 반려 표시, 위반 항목 보존, 현재 스토리 불변, 완료 이벤트 |
 | 이름과 소개 위치 | 위치 `protagonistName`, `characters[0].description`, 종류 `TEXT`인 위반 항목 | 형식 합격, 반려 표시, 두 위반 항목 보존 |
@@ -185,11 +185,13 @@
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
 | 인증 | 토큰 없음, 앱 접근 토큰, 역할 없는 관리자 토큰 | 401, 401, 403 |
-| 공개 스토리 | 회원 소유 공개 스토리, `reasonCode` `COPYRIGHT_INFRINGEMENT`, `memo` 있음 | 200, `visibility` `PRIVATE`, `takedownReason`, `takenDownAt`<br>스토리 행의 두 컬럼 기록, 스냅샷 갱신 뒤 비공개, 커밋 후 색인 이벤트<br>감사 로그 `STORY_TAKEN_DOWN` 1행, 사유 `저작권 침해`, 변경 전 `visibility` `PUBLIC`, 변경 후에 메모 포함<br>공개 중단 이벤트 1건, `story_taken_down` 로그에 메모 없음 |
+| 공개 스토리 | 회원 소유 공개 스토리, `reasonCode` `COPYRIGHT_INFRINGEMENT`, `memo` 있음 | 200, `visibility` `PRIVATE`, `takedownReason`, `takedownReasonDetail` `null`, `takenDownAt`<br>스토리 행의 두 컬럼 기록, 스냅샷 갱신 뒤 비공개, 커밋 후 색인 이벤트<br>감사 로그 `STORY_TAKEN_DOWN` 1행, 사유 `저작권 침해`, 변경 전 `visibility` `PUBLIC`, 변경 후에 메모 포함<br>공개 중단 이벤트 1건, `story_taken_down` 로그에 메모 없음 |
 | 비공개 스토리 | 이미 `PRIVATE`인 회원 스토리, `memo` 생략 | 200, 공개 중단 표시 기록<br>감사 로그 변경 후 메모 `null`, 공개 중단 이벤트 1건 |
 | 대상 아님 | 이미 공개 중단된 스토리, 삭제된 스토리, 공식 계정 스토리, 게스트 스토리 | 409, 스토리와 감사 로그와 이벤트 변화 없음 |
 | 없는 스토리와 형식 | 없는 식별자, UUID 아닌 경로 | 404, 400 |
+| 기타 사유 | `reasonCode` `ETC`, `reasonDetail` "실존 인물 비방" | 200, `takedownReasonDetail` "실존 인물 비방", 스토리 행의 입력 사유 기록<br>감사 로그 사유와 변경 후 `takedownReasonDetail`이 "실존 인물 비방"<br>공개 중단 이벤트의 사유가 입력 사유, `story_taken_down` 로그에 입력 사유 없음 |
 | 입력 검증 | `reasonCode` 누락, `SPAM`, `memo` 공백만, 501자 | 400 |
+| 입력 사유 검증 | `ETC`에 `reasonDetail` 누락, 공백만, 101자<br>`SEXUAL_CONTENT`에 `reasonDetail` 값<br>`SEXUAL_CONTENT`에 `reasonDetail` `null` | 400<br>400<br>200 |
 | 대기 중 제출본 | 대기 중 수정 제출본과 보류 중 수정 제출본이 있는 스토리 각각 | 제출본 `FAILED`, `errorCode` `STORY_TAKEN_DOWN`, 판정 시각 기록, 재시도와 보류와 임대 필드 비움, 완료 이벤트 없음<br>`story_taken_down`의 `failed_submission_public_id` |
 | 늦은 승인 | 공개 중단 전에 선점된 회차의 승인 결과가 공개 중단 뒤 도착 | 반영 없음, 스토리 `PRIVATE`와 공개 중단 표시 유지 |
 | 반려본 유지 | 반려된 수정 제출본이 있는 스토리 | 제출본 그대로 `REJECTED` |
@@ -201,4 +203,4 @@
 | 감사 기록 실패 | 감사 로그 삽입 예외 | 500, 스토리, 제출본, 알림 변화 없음 |
 | 알림 기록 실패 | 알림 내역 삽입 예외 | 500, 스토리, 제출본, 감사 로그 변화 없음 |
 | 다른 회원의 채팅 | 공개 중단 전에 다른 회원이 시작한 채팅의 다음 턴, 다른 회원의 상세와 채팅 시작 | 마지막 공개본으로 진행, 404 |
-| 저장소 제약 | 실제 PostgreSQL에서 공개 중단 표시가 있는 행을 `PUBLIC`으로 바꿈, 두 컬럼 중 하나만 채움 | 체크 제약 위반 |
+| 저장소 제약 | 실제 PostgreSQL에서 공개 중단 표시가 있는 행을 `PUBLIC`으로 바꿈, 시각과 분류 중 하나만 채움, `ETC`인데 입력 사유 없음, `ETC`가 아닌데 입력 사유 있음 | 체크 제약 위반 |

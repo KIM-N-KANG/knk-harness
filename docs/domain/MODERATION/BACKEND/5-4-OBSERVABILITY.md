@@ -68,7 +68,7 @@ Fluent Bit`"]
 | 전달 지연 | 실행기 거부<br>평문 WARN `moderation_dispatch_deferred` | 제출본 내부 ID, 회차, 예외 클래스 |
 | 보류 | 웹훅 미설정으로 전송하지 않을 때<br>평문 WARN `moderation_held` | 제출본 공개 식별자, 종류, 사유 코드, 시도 횟수 |
 | 보류 알림 실패 | Slack 전송 실패<br>평문 WARN `moderation_hold_notification_failed` | 제출본 공개 식별자, 예외 클래스 |
-| 공개 중단 | 공개 중단 커밋 뒤<br>`story_taken_down` | `story_public_id`, `reason_code`<br>`previous_visibility` = 공개 중단 전 공개 범위<br>`failed_submission_public_id` = 실패로 끝낸 대기 중 제출본, 없으면 `null`<br>`notified` = 공개 중단 이벤트를 발행했는지이며 소유 회원이 탈퇴했으면 `false`<br>메모와 제목은 기록하지 않음 |
+| 공개 중단 | 공개 중단 커밋 뒤<br>`story_taken_down` | `story_public_id`, `reason_code`<br>`previous_visibility` = 공개 중단 전 공개 범위<br>`failed_submission_public_id` = 실패로 끝낸 대기 중 제출본, 없으면 `null`<br>`notified` = 공개 중단 이벤트를 발행했는지이며 소유 회원이 탈퇴했으면 `false`<br>입력 사유, 메모, 제목은 기록하지 않음 |
 | 공개 중단 해제 | 공개 중단 표시를 지운 승인 커밋 뒤<br>`story_takedown_cleared` | `story_public_id`, `submission_public_id`<br>`visibility` = 승인 적용 뒤 공개 범위 |
 
 - 판정 결과 자체는 로그에 남기지 않는다. 결과는 제출본 행과 AI 서버의 Langfuse 기록에 있다.
@@ -138,7 +138,7 @@ Fluent Bit`"]
 | 입력 원문, 검수 입력, AI 응답 본문 | 로그와 Sentry에 싣지 않음<br>원문과 판정은 AI 서버의 Langfuse에서 관리 |
 | 이미지 URL과 객체 키 | 로그에 싣지 않음 |
 | 보류 알림 | 제출본 공개 식별자, 종류, 사유 코드, 시도 횟수만 |
-| 공개 중단 메모 | 로그와 Sentry에 싣지 않음<br>감사 로그에만 있음 |
+| 공개 중단 메모와 입력 사유 | 로그와 Sentry에 싣지 않음<br>메모는 감사 로그에만, 입력 사유는 스토리 행과 감사 로그와 알림에 있음 |
 | 웹훅 주소와 응답 | 로그에 싣지 않음 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 5xx를 전부 캡처<br>기본 개인정보 수집 비활성화 |
