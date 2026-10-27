@@ -19,7 +19,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | [2-5-STATE-MANAGEMENT.md](2-5-STATE-MANAGEMENT.md) | URL 상태, 서버 상태, 브라우저 저장 |
 | [3-1-CONTRACT.md](3-1-CONTRACT.md) | 화면이 부르는 BFF 경로와 서버 계약의 대응, 보내는 쿼리 |
 | [3-2-DATA-INTEGRATION.md](3-2-DATA-INTEGRATION.md) | 조회, 캐시, 재요청, 데이터 모드 |
-| [3-4-INTERACTION-FLOWS.md](3-4-INTERACTION-FLOWS.md) | 화면 진입, 탭 전환, 기간 변경, 광고 캠페인 선택, 준비 중 재요청, 스토리 공개 중단의 흐름 |
+| [3-4-INTERACTION-FLOWS.md](3-4-INTERACTION-FLOWS.md) | 화면 진입, 탭 전환, 기간 변경, 광고 캠페인 선택, 준비 중 재요청, 전환 퍼널 목록, 스토리 공개 중단의 흐름 |
 | [4-1-ERROR-HANDLING.md](4-1-ERROR-HANDLING.md) | 불러오는 중, 실패, 사용 불가, 준비 중, 값 없음, 기간 오류의 표시와 복귀 |
 | [4-2-QUALITY.md](4-2-QUALITY.md) | 접근성, 인증 상태, 분석 이벤트 |
 | [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 화면별 테스트 케이스와 검증 명령 |

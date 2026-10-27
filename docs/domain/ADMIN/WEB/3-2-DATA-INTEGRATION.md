@@ -26,6 +26,7 @@
 | `pendingDates`가 비어 있지 않음 | 같은 요청을 60초 간격으로 다시 보냄 |
 | 개요 오늘 활성 사용자 카드의 `todayActiveUsers`가 `null` | 같음 |
 | 사용자 활동의 `monthlyActiveUsers`가 `null` | 같음 |
+| 채팅 턴 도달률의 `platforms`가 `null` | 같음 |
 | 위 조건이 모두 풀림 | 재요청 멈춤 |
 | 탭을 떠남 | 재요청 멈춤 |
 
