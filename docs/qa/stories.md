@@ -203,8 +203,8 @@
 | STORY-LINE-11 | P2  | 스토리라인 표시됨             | "다시 만들기"를 연속 2회 탭 후 각 요청 본문 확인(개발자 도구 네트워크 탭) | 매 요청이 새 `requestId`를 받고, `parentCreationId`가 **바로 직전** 요청의 `requestId`를 가리킨다(체인). 최초 생성은 `null`이고, 3번째 요청의 부모는 2번째이지 최초가 아니다. 화면 동작에는 영향이 없다 | ✅ e2e `stories/story-create` | §3-1-7, KNK-757·KNK-755 |
 | STORY-LINE-12 | P0  | 생성 요청이 HTTP 실패 후 서버에서는 `PENDING` | "다시 만들기" 탭, 재POST가 409 | 실패한 요청의 `requestId`를 재사용하고 409를 오류로 끝내지 않으며 3초 복구 폴링으로 결과를 표시 | ✅ e2e `stories/story-create-recovery` | §3-1-4 재시도 멱등·409, KNK-994 |
 | STORY-LINE-13 | P1  | 선택한 키워드 드로어 열림 | 기기·브라우저 뒤로가기 | 드로어만 닫히고 퍼널에 남으며 나가기 다이얼로그는 뜨지 않음 | ✅ e2e `stories/story-create` | §3-1-2 오버레이와 뒤로가기, 웹 Spec 화면 전환 규칙, KNK-1613 |
-| STORY-LINE-14 | P1  | 생성 API가 422 `CONTENT_REJECTED` | "스토리라인 만들기" 탭 | 키워드 단계에 남아 선택을 유지한 채 §3-1-4 입력 내용 거절 문구를 인라인으로 표시. "다시 만들기" 없음. 다시 "스토리라인 만들기"를 누르면 새 `requestId`로 요청 | ✅ e2e `stories/story-create-content-rejected` | §3-1-4 입력 내용 거절, KNK-1869 |
-| STORY-LINE-15 | P1  | 스토리라인 표시됨, 재생성 API가 422 `CONTENT_REJECTED` | "다시 만들기" 탭 | 키워드 단계로 돌아가 선택을 유지한 채 §3-1-4 입력 내용 거절 문구를 인라인으로 표시. 복구 조회 `FAILED` 뒤 "다시 만들기"가 422를 받아도 같음 | ✅ e2e `stories/story-create-content-rejected` | §3-1-4 입력 내용 거절, KNK-1869 |
+| STORY-LINE-14 | P1  | 생성 API가 422 `CONTENT_REJECTED` | "스토리라인 만들기" 탭 | 키워드 단계에 남아 선택을 유지한 채 하단 버튼 위 안내 자리(키워드 미선택 안내와 같은 위치)에 §3-1-4 입력 내용 거절 문구를 한 줄로 표시. "다시 만들기" 없음. 다시 "스토리라인 만들기"를 누르면 새 `requestId`로 요청 | ✅ e2e `stories/story-create-content-rejected` | §3-1-4 입력 내용 거절, KNK-1869 |
+| STORY-LINE-15 | P1  | 스토리라인 표시됨, 재생성 API가 422 `CONTENT_REJECTED` | "다시 만들기" 탭 | 키워드 단계로 돌아가 선택을 유지한 채 하단 버튼 위 안내 자리(키워드 미선택 안내와 같은 위치)에 §3-1-4 입력 내용 거절 문구를 한 줄로 표시. 복구 조회 `FAILED` 뒤 "다시 만들기"가 422를 받아도 같음 | ✅ e2e `stories/story-create-content-rejected` | §3-1-4 입력 내용 거절, KNK-1869 |
 
 ## STORY-INFO — 생성 퍼널 3단계: 추가 정보
 
