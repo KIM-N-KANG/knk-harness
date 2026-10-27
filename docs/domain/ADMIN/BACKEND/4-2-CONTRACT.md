@@ -1698,7 +1698,7 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-세그먼트 묶음 구조는 `all`(전체 Web), `ads`(광고 유입), `nonAds`(광고 외 유입)의 세 정수다. `nonAds`는 `all`에서 `ads`를 뺀 값이다.
+세그먼트 묶음 구조는 `all`(전체 Web), `ads`(광고 유입), `nonAds`(광고 외 유입)의 세 정수다. `nonAds`는 `all`에서 `ads`를 뺀 값이다. 신규 가입자도 Web만 세고 Android 가입은 광고 구분 없이 `androidSignups`로 따로 준다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -1717,8 +1717,9 @@ Authorization: Bearer {adminToken}
 | `daily[].newVisitorsBySource.threads` | `integer` | 캠페인이 아니면서 소스가 쓰레드 |
 | `daily[].newVisitorsBySource.dcinside` | `integer` | 캠페인이 아니면서 소스가 디시인사이드 |
 | `daily[].newVisitorsBySource.other` | `integer` | 캠페인이 아니면서 소스 목록 밖 |
-| `daily[].signups` | `object` | 신규 가입자<br>세그먼트 묶음 구조 |
+| `daily[].signups` | `object` | Web 신규 가입자<br>세그먼트 묶음 구조 |
 | `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 `signups` 누계<br>세그먼트 묶음 구조 |
+| `daily[].androidSignups` | `integer` | Android 신규 가입자<br>광고 구분 없음 |
 | `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
 | `daily[].completionRequests` | `integer` | 간편 제작 요청 횟수 |
 | `daily[].chatMessages` | `integer` | 채팅 메시지 전송 횟수 |
@@ -1726,6 +1727,7 @@ Authorization: Bearer {adminToken}
 | `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
 | `totals.newVisitors` | `object` | 일별 합<br>세그먼트 묶음 구조 |
 | `totals.signups` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.androidSignups` | `integer` | 일별 합 |
 | `totals.adsShare` | `number / null` | `totals.newVisitors.ads`를 `totals.newVisitors.all`로 나눈 0~1<br>`all`이 0이면 `null` |
 | `totals.storylineRequests`, `totals.completionRequests`, `totals.chatMessages` | `integer` | 일별 합 |
 
@@ -1771,6 +1773,7 @@ Authorization: Bearer {adminToken}
       "newVisitorsBySource": { "ads": 152, "instagram": 4, "threads": 2, "dcinside": 1, "other": 3 },
       "signups": { "all": 21, "ads": 18, "nonAds": 3 },
       "cumulativeSignups": { "all": 21, "ads": 18, "nonAds": 3 },
+      "androidSignups": 30,
       "storylineRequests": 40,
       "completionRequests": 17,
       "chatMessages": 231
@@ -1780,6 +1783,7 @@ Authorization: Bearer {adminToken}
     "activeUsersAverage": 150.5,
     "newVisitors": { "all": 301, "ads": 280, "nonAds": 21 },
     "signups": { "all": 39, "ads": 33, "nonAds": 6 },
+    "androidSignups": 52,
     "adsShare": 0.93,
     "storylineRequests": 71,
     "completionRequests": 30,
@@ -2092,7 +2096,9 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+가입 수와 누계, 가입 경로, 게스트 이관은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 회원 수에서는 재가입으로 소셜 연동을 새 계정에 넘긴 예전 계정 행을 뺀다. 플랫폼별 가입 수는 Amplitude 가입 이벤트로 계산하며 팀 계정을 제외하지 않는다. 두 원본은 따로 세므로 같은 날의 DB 가입 수와 플랫폼 합이 다를 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+
+플랫폼 묶음 구조는 `all`, `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. 이 절과 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 값은 국내 조건 안에서 `platform`의 `Web`, `Android`, `(none)`으로 나눈 세 조회이고 `all`은 세 값의 합이다. 해외의 앱 사용자는 세지 않는다.
 
 **1. 쿼리**
 
@@ -2101,6 +2107,9 @@ Authorization: Bearer {adminToken}
 | `from`, `to` | `string` | 선택 | 대시보드 차트와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30`, `90` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+- 플랫폼별 가입 수는 분석 지표처럼 저장 값을 쓰고 비어 있는 날짜만 받는다. 받지 못한 날짜는 `pendingDates`에 넣고 DB 값은 그대로 응답한다. 관리자 페이지는 `pendingDates`가 비어 있지 않으면 60초 뒤 같은 요청을 다시 보낸다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통))
+
 <br>
 
 **2. 응답**
@@ -2108,15 +2117,19 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `platformAsOf` | `string / null` | 플랫폼별 가입 수를 분석 도구에서 받은 시각<br>분석 지표의 `asOf`와 같은 규칙<br>준비된 날짜가 없으면 `null` |
+| `pendingDates` | `string[]` | 플랫폼별 가입 수를 아직 받지 못한 KST 날짜, 오름차순<br>`daily`에는 그 날짜도 있고 `signupsByPlatform`만 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
 | `daily[].date` | `string` | KST 날짜 |
-| `daily[].signups` | `object` | 그날 생성된 회원 수 |
-| `daily[].signups.total` | `integer` | 전체 |
+| `daily[].signups` | `object` | 그날 생성된 회원 수<br>재가입으로 연동을 넘긴 예전 계정 행은 뺌 |
+| `daily[].signups.total` | `integer` | 전체<br>로그인 경로가 구글과 카카오뿐이라 `google`과 `kakao`의 합과 같음 |
 | `daily[].signups.google` | `integer` | 첫 소셜 연동이 구글 |
 | `daily[].signups.kakao` | `integer` | 첫 소셜 연동이 카카오 |
-| `daily[].signups.other` | `integer` | 그 외 연동 또는 연동 없음 |
-| `daily[].cumulativeSignups` | `integer` | 서비스 시작부터 그날까지 생성된 회원 수<br>범위 첫날 전의 가입과 탈퇴 회원을 포함한 전체 누계<br>범위 끝이 오늘이면 마지막 값이 같은 시점 대시보드 요약의 `members.total`과 같음 |
-| `daily[].migratedFromGuest` | `integer` | 그날 생성된 회원 중 게스트 데이터를 이관한 회원 수 |
+| `daily[].cumulativeSignups` | `integer` | 서비스 시작부터 그날까지 생성된 회원 수<br>범위 첫날 전의 가입과 탈퇴 회원을 포함한 전체 누계이며 `signups`와 같이 예전 계정 행은 뺌<br>대시보드 요약의 `members.total`보다 예전 계정 행 수만큼 작음 |
+| `daily[].migratedFromGuest` | `integer` | 그날 생성된 회원 중 게스트 데이터를 이관한 회원 수<br>예전 계정 행은 뺌 |
+| `daily[].signupsByPlatform` | `object / null` | 그날 구글과 카카오 가입 이벤트의 고유 사용자 수 합<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
+
+- 플랫폼별 가입 수는 회원을 세는 지표라 게스트와 회원 구분이 없다.
 
 <br>
 
@@ -2125,6 +2138,52 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
+
+- 분석 도구를 쓸 수 없어도 실패로 응답하지 않는다. 플랫폼별 가입 수를 받지 못한 날짜는 `pendingDates`에 넣고 DB 값을 응답한다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/users/signups?from=2026-10-26&to=2026-10-27
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+오늘 날짜인 10-27의 플랫폼별 가입 수를 아직 받지 못한 응답이다.
+
+```json
+{
+  "asOf": "2026-10-27T05:10:00Z",
+  "from": "2026-10-26",
+  "to": "2026-10-27",
+  "platformAsOf": "2026-10-27T04:58:00Z",
+  "pendingDates": ["2026-10-27"],
+  "daily": [
+    {
+      "date": "2026-10-26",
+      "signups": { "total": 24, "google": 15, "kakao": 9 },
+      "cumulativeSignups": 1830,
+      "migratedFromGuest": 11,
+      "signupsByPlatform": { "all": 25, "web": 7, "android": 15, "unknown": 3 }
+    },
+    {
+      "date": "2026-10-27",
+      "signups": { "total": 9, "google": 6, "kakao": 3 },
+      "cumulativeSignups": 1839,
+      "migratedFromGuest": 4,
+      "signupsByPlatform": null
+    }
+  ]
+}
+```
+
+</details>
 
 <br>
 
@@ -2185,11 +2244,16 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+`segments`와 `guestToMember`는 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. `platforms`는 Amplitude의 AI 응답 성공 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 세 조회다. `platforms`는 채팅 생성일이 아니라 턴을 저장한 날짜로 세고 분모가 1턴 응답 수라 `segments`와 비율의 뜻이 다르다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
-신규 가입자와 같다.
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 신규 가입자와 같음 |
+| `segment` | `string` | 선택 | `all`, `guest`, `member`<br>기본 `all`<br>`platforms`만 이 값으로 거름<br>`guest`는 이벤트에 회원 식별자가 없는 턴, `member`는 있는 턴 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 플랫폼 값의 저장과 `pendingDates`, 재요청은 신규 가입자와 같다.
 
 <br>
 
@@ -2198,7 +2262,9 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
-| `segments` | `object[]` | `all`, `guest`, `member` 세 항목<br>범위 안에 생성된 삭제되지 않은 채팅을 현재 소유자 유형으로 나눔 |
+| `segment` | `string` | 적용한 `segment` |
+| `platformAsOf`, `pendingDates` | | 신규 가입자와 같음<br>대상은 `platforms` |
+| `segments` | `object[]` | `all`, `guest`, `member` 세 항목<br>범위 안에 생성된 삭제되지 않은 채팅을 현재 소유자 유형으로 나눔<br>`segment` 쿼리와 무관하게 세 항목 모두 |
 | `segments[].segment` | `string` | `all`, `guest`, `member` |
 | `segments[].chats` | `integer` | 채팅 수 |
 | `segments[].reached` | `object[]` | 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50의 항목 12개, 오름차순<br>턴 수 분포 13구간에서 0을 뺀 구간 시작 턴 |
@@ -2209,12 +2275,55 @@ Authorization: Bearer {adminToken}
 | `guestToMember.chatsReached5` | `integer` | 소유 회원의 게스트 이관 시각보다 먼저 생성됐고 현재 턴이 5 이상인 채팅 수 |
 | `guestToMember.chatsReached6` | `integer` | 그중 현재 턴이 6 이상인 채팅 수 |
 | `guestToMember.rate` | `number` | `chatsReached6`을 `chatsReached5`로 나눈 0~1<br>0이면 0 |
+| `platforms` | `object[] / null` | `all`, `web`, `android`, `unknown` 네 항목<br>`pendingDates`를 뺀 날짜의 합<br>준비된 날짜가 없으면 `null` |
+| `platforms[].platform` | `string` | `all`, `web`, `android`, `unknown`<br>`all`은 나머지 셋의 합 |
+| `platforms[].chats` | `integer` | 1턴 응답을 저장한 채팅 수<br>턴 번호 1인 성공 이벤트 수 |
+| `platforms[].reached` | `object[]` | `segments[].reached`와 같은 기준 턴 12개, 오름차순 |
+| `platforms[].reached[].turn` | `integer` | 기준 턴 |
+| `platforms[].reached[].chats` | `integer` | 기준 턴의 응답을 저장한 채팅 수<br>턴 번호가 기준 턴인 성공 이벤트 수 |
+| `platforms[].reached[].rate` | `number` | `platforms[].chats`로 나눈 0 이상의 값<br>범위 전에 1턴을 저장한 채팅이 범위 안에서 기준 턴에 닿으면 1을 넘을 수 있음<br>`platforms[].chats`가 0이면 0 |
 
 <br>
 
 **3. 실패 응답**
 
-신규 가입자와 같다.
+신규 가입자와 같다. 허용하지 않는 `segment`도 400이다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/conversion/turn-reach?days=7&segment=member
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `segments`와 `platforms`의 첫 항목과 기준 턴 두 개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-27T05:10:00Z",
+  "from": "2026-10-21",
+  "to": "2026-10-27",
+  "segment": "member",
+  "platformAsOf": "2026-10-27T05:02:00Z",
+  "pendingDates": [],
+  "segments": [
+    { "segment": "all", "chats": 812, "reached": [{ "turn": 1, "chats": 640, "rate": 0.79 }, { "turn": 5, "chats": 301, "rate": 0.37 }] }
+  ],
+  "guestToMember": { "chatsReached5": 40, "chatsReached6": 31, "rate": 0.78 },
+  "platforms": [
+    { "platform": "all", "chats": 402, "reached": [{ "turn": 1, "chats": 402, "rate": 1.0 }, { "turn": 5, "chats": 233, "rate": 0.58 }] }
+  ]
+}
+```
+
+</details>
 
 <br>
 
@@ -2279,11 +2388,11 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버 DB로 계산한다. 팀 계정 제외 목록을 적용한다.
+`chats`, `withPersona`, `byModel`, `turnsByModel`은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 채팅 시작 클릭 수와 플랫폼별 모델 턴 수는 Amplitude 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 세 조회다. 채팅 수, 페르소나 채팅 수, 채팅 모델별 채팅 수는 채팅 생성과 그 모델을 알리는 이벤트가 없어 플랫폼으로 나누지 않는다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
-신규 가입자와 같다.
+채팅 턴 도달률과 같다. `segment`는 채팅 시작 클릭 수와 플랫폼별 모델 턴 수만 거른다.
 
 <br>
 
@@ -2292,18 +2401,26 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
-| `daily` | `object[]` | 날짜 오름차순<br>범위 안에 생성된 삭제되지 않은 채팅 |
+| `segment` | `string` | 적용한 `segment` |
+| `platformAsOf`, `pendingDates` | | 신규 가입자와 같음<br>대상은 `daily[]`의 플랫폼 값 |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩<br>DB 값은 범위 안에 생성된 삭제되지 않은 채팅 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].chats` | `integer` | 채팅 수 |
 | `daily[].withPersona` | `integer` | 페르소나 이름 스냅샷이 있는 채팅 수 |
 | `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 채팅의 현재 선택 모델 `chat_models.code`<br>모델을 바꾼 채팅은 바꾼 모델로 셈 |
 | `daily[].turnsByModel` | `object` | 청구 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 메시지에 기록한 청구 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>게스트 턴은 채팅 모델과 무관하게 `LITE`<br>모델 기록 전의 메시지는 키 `UNRECORDED`<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 키의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 키는 없음 |
+| `daily[].chatStarts` | `object / null` | 그날 채팅 시작 버튼 클릭 수<br>주인공 종류가 `default` 또는 `persona`인 클릭만<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
+| `daily[].personaChatStarts` | `object / null` | 그중 주인공 종류가 `persona`인 클릭 수<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
+| `daily[].platformTurnsByModel` | `object / null` | 그날 저장한 AI 응답 턴 수를 청구 모델 코드와 플랫폼으로 나눈 값<br>키는 `chat_models.code`, 값은 플랫폼 묶음 구조<br>재생성은 세지 않음<br>`pendingDates`의 날짜는 `null` |
+
+- 페르소나 사용률은 관리자 페이지가 `personaChatStarts`를 `chatStarts`로 나눠 만든다. 클릭은 채팅 생성과 같지 않아 `withPersona`를 `chats`로 나눈 값과 다를 수 있다.
+- `platformTurnsByModel`의 키에는 모델 기록 전 `UNRECORDED`가 없고 턴이 0인 모델도 키가 있다.
 
 <br>
 
 **3. 실패 응답**
 
-신규 가입자와 같다.
+채팅 턴 도달률과 같다.
 
 <br>
 
