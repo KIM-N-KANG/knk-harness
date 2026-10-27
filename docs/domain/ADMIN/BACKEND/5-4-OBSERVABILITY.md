@@ -100,7 +100,7 @@ Fluent Bit`"]
 | 권한 판정 | 로그 `admin_access_denied`<br>요청 로그의 `/api/v1/admin/` 접두 경로 401과 403 비율 |
 | 운영 작업 | 감사 로그 조회<br>실패한 요청은 감사 로그에 없고 요청 로그에만 있음 |
 | 대시보드 | 요청 로그의 `/api/v1/admin/dashboard/summary`와 `/api/v1/admin/dashboard/charts` 500 비율<br>`duration_ms` |
-| 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms` |
+| 목록과 상세 | 요청 로그의 `/api/v1/admin/stories`, `/api/v1/admin/chats`, `/api/v1/admin/members`, `/api/v1/admin/payments/orders` 접두 경로의 400 비율과 `duration_ms`<br>회원 목록의 누적 턴 수 정렬은 걸러진 회원 전체를 세므로 `/api/v1/admin/members`의 `duration_ms`가 늘면 정렬 쿼리 계획 확인 |
 | 접속 기록 | 접속 기록 실패 WARN |
 | 분석 지표 | `admin_analytics_fetch_failed`의 `reason` 분포<br>요청 로그의 `/api/v1/admin/dashboard/analytics` 503 비율<br>`admin_analytics_refreshed`의 `pending_days`가 줄지 않으면 예산 경쟁이나 반복 실패 |
 | 캠페인 분석 | `admin_analytics_fetch_failed`의 `budget_exceeded` 빈도<br>요청 로그의 `/api/v1/admin/campaigns/` 접두 경로 503 비율과 `duration_ms` |

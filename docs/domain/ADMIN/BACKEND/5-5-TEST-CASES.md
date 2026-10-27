@@ -179,7 +179,11 @@
 | 출석 필터 | `attendanceDate` | 그날 출석 보상 받은 회원 |
 | 정렬 | `sort=paidKrw&order=desc` | 결제액 내림차순<br>같으면 공개 식별자 오름차순 |
 | 상세 | 지갑 있는 회원<br>지갑 없는 회원 | `creditBalance` 잔액<br>0 |
-| 누적 턴 수 | 회원의 채팅 셋(그중 하나는 삭제, 하나는 게스트 때 만들어 이관)에 AI 응답 메시지 2, 3, 4개와 사용자 메시지, 한 AI 응답의 재생성 판본 2개 | `turnCount` 9<br>사용자 메시지와 판본은 세지 않음 |
+| 누적 턴 수 | 회원의 채팅 셋(그중 하나는 삭제, 하나는 게스트 때 만들어 이관)에 AI 응답 메시지 2, 3, 4개와 사용자 메시지, 한 AI 응답의 재생성 판본 2개 | 목록 항목과 상세의 `turnCount` 모두 9<br>사용자 메시지와 판본은 세지 않음<br>목록의 `chatCount`는 삭제를 뺀 2 |
+| 기간 턴 수 | 같은 회원, `chatFrom`과 `chatTo`가 AI 응답 3개인 채팅과 삭제된 AI 응답 2개 채팅의 생성일만 포함 | `periodChatCount` 1, `periodTurnCount` 5, `turnCount` 9 |
+| 기간 없음 | `chatFrom`과 `chatTo` 없이 목록 조회 | `periodChatCount`와 `periodTurnCount` 모두 `null` |
+| 턴 수 정렬 | 턴 수가 9, 0, 9, 4인 회원 넷과 `sort=turnCount&order=desc`<br>`chatFrom`, `chatTo`를 함께 지정 | 9, 9, 4, 0 순서이고 같은 9는 공개 식별자 오름차순<br>기간이 있어도 `turnCount` 누적 값 순서 |
+| 턴 수 정렬 계획 | 수동 확인<br>로컬 PostgreSQL에 마이그레이션을 적용하고 `sort=createdAt`과 `sort=turnCount` 회원 목록 쿼리의 실행 계획 | `createdAt`은 턴 수 집계가 현재 페이지 행에만 실행<br>두 정렬 모두 `story_chats (user_id, created_at)`와 `story_messages (chat_id, role, created_at)` 인덱스 사용 |
 | 상세 오류 | 없는 회원<br>UUID 아님 | 404<br>400 |
 | 응답 범위 | 목록과 상세 응답 | 이메일과 소셜 식별자 필드 없음 |
 | 이프 내역 | 원장 행 5건, `size` 2 | 기록 시각 내림차순, `balanceAfter`는 그 행까지의 누계, `totalPages` 3, 식별자 필드 없음 |

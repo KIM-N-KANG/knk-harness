@@ -888,11 +888,11 @@ Authorization: Bearer {adminToken}
 | `excludeDeleted` | `boolean` | 선택 | `true`면 탈퇴 회원 제외 |
 | `from`, `to` | `string` | 선택 | 가입일 |
 | `chatBucket` | `integer` | 선택 | 0~4<br>회원별 채팅 생성 횟수 차트의 구간 순서<br>채팅이 없는 회원은 어떤 값에도 해당하지 않음 |
-| `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatBucket` 판정과 `periodChatCount`를 그 기간으로 세고 기간에 채팅이 없는 회원은 제외 |
+| `chatFrom`, `chatTo` | `string` | 선택 | 채팅 생성일<br>지정하면 `chatBucket` 판정과 `periodChatCount`, `periodTurnCount`를 그 기간으로 세고 기간에 채팅이 없는 회원은 제외 |
 | `creditDirection` | `string` | 선택 | `granted`, `spent`<br>그 방향의 원장 행이 있는 회원 |
 | `creditDate` | `string` | 선택 | 원장 기록일<br>`creditDirection`과 함께만 |
 | `attendanceDate` | `string` | 선택 | 그 KST 날짜에 출석 보상을 받은 회원 |
-| `sort` | `string` | 선택 | `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`<br>기본 `createdAt` |
+| `sort` | `string` | 선택 | `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`<br>`chatCount`와 `turnCount`는 채팅 기간과 무관한 누적 값으로 정렬<br>기본 `createdAt` |
 | 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
 
 <br>
@@ -908,6 +908,8 @@ Authorization: Bearer {adminToken}
 | `items[].paidKrw` | `integer` | 완료 상태 주문의 금액 합<br>환불된 주문 제외 |
 | `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
 | `items[].periodChatCount` | `integer / null` | `chatFrom` 또는 `chatTo`를 지정했을 때 그 기간의 채팅 수<br>지정하지 않으면 `null` |
+| `items[].turnCount` | `integer` | 누적 턴 수<br>소유 채팅의 AI 응답 메시지 수이며 재생성 판본은 세지 않음<br>삭제된 채팅과 게스트 때 만들어 이관된 채팅 포함<br>대시보드 채팅 턴 수와 같은 정의이고 팀 계정 제외 없음 |
+| `items[].periodTurnCount` | `integer / null` | `chatFrom` 또는 `chatTo`를 지정했을 때 그 기간에 생성된 소유 채팅의 누적 턴 수<br>채팅 생성일만 기간으로 거르고 나머지는 `turnCount`와 같은 정의<br>지정하지 않으면 `null` |
 
 - `q`가 있으면 접속 기록으로 감사 로그에 남는다. 이메일은 검색에만 쓰고 응답에는 없다.
 
@@ -946,7 +948,9 @@ Authorization: Bearer {adminToken}
       "creditsSpent": 18640,
       "paidKrw": 9600,
       "chatCount": 17,
-      "periodChatCount": null
+      "periodChatCount": null,
+      "turnCount": 312,
+      "periodTurnCount": null
     }
   ],
   "page": 1,
@@ -978,13 +982,12 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-회원 목록 항목에 다음 필드를 더한다. `periodChatCount`는 항상 `null`이다.
+회원 목록 항목에 다음 필드를 더한다. `periodChatCount`와 `periodTurnCount`는 항상 `null`이고 `turnCount`는 목록과 같은 값이다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `creditBalance` | `integer` | 만료되지 않은 이프 잔액 |
 | `storyCount` | `integer` | 삭제되지 않은 소유 스토리 수 |
-| `turnCount` | `integer` | 누적 턴 수<br>소유 채팅의 AI 응답 메시지 수이며 재생성 판본은 세지 않음<br>삭제된 채팅과 게스트 때 만들어 이관된 채팅 포함<br>대시보드 채팅 턴 수와 같은 정의이고 팀 계정 제외 없음 |
 | `deletedAt` | `string / null` | 탈퇴 시각 |
 
 - 상세 조회는 접속 기록으로 감사 로그에 남는다.
@@ -1025,9 +1028,10 @@ Authorization: Bearer {adminToken}
   "paidKrw": 9600,
   "chatCount": 17,
   "periodChatCount": null,
+  "turnCount": 312,
+  "periodTurnCount": null,
   "creditBalance": 1230,
   "storyCount": 4,
-  "turnCount": 312,
   "deletedAt": null
 }
 ```

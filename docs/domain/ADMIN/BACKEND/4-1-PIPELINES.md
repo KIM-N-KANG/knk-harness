@@ -270,7 +270,7 @@ ACCOUNT`"]
 ACCOUNT`"]
     B -->|없음| E["`**필터만 적용**`"]
     C --> F["`**집계 결합**
-최근 활동, 소모, 결제액, 채팅 수`"]
+최근 활동, 소모, 결제액, 채팅 수, 턴 수`"]
     D --> F
     E --> F
     F --> G["`**응답 조립**`"]
@@ -293,7 +293,9 @@ ACCOUNT`"]
 | 채팅 구간 | 채팅 수를 회원별 채팅 생성 횟수 차트의 5구간에 대응<br>`chatFrom` 또는 `chatTo`가 있으면 지정된 경계 안의 채팅 수로 판정 |
 | 원장 필터 | `creditDirection`은 적립 사유의 양수 행 또는 소모 사유의 음수 행<br>`creditDate`는 그 행의 기록일 |
 | 출석 필터 | 출석 보상 사유의 행이 그 KST 날짜에 있는 회원 |
-| 상세 | 목록 항목에 잔액, 소유 스토리 수, 누적 턴 수, 탈퇴 시각을 더함<br>잔액은 PAYMENT의 잔액 연산<br>누적 턴 수는 `user_id`가 그 회원인 `story_chats`(삭제 포함)의 `role = ASSISTANT`인 `story_messages` 수<br>`story_messages`는 `(chat_id, message_order)` 고유 인덱스로 채팅별로 찾음<br>`story_chats`의 회원 인덱스는 삭제 제외 부분 인덱스라 삭제된 채팅까지 세려면 쓰지 못하지만 현재 채팅 행 수에서는 회원 조건 스캔 비용이 작아 새 인덱스를 두지 않음 |
+| 누적 턴 수 | `user_id`가 그 회원인 `story_chats`(삭제 포함)의 `role = ASSISTANT`인 `story_messages` 수<br>재생성 판본은 `story_message_versions`에 따로 있어 세지 않음<br>목록과 상세가 같은 계산<br>기간 턴 수는 같은 계산을 `created_at`이 기간 안인 채팅으로 한정 |
+| 집계 비용 | 정렬 열이 아닌 회원 집계(최근 활동, 소모, 결제액, 채팅 수, 턴 수)는 정렬과 페이지를 적용한 뒤 현재 페이지 회원에만 계산<br>정렬 열의 집계와 `chatBucket`, `chatFrom`, `chatTo` 조건은 걸러진 회원 전체에 계산<br>회원별 채팅은 삭제된 채팅도 포함하는 `story_chats (user_id, created_at)` 인덱스로 찾음<br>채팅별 AI 응답은 `story_messages (chat_id, role, created_at)` 인덱스로 셈 |
+| 상세 | 목록 항목에 잔액, 소유 스토리 수, 탈퇴 시각을 더함<br>잔액은 PAYMENT의 잔액 연산 |
 | 이프 내역 | 회원의 원장 행을 기록 시각과 내부 ID에 같은 `order` 방향을 적용해 조회<br>누계는 방향과 무관하게 기록 시각과 내부 ID 오름차순의 수량 합 |
 | 출석 기록 | 출석 보상 행을 KST 날짜로 묶음 |
 | 접속 기록 | 검색어가 있는 목록은 정규화한 검색어를 대상으로 `MEMBER_SEARCHED`<br>상세, 이프 내역, 출석 기록은 회원 공개 식별자를 대상으로 `MEMBER_VIEWED`<br>검색어 없는 목록은 기록하지 않음 |
