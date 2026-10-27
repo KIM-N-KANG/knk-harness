@@ -108,5 +108,5 @@
 | 오류 응답 형식 | 필수 입력이 빠진 400 | `status`, `code`, `message`, `path`, `details` 필드 |
 | Sentry 전송과 태그 | 500, 상태 예외로 만든 5xx, 404와 409, 406과 415, AI 내용 거절 422 | 5xx만 캡처하고 `endpoint`, `http_method`, `status_code` 태그와 `duration_ms`<br>4xx는 미전송 |
 | 인증 수준과 귀속 | 불필요 경로의 만료와 위조 토큰, 선택 경로의 회원 귀속과 간편 제작 진행 가로채기, 동의 게이트 허용 목록 | 401 없음, 회원 귀속, 미동의 회원 403 |
-| AI 호출 기록 | 성공, 실패, MDC `unknown`, 컬럼 길이 초과 | `SUCCEEDED` 또는 `FAILED` 적재, 실패 예외 전파, `meta` 반영, 잘라서 적재 |
-| 지표 outcome | 성공, 502, AI 내용 거절 422, 경쟁 409, AI 전 4xx | `success`, `failure`, `rejected` 구분, 회수 재구성은 타이머 미기록 |
+| AI 호출 기록 | 성공, 실패, AI 내용 거절 422, MDC `unknown`, 컬럼 길이 초과 | `SUCCEEDED` 또는 `FAILED` 적재, 내용 거절은 `SUCCEEDED`, 실패 예외 전파, `meta` 반영, 잘라서 적재 |
+| 지표 outcome | 성공, 502, AI 내용 거절 422, 경쟁 409, AI 전 4xx | `success`, `failure`, `rejected` 구분<br>AI 내용 거절은 생성 결과 지표 `rejected`, AI 호출 지표 `success`<br>회수 재구성은 타이머 미기록 |
