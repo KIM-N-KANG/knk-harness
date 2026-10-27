@@ -101,7 +101,7 @@
 | 광고 유입 비중 없음 | `totals.adsShare`가 `null` | "신규 방문자 없음" |
 | 추이 준비 중 | `pendingDates` 있음 | "준비된 날짜만 합산한 값입니다." |
 | 간편 제작 광고 구분 | 광고 유입 선택 | 단계 막대가 `ads` 값, 서버로 광고 구분을 보내지 않음 |
-| 웹과 앱 신규 가입자 | 캠페인 추이 `totals.signups.all` 39, `totals.androidSignups` 52 | 웹 신규 가입자 카드 39명, 앱 신규 가입자 카드 52명, 웹 신규 가입자 차트에 앱 값이 섞이지 않음<br>Amplitude 출처 툴팁에 "앱 신규 가입자는 같은 국가 조건의 앱 가입을 광고 구분 없이 따로 셉니다." |
+| 웹과 앱 신규 가입자 | 캠페인 추이 `totals.signups.all` 39, `totals.androidSignups` 52 | 웹 신규 가입자 카드 39명, 앱 신규 가입자 카드 52명, 웹 신규 가입자 차트에 앱 값이 섞이지 않음<br>Amplitude 출처 툴팁에 "앱 신규 가입자는 광고 구분 없이 따로 세고, 나머지 지표는 웹 사용자만 셉니다." |
 | 전환율 | 1단계 100, 2단계 40, 3단계 0, 4단계 0 | 2단계 40.0%, 3단계 0.0%, 4단계 "계산할 수 없음" |
 | 상세 진입 대상 스토리 | 3차 선택, 기간 `from=2026-10-01&to=2026-10-21`, 입력 없음 | `storyId` 없이 요청 |
 | 상세 진입 기본 기간 | 3차 선택, 기간 쿼리 없음 | 3차 기간 35일이 31일 상한을 넘어 기간 확인 필요 상자, 요청 없음 |
@@ -195,7 +195,7 @@
 | 모델 합집합과 기록 전 | `byModel`에 `AURORA`만, `turnsByModel`에 `LITE`와 `UNRECORDED` | 비중 표 행이 오로라, 라이트, 기록 전 셋<br>없는 쪽 값은 0 |
 | 모르는 모델 | 모델 코드 `NOVA` | `NOVA` 그대로 |
 | 채팅 옵션 대상 | 조건 줄에서 게스트 | 요청에 `segment=guest`, 채팅 수와 모델 비중 표 값은 바뀌지 않음 |
-| 페르소나 시작 비중 | 기간 합 `chatStarts` `{all: 15, web: 10, android: 5, unknown: 0}`, `personaChatStarts` `{all: 2, web: 2, android: 0, unknown: 0}` | 전체 13.3%, 웹 20.0%, 앱 0.0%, 플랫폼 없음 "클릭 없음" |
+| 페르소나 시작 클릭 비중 | 기간 합 `chatStarts` `{all: 15, web: 10, android: 5, unknown: 0}`, `personaChatStarts` `{all: 2, web: 2, android: 0, unknown: 0}` | 전체 13.3%, 웹 20.0%, 앱 0.0%, 플랫폼 없음 "집계 대상 클릭 없음" |
 | 플랫폼별 모델 턴 수 | 기간 합 `platformTurnsByModel`의 `LITE` `{all: 7, web: 4, android: 3, unknown: 0}`, `AURORA` `{all: 1, web: 1, android: 0, unknown: 0}` | 표 행 오로라, 라이트 순서와 각 열 값, 제목 옆 출처 표시 "Amplitude" |
 | 채팅 없음 | 채팅 수 합 0 | 비중 자리 "채팅 없음" |
 | AI 비용 | `totals.costKrw` 7, `costPerTurnKrw` 3.5, `usdKrwRate` 1400 | 총 AI 비용 7원, 턴당 원가 3.5원, 출처 표시 "Langfuse" |
