@@ -69,7 +69,7 @@ flowchart LR
 
 ### 5-4-4 AI 호출 기록
 
-AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `completed_at` 없이 `STARTED`로 남은 행은 호출 처리 중 프로세스가 중단되었거나 종료 상태 저장에 실패했을 수 있다. `SUCCEEDED`는 AI 호출 성공만 의미하고 스토리 저장 완료를 의미하지 않는다.
+AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `completed_at` 없이 `STARTED`로 남은 행은 호출 처리 중 프로세스가 중단되었거나 종료 상태 저장에 실패했을 수 있다. `SUCCEEDED`는 AI 호출 성공만 의미하고 스토리 저장 완료를 의미하지 않는다. AI 내용 거절은 AI 서버가 계약대로 응답한 호출이라 `SUCCEEDED`다.
 
 | 필드 | STORY 도메인의 값 |
 |---|---|
@@ -130,7 +130,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 생성 이미지 | 로그 `*_upload_failed`, `*_budget_exhausted`, `*_cleanup_*`<br>스토리는 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음 |
 | 검색 색인 | WARN 평문 로그<br>요청 실패로 이어지지 않음 |
 
-`ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이다. 100자로 잘라 기록한다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. 예외는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다.
+`ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이다. 100자로 잘라 기록한다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, 내용 거절을 뺀 AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. AI 호출 실패는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다. 내용 거절은 422로 바뀌어 전파되므로 Sentry에 남지 않는다.
 
 <br>
 
@@ -147,7 +147,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 기준 | 내용 |
 |---|---|
-| `rejected`와 `failure` | `rejected`는 컴파일 또는 AI 호출 전의 4xx 거부, `failure`는 호출에 진입한 뒤의 실패<br>판별 기준은 HTTP 상태가 아니라 AI 진입 여부<br>알림과 p95는 `failure`만 사용 |
+| `rejected`와 `failure` | `rejected`는 컴파일 또는 AI 호출 전의 4xx 거부와 AI 내용 거절<br>`failure`는 호출에 진입한 뒤의 그 밖의 실패<br>판별 기준은 HTTP 상태가 아니라 AI 진입 여부이고 AI 내용 거절만 진입 뒤에도 `rejected`<br>알림과 p95는 `failure`만 사용 |
+| AI 내용 거절의 AI 호출 지표 | AI 서버가 계약대로 응답한 호출이라 `manyak.ai.call.duration`과 `ai_call_completed`의 `outcome`은 `success` |
 | 히스토그램 구간 | `manyak.story.creation.duration`과 `manyak.ai.call.duration`은 100ms에서 240초<br>상한이 컴파일 대기 180초보다 커야 대기 초과 직전 분포가 보임<br>`http.server.requests`는 10ms에서 10초라 AI 대기 경로의 p95는 10초 상한에 제한되어 실제 지연을 구분하기 어려움 |
 
 <br>
@@ -182,7 +183,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | 범위 | AI 서버, 백엔드(`java-spring-boot`), 웹 프로젝트 |
 | 오류 없음과 조회 실패 | 오류가 없다는 결과와 조회 실패를 구분해 전달 |
-| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
+| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, AI 내용 거절, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
 
 <br>
 

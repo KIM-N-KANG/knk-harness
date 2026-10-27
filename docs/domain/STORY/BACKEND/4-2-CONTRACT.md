@@ -892,6 +892,7 @@ Authorization: Bearer <accessToken>
 | 400 | `CUSTOM_GENRE_NOT_ALLOWED` | `customGenreTags`에 값 존재 |
 | 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트 체험 한도 소진 |
 | 409 | `CONFLICT` | 같은 `requestId`가 진행 중<br>소유자나 단계가 다른 `requestId` 재사용 |
+| 422 | `CONTENT_REJECTED` | AI가 입력 내용을 이유로 생성을 거절 |
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답 |
 
 <details>
@@ -1028,6 +1029,7 @@ Authorization: Bearer <accessToken>
 | 403 | `FORBIDDEN` | 정지 계정, 회원 소유 진행의 소유권 위반 |
 | 404 | `NOT_FOUND` | 진행이나 스토리라인 없음 |
 | 409 | `CONFLICT` | 이미 완성된 진행, 같은 `requestId`가 진행 중<br>소유자나 단계가 다른 `requestId` 재사용 |
+| 422 | `CONTENT_REJECTED` | AI가 입력 내용을 이유로 생성을 거절 |
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답<br>컴파일 결과의 사건이나 엔딩 이름 중복, 본문에 이름 토큰이 있는데 주인공 이름 없음 |
 
 <details>
@@ -1102,6 +1104,23 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 }
 ```
 
+<br>
+
+**4) 422 Response body**
+
+AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프는 환불된다. 같은 입력은 다시 거절되므로 입력을 고쳐 새 `requestId`로 요청한다.
+
+```json
+{
+  "timestamp": "2026-06-10T12:00:00Z",
+  "status": 422,
+  "code": "CONTENT_REJECTED",
+  "message": "입력 내용이 안전 정책에 맞지 않아 생성할 수 없습니다.",
+  "path": "/api/v1/stories/simple",
+  "details": []
+}
+```
+
 </details>
 
 <br>
@@ -1114,7 +1133,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 인증 | 선택 |
 | 성공 | 200 |
 
-스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회한다. `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
+스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회한다. `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. 다시 보낸 요청이 422 `CONTENT_REJECTED`로 실패하면 같은 입력은 다시 거절되므로 입력을 고쳐 새 `requestId`로 요청한다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
 
 **1. 응답**
 
