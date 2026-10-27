@@ -1,6 +1,6 @@
 # 3-1 계약
 
-이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리 상세의 스토리 설정 구역, 스토리와 채팅의 목록과 상세가 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
+이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리 상세의 스토리 설정 구역과 공개 중단, 스토리와 채팅의 목록과 상세가 부르는 BFF 경로와 서버 계약의 대응, 웹이 보내는 쿼리와 계약을 쓰는 방식의 차이를 정한다.
 
 요청과 응답 필드, 실패 응답의 기준은 BACKEND 계약에, BFF의 검증과 전달은 데이터 연동에 있다. ([BACKEND 4-2 계약](../BACKEND/4-2-CONTRACT.md), [3-2 데이터 연동](3-2-DATA-INTEGRATION.md))
 
@@ -37,13 +37,14 @@
 | 검수 제출 목록 | `GET /api/moderation/submissions` | [MODERATION 4-2-8 관리자 제출본 목록](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-8-관리자-제출본-목록) |
 | 검수 제출 상세 | `GET /api/moderation/submissions/{submissionId}` | [MODERATION 4-2-9 관리자 제출본 상세](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-9-관리자-제출본-상세) |
 | 검수 보류 해제 | `POST /api/moderation/holds/{submissionId}/release` | [MODERATION 4-2-7 보류 해제](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-7-보류-해제) |
+| 스토리 공개 중단 | `POST /api/moderation/stories/{storyId}/takedown` | [MODERATION 4-2-10 공개 중단](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-10-공개-중단) |
 | 스토리 상세의 스토리 설정 | `GET /api/stories/{storyId}/settings` | [4-2-7 스토리 설정](../BACKEND/4-2-CONTRACT.md#4-2-7-스토리-설정) |
 | 스토리 목록과 범위 목록 | `GET /api/stories` | [4-2-5 스토리 목록](../BACKEND/4-2-CONTRACT.md#4-2-5-스토리-목록) |
 | 스토리 상세 | `GET /api/stories/{storyId}` | [4-2-6 스토리 상세](../BACKEND/4-2-CONTRACT.md#4-2-6-스토리-상세) |
 | 채팅 목록과 범위 목록 | `GET /api/chats` | [4-2-8 채팅 목록](../BACKEND/4-2-CONTRACT.md#4-2-8-채팅-목록) |
 | 채팅 상세 | `GET /api/chats/{chatId}` | [4-2-9 채팅 상세](../BACKEND/4-2-CONTRACT.md#4-2-9-채팅-상세) |
 
-- 검수 제출의 세 경로와 스토리 설정 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
+- 검수 제출의 세 경로, 스토리 공개 중단 경로, 스토리 설정 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
 
 <br>
 
@@ -65,6 +66,7 @@
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
 | 검수 제출 목록 | `status`, `from`, `to`, `q`, `memberId`, `storyId`, `page`, `size`, `sort`, `order`<br>값이 있는 것만<br>기본 `page=1`, `size=20`, `sort=createdAt`, `order=desc` |
 | 검수 보류 해제 | 본문 `reason`<br>앞뒤 공백을 지운 1~500자 |
+| 스토리 공개 중단 | 본문 `reasonCode`와 `memo`<br>`memo`는 앞뒤 공백을 지운 1~500자일 때만 싣고 비면 뺌 |
 | 스토리 목록, 채팅 목록, 범위 목록의 삭제 필터 | 포함은 `deleted=include`<br>삭제된 스토리만과 삭제된 채팅만은 `deleted=only`<br>제외는 `deleted`를 보내지 않음<br>범위 목록은 `memberId`나 `storyId`와 함께 보냄 |
 
 - 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
@@ -85,4 +87,5 @@
 | 설치 지표의 `asOf` | Play 기준 날짜를 바꾸지 않고 "집계 기준 날짜 {날짜} (Play 기준 태평양 시간)" |
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |
 | `campaign`, `storyId`, `platform` | 서버가 적용한 값을 화면의 조건 표시에 씀 |
+| 스토리의 `takenDownAt`, `takedownReason` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
 | 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-15 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-15-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |
