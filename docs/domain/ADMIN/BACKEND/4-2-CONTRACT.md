@@ -2061,6 +2061,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `14` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+| `segment` | `string` | 선택 | `all`, `guest`, `member`<br>기본 `all`<br>`guest`는 사용자 속성 `user_id`가 없는 사용자의 세션, `member`는 있는 사용자의 세션<br>세션 조회의 세그먼트 조건으로 거름 |
 
 - 셋 다 없으면 오늘을 포함한 최근 14일이다.
 
@@ -2073,6 +2074,7 @@ Authorization: Bearer {adminToken}
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
+| `segment` | `string` | 적용한 `segment` |
 | `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null`<br>`all`과 `android`는 국내 조건의 사용자만 |
 
 - 세션 정의는 분석 도구의 기본 세션이다. 사용자당 세션 수는 제공하지 않는다.
@@ -2083,7 +2085,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days`와 `segment` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>
@@ -2342,6 +2344,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱·국내와 앱·해외 로그인의 합, `all`은 Android 외와 `android`의 합<br>건수는 조건별 건수의 합이고 사용자 수는 조건별 고유 사용자 수의 합 |
+| `segment` | `string` | 선택 | `all`, `guest`, `member`<br>기본 `all`<br>`guest`는 회원 식별자가 없는 이벤트, `member`는 있는 이벤트<br>앱·해외 로그인은 회원만이라 `guest`에서 0 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
@@ -2355,6 +2358,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
 | `platform` | `string` | 적용한 플랫폼 |
+| `segment` | `string` | 적용한 `segment` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].messagesByInputMode` | `object` | 채팅 메시지 전송 횟수<br>`choice`, `plain`, `block`, `unknown`의 정수<br>`unknown`은 전송 합계에서 나머지 셋을 뺀 값 |
@@ -2375,7 +2379,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `platform`과 `days` |
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `platform`과 `days`와 `segment` |
 | 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
 
 <br>

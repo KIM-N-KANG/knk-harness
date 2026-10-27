@@ -322,6 +322,7 @@
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `user_id` 조건 없음, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |
+| 세션 대상 | `days` 7, `segment=member`<br>`segment=guest`<br>`segment=visitor` | 세션 조회 3회의 `s`에 `{"prop":"user_id","op":"is not","values":["(none)"]}`가 더해지고 예산 계수기 308 증가, `segment` 생략 때와 다른 저장 키<br>같은 조건의 `op`가 `is`<br>400 |
 | 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
 | 신규 가입자 | 회원 3명(구글 2, 카카오 1), 그중 1명 `migrated_at` 있음, 팀 계정 1명 | `signups.total` 3, `google` 2, `kakao` 1, `migratedFromGuest` 1, 팀 계정 제외, `signups`에 `other` 필드 없음 |
 | 재가입 예전 계정 | 10-20 구글로 가입하고 `migrated_at`이 있는 회원 A가 탈퇴<br>10-22 같은 구글 계정으로 재가입해 회원 B 생성, A의 연동 행이 B로 옮겨짐 | 10-20 `signups.total` 0, `migratedFromGuest` 0<br>10-22 `signups.total` 1, `google` 1<br>재가입 전 같은 범위를 조회했을 때 10-20 `total` 1 |
@@ -347,6 +348,7 @@
 | 플랫폼과 DB 분리 | `segment=member`, DB에 게스트 채팅 1개와 회원 채팅 1개 | `segments` 세 항목은 `segment` 생략 때와 같음<br>대역 500이면 200, `platforms` `null`, `segments`와 `guestToMember`는 정상 |
 | 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 12회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 7개), `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
 | 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 앱·국내 12회와 앱·해외 로그인 12회, 응답 값은 두 묶음의 합<br>Android 외 12회와 앱 두 묶음 24회, 응답 값은 세 묶음의 합 |
+| 기능 사용 대상 | `days` 7, `platform=all`, `segment=guest`<br>`platform=all`, `segment=member` | Android 외와 앱·국내 24회만 보내고 모든 이벤트 필터에 `user_id` `is` `(none)`, 앱·해외 로그인 묶음은 조회 없이 0<br>Android 외와 앱·국내 24회에 `user_id` `is not` `(none)` 필터, 앱·해외 로그인 12회는 `segment` `all`과 같은 저장 키라 저장 값이 있으면 다시 받지 않음 |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 기능 사용 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
@@ -424,7 +426,7 @@
 | 저장 실패 | upsert 예외 | 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |
 | 새벽 배치 시작 | 고정 시계 KST 02:55와 03:00에 배치 실행 | 02:55는 새벽 배치 조회 없음<br>03:00부터 기본 지표 키의 어제 날짜 조회 |
-| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, 세션, 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인 추이, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜와 확정 전 리텐션 코호트만 조회<br>퍼널, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member` 조회 없음 |
+| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인 추이, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜와 확정 전 리텐션 코호트만 조회<br>퍼널, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member` 조회 없음 |
 | 새벽 배치 리텐션 기간 | 03:00 실행, 확정 전 코호트 D-33과 D-34가 오늘 받은 값 없음 | 새벽 배치는 D-33까지 조회<br>D-34는 새벽 배치가 끝난 뒤 초기 백필이 조회 |
 | 새벽 배치 이어 받기 | 그날 새벽 작업 비용이 배치 몫 300을 넘음 | 첫 실행은 300 이하만 예약하고 `admin_analytics_backfill`의 `phase` `nightly`, `result` `partial`, `reason` `budget_share`<br>5분 뒤 실행이 남은 키를 받아 `done` |
 | 새벽 배치 완료 판단 | 그날 새벽 배치를 마친 뒤 실행 | 새벽 배치 조회 없이 초기 백필로 넘어감 |
