@@ -423,7 +423,7 @@ service_map:
 | `suspects[].component` | 문자열 | 필수 | 서비스 지도의 `components[].name` |
 | `suspects[].hypothesis` | 문자열 | 필수 | 원인 가설 한 문장 |
 | `ruled_out[]` | 문자열 배열 | 필수 | 조회로 정상임을 확인해 원인에서 뺀 것. 항목마다 짧은 이름. 0개 이상 |
-| `evidence[]` | 배열 | 조건부 | `incident`와 `not_incident`는 1개 이상. 근거 하나에 `query_ref`와 `code_ref` 중 하나만 둠 |
+| `evidence[]` | 배열 | 조건부 | `incident`와 `not_incident`는 1개 이상. 근거 하나에 `query_ref`와 `code_ref` 중 하나만 둠. 원인 가설을 직접 받치는 근거가 앞 |
 | `evidence[].observation` | 문자열 | 필수 | 관찰 한 문장 |
 | `evidence[].query_ref` | 정수 | 조건부 | 조회 근거의 조회 기록 번호. 코드 근거면 `null` |
 | `evidence[].value` | 숫자 | 조건부 | 조회 근거에서 조회 결과에 있는 값. 코드 근거면 `null` |
@@ -445,7 +445,7 @@ service_map:
 | `usage.cost_usd` | 숫자 | 필수 | |
 | `usage.elapsed_seconds` | 숫자 | 필수 | |
 
-글자 상한은 `headline`의 칸과 `ruled_out[]`을 `, `로 이은 글이 40자이고 `actions`의 항목이 60자다. 글자 수는 유니코드 문자 단위로 센다. 상한은 제출 입력 스키마에 두지 않고 출력 간 조건으로도 검사하지 않는다. 넘은 값은 보고에 그대로 기록하고 슬랙 연결기가 메시지에서만 줄인다(5-9). 메시지의 표시 길이 때문에 진단이 실행 실패로 끝나는 것을 막기 위해서다.
+글자 상한은 `headline`의 칸과 `ruled_out[]`을 `, `로 이은 글이 40자, `actions`의 항목이 60자, `suspects[].hypothesis`가 120자, `evidence[].observation`이 80자다. 글자 수는 유니코드 문자 단위로 센다. 상한은 제출 입력 스키마에 두지 않고 출력 간 조건으로도 검사하지 않는다. 넘은 값은 보고에 그대로 기록하고 슬랙 연결기가 메시지에서만 줄인다(5-9). 메시지의 표시 길이 때문에 진단이 실행 실패로 끝나는 것을 막기 위해서다.
 
 <details>
 <summary><b>진단 보고 예시(LLM 응답 대기 장애)</b></summary>
@@ -478,11 +478,11 @@ service_map:
   ],
   "ruled_out": ["큐 대기", "CPU", "오류"],
   "evidence": [
-    { "observation": "채팅 턴 스트림 p95가 18:50 구간에 68.3초", "query_ref": 1, "value": 68348337740, "code_ref": null, "verified": true },
-    { "observation": "스토리 목록 p95는 최대 63ms로 기준 1초 안", "query_ref": 1, "value": 62659445, "code_ref": null, "verified": true },
-    { "observation": "chat.turn.queue 스팬 평균 2.4ms로 실행기 대기는 원인이 아님", "query_ref": 3, "value": 2353175.785714286, "code_ref": null, "verified": true },
     { "observation": "manyak-ai POST /api/v1/chat/turns 평균 34.0초로 서버 스트림 평균과 거의 같음", "query_ref": 5, "value": 34008976481.90625, "code_ref": null, "verified": true },
     { "observation": "manyak-ai llm.stream 스팬 평균 21.4초", "query_ref": 5, "value": 21417135902.28125, "code_ref": null, "verified": true },
+    { "observation": "chat.turn.queue 스팬 평균 2.4ms로 실행기 대기는 원인이 아님", "query_ref": 3, "value": 2353175.785714286, "code_ref": null, "verified": true },
+    { "observation": "채팅 턴 스트림 p95가 18:50 구간에 68.3초", "query_ref": 1, "value": 68348337740, "code_ref": null, "verified": true },
+    { "observation": "스토리 목록 p95는 최대 63ms로 기준 1초 안", "query_ref": 1, "value": 62659445, "code_ref": null, "verified": true },
     { "observation": "채팅 턴 실행기 활성 스레드 최댓값 1로 동시 실행 상한에 닿지 않음", "query_ref": 6, "value": 1, "code_ref": null, "verified": true },
     { "observation": "manyak-server CPU 최댓값 12.9%", "query_ref": 7, "value": 12.895404487848284, "code_ref": null, "verified": true }
   ],
@@ -557,18 +557,20 @@ service_map:
 
 보고 메시지는 아래 Block Kit 블록을 위에서부터 차례로 쓴다. 알림 미리보기에 보이는 대체 텍스트 `text`에는 머리 줄을 넣는다. 판정에 따라 보이는 블록과 칸이 다르고 보이지 않는 것은 뺀다.
 
-| 순서 | 블록 | 내용 | 보이는 판정 |
+| 순서 | 블록 | 내용 | 보이는 조건 |
 |---|---|---|---|
 | 1 | `header` | 머리 줄. 아래 판정 표의 머리 표시. `suspects[0].component`가 있으면 `<머리 표시> · <component>`로 붙임 | 모두 |
 | 2 | `section`의 `fields` | 판정 표의 칸을 차례로 하나씩 넣음. 칸마다 mrkdwn `*<칸 이름>:* <값>`이고 두 칸씩 한 줄로 보임 | 모두 |
-| 3 | `section`의 `text` | mrkdwn 두 줄 `*지금 할 일:* <actions.immediate[0]>`과 `*개선 방향:* <actions.improvement[0]>` | `incident` |
-| 4 | `context` | mrkdwn 한 줄 `<근거 요약> · 조회 <usage.queries>회 · <usage.elapsed_seconds>초 · $<usage.cost_usd>`. 경과 시간은 반올림한 정수 초 | 모두 |
+| 3 | `section`의 `text` | mrkdwn 한 줄 `*원인 가설:* <suspects[0].hypothesis>` | `suspects`가 있을 때 |
+| 4 | `section`의 `text` | mrkdwn 첫 줄 `*주요 근거*` 아래에 근거 한 줄씩 `• <observation>`. 보고의 근거 순서대로 앞에서 3개까지 넣음<br>`verified`가 거짓인 근거는 관찰 앞에 `⚠ `를 붙여 `• ⚠ <observation>`으로 씀<br>`code_ref`가 있는 근거는 관찰 뒤에 파일 위치를 붙여 `` • <observation> (`<파일 이름>:<start_line>`) ``으로 씀. 파일 이름은 `code_ref.path`의 마지막 부분 | `evidence`가 있을 때 |
+| 5 | `section`의 `text` | mrkdwn 두 줄 `*지금 할 일:* <actions.immediate[0]>`과 `*개선 방향:* <actions.improvement[0]>` | `incident` |
+| 6 | `context` | mrkdwn 한 줄 `<근거 요약> · 조회 <usage.queries>회 · <usage.elapsed_seconds>초 · $<usage.cost_usd>`. 경과 시간은 반올림한 정수 초 | 모두 |
 
 | `verdict` | 머리 표시 | 칸과 순서 |
 |---|---|---|
 | `incident` | `🔴 장애` | 영향, 원인, 첫 이상, 배제한 원인 |
-| `not_incident` | `🟢 이상 없음` | 확인한 범위와 주요 수치 |
-| `undetermined` | `🟡 판단 불가` | 확인한 범위, 주요 수치, 원인 |
+| `not_incident` | `🟢 이상 없음` | 확인한 범위, 주요 수치, 배제한 원인 |
+| `undetermined` | `🟡 판단 불가` | 확인한 범위, 주요 수치, 원인, 배제한 원인 |
 
 | 칸 | 값의 출처 |
 |---|---|
@@ -585,7 +587,7 @@ service_map:
 | `verified`가 거짓인 근거가 있음 | `⚠ 근거 <근거 수>개 중 <거짓인 근거 수>개 검증 실패` |
 | 근거 없음 | 근거 요약과 뒤의 ` · `를 빼고 줄이 `조회`로 시작함 |
 
-칸과 할 일 줄의 값이 5-7의 글자 상한을 넘으면 상한보다 한 자 적게 남기고 끝에 `…`를 붙인다. 보고 파일의 값은 그대로 둔다. `impact.summary`, 원인 가설 문장, 근거의 관찰, 두 번째부터의 조치는 메시지에 넣지 않는다. 운영자가 스레드에서 자세히 물으면 대화 턴이 보고 요약으로 풀어 답한다. ([6-1-7 대화 턴](6-1-AI-EXECUTION.md#6-1-7-대화-턴))
+칸, 원인 가설, 근거의 관찰, 할 일 줄의 값이 5-7의 글자 상한을 넘으면 상한보다 한 자 적게 남기고 끝에 `…`를 붙인다. 근거 줄은 관찰만 줄이고 `⚠ `와 파일 위치는 줄이지 않는다. 보고 파일의 값은 그대로 둔다. `impact.summary`, 두 번째부터의 원인 가설, 네 번째부터의 근거, 두 번째부터의 조치는 메시지에 넣지 않는다. 운영자가 스레드에서 자세히 물으면 대화 턴이 보고 요약으로 풀어 답한다. ([6-1-7 대화 턴](6-1-AI-EXECUTION.md#6-1-7-대화-턴))
 
 <details>
 <summary><b>보고 메시지 예시</b></summary>
@@ -608,6 +610,8 @@ service_map:
         { "type": "mrkdwn", "text": "*배제한 원인:* 큐 대기, CPU, 오류" }
       ]
     },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*원인 가설:* 턴 스트림 시간 대부분을 manyak-ai의 llm.stream 스팬이 외부 LLM 제공자의 스트리밍 응답을 기다리는 데 써서 서버 자원이나 큐와 무관하게 기준을 넘는다." } },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*주요 근거*\n• manyak-ai POST /api/v1/chat/turns 평균 34.0초로 서버 스트림 평균과 거의 같음\n• manyak-ai llm.stream 스팬 평균 21.4초\n• chat.turn.queue 스팬 평균 2.4ms로 실행기 대기는 원인이 아님" } },
     { "type": "section", "text": { "type": "mrkdwn", "text": "*지금 할 일:* LLM 제공자 상태와 gemini 지연 확인\n*개선 방향:* llm.stream 모델별 p95 경보" } },
     { "type": "context", "elements": [{ "type": "mrkdwn", "text": "근거 7개 중 7개 검증 · 조회 7회 · 49초 · $0.22" }] }
   ]
@@ -620,20 +624,34 @@ service_map:
 🔴 장애 · manyak-ai
 영향: 채팅 턴 p95 68초 (기준 45초)     원인: LLM 응답 대기(gemini)
 첫 이상: 18:16                        배제한 원인: 큐 대기, CPU, 오류
+원인 가설: 턴 스트림 시간 대부분을 manyak-ai의 llm.stream 스팬이 외부 LLM 제공자의 스트리밍 응답을 기다리는 데 써서 서버 자원이나 큐와 무관하게 기준을 넘는다.
+주요 근거
+• manyak-ai POST /api/v1/chat/turns 평균 34.0초로 서버 스트림 평균과 거의 같음
+• manyak-ai llm.stream 스팬 평균 21.4초
+• chat.turn.queue 스팬 평균 2.4ms로 실행기 대기는 원인이 아님
 지금 할 일: LLM 제공자 상태와 gemini 지연 확인
 개선 방향: llm.stream 모델별 p95 경보
 근거 7개 중 7개 검증 · 조회 7회 · 49초 · $0.22
 ```
 
-장애 아님 예시는 근거 4개 가운데 하나의 `verified`가 거짓인 합성 예시다. 블록 형식은 장애 예시와 같으므로 표시 결과만 적는다.
+장애 아님 예시는 근거 4개 가운데 둘째의 `verified`가 거짓이고 셋째가 코드 근거인 합성 예시다. 의심 구성 요소와 조치가 없어 원인 가설과 조치 블록이 빠진다. 블록 형식은 장애 예시와 같으므로 주요 근거 블록과 표시 결과만 적는다.
+
+```json
+{ "type": "section", "text": { "type": "mrkdwn", "text": "*주요 근거*\n• 채팅 턴 스트림 p95 최대 31.2초로 기준 45초 안\n• ⚠ manyak-server CPU 최댓값 41%로 여유 있음\n• 채팅 스트림 실행기 동시 실행 상한은 64 (`application.yml:111`)" } }
+```
 
 ```text
 🟢 이상 없음
 확인한 범위: 18:00~19:00 채팅 턴, 스토리 목록     주요 수치: 채팅 턴 p95 31초 (기준 45초)
+배제한 원인: 큐 대기, CPU
+주요 근거
+• 채팅 턴 스트림 p95 최대 31.2초로 기준 45초 안
+• ⚠ manyak-server CPU 최댓값 41%로 여유 있음
+• 채팅 스트림 실행기 동시 실행 상한은 64 (application.yml:111)
 ⚠ 근거 4개 중 1개 검증 실패 · 조회 4회 · 38초 · $0.05
 ```
 
-판단 불가 예시는 의심 구성 요소와 근거가 없는 합성 예시다.
+판단 불가 예시는 의심 구성 요소, 근거, 배제한 원인이 없는 합성 예시다. 칸 둘과 `context`만 남는다.
 
 ```text
 🟡 판단 불가
