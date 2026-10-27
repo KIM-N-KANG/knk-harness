@@ -91,7 +91,7 @@ flowchart LR
 | 에이전트 | 1단계: 운영자 PC의 상주 프로그램<br>2단계: 운영 ECS 클러스터의 상주 태스크 | 감시, 탐지, 진단, 보고, 대화 |
 | 관측 저장소 | OpenSearch, CloudWatch, AMP | 에이전트가 읽기 전용으로 조회하는 운영 환경의 자료 |
 | 슬랙 | 알림 채널 하나 | 보고 알림, 멘션 요청, 스레드 대화 |
-| 코드 저장소 | manyak-server, manyak-ai, manyak-terraform | 진단과 대화 때 읽기 전용 사본으로 읽음 |
+| 코드 저장소 | manyak-server, manyak-ai, manyak-notification, manyak-terraform | 진단과 대화 때 읽기 전용 사본으로 읽음 |
 
 <br>
 

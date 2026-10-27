@@ -165,6 +165,7 @@ slack:
 code_repositories:
   - { name: manyak-server, clone_url: "https://github.com/KIM-N-KANG/manyak-server.git", branch: main }
   - { name: manyak-ai, clone_url: "https://github.com/KIM-N-KANG/manyak-ai.git", branch: main }
+  - { name: manyak-notification, clone_url: "https://github.com/KIM-N-KANG/manyak-notification.git", branch: main }
   - { name: manyak-terraform, clone_url: "https://github.com/KIM-N-KANG/manyak-terraform.git", branch: dev }
 service_map:
   # 5-4 예시의 components와 latency_slo
@@ -337,7 +338,10 @@ service_map:
       log_service: manyak-notification
       span_service: manyak-notification
       metric_dimensions: { ClusterName: manyak-prod, ServiceName: manyak-prod-notification }
-      paths: [manyak-terraform/terraform/envs/prod/notification.tf]
+      repository: manyak-notification
+      paths:
+        - manyak-notification/src/main/resources/application.yml
+        - manyak-terraform/terraform/envs/prod/notification.tf
     - name: manyak-notification 오토스케일링
       kind: autoscaling
       parent: manyak-notification

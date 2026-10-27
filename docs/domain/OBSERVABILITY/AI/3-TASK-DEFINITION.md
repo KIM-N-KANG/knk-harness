@@ -115,6 +115,7 @@ flowchart LR
 관측 자료`"]
         K["`**코드 사본**
 manyak-server, manyak-ai,
+manyak-notification,
 manyak-terraform`"]
     end
     A["`**진단**`"]
@@ -146,7 +147,7 @@ manyak-terraform`"]
 | 진단 요청 | 이상 탐지나 슬랙 멘션 | 이상 후보: 진단할 구간과 그 구간을 연 신호<br>운영자 요청: 요청 문장과 요청 시각 |
 | 서비스 지도 | 설정 파일 | 구성 요소 이름과 각 구성 요소의 로그 서비스 이름, 스팬 서비스 이름, 지표 차원<br>구성 요소의 저장소, 설정 파일, 인프라 파일의 위치<br>요청 경로별 지연 기준 |
 | 조회 도구 | MCP 서버와 에이전트 | 로그, 스팬, 지표, 경보 이력, 확장 이력을 조회 |
-| 코드 사본 | 코드 저장소 | 원인이 코드에서 왔을 때 스팬 이름과 SQL로 검색해 원인 코드 위치를 찾는 manyak-server와 manyak-ai의 코드<br>동시성 상한, 큐 크기, 태스크 크기, 확장 정책을 읽는 manyak-server의 application 설정과 manyak-terraform의 운영 정의 |
+| 코드 사본 | 코드 저장소 | 원인이 코드에서 왔을 때 스팬 이름과 SQL로 검색해 원인 코드 위치를 찾는 manyak-server, manyak-ai, manyak-notification의 코드<br>동시성 상한, 큐 크기, 태스크 크기, 확장 정책을 읽는 manyak-server의 application 설정과 manyak-terraform의 운영 정의 |
 
 동시 턴 상한과 확장 기준 같은 설계값은 관측 자료에 없고 manyak-server의 application 설정과 manyak-terraform의 확장 정책에 있다. 코드 사본을 읽지 못하면 상한 도달과 확장 실패를 원인으로 지목할 수 없다.
 
