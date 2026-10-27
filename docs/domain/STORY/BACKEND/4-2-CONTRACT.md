@@ -1001,6 +1001,7 @@ Authorization: Bearer <accessToken>
 | `storylineId` | `integer` | 필수 | 선택한 스토리라인 ID |
 | `additionalInfos` | `string[]` | 선택 | 추가 정보 최대 13개, 항목당 100자<br>선택한 추천 정보와 직접 입력한 정보를 합쳐 보냄<br>기본값 `[]` |
 | `artStyle` | `string` | 선택 | 활성 화풍 코드, 기본값 `ANIME`<br>빈 문자열은 기본값으로 보지 않고 거절<br>`NONE`이면 인물 이미지와 표지를 만들지 않음<br>차감액은 같음 |
+| `visibility` | `string` | 선택 | `PUBLIC` 또는 `PRIVATE`, 기본값 `PRIVATE`<br>게스트도 `PUBLIC`을 지정할 수 있음<br>게스트 스토리는 이관으로 회원 소유가 된 뒤 공개 목록과 검색에 실림 |
 | `isRegenerated` | `boolean` | 선택 | AI 호출 헤더로 그대로 전달 |
 | `draftId` | `string` | 선택 | 접수 시 삭제할 내 초안<br>회원 요청만 처리하고 없거나 타인의 초안이면 무시 |
 
@@ -1048,6 +1049,7 @@ Authorization: Bearer <accessToken>
     "지워진 기록은 지하 보관실에 흔적으로 남는다.",
     "결말은 서린이 기록을 되찾는 여운 있는 해피엔딩"
   ],
+  "visibility": "PUBLIC",
   "isRegenerated": false
 }
 ```
@@ -2246,6 +2248,6 @@ Content-Length: 204800
 | PAYMENT | 차감과 환불 요청(`ref_type` `STORY`), 게스트 카운터 예약과 복원 요청 | 잔액 부족과 한도 소진 예외 |
 | PAYMENT |  | 정책값 `story_creation_cost` |
 | NOTIFICATION | 완성 이벤트(회원, 요청 ID, 스토리 공개 ID, 제목) | 없음 |
-| ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보 |
+| ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보와 이관된 스토리의 색인 요청 이벤트 |
 | ACCOUNT |  | 동의 게이트 허용 목록 |
 | 검색 | 색인 요청 이벤트(스토리 ID) | 검색 결과 카드 |
