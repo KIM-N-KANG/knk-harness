@@ -22,6 +22,7 @@
 | Secrets Manager | Terraform이 태스크 정의에 참조 주입 | 공유 시크릿, FCM 자격 증명 |
 | 공개 ALB | 운영 | 내부 경로 차단 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 두 단위의 트레이스 전송 |
+| OTel Collector | 운영에서 지표를 받아 AMP에 씀<br>AMP 인증은 Collector가 처리 | 두 단위의 지표 전송 |
 
 <br>
 
@@ -38,6 +39,7 @@
 | Redis | 필요한 시점에 연결<br>서버: 출석과 이프 만료 예정 회차의 선점 실패는 건너뜀, 이프 만료 예정 회차의 커밋 뒤 쿨다운 기록 실패는 내역과 요청 유지<br>알림 서비스: 재전달 |
 | 큐 | 서버: 아웃박스에 보존하고 백오프<br>알림 서비스: 수신 중단 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
+| OTel Collector | 연결할 수 없어도 기동과 발송은 정상<br>그 주기의 지표 전송만 실패 |
 
 <br>
 
@@ -113,7 +115,9 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL과 인증 헤더는 Secrets Manager | 서버만 주입<br>알림 서비스는 기본값 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform의 `enable_otlp_metrics=true`와 `otel_collector_enabled=true`일 때 `true` 주입<br>조건이 아니면 주입 없음 | 두 단위 모두 |
+| `MANAGEMENT_OTLP_METRICS_EXPORT_URL` | `http://localhost:4318/v1/metrics` | 같은 조건에서 OTel Collector의 내부 수집 주소 주입<br>포트 `4318`, 경로 `/v1/metrics` | 두 단위 모두<br>인증 헤더 없음 |
+| `MANAGEMENT_OTLP_METRICS_EXPORT_AGGREGATIONTEMPORALITY` | `cumulative` | 같은 조건에서 `cumulative` 주입 | 두 단위 모두 |
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | 두 단위 모두 |
 | `MANYAK_TRACING_SAMPLING` | `1.0` | 주입 없음 | |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수<br>두 단위 모두 |
@@ -150,7 +154,7 @@
 | 출석 발송 시각 | 환경 변수 변경 후 새 태스크 시작 | 야간 구간으로 옮기면 야간 동의자에게만 발송 |
 | 이프 만료 예정 발송 시각 | 환경 변수 변경 후 새 태스크 시작 | 옮긴 시간만큼 만료 창이 겹치거나 비어 그 구간의 로트가 두 번 들거나 빠짐<br>겹침의 중복은 쿨다운이 막음 |
 | 소비자 시간 설정 | Terraform 변경 후 apply | 메시지 큐 설정과 함께 바꿈 |
-| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 지표는 서버만 해당 |
+| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 지표를 켜면 전송 주기 안에 AMP에서 `job`이 `manyak-server`와 `manyak-notification`인 시계열이 보임 |
 
 <br>
 

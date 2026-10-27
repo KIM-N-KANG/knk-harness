@@ -25,7 +25,7 @@
 | 저장 이미지 선택 공급자 | `JEV_MODEL`과 TypeSafe URL 오류는 기동 실패<br>키 누락과 실행 중 선택 실패는 대체 이미지 사용 |
 | 이미지 공급자 | OpenAI 키와 이미지 설정 오류는 기동 실패<br>실행 중 실패는 기본 이미지 유지 |
 | CDN와 이미지 업로드 | 주소·호스트 검증 또는 전송 실패 시 기본 이미지 유지 |
-| 관측 도구 | 관측 초기화 실패로 생성 서비스를 중단하지 않음 |
+| 관측 도구 | 관측 초기화 실패로 생성 서비스를 중단하지 않음<br>OTel Collector에 연결하지 못하면 추적과 지표 전송만 실패 |
 
 <br>
 
@@ -147,7 +147,9 @@
 | `LANGFUSE_HOST` | 문자열, `https://cloud.langfuse.com` | 운영 Secrets Manager 참조<br>활성화에는 JP 주소 필요 |
 | `LANGFUSE_SAMPLE_RATE` | 문자열, `1.0` | 별도 주입 없음<br>초기화 시 0~1 수치로 검사 |
 | `MANYAK_TRACING_ENABLED` | 불리언, `false` | 운영 Terraform의 `tracing_enabled=true`일 때 AI 태스크에 `true` 주입<br>비활성 시 주입 없음 |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 문자열, 빈 값 | 같은 조건에서 Data Prepper의 내부 수집 주소 주입<br>포트 `21890`, 경로 `/v1/traces`<br>비활성 시 주입 없음 |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 문자열, 빈 값 | 같은 조건에서 Data Prepper의 내부 수집 주소 주입<br>포트 `21890`, 경로 `/v1/traces`를 포함하고 쿼리 문자열이 없는 전체 URL ([주소 기준](7-3-OBSERVABILITY.md#7-3-7-수집-조건과-실패-처리))<br>비활성 시 주입 없음<br>추적을 켰는데 유효하지 않으면 추적만 끄고 기동 계속 |
+| `MANYAK_OTLP_METRICS_ENABLED` | 불리언, `false` | 운영 Terraform의 `enable_otlp_metrics=true`와 `otel_collector_enabled=true`일 때 AI 태스크에 `true` 주입<br>비활성 시 주입 없음 |
+| `MANYAK_OTLP_METRICS_ENDPOINT` | 문자열, 빈 값 | 같은 조건에서 OTel Collector의 내부 수집 주소 주입<br>포트 `4318`, 경로 `/v1/metrics`를 포함하고 쿼리 문자열이 없는 전체 URL ([주소 기준](7-3-OBSERVABILITY.md#7-3-7-수집-조건과-실패-처리))<br>비활성 시 주입 없음<br>지표를 켰는데 유효하지 않으면 지표만 끄고 기동 계속 |
 
 <br>
 

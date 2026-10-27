@@ -26,14 +26,15 @@ Fluent Bit`"]
     N -->|OTLP 트레이스| DP
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**Grafana Cloud**`"]
+    S -->|OTLP 지표| AMP["`**AMP**`"]
+    N -->|OTLP 지표| AMP
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S,N comp
-    class F,OS,CW,DP,OD,G,SE,SL,Q,SNS ext
+    class F,OS,CW,DP,OD,AMP,SE,SL,Q,SNS ext
     style U fill:#FAFAFA,stroke:#AAAAAA
 ```
 
@@ -112,7 +113,7 @@ Fluent Bit`"]
 |---|---|
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성과 검수 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
-| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
+| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 지표 `manyak.push.consume.result`와 `manyak.push.send.result`, 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보 |
 | 이프 만료 예정 알림 | 로그 `credit_expiry_reminder_sent`의 `targets`, `cooldown`, `sent`, 선점 실패 로그<br>회원별 최종 결과는 `push_delivery_results`의 `type`이 `CREDIT_EXPIRY_REMINDER`인 행<br>발송 결과는 출석 리마인드와 같음 |
 | 프로모션 | 캠페인 행의 결과 컬럼, 회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
@@ -134,8 +135,9 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
-| 전송 주기 | 60초 간격 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 OTel Collector를 거쳐 AMP로 전송<br>운영은 서버와 알림 서비스 모두 켬 |
+| 전송 주기 | 60초 간격<br>누적 집계 |
+| 서비스와 인스턴스 | 리소스 속성 `service.name`이 AMP의 `job` 라벨<br>서버는 `manyak-server`이고 알림 서비스는 `manyak-notification`<br>`service.instance.id`가 기동마다 바뀌어 `instance` 라벨이 됨<br>여러 태스크의 누적 건수는 인스턴스별로 합산 |
 | 사전 등록 | 발송, 아웃박스, 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
 
 <br>
