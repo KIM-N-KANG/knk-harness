@@ -254,6 +254,8 @@ FLS로 뺀 필드는 검색 결과, 집계, 건수 질의 어디에도 나오지
 
 `prometheus.workspace_url`이 있으면 Prometheus MCP 서버가 그 AMP 작업 공간을 PromQL로 읽는다. 마냑은 앱 지표를 AMP로 보내고 운영 설정에 이 값을 채운다. 값이 비어 있으면 앱 지표 없이 진단한다. 탐지기는 앱 지표를 읽지 않는다.
 
+앱 지표에서 OTLP 리소스의 `service.name`은 `job` 라벨이 되고 `service.instance.id`는 `instance` 라벨이 된다. 마냑 운영에서는 백엔드, 알림 서버, AI 서버가 각자 보내고 `job` 값은 서비스 지도의 `log_service`와 같은 `manyak-server`, `manyak-notification`, `manyak-ai`다.
+
 <br>
 
 **6. 확장 이력**

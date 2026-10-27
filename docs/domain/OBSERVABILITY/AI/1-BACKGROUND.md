@@ -13,7 +13,7 @@
 | 로그 | 요청 완료, 외부 호출, 오류 같은 사건 한 건과 그 필드 | OpenSearch 로그 인덱스 |
 | 트레이스 | 요청 하나가 서비스와 DB를 거치며 쓴 시간. 구간 하나를 스팬이라 부름 | OpenSearch 스팬 인덱스 |
 | 지표 | 서비스, DB, 캐시, 로드밸런서의 1분 단위 수치(CPU, 메모리, 연결 수, 요청 수) | CloudWatch |
-| 앱 지표 | 서비스가 직접 내보낸 내부 수치(실행기 활성 스레드 같은 값) | AMP |
+| 앱 지표 | 서비스가 직접 내보낸 내부 수치(실행기 활성 스레드, HTTP 요청 시간, 푸시 발송 결과 같은 값). 서비스마다 `job` 라벨로 나뉨 | AMP |
 | 확장과 경보 이력 | 오토스케일링이 태스크 수를 바꾼 기록과 경보 상태 변화 | Application Auto Scaling과 CloudWatch 경보 |
 
 마냑은 백엔드(manyak-server), AI 서버(manyak-ai), 알림 서버(manyak-notification)가 ECS 서비스로 실행되고 PostgreSQL(RDS)과 Redis(ElastiCache)를 쓴다. 채팅 한 턴은 백엔드가 받아 턴 실행기에서 차례를 기다린 뒤 AI 서버를 호출하고 그 결과를 DB에 저장한다.
