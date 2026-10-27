@@ -218,7 +218,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 응답의 알림 식별자<br>읽음 처리 경로값과 목록 커서 |
 | `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
 | `message_key` | varchar(255) | NOT NULL | 큐 메시지와 같은 규칙의 메시지 식별자<br>발송 모드와 무관하게 같은 값 |
-| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `NOTICE` `ATTENDANCE_REMINDER` `PROMOTION` | 시나리오 식별자 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `PROMOTION` | 시나리오 식별자 |
 | `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>기록 시 종류에서 정함 |
 | `title` | varchar(120) | NOT NULL | 표시 제목<br>광고 알림은 광고 표기 포함 |
 | `body` | varchar(300) | NOT NULL | 표시 본문 |

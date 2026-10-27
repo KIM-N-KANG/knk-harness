@@ -118,6 +118,7 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `NOTICE_UNPUBLISHED` | `CHANGE` | `NOTICE` | NOTICE |
 | `NOTICE_DELETED` | `CHANGE` | `NOTICE` | NOTICE |
 | `SUBMISSION_HOLD_RELEASED` | `CHANGE` | `SUBMISSION` | MODERATION |
+| `STORY_TAKEN_DOWN` | `CHANGE` | `STORY` | MODERATION |
 | `ORIGINAL_CREATED` | `CHANGE` | `STORY` | STORY |
 | `ORIGINAL_UPDATED` | `CHANGE` | `STORY` | STORY |
 | `ORIGINAL_THUMBNAIL_DELETED` | `CHANGE` | `STORY` | STORY |
@@ -140,11 +141,14 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `NOTICE_PUBLISHED`, `NOTICE_UNPUBLISHED` | `status`, `publishedAt`, `notifiedAt` | `status`, `publishedAt`, `notifiedAt` |
 | `NOTICE_DELETED` | `title`, `tag`, `status` | 없음 |
 | `SUBMISSION_HOLD_RELEASED` | `holdReason`, `attempt` | 없음 |
+| `STORY_TAKEN_DOWN` | `visibility` | `visibility`, `takedownReason`, `takenDownAt`, `memo` |
 | `ORIGINAL_CREATED` | 없음 | `status`, `visibility`, `title`, `genres` |
 | `ORIGINAL_UPDATED` | `status`, `visibility`, `title`, `genres` | `status`, `visibility`, `title`, `genres` |
 | `ORIGINAL_THUMBNAIL_DELETED` | `thumbnailUrl` | 없음 |
 
 공지 본문은 5,000자까지라 변경 전후 값의 상한을 넘으므로 넣지 않는다. 변경 내용은 공지 상세로 확인한다.
+
+`STORY_TAKEN_DOWN`의 `reason`은 사유 분류의 표시 이름이고 관리자가 적은 메모는 변경 후 값의 `memo`다. 메모가 없으면 `memo`는 `null`이다. ([MODERATION 4-2-10 공개 중단](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-10-공개-중단))
 
 <br>
 
@@ -207,6 +211,7 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `chat_models` | `code` | 모델 비중의 키 |
 | `story_messages` | `chat_id`, `role`, `created_at`, `model_code` | 채팅 턴 수, 모델별 턴 수(`model_code`), 회원 상세의 누적 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
+| `stories` | `taken_down_at`, `takedown_reason` | 스토리 목록과 상세의 공개 중단 표시 |
 | `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
 | `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
 | `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |

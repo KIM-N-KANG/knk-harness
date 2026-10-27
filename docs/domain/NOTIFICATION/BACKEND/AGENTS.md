@@ -58,7 +58,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 ### 3. 명세와 코드의 대응
 
-서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 알림 서비스 코드 경로는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성과 검수 이벤트의 발행 지점은 STORY와 MODERATION 세트에서 다룬다. 탈퇴 시 토큰과 알림 내역 삭제 호출은 ACCOUNT 세트에서 다룬다.
+서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 알림 서비스 코드 경로는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성, 검수, 공개 중단 이벤트의 발행 지점은 STORY와 MODERATION 세트에서 다룬다. 탈퇴 시 토큰과 알림 내역 삭제 호출은 ACCOUNT 세트에서 다룬다.
 
 **1. 서버**
 
@@ -68,6 +68,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 | 토큰, 동의, 자격, 발송기, 출석, 캠페인, 캠페인 관리, 템플릿, 결과 기록과 통계 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-2~4-1-5, 4-1-8~4-1-10, 4-1-13, 4-1-15~4-1-19 |
 | 완성 리스너 | [push/event/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/event/), [push/outbox/StoryCompletionOutboxListener.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/outbox/StoryCompletionOutboxListener.kt) | 4-1-6 |
 | 검수 리스너 | [story/submission/ModerationPushListeners.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/ModerationPushListeners.kt) | 4-1-7 |
+| 공개 중단 리스너 | [story/submission/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/) | 4-1-20 |
 | 아웃박스, 릴레이, 발행 어댑터 | [push/outbox/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/outbox/) | 4-1-11, 4-2-9, 5-2-4 |
 | 스케줄러 | [push/scheduler/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/scheduler/) | 4-1-8~4-1-10 |
 | 모델 | [push/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/entity/), [push/repository/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/repository/), [auth/entity/User.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/entity/User.kt) | 3-2 DB 스키마, 3-1-7 도메인 모델 |

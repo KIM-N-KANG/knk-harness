@@ -68,6 +68,8 @@ Fluent Bit`"]
 | 전달 지연 | 실행기 거부<br>평문 WARN `moderation_dispatch_deferred` | 제출본 내부 ID, 회차, 예외 클래스 |
 | 보류 | 웹훅 미설정으로 전송하지 않을 때<br>평문 WARN `moderation_held` | 제출본 공개 식별자, 종류, 사유 코드, 시도 횟수 |
 | 보류 알림 실패 | Slack 전송 실패<br>평문 WARN `moderation_hold_notification_failed` | 제출본 공개 식별자, 예외 클래스 |
+| 공개 중단 | 공개 중단 커밋 뒤<br>`story_taken_down` | `story_public_id`, `reason_code`<br>`previous_visibility` = 공개 중단 전 공개 범위<br>`failed_submission_public_id` = 실패로 끝낸 대기 중 제출본, 없으면 `null`<br>`notified` = 공개 중단 이벤트를 발행했는지이며 소유 회원이 탈퇴했으면 `false`<br>메모와 제목은 기록하지 않음 |
+| 공개 중단 해제 | 공개 중단 표시를 지운 승인 커밋 뒤<br>`story_takedown_cleared` | `story_public_id`, `submission_public_id`<br>`visibility` = 승인 적용 뒤 공개 범위 |
 
 - 판정 결과 자체는 로그에 남기지 않는다. 결과는 제출본 행과 AI 서버의 Langfuse 기록에 있다.
 - 검수 완료 알림의 발송 로그는 NOTIFICATION 세트에 있다.
@@ -84,6 +86,7 @@ Fluent Bit`"]
 | 재시도와 보류 | 관리자 보류 목록<br>제출본 행의 재시도 횟수와 다음 시도 시각<br>보류 알림 Slack 메시지<br>해제 이력은 관리자 도메인의 감사 로그 |
 | 임대 복구 | 제출본 행의 임대 시작 시각과 회차<br>로그 `moderation_execution_deferred`, `moderation_dispatch_deferred` |
 | 승인 적용 실패 | 제출본 `errorCode` `APPLY_FAILED` |
+| 공개 중단 | 관리자 도메인 감사 로그의 `STORY_TAKEN_DOWN`<br>로그 `story_taken_down`, `story_takedown_cleared`<br>요청 로그의 `/api/v1/admin/moderation/stories/{storyId}/takedown` 상태 분포<br>공개 중단으로 끝낸 제출본은 `errorCode` `STORY_TAKEN_DOWN` |
 
 <br>
 
@@ -135,6 +138,7 @@ Fluent Bit`"]
 | 입력 원문, 검수 입력, AI 응답 본문 | 로그와 Sentry에 싣지 않음<br>원문과 판정은 AI 서버의 Langfuse에서 관리 |
 | 이미지 URL과 객체 키 | 로그에 싣지 않음 |
 | 보류 알림 | 제출본 공개 식별자, 종류, 사유 코드, 시도 횟수만 |
+| 공개 중단 메모 | 로그와 Sentry에 싣지 않음<br>감사 로그에만 있음 |
 | 웹훅 주소와 응답 | 로그에 싣지 않음 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 5xx를 전부 캡처<br>기본 개인정보 수집 비활성화 |

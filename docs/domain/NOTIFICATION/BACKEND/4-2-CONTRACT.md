@@ -597,7 +597,7 @@ Content-Type: application/json
 | `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에도 바뀌지 않음 |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
-| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
+| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
 | `data` | `object` | 필수 | 푸시 데이터<br>동의와 토큰을 담지 않음 |
 | `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>생략하면 만료 없음 |
 | `requestId` | `string` | 필수 | 발행 원인의 요청 ID<br>없으면 `unknown` |
@@ -608,6 +608,7 @@ Content-Type: application/json
 |---|---|---|
 | `STORY_COMPLETED` | `SERVICE` | `story-completed:{완성 요청 ID}` |
 | `STORY_MODERATION_COMPLETED` | `SERVICE` | `story-moderation:{제출본 ID}:{회차}` |
+| `STORY_TAKEN_DOWN` | `SERVICE` | `story-taken-down:{스토리 공개 식별자}:{공개 중단 시각의 epoch 밀리초}` |
 | `NOTICE` | `SERVICE` | `notice:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 | `ATTENDANCE_REMINDER` | `MARKETING` | `attendance:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
@@ -671,6 +672,10 @@ Content-Type: application/json
 | `STORY_MODERATION_COMPLETED` | `deepLink` | `string` | `/studio` |
 | `STORY_MODERATION_COMPLETED` | `title` | `string` | 결과별 제목 |
 | `STORY_MODERATION_COMPLETED` | `body` | `string` | 결과별 본문 |
+| `STORY_TAKEN_DOWN` | `storyId` | `string` | 스토리 공개 식별자 |
+| `STORY_TAKEN_DOWN` | `deepLink` | `string` | `/studio` |
+| `STORY_TAKEN_DOWN` | `title` | `string` | 고정 제목 |
+| `STORY_TAKEN_DOWN` | `body` | `string` | 스토리 제목과 사유 분류가 들어간 본문 |
 | `NOTICE` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `NOTICE` | `noticeId` | `string` | 공지 공개 식별자 |
 | `NOTICE` | `noticeTag` | `string` | 공지 태그<br>`SERVICE`, `UPDATE`, `MAINTENANCE` |
@@ -695,6 +700,12 @@ Content-Type: application/json
 | `REJECTED` | 검수에서 반려됐어요 | 「{스토리 제목}」의 내용을 수정해 다시 제출해 주세요. |
 | `FAILED` | 검수를 진행하지 못했어요 | 「{스토리 제목}」의 검수 중 문제가 생겼어요. 잠시 후 다시 제출해 주세요. |
 
+| `type` | `title` | `body` |
+|---|---|---|
+| `STORY_TAKEN_DOWN` | 스토리 공개가 중단됐어요 | 「{스토리 제목}」의 공개를 {사유 분류 표시 이름} 사유로 중단했어요. 내용을 수정해 검수를 다시 받으면 공개할 수 있어요. |
+
+- 스토리 제목은 이름 토큰을 기본 주인공 이름으로 치환한 공개 중단 시점의 제목이다. 사유 분류 표시 이름은 선정성, 저작권 침해, 혐오 표현, 기타다. ([MODERATION 4-2-10 공개 중단](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-10-공개-중단))
+
 <br>
 
 **3. 딥링크 UTM 쿼리**
@@ -705,6 +716,7 @@ Content-Type: application/json
 |---|---|---|---|---|
 | `STORY_COMPLETED` | `push` | `push` | `story_completed` | `story_completed` |
 | `STORY_MODERATION_COMPLETED` | `push` | `push` | `story_moderation_completed` | `story_moderation_completed` |
+| `STORY_TAKEN_DOWN` | `push` | `push` | `story_taken_down` | `story_taken_down` |
 | `ATTENDANCE_REMINDER` | `push` | `push` | `attendance_reminder` | `attendance_reminder` |
 | `NOTICE` | `push` | `push` | 캠페인 공개 식별자 | `notice` |
 | `PROMOTION` | `push` | `push` | 캠페인 공개 식별자 | `promotion` |
@@ -737,6 +749,19 @@ Content-Type: application/json
   "title": "(광고) 이프 250이 도착했어요 🍃",
   "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
   "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=push&utm_medium=push&utm_campaign=attendance_reminder&utm_content=attendance_reminder"
+}
+```
+
+**2) `STORY_TAKEN_DOWN` 푸시 데이터**
+
+```json
+{
+  "type": "STORY_TAKEN_DOWN",
+  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "title": "스토리 공개가 중단됐어요",
+  "body": "「달빛 아래의 약속」의 공개를 저작권 침해 사유로 중단했어요. 내용을 수정해 검수를 다시 받으면 공개할 수 있어요.",
+  "deepLink": "https://manyak.app/studio?utm_source=push&utm_medium=push&utm_campaign=story_taken_down&utm_content=story_taken_down"
 }
 ```
 
@@ -1364,7 +1389,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `notificationId` | `string` | 알림 식별자 |
 | `category` | `string` | `NEWS`, `ACTIVITY` |
-| `type` | `string` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>모르는 값은 클라이언트가 기본 표시로 처리 |
+| `type` | `string` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>모르는 값은 클라이언트가 기본 표시로 처리 |
 | `title` | `string` | 표시 제목<br>광고 알림은 광고 표기 포함 |
 | `body` | `string` | 표시 본문 |
 | `deepLink` | `string / null` | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 `null` |
@@ -1606,7 +1631,7 @@ Authorization: Bearer {accessToken}
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|
 | STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트, 캠페인 이동 대상 스토리의 공개 판정 |
-| MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트 |
+| MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구<br>공개 중단 이벤트의 알림 내역 기록, 발송 경로와 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트<br>공개 중단 트랜잭션, 공개 중단 이벤트 |
 | NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
 | ADMIN | 기간의 캠페인 도달 요약 연산<br>종류별 날짜별 도달 회원 수 연산 | 관리자 요청자와 변경 감사 기록 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산<br>회원의 알림 내역 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
@@ -1619,6 +1644,7 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
+| 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 공개 중단 시각 | 알림 내역 행<br>원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송<br>호출자의 트랜잭션에 참여 |
 | 공지 발송 요청 | 공지 공개 식별자, 알림 제목 100자 이내, 알림 본문 300자 이내, 종류, 공지 태그, 딥링크 | 예약 시각이 현재인 캠페인 1건<br>호출자의 트랜잭션에 참여하고 같은 공지의 두 번째 요청은 유니크 위반 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
 | 기간의 캠페인 도달 요약 | KST 날짜 범위 | 마지막 회차의 선점 시각이 범위 안인 캠페인마다 공개 식별자, 종류, 제목, 공지 공개 식별자, 선점 시각, 딥링크 포함 여부(`null` 가능), 도달 회원 수<br>도달 회원 수는 캠페인 구조의 `deliveredMembers`와 같은 집계 |

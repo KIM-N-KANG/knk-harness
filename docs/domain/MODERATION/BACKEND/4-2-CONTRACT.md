@@ -16,7 +16,7 @@
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
 | 식별자 | 제출본, 스토리, 회원은 UUID 공개 식별자<br>내부 PK와 임대는 노출하지 않음<br>회차와 재시도 상태는 관리자 API에만 노출 |
-| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수 |
+| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수<br>공개 중단은 `reason` 대신 사유 분류 `reasonCode`가 필수이고 메모 `memo`는 선택 |
 | 위치 | 위반 항목과 이미지 오류의 `path`는 응답 폼 기준의 필드 경로<br>배열 인덱스는 0부터 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
@@ -111,6 +111,7 @@
 | `MODEL_CALL_FAILED` | AI 서버의 모델 호출 실패 |
 | `MODERATION_UNAVAILABLE` | 이미지 복사 실패, AI 서버 호출 실패, 시간 초과, 응답 형식 오류 |
 | `APPLY_FAILED` | 승인 뒤 현재 스토리 적용 단계의 검증 실패 |
+| `STORY_TAKEN_DOWN` | 관리자가 스토리를 공개 중단해 대기 중이던 수정 제출본을 끝냄<br>수정 요청으로 다시 접수 |
 
 - 반려는 저장된 `issues`가 하나 이상이고 `errorCode`가 `null`이다. 응답의 `issues`는 재대응으로 비어 있을 수 있다. 실패는 `errorCode`가 있고 `issues`와 `imageErrors`가 함께 있을 수 있다.
 - 대상이 사라진 항목은 `issues`와 `imageErrors`에서 뺀다.
@@ -826,12 +827,98 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-10 다른 도메인과의 경계
+### 4-2-10 공개 중단
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/moderation/stories/{storyId}/takedown` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+회원 스토리를 비공개로 바꾸고 공개 중단 표시를 남긴다. 소유자는 수정 요청이 검수를 통과해야 다시 공개할 수 있다. 관리자가 공개 중단을 해제하는 경로는 없다.
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `storyId` | 경로 | 필수 | 스토리 공개 식별자 |
+| `reasonCode` | `string` | 필수 | 사유 분류<br>`SEXUAL_CONTENT`, `COPYRIGHT_INFRINGEMENT`, `HATE_SPEECH`, `ETC` |
+| `memo` | `string` | 선택 | 감사 로그에만 남기는 메모<br>보내면 1~500자이고 공백만은 거절<br>생략과 `null`은 메모 없음 |
+
+| `reasonCode` | 표시 이름 |
+|---|---|
+| `SEXUAL_CONTENT` | 선정성 |
+| `COPYRIGHT_INFRINGEMENT` | 저작권 침해 |
+| `HATE_SPEECH` | 혐오 표현 |
+| `ETC` | 기타 |
+
+- 표시 이름은 감사 로그의 사유와 소유자 알림 본문에 쓴다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `storyId` | `string` | 스토리 공개 식별자 |
+| `visibility` | `string` | 항상 `PRIVATE` |
+| `takedownReason` | `string` | 요청한 사유 분류 |
+| `takenDownAt` | `string` | 공개 중단 시각 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reasonCode` 누락이나 허용 값 밖, `memo`가 공백만이거나 500자 초과, `storyId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 스토리 |
+| 409 | `CONFLICT` | 이미 공개 중단된 스토리, 삭제된 스토리, 공식 계정 소유 스토리, 소유 회원이 없는 스토리 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/moderation/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7/takedown
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "reasonCode": "COPYRIGHT_INFRINGEMENT", "memo": "원작 웹툰의 설정과 대사를 그대로 옮김. 신고 3건 확인" }
+```
+
+**2) 200 Response body**
+
+```json
+{ "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7", "visibility": "PRIVATE", "takedownReason": "COPYRIGHT_INFRINGEMENT", "takenDownAt": "2026-10-27T02:00:00Z" }
+```
+
+**3) 409 Response body**
+
+```json
+{
+  "timestamp": "2026-10-27T02:00:01.000Z",
+  "status": 409,
+  "code": "CONFLICT",
+  "message": "이미 공개 중단된 스토리입니다.",
+  "path": "/api/v1/admin/moderation/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7/takedown",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-11 다른 도메인과의 경계
 
 | 도메인 | MODERATION이 제공하는 것 | MODERATION이 사용하는 것 |
 |---|---|---|
-| STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제 |
-| NOTIFICATION | 검수 완료 이벤트 | 없음 |
+| STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제<br>공개 중단 적용과 해제, 공개 중단 표시, 공식 계정 식별, 이름 토큰 치환 |
+| NOTIFICATION | 검수 완료 이벤트, 공개 중단 이벤트 | 없음 |
 | ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금, 회원 공개 식별자 |
 | ADMIN | 보류 중 제출본 수 | 관리자 요청자와 변경 감사 기록, 회원 요약 구조 |
 | AI 서버 | 검수 입력 | 판정 결과 |
@@ -842,10 +929,12 @@ Authorization: Bearer {adminToken}
 | 연산 | 입력 | 결과 |
 |---|---|---|
 | 등록 접수 | 등록 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태 |
-| 수정 접수 | 스토리 공개 식별자, 수정 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태<br>공개 범위만 변경하면 즉시 반영한 수정 폼<br>대기 중 제출본이 있으면 공개 범위만 바꿔도 거절 예외 |
+| 수정 접수 | 스토리 공개 식별자, 수정 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태<br>공개 범위만 변경하면 즉시 반영한 수정 폼<br>공개 중단된 스토리를 `PUBLIC`으로 바꾸면 공개 범위만이어도 제출본<br>대기 중 제출본이 있으면 공개 범위만 바꿔도 거절 예외 |
 | 대기 중 존재 확인 | 스토리 내부 ID | 대기 중 제출본이 있으면 거절 예외 |
 | 수정 폼 메타데이터 | 스토리 공개 식별자, 회원 내부 ID | 최신 미승인 제출본의 식별자, 상태, 위반 항목, 오류 코드, 이미지 오류 또는 `null` |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 상태, 회차, 제목 | NOTIFICATION의 발송 경로 |
+| 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 공개 중단 시각 | NOTIFICATION의 알림 내역 기록과 발송 경로<br>공개 중단 트랜잭션에 참여 |
+| 공개 중단 적용 | 잠근 스토리, 사유 분류, 공개 중단 시각 | STORY가 공개 스냅샷 갱신, 비공개 전환, 공개 중단 시각과 사유 분류 기록<br>커밋 후 색인 이벤트 |
 | 회원 제출본 전부 삭제 | 회원 내부 ID | 없음 |
 | 스토리 제출본 전부 삭제 | 스토리 내부 ID | 없음 |
 | 보류 중 제출본 수 | 없음 | 대기 상태이고 보류 시각이 있는 제출본 수 |

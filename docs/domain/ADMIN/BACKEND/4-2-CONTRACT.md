@@ -20,7 +20,7 @@
 | 식별자 | 회원, 감사 로그, 주문, 스토리, 채팅은 UUID 공개 식별자<br>내부 PK는 노출하지 않음 |
 | 채팅 대화 원문 | 어떤 관리자 응답에도 채팅의 사용자 메시지, AI 응답, 추천 입력을 싣지 않음<br>시작 설정의 추천 입력은 제작 입력이라 스토리 설정 응답에만 실음 |
 | 호출 주체 | 관리자 페이지의 서버 측 처리기<br>브라우저가 직접 호출하지 않으므로 관리자 페이지 주소는 CORS 허용 목록에 없음 |
-| 사유 | 변경 작업의 요청 본문에 `reason` 필수 |
+| 사유 | 변경 작업의 요청 본문에 `reason` 필수<br>스토리 공개 중단은 `reason` 대신 사유 분류 `reasonCode`가 필수이고 메모 `memo`는 선택 ([MODERATION 4-2-10 공개 중단](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-10-공개-중단)) |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
 <br>
@@ -499,6 +499,8 @@ Authorization: Bearer {adminToken}
 | `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 수 합계 |
 | `items[].createdAt` | `string` | 생성 시각 |
 | `items[].deletedAt` | `string / null` | 삭제 시각<br>삭제되지 않았으면 `null` |
+| `items[].takenDownAt` | `string / null` | 관리자의 공개 중단 시각<br>공개 중단 표시가 없으면 `null` |
+| `items[].takedownReason` | `string / null` | 공개 중단 사유 분류<br>`SEXUAL_CONTENT`, `COPYRIGHT_INFRINGEMENT`, `HATE_SPEECH`, `ETC`<br>공개 중단 표시가 없으면 `null` |
 
 - 삭제된 스토리는 `deleted`에 따라 싣는다. 팀 계정 제외는 적용하지 않는다.
 
@@ -541,7 +543,9 @@ Authorization: Bearer {adminToken}
       "chatCount": 42,
       "totalTurns": 388,
       "createdAt": "2026-09-30T12:00:00Z",
-      "deletedAt": null
+      "deletedAt": null,
+      "takenDownAt": null,
+      "takedownReason": null
     }
   ],
   "page": 1,
