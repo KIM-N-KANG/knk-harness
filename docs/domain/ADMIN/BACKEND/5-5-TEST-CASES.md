@@ -331,6 +331,7 @@
 | 신규 가입자 플랫폼 | `days` 7 | 대역에 세분화 6회, 구글과 카카오 이벤트마다 `is_new_user` `true`와 `country`, 웹은 `platform` `Web`, 앱·국내는 `Android`, 플랫폼 없음은 `(none)`, `user_id` 조건과 `s` 없음 |
 | 플랫폼 합 | 하루 구글 웹 3, 앱 5, 없음 1과 카카오 웹 1, 앱 2, 없음 0 | `signupsByPlatform` `all` 12, `web` 4, `android` 7, `unknown` 1 |
 | 플랫폼 준비 중 | 예산이 3일치만 남은 7일 요청 | 200, 7일 모두 DB 값, 최근 3일만 `signupsByPlatform` 값, 나머지 4일은 `signupsByPlatform` `null`이고 `pendingDates`에 있음 |
+| 플랫폼 시간 한도 | 빈 저장소, 대역이 신규 가입자 플랫폼 조회마다 2초씩 늦게 응답<br>같은 상태에서 채팅 턴 도달률과 채팅 옵션 비중 요청 | 5초 안에 200, DB 값 정상, 받은 조회 값만 저장, 받지 못한 날짜는 `signupsByPlatform` `null`과 `pendingDates`, `admin_analytics_fetch_failed`의 `reason` `timeout`, 그 키에 60초 쿨다운<br>두 엔드포인트도 5초 안에 200이고 플랫폼 값만 `null`과 `pendingDates` |
 | 플랫폼 사용 불가 | 대역 500, 저장 값 없음<br>자격 증명 빈 값 | 두 경우 모두 200, DB 값은 정상, 모든 날짜가 `pendingDates`, `platformAsOf` `null`<br>대역 500이면 `admin_analytics_fetch_failed` |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
 | 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |

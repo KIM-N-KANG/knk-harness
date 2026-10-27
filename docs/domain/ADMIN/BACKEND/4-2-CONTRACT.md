@@ -2141,7 +2141,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | 400 | `BAD_REQUEST` | 대시보드 차트와 같음 |
 
-- 분석 도구를 쓸 수 없어도 실패로 응답하지 않는다. 플랫폼별 가입 수를 받지 못한 날짜는 `pendingDates`에 넣고 DB 값을 응답한다.
+- 분석 도구를 쓸 수 없거나 플랫폼 조회가 5초 안에 끝나지 않아도 실패로 응답하지 않는다. 플랫폼별 가입 수를 받지 못한 날짜는 `pendingDates`에 넣고 DB 값을 기다리지 않고 응답한다.
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
