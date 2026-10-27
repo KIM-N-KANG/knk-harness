@@ -59,6 +59,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 이프 내역 | `features/credits/` | 2-1-9 |
 | 검수 제출 목록과 상세 | `features/moderation/` | 2-1-11 |
 | 공지 태그와 게시 | `features/notices/` | 2-1-13, 5-1-11 |
+| 회원 목록과 상세의 누적 턴 | `features/shared/`, `features/members/` | 2-1-12, 5-1-8 |
 | 스토리 상세의 스토리 설정 | `features/stories/` | 2-1-14, 5-1-12 |
 | 스토리와 채팅의 삭제 필터와 삭제 표시 | `features/shared/` | 2-1-15, 5-1-13 |
 | 스토리 공개 중단 | `features/stories/` | 2-1-16, 3-4-5, 5-1-14 |

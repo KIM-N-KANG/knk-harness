@@ -1,6 +1,6 @@
 # 2-5 상태 관리
 
-이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리와 채팅 목록의 삭제 필터, 스토리 공개 중단이 쓰는 상태를 URL, 서버 상태, 브라우저 저장으로 나눠 저장 위치와 수명, 복원 방식을 정한다.
+이 문서는 관리자 웹 대시보드 그룹과 이프 내역, 검수 제출 화면, 스토리와 채팅 목록의 삭제 필터, 회원 목록의 정렬, 스토리 공개 중단이 쓰는 상태를 URL, 서버 상태, 브라우저 저장으로 나눠 저장 위치와 수명, 복원 방식을 정한다.
 
 조회와 재요청 설정은 데이터 연동에, 기간과 조건의 기본값은 정보 구조에 있다. ([3-2 데이터 연동](3-2-DATA-INTEGRATION.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
 
@@ -24,7 +24,7 @@
 | `platform` | 사용자, 전환, 기능과 품질 | 그 화면에서 플랫폼을 고르는 탭의 값 |
 | `direction` | 이프 내역 | `granted`, `spent` |
 | `date` | 이프 내역 | 기록일 |
-| `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt` |
+| `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출, 회원 목록 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt`<br>회원 목록의 `sort`는 `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`이고 없으면 `createdAt` |
 | `status` | 검수 제출 | `PENDING`, `HELD`, `APPROVED`, `REJECTED`, `FAILED`<br>없으면 전체 |
 | `from`, `to`, `q`, `memberId`, `storyId` | 검수 제출 | 접수일 범위, 검색어, 소유 회원과 스토리 공개 식별자 |
 | `deleted` | 스토리 목록, 채팅 목록 | 삭제 필터의 `include`, `only`<br>없으면 제외 |
