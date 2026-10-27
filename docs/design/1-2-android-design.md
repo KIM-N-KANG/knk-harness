@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.8 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-25 |
+| 수정일 | 2026-10-27 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -330,6 +330,8 @@ Room DB v6은 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `
 
 payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayload.kt)가 쓰고 [`SimpleDraftPayloadReader`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayloadReader.kt)가 읽습니다. 스토리라인 초안의 `generationRequest`와 최상위 `generationRequestId`는 화면에 보이는 결과를 만든 생성 요청이어야 해서, 스토어는 재시도에 쓰는 마지막 요청과 별도로 결과를 만든 요청을 들고 있습니다. 진행 순번(`selectedStorylineIndex`)은 고른 스토리라인 ID로 바꿔 쓰고 읽을 때 결과에서 찾아 순번으로 되돌리며, 찾지 못하면 스토리라인 선택 단계로 엽니다. 빠졌거나 null인 선택 필드는 기본값으로 읽고, 상세의 `generation`이 완료가 아니면 초안을 찾지 못한 것으로 보아 그 버전으로 덮어써 같은 ID로 새로 시작합니다. 서버 스토리라인 초안 카드는 단계를 몰라 스토리라인 라우트로 열고, 카드로 연 초안이 추가 정보 단계였으면 스토리라인 화면이 추가 정보 라우트를 이어 쌓습니다. 이어 갈 스토리라인이 없는 스토리라인 라우트는 같은 `draftId`의 키워드 라우트로 바꿉니다. 판정을 기다리는 동안 단계 화면은 헤더 아래에 `rememberDelayedProgressVisibility` 스피너를 둡니다.
 
+스토리라인 생성 응답이 422 `CONTENT_REJECTED`(`DomainError.isContentRejected`)이면 `StorylineGenerationStore`가 다른 상태 코드 실패와 같이 기록을 정리한 뒤(결과가 없으면 지우고, 다시 만들기였으면 직전 결과를 기기 안에 되돌림) 메모리의 생성과 편집을 비우고 `StorylineGenerationState.Rejected`로 바꿉니다. 세션의 저장 위치는 그대로 둬 키워드 단계가 진입 판정을 다시 하지 않습니다. 스토리라인 화면은 이 상태를 받으면 `RestartAtKeyword`로 같은 `draftId`의 키워드 라우트로 바꾸고, 키워드 화면은 진입 판정 뒤 `takeRejectedKeyword()`로 거절된 요청을 `KeywordDraftSnapshot`으로 꺼내 채우며 `contentRejected`로 푸터 안내를 그립니다. 기준선은 빈 입력이라 돌아온 키워드는 저장하지 않은 편집입니다. 꺼내면 스토어가 `Idle`이 되어 다음 생성이 새 요청 ID로 시작합니다. 거절 문구는 키워드 화면과 제작 탭이 함께 쓰므로 `common`의 `error_content_rejected`에 두고 `DomainErrorMessages`도 이 코드를 같은 문구로 바꿉니다([A-082](../adr/1-3-android-adr.md#a-082)).
+
 세션은 서버 상세와 PUT 응답의 `createdAt`을 들고 있다가 기기 안 행을 처음 쓸 때와 완성 요청에 넘겨, 단계가 바뀌어도 카드의 처음 저장 시각과 순서가 바뀌지 않게 합니다(이미 있는 행은 기존 시각을 유지합니다).
 
 서버 간편 제작 카드는 `SimpleDraftServerStore`가 `StoryDraftRemote` 목록에서 `SIMPLE` 항목만 골라 냅니다. `CreationProgressRepository`는 기기 안 행과 완성 요청, 서버 간편 제작 카드를 `mergeSimpleDrafts`로 합치는데, 같은 `draftId`의 기기 안 행이나 완성 요청이 서버 초안을 가리키고 서버 `version`이 그 기준 버전 이하이면 서버 카드를 숨깁니다. 숨기지 않은 서버 카드는 `CreationProgressSummary.onServer`가 참이라, 같은 ID의 기기 안 카드와 목록 키, 이어서 만들기, 삭제를 따로 합니다. 기기 안 카드 삭제는 그 카드가 숨긴 서버 초안을 먼저 DELETE하고 행을 지웁니다. 서버 카드로 이어서 만들면 라우트에 `server`를 싣고, 진입 판정이 같은 ID의 기기 안 행을 새 UUID 행으로 옮기며(`PendingStoryCreationDao.detach`, 서버 초안 연결은 버림) 서버 초안을 엽니다. 이 세션의 진행 기록이 이 기기의 다른 갈래를 덮지 않게 하려는 것이고, 옮긴 행은 기기 안 세션의 초안으로 남습니다. 완성 요청은 세션의 `draftId`를 항상 싣고(기기 안 세션의 ID는 서버가 넘깁니다) 서버 세션이면 요청 행에도 `serverDraftVersion`을 남겨, 서버가 요청을 기록하며 초안을 지우기 전까지 같은 제작의 서버 카드를 가립니다.
@@ -342,13 +344,14 @@ payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-
 | --- | --- |
 | POST 성공 | Completed 저장 |
 | 네트워크·401·403 | 서버 수락 여부를 단정하지 않고 불확실 상태 유지 |
+| 422 `CONTENT_REJECTED` | 서버가 실패로 기록한 확정 거절이라 조회 없이 추가 정보 단계 초안으로 되돌리고 거절로 알림 |
 | 그 외 실패와 409 | GET 요청 조회로 복구하고, 조회가 FAILED나 404면 요청을 지우고 추가 정보 단계 초안으로 되돌림 |
 | 사용자 새로고침의 미수락 요청 | GET 404이면 같은 저장 명령·requestId로 다시 전송 |
 | 제작 탭의 미완료 카드 | STARTED·노출 중 5초 폴링 |
 | 스토리라인 복구 | STARTED 중 3초 폴링. 완성 요청 폴링과 별개 |
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
-확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 알려 보고 있는 제작 탭이 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
+확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 `CompletionFailure`(사유를 모르는 `FAILED`, 원 응답의 수위 거절 `CONTENT_REJECTED`)를 알려 보고 있는 제작 탭이 사유에 맞는 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
 
 v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. v5→v6은 두 테이블에 nullable `serverDraftVersion` 열만 더해, 기존 행은 기기 안 세션의 것으로 남습니다. destructive migration을 사용하지 않습니다.
 
