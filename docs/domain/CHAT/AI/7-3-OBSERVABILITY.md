@@ -139,12 +139,13 @@ FastAPI 계측의 HTTP 서버 지표를 OTLP로 OTel Collector에 보내고 Coll
 
 | 지표 | 종류와 속성 | 의미 |
 |---|---|---|
-| `http.server.duration` | 밀리초 히스토그램<br>메서드, 상태 코드, 등록 경로 템플릿과 호스트 같은 계측 기본 속성 | 요청별 처리 시간 분포와 요청 수 |
-| `http.server.active_requests` | UpDownCounter<br>메서드와 호스트 같은 계측 기본 속성 | 처리 중인 요청 수 |
+| `http.server.duration` | 밀리초 히스토그램<br>속성은 `http.method`, `http.status_code`와 등록 경로 템플릿인 `http.target`만 | 요청별 처리 시간 분포와 요청 수 |
+| `http.server.active_requests` | UpDownCounter<br>속성은 `http.method`만 | 처리 중인 요청 수 |
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 지표 이름 | 현재 의존성의 계측 기본 규약 기준<br>계측 라이브러리의 HTTP 규약을 바꾸면 이름과 속성도 바뀜 |
+| 지표와 속성 이름 | 현재 고정한 FastAPI 계측 버전의 기본 HTTP 규약 기준<br>이 규약에서 `http.target`은 요청 시간 히스토그램에 한해 실제 경로가 아닌 등록 경로 템플릿<br>계측 버전이나 규약을 바꾸면 이름이 바뀌므로 허용 속성도 그 기준으로 다시 정함 |
+| 속성 제한 | 지표마다 위 허용 속성만 남기고 계측이 붙이는 나머지 속성은 버림<br>Host 헤더에서 온 서버 이름처럼 클라이언트가 정하는 값은 요청마다 바꿔 보내면 같은 경로의 시계열이 계속 늘어나므로 남기지 않음<br>등록 경로가 없는 요청은 경로 속성 없이 집계 |
 | 제외 | 요청과 응답 크기 히스토그램은 보내지 않음<br>health 경로는 계측하지 않음 |
 | 전송 주기 | 60초 간격<br>누적 집계 |
 | 서비스와 인스턴스 | 리소스 속성 `service.name=manyak-ai`가 AMP의 `job` 라벨<br>`service.instance.id`는 프로세스 기동마다 새 UUID이며 `instance` 라벨이 됨<br>다른 리소스 속성은 라벨로 올리지 않음 |
@@ -193,7 +194,7 @@ Sentry 일일 보고는 `daily-sentry-report` 스킬에 정의되어 있다. ([d
 | 이미지 결과 `child_image` | URL, 이미지 데이터와 인물 이름 제외 |
 | Sentry 요청·지역변수 | 전송 전 요청 정보 제거<br>지역 변수와 기본 개인정보 전송 안 함 |
 | 인프라 추적 | 등록 경로 템플릿과 허용된 기술 속성만 전송<br>본문, URL, 헤더, 예외 메시지, 이벤트와 링크 제외 |
-| 인프라 지표 | 계측 기본 속성만 기록<br>본문, 쿼리 문자열과 등록되지 않은 실제 경로 제외 |
+| 인프라 지표 | 지표별 허용 속성만 기록 ([7-3-4 지표](#7-3-4-지표))<br>본문, 헤더, 쿼리 문자열과 등록되지 않은 실제 경로 제외 |
 | 로그 | 구조화된 식별자와 메시지·스택 기록<br>JSON 포매터 자체에는 원문을 제거하는 공통 정제 기능 없음 |
 
 <br>
@@ -206,7 +207,8 @@ Sentry 일일 보고는 `daily-sentry-report` 스킬에 정의되어 있다. ([d
 | Langfuse 표본 비율 | `LANGFUSE_SAMPLE_RATE`, 기본값 `1.0`, 허용 범위 0~1<br>추적 ID 기반으로 요청과 하위 호출의 선택을 맞춤 |
 | 인프라 추적 활성화 | `MANYAK_TRACING_ENABLED=true`와 유효한 `MANYAK_OTLP_TRACES_ENDPOINT`<br>기본값은 비활성 |
 | 인프라 표본 정책 | 부모 표본 결정을 따름, 부모 없으면 수집<br>Langfuse 표본 결정과 분리 |
-| 인프라 지표 활성화 | `MANYAK_OTLP_METRICS_ENABLED=true`와 유효한 `MANYAK_OTLP_METRICS_ENDPOINT`<br>주소는 `http`나 `https`의 전체 URL이고 호스트가 있으며 사용자 정보와 fragment가 없음<br>기본값은 비활성 |
+| 인프라 지표 활성화 | `MANYAK_OTLP_METRICS_ENABLED=true`와 유효한 `MANYAK_OTLP_METRICS_ENDPOINT`<br>기본값은 비활성 |
+| 인프라 수집 주소 | 추적과 지표 주소에 같은 기준 적용<br>`http`나 `https`의 전체 URL이고 호스트가 있으며 포트가 0이 아님<br>사용자 정보, 쿼리 문자열과 fragment가 없음<br>쿼리를 막는 이유는 수집기에 연결하지 못할 때 exporter의 재시도 경고가 주소의 경로와 쿼리를 그대로 로그에 남기기 때문 |
 | Sentry 활성화 | `SENTRY_DSN` 설정<br>코드에는 `prod` 전용 활성화 가드 없음 |
 | Sentry 성능 추적 | `SENTRY_TRACES_SAMPLE_RATE`, 기본값 `0.0`<br>오류 이벤트 수집 비율과 다른 설정 |
 | 테스트 | 외부 관측 비활성화<br>가짜 관측 객체로 기록 내용 검사 |
