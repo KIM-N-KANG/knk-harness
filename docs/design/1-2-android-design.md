@@ -6,7 +6,7 @@
 | --- | --- |
 | 버전 | v0.8 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-27 |
+| 수정일 | 2026-10-28 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -87,7 +87,7 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | `CreationProgressAccess` | `common` 계약, `create` 구현. 제작 요약 관찰·폐기·새로고침(완성 요청 상태, 서버 초안 목록)만 노출 |
 | `StoryLikeUpdates` | `common` 계약, `home` 구현. 상세의 성공한 좋아요 수를 홈 목록으로 전달 |
 | `StoryDeletion` | `common` 계약, `studio` 구현. 상세 화면의 삭제와 목록 상태를 연결 |
-| `SignupOnboardingWriter` | `common` 계약, `my`의 초대 상태 구현. `auth`가 토큰 발급 응답(`COMPLETED`의 토큰 또는 가입 완료 응답)의 가입 결과를 전달 |
+| `SignupOnboardingWriter` | `common` 계약, `my`의 초대 안내와 `home`의 스토리 온보딩이 각자 `@IntoSet`으로 구현. `auth`가 토큰 발급 응답(`COMPLETED`의 토큰 또는 가입 완료 응답)이 신규 가입이면 등록된 기록기를 모두 부름 |
 | `MemberConsent` | `common` 계약, `legal`의 `ConsentRepositoryImpl` 구현. 서버에서 확인한 필수 동의 완료 상태를 분석 식별과 푸시 등록이 관찰 |
 | `SessionIdAccess` | `network` 포트, `app`이 `AnalyticsIdentity`에 연결. Amplitude의 현재 세션 ID를 조회하며 값이 없으면 헤더 생략 |
 | `SessionTokenAccess` | `network` 포트, `auth`의 `SessionTokenManager` 구현 |
@@ -126,6 +126,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
+- [신규 가입 온보딩](../spec/3-3-android-spec.md#신규-가입-온보딩)은 `home/onboarding`이 소유합니다. `StoryOnboardingStore`가 자기 DataStore 파일(`story-onboarding`)에 표시 하나를 두고 `UserScopedStore`로 로그아웃 정리에 참여하며, 읽기 실패는 "온보딩 없음"입니다. `RootViewModel.storyOnboardingPending`(읽기 전 null)이 메인 백스택의 루트를 `StoryOnboardingRoute` 또는 `MainTabsRoute`로 정하고, null인 동안 메인 그래프를 열지 않습니다. 그래프를 연 뒤 표시가 켜지면 셸만 있는 백스택일 때만 루트를 바꿉니다. 완료는 `app`의 `rememberOnboardingFinisher`가 루트 키만 `MainTabsRoute`로 바꿔 끼우고 탭을 고른 뒤 `RootViewModel.onStoryOnboardingFinished`로 완료 이벤트를 보내고 표시를 지웁니다. 같은 실행의 완료는 메모리에도 두어 저장 실패 뒤 화면 재생성이 온보딩으로 되돌리지 않고, 저장된 표시가 꺼지면 내립니다. 상세 엔트리의 채팅 진입도 이 동작을 거쳐 온보딩 위에서 연 상세의 채팅이 완료가 됩니다. `StoryOnboardingViewModel`은 `HomeRepository.publicStories`로 오리지널 채팅순 첫 페이지를 읽고, 가운데 순번(`selectedIndex`), `ChatStarter`의 single-flight 채팅 생성, 1초 머문 카드의 노출 기록을 소유합니다. 캐러셀은 `HorizontalPager`에 큰 페이지 수를 주고 가운데에서 시작하며 `rememberPagerState`가 위치를 저장합니다. 가운데 순번은 페이지가 절반을 넘긴 `currentPage`로 올려 넘기는 도중의 채팅 시작도 보이는 카드로 시작합니다. 카드는 상세 주변 인물 카드와 같은 틀로 위에 `StoryCover`, 구분선 아래 글자 영역을 두며 카드 폭은 글자 영역 높이를 뺀 남은 높이로도 제한하고, 옆 카드는 `graphicsLayer`로 가운데 쪽 변을 기준점 삼아 줄이고 흐립니다. 카드의 옅은 그림자도 같은 층의 높이(`shadowElevation`)로 그려 반투명 층이 그림자를 자르지 않게 합니다. 창 높이가 낮으면(가로 화면) 캐러셀 높이를 고정하고 화면을 세로 스크롤해 카드가 남은 높이만큼 줄어들지 않게 합니다([A-083](../adr/1-3-android-adr.md#a-083-신규-가입-온보딩을-메인-백스택의-루트로-두고-완료를-기기-안-회원-귀속-표시로-판정하기)).
 - 홈 카드·제작 `MyStoryCard`·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를 그리고, 좁은 표지에서는 배지 단위로 줄을 바꿉니다. `MyStoryCard`의 메타는 `StorySummary.visibility`(공개 범위)와 제작일을 그립니다. 목록과 상세가 같은 `common`의 `StoryVisibility`를 쓰며 알려진 값만 보관하고 없으면 그 항목만 생략합니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 표지 위 겹침 요소는 상세 히어로 배지를 포함해 `StoryCover`가 `CoverOverlayScope.backdrop`으로 넘기는 흐림 원천을 `coverBackdrop`으로 잘라 깝니다([A-073](../adr/1-3-android-adr.md#a-073-표지-위-뱃지에-웹과-같은-배경-흐림을-graphicslayer로-적용하기)). 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 성공한 수는 `common`의 `StoryLikeUpdates`로 `HomeRepositoryImpl`에 전달합니다. 저장소의 replay 없는 `SharedFlow`를 `HomeViewModel`이 자신의 수명 동안 수집해 같은 카드만 갱신하며, 조회 중 수신한 변경은 해당 응답에 합쳐 늦은 응답의 덮어쓰기를 막습니다. 새 조회가 시작되면 임시 합산 값을 비워 서버 값을 다시 정본으로 씁니다.
 - 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
 - 상세의 페르소나 셀렉트는 `StoryPersonaControl`이 소유합니다. 내 페르소나 목록과 상세에서 만든 페르소나(`CreatedPersona`)는 `PersonaAccess`의 메모리 StateFlow를 관찰하고, 직접 고른 값은 컨트롤 안의 장부에 둬 고른 직후의 채팅 시작이 이벤트 채널보다 앞선 값을 읽습니다. 화면이 보일 때마다 목록을 다시 읽고, 목록에 없는 선택은 기본 주인공으로 돌아갑니다. "페르소나 생성하기"는 `ManyakSelectField`의 동작 항목(`ManyakSelectAction`)이며 `app`이 `PersonaCreateRoute(originStoryId)`를 쌓습니다. 생성에 성공하면 저장소가 그 스토리의 미리 선택을 남기고, 다른 주인공을 고르거나 채팅을 시작하면 지웁니다. 채팅을 시작할 때 고른 주인공은 직접 고른 값으로 굳혀, 백스택에 남은 상세가 채팅방에서 돌아왔을 때 같은 선택을 보입니다. 하단 CTA는 라벨 아래 `labelTiny` 한 줄로 고른 페르소나와 시작 상황을 요약하며, 두 줄이 하트 버튼과 같은 48dp 안에 들도록 버튼의 세로 안쪽 여백을 걷습니다.
