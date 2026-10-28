@@ -195,6 +195,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 생략<br>웹훅은 생략 |
 | `session_id` | 정수 문자열일 때만 포함<br>웹훅은 생략 |
 | `request_id`, `is_logged_in` | 요청 문맥<br>웹훅은 주문 소유자에게 붙이는 회원 이벤트이므로 `is_logged_in`은 `true` |
+| `platform`, `app_version` | ACCOUNT와 같음 ([ACCOUNT 5-4-9 분석 이벤트](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-분석-이벤트))<br>웹훅은 헤더가 없어 생략 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `rewarded` | 이번 요청으로 출석 보상을 적립했으면 `true` |
 | `amount` | 이번 요청으로 적립한 이프 |

@@ -18,10 +18,11 @@
 | `days` | 개요, 분석 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
 | `tab` | 지표 화면 | 탭 값 |
 | `campaign` | 유입 분석 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
-| `segment` | 유입 분석 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
-| `segment` | 사용자, 전환, 기능과 품질 | 세션, 채팅 턴 도달률, 기능 사용과 안정성, 채팅 옵션 비중의 대상 `all`, `guest`, `member`<br>화면마다 따로 읽고 기능과 품질 화면의 두 탭은 같은 값을 함께 씀 |
+| `adSegment` | 유입 분석 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
+| `platform` | 지표 화면 | 플랫폼 `all`, `web`, `android`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
+| `segment` | 지표 화면 | 대상 `all`, `guest`, `member`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
 | `storyId` | 유입 분석, 전환 | 대상 스토리 공개 식별자<br>전환에서는 상세 진입 채팅 카드의 입력 값 |
-| `platform` | 사용자, 전환, 기능과 품질 | 그 화면에서 플랫폼을 고르는 탭의 값<br>전환에서는 플랫폼을 받는 세 퍼널 카드에 함께 적용 |
+| `cohort` | 사용자 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
 | `direction` | 이프 내역 | `granted`, `spent` |
 | `date` | 이프 내역 | 기록일 |
 | `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출, 회원 목록 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt`<br>회원 목록의 `sort`는 `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`이고 없으면 `createdAt` |
@@ -35,8 +36,10 @@
 | 기간 쿼리 우선순위 | 알려진 `range`가 있으면 그 범위<br>없고 `from`과 `to`가 올바르면 그 범위<br>둘 다 없으면 탭의 기본 기간 |
 | 기간 선택 | `range`, `from`, `to`, `days`를 지우고 새 값만 씀 |
 | 탭 전환 | `tab`만 바꾸고 기간과 조건은 유지 |
+| 지표 화면 이동 | 사이드바의 지표 화면 메뉴는 지금 URL의 `platform`과 `segment`를 붙여 엶<br>기간과 그 밖의 조건은 붙이지 않음 |
+| 지원하지 않는 구분 | 그 탭이 쓰지 않는 `platform`과 `segment`는 읽지 않고 URL에서 지우지도 않음 |
 | 광고 캠페인 변경 | `campaign`을 바꾸고 `range`, `from`, `to`, `storyId`를 지움 |
-| 잘못된 값 | 알 수 없는 `tab`, `platform`, `segment`는 기본값으로 화면을 그림<br>예전 링크의 `funnel`은 읽지 않고 URL에서 지우지도 않음<br>알 수 없는 삭제 필터 값은 제외로 그리고 요청에 싣지 않음 |
+| 잘못된 값 | 알 수 없는 `tab`, `platform`, `segment`, `adSegment`는 기본값으로 화면을 그림<br>예전 링크의 `funnel`은 읽지 않고 URL에서 지우지도 않음<br>예전 링크의 `segment=ads`와 `segment=nonAds`는 광고 구분으로 읽지 않음<br>알 수 없는 삭제 필터 값은 제외로 그리고 요청에 싣지 않음 |
 | 뒤로 가기 | 쿼리 변경은 기록에 남아 뒤로 가기로 앞의 선택으로 돌아감<br>`days` 교체만 기록에 남기지 않음 |
 
 <br>

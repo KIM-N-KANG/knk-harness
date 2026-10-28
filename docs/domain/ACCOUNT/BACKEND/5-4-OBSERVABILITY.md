@@ -190,6 +190,8 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `device_id_hash` | 이벤트 프로퍼티는 디바이스 해시<br>헤더가 없으면 생략 |
 | `session_id` | 정수 문자열일 때만 포함 |
 | `request_id`, `is_logged_in` | 요청 문맥 |
+| `platform` | 요청에 `X-Manyak-App-Version` 헤더가 있으면 `Android`<br>헤더가 없으면 생략 |
+| `app_version` | `X-Manyak-App-Version` 헤더 값<br>1~50자가 아니거나 헤더가 없으면 생략 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>검증 실패는 `validation`, 공개 키 조회와 연결 실패는 `network`, 검증 통과 뒤 저장 실패는 `server` |
 | `is_rejoined` | 이번 로그인에서 끊긴 연동을 재사용해 재가입 계정을 만들었으면 `true` |
@@ -199,6 +201,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `reason` | 초대 코드 제출 거절 사유<br>`invalid_format`, `not_found`, `self_code`, `already_redeemed`, `inviter_withdrawn`, `inviter_unavailable`, `inviter_newer` |
 
 - `device_id` 원본은 클라이언트가 같은 Amplitude 프로젝트에 직접 보내는 기기 식별자와 같은 값이다. 서버 이벤트는 이 값으로 클라이언트 이벤트와 같은 기기 프로필에 병합된다. 분석 이벤트 경로에서는 원본을 요청 처리 중 Amplitude 발송까지만 전달하고 저장하지 않는다. 동의 대기의 원문 보관은 보존 요구사항의 기존 규칙을 따른다([2-5 데이터 보존](2-REQUIREMENTS.md#2-5-데이터-보존)). 알림 서비스가 호출하는 내부 API에는 원본 헤더가 없어 헤더 없음 규칙을 따른다.
+- `platform`과 `app_version`은 이벤트 프로퍼티가 아니라 Amplitude 이벤트의 기기 필드다. 앱 SDK가 이벤트를 늦게 올려도 앱 요청의 서버 이벤트가 Android로 잡힌다. 웹은 헤더를 보내지 않아 생략하고 Amplitude가 그 사용자에게 아는 플랫폼을 따른다. 이 규칙은 CHAT, STORY, PAYMENT의 서버 이벤트에도 같다.
 - 로그인 성공 이벤트는 소셜 인증 완료, 동의 완료, 호환 로그인에서 요청당 1회다. 동의 대기 단계에서는 발행하지 않는다.
 - 실패 이벤트는 서비스 판정 단계에 도달한 요청만 집계한다. 요청 형식 검증과 인증 단계에서 거절된 요청은 집계하지 않는다.
 - 이관 카운트의 합은 제출 총수와 같다. 제출 배열이 둘 다 비면 발행하지 않는다.

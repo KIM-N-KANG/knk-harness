@@ -100,15 +100,18 @@
 | 턴 수 분포 | 현재 턴 0, 1, 4, 5, 6, 7, 50인 채팅 | `turns` 차트의 `0`, `1`, `4`, `5`, `6`, `7~9`, `50+`가 각 1이고 나머지 구간 0<br>항목 13개 |
 | 장르별 평균 턴 수 | 장르 `판타지, 미스터리` 스토리의 채팅 2개(턴 2, 4) | `판타지`와 `미스터리` 막대 모두 `value` 3, `chats` 2, `totalTurns` 6 |
 | 장르 순서와 소표본 | `던전` 채팅 1개(턴 465), `로맨스` 채팅 6개(턴 합 60) | 점 순서 `던전`(465, `chats` 1), `로맨스`(10, `chats` 6)<br>채팅이 1개인 장르도 응답에 있음 |
-| 게스트 비율 | 게스트 채팅 1, 회원 채팅 3 | `게스트` 25, `회원` 75 |
+| 게스트 비율 | 게스트 채팅 1(기기 A의 AI 호출 기록 있음), 회원 A의 채팅 2와 회원 B의 채팅 1 | `게스트` 25, `chats` 1, `users` 1<br>`회원` 75, `chats` 3, `users` 2 |
+| 게스트 사용자 수 | 기기 A가 AI를 호출한 게스트 채팅 2, 기기 B의 게스트 채팅 1, AI 호출 기록이 없는 게스트 채팅 1<br>기기 해시 없는 호출 기록만 있는 게스트 채팅 1 | `게스트`의 `chats` 5, `users` 2 |
+| 이관 채팅 소유자 | 게스트가 만든 뒤 회원 A에게 이관된 채팅 1 | `회원`의 `chats` 1, `users` 1<br>`게스트`의 `chats` 0 |
 | 회원별 채팅 | 회원 A 채팅 1, 회원 B 채팅 5 | `1개` 1, `5~9개` 1 |
 | 첫 메시지 시간 | 첫 사용자 메시지가 30초, 60초, 1000초인 채팅과 메시지 없는 채팅 | `평균` 45<br>`description`에 900초 초과 1과 입력 없음 1 |
 | AI 지연과 성공률 | `chat_response` 성공 2(지연 1초, 3초), 실패 1, 진행 중 1 | `ai-latency`의 `chat_response` 2<br>`ai-success`의 `chat_response` 66.67 |
 | 실시간 이미지 AI 지표 | `chat_image` 성공 2(지연 4초, 지연 없음 1), 실패 2, 팀 계정 채팅의 성공 1 | `ai-latency`의 `chat_image` 4<br>`ai-success`의 `chat_image` 50, 팀 계정 채팅 제외<br>두 차트 항목 순서가 `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
+| 제작 방식별 스토리 수 | 간편 제작으로 완성한 스토리 2, 일반 제작 스토리 1<br>삭제된 간편 제작 스토리 1, 제외 목록에 있는 공식 계정의 간편 제작 스토리 1, 범위 밖에 생성된 일반 제작 스토리 1 | `일반 제작` 1, `간편 제작` 2<br>항목 순서가 `일반 제작`, `간편 제작`이고 `characters` 바로 앞 |
 | 간편 제작별 입력 주변 인물 수 | 주변 인물 행 없는 세션, 입력한 주변 인물 2명 세션<br>공식 계정의 세션 1건 | `0명` 1, `2명` 1<br>공식 계정 세션 포함 |
 | 빈 자리 인물 제외 | 주변 인물 행 3개 중 이름만 있는 1개, 특징 태그만 연결된 1개, 이름, 성별, 태그가 모두 빈 1개 | `2명` 1<br>스토리 목록 `supportingCharacterCount=2`에 그 스토리 포함 |
 | 제작 세션 팀 제외 | 공식 계정이 아닌 제외 목록 회원의 세션 | 집계에서 제외 |
-| 차트 구역 | 분포 차트 8개 | `category`가 `users` 2개, `engagement` 3개, `content` 1개, `ai-quality` 2개 |
+| 차트 구역 | 분포 차트 9개 | `category`가 `users` 2개, `engagement` 3개, `content` 2개, `ai-quality` 2개 |
 | 막대 링크 | `turns` 차트 둘째 막대 | `link.list` `chats`, `params.turnBucket` `1`, `from`과 `to`가 응답의 `from`, `to`와 같음 |
 | 링크 삭제 필터 | 범위 안에 같은 턴 구간의 삭제된 채팅 1개와 삭제되지 않은 채팅 2개<br>그 구간 막대의 `link`로 목록 호출 | 모든 막대의 `link.params`에 `deleted` 없음<br>목록 `totalElements` 2이고 삭제된 채팅 없음 |
 | 링크 일치 | 건수 차트 막대의 `link`로 목록 호출(팀 계정과 삭제 행 없는 데이터)<br>`genre-depth`, `started-as`, `first-message` 막대의 `link`로 목록 호출<br>`ai-latency`, `ai-success` 막대의 `link`로 목록 호출 | 목록 `totalElements`가 막대 `value`와 같음<br>목록 항목이 막대 산식의 대상과 같고 그 항목으로 산식을 계산하면 `value`와 같음<br>목록이 조건에 맞는 호출 기록이 하나 이상 연결된 스토리나 채팅과 정확히 같음<br>AI 차트 값은 호출 단위라 목록 항목으로 재계산하지 않음 |
@@ -123,6 +126,7 @@
 | 공식 계정 미설정 | 설정값 빈 값 | `scope=original` 0건 |
 | 장르 필터 | `genre=판타지` | 장르 문자열에 판타지가 있는 스토리만 |
 | 태그와 인물 수 | 제작 세션으로 완성한 스토리와 일반 등록 스토리<br>세션에 빈 자리 인물 1개 포함 | 태그 배열과 빈 자리를 뺀 `supportingCharacterCount`<br>일반 등록은 빈 배열과 `null` |
+| 제작 방식 필터 | 제작 세션으로 완성한 스토리 1, 일반 등록 스토리 1<br>`creationMode=SIMPLE`, `GENERAL`, `simple` | 앞 스토리만, 뒤 스토리만, 400 |
 | 보류 상태 | 보류 제출본 있는 스토리<br>대기 제출본만 있는 스토리 | `HELD`<br>`APPROVED` |
 | 채팅 기간 | `chatFrom`, `chatTo` 안에 채팅 1건, 밖에 2건인 스토리와 기간에 채팅 없는 스토리 | `chatCount` 1, `totalTurns`는 그 채팅의 턴<br>채팅 없는 스토리 제외 |
 | AI 호출 필터 | `aiFeature=story_completion&aiStatus=FAILED` | 실패 기록이 연결된 스토리만 |
@@ -262,7 +266,7 @@
 | 누계 | 이틀 가입 4, 2 | `cumulativeSignups.all` 4, 6 |
 | 합계 | 이틀 DAU 100, 200과 신규 방문자 전체 10, 광고 7 | `activeUsersAverage` 150, `adsShare` 0.7 |
 | 추이 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 간편 제작 퍼널 | `days` 7 | 대역에 퍼널 조회 2회, 순서 모드와 `cs` 86400, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` 조건 |
+| 간편 제작 퍼널 | `days` 7 | 대역에 퍼널 조회 2회, 순서 모드와 `cs` 86400, `n=new`, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` 조건<br>1단계 `client_storyList_viewed`, 2단계 `client_storyCreate_viewed` |
 | 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 모든 단계의 사용자 수 0, 정상 응답과 값 저장 |
 | 퍼널 형식 오류 | `data` 없음, `data` `null`, 6단계 요청에 5단계 항목 | 503, `admin_analytics_fetch_failed`의 `reason` `parse_error`, 값 저장 안 함 |
 | 퍼널 세그먼트 차 | 1단계 전체 100, 광고 80 | `steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
@@ -320,6 +324,15 @@
 | D1 인덱스 회귀 | 신규 방문일이 오늘에서 10일 전인 코호트 배열<br>인덱스 0이 `count`와 `outof` 200, 인덱스 1(Day 0)이 `count` 199와 `outof` 200, 인덱스 2가 `count` 30과 `outof` 200<br>세 칸 모두 `incomplete` 아님 | `d1`은 인덱스 2를 읽은 0.15<br>인덱스 1의 0.995는 어느 필드에도 없음 |
 | 리텐션 요약 | 고정 시계 KST 10-26, 범위 10-21~10-23<br>인덱스 4(Day 3)가 10-21 코호트는 `count` 1과 `outof` 10, 10-22 코호트는 `count` 9와 `outof` 30, 10-23 코호트는 `count` 5와 `outof` 5 | `summary.d3` 0.25<br>10-23 코호트의 `d3`은 10-26이 끝나지 않아 `null`이고 요약에 들지 않음 |
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
+| 리텐션 가입자 | `days` 7, `cohort=signup` | 대역에 리텐션 조회 6회, 시작 이벤트는 플랫폼마다 구글과 카카오 로그인 성공에 `is_new_user` `true` 필터, 복귀 `_active`, 예산 계수기 336 증가, 응답 `cohort` `signup` |
+| 가입자 배열 합 | 오늘에서 20일 전 코호트의 같은 플랫폼 두 배열<br>구글은 인덱스 0의 `count`와 `outof` 3, 인덱스 2의 `count` 1과 `outof` 3<br>카카오는 인덱스 0의 `count`와 `outof` 2, 인덱스 2의 `count` 1과 `outof` 2, 인덱스 3만 `incomplete` | `users` 5, `d1` 0.4<br>`d2` `null` |
+| 리텐션 채팅 시작자 | `days` 7, `cohort=first-chat` | 대역에 리텐션 조회 3회, 시작 이벤트 `server_chat_aiMessage_processed_succeeded`에 `turn_number` `"1"`과 `is_regenerated` `false` 필터, 복귀 `_active`, 예산 계수기 168 증가 |
+| 시작 집단 저장 키 | 방문자 코호트가 저장된 범위에 `cohort` 생략, `cohort=visitor`<br>같은 범위에 `cohort=first-chat`<br>`cohort=member` | 두 요청 모두 대역 호출 없음, 응답 `cohort` `visitor`<br>다른 저장 키라 새로 조회<br>400 |
+| 세션 길이 분포 | `days` 7, `segment` 생략 | 대역에 세션 길이 조회 21회(날짜마다 전체, Web, Android), 요청마다 `start`와 `end`가 같은 날짜, 구간 매개변수 없음, `s`는 평균 세션 길이와 같은 조건, 예산 계수기 224 증가, 평균 세션 길이 조회 없음 |
+| 세션 길이 합과 중앙값 | 이틀의 `all` 구간별 세션 수 `[2,1,1,0,0,0,0,0,0]`, `[1,1,2,1,0,0,0,0,0]`<br>하루 `[5,5,0,0,0,0,0,0,0]`<br>하루 모두 0 | `sessions` `[3,2,3,1,0,0,0,0,0]`, `totalSessions` 9, `medianBin` 1<br>`medianBin` 0<br>`totalSessions` 0, `medianBin` `null` |
+| 세션 길이 구간 | 대역 `xValues`가 기본 구간 9개<br>10개이거나 경계가 다름 | `bins`의 `fromSeconds`와 `toSeconds`가 0, 3, 10, 30, 60, 180, 600, 1800, 3600과 3, 10, 30, 60, 180, 600, 1800, 3600, 86400<br>저장하지 않고 `admin_analytics_fetch_failed`의 `reason` `parse_error` |
+| 세션 길이와 평균 분리 | 대역이 세션 길이 조회에만 500 | 세션 길이 분포는 503, 평균 세션 길이 응답은 정상이고 그 키에 쿨다운 없음 |
+| 세션 길이 대상 | `days` 7, `segment=member` | 21회의 `s`에 `user_id` `is not` `(none)` 조건, 예산 계수기 308 증가, `segment` 생략 때와 다른 저장 키 |
 | 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `user_id` 조건 없음, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |
 | 세션 대상 | `days` 7, `segment=member`<br>`segment=guest`<br>`segment=visitor` | 세션 조회 3회의 `s`에 `{"prop":"user_id","op":"is not","values":["(none)"]}`가 더해지고 예산 계수기 308 증가, `segment` 생략 때와 다른 저장 키<br>같은 조건의 `op`가 `is`<br>400 |
@@ -333,7 +346,7 @@
 | 플랫폼 준비 중 | 예산이 3일치만 남은 7일 요청 | 200, 7일 모두 DB 값, 최근 3일만 `signupsByPlatform` 값, 나머지 4일은 `signupsByPlatform` `null`이고 `pendingDates`에 있음 |
 | 플랫폼 시간 한도 | 빈 저장소, 대역이 신규 가입자 플랫폼 조회마다 2초씩 늦게 응답<br>같은 상태에서 채팅 턴 도달률과 채팅 옵션 비중 요청 | 5초 안에 200, DB 값 정상, 받은 조회 값만 저장, 받지 못한 날짜는 `signupsByPlatform` `null`과 `pendingDates`, `admin_analytics_fetch_failed`의 `reason` `timeout`, 그 키에 60초 쿨다운<br>두 엔드포인트도 5초 안에 200이고 플랫폼 값만 `null`과 `pendingDates` |
 | 플랫폼 사용 불가 | 대역 500, 저장 값 없음<br>자격 증명 빈 값 | 두 경우 모두 200, DB 값은 정상, 모든 날짜가 `pendingDates`, `platformAsOf` `null`<br>대역 500이면 `admin_analytics_fetch_failed` |
-| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` |
+| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계와 2단계가 `client_storyList_viewed`, `client_storyCreate_viewed`이고 다른 퍼널은 `n=active` |
 | 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |
 | 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `country`와 `platform` `Android`, `user_id` 조건 없음<br>400 |
@@ -347,11 +360,16 @@
 | 플랫폼 도달 값 | 웹의 턴 1 이벤트 이틀 합 10, 턴 5 합 4, 턴 50 합 0<br>앱·국내 턴 1 합 20, 턴 5 합 10<br>플랫폼 없음 모두 0 | `web` `chats` 10, 턴 5 `rate` 0.4<br>`all` `chats` 30, 턴 5 `chats` 14<br>`unknown` `chats` 0과 모든 `rate` 0 |
 | 플랫폼 도달 1 초과 | 범위 안 턴 1 이벤트 2, 턴 2 이벤트 3 | 턴 2 `rate` 1.5 |
 | 플랫폼과 DB 분리 | `segment=member`, DB에 게스트 채팅 1개와 회원 채팅 1개 | `segments` 세 항목은 `segment` 생략 때와 같음<br>대역 500이면 200, `platforms` `null`, `segments`와 `guestToMember`는 정상 |
-| 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 12회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 7개), `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
-| 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 앱·국내 12회와 앱·해외 로그인 12회, 응답 값은 두 묶음의 합<br>Android 외 12회와 앱 두 묶음 24회, 응답 값은 세 묶음의 합 |
-| 기능 사용 대상 | `days` 7, `platform=all`, `segment=guest`<br>`platform=all`, `segment=member` | Android 외와 앱·국내 24회만 보내고 모든 이벤트 필터에 `user_id` `is` `(none)`, 앱·해외 로그인 묶음은 조회 없이 0<br>Android 외와 앱·국내 24회에 `user_id` `is not` `(none)` 필터, 앱·해외 로그인 12회는 `segment` `all`과 같은 저장 키라 저장 값이 있으면 다시 받지 않음 |
+| 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 11회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 6개), `client_storyCreate_completeError_shown` 조회 없음, `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
+| 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 앱·국내 11회와 앱·해외 로그인 11회, 응답 값은 두 묶음의 합<br>Android 외 11회와 앱 두 묶음 22회, 응답 값은 세 묶음의 합 |
+| 기능 사용 대상 | `days` 7, `platform=all`, `segment=guest`<br>`platform=all`, `segment=member` | Android 외와 앱·국내 22회만 보내고 모든 이벤트 필터에 `user_id` `is` `(none)`, 앱·해외 로그인 묶음은 조회 없이 0<br>Android 외와 앱·국내 22회에 `user_id` `is not` `(none)` 필터, 앱·해외 로그인 11회는 `segment` `all`과 같은 저장 키라 저장 값이 있으면 다시 받지 않음 |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
+| 간편 제작 실패율 | 10-21에 받은 `STORY_COMPLETION` 요청 `COMPLETED` 3, 회원 `FAILED` 1, 게스트 `FAILED` 1, `PENDING` 1, 팀 계정 회원 `FAILED` 1과 `STORYLINE_GENERATION` `FAILED` 1 | 10-21 `storyCompletion`의 `requests` 5, `failed` 2, `failureRate` 0.4 |
+| 실패 뒤 재시도 | `FAILED`였던 요청이 같은 `request_id`로 다시 실행돼 `COMPLETED` | 그 요청은 완료로 셈 |
+| 요청 없는 날 | 범위 안 하루에 완성 요청 없음 | 그 날짜 항목이 있고 `requests` 0, `failureRate` `null` |
+| 실패율 조건 무관 | 같은 범위에 `platform=web`, `segment=guest`<br>`daily`의 날짜 하나가 `pendingDates` | `storyCompletion`은 `platform=all`, `segment=all`과 같음<br>`storyCompletion`은 그 날짜를 포함한 범위의 모든 날짜 |
+| 실패율과 사용 불가 | 기능 사용의 Amplitude 값이 한 날짜도 없음 | 503, `storyCompletion` 없음 |
 | 기능 사용 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | 모델별 턴 수 | 10-21 AI 응답: 메시지 `model_code` `AURORA` 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 채팅의 `LITE` 3개, 삭제된 채팅의 `LITE` 1개, 채팅 모델이 `AURORA`인 게스트 채팅의 `LITE` 1개, `model_code`가 `NULL`인 1개, 팀 계정 채팅의 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 5, "UNRECORDED": 1}`<br>합 8이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
@@ -432,7 +450,7 @@
 | 저장 실패 | 저장 값이 없는 날짜를 받는 갱신에서 upsert 예외 | 10초 안에 끝난 갱신을 기다린 요청은 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청이 시작한 갱신에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |
 | 새벽 배치 시작 | 고정 시계 KST 02:55와 03:00에 배치 실행 | 02:55는 새벽 배치 조회 없음<br>03:00부터 기본 지표 키의 어제 날짜 조회 |
-| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인 추이, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜와 확정 전 리텐션 코호트만 조회<br>퍼널, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member` 조회 없음 |
+| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션과 세션 길이 분포, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인 추이, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜와 방문자의 확정 전 리텐션 코호트만 조회<br>퍼널, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member`, 리텐션의 가입자와 채팅 시작자 조회 없음 |
 | 새벽 배치 리텐션 기간 | 03:00 실행, 확정 전 코호트 D-33과 D-34가 오늘 받은 값 없음 | 새벽 배치는 D-33까지 조회<br>D-34는 새벽 배치가 끝난 뒤 초기 백필이 조회 |
 | 새벽 배치 이어 받기 | 그날 새벽 작업 비용이 배치 몫 300을 넘음 | 첫 실행은 300 이하만 예약하고 `admin_analytics_backfill`의 `phase` `nightly`, `result` `partial`, `reason` `budget_share`<br>5분 뒤 실행이 남은 키를 받아 `done` |
 | 새벽 배치 완료 판단 | 그날 새벽 배치를 마친 뒤 실행 | 새벽 배치 조회 없이 초기 백필로 넘어감 |

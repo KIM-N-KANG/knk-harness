@@ -167,7 +167,7 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `params_hash` | char(64) | NOT NULL | 조회 정의의 매개변수를 정해진 순서로 직렬화한 JSON의 SHA-256 16진 문자열 |
 | `params` | jsonb | NOT NULL | 해시를 만든 매개변수 원문<br>운영자가 행의 의미를 확인하는 용도 |
 | `metric_date` | date | NOT NULL | KST 날짜<br>리텐션은 코호트 날짜 |
-| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>푸시 열람은 `utm_campaign` 값과 고유 사용자 수 객체 배열<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열<br>`langfuse_ai_cost`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체 배열이고 정상 조회에 데이터가 없던 날은 빈 배열 |
+| `value` | jsonb | NOT NULL | 일별 지표는 숫자 하나<br>푸시 열람은 `utm_campaign` 값과 고유 사용자 수 객체 배열<br>리텐션은 `count`, `outof`, `incomplete` 객체 배열<br>세션 길이 분포는 구간 9개의 세션 수 정수 배열<br>`langfuse_ai_cost`는 `traceName`, `model`, `costUsd`, `totalTokens` 객체 배열이고 정상 조회에 데이터가 없던 날은 빈 배열 |
 | `fetched_at` | timestamptz | NOT NULL | Amplitude나 Langfuse에서 받은 시각 |
 | `finalized_at` | timestamptz | | 확정한 시각<br>NULL이면 다시 받을 수 있음 |
 
@@ -212,11 +212,12 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `story_messages` | `chat_id`, `role`, `created_at`, `model_code` | 채팅 턴 수, 모델별 턴 수(`model_code`), 회원 목록과 상세의 누적 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
 | `stories` | `taken_down_at`, `takedown_reason`, `takedown_reason_detail` | 스토리 목록과 상세의 공개 중단 표시 |
-| `story_creation_sessions` | `id`, `user_id`, `story_id`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수 |
+| `story_creation_sessions` | `id`, `user_id`, `story_id`, `status`, `created_at` | 제작 세션 차트, 스토리의 태그와 주변 인물 수, 스토리의 제작 방식 |
 | `story_creation_characters` | `id`, `creation_session_id`, `role`, `name`, `gender` | 입력한 주변 인물 수 |
 | `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |
 | `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
-| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용<br>`feature`는 CHAT이 기록하는 `chat_image`를 포함하고 AI 비용은 그 값을 장당 원가로 계산 |
+| `story_creation_requests` | `user_id`, `stage`, `status`, `created_at` | 간편 제작 실패율 |
+| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `device_id_hash`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용, 게스트 채팅의 사용자 수<br>`feature`는 CHAT이 기록하는 `chat_image`를 포함하고 AI 비용은 그 값을 장당 원가로 계산 |
 | `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 적립과 소모, 출석, 회원 이프 내역과 소모량, 채팅 소모량, 결제 전후 비교 |
 | `credit_orders` | `id`, `public_id`, `user_id`, `product_id`, `status`, `price_krw`, `credit_amount`, `completed_at`, `refunded_at`, `reversal_shortfall` | 결제 건수와 금액, 결제 내역과 상세, 회원 결제액 |
 | `story_submissions` | `story_id`, `status`, `held_at` | 스토리의 보류 상태 |

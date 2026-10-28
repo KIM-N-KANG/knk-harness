@@ -25,6 +25,7 @@
 | 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
 | 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |
 | 세션 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
+| 세션의 세션 길이 분포 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
 | 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
 | 전환 퍼널 | `GET /api/conversion/funnels/{funnel}` | [4-2-29 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-29-전환-퍼널) |
 | 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
@@ -60,11 +61,11 @@
 | 유입 분석의 캠페인 추이와 두 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 유입 분석 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
 | 유입 분석 유입 소스 | 기간만 |
-| 전환 퍼널 | 퍼널 다섯 개를 경로의 `funnel`마다 따로 동시에 요청<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 조건 줄의 값<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
-| 채팅 턴 도달률, 채팅 옵션 비중 | 기간과 `segment`<br>`segment`는 조건 줄의 `all`, `guest`, `member`이고 `all`이어도 보냄 |
-| 기능 사용과 안정성 | `platform`의 `all`, `web`, `android`<br>`segment`의 `all`, `guest`, `member`이고 `all`이어도 보냄 |
-| 사용자 세션 | 기간과 `segment`<br>`segment`는 `all`이어도 보냄 |
-| 리텐션 | 기간만<br>플랫폼은 응답의 세 항목 가운데 화면에서 고름 |
+| 전환 퍼널 | 퍼널 다섯 개를 경로의 `funnel`마다 따로 동시에 요청<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 고른 플랫폼이고 전체면 `web`<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
+| 채팅 턴 도달률, 채팅 옵션 비중 | 기간과 고른 대상의 `segment`<br>`all`이어도 보냄 |
+| 기능 사용과 안정성 | 고른 `platform`과 `segment`<br>`all`이어도 보냄 |
+| 사용자 세션과 세션 길이 분포 | 둘 다 기간과 고른 대상의 `segment`<br>`all`이어도 보냄<br>두 요청을 따로 동시에 보냄 |
+| 리텐션 | 기간과 `cohort`<br>`cohort`는 고른 시작 집단이고 `visitor`여도 보냄 |
 | 인프라 지표 | 기간만 |
 | DB 테이블 크기 | `limit=20` |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
@@ -75,6 +76,7 @@
 | 스토리 목록, 채팅 목록, 범위 목록의 삭제 필터 | 포함은 `deleted=include`<br>삭제된 스토리만과 삭제된 채팅만은 `deleted=only`<br>제외는 `deleted`를 보내지 않음<br>범위 목록은 `memberId`나 `storyId`와 함께 보냄 |
 
 - 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
+- 위 표에 `platform`이나 `segment`를 적지 않은 요청에는 그 쿼리를 싣지 않는다. 사용자 활동, 리텐션, 세션, 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼은 응답의 플랫폼 값에서, 채팅 턴 도달률의 서버 DB 대상은 `segments`에서 화면이 고른다. ([2-1-2 분석 화면 공통 요소](2-1-INFORMATION-ARCHITECTURE.md#2-1-2-분석-화면-공통-요소))
 - 기간 오류가 있거나 필요한 조건이 비어 있으면 요청을 보내지 않는다.
 
 <br>
@@ -83,8 +85,8 @@
 
 | 응답 값 | 웹의 처리 |
 |---|---|
-| `pendingDates` | 준비 중 알림과 차트 끊김<br>비어 있지 않으면 60초 뒤 같은 요청을 다시 보냄<br>신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중에서는 플랫폼별 값에만 적용하고 서버 DB 값은 모든 날짜를 그림 |
-| `platformAsOf` | 플랫폼별 카드, 차트, 표의 출처 툴팁 끝에 "{시각} KST 집계 기준"<br>`null`이면 시각을 표시하지 않음 |
+| `pendingDates` | 준비 중 알림과 차트 끊김<br>비어 있지 않으면 60초 뒤 같은 요청을 다시 보냄<br>신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중에서는 Amplitude 값에만 적용하고 서버 DB 값은 모든 날짜를 그림 |
+| `platformAsOf` | Amplitude 값 카드, 차트, 표의 출처 툴팁 끝에 "{시각} KST 집계 기준"<br>`null`이면 시각을 표시하지 않음 |
 | `todayActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
 | `monthlyActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
 | Amplitude 지표와 서버 DB 지표의 `asOf` | 탭 제목 아래에 KST 시각으로 "{시각} KST 집계 기준" |
@@ -92,9 +94,11 @@
 | 인프라 지표와 DB 테이블 크기의 `asOf` | 출처 툴팁의 "{받은 시각} KST"<br>캐시로 응답한 값이면 그 캐시를 만든 시각 |
 | 설치 지표의 `asOf` | Play 기준 날짜를 바꾸지 않고 "집계 기준 날짜 {날짜} (Play 기준 태평양 시간)" |
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |
-| `campaign`, `storyId`, `platform`, `segment` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 세션, 채팅 턴 도달률, 기능 사용과 안정성, 채팅 옵션 비중에서만 대상으로 표시하고 유입 분석의 광고 구분과 섞지 않음 |
+| `campaign`, `storyId`, `platform`, `segment`, `cohort` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 대상으로 표시<br>리텐션 응답에 `cohort`가 없으면 방문자로 표시 |
 | 신규 가입자 응답의 `signups.other` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
-| 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 플랫폼별 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
+| 기능 사용과 안정성의 `users.storyCompleteError` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
+| 기능 사용과 안정성의 `storyCompletion` | 응답에 없으면 간편 제작 실패율 차트 자리에 "준비 중"을 두고 재요청하지 않음 |
+| 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 Amplitude 값 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
 | 회원의 `turnCount`, `periodTurnCount` | 정보 구조의 누적 턴 표시 ([2-1-12 회원 목록과 상세의 누적 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-12-회원-목록과-상세의-누적-턴))<br>`periodTurnCount`가 `null`이면 기간 표시 없음 |
 | 스토리의 `takenDownAt`, `takedownReason`, `takedownReasonDetail` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김<br>`ETC`면 사유에 `takedownReasonDetail`을 함께 보임 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
 | 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-15 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-15-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |

@@ -37,6 +37,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 하려는 일 | 먼저 볼 곳 | 함께 볼 곳 |
 |---|---|---|
 | 분석 화면에 지표나 차트 추가 | [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md) | [2-3-3 계열 순서와 모양](2-3-UI-DESIGN-SYSTEM.md#2-3-3-계열-순서와-모양)<br>[3-1 계약](3-1-CONTRACT.md)<br>[5-1 검증](5-1-VERIFICATION.md) |
+| 탭의 플랫폼이나 대상 지원 변경 | [2-1-2 분석 화면 공통 요소](2-1-INFORMATION-ARCHITECTURE.md#2-1-2-분석-화면-공통-요소)의 플랫폼과 대상 | [3-1-2 보내는 쿼리](3-1-CONTRACT.md#3-1-2-보내는-쿼리)<br>[5-1 검증](5-1-VERIFICATION.md) |
 | 기간 상한이나 기본 기간 변경 | [2-1-2 분석 화면 공통 요소](2-1-INFORMATION-ARCHITECTURE.md#2-1-2-분석-화면-공통-요소) | [BACKEND 4-1-20 Amplitude 조회 공통](../BACKEND/4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)<br>[3-4 흐름](3-4-INTERACTION-FLOWS.md) |
 | 상태 문구 변경 | [4-1 오류 처리](4-1-ERROR-HANDLING.md) | [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md)의 화면 문구 |
 | 메뉴 추가 | [2-1-1 메뉴와 경로](2-1-INFORMATION-ARCHITECTURE.md#2-1-1-메뉴와-경로) | [2-5 상태](2-5-STATE-MANAGEMENT.md) |
