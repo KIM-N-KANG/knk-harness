@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.8 |
+| 버전 | v0.9 |
 | 작성일 | 2026-09-09 |
 | 수정일 | 2026-10-28 |
 | 대상 | manyak-android |
@@ -388,6 +388,8 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 분석 이벤트·식별자·수집 제한은 [분석 Spec](../spec/6-analytics.md)이 정본입니다. Android는 Amplitude와 Firebase Crashlytics를 사용하고 Firebase Analytics는 사용하지 않습니다.
 
 - 첫 이벤트 이전에 공용 device ID를 주입합니다. 로그인은 공개 사용자 ID, 로그아웃은 세션 정리 순서에 맞춰 사용자 해제와 device ID 교체를 수행합니다.
+- 사용자 속성(`setOnce`)도 이벤트와 같은 대기열을 타서 device ID 주입 뒤에 나갑니다.
+- `InstallReferrerReporter`는 앱 시작마다 기기 DataStore의 `install_referrer_reported` 키를 보고, 없을 때만 Play Install Referrer를 읽어 유입 귀속 속성을 보냅니다([분석 Spec §6-2](../spec/6-analytics.md#6-2-식별자-정책)). 조회 실패와 서비스 연결 끊김은 키를 남기지 않고 다음 실행에 다시 읽으며, Play 밖 설치(`FEATURE_NOT_SUPPORTED`)는 보낼 값 없이 완료로 남깁니다. 키는 device ID와 별개라 로그아웃의 device ID 교체 뒤에도 다시 보내지 않습니다.
 - Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 R8을 적용하고 빌드마다 mapping 파일을 Crashlytics에 올립니다. 빌드·매핑 상태는 [배포 Design](4-deployment.md#manyak-android-ci)에서 확인합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
 - 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계 조건은 분석 Spec을 따릅니다. reducer에 관측 호출을 넣지 않습니다.
 - breadcrumb는 Amplitude 어댑터에서 연결해 화면에서 중복 발화하지 않습니다. 지속 Crashlytics 키는 `screen_name`을 사용하고 개별 식별자는 breadcrumb로 연결합니다.
