@@ -168,7 +168,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 ### 약관 동의 게이트
 
-`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트가 `LegalConsentViewModel`을 먼저 만들고 `MemberConsentGate`에서 저장소의 완료 상태와 ViewModel의 `isSatisfied`를 함께 확인합니다. 확인 전에는 회원 그래프를 구성하지 않습니다. 가입 완료 뒤 회원 동의 조회 중에는 로그인 화면에 지연 진행 표시와 뒤로가기 로그아웃을 제공합니다. `LoginViewModel`은 회원 상태의 새 소셜 로그인을 거부합니다. 완료 후 회원 그래프의 `MemberOverlays`가 알림 권한 요청을 시작하고, 권한 응답 뒤 선택 동의 처리와 초대 코드, 광고 재질문을 순서대로 연결합니다. 동의 ViewModel을 루트 수명에서 유지해 화면 전환 시 선택 동의 답을 잃지 않습니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 회원 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. 가입 완료로 세션이 열려도 같은 조회로 다시 확인하므로 정지 회원은 기존 `FORBIDDEN` 상태로 갑니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
+`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트가 `LegalConsentViewModel`을 먼저 만들고 `MemberConsentGate`에서 저장소의 완료 상태와 ViewModel의 `isSatisfied`를 함께 확인합니다. 확인 전에는 회원 그래프를 구성하지 않습니다. 가입 완료 뒤 회원 동의 조회 중에는 로그인 화면에 지연 진행 표시와 뒤로가기 로그아웃을 제공합니다. `LoginViewModel`은 회원 상태의 새 소셜 로그인을 거부합니다. 완료 후 회원 그래프의 `MemberOverlays`가 알림 권한 요청을 시작하고, 권한 응답 뒤 선택 동의 처리와 초대 코드, 광고 재질문을 순서대로 연결합니다. 초대 코드 시트는 `MainNavDisplay`가 알리는 홈 탭 표시 여부(메인 백스택 맨 위가 `MainTabsRoute`이고 홈 탭을 고름)가 참일 때만 그립니다. 동의 ViewModel을 루트 수명에서 유지해 화면 전환 시 선택 동의 답을 잃지 않습니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 회원 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. 가입 완료로 세션이 열려도 같은 조회로 다시 확인하므로 정지 회원은 기존 `FORBIDDEN` 상태로 갑니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
 
 로그인 중 가입 대기는 `auth`가 소유합니다. `SessionRepositoryImpl`이 `POST /auth/social/{provider}`를 호출하고 `COMPLETED`면 기존처럼 토큰을 저장해 회원을 공개합니다. `CONSENT_REQUIRED`면 토큰을 만들지 않고 대기 코드는 저장소 필드에만, 필요한 항목과 요구 버전은 `SignupRepository.pendingSignup`(`PendingSignup`)에 둡니다. 대기 코드는 엔티티·로그·Crashlytics·분석·디스크에 싣지 않으며 프로세스가 재시작되면 사라집니다. 새 로그인을 시작할 때 이전 대기를 버리고, 대기를 공개할 때 직전 종료 안내를 지웁니다. `LegalConsentViewModel`은 세션 상태와 대기를 함께 보고 `SignedOut`에 대기가 있으면 `isSignup` 시트를, 회원이면 회원 동의 조회를 시작합니다. 루트는 `SignedOut`에서 `SignupConsentGate`로 로그인 화면 위에 같은 시트를 얹습니다. 가입 모드의 제출은 `completeSignup`이 `POST /auth/social/complete`(`X-Manyak-Consent-Token`)로 보내고, 성공하면 같은 인증 작업 안에서 토큰 저장과 회원 공개를 마친 뒤 대기를 비웁니다. 회원 공개가 대기 해제보다 먼저라 동의 ViewModel이 가입 취소로 오인하지 않고 선택 동의 답(`marketingAnswer`)을 회원 그래프로 넘깁니다. 401 `CONSENT_TOKEN_INVALID`와 400 `CONSENT_VERSION_MISMATCH`·`CONSENT_REQUIRED_MISSING`은 대기를 버리고 `SessionEndNotice.SIGNUP_EXPIRED`·`SIGNUP_OUTDATED`를 로그인 화면 안내로 남기며 소셜 인증을 자동으로 다시 시작하지 않습니다. 그 밖의 실패는 대기를 유지해 같은 시트에서 다시 제출합니다. 가입 모드의 로그아웃 버튼과 뒤로가기는 `cancelSignup`으로 대기만 버리고 로그아웃을 호출하지 않습니다. 광고 동의는 완료 본문에 싣지 않고 세션이 열린 뒤 기존 알림 경로로 저장합니다.
 
@@ -224,7 +224,7 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 `MyViewModel`은 프로필 갱신 중 상태를 보유하고, 캐시가 없는 조회 중에는 `ProfileHeader`가 연동 Chip 골격 두 개를 표시합니다. 응답의 연동 목록이 비어 있거나 조회가 실패하면 연동 버튼을 추측해 만들지 않습니다. 기존 프로필이 있으면 갱신 중에도 그 값을 유지합니다.
 
-`InviteOnboardingRepository.acknowledge()`는 닫기 기록의 저장 성공 여부를 반환합니다. DataStore의 I/O 실패는 false이며 코루틴 취소는 전파합니다. `InviteOnboardingViewModel`은 보상 지급 결과와 닫기 기록 결과를 별도로 처리해 `Redeemed(closeFailed)` 또는 `DismissFailed` Effect로 안내하고, 현재 실행의 dismissed 상태로 시트 재표시와 재제출을 막습니다. 서버 지급과 로컬 기록을 하나의 성공으로 취급하지 않습니다.
+`InviteOnboardingStore.pending`은 디스크의 안내 표시와 프로세스 메모리의 "이번 실행에 가입함"을 합쳐, 가입한 실행에서는 거짓이고 다음 실행부터 참입니다([A-086](../adr/1-3-android-adr.md#a-086)). `InviteOnboardingRepository.acknowledge()`는 닫기 기록의 저장 성공 여부를 반환합니다. DataStore의 I/O 실패는 false이며 코루틴 취소는 전파합니다. `InviteOnboardingViewModel`은 보상 지급 결과와 닫기 기록 결과를 별도로 처리해 `Redeemed(closeFailed)` 또는 `DismissFailed` Effect로 안내하고, 현재 실행의 dismissed 상태로 시트 재표시와 재제출을 막습니다. 서버 지급과 로컬 기록을 하나의 성공으로 취급하지 않습니다.
 
 ### 이프 정책 캐시
 
@@ -238,7 +238,7 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 ### 회원 알림함
 
-`notification/inbox`가 회원 알림 API, 분류별 목록과 커서, 읽음 상태, 화면을 관리합니다. 인증 클라이언트와 공통 오류 변환을 사용하며 본문 없는 읽음 성공은 `emptyBodyApiCall`로 처리합니다. 서버 목록과 읽음 기록을 디스크에 복제하지 않습니다.
+`notification/inbox`가 회원 알림 API, 분류별 목록과 커서, 읽음 상태, 화면을 관리합니다. 인증 클라이언트와 공통 오류 변환을 사용하며 본문 없는 읽음 성공은 `emptyBodyApiCall`로 처리합니다. 서버 목록과 읽음 기록을 디스크에 복제하지 않습니다. 카드 제목은 공지 목록과 같이 제목 글만 한 줄로 줄이고 안 읽음 점은 별도 글로 줄 끝에 둬 말줄임에 잘리지 않게 합니다.
 
 알림함 ViewModel은 선택한 분류와 두 분류의 목록을 유지합니다. 목록 조회와 읽음 요청은 같은 Mutex로 순서를 맞춰 이전 응답이 읽음 표시를 되돌리지 않게 합니다. 한 건 읽음은 요청 결과와 관계없이 목적지로 이동하고, 모두 읽음 실패는 두 분류의 읽음과 개수를 복원합니다. 화면 재생성은 읽음 요청을 다시 실행하지 않으며 탭별 스크롤은 저장 가능한 화면 상태입니다. 알림 내용은 회원 그래프 안의 ViewModel 수명에만 존재합니다.
 
@@ -376,6 +376,8 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 `CreateAdditionalInfoViewModel`이 화면에 들어올 때 토큰 없는 `SimpleStoryApi`로 `GET stories/art-styles`를 받아 `artStyles`(받기 전과 실패는 null)와 `artStylesFailed`로 둡니다. 조회는 Job 하나로 묶어 다시 시도 연타가 요청을 겹치지 않게 하고, 복원 스냅숏이 늦게 와도 먼저 받은 목록을 덮지 않습니다. 고른 code는 `selectedArtStyle`, 미선택 완성의 푸터 안내는 `showArtStyleRequired`가 들며, 화풍을 고르면 안내를 내립니다. 화풍은 진행 미러에 함께 실려 임시 저장되고, "다시 선택하기"와 스토리라인 재생성 결과는 화풍을 지우지 않습니다. 저장 형식과 requestId 재사용은 [A-072](../adr/1-3-android-adr.md#a-072-간편-제작-화풍을-기존-초안-json에-더하고-스토리라인을-다시-만들어도-남기기)를 참조합니다.
 
 그리드는 스크롤 목록 안이라 지연 그리드 대신 세 칸씩 나눈 줄로 그립니다. 칸은 `StoryCover`(미리보기가 없으면 기본 심벌) 위에 표지 뱃지와 같은 흐린 바탕(`coverBackdrop`)으로 이름을 얹고, `selectable`(RadioButton 역할)과 화풍 이름 하나만 읽히는 시맨틱을 둡니다. 고른 칸은 `designsystem`의 `selectionRing`으로 표지 바깥에 brand 테두리를 둘러 자리가 흔들리지 않게 하며, 스토리 상세 인물 썸네일이 같은 수식어를 씁니다.
+
+화풍 아래의 공개 스위치는 일반 제작 등록 탭과 같은 `create/presentation/component`의 `VisibilityField`를 씁니다. 값은 `CreateAdditionalInfoUiState.visibility`(기본 `PUBLIC`)가 들고 화풍과 함께 진행 미러(`CreationProgress.visibility`)에 실리며, 스토리라인 재생성과 "다시 선택하기"에도 남습니다. 완성 명령의 `visibility`로 보내고 requestId 재사용 조건에 더합니다. 저장 형식은 [A-087](../adr/1-3-android-adr.md#a-087)을 참조합니다.
 
 ### 편집 저장과 복원
 
