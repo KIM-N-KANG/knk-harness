@@ -434,6 +434,8 @@ COOP나 앱의 창 처리로 opener가 없을 때 완료 화면은 수동 복귀
 
 루트 `in-app-browser-observer`는 SSR에서 미감지 상태, 클라이언트에서 UA를 판정합니다. 진입을 차단하거나 자동 탈출하지 않습니다.
 
+루트 [in-app-scroll-anchor](../../../manyak-web/src/components/layout/in-app-scroll-anchor.tsx)는 `isInAppBrowser`가 참일 때 [in-app-browser](../../../manyak-web/src/lib/in-app-browser.ts)의 `anchorDocumentScroll`로 문서 스크롤 위치를 1px에 둡니다. 앱은 프레임 안 컨테이너가 스크롤해 문서 위치가 늘 0이고, 인앱 브라우저의 당겨서 닫기 제스처는 WebView 문서 위치만 봅니다. 그래서 목록을 내린 뒤 위로 스크롤해도 호스트 앱이 페이지 최상단에서 당긴 것으로 보고 브라우저를 끌어내립니다. `body`에 하단 1px 여분을 주고 문서 위치가 0으로 내려가면 1로 되돌립니다. iOS가 입력 칸을 키보드 위로 올리려 문서를 더 내린 위치는 되돌리지 않습니다. 안쪽 스크롤러는 `overscroll-contain`으로 문서에 스크롤을 넘기지 않으므로 바꾸지 않습니다.
+
 | UA | 외부 전환 시도 |
 | --- | --- |
 | `KAKAOTALK` | `kakaotalk://web/openExternal?url=…` |
