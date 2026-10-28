@@ -304,6 +304,7 @@ Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다
 | MY-INBOX-11 | P1 | 목록이 맨 위 | 아래로 당겼다 놓기 | 홈과 같은 표시자로 그 탭의 첫 페이지부터 다시 조회 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-INBOX-12 | P2 | 회원, 알림함 조회 성공 | 알림함 주소로 직접 진입, 홈 헤더 종 버튼으로 알림함 열기 | 두 진입 모두 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notifications/notifications` | [문서 열람과 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
 | MY-INBOX-13 | P1 | 활동에 `CREDIT_EXPIRY_REMINDER` 알림 1건(`deepLink` 이프 충전) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "이프 만료" 라벨. 탭하면 읽음을 기록하고 `deepLink`의 이프 충전 탭으로 이동 | 수동 | FE-SCREEN-015 카드, KNK-1842 |
+| MY-INBOX-14 | P1 | 활동에 `STORY_TAKEN_DOWN` 알림 1건(`deepLink` `/studio`) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "공개 제한" 라벨과 서버가 보낸 제목·본문. 탭하면 읽음을 기록하고 제작 탭으로 이동 | 수동 | FE-SCREEN-015 카드, KNK-1886 |
 
 Android(KNK-1827)는 미착수입니다.
 
