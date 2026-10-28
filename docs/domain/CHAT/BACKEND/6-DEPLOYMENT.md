@@ -137,7 +137,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 차감 행 연결 컬럼 | 메시지와 버전 이력의 `credit_transaction_id` 마이그레이션은 행 단위 선차감 대사 코드와 같은 릴리스에 포함<br>새 코드의 턴 차감은 참조 종류 `CHAT_TURN`으로 기록하고 행 단위 대사는 이 참조 종류만 다루므로 혼재 배포 중 구버전이 만든 `CHAT` 차감은 그룹 규칙으로 처리됨 | 수동 검토<br>참조 종류 규칙은 PAYMENT 세트의 대사 규칙 |
 | 채팅 설정 컬럼의 DB 기본값 | `story_chats.model_code`는 `NOT NULL DEFAULT 'LITE'`, `story_chats.long_response`는 `NOT NULL DEFAULT false`로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>전체 행 UPDATE 없음 | 수동 검토<br>롤링 교체 중과 이전 이미지 복구 시 구버전 채팅 생성이 실패하지 않음 |
 | 부분 유니크 인덱스 생성 | `story_messages`, `story_message_versions`의 행 수를 확인하고 마이그레이션 트랜잭션 안의 일반 `CREATE INDEX`로 적용<br>현재 운영 규모에서는 잠금 시간이 짧음 | 수동 검토<br>행 수가 수백만을 넘으면 `lock_timeout`을 두고 배포 시간대 조정 |
-| 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>되돌린 기간의 재생성은 요약을 비우지 않으므로 그 기간에 요약 끝 턴과 같은 턴을 재생성한 채팅에는 이전 응답을 담은 요약이 남을 수 있음 |
+| 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음<br>요약을 켠 뒤 이전 이미지로 되돌렸다가 다시 배포하면 설정을 끈 채 배포<br>구버전 태스크가 모두 내려간 뒤 설정을 켜기 전에 `UPDATE story_chats SET summary = NULL, summary_through_turn = 0 WHERE summary_through_turn > 0` 실행<br>최초 도입은 저장된 요약이 없어 일괄 비우기 해당 없음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>구버전은 재생성 때 요약을 비우지 않아 되돌린 기간의 재생성이 이전 응답을 담은 요약을 남길 수 있음<br>일괄 비우기 뒤 모든 채팅은 다음 요약 경계까지 원문으로 진행 |
 | S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
@@ -219,7 +219,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 출력 분량 | 출력 분량을 켠 채팅의 턴 1회, 턴 저장 로그의 `long_response`, AI 서버의 Langfuse 트레이스 입력 | AI가 받은 `long_response`가 `true` |
 | 정책값 응답 | `GET /credits/policies`의 `chatTurnCost` | 라이트(`LITE`)의 가격과 같음 |
 | 생성 중 상태 | 상세 응답과 Redis TTL | 생성 중 상태 표시와 종료 시 해제<br>종료 스트림 보관 후 만료 |
-| 대화 요약 | 켠 환경에서 10번째 턴을 넘긴 채팅, `ai_call_logs` `chat_compact`, 로그 `chat_compact_saved`, 다음 턴의 AI 서버 Langfuse 트레이스 입력 | 10번째 턴 뒤 요약 1회 저장<br>다음 턴 요청의 `summary`가 저장한 요약이고 `history`가 요약 범위 뒤 원문<br>끈 환경은 `chat_compact` 행 없음 |
+| 대화 요약 | 켠 환경에서 10번째 턴을 넘긴 채팅, `ai_call_logs` `chat_compact`, 로그 `chat_compact_saved`, `chat_compact_saved` 이후에 구성한 턴 요청의 AI 서버 Langfuse 트레이스 입력 | 10번째 턴 뒤 요약 1회 저장<br>`chat_compact_saved` 이후에 구성한 턴 요청의 `summary`가 저장한 요약이고 `history`가 요약 범위 뒤 원문<br>저장 전에 구성한 요청은 기존 요약과 원문으로 나가는 것이 정상<br>끈 환경은 `chat_compact` 행 없음 |
 
 <br>
 
@@ -233,5 +233,5 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 차감액이 기대와 다름 | 원장 `CHAT_TURN` 행의 `amount`, 턴 저장 로그의 `model_code`와 `turn_cost`, `chat_models` | 체험 턴은 0, 청구 모델의 행 가격과 비교<br>모델 변경 전에 시작한 턴은 이전 모델 가격 |
 | 턴이 큐에서 밀리거나 거부됨 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`, 스팬 `chat.turn.queue` | 백그라운드 작업 스레드 수와 큐 크기 조정, AI 지연 확인 |
 | 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 태스크 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
-| 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
+| 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
 | 환불 실패 알림 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`, Redis와 DB 상태 | 회원 차감은 원장에서 사후 환불<br>체험 복원 실패는 카운터 수동 보정 |

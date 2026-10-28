@@ -90,7 +90,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | `input_token_count`, `output_token_count`, `retry_count` | AI 응답 `meta`, 음수는 0<br>`null`이면 덮어쓰지 않음 |
 | `prompt_versions` | AI 응답 `meta`<br>`null`이면 덮어쓰지 않음 |
 | `latency_ms` | 호출 시작부터 `completed` 수신까지<br>선택지와 요약은 응답 수신까지 |
-| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED`<br>요약은 오류 종류와 무관하게 `AI_COMPACT_FAILED` |
+| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED`<br>요약은 AI 호출 실패에만 `AI_COMPACT_FAILED`<br>공백만 있는 요약은 AI 호출 실패 |
 | `sentry_event_id` | 본문 호출의 스트림 실패만 |
 
 <br>
@@ -115,8 +115,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
 | 대화 요약 저장 | 저장 확정 직후<br>`chat_compact_saved` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`summary_length`(요약 글자 수) |
-| 대화 요약 폐기 | 저장 조건을 통과하지 못함<br>`chat_compact_discarded` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`reason`(`REGENERATED`, `SUPERSEDED`) |
-| 대화 요약 실패 | 호출 실패, 시간 초과, 공백 요약, 저장 오류<br>`chat_compact_failed` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`error`는 예외 클래스 이름 |
+| 대화 요약 폐기 | 저장 조건을 통과하지 못함<br>`chat_compact_discarded` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`reason`(`CHAT_DELETED`, `REGENERATED`, `SUPERSEDED`) |
+| 대화 요약 실패 | 요약 시작 실패, 호출 기록 실패, AI 호출 실패, 요약 저장 실패<br>`chat_compact_failed` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>호출 기록이 없으면 `ai_call_log_id`는 `null`<br>`reason`(`START_FAILED`, `CALL_LOG_FAILED`, `AI_FAILED`, `SAVE_FAILED`)<br>`error`는 예외 클래스 이름 |
 | 대화 요약 무효화 | 재생성 저장이 저장된 요약을 비움<br>`chat_compact_invalidated` | `chat_id`, `story_id`, `turn_number`<br>`summary_through_turn`은 비운 요약의 끝 턴 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
 | 피드백 전달 실패 | WARN과 Sentry 메시지 | 예외 클래스 이름만 |
@@ -226,8 +226,9 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 상황 | 처리 |
 |---|---|
-| `ai_call_logs` `STARTED` 적재 실패 | 예외가 전파되어 AI 호출을 시작하지 않음<br>환불 처리 |
-| `ai_call_logs` 전이 저장 실패 | 예외가 전파됨<br>성공한 AI 호출도 스트림 실패로 끝남 |
+| `ai_call_logs` `STARTED` 적재 실패 | 예외가 전파되어 AI 호출을 시작하지 않음<br>환불 처리<br>대화 요약은 그 요약을 건너뛰고 `chat_compact_failed`(`CALL_LOG_FAILED`) 로그만 남김<br>대화 요약의 실패는 턴, 과금, 클라이언트 응답에 영향 없음 |
+| `ai_call_logs` 전이 저장 실패 | 예외가 전파됨<br>성공한 AI 호출도 스트림 실패로 끝남<br>대화 요약은 요약을 저장하지 않고 `chat_compact_failed`(`CALL_LOG_FAILED`) 로그를 남김 |
+| AI 호출 성공 뒤 대화 요약 저장 실패 | 호출 기록은 `SUCCEEDED` 유지<br>`chat_compact_failed`(`SAVE_FAILED`) 로그로 구분 |
 | 응답 `meta` 반영, 지표 기록 실패 | 무시하고 호출 결과 유지 |
 | 턴 번호 사후 반영 실패 | 예외가 전파됨<br>저장된 턴은 유지되고 스트림은 `error`로 끝남 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |

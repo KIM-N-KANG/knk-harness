@@ -58,7 +58,7 @@
 | 실행기 거부 | 스트림 실행기 포화<br>첫 POST의 수신 연결 상한 초과 | 환불 뒤 500으로 응답<br>스트림은 열리지 않음 |
 | 재연결 수신 불가 | 재연결 GET의 수신 연결 상한 초과<br>스트림 존재 확인이나 생성 중 키 확인의 Redis 오류 | 503 `SERVICE_UNAVAILABLE`로 응답<br>생성과 과금에 영향 없음 |
 | 수신 중 읽기 오류 | 수신 연결의 Redis Streams 읽기 실패 | 종료 이벤트 없이 연결 종료<br>생성과 저장에 영향 없음 |
-| 대화 요약 실패 | AI 요약 호출의 연결 실패, 시간 초과, 오류 응답<br>공백만 있는 요약<br>요약 저장의 DB 오류 | 오류 종류와 무관하게 기존 요약과 요약 끝 턴 유지<br>턴, 과금, 클라이언트 응답에 영향 없음<br>Sentry에 보내지 않음 |
+| 대화 요약 실패 | 비동기 작업 제출 거부와 범위 읽기 오류 같은 요약 시작 실패<br>호출 기록 적재 실패<br>AI 요약 호출의 연결 실패, 시간 초과, 오류 응답, 공백만 있는 요약<br>요약 저장의 DB 오류 | 오류 종류와 무관하게 기존 요약과 요약 끝 턴 유지<br>이미 커밋된 턴 결과에 전파하지 않아 턴, 과금, 클라이언트 응답에 영향 없음<br>Sentry에 보내지 않음<br>`chat_compact_failed` 로그의 `reason`으로 실패 단계 구분 |
 | 예상하지 못한 오류 | 어디서든 | 전역 핸들러가 500 고정 문구로 응답하고 Sentry 전송<br>백그라운드 작업 중 오류는 `error` 이벤트 |
 
 <br>
@@ -145,4 +145,4 @@
 | 생성 마감 초과 | Sentry 미전송<br>`chat_turn_timeout` 로그와 결과 지표 `failure`로 확인<br>AI 호출 기록(`ai_call_logs`)에는 `AI_STREAM_FAILED` 실패로 기록 |
 | 예상 가능한 4xx | Sentry 미전송<br>원인 예외가 있으면 클래스와 메시지를 한 줄로 WARN에 기록<br>원인 예외가 없으면 DEBUG에 기록 |
 | 환불 실패 | 지표와 구조화 로그로 기록 |
-| 대화 요약 실패 | Sentry 미전송<br>`chat_compact_failed` 로그와 AI 호출 기록(`ai_call_logs`)의 `AI_COMPACT_FAILED`로 확인 |
+| 대화 요약 실패 | Sentry 미전송<br>`chat_compact_failed` 로그의 `reason`으로 실패 단계 구분<br>AI 호출 실패만 AI 호출 기록(`ai_call_logs`)에 `AI_COMPACT_FAILED`로 기록 |

@@ -90,11 +90,15 @@
 | 요약과 턴 진행 | 요약 응답이 지연되는 동안 11번째 턴 이어쓰기 | 11번째 턴은 요약을 기다리지 않고 완료<br>AI 요청은 기존 요약과 원문으로 구성 |
 | 요약 요청 구성 | 요약 없는 채팅의 10번째 턴, 요약 끝 턴이 10인 채팅의 20번째 턴, 이미지 마커와 시스템 메시지가 있는 채팅 | `summary` 빈 문자열과 1~10번째 턴 원문, 저장한 요약과 11~20번째 턴 원문, 마커를 지우지 않은 원문과 시스템 메시지 제외<br>헤더의 턴 번호는 이번 요약 범위의 끝 턴 |
 | 요약 저장 | 10번째 턴 요약 성공 | `summary`와 `summary_through_turn=10` 저장<br>메시지 행 변화 없음<br>채팅의 `updated_at`과 목록 정렬 유지<br>`chat_compact_saved` 로그와 `ai_call_logs` `chat_compact` 행 |
-| 요약 적용 | 요약 끝 턴이 10인 채팅의 12번째 턴 이어쓰기, 같은 채팅에서 대화 요약을 끈 뒤 이어쓰기 | `summary`는 저장한 요약과 `history`는 11번째 턴만, `summary` 빈 문자열과 `history`는 첫 턴부터 전체 |
+| 요약 적용 | 요약 끝 턴이 10인 채팅의 12번째 턴 이어쓰기<br>같은 채팅에서 대화 요약을 끈 뒤 이어쓰기 | 12번째 턴은 `summary`가 저장한 요약이고 `history`는 11번째 턴만<br>끈 뒤에는 `summary` 빈 문자열이고 `history`는 첫 턴부터 전체 |
 | 요약 범위 고정 | 10번째 턴 요약 중 11번째 턴 저장 뒤 요약 성공 | `summary_through_turn=10`<br>다음 이어쓰기의 `history`는 11번째 턴부터 |
 | 진행 중 요청과 새 요약 | 12번째 턴의 AI 호출 중 요약 저장 | 12번째 턴 요청은 구성 시점의 요약과 원문 유지<br>13번째 턴 요청부터 새 요약 적용 |
-| 요약 실패 | AI 오류 응답, 300초 초과, 연결 실패, 공백만 있는 요약 | 기존 요약과 요약 끝 턴 유지<br>턴과 과금 영향 없음<br>`chat_compact_failed` 로그와 `ai_call_logs`의 `AI_COMPACT_FAILED`<br>Sentry 미전송 |
-| 실패 뒤 다음 요약 | 10번째 턴 요약 실패 뒤 11~19번째 턴 저장, 20번째 턴 저장 | 11~19번째 턴 뒤 요약 요청 없음, 20번째 턴 뒤 기존 요약과 1~20번째 턴 원문으로 요청 |
+| 요약 실패 | AI 오류 응답, 300초 초과, 연결 실패, 공백만 있는 요약 | 기존 요약과 요약 끝 턴 유지<br>턴과 과금 영향 없음<br>`chat_compact_failed`와 `reason=AI_FAILED`<br>`ai_call_logs`는 `FAILED`와 `AI_COMPACT_FAILED`<br>Sentry 미전송 |
+| 요약 호출 기록 적재 실패 | `ai_call_logs`의 `STARTED` 적재 실패 | AI 요약 호출 없음<br>`chat_compact_failed`와 `reason=CALL_LOG_FAILED`<br>턴 저장, `completed`, 과금 영향 없음 |
+| 요약 저장 실패 | AI 요약 호출 성공 뒤 요약 저장의 DB 오류 | `ai_call_logs`는 `SUCCEEDED` 유지<br>`chat_compact_failed`와 `reason=SAVE_FAILED`<br>기존 요약과 요약 끝 턴 유지 |
+| 요약 시작 실패 | 10번째 턴 커밋 뒤 비동기 작업 제출 거부<br>요약 범위 읽기의 DB 오류 | 10번째 턴은 저장, `completed`, 과금 모두 정상<br>`chat_compact_failed`와 `reason=START_FAILED`<br>AI 요약 호출 없음 |
+| 실패 뒤 다음 요약 | 10번째 턴 요약 실패 뒤 11~19번째 턴 저장<br>20번째 턴 저장 | 11~19번째 턴 뒤 요약 요청 없음<br>20번째 턴 뒤 기존 요약과 1~20번째 턴 원문으로 요청 |
+| 요약 중 채팅 삭제 | 요약 중 채팅 삭제 뒤 요약 성공 | 결과 폐기와 `reason=CHAT_DELETED`<br>요약과 요약 끝 턴 변화 없음 |
 | 늦게 끝난 이전 요약 | 10번째 턴 요약이 20번째 턴 요약보다 늦게 끝남 | 20번째 턴 요약 유지<br>10번째 턴 요약은 `chat_compact_discarded`와 `reason=SUPERSEDED` |
 | 요약과 설정 변경 | 요약 저장과 출력 분량 변경이 동시에 일어남 | 요약과 출력 분량이 모두 남음 |
 | 요약 비노출 | 요약이 저장된 채팅의 상세, 일괄 조회, 공유 열람 | 응답 형식 변화 없음<br>요약 본문과 요약 끝 턴을 싣지 않음 |
@@ -111,14 +115,14 @@
 | 선택지 | 마지막 턴, 현재 마지막 턴이 아닌 턴, 다른 채팅의 턴, 이미 있는 선택지, AI 실패 | 저장과 응답, 409, 409, AI 호출 없이 기존 값, 502 |
 | 선택지 경쟁 | AI 호출 중 재생성 커밋, 동시 호출 2건 | 409, 먼저 저장한 값 |
 | 요약 범위 안 대상의 재생성 | 요약 끝 턴이 10이고 턴이 10개인 채팅의 재생성 | `summary` 빈 문자열, `history`는 1~9번째 턴 원문, `user_input`은 10번째 턴 입력 |
-| 요약 범위 밖 대상의 재생성 | 요약 끝 턴이 10이고 턴이 12개인 채팅의 재생성 | `summary`는 저장한 요약, `history`는 11번째 턴만 |
+| 요약 범위 밖 대상의 재생성 | 요약 끝 턴이 10이고 턴이 12개인 채팅의 재생성 | `summary`는 저장한 요약이고 `history`는 11번째 턴만 |
 | 요약 범위 안 대상의 선택지 | 요약 끝 턴이 10이고 턴이 10개인 채팅의 선택지 생성 | `summary` 빈 문자열, `history`는 1~9번째 턴 원문, `user_input`과 `ai_output`은 10번째 턴<br>저장된 요약 유지 |
 | 요약 범위 밖 대상의 선택지 | 요약 끝 턴이 10이고 턴이 11개인 채팅의 선택지 생성 | `summary`는 저장한 요약, `history`는 빈 배열, `user_input`과 `ai_output`은 11번째 턴 |
-| 요약 중 재생성 | 10번째 턴 요약 중 10번째 턴 재생성 저장, 10번째 턴 요약 중 11번째 턴 재생성 저장 | 둘 다 요약 결과 폐기와 `reason=REGENERATED`<br>요약 끝 턴 유지 |
-| 저장된 요약 무효화 | 요약 끝 턴이 10이고 턴이 10개인 채팅의 재생성 성공, 같은 상황의 재생성 결과 폐기 | `summary`가 `NULL`, `summary_through_turn=0`, `chat_compact_invalidated` 로그, 요약 유지 |
+| 요약 중 재생성 | 10번째 턴 요약 중 10번째 턴 재생성 저장<br>10번째 턴 요약 중 11번째 턴 재생성 저장 | 둘 다 요약 결과 폐기와 `reason=REGENERATED`<br>요약 끝 턴 유지 |
+| 저장된 요약 무효화 | 요약 끝 턴이 10이고 턴이 10개인 채팅의 재생성 성공<br>같은 상황의 재생성 결과 폐기 | 성공은 `summary`가 `NULL`이고 `summary_through_turn=0`이며 `chat_compact_invalidated` 로그 기록<br>폐기는 요약 유지 |
 | 요약 범위 밖 재생성 | 요약 끝 턴이 10이고 턴이 12개인 채팅의 재생성 성공 | 요약과 요약 끝 턴 유지 |
 | 요약 저장 뒤 재생성 저장 | 10번째 턴 재생성의 AI 호출 중 10번째 턴 요약이 저장되고 재생성이 커밋됨 | 재생성 저장이 요약을 비움 |
-| 무효화 뒤 다음 요약 | 무효화 뒤 11~19번째 턴 저장, 20번째 턴 저장 | 11~19번째 턴 요청은 `summary` 빈 문자열과 첫 턴부터 원문, 20번째 턴 뒤 1~20번째 턴 원문으로 요약 요청 |
+| 무효화 뒤 다음 요약 | 무효화 뒤 11~19번째 턴 저장<br>20번째 턴 저장 | 11~19번째 턴 요청은 `summary` 빈 문자열과 첫 턴부터 원문<br>20번째 턴 뒤 1~20번째 턴 원문으로 요약 요청 |
 
 <br>
 
@@ -141,14 +145,15 @@
 | 피드백 전달 | 저장 성공, 저장 롤백, 웹훅 실패 | 커밋 후 1회 전달, 미전달, 201 유지 |
 | 오류 응답 형식 | 필수 입력이 빠진 400 | `status`, `code`, `message`, `path`, `details` 필드 포함 |
 | 정지 계정 | 생성, 이어쓰기, 재생성, 선택지 | 403과 스트림 미개시 |
-| AI 호출 기록 | 본문 성공과 실패, 선택지, 대화 요약 성공과 실패 | `chat_response`, `choice_generation` 행과 `meta`, 실패 코드<br>요약은 `chat_compact` 행과 요약 범위의 끝 턴, `meta` 없음, 실패 코드 `AI_COMPACT_FAILED` |
+| AI 호출 기록 | 본문 성공과 실패, 선택지, 대화 요약 성공과 실패 | `chat_response`, `choice_generation` 행과 `meta`, 실패 코드<br>요약은 `chat_compact` 행과 요약 범위의 끝 턴, `meta` 없음, AI 호출 실패에만 실패 코드 `AI_COMPACT_FAILED` |
 | 지표 | 이탈 뒤 저장 성공, AI 실패, 생성 마감 초과, 생성 중 거절 | `success`, `failure`, `failure`, `rejected`<br>`model_code` 태그는 청구 모델, 거절은 `none`<br>연결 종료만으로 `cancelled` 기록 없음 |
 | 분석 이벤트 | 저장 성공, 도달 턴, 저장 전 실패, 저장 후 전송 실패 | 성공 이벤트에 `model_code`, `turn_cost`, `long_response`, `ending_id` 포함, 실패 이벤트에 `model_code`와 `long_response`, 중복 실패 없음 |
 | 턴 저장 로그 | 체험 턴, 유료 `AURORA` 턴 | `ai_response_saved`에 `model_code=LITE`과 `turn_cost=0`, `model_code=AURORA`와 `turn_cost=50` |
 | 출력 분량 기록 | 출력 분량을 켠 채팅의 턴 저장과 재생성 저장 | `ai_response_saved`와 `ai_response_regenerated`에 `long_response=true` |
 | 기존 채팅 마이그레이션 | 모델 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `model_code=LITE`로 채워지고 NOT NULL 통과, 생략 삽입도 `LITE`로 성공 |
 | 기존 채팅의 출력 분량 마이그레이션 | 출력 분량 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `long_response=false`로 채워지고 NOT NULL 통과, 생략 삽입도 `false`로 성공 |
-| 요약 끝 턴 마이그레이션 | 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `summary_through_turn=0`으로 채워지고 NOT NULL 통과, 생략 삽입도 0으로 성공 |
+| 요약 끝 턴 마이그레이션 | 컬럼 추가 전 채팅 행<br>컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `summary_through_turn=0`으로 채워지고 NOT NULL 통과<br>생략 삽입도 0으로 성공 |
+| 롤백 뒤 요약 일괄 비우기 | 요약을 켠 뒤 이전 이미지로 되돌린 기간에 요약 끝 턴과 같은 턴을 재생성한 채팅<br>새 이미지를 설정을 끈 채 배포하고 일괄 비우기 실행 뒤 설정을 켬 | 모든 채팅의 `summary`가 `NULL`이고 `summary_through_turn=0`<br>다음 이어쓰기는 `summary` 빈 문자열과 첫 턴부터 원문<br>다음 요약 경계에서 다시 요약 |
 | 요약 호출 기록 제약 | `feature=chat_compact` 행 삽입 | 실제 PostgreSQL에서 `ai_call_logs`의 feature 제약 통과 |
 | 새 채팅의 모델 명시 | 기본 모델이 `AURORA`인 상태에서 채팅 생성 | 저장된 `model_code`가 DB 기본값 `LITE`가 아니라 `AURORA` |
 
