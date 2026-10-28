@@ -41,7 +41,7 @@ ai_call_logs`"]
 
 ### 5-4-2 상관관계 식별자
 
-상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 로그, Sentry, `ai_call_logs`는 같은 식별자 값을 사용한다. 스트림 실행기는 MDC와 현재 스팬을 백그라운드 작업 스레드에 복사한다.
+상관관계 필터는 모든 요청의 MDC에 다음 값을 기록한다. 로그, Sentry, `ai_call_logs`는 같은 식별자 값을 사용한다. 스트림 실행기는 MDC와 현재 스팬을 백그라운드 작업 스레드에 복사한다. 대화 요약은 요약을 일으킨 이어쓰기 요청의 MDC를 이어받는다.
 
 | MDC 필드 | 값 | 규칙 |
 |---|---|---|
@@ -57,7 +57,7 @@ ai_call_logs`"]
 | `chat_id`(공개 ID), `turn_number` | 턴 로그, `ai_call_logs`, Sentry 태그, 분석 이벤트, AI 서버 Langfuse metadata | 같은 턴의 본문 호출과 선택지 호출 |
 | `story_id`(공개 ID) | 턴 로그, `ai_call_logs`, Sentry 태그 | 스토리 |
 | `creation_id` | AI 호출 헤더 | 간편 제작부터 채팅까지의 과정 |
-| `ai_call_log_id` | `ai_response_saved`, `ai_response_regenerated`, `ai_stream_failed` 로그 | `ai_call_logs` 행 |
+| `ai_call_log_id` | `ai_response_saved`, `ai_response_regenerated`, `ai_stream_failed`, `chat_compact_saved`, `chat_compact_discarded`, `chat_compact_failed` 로그 | `ai_call_logs` 행 |
 | `model_code` | 턴 저장과 재생성 로그, 결과 지표 태그, 분석 이벤트 | 청구 모델의 코드<br>AI 요청 필드 `model_tier`와 같은 값<br>실제 LLM은 `ai_call_logs.model` |
 | `long_response` | 턴 저장과 재생성 로그, 분석 이벤트 | 턴 시작 시점의 출력 분량<br>AI 요청 필드 `long_response`와 같은 값<br>A/B 비교에서 짧은 응답 턴만 고르는 기준 |
 
@@ -75,22 +75,22 @@ ai_call_logs`"]
 
 ### 5-4-4 AI 호출 기록
 
-AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `SUCCEEDED`는 AI 호출 성공만 의미한다. 턴 저장 완료는 `turn_number IS NOT NULL`로 판정한다.
+AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종료 시 `SUCCEEDED` 또는 `FAILED`로 바꾼다. `SUCCEEDED`는 AI 호출 성공만 의미한다. 본문 호출의 턴 저장 완료는 `turn_number IS NOT NULL`로 판정한다. 대화 요약의 저장과 폐기는 로그 이벤트로 확인한다.
 
 | 필드 | CHAT 도메인의 값 |
 |---|---|
-| `feature` | `chat_response`, `choice_generation` |
+| `feature` | `chat_response`, `choice_generation`, `chat_compact` |
 | `caller_service` | `manyak-server` |
 | `request_id` | MDC 값, 없으면 `unknown`<br>128자로 자름 |
 | `session_id`, `device_id_hash` | MDC 값, `unknown`이면 `null`<br>128자로 자름 |
 | `story_id` | 스토리 내부 ID |
 | `chat_id` | 채팅 공개 ID |
-| `turn_number` | 저장이 확정된 뒤 반영<br>저장 전 실패는 `null` |
-| `provider`, `model` | AI 응답 `meta`, 컬럼 길이 상한에 맞춰 자름 |
+| `turn_number` | 본문과 선택지는 저장이 확정된 뒤 반영<br>저장 전 실패는 `null`<br>요약은 호출 시작 때 이번 요약 범위의 끝 턴 기록 |
+| `provider`, `model` | AI 응답 `meta`, 컬럼 길이 상한에 맞춰 자름<br>요약은 응답에 `meta`가 없어 `null` |
 | `input_token_count`, `output_token_count`, `retry_count` | AI 응답 `meta`, 음수는 0<br>`null`이면 덮어쓰지 않음 |
 | `prompt_versions` | AI 응답 `meta`<br>`null`이면 덮어쓰지 않음 |
-| `latency_ms` | 호출 시작부터 `completed` 수신까지 |
-| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED` |
+| `latency_ms` | 호출 시작부터 `completed` 수신까지<br>선택지와 요약은 응답 수신까지 |
+| `error_code` | AI 구조화 오류는 AI 코드<br>그 외 본문은 `AI_STREAM_FAILED`, 선택지는 `AI_CHOICE_FAILED`<br>요약은 오류 종류와 무관하게 `AI_COMPACT_FAILED` |
 | `sentry_event_id` | 본문 호출의 스트림 실패만 |
 
 <br>
@@ -114,6 +114,10 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 실행기 거부 | 백그라운드 작업 제출 실패나 첫 POST의 수신 연결 거부<br>`chat_turn_schedule_rejected` | `chat_id`, `story_id`, `error` |
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
+| 대화 요약 저장 | 저장 확정 직후<br>`chat_compact_saved` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`summary_length`(요약 글자 수) |
+| 대화 요약 폐기 | 저장 조건을 통과하지 못함<br>`chat_compact_discarded` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`reason`(`REGENERATED`, `SUPERSEDED`) |
+| 대화 요약 실패 | 호출 실패, 시간 초과, 공백 요약, 저장 오류<br>`chat_compact_failed` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`error`는 예외 클래스 이름 |
+| 대화 요약 무효화 | 재생성 저장이 저장된 요약을 비움<br>`chat_compact_invalidated` | `chat_id`, `story_id`, `turn_number`<br>`summary_through_turn`은 비운 요약의 끝 턴 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
 | 피드백 전달 실패 | WARN과 Sentry 메시지 | 예외 클래스 이름만 |
 
@@ -142,6 +146,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 실행기 포화 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`<br>스팬 `chat.turn.queue` |
 | 실시간 이미지 | 턴은 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음<br>업로드 위치 발급과 객체 확인 실패는 WARN 평문 로그 |
 | 피드백 전달 | WARN 평문 로그와 Sentry 메시지 |
+| 대화 요약 | `ai_call_logs` `feature=chat_compact`, 로그 `chat_compact_failed`, `chat_compact_discarded`<br>턴과 무관해 Sentry에 남지 않음 |
 
 <br>
 
@@ -195,9 +200,9 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 항목 | 기준 |
 |---|---|
 | 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 <br>이미지 환불과 이미지 체험 복원 실패는 지표에 없어 알림 대상이 아님 |
-| AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 Grafana가 Slack으로 알림<br>턴 본문과 선택지 호출이 모두 포함됨 |
+| AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 Grafana가 Slack으로 알림<br>턴 본문, 선택지, 대화 요약 호출이 모두 포함됨 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
-| CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
+| CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, 대화 요약 실패, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
 
 <br>
 
@@ -207,7 +212,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 데이터 | 현재 기록 방식 |
 |---|---|
-| 사용자 입력 원문, 프롬프트, AI 응답 본문 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>입력은 길이 구간만 기록<br>원문은 AI 서버의 Langfuse에서 관리 |
+| 사용자 입력 원문, 프롬프트, AI 응답 본문, 대화 요약 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>입력은 길이 구간만 기록<br>요약은 글자 수만 기록<br>원문은 AI 서버의 Langfuse에서 관리 |
 | 선택지 원문 | 로그에 싣지 않음 |
 | 실시간 이미지 | URL과 바이너리를 로그에 싣지 않음 |
 | 공유 토큰 | 분석 이벤트에 싣지 않음<br>요청 로그의 `endpoint`와 Sentry의 경로에는 열람 요청 경로가 그대로 남음 |
