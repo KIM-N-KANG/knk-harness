@@ -177,7 +177,7 @@ URL·접근 조건의 정본은 [웹 라우팅 표](../spec/3-2-web-spec.md#라�
 | 퍼널 X·브라우저 back | 예약 저장 flush와 더미 기록 정리 후 [return-to-main-tab](../../../manyak-web/src/lib/return-to-main-tab.ts)로 제작 탭 |
 | 마이 → 서비스 안내·법적 문서 | 새 탭 |
 | 시트·다이얼로그 열림 | 아래 히스토리 레이어 매니저의 `close` 레이어. 뒤로가기면 소비자의 `onOpenChange(false)`를 부르고, 소비자가 열림을 유지하면(처리 중 잠금) 더미를 다시 쌓음 |
-| 시트 안 이동 | `returnToMainTab`, `useStartChat`의 이동, `startSocialLogin`, 옵션 시트의 수정하기 `push`가 `leaveLayers`로 더미를 먼저 소비한 뒤 이동 |
+| 시트 안 이동 | `returnToMainTab`, `useStartChat`의 이동, `startSocialLogin`, 옵션 시트의 수정하기 `push`, 로그인 필요 시트의 문서 링크(`LoginLegalLinks`)가 `leaveLayers`로 더미를 먼저 소비한 뒤 이동 |
 
 **히스토리 레이어 매니저.** [history-layer-stack](../../../manyak-web/src/lib/history-layer-stack.ts)이 레이어 스택과 더미 칸, 작업 큐를 DOM 없이 관리하고 [history-layers](../../../manyak-web/src/lib/history-layers.ts)가 캡처 단계 `popstate` 리스너 하나로 이벤트를 넣습니다. 레이어는 `close`(뒤로가기 한 번에 소비)와 `guard`(제작 퍼널, 소비될 때마다 재적재)입니다. 더미 state는 `null`이며 객체를 넣으면 Next 앱 라우터가 `__NA` 없는 state에서 전체 리로드합니다. `navigator.userActivation.isActive`가 거짓이면 더미를 쌓지 않고(Chrome이 조작 없는 항목을 뒤로가기에서 건너뜀), `guard`만 첫 `pointerdown`·`keydown`에서 쌓습니다. 더미 쌓기와 되감기는 큐로 직렬화하며 되감기는 1초 안에 `popstate`가 없으면 큐를 비웁니다. `popstate`는 맨 위 더미의 주인에게만 가고 주인 없는 잔여 칸은 이어서 소비하며, 주소가 기록과 다르면 상태를 버리고 Next에 넘깁니다. [use-back-layer](../../../manyak-web/src/hooks/use-back-layer.ts)가 `Drawer`·`Dialog`·`AlertDialog` 래퍼(`closeOnBack` 기본 참)와 채팅 투어, 실시간 이미지 안내에서 레이어를 열고, [use-prevent-page-leave](../../../manyak-web/src/hooks/use-prevent-page-leave.ts)는 `guard` 레이어로 `confirmLeave`와 `leaveAfterCleanup`(`leaveLayers`)을 제공합니다. `confirmLeave`는 `leaveLayers`와 같은 정리 흐름으로 더미 기록을 먼저 소비한 뒤 `history.go(-1)`로 이전 화면에 이동합니다. 더미 정리의 `popstate`만 흡수하고 실제 화면 이동의 이벤트는 Next 라우터에 전달해 URL과 화면이 함께 바뀌도록 합니다.
 
