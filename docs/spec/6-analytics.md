@@ -4,7 +4,7 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.37 |
+| 버전 | v0.38 |
 | 작성일 | 2026-06-30 |
 | 수정일 | 2026-10-28 |
 | 대상 | 마냑 MVP |
@@ -105,6 +105,18 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../design/1-2-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
 - 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)이 소유합니다.
+
+**유입 귀속 사용자 속성.** 웹과 Android는 첫 유입 경로를 같은 Amplitude 사용자 속성 이름으로 남겨 웹 가입과 앱 가입을 같은 기준으로 비교합니다. 값은 처음 한 번만 쓰고(`setOnce`) 이후 유입으로 덮어쓰지 않습니다.
+
+| 속성 | 웹 | Android |
+| --- | --- | --- |
+| `initial_utm_source`<br>`initial_utm_medium`<br>`initial_utm_campaign`<br>`initial_utm_content` | 첫 방문 URL의 UTM<br>Amplitude Browser SDK가 자동 수집 | Play Install Referrer의 같은 이름 UTM<br>앱이 설치당 한 번 보냄 |
+
+- Android는 값이 있는 키만 보냅니다. Play 밖에서 설치해 referrer를 조회할 수 없으면 보내지 않습니다.
+- 자연 설치는 `utm_source=google-play`, `utm_medium=organic`입니다. 웹 배너를 거친 설치는 `utm_source=manyak_web`이며 `utm_medium`으로 배너(`app_banner`)와 공유 링크(`share_link`)를 나눕니다(§6-4-2-18).
+- Meta 앱 광고 설치는 `utm_source`(`apps.facebook.com`, `apps.instagram.com`)로 구분합니다. `utm_content`는 Meta가 암호화한 광고 정보라 복호화 없이는 광고 단위로 나누지 않습니다.
+- Play는 광고를 누르고 설치한 경우에만 광고 경로를 넘깁니다. 광고를 보기만 하고 나중에 설치하면 자연 설치로 남습니다.
+- referrer는 설치 후 90일 동안 조회됩니다. 이 기능 이전 버전으로 설치한 사용자도 그 안에 업데이트하고 실행하면 속성이 붙지만, 그 전에 기록된 이벤트에는 붙지 않으므로 사용자 단위로 집계합니다.
 
 ## 6-3. 이벤트 네이밍과 공통 프로퍼티
 
@@ -733,7 +745,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | `client_appBanner_escapeGuide_shown` | P2 | iOS 인앱에서 외부 전환 1.5초 뒤에도 화면이 그대로라 안내 시트를 열 때 | 없음 |
 
 - `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표입니다.
-- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 설치는 Play Console과 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)로 봅니다.
+- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 배너를 거친 설치는 앱이 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)를 `initial_utm_*` 사용자 속성으로 남겨 구분합니다(§6-2).
 
 #### 6-4-2-19. 프로필 수정 — `Phase 3 · 구현`(KNK-1148)
 
