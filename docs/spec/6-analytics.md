@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.36 |
+| 버전 | v0.37 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-23 |
+| 수정일 | 2026-10-28 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -284,6 +284,14 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
 | P1 `Phase 3 · 구현` | client | `client_profileEdit_viewed`                              |
 | P1 `Phase 3 · 구현` | client | `client_profileEdit_completed`                           |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_viewed`                          |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_chatStartButton_clicked`         |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_createButton_clicked`            |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_completed`                       |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_storyCard_impressed`             |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_detailButton_clicked`            |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_chatStartError_shown`            |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_loadError_shown`                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
@@ -739,6 +747,25 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 - 닉네임과 프리셋 키는 싣지 않습니다. 닉네임은 사용자 입력이고([§6-7](#6-7-개인정보와-원문-수집-원칙)), 프리셋 분포가 필요해지면 서버 데이터로 봅니다.
 - 프로필 수정에는 서버 분석 이벤트가 없어 `viewed` 대비 `completed`를 수정 완료율로 봅니다. 409 같은 실패율은 이 두 이벤트로 구분하지 않습니다.
 
+#### 6-4-2-20. 신규 가입 온보딩 — `Phase 3 · 구현`(KNK-1892)
+
+Android [신규 가입 온보딩](3-3-android-spec.md#신규-가입-온보딩) 화면의 이벤트입니다. `screen_name`은 `storyOnboarding`입니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수입니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyOnboarding_viewed` | P0 | 온보딩 화면 진입. 상세에서 돌아오거나 구성 변경으로 다시 그려도 다시 보내지 않음 | 없음 |
+| `client_storyOnboarding_storyCard_impressed` | P1 | 가운데 카드로 1초 이상 머문 스토리. 진입당 스토리별 1회(처음 보이는 카드 포함) | `story_id` (string, 필수), `position` (number, 필수) |
+| `client_storyOnboarding_detailButton_clicked` | P1 | "상세 보기" 또는 가운데 카드 탭 | `story_id` (string, 필수), `position` (number, 필수), `source` (string, 필수: `button` / `card`) |
+| `client_storyOnboarding_chatStartButton_clicked` | P0 | "채팅 시작하기" 클릭(채팅 생성 요청 전) | `story_id` (string, 필수), `position` (number, 필수), `browsed_count` (number, 필수) |
+| `client_storyOnboarding_chatStartError_shown` | P1 | 채팅 생성 실패 토스트 | `story_id` (string, 필수) |
+| `client_storyOnboarding_createButton_clicked` | P0 | "직접 만들기" 클릭 | `browsed_count` (number, 필수) |
+| `client_storyOnboarding_loadError_shown` | P1 | 오리지널 목록 조회 실패 화면 노출 | 없음 |
+| `client_storyOnboarding_completed` | P0 | 온보딩을 벗어남: 채팅 생성 성공 또는 간편 제작 진입 | `action` (string, 필수: `chat` / `create`), `source` (string, chat 필수: `carousel` / `storyDetail`), `story_id` (string, chat 필수), `chat_id` (string, chat 필수) |
+
+- 버튼 클릭(`chatStartButton_clicked`)과 실제 시작(`completed`의 `action=chat`)을 나눠 채팅 생성 실패와 이탈을 봅니다. 온보딩 위에서 연 상세의 채팅은 상세의 `client_storyDetail_chatStartButton_clicked`가 클릭을, `completed`(`source=storyDetail`)가 실제 시작을 맡습니다.
+- `completed`의 `chat_id`로 채팅 활성화 퍼널([§6-5-3-2](#6-5-3-2-채팅-활성화-퍼널))의 첫 메시지와 첫 AI 응답을 잇습니다. `action=create`는 간편 제작 진입 시점에 보내며, 이후는 스토리 제작 퍼널([§6-5-3-1](#6-5-3-1-스토리-제작-퍼널))이 이어 봅니다.
+- 스와이프마다 보내는 이벤트는 두지 않습니다. 스쳐 간 카드까지 세면 둘러본 정도가 부풀려지므로 1초 머문 카드의 노출과 `browsed_count`로 탐색을 봅니다.
+
 ### 6-4-3. impression 수집 기준
 
 `impressed`는 특정 item 또는 section이 사용자 화면에 유효하게 노출된 상태를 뜻합니다.
@@ -833,6 +860,21 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 5    | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded`                  | `chat_id` |
 
 완성과 채팅 생성이 분리돼 3단계에는 `chat_id`가 없습니다. 3~4단계는 `device_id` 순차 기준으로 근사하고, 4단계 `chat_id`로 5단계를 연결합니다.
+
+#### 6-5-3-4. 신규 가입 온보딩 퍼널
+
+신규 가입 회원이 온보딩에서 실제 대화까지 가는지 측정합니다(Android).
+
+| 순서 | 단계 | 이벤트 | 고정값 |
+| ---- | ---- | ---- | ---- |
+| 1 | 온보딩 진입 | `client_storyOnboarding_viewed` | device |
+| 2 | 스토리 탐색 | `client_storyOnboarding_storyCard_impressed` | device |
+| 3 | 채팅 시작 클릭 | `client_storyOnboarding_chatStartButton_clicked` | device |
+| 4 | 채팅 생성 | `client_storyOnboarding_completed` where `action = chat` | `chat_id` |
+| 5 | 첫 메시지 | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
+| 6 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` | `chat_id` |
+
+상세를 거친 시작은 3단계 대신 `client_storyOnboarding_detailButton_clicked` → `client_storyDetail_chatStartButton_clicked`를 거칩니다. 경로 비교는 4단계의 `source`로, 직접 만들기로 빠진 비율은 `completed`의 `action=create`로 봅니다.
 
 ### 6-5-4. 핵심 지표
 
