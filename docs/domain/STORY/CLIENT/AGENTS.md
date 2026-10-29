@@ -2,7 +2,7 @@
 
 단계마다 공통 문서 다음 해당 플랫폼 문서를 읽는다. 사용자 기대와 요구사항, 화면, 연동과 구현, 검증 순서로 구체화한다.
 
-작성 규칙: [클라이언트 가이드](../../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md).
+작성 규칙: [클라이언트 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md).
 
 플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
 

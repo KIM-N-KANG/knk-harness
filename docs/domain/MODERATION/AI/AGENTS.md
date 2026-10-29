@@ -27,4 +27,4 @@
 
 ### 2 작업 규칙
 
-[제품 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md)와 [AI 작성 가이드](../../../REFERENCE/AI-SPEC-WRITING-GUIDE.md)를 따른다. 제품 명세는 `docs/domain/`의 AI 세트와 `docs/REFERENCE/`에서 확인하며 과거 통합 문서를 현재 계약의 근거로 사용하지 않는다. 문서의 작성과 검토를 서브에이전트에 맡기지 않는다.
+[제품 작성 가이드](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md)와 [AI 작성 가이드](../../../reference/AI-SPEC-WRITING-GUIDE.md)를 따른다. 제품 명세는 `docs/domain/`의 AI 세트와 `docs/reference/`에서 확인하며 과거 통합 문서를 현재 계약의 근거로 사용하지 않는다. 문서의 작성과 검토를 서브에이전트에 맡기지 않는다.

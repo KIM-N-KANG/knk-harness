@@ -7,7 +7,7 @@
      → 연동 계약 → 구성 → 상태 → 실행 → 검증 → 배포
 ```
 
-플랫폼 이동: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md). 작성 규칙은 [클라이언트 가이드](../../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md), 과거 결정은 [DECISIONS](DECISIONS.md)에서 확인한다.
+플랫폼 이동: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md). 작성 규칙은 [클라이언트 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md), 과거 결정은 [DECISIONS](DECISIONS.md)에서 확인한다.
 
 <br>
 

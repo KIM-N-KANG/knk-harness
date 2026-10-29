@@ -22,6 +22,7 @@
 
 | 도메인 | 다루는 것 | 세트 |
 | --- | --- | --- |
+| [APP](docs/domain/APP/AGENTS.md) | 앱 탐색, 테마, 서비스 안내와 앱 진입 | CLIENT |
 | [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 계정, 로그인, 동의, 이관과 프로필 | BACKEND, CLIENT |
 | [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프, 충전, 보상과 체험 한도 | BACKEND, CLIENT |
 | [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅, 선택지, 이미지, 공유와 피드백 | AI, BACKEND, CLIENT |
@@ -29,21 +30,21 @@
 | [MODERATION](docs/domain/MODERATION/AGENTS.md) | 검수, 15세 모드, 입력 검사와 신고 | AI, BACKEND, CLIENT |
 | [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 공지, 알림함, 수신 설정과 푸시 | BACKEND, CLIENT |
 
-- 클라이언트는 단계마다 `CLIENT/`의 공통 문서 다음 `WEB/` 또는 `ANDROID/`를 읽습니다. 여러 도메인이 사용하는 셸과 플랫폼 기반은 [공용 클라이언트](docs/client/AGENTS.md)에서 확인합니다.
+- 클라이언트는 단계마다 `CLIENT/`의 공통 문서 다음 `WEB/` 또는 `ANDROID/`를 읽습니다. 앱 셸과 진입은 [APP 클라이언트](docs/domain/APP/CLIENT/AGENTS.md), 공통 기술 규칙은 [플랫폼 기반](docs/platform/AGENTS.md)에서 확인합니다.
 - 사용자 목표는 각 CLIENT의 `2-1-USER-STORY.md`에서 정의합니다. ID는 파일과 절 번호에 독립적이며 WEB과 ANDROID가 같은 ID를 참조합니다.
-- 문체와 파일명은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md), [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md), [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 작성 가이드를 따릅니다.
+- 문체와 파일명은 [제품 Spec 작성 가이드](docs/reference/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 구성은 [AI](docs/reference/AI-SPEC-WRITING-GUIDE.md), [백엔드](docs/reference/BACKEND-SPEC-WRITING-GUIDE.md), [클라이언트](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md) 작성 가이드를 따릅니다.
 
 | 작업 상황 | 확인할 문서 |
 | --- | --- |
-| 용어, 한영 표기와 네이밍 | [용어집](docs/REFERENCE/GLOSSARY.md) |
-| 서비스 배경과 대상 사용자 | [서비스 배경](docs/REFERENCE/SERVICE-BACKGROUND.md) |
-| 분석 이벤트, 지표와 관측 | [분석 기준](docs/REFERENCE/ANALYTICS.md) |
-| 공용 서비스 인터페이스와 상태 확인 | [서비스 인터페이스](docs/REFERENCE/SERVICE-INTERFACES.md) |
-| 배포, 인프라, CI/CD와 복구 | [배포 Design](docs/design/4-deployment.md), [배포 ADR](docs/adr/4-deployment-adr.md) |
+| 용어, 한영 표기와 네이밍 | [용어집](docs/reference/GLOSSARY.md) |
+| 서비스 배경과 대상 사용자 | [서비스 배경](docs/reference/SERVICE-BACKGROUND.md) |
+| 분석 이벤트, 지표와 관측 | [분석 기준](docs/reference/ANALYTICS.md) |
+| 공용 서비스 인터페이스와 상태 확인 | [서비스 인터페이스](docs/reference/SERVICE-INTERFACES.md) |
+| 배포, 인프라, CI/CD와 복구 | [배포 Design](docs/operations/DEPLOYMENT.md), [배포 ADR](docs/operations/DECISIONS.md) |
 | 클라이언트 검증 | 공용 또는 해당 도메인의 플랫폼 세트 `5-1-VERIFICATION.md` |
 | 작업 담당, 일정, 우선순위와 미결 사항 | Jira |
 
-기존 백엔드와 AI의 통합 Design 및 ADR은 `docs/design/`과 `docs/adr/`에 보존합니다. 현재 도메인 명세가 우선이며, 과거 결정은 현재 계약을 대체하지 않습니다.
+기존 백엔드와 AI 결정 원문은 [결정 기록](docs/reference/decisions/AGENTS.md)에 보존합니다. 통합 Design의 기능 설명은 도메인 문서로 대체하며 공통 기술 기반은 `docs/platform/`, 배포는 `docs/operations/`에서 관리합니다.
 
 ## Agent Skills
 
@@ -60,7 +61,7 @@
 
 ## Documentation Guidelines
 
-- Spec을 작성하거나 수정하기 전에 제품 Spec 작성 가이드 전체를 반드시 읽고, 문체와 표 구성, 문서 참조 규칙을 적용합니다. ([제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md))
+- Spec을 작성하거나 수정하기 전에 제품 Spec 작성 가이드 전체를 반드시 읽고, 문체와 표 구성, 문서 참조 규칙을 적용합니다. ([제품 Spec 작성 가이드](docs/reference/PRODUCT-SPEC-WRITING-GUIDE.md))
 - 관련 문서의 해당 절을 전체로 읽습니다. 요구사항·동작 계약은 Spec, 현재 구현 구조는 Design, 중요한 결정의 이유는 ADR에 기록합니다. 중복 본문 대신 링크를 사용합니다.
 - 제품 동작·분석 기준을 바꿀 때 관련 Spec을 확인하고, 계약 변경을 먼저 반영합니다. 구현 변경 시 영향받는 문서와 검증 항목을 같은 작업에서 갱신하며, 미래 구조를 현재 Design에 먼저 반영하지 않습니다. 계약·예외·보안·실패·복구 조건을 보존하며, 코드만으로 제품 정책의 승인 여부나 과거 결정 이유를 추정하지 않습니다.
 - 일정, 진행 상태, 우선순위와 미결 사항은 Jira, 구현 계획과 검증 결과는 구현 저장소의 계획 문서와 PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.

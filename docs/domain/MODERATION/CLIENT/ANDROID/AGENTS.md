@@ -17,7 +17,7 @@
 - [report/src/main/java/app/manyak/report](../../../../../../manyak-android/report/src/main/java/app/manyak/report)
 - [report/src/main/res/values/strings.xml](../../../../../../manyak-android/report/src/main/res/values/strings.xml)
 
-모듈 경계의 결정은 [A-038](../../../../client/ANDROID/DECISIONS.md#a-038)에 있다. STORY의 입력 거절 결정은 [A-082](../../../STORY/CLIENT/ANDROID/DECISIONS.md#a-082)에 있다.
+모듈 경계의 결정은 [A-038](../../../../platform/ANDROID/DECISIONS.md#a-038)에 있다. STORY의 입력 거절 결정은 [A-082](../../../STORY/CLIENT/ANDROID/DECISIONS.md#a-082)에 있다.
 
 ### 3 작성과 검증
 

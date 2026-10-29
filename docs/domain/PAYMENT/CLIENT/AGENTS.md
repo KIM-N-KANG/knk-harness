@@ -2,7 +2,7 @@
 
 단계마다 공통 문서, 해당 플랫폼 문서 순서로 읽는다. 하위 구현과 검증을 이유로 상위 요구를 바꾸지 않는다.
 
-작성 규칙은 클라이언트 가이드를 적용한다. ([작성 가이드](../../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md))
+작성 규칙은 클라이언트 가이드를 적용한다. ([작성 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md))
 
 플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
 

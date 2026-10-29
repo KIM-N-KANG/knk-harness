@@ -17,8 +17,8 @@
 | MY-NOTICES-A03 | P0 | Android, 읽음 기록 없음, 공지 3건 | 헤더 공지 버튼 탭 → 첫 줄 탭 → 뒤로가기 → 뒤로가기 → 모든 줄을 열고 홈 복귀 | 목록은 굵은 제목과 제목 끝 빨간 점(보조 기술 이름 "새 공지"), 줄을 누르면 앱 공통 리플, 상세는 제목·"게시 YYYY-MM-DD"·줄바꿈 살린 본문. 돌아오면 연 줄만 점이 꺼지고 홈 헤더 점은 유지, 모두 열면 헤더 점과 마이 배지가 꺼짐 | ✅ 수동(에뮬레이터) · unit `notice/NoticeViewModelsTest`·`NoticeUnreadTest` | FE-SCREEN-014 안 읽은 공지 표시 |
 | MY-NOTICES-A04 | P1 | Android, 앱 종료 상태 | 공지 게시 푸시 탭(또는 `manyak://manyak.app/notices/{noticeId}` 앱 열기 링크) → 뒤로가기 | 그 공지 상세가 열리고 읽음으로 기록. 뒤로가기는 공지 목록, 다시 뒤로가기는 홈 | ✅ 수동(에뮬레이터, `am start -a VIEW`) · unit `app/ExternalEntryTest`·`navigation/DeepLinkTest` | [Android 알림](AGENTS.md) |
 | MY-NOTICES-A05 | P1 | Android, 없는 `noticeId` | 딥링크로 상세 진입 → "공지사항 목록으로" 탭 | "공지를 찾을 수 없어요" + 보조 안내 + "공지사항 목록으로" 버튼, 탭하면 목록. 읽음 기록 없음 | ✅ 수동(에뮬레이터) · unit `NoticeViewModelsTest` | FE-SCREEN-014 상태 |
-| MY-NOTICES-A06 | P1 | Android, 앱 실행 뒤 비행기 모드 | 헤더 공지 버튼 탭 → 비행기 모드 해제 → "다시 시도" 탭 | "공지사항을 불러오지 못했어요" + "다시 시도"(앱 공통 문구). 재시도하면 목록 표시. 안 읽음 점은 조회 실패 동안 꺼짐 | ✅ 수동(에뮬레이터) | FE-SCREEN-014 상태, [Android 공지사항](../../../../client/ANDROID/3-3-LAYOUT.md#3-3-1-셸과-조작) |
-| MY-NOTICES-A08 | P1 | Android, 목록 표시됨 | 목록을 당겨 새로고침 → 비행기 모드에서 다시 당김 | 당김 표시자가 돌고 목록을 다시 읽음. 오프라인이면 기존 목록을 그대로 두고 "새로고침하지 못했어요" 토스트. 골격·빈 상태·실패 화면에서는 당김 없음 | ✅ 수동(에뮬레이터) · unit `NoticeViewModelsTest` | [Android 공지사항](../../../../client/ANDROID/3-3-LAYOUT.md#3-3-1-셸과-조작) |
+| MY-NOTICES-A06 | P1 | Android, 앱 실행 뒤 비행기 모드 | 헤더 공지 버튼 탭 → 비행기 모드 해제 → "다시 시도" 탭 | "공지사항을 불러오지 못했어요" + "다시 시도"(앱 공통 문구). 재시도하면 목록 표시. 안 읽음 점은 조회 실패 동안 꺼짐 | ✅ 수동(에뮬레이터) | FE-SCREEN-014 상태, [Android 공지사항](../../../APP/CLIENT/ANDROID/3-3-LAYOUT.md#3-3-1-셸과-조작) |
+| MY-NOTICES-A08 | P1 | Android, 목록 표시됨 | 목록을 당겨 새로고침 → 비행기 모드에서 다시 당김 | 당김 표시자가 돌고 목록을 다시 읽음. 오프라인이면 기존 목록을 그대로 두고 "새로고침하지 못했어요" 토스트. 골격·빈 상태·실패 화면에서는 당김 없음 | ✅ 수동(에뮬레이터) · unit `NoticeViewModelsTest` | [Android 공지사항](../../../APP/CLIENT/ANDROID/3-3-LAYOUT.md#3-3-1-셸과-조작) |
 | MY-NOTICES-A07 | P2 | Android, `nextCursor`가 있는 21건 이상 | 목록 끝까지 스크롤, 다음 페이지 실패 유도 | 끝에 닿으면 다음 페이지를 이어 붙이고, 실패하면 기존 목록 아래 "다시 시도"만 표시하고 자동 재요청 없음 | ◐ unit `NoticeViewModelsTest`(dev에 3건뿐이라 화면은 미확인) | FE-SCREEN-014 목록·상태 |
 
 <br>

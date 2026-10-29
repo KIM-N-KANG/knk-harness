@@ -2,7 +2,7 @@
 
 채팅 AI 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 이 파일의 상대경로는 `docs/domain/CHAT/AI/` 기준이다.
 
-제품 명세 문서는 하네스의 `docs/domain/` 아래 AI 세트와 `docs/REFERENCE/` 안에서만 참조한다. 그 밖의 과거 문서와 해당 문서로 연결된 링크는 근거로 사용하지 않는다.
+제품 명세 문서는 하네스의 `docs/domain/` 아래 AI 세트와 `docs/reference/` 안에서만 참조한다. 그 밖의 과거 문서와 해당 문서로 연결된 링크는 근거로 사용하지 않는다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다. 모델 이름, 제한 시간과 횟수는 해당 명세에서 확인한다.
 
@@ -63,8 +63,8 @@
 
 | 항목 | 위치 |
 |---|---|
-| 공통 문체와 형식 | [PRODUCT-SPEC-WRITING-GUIDE.md](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
-| 문서별 작성 기준과 그림 규칙 | [AI-SPEC-WRITING-GUIDE.md](../../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) |
+| 공통 문체와 형식 | [PRODUCT-SPEC-WRITING-GUIDE.md](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 문서별 작성 기준과 그림 규칙 | [AI-SPEC-WRITING-GUIDE.md](../../../reference/AI-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체의 문서 지침 | [AGENTS.md](../../../../AGENTS.md) |
 | 코드 규칙 | `manyak-ai`의 `AGENTS.md`, `.agents/STYLEGUIDE.md` |
 | 문서 변경 뒤의 검사 | `git diff --check`를 실행함 <br> 링크, 앵커와 참조한 절 번호도 확인함 |

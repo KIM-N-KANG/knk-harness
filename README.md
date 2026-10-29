@@ -42,20 +42,20 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-[도메인 목록](docs/domain/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있고, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
+[도메인 목록](docs/domain/AGENTS.md)에서 APP, ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. APP에는 CLIENT 세트가 있고 나머지 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
 
-클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 단계마다 공통 다음 해당 플랫폼 문서를 읽으며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
+클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 단계마다 공통 다음 해당 플랫폼 문서를 읽으며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 
 | 공용 내용 | 문서 |
 | --- | --- |
-| 셸, 테마, 서비스 안내와 플랫폼 기반 | [공용 클라이언트](docs/client/AGENTS.md) |
-| 용어와 표기 | [용어집](docs/REFERENCE/GLOSSARY.md) |
-| 서비스와 사용자 | [서비스 배경](docs/REFERENCE/SERVICE-BACKGROUND.md) |
-| 이벤트, 지표와 관측 | [분석 기준](docs/REFERENCE/ANALYTICS.md) |
-| 공용 API 규칙과 상태 확인 | [서비스 인터페이스](docs/REFERENCE/SERVICE-INTERFACES.md) |
-| 배포와 복구 | [배포 Design](docs/design/4-deployment.md), [배포 ADR](docs/adr/4-deployment-adr.md) |
+| 셸, 테마와 서비스 안내 | [APP 클라이언트](docs/domain/APP/CLIENT/AGENTS.md) |
+| 용어와 표기 | [용어집](docs/reference/GLOSSARY.md) |
+| 서비스와 사용자 | [서비스 배경](docs/reference/SERVICE-BACKGROUND.md) |
+| 이벤트, 지표와 관측 | [분석 기준](docs/reference/ANALYTICS.md) |
+| 공용 API 규칙과 상태 확인 | [서비스 인터페이스](docs/reference/SERVICE-INTERFACES.md) |
+| 배포와 복구 | [배포 Design](docs/operations/DEPLOYMENT.md), [배포 ADR](docs/operations/DECISIONS.md) |
 
-각 세트의 `AGENTS.md`가 읽는 순서와 코드 위치를 안내합니다. 결정 기록은 해당 세트의 `DECISIONS.md`에 보존합니다. 기존 백엔드와 AI의 통합 Design 및 ADR은 보존하되 현재 도메인 명세를 우선합니다.
+각 세트의 `AGENTS.md`가 읽는 순서와 코드 위치를 안내합니다. 결정 기록은 해당 세트의 `DECISIONS.md`에 보존합니다. 기존 백엔드와 AI 결정 원문은 [reference/decisions](docs/reference/decisions/AGENTS.md)에 보존합니다. 공통 기술 규칙은 [platform](docs/platform/AGENTS.md), 배포는 [operations](docs/operations/AGENTS.md)에서 관리합니다.
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
