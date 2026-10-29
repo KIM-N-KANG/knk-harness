@@ -95,6 +95,7 @@
 | 진행 중 요청과 새 요약 | 12번째 턴의 AI 호출 중 요약 저장 | 12번째 턴 요청은 구성 시점의 요약과 원문 유지<br>13번째 턴 요청부터 새 요약 적용 |
 | 요약 실패 | AI 오류 응답, 300초 초과, 연결 실패, 공백만 있는 요약 | 기존 요약과 요약 끝 턴 유지<br>턴과 과금 영향 없음<br>`chat_compact_failed`와 `reason=AI_FAILED`<br>`ai_call_logs`는 `FAILED`와 `AI_COMPACT_FAILED`<br>Sentry 미전송 |
 | 요약 호출 기록 적재 실패 | `ai_call_logs`의 `STARTED` 적재 실패 | AI 요약 호출 없음<br>`chat_compact_failed`와 `reason=CALL_LOG_FAILED`<br>턴 저장, `completed`, 과금 영향 없음 |
+| 요약 호출 기록 전이 실패 | AI 요약 호출 성공 뒤 `ai_call_logs` 상태 전이 저장 실패 | 요약 미저장<br>기존 요약과 요약 끝 턴 유지<br>`chat_compact_failed`와 `reason=CALL_LOG_FAILED`<br>턴과 과금 영향 없음 |
 | 요약 저장 실패 | AI 요약 호출 성공 뒤 요약 저장의 DB 오류 | `ai_call_logs`는 `SUCCEEDED` 유지<br>`chat_compact_failed`와 `reason=SAVE_FAILED`<br>기존 요약과 요약 끝 턴 유지 |
 | 요약 시작 실패 | 10번째 턴 커밋 뒤 비동기 작업 제출 거부<br>요약 범위 읽기의 DB 오류 | 10번째 턴은 저장, `completed`, 과금 모두 정상<br>`chat_compact_failed`와 `reason=START_FAILED`<br>AI 요약 호출 없음 |
 | 실패 뒤 다음 요약 | 10번째 턴 요약 실패 뒤 11~19번째 턴 저장<br>20번째 턴 저장 | 11~19번째 턴 뒤 요약 요청 없음<br>20번째 턴 뒤 기존 요약과 1~20번째 턴 원문으로 요청 |
