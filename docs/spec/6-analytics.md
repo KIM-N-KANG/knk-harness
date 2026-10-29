@@ -103,7 +103,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 - 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지합니다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않습니다. Android Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않습니다.
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급합니다.
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../design/1-2-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
-- Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
+- Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(ACCOUNT-US-012 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
 - 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)이 소유합니다.
 
 **유입 귀속 사용자 속성.** 웹과 Android는 첫 유입 경로를 같은 Amplitude 사용자 속성 이름으로 남겨 웹 가입과 앱 가입을 같은 기준으로 비교합니다. 값은 처음 한 번만 쓰고(`setOnce`) 이후 유입으로 덮어쓰지 않습니다.
@@ -596,7 +596,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-12. 인앱 브라우저 대응
 
-[웹 인앱 로그인 계약](3-2-web-spec.md#인앱-브라우저-로그인)의 관측 이벤트입니다. 인앱 로그인은 일반 로그인 화면과 Google 팝업 또는 같은 탭의 Kakao 로그인을 사용하며, 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. 화면 횡단 전역 동작이므로 screenName 자리에 `inappBrowser`를 씁니다.
+[웹 인앱 로그인 계약](../domain/ACCOUNT/CLIENT/WEB/3-2-INTERACTION-FLOWS.md#3-2-3-팝업과-계정-연동)의 관측 이벤트입니다. 인앱 로그인은 일반 로그인 화면과 Google 팝업 또는 같은 탭의 Kakao 로그인을 사용하며, 전환은 기존 provider 버튼 클릭과 서버 로그인 성공 이벤트로 확인합니다. 화면 횡단 전역 동작이므로 screenName 자리에 `inappBrowser`를 씁니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |

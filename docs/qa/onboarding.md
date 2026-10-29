@@ -11,7 +11,7 @@
 | 작성 목적 | 신규 가입 초대 코드 온보딩과 앱 안내 배너의 수동 QA와 E2E 검수 기준을 정의합니다. 간편 제작 첫 진입 안내는 [STORY-TUTORIAL](stories.md#story-tutorial--간편-제작-첫-진입-안내)이 다룹니다. |
 | 화면 | 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) · 앱 안내 배너(루트 레이아웃, 모든 화면 최상단) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
-| 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [앱 안내 배너](../spec/3-2-web-spec.md#앱-안내-배너) |
+| 관련 스펙 | [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), [앱 안내 배너](../spec/3-2-web-spec.md#앱-안내-배너) |
 | 관련 E2E | `manyak-web/e2e/my/invite.spec.ts`(신규 가입 바텀 시트), `manyak-web/e2e/visual/onboarding-visual.spec.ts`, `manyak-web/e2e/smoke/app-banner.spec.ts`, `manyak-web/e2e/visual/app-banner-visual.spec.ts` |
 
 ## 읽는 순서
@@ -21,7 +21,7 @@
 
 ## 목차
 
-- [ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩](#onbd-invite--신규-가입회원-초대-코드-온보딩)
+- [ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-17-onbd-invite-신규-가입회원-초대-코드-온보딩)
 - [ONBD-BANNER — 앱 안내 배너](#onbd-banner--앱-안내-배너)
 - [ONBD-APPLINK — 앱 공유 링크](#onbd-applink--앱-공유-링크)
 - [⚠️ 확인 필요](#️-확인-필요)
@@ -32,20 +32,7 @@
 
 ## ONBD-INVITE — 신규 가입(회원) 초대 코드 온보딩
 
-기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지).
-
-| ID             | P   | 사전조건                                                 | 절차                                  | 기대 결과                                                                                                                                                                                                                              | 자동화                                   | 근거                                                      |
-| -------------- | --- | -------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------- |
-| ONBD-INVITE-01 | P0  | 신규 가입 회원(`inviteOnboardingPending: true`), 가입한 탭을 닫은 뒤의 다음 접속 | 홈 진입 | 모달 바텀 시트 표시: 제목 "초대 코드를 등록하면" / "N 이프를 받을 수 있어요"(N은 `GET /credits/policies`의 `inviteReward`), 설명 "지금은 건너뛰고 나중에 등록해도 돼요", 초대 코드 입력 + 세로 버튼 두 개("등록하기" 주 스타일, "닫기" 고스트 스타일, 웹은 xs·내용 너비·가운데 정렬, 등록 버튼과 8px 간격). 제목·설명 8px, 설명·폼 32px 간격. 닫기(X) 버튼 없음. 초점은 입력란이 아니라 시트에 있어 모바일 키보드가 자동으로 올라오지 않음. 게스트 온보딩과 동시 표시되지 않음 | ✅ e2e `my/invite` · visual `onboarding-visual` | FE-SCREEN-008, §3-1-7 이프 정책 수치 표시, 구현(`invite-onboarding-sheet`), KNK-1045·1095 |
-| ONBD-INVITE-02 | P0  | ONBD-INVITE-01                                           | 배경 탭 또는 ESC 입력                 | 세션 플래그 소비(`inviteOnboardingPending: false` 저장) 후 닫힘. 새로고침·재방문에도 다시 뜨지 않음(단 ONBD-INVITE-05 재시도 화면에서는 닫기 재시도로 동작)                                                                             | ✅ e2e `my/invite`                       | FE-SCREEN-008, 구현(`invite-onboarding-sheet`)            |
-| ONBD-INVITE-03 | P1  | 세션 갱신 API가 5xx로 실패                               | 배경 탭 또는 ESC 입력                 | 바텀 시트 유지 + "창을 닫지 못했어요" 토스트. 새로고침 시 다시 표시(플래그 미소비)                                                                                                                                                    | ✅ e2e `my/invite`                       | 구현(`invite-onboarding-sheet`)                           |
-| ONBD-INVITE-04 | P0  | ONBD-INVITE-01                                           | 유효한 코드 입력 → "등록하기"         | "친구 초대 보상으로 N 이프를 받았어요" 토스트 + 바텀 시트 닫힘. 새로고침 후에도 다시 열리지 않음                                                                                                                                 | ✅ e2e `my/invite`                       | FE-SCREEN-008                                             |
-| ONBD-INVITE-05 | P1  | 코드 적립 성공 + 세션 저장 실패                          | 등록 완료 관찰                        | 코드를 다시 청구하지 않고 입력 폼 대신 "N 이프는 정상 지급되었지만, 창을 닫는 데 실패했어요" 안내 + "닫기"(재시도) 버튼 표시(웹 xs·내용 너비·가운데 정렬)                                                                                                       | ✅ e2e `my/invite`                       | 구현(`invite-onboarding-sheet`)                           |
-| ONBD-INVITE-07 | P2  | 등록 또는 닫기 처리 진행 중                              | 버튼·입력 상태 확인                   | 입력창과 "닫기"·"등록하기" 버튼이 모두 잠기고, 등록 버튼은 크기를 유지한 중앙 스피너 표시. 적립 후 저장 재시도 화면(ONBD-INVITE-05)의 "닫기" 버튼도 재시도 중 같은 방식의 스피너로 전환                                                                                                                                              | ◐ e2e `my/invite`(적립 후 저장 대기만)   | FE-SCREEN-008 등록 중 상태                                |
-| ONBD-INVITE-08 | P2  | ONBD-INVITE-01, 잘못된 코드(예: 내 코드, 서버 모킹 필요) | 코드 입력 → "등록하기"                | 바텀 시트 유지 + `/my/invite`와 동일한 사유별 인라인 오류(`aria-invalid`·`role=alert`). 보상 미지급                                                                                                                                   | ✅ e2e `my/invite`                       | FE-SCREEN-008 코드 입력, 구현(`invite-onboarding-sheet`)  |
-| ONBD-INVITE-09 | P0  | ONBD-INVITE-01                                           | "닫기" 탭                            | 배경 탭·ESC와 동일하게 세션 플래그 소비(`inviteOnboardingPending: false` 저장) 후 닫힘. 새로고침·재방문에도 다시 뜨지 않음. 코드 입력 자격(계정당 1회)은 남아 이후 `/my/invite`에서 등록 가능. 저장이 5xx로 실패하면 ONBD-INVITE-03과 동일하게 유지 + "창을 닫지 못했어요" 토스트 | ✅ e2e `my/invite`                       | FE-SCREEN-008, KNK-1045                                   |
-| ONBD-INVITE-10 | P0  | 방금 가입을 마친 탭(`inviteOnboardingPending: true`) | 홈 진입, 같은 탭 새로고침, 탭을 닫고 새 탭으로 홈 진입 | 가입한 탭에서는 새로고침해도 시트를 띄우지 않고 간편 제작 첫 진입 안내도 막지 않음. 새 탭의 홈에서 시트 표시 | ✅ e2e `my/invite` | FE-SCREEN-008 신규 가입 온보딩, [웹 로그인과 회원 이관](../spec/3-2-web-spec.md#로그인과-회원-이관), KNK-1900 |
-| ONBD-INVITE-11 | P1  | ONBD-INVITE-01의 다음 접속, 홈이 아닌 화면(마이, 제작)으로 진입 | 화면 관찰 후 하단 탭으로 홈 이동 | 홈이 아닌 화면에서는 시트를 띄우지 않고, 홈으로 오면 시트 표시 | ✅ e2e `my/invite`·`auth/consent` | 같음 |
+ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-17 ONBD-INVITE: 신규 가입(회원) 초대 코드 온보딩](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-17-onbd-invite-신규-가입회원-초대-코드-온보딩))
 
 ## ONBD-BANNER — 앱 안내 배너
 

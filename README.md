@@ -42,7 +42,9 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-제품 문서는 `docs/spec/`(배경·요구·계약), `docs/design/`(현재 내부 구조), `docs/adr/`(누적 결정 기록)로 나눕니다. 세 폴더는 `docs/` 바로 아래에 둡니다. 숫자 접두어는 각 폴더에서 독립적으로 관리합니다. 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
+제품 문서는 `docs/domain/` 아래 도메인별 세트로 구성합니다. 클라이언트는 `CLIENT/`에 공통 계약을 두고 `WEB/`, `ANDROID/`에 플랫폼 차이와 구현, 검증을 둡니다. [ACCOUNT 클라이언트](docs/domain/ACCOUNT/CLIENT/AGENTS.md)는 이 구조를 사용합니다. 여러 도메인이 사용하는 기반은 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다.
+
+아직 이관하지 않은 내용은 아래 Spec, Design, ADR과 QA를 기준으로 사용합니다. 이전 위치의 참조는 새 기준 문서로 연결하며, 파일 역할과 배치는 [클라이언트 작성 가이드](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 
 | 분류·번호 | 문서 | 역할 |
 | --- | --- | --- |

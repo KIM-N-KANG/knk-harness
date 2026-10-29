@@ -7,7 +7,7 @@
 - 수동 QA와 E2E 테스트 설계에 사용할 화면·기능별 케이스를 작성합니다. [유저 스토리](../spec/2-user-stories.md), [공통 Spec](../spec/3-1-client-spec.md), [웹 Spec](../spec/3-2-web-spec.md)의 관련 절을 먼저 읽습니다.
 - 제품 규칙은 Spec, 작업 진행은 Jira를 따릅니다. QA에는 검수 절차와 자동화 연결을 기록하고 실행·릴리스 근거는 해당 계획·PR에 남깁니다.
 - 코드와 계약이 다르면 차이와 관련 QA ID를 해당 Jira나 기능 계획에 남깁니다. 관측된 코드만으로 기대 결과를 바꾸지 않습니다.
-- 여러 문서에 걸치는 기능은 한 문서가 케이스를 소유하고 나머지는 참조만 둡니다. 신규 가입 초대 코드 다이얼로그는 `onboarding.md`가 소유합니다.
+- 여러 문서에 걸치는 기능은 한 문서가 케이스를 소유하고 나머지는 참조만 둡니다. ACCOUNT의 인증, 법적 문서, 프로필, 페르소나, 초대와 탈퇴 케이스는 [ACCOUNT 웹 검증](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)에서 관리합니다. `auth.md`, `legal.md`와 관련 기존 절은 새 위치를 안내합니다.
 
 ## 문서 목록
 
@@ -15,10 +15,10 @@
 | ---------------------------------- | ---------------------------------------------- |
 | [`chats.md`](chats.md)           | 채팅 목록 · 채팅 화면 · 공유 열람              |
 | [`stories.md`](stories.md)       | 스토리 목록 · 상세 · 생성 퍼널                 |
-| [`auth.md`](auth.md)             | 로그인 · 세션 · 데이터 이관 · 로그아웃         |
+| [`auth.md`](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)             | 로그인 · 세션 · 데이터 이관 · 로그아웃         |
 | [`my.md`](my.md)                 | 마이 · 회원 탈퇴 · 피드백 · 초대 · 서비스 안내 · 공지사항 · 알림함 · 하단 탭 |
 | [`onboarding.md`](onboarding.md) | 신규 가입 초대 코드 다이얼로그, 앱 안내 배너, 앱 공유 링크 |
-| [`legal.md`](legal.md)           | 약관 · 개인정보 처리방침                       |
+| [`legal.md`](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)           | 약관 · 개인정보 처리방침                       |
 
 ## 케이스 작성 규칙
 

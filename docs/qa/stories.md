@@ -54,7 +54,7 @@
 | STORY-LIST-04 | P1 | 배치 응답에 `thumbnailUrlSm`이 있는 스토리 | 카드 확인                                 | 기본 심벌 대신 썸네일 이미지 렌더. `null`이면 기본 심벌 유지                                                                                             | 수동                                            | US-2-7, §3-1-3, 구현(`story-card`)          |
 | STORY-LIST-05 | P1 | 게스트, 저장된 스토리 ID 없음, 진행 카드 없음 | `/studio` 진입                            | 별도 섹션 제목 없음. 앱과 같이 가운데 한 줄 보조 안내(§3-1-3 빈 상태 문구)만 두고 별도 CTA 없음. FAB는 표시(STORY-LIST-11과 동일 동작). 초안·완성 중 진행 카드가 있으면 안내를 표시하지 않음 | ✅ e2e `stories/story-list`, `visual/stories-visual` | US-2-3, §3-1-3, KNK-1355                 |
 | STORY-LIST-06 | P1 | 게스트, 스토리 ID 있음                     | 배치 조회가 4xx·5xx로 실패                | "스토리를 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                                                              | ✅ e2e `stories/story-list`                     | US-2-6, §3-1-3                              |
-| STORY-LIST-07 | P2 | 게스트, 스토리 ID 있음                     | `/studio` 진입 직후 관찰                  | 별도 섹션 제목과 빈 상태 깜빡임 없이 실제 카드와 같은 전체 폭, 가로 16px·세로 8px 패딩, 128px 표지·제목·소개·장르·하단 메타의 1열 행 스켈레톤 5개 → 목록 전환. 지연 전에는 목록 영역을 비움 | ✅ e2e `stories/story-list`                     | §3-1-3 상태표, [웹 저장소 3-state](../spec/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
+| STORY-LIST-07 | P2 | 게스트, 스토리 ID 있음                     | `/studio` 진입 직후 관찰                  | 별도 섹션 제목과 빈 상태 깜빡임 없이 실제 카드와 같은 전체 폭, 가로 16px·세로 8px 패딩, 128px 표지·제목·소개·장르·하단 메타의 1열 행 스켈레톤 5개 → 목록 전환. 지연 전에는 목록 영역을 비움 | ✅ e2e `stories/story-list`                     | §3-1-3 상태표, [웹 저장소 3-state](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), KNK-1043 |
 | STORY-LIST-08 | P2 | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨  | `/studio` 진입                            | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                                                               | 수동                                            | §3-1-6 배치 재조회                          |
 | STORY-LIST-09 | P0 | 회원 로그인 상태                           | `/studio` 진입                            | 로컬 ID와 무관하게 `GET /users/me/stories` 서버 목록으로 카드 표시(서버 순서 유지, 이관 미발동)                                                              | ✅ e2e `stories/story-list`                     | 구현(`use-created-stories`), §3-1-3         |
 | STORY-LIST-10 | P2 | 세션 판별 중(`loading`)                    | `/studio` 진입 직후 관찰                  | 게스트 빈 상태가 아닌 로딩으로 표시(회원에게 빈 서재 깜빡임 없음)                                                                                            | 수동                                            | 구현(`use-created-stories`)                 |
@@ -354,18 +354,18 @@
 
 ## STORY-GATE — 제작과 채팅 시작 동의 게이트
 
-기준: [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [동의 모델](../spec/3-1-client-spec.md#fe-screen-010-서비스-이용약관개인정보-처리방침). 게스트는 제작 화면 진입과 입력은 바로 하고 스토리라인 생성 요청 직전에 동의한다. 채팅방 생성도 동의 전 가능하다. 시트의 공통 계약과 검수는 AUTH-GUEST가 소유한다. 로그인 뒤 절차는 [AUTH-LOGIN-07 및 AUTH-CONSENT](auth.md)를 따른다.
+기준: [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), [동의 모델](../domain/ACCOUNT/CLIENT/3-2-INTERACTION-FLOWS.md#3-2-1-로그인과-필수-동의). 게스트는 제작 화면 진입과 입력은 바로 하고 스토리라인 생성 요청 직전에 동의한다. 채팅방 생성도 동의 전 가능하다. 시트의 공통 계약과 검수는 AUTH-GUEST가 소유한다. 로그인 뒤 절차는 [AUTH-LOGIN-07 및 AUTH-CONSENT](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)를 따른다.
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| STORY-GATE-01 | P0 | 미동의 게스트, 제작 목록 있음 | 제작 FAB 탭 → 간편 제작 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13, 웹 게스트 이용 동의 |
-| STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | FAB 탭(빈 상태에도 별도 CTA 없음, KNK-1355) → 간편 제작 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | US-9-13 |
+| STORY-GATE-01 | P0 | 미동의 게스트, 제작 목록 있음 | 제작 FAB 탭 → 간편 제작 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | ACCOUNT-US-004, 웹 게스트 이용 동의 |
+| STORY-GATE-02 | P0 | 게스트, 제작 목록 비어 있음 | FAB 탭(빈 상태에도 별도 CTA 없음, KNK-1355) → 간편 제작 | 동의 시트 없이 제작 입력 화면 진입 | ✅ e2e `stories/story-login-gate` | ACCOUNT-US-004 |
 | STORY-GATE-03 | P0 | 미동의 게스트 | 제작 URL 직접 진입, 키워드 입력 후 생성 버튼 탭, 취소 후 재시도 및 동의 | 진입 시 태그 조회와 입력 화면 표시. 생성 버튼에서만 동의 시트 표시. 취소 시 입력 및 단계 유지, 동의 후 같은 키워드로 한 번만 생성 요청 | ✅ e2e `stories/story-login-gate`, `auth/guest-consent` | 웹 게스트 이용 동의 |
-| STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), 구현(`use-start-chat`) |
+| STORY-GATE-04 | P0 | 게스트, 스토리 상세 | "새 채팅 시작하기" 탭 | 게스트도 `POST /chats`로 채팅방을 만들어 진입한다. 그 채팅 ID는 localStorage 서재에 기록되어 게스트 채팅 목록에서 다시 볼 수 있다. 전송은 CHAT-GATE-01 | ✅ e2e `stories/story-login-gate` | [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), 구현(`use-start-chat`) |
 | STORY-GATE-05 | — | (폐기, KNK-1355) 채팅 빈 상태의 "스토리 만들기" CTA를 없애 진입 경로가 사라짐. 제작 진입은 STORY-GATE-01·02로 검증 | — | — | — | — |
-| STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | US-9-13 |
-| STORY-GATE-07 | P1 | 게스트, 공유 열람 화면 | 하단 제작 CTA 탭 | 동의 시트 없이 제작 입력 화면으로 이동 | ✅ e2e `share/shared-chat` | US-9-13, 웹 문서 열람 |
-| STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
+| STORY-GATE-06 | P1 | 게스트, 예전 초안 카드 있음 | "이어서 만들기" 탭 | 동의 시트 없이 초안을 복원해 제작 재개 | ✅ e2e `stories/story-login-gate` | ACCOUNT-US-004 |
+| STORY-GATE-07 | P1 | 게스트, 공유 열람 화면 | 하단 제작 CTA 탭 | 동의 시트 없이 제작 입력 화면으로 이동 | ✅ e2e `share/shared-chat` | ACCOUNT-US-004, 웹 문서 열람 |
+| STORY-GATE-08 | P1 | 세션 판정 또는 회원 동의 조회 중 | 제작 URL 진입 | 판정 전 스피너. 미동의 회원은 회원 동의 게이트가 차단하고, 게스트로 확정되면 동의 시트 없이 입력 화면 표시 | 수동 | [동의 게이트](../domain/ACCOUNT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-3-회원-동의-상태) |
 
 ## STORY-LIMIT — 회원 이프 게이팅
 

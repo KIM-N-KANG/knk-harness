@@ -22,16 +22,16 @@
 
 | 도메인 | 다루는 것 | 세트 |
 | --- | --- | --- |
-| [STORY](docs/domain/STORY/AGENTS.md) | 스토리 탐색·제작·상세·공개·검색 | AI · BACKEND · WEB · ANDROID |
-| [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅 플레이·선택지·실시간 이미지·피드백 | AI · BACKEND · WEB · ANDROID |
-| [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 게스트·회원·로그인·동의·이관·프로필 | BACKEND · WEB · ANDROID |
-| [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프·충전 결제·보상·체험 한도 | BACKEND · WEB · ANDROID |
-| [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND · WEB · ANDROID |
-| [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI · BACKEND · WEB · ANDROID |
+| [STORY](docs/domain/STORY/AGENTS.md) | 스토리 탐색·제작·상세·공개·검색 | AI, BACKEND, CLIENT |
+| [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅 플레이·선택지·실시간 이미지·피드백 | AI, BACKEND, CLIENT |
+| [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 게스트·회원·로그인·동의·이관·프로필 | BACKEND, CLIENT |
+| [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프·충전 결제·보상·체험 한도 | BACKEND, CLIENT |
+| [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND, CLIENT |
+| [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI, BACKEND, CLIENT |
 
 - 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
 - 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
-- 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
+- 클라이언트 세트는 `CLIENT/`의 공통 계약과 하위 `WEB/`, `ANDROID/`의 차이와 구현을 함께 확인합니다. ACCOUNT는 [CLIENT](docs/domain/ACCOUNT/CLIENT/AGENTS.md)가 기준입니다. 도메인 공통 기반과 아직 이관하지 않은 플랫폼 구조는 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다. 다른 도메인은 이관 전까지 기존 Spec, Design, ADR과 QA를 함께 확인합니다.
 
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |

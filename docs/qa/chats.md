@@ -11,7 +11,7 @@
 | 작성 목적 | 채팅 목록·채팅 화면의 수동 QA와 E2E 검수 기준을 정의합니다. |
 | 화면 | 채팅 목록 `/chats`(FE-SCREEN-004), 채팅 화면 `/chats/[id]`(FE-SCREEN-005), 공유 열람 `/share/[shareId]` |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
-| 관련 스펙 | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), [`2-user-stories.md §2-5·§2-6`](../spec/2-user-stories.md) |
+| 관련 스펙 | [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), [`2-user-stories.md §2-5·§2-6`](../spec/2-user-stories.md) |
 | 관련 E2E | `manyak-web/e2e/chats/chat-list.spec.ts`, `manyak-web/e2e/chats/chat-room.spec.ts`, `manyak-web/e2e/chats/chat-tour.spec.ts`, `manyak-web/e2e/visual/chats-visual.spec.ts`, `manyak-web/e2e/chats/chat-guest-limit.spec.ts`, `manyak-web/e2e/chats/chat-share.spec.ts`, `manyak-web/e2e/share/shared-chat.spec.ts`, `manyak-web/e2e/visual/share-visual.spec.ts` |
 
 ## 읽는 순서
@@ -57,7 +57,7 @@
 | CHAT-LIST-04 | P1  | 게스트, 로컬 채팅 ID와 스토리 ID 모두 없음 | `/chats` 진입                        | 앱과 같이 가운데 한 줄 보조 안내(§3-1-3 빈 상태 문구)만 표시. 버튼·CTA 없음                                          | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3, KNK-1355        |
 | CHAT-LIST-05 | P1  | 게스트, 채팅 ID 없음 + 스토리 ID 있음                        | `/chats` 진입                        | CHAT-LIST-04와 같은 한 줄 안내만(스토리 유무로 분기하지 않음)                                                        | ✅ e2e `chats/chat-list`     | US-5-4, §3-1-3, KNK-1355        |
 | CHAT-LIST-06 | P1  | 게스트, 채팅 ID 있음                                         | 배치 조회가 5xx로 실패               | "채팅을 불러오지 못했어요" + "다시 시도하기" 버튼. 재시도 성공 시 목록 표시                                               | 수동                         | US-2-6 유형, §3-1-3             |
-| CHAT-LIST-07 | P2  | 게스트, 채팅 ID 있음                                         | 진입 직후(하이드레이션·조회 중) 관찰 | 빈 상태 깜빡임 없이 실제 카드와 같은 가로 16px·세로 8px 패딩, 56px·12px 곡률 썸네일, 제목·미리보기·메타 행의 지연 스켈레톤 → 목록 전환 | ✅ e2e `chats/chat-list`      | §3-1-3·[웹 저장소 3-state](../spec/3-2-web-spec.md#웹-사용자-모델), KNK-1043 |
+| CHAT-LIST-07 | P2  | 게스트, 채팅 ID 있음                                         | 진입 직후(하이드레이션·조회 중) 관찰 | 빈 상태 깜빡임 없이 실제 카드와 같은 가로 16px·세로 8px 패딩, 56px·12px 곡률 썸네일, 제목·미리보기·메타 행의 지연 스켈레톤 → 목록 전환 | ✅ e2e `chats/chat-list`      | §3-1-3·[웹 저장소 3-state](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), KNK-1043 |
 | CHAT-LIST-08 | P2  | 게스트, 로컬 ID 중 일부가 서버에서 삭제됨                    | `/chats` 진입                        | 서버가 반환하지 않은 ID는 조용히 카드에서 제외                                                                      | 수동                         | §3-1-6 배치 재조회              |
 | CHAT-LIST-09 | P2  | `lastStoryPreview`가 빈 문자열인 채팅                        | `/chats` 진입                        | 미리보기 자리에 "채팅을 시작하고 이야기를 이어가 보세요" fallback 표시                                              | ✅ e2e `visual/chats-visual` | §3-1-3                          |
 | CHAT-LIST-10 | P2  | `lastStoryPreview`가 `null`인 채팅                           | `/chats` 진입                        | 해당 채팅은 목록 변환 단계에서 제외되어 카드가 나타나지 않음                                                        | 수동                         | §3-1-3                          |
@@ -305,15 +305,15 @@
 
 ## CHAT-GATE — 전송과 재생성 동의 게이트
 
-기준: [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델). 게스트도 동의 후 채팅 전송과 재생성을 이용한다. 채팅방 생성은 동의 전에도 가능하다. 공통 동의 검수는 AUTH-GUEST가 소유한다. 로그인 뒤 절차는 [AUTH-LOGIN-07·AUTH-CONSENT](auth.md)를 따른다.
+기준: [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원). 게스트도 동의 후 채팅 전송과 재생성을 이용한다. 채팅방 생성은 동의 전에도 가능하다. 공통 동의 검수는 AUTH-GUEST가 소유한다. 로그인 뒤 절차는 [AUTH-LOGIN-07·AUTH-CONSENT](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)를 따른다.
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| CHAT-GATE-01 | P0 | 미동의 게스트, 채팅방 | 직접 입력, 추천 랜덤 전송 또는 선택지 전송 | 요청 없이 AUTH-GUEST 동의 시트. 취소하면 입력 유지, 동의하면 대기한 입력만 한 번 전송 | ✅ e2e `chats/chat-login-gate`, `auth/guest-consent` | US-9-13, 웹 게스트 이용 동의 |
-| CHAT-GATE-02 | P0 | 게스트, 마지막 턴 있음 | "다시 생성" 탭 | 재생성 요청 없이 같은 시트, 기존 본문 유지 | ✅ e2e `chats/chat-login-gate` | US-9-13 |
+| CHAT-GATE-01 | P0 | 미동의 게스트, 채팅방 | 직접 입력, 추천 랜덤 전송 또는 선택지 전송 | 요청 없이 AUTH-GUEST 동의 시트. 취소하면 입력 유지, 동의하면 대기한 입력만 한 번 전송 | ✅ e2e `chats/chat-login-gate`, `auth/guest-consent` | ACCOUNT-US-004, 웹 게스트 이용 동의 |
+| CHAT-GATE-02 | P0 | 게스트, 마지막 턴 있음 | "다시 생성" 탭 | 재생성 요청 없이 같은 시트, 기존 본문 유지 | ✅ e2e `chats/chat-login-gate` | ACCOUNT-US-004 |
 | CHAT-GATE-03 | P0 | 게스트, 채팅 메뉴 시트 열림 | "새 채팅 시작하기" 탭 | 게스트도 참조 스토리로 새 채팅방을 만들어 이동(STORY-GATE-04와 같은 지속 저장 규칙) | ✅ e2e `chats/chat-login-gate` | 구현(`use-start-chat`) |
-| CHAT-GATE-05 | P0 | 이 탭에서 게스트로 시작한 채팅 ID 있음 | 로그인 → 동의 완료 | `/auth/migrate` `chatIds`에 탭의 게스트 채팅 ID가 서재 ID와 함께 실리고, 평가 완료 뒤 탭 저장소에서 제거. 이관 닫힌 계정은 옮기지 못해 그 채팅방이 403(CHAT-ENTRY-08) | ✅ e2e `chats/chat-login-gate` | [웹 사용자 모델](../spec/3-2-web-spec.md#웹-사용자-모델), AUTH-MIGRATE-03 |
-| CHAT-GATE-04 | P1 | 세션 판정·동의 조회 중(회원) | 전송·재생성 | 시트 없이 조용히 막힘(동의 시트가 화면을 덮음). 판정 뒤 정상 전송 | 수동 | [동의 게이트](../design/1-1-web-design.md#동의-게이트-웹) |
+| CHAT-GATE-05 | P0 | 이 탭에서 게스트로 시작한 채팅 ID 있음 | 로그인 → 동의 완료 | `/auth/migrate` `chatIds`에 탭의 게스트 채팅 ID가 서재 ID와 함께 실리고, 평가 완료 뒤 탭 저장소에서 제거. 이관 닫힌 계정은 옮기지 못해 그 채팅방이 403(CHAT-ENTRY-08) | ✅ e2e `chats/chat-login-gate` | [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), AUTH-MIGRATE-03 |
+| CHAT-GATE-04 | P1 | 세션 판정·동의 조회 중(회원) | 전송·재생성 | 시트 없이 조용히 막힘(동의 시트가 화면을 덮음). 판정 뒤 정상 전송 | 수동 | [동의 게이트](../domain/ACCOUNT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-3-회원-동의-상태) |
 
 ## CHAT-LIMIT — 회원 이프·체험 표시
 

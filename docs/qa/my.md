@@ -22,13 +22,13 @@
 ## 목차
 
 - [MY-MENU — 마이 메뉴 `/my`](#my-menu--마이-메뉴-my)
-- [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](#my-account-deletion--회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
+- [MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-13-my-account-deletion-회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052)
 - [MY-NOTIFICATIONS — 알림 설정 `/my/notifications` (KNK-1401)](#my-notifications--알림-설정-mynotifications-knk-1401)
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](#my-credits--이프-충전-mycredits-fe-screen-008-knk-108310921297)
-- [MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](#my-persona--페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469)
-- [MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)](#my-profile--프로필-수정-myprofileedit-fe-screen-008-knk-1148)
+- [MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-my-persona-페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469)
+- [MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-15-my-profile-프로필-수정-myprofileedit-fe-screen-008-knk-1148)
 - [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
-- [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](#my-invite--친구-초대-myinvite-fe-screen-008)
+- [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-16-my-invite-친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
 - [MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011)](#my-info--서비스-안내-about-fe-screen-011)
 - [MY-NOTICES — 공지사항 `/notices` (FE-SCREEN-014, KNK-1817)](#my-notices--공지사항-notices-fe-screen-014-knk-1817)
@@ -40,46 +40,26 @@
 
 컬럼 정의와 우선순위 기준은 [`AGENTS.md`](AGENTS.md)를 따릅니다.
 
-로그인·세션·연동은 [인증 QA](auth.md), 공통 화면 검수는 [QA 공통 항목](AGENTS.md#크로스커팅-항목)을 따릅니다.
+로그인·세션·연동은 [인증 QA](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md), 공통 화면 검수는 [QA 공통 항목](AGENTS.md#크로스커팅-항목)을 따릅니다.
 
 ## MY-MENU — 마이 메뉴 `/my`
+
+계정과 프로필 케이스는 ACCOUNT 검증으로 옮겼다. ([MY-MENU](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-18-my-menu-계정과-프로필))
 
 기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지).
 
 | ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
 | ------------ | --- | ------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
-| MY-MENU-01 | P0 | 게스트 | `/my` 진입 | 프로필 영역에 "게스트" 표시 + 로그인 버튼. 로그아웃 버튼 없음 | ✅ e2e `my/my-page` | FE-SCREEN-008, [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 | MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·알림(공지사항만, 알림 설정 없음)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
-| MY-MENU-03   | P0  | 게스트                                            | 로그인 버튼 탭         | `/login`으로 이동(마이 → 로그인 진입점)                                                                                 | ✅ e2e `my/login-page`                         | US-9-1, FE-SCREEN-008 진입점                 |
-| MY-MENU-04   | P0  | 회원 로그인 상태                                  | `/my` 진입             | 닉네임 표시 + 로그아웃·회원 탈퇴 메뉴 표시. 로그인 버튼 없음                                                            | ✅ e2e `my/my-page`·`my/account-deletion`     | FE-SCREEN-008                                |
 | MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 알림(알림 설정 → 공지사항 순) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 5개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
-| MY-MENU-06   | P2  | 회원, `me` 응답에 `profileThumbnailBase64` 있음   | 프로필 이미지 확인     | base64 썸네일(`data:image/png;base64,...`)을 세션 이미지보다 우선해 원형으로 렌더                                       | ✅ e2e `my/my-page`                            | 구현(`profile-header`)                       |
-| MY-MENU-07 | P1 | 회원 | 닉네임 아래 영역 확인 | 닉네임 아래 google → kakao 순서로 Chip 표시. Google만 연동이면 점선 "카카오 연동하기", 둘 다 연동이면 Chip 2개만 표시. 연동 실행·오류는 AUTH-LINK 담당 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 계정 연동, KNK-740 |
-| MY-MENU-08   | P2  | 회원, `me` 응답의 `linkedProviders`가 비었거나 없음 | 닉네임 아래 영역 확인  | 연동 Chip 행 자체를 렌더하지 않음(연동 버튼 2개가 잠깐 보이는 오해 방지)                                                | 수동                                           | FE-SCREEN-008 계정 연동, KNK-740             |
-| MY-MENU-09   | P2  | 프로필 이미지 없음 또는 이미지 로드 실패          | 프로필 영역 확인       | 회색 원 placeholder로 대체. 레이아웃 깨짐 없음                                                                          | ◐ e2e `visual/my-visual`(이미지 없음 분기만)   | 구현(`profile-header`)                       |
 | MY-MENU-10   | P1  | 회원                                              | 이프 카드 확인       | "내 이프" + 잔액(천 단위 콤마) 표시. 조회 중에는 스켈레톤                                                             | ◐ e2e `visual/my-visual`(잔액 표시만)          | US-10-1, FE-SCREEN-008                       |
-| MY-MENU-16   | P2  | 세션 판별 중(`loading`)                           | `/my` 진입 직후 관찰   | 닉네임·이프 카드 자리에 스켈레톤 표시(게스트 UI 깜빡임 없음)                                                          | 수동                                           | 구현(`profile-header`·`credit-balance-card`) |
 | MY-MENU-17 | P1 | 게스트/회원 | 피드백 메뉴 탭 | `/my/feedback`으로 이동 | ◐ e2e `my/my-page`(링크 표시만) | US-7-1, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) |
 | MY-MENU-18   | P1  | 게스트/회원                                       | 테마 변경 메뉴 반복 탭      | 시스템 설정 → 라이트 모드 → 다크 모드 순으로 순환. 왼쪽 아이콘(모니터·해·달)과 오른쪽 문구가 함께 바뀌고 테마 즉시 적용 | ✅ e2e `my/my-page`                            | 구현(`theme-menu-item`)                      |
-| MY-MENU-19 | P2 | 회원, base64 썸네일 없음·세션 이미지가 환경별 프로필 프리셋 URL | 프로필 이미지 확인 | 운영 `api.manyak.app`과 개발 `dev-api.manyak.app`의 `/profile-presets/**` 이미지가 원형으로 렌더링 | 수동 | [웹 이미지 검증](../design/1-1-web-design.md#원격-이미지-최적화), KNK-832 |
-| MY-MENU-20   | P0  | 회원                                              | 회원 탈퇴 메뉴 탭      | `/my/account-deletion`으로 이동. 사용자 제거 아이콘(`UserRemove02Icon`)과 위험색 문구 표시                               | ✅ e2e `my/account-deletion`                  | US-9-11, FE-SCREEN-008 회원 탈퇴            |
 | MY-MENU-21 | P1 | 회원 | 이프 카드 확인 | 잔액 오른쪽에 강조색 버튼 "충전" 하나만 표시(출석 체크·내역 버튼은 없음). 탭하면 `/my/credits`로 이동 | ✅ e2e `my/credits`·`visual/my-visual` | FE-SCREEN-008 마이 페이지 회원 상태 구성, KNK-1092 |
-| MY-MENU-22 | P2 | 회원 | 친구 초대 메뉴 확인 | "친구 초대" 라벨 아래에 작은 강조색 보조 문구 "하고 N 이프 받기" 표시(N은 `GET /credits/policies`의 `inviteReward`). 라벨과 이어 한 문장으로 읽힘 | ◐ e2e `visual/my-visual`(표시만) | FE-SCREEN-008 마이 페이지 회원 상태 구성, §3-1-7 이프 정책 수치 표시, KNK-1092·1095 |
 
 ## MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)
 
-기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지).
-
-| ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
-| ---------------------- | --- | --------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------ |
-| MY-ACCOUNT-DELETION-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/account-deletion` | [웹 접근 조건](../spec/3-2-web-spec.md#라우팅-테이블) |
-| MY-ACCOUNT-DELETION-02 | P0  | 회원                              | 마이 메뉴에서 진입              | 뒤로가기 헤더 "회원 탈퇴" + 제목 "탈퇴하기 전에 / 아래 내용을 모두 확인해주세요" + 설명 "모든 항목을 확인해야 탈퇴할 수 있어요" + 확인 항목 4개 + 하단 "회원 탈퇴하기" CTA 표시. 하단 탭 없음 | ◐ e2e `my/account-deletion`·`visual/my-visual`  | US-9-11, FE-SCREEN-008 화면 구성     |
-| MY-ACCOUNT-DELETION-03 | P0  | 화면 기본 상태                    | 체크박스를 순서대로 선택        | 하나라도 미선택이면 CTA 비활성. 잔여 이프 소멸·기존 서재 복구 불가·공개 콘텐츠 잔존 가능·같은 소셜 계정 재로그인 시 기존 계정 미복구를 모두 체크하면 CTA 활성                               | ✅ e2e `my/account-deletion`                    | FE-SCREEN-008 사전 확인              |
-| MY-ACCOUNT-DELETION-04 | P1 | 미선택 체크박스와 하단 CTA 표시됨 | 기본·전체 선택 상태를 각각 확인 | 미선택 체크박스는 2px `muted-foreground/50` 보더, 선택 시 `primary` 채움에 체크 패스가 그려짐. 체크박스와 문구 사이는 16px. CTA는 활성·로딩 상태에 위험색 배경 사용 | ◐ e2e `visual/my-visual`(기본 상태만) | [웹 표현](../design/1-1-web-design.md#웹-표현-값), KNK-1052 |
-| MY-ACCOUNT-DELETION-05 | P0  | 네 항목 전체 선택, 탈퇴 API 204   | "회원 탈퇴하기" 탭              | `DELETE /users/me`를 한 번 호출. 성공 뒤 사용자 캐시·복구 슬롯·분석 식별자와 BFF·NextAuth 세션을 정리하고 `/my`로 이동해 게스트 상태 표시                                                     | ◐ e2e `my/account-deletion`(요청·로그아웃·이동) | §3-1-7 회원 탈퇴                     |
-| MY-ACCOUNT-DELETION-06 | P1  | 탈퇴 요청 응답 대기               | CTA 관찰                        | 버튼 크기를 유지한 중앙 스피너("회원 탈퇴 중") 표시 + CTA 비활성으로 중복 요청 차단                                                                                                           | ✅ e2e `my/account-deletion`                    | FE-SCREEN-008 요청 중 상태           |
-| MY-ACCOUNT-DELETION-07 | P0  | 탈퇴 API 5xx·네트워크 실패        | CTA 탭                          | "회원 탈퇴에 실패했어요" 토스트 + 현재 경로·체크 상태 유지. 요청 종료 후 CTA가 다시 활성화되어 재시도 가능. 세션 만료가 확정된 401은 전역 세션 만료 흐름을 따름                               | ✅ e2e `my/account-deletion`(5xx)               | §3-1-7 회원 탈퇴 실패                |
-| MY-ACCOUNT-DELETION-08 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | 탈퇴 요청 없이 `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
+ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-13 MY-ACCOUNT-DELETION: 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-13-my-account-deletion-회원-탈퇴-myaccount-deletion-fe-screen-008-knk-1052))
 
 <a id="my-credits--이프-충전-mycredits-fe-screen-008-knk-10831092-미배포"></a>
 
@@ -153,38 +133,11 @@
 
 ## MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)
 
-기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지), [웹 URL](../spec/3-2-web-spec.md).
-
-| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
-| --- | --- | --- | --- | --- | --- | --- |
-| MY-PERSONA-01 | P0 | 동의를 마친 회원, 스토리 상세 | 페르소나 Select의 "페르소나 생성하기" → 이름·성별·특징 입력 → "생성하기" | `/my/personas/new`의 "페르소나 생성" 화면이 열림. `POST /users/me/personas`에 앞뒤 공백을 뺀 `name`과 `# 주인공`, `## 성별`, 성별 값, 특징을 줄바꿈으로 이은 `description`이 실림. "페르소나를 생성했어요" 토스트 후 상세로 돌아오고 페르소나 Select에 새 페르소나가 선택되어 있음 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
-| MY-PERSONA-02 | P1 | 회원, 생성 화면 | 아무것도 입력하지 않고 "생성하기" → 이름 입력 → 성별 선택 | 요청 없이 기본 정보 아래 "이름을 입력해 주세요", 특징 아래 "특징을 입력해 주세요"가 표시됨. 이름을 입력하면 "성별을 선택해 주세요"로 바뀌고 성별을 고르면 안내 문구로 돌아옴 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
-| MY-PERSONA-03 | P1 | 회원, 생성 요청이 409(10개 초과) 또는 5xx | 입력 후 "생성하기" | 409는 "페르소나는 10개까지 만들 수 있어요", 그 밖은 "페르소나를 생성하지 못했어요" 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `stories/story-persona`(409) | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
-| MY-PERSONA-04 | P1 | 게스트 | `/my/personas/new` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `stories/story-persona` | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
-| MY-PERSONA-05 | P2 | 회원, 생성 화면 | 이름 20자, 특징 500자를 넘겨 입력 시도. 생성 요청 중 화면 관찰 | 각 상한에서 입력이 막히고 카운터가 `20 / 20`, `500 / 500`. 요청 중에는 입력이 잠기고 버튼 크기를 유지한 스피너("페르소나 생성 중")가 보임 | 수동 | §3-1-3 FE-SCREEN-008 페르소나 생성, KNK-1469 |
-| MY-PERSONA-06 | P1 | 회원, 내 페르소나 있음 / 없음 | 마이 → "페르소나" 섹션의 "페르소나 관리" | `/my/personas`에서 줄마다 이름과 특징 요약(절 제목 줄 제외)이 최대 두 줄로 보이고 넘으면 말줄임. 줄을 누르면 특징 원문 전체(절 제목과 줄바꿈 포함)가 펼쳐지고 다시 누르면 접힘. 마지막 줄 아래 가운데에 "페르소나 추가" 보조 버튼. 없으면 "아직 만든 페르소나가 없어요"와 그 아래 같은 버튼 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
-| MY-PERSONA-07 | P0 | 회원, 내 페르소나 있음 | 줄 더보기 → "수정하기" → 이름 변경 → "저장하기" | 시트(종류 "페르소나", 제목 이름)에 수정하기, 삭제하기 순서. 수정 화면은 "페르소나 수정" 헤더와 "수정한 내용은 새로 시작하는 채팅부터 적용돼요" 설명, 기존 이름과 성별과 특징이 채워짐. `PATCH`에 `name`과 `description`이 실리고 "페르소나를 수정했어요" 토스트 후 목록에 바뀐 이름이 보임 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
-| MY-PERSONA-08 | P0 | 회원, 내 페르소나 2개 | 줄 더보기 → "삭제하기" → 확인 다이얼로그의 "삭제하기" | "페르소나를 삭제할까요?"와 "이 페르소나로 진행 중인 채팅은 그대로 이어갈 수 있어요"가 보이고, 확정하면 `DELETE` 후 "페르소나를 삭제했어요" 토스트와 함께 목록에서 사라짐 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
-| MY-PERSONA-09 | P1 | 회원, 내 페르소나 10개 | 목록의 "페르소나 추가" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
-| MY-PERSONA-10 | P1 | 게스트 | `/my/personas` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `my/personas` | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469, [웹 URL](../spec/3-2-web-spec.md) |
-| MY-PERSONA-11 | P2 | 회원, 목록 조회 실패 / 목록에 없는 ID로 수정 화면 진입 | `/my/personas` 진입 / `/my/personas/없는-ID/edit` 진입 | "페르소나를 불러오지 못했어요"와 "다시 시도하기" / "페르소나를 찾을 수 없어요" | 수동 | §3-1-3 FE-SCREEN-008 페르소나 관리, KNK-1469 |
+ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-14 MY-PERSONA: 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-my-persona-페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469))
 
 ## MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)
 
-기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지), [웹 URL](../spec/3-2-web-spec.md). 문구는 스펙 절을 따릅니다.
-
-| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
-| --- | --- | --- | --- | --- | --- | --- |
-| MY-PROFILE-01 | P0 | 회원 | 마이 프로필 영역(닉네임과 꺾쇠) 탭 → 이미지 버튼 → 시트에서 다른 프리셋 → 닉네임 변경 → "저장하기" | `/my/profile/edit`로 이동하고 현재 닉네임과 이미지가 채워짐. 바뀐 내용이 없으면 저장 버튼 비활성. 시트에 현재 이미지 프리셋이 선택 상태로 보이고 고르면 시트가 닫힘. `PATCH /users/me`에 바뀐 `nickname`과 `profileImagePreset`만 실리고, 세션 맞춤 요청(`profileRefresh`) 뒤 저장 토스트와 함께 마이로 돌아와 새 닉네임이 보이고 프로필 수정 폼은 사라짐 | ✅ e2e `my/profile` (Mobile Chrome, Mobile Safari) | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-02 | P1 | 회원, 프로필 수정 화면 | 공백이 든 닉네임 / 1자 닉네임으로 "저장하기" | 요청 없이 닉네임 칸 아래 안내 대신 허용 문자 오류 / 길이 오류가 보이고, 칸을 고치면 안내로 돌아옴 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-03 | P1 | 회원, 수정 요청이 409 / 400 / 5xx | 규칙을 지킨 닉네임으로 "저장하기" | 409는 이미 사용 중 사유, 400은 쓸 수 없는 닉네임 사유를 닉네임 칸 아래에 표시. 5xx는 저장 실패 토스트. 화면과 입력이 그대로 남음 | ◐ e2e `my/profile`(409) | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-04 | P1 | 회원, 닉네임을 바꾼 상태 | 헤더 뒤로가기 버튼 → "닫기" → 기기 뒤로가기 → "나가기" | 스토리 수정과 같은 확인 다이얼로그가 뜨고, 닫기면 입력이 남은 채 화면에 머묾. 나가기면 저장 없이 마이로 돌아가 URL과 실제 마이 화면이 함께 바뀌고 프로필 수정 폼은 사라짐. 바꾼 내용이 없으면 MY-PROFILE-09를 따름 | ✅ e2e `my/profile` (Mobile Chrome, Mobile Safari) | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-05 | P1 | 게스트 | `/my/profile/edit` 직접 진입 | 로그인 화면으로 이동 | ✅ e2e `my/profile` | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148, [웹 URL](../spec/3-2-web-spec.md) |
-| MY-PROFILE-06 | P2 | 회원, 프리셋 목록 조회 실패 / 회원 정보 조회 실패 | 이미지 버튼으로 시트 열기 / `/my/profile/edit` 진입 | 시트에 이미지 조회 실패 안내와 다시 시도하기 / 화면에 프로필 조회 실패 안내와 다시 시도하기 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-07 | P2 | 회원, 저장 성공 직후 | 마이에서 새로고침 | 새로고침 직후 첫 페인트부터 새 닉네임과 이미지가 보이고 이전 닉네임이 잠깐 보이지 않음(세션도 서버 값으로 맞춰짐). 다른 기기의 세션은 다음 로그인 또는 `GET /auth/me` 응답부터 반영 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148, [웹 Design 토큰 세션](../design/1-1-web-design.md#토큰-세션-bff) |
-| MY-PROFILE-08 | P2 | 회원, 닉네임을 바꿔 저장 | 내가 쓴 공개 스토리 상세 열기 | 작성자 표시가 새 닉네임 | 수동 | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1148 |
-| MY-PROFILE-09 | P1 | 회원, 마이에서 프로필 수정으로 진입 | 아무것도 고치지 않고 헤더 뒤로가기 탭 | 이탈 확인과 수정 요청 없이 `/my`와 실제 마이 화면으로 돌아가며 프로필 수정 폼은 사라짐 | ✅ e2e `my/profile` (Mobile Chrome, Mobile Safari) | §3-1-3 FE-SCREEN-008 프로필 수정, US-9-14, KNK-1724 |
-| MY-PROFILE-10 | P1 | 회원, `/my/profile/edit` 주소로 직접 진입 | 회원 정보가 표시된 뒤 헤더 뒤로가기 탭 | `/my`로 교체 이동하고 실제 마이 화면이 보이며 프로필 수정 폼은 사라짐 | ✅ e2e `my/profile` (Mobile Chrome, Mobile Safari) | [웹 화면 전환 규칙](../spec/3-2-web-spec.md#화면-전환-규칙), KNK-1724 |
+ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-15 MY-PROFILE: 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-15-my-profile-프로필-수정-myprofileedit-fe-screen-008-knk-1148))
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 
@@ -206,27 +159,7 @@
 
 ## MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)
 
-기준: [계약·구조](../spec/3-1-client-spec.md#fe-screen-008-로그인마이-페이지).
-
-| ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
-| -------------- | --- | ----------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | -------------------------------------- |
-| MY-INVITE-01 | P0 | 게스트 | `/my/invite` 직접 진입 | `/login`으로 replace 이동(마이 메뉴에도 친구 초대 미노출 — MY-MENU-02) | ✅ e2e `my/invite` | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙), FE-SCREEN-008 |
-| MY-INVITE-02   | P0  | 회원, 응답 fixture의 `monthlyRewardLimit=10` | 마이 → 친구 초대 메뉴 탭                | `/my/invite` 진입. 내 초대 코드 + "이번 달 받은 보상 N/10회" + 코드 복사·카카오톡 공유 버튼 + 코드 입력 폼 + 이용 안내 4개 항목 표시                         | ✅ e2e `my/invite`                 | US-10-2, FE-SCREEN-008 친구 초대       |
-| MY-INVITE-03   | P1  | 코드 표시됨                                                                               | "코드 복사하기" 탭                      | 초대 코드 문자열만 클립보드에 저장 + "초대 코드를 복사했어요" 토스트                                                                                         | ✅ e2e `my/invite`                 | FE-SCREEN-008 코드 복사·공유           |
-| MY-INVITE-04   | P2  | 클립보드 권한 거부 등 복사 실패                                                           | 코드 복사 탭                            | "초대 코드 복사에 실패했어요" 토스트                                                                                                                         | 수동                               | 구현(`invite-screen`)                  |
-| MY-INVITE-05   | P1  | 카카오 SDK 초기화 완료                                                                    | "카카오톡 공유하기" 탭                  | 공유 메시지에 제목 "초대 코드 등록하고 N 이프 받기 🎁"(N은 `GET /credits/policies`의 `inviteReward`) + 본문 "초대 코드: {코드}" + "마냑 하러가기" 버튼(서비스 홈 링크) 전송                            | ✅ e2e `my/invite`                 | FE-SCREEN-008 코드 복사·공유           |
-| MY-INVITE-06   | P1  | 카카오 JS 키 미설정 또는 SDK 로드 전·실패                                                 | 공유 버튼 확인                          | 버튼 비활성화. 공유 호출이 실패하면 "카카오톡 공유를 열지 못했어요" 토스트                                                                                   | 수동                               | FE-SCREEN-008 초대 코드 카드           |
-| MY-INVITE-07   | P2  | 초대 화면 방문 후 뒤로가기로 이탈                                                         | 친구 초대 재진입                        | SDK 스크립트가 캐시돼도 공유 버튼이 활성 상태로 복구됨                                                                                                       | ✅ e2e `my/invite`                 | 구현(`use-kakao-share`)                |
-| MY-INVITE-08   | P1  | 초대 코드 조회가 5xx로 실패                                                               | `/my/invite` 진입                       | 코드 카드에 "초대 코드를 불러오지 못했어요" + "다시 시도하기" 버튼(재시도 중 "다시 시도 중..."). 코드 입력 폼은 계속 사용 가능. 재시도 성공 시 코드 표시         | ✅ e2e `my/invite`                 | §3-1-7 이프·초대                       |
-| MY-INVITE-09   | P2  | 조회 200이지만 응답에 `inviteCode` 없음                                                   | 진입                                    | MY-INVITE-08과 동일한 실패 안내 + 입력 폼 유지                                                                                                               | ✅ e2e `my/invite`                 | 구현(`invite-screen`)                  |
-| MY-INVITE-10   | P2  | 코드 조회 성공 이력(캐시) 있음                                                            | 재진입 시 백그라운드 재조회가 실패      | 기존 코드·복사·공유 버튼 유지(실패 안내로 덮지 않음)                                                                                                         | ✅ e2e `my/invite`                 | 구현(`invite-screen`)                  |
-| MY-INVITE-11   | P0  | 미사용 계정, 유효한 타인 코드                                                             | 소문자·공백 섞인 코드 입력 → "등록"     | 대문자 정규화된 코드로 제출. 성공 시 "친구 초대 보상으로 N 이프를 받았어요" 토스트(N은 `GET /credits/policies`의 `inviteReward`) + 입력 초기화 + 잔액 자동 갱신(me 무효화)                             | ✅ e2e `my/invite`                 | US-10-2, FE-SCREEN-008 코드 입력       |
-| MY-INVITE-12   | P1  | 입력 비어 있음                                                                            | 등록 탭                                 | "코드를 입력해주세요" 인라인 오류(`aria-invalid`). API 요청 없음                                                                                             | ✅ e2e `my/invite`                 | FE-SCREEN-008 코드 입력                |
-| MY-INVITE-13   | P0  | 각 오류 응답(400·404 / 409 `INVITE_SELF_CODE` / 409 `INVITE_ALREADY_REDEEMED` / 기타 5xx) | 코드 제출                               | 사유별 인라인 안내: "코드를 다시 확인해주세요" / "내 코드는 입력할 수 없어요" / "이미 초대 코드를 입력했어요" / "초대 코드 입력에 실패했어요". 입력값은 유지 | ✅ e2e `my/invite`                 | FE-SCREEN-008 코드 입력                |
-| MY-INVITE-14   | P1  | 등록 요청 진행 중                                                                         | 폼 관찰                                 | 입력창·등록 버튼 비활성화 + 버튼 크기를 유지한 중앙 스피너("초대 코드 등록 중")                                                                              | ✅ e2e `my/invite`                 | FE-SCREEN-008 등록 중 상태             |
-| MY-INVITE-15   | P2  | 응답 fixture의 월 보상 횟수·상한이 10/10회                                                         | 코드 카드 확인                          | 진행 표기만 10/10회로 바뀌고 코드 복사·공유는 계속 가능(상한은 보상 적립에만 적용)                                                                           | ✅ e2e `my/invite`                 | FE-SCREEN-008 이용 안내                |
-| MY-INVITE-16   | P2  | 코드 입력창                                                                               | 공백 포함 문자열 붙여넣기·9자 이상 입력 | 공백 제거·대문자 변환 후 8자까지만 반영                                                                                                                      | ◐ e2e `my/invite`(대문자 표시만)   | 구현(`invite-code`)                    |
-| MY-INVITE-17   | P2  | 임의 사용자                                                                               | 폐기된 초대 URL `/invite/{code}` 진입   | 404 표시. 초대 코드 쿠키 저장·로그인 리다이렉트 없음                                                                                                         | ✅ e2e `my/invite`                 | FE-SCREEN-008 결정 기록(초대 URL 폐기) |
+ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-16 MY-INVITE: 친구 초대 `/my/invite` (FE-SCREEN-008)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-16-my-invite-친구-초대-myinvite-fe-screen-008))
 
 ## MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)
 
