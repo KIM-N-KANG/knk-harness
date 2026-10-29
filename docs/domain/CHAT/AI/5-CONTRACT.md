@@ -338,6 +338,8 @@ compact가 먼저 완료돼도 이미 전송한 선택지 요청은 위 내용�
 | `history[].role` | `string` | 필수 | `USER` 또는 `ASSISTANT` |
 | `history[].content` | `string` | 필수 | 메시지 원문 |
 
+`summary`와 모든 `history[].content`에서 이미지 마커와 공백을 제외한 내용이 전부 비어 있으면 모델 호출 없이 422를 반환한다. 어느 한쪽에 내용이 있으면 허용한다.
+
 <br>
 
 **2. 응답 필드**
