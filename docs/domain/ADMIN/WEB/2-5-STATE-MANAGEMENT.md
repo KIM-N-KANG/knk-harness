@@ -12,17 +12,17 @@
 
 | 쿼리 | 쓰는 화면 | 값 |
 |---|---|---|
-| `range` | 개요, 분석, 지표 화면 | 빠른 범위 키<br>`today`, `yesterday`, `last7d`, `last14d`, `last30d`, `last90d`, `thisWeek`, `lastWeek`, `thisMonth`, `lastMonth`, `last6m`, `last1y` |
-| `from` | 개요, 분석, 지표 화면 | 직접 선택한 시작 날짜 |
-| `to` | 개요, 분석, 지표 화면 | 직접 선택한 끝 날짜 |
-| `days` | 개요, 분석 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
-| `tab` | 지표 화면 | 탭 값 |
-| `campaign` | 유입 분석 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
-| `adSegment` | 유입 분석 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
+| `range` | 개요, 지표 화면 | 빠른 범위 키<br>`today`, `yesterday`, `last7d`, `last14d`, `last30d`, `last90d`, `thisWeek`, `lastWeek`, `thisMonth`, `lastMonth`, `last6m`, `last1y` |
+| `from` | 개요, 지표 화면 | 직접 선택한 시작 날짜 |
+| `to` | 개요, 지표 화면 | 직접 선택한 끝 날짜 |
+| `days` | 개요, 예전 분석 경로 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
+| `tab` | 지표 화면 | 탭 값<br>하위 구분이 있는 탭은 하위 구분 값 |
+| `campaign` | 성장, 스토리 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
+| `adSegment` | 스토리 | 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds` |
 | `platform` | 지표 화면 | 플랫폼 `all`, `web`, `android`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
 | `segment` | 지표 화면 | 대상 `all`, `guest`, `member`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
-| `storyId` | 유입 분석, 전환 | 대상 스토리 공개 식별자<br>전환에서는 상세 진입 채팅 카드의 입력 값 |
-| `cohort` | 사용자 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
+| `storyId` | 스토리, 채팅 | 대상 스토리 공개 식별자<br>채팅에서는 상세 진입 채팅 카드의 입력 값 |
+| `cohort` | 성장 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
 | `direction` | 이프 내역 | `granted`, `spent` |
 | `date` | 이프 내역 | 기록일 |
 | `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출, 회원 목록 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt`<br>회원 목록의 `sort`는 `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`이고 없으면 `createdAt` |
@@ -35,12 +35,13 @@
 |---|---|
 | 기간 쿼리 우선순위 | 알려진 `range`가 있으면 그 범위<br>없고 `from`과 `to`가 올바르면 그 범위<br>둘 다 없으면 탭의 기본 기간 |
 | 기간 선택 | `range`, `from`, `to`, `days`를 지우고 새 값만 씀 |
-| 탭 전환 | `tab`만 바꾸고 기간과 조건은 유지 |
-| 지표 화면 이동 | 사이드바의 지표 화면 메뉴는 지금 URL의 `platform`과 `segment`를 붙여 엶<br>기간과 그 밖의 조건은 붙이지 않음 |
+| 탭 전환 | `tab`만 바꾸고 기간과 조건은 유지<br>하위 구분 전환도 같음 |
+| 지표 화면 이동 | 사이드바의 지표 화면 메뉴는 지금 URL의 `platform`, `segment`, `campaign`을 붙여 엶<br>기간과 그 밖의 조건은 붙이지 않음<br>관리 목록과 오가는 상호 링크는 쿼리를 붙이지 않음 |
+| 예전 경로 | 예전 지표 경로는 정보 구조의 이동 표대로 URL을 교체하고 기록을 늘리지 않음 ([2-1-1 메뉴와 경로](2-1-INFORMATION-ARCHITECTURE.md#2-1-1-메뉴와-경로)) |
 | 지원하지 않는 구분 | 그 탭이 쓰지 않는 `platform`과 `segment`는 읽지 않고 URL에서 지우지도 않음 |
 | 광고 캠페인 변경 | `campaign`을 바꾸고 `range`, `from`, `to`, `storyId`를 지움 |
 | 잘못된 값 | 알 수 없는 `tab`, `platform`, `segment`, `adSegment`는 기본값으로 화면을 그림<br>예전 링크의 `funnel`은 읽지 않고 URL에서 지우지도 않음<br>예전 링크의 `segment=ads`와 `segment=nonAds`는 광고 구분으로 읽지 않음<br>알 수 없는 삭제 필터 값은 제외로 그리고 요청에 싣지 않음 |
-| 뒤로 가기 | 쿼리 변경은 기록에 남아 뒤로 가기로 앞의 선택으로 돌아감<br>`days` 교체만 기록에 남기지 않음 |
+| 뒤로 가기 | 쿼리 변경은 기록에 남아 뒤로 가기로 앞의 선택으로 돌아감<br>`days` 교체와 예전 경로 이동만 기록에 남기지 않음 |
 
 <br>
 
