@@ -24,8 +24,8 @@
 
 ```mermaid
 graph LR
-    Browser[브라우저] -->|X-Manyak-Device-Id · X-Manyak-Session-Id 주입| BFF["Next.js BFF 프록시<br/>/api/* → API_BASE_URL"]
+    Browser[브라우저] -->|X-Manyak-Device-Id, X-Manyak-Session-Id 주입| BFF["Next.js BFF 프록시<br/>/api/* → API_BASE_URL"]
     Android[Android 앱] --> Server
-    BFF --> Server["manyak-server /api/v1/*<br/>request_id 부여 · device_id 해시 · 구조화 로그"]
-    Server -->|X-Manyak-Request-Id · X-Manyak-Session-Id · X-Manyak-Device-Id-Hash 전달| AI["manyak-ai<br/>스토리 생성(동기 REST) · 채팅 턴(SSE)"]
+    BFF --> Server["manyak-server /api/v1/*<br/>request_id 부여, device_id 해시, 구조화 로그"]
+    Server -->|X-Manyak-Request-Id, X-Manyak-Session-Id, X-Manyak-Device-Id-Hash 전달| AI["manyak-ai<br/>스토리 생성(동기 REST), 채팅 턴(SSE)"]
 ```

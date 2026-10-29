@@ -20,8 +20,8 @@ Python 3.11, FastAPI, Pydantic v2 기반이다.
 
 ```mermaid
 flowchart LR
-    C["<div style='width:200px;text-align:center;'>1. 호출부<br/>프롬프트·모델 이름·호출 조건 전달</div>"]
-    G["<div style='width:200px;text-align:center;'>2. 공통 통로 · complete / stream<br/>registry.py에서 모델 설정 조회</div>"]
+    C["<div style='width:200px;text-align:center;'>1. 호출부<br/>프롬프트, 모델 이름, 호출 조건 전달</div>"]
+    G["<div style='width:200px;text-align:center;'>2. 공통 통로: complete / stream<br/>registry.py에서 모델 설정 조회</div>"]
     S["<div style='width:200px;text-align:center;'>3. 공통 통로<br/>설정에 맞는 SDK 어댑터 선택</div>"]
     A["<div style='width:200px;text-align:center;'>4. SDK 어댑터<br/>공급자별 인자로 변환해 요청 전송</div>"]
     P["<div style='width:200px;text-align:center;'>5. 외부 공급자 AI API<br/>모델 실행</div>"]

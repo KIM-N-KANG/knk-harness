@@ -13,6 +13,7 @@ knk-workspace/
 ├── manyak-android/
 ├── manyak-server/
 ├── manyak-ai/
+├── manyak-notification/
 ├── manyak-terraform/
 └── manyak-infra/
 ```
@@ -22,8 +23,9 @@ knk-workspace/
 - `manyak-android/`: 마냑 안드로이드 앱 저장소입니다.
 - `manyak-server/`: 마냑 백엔드 서버 저장소입니다.
 - `manyak-ai/`: 마냑 AI 서버 저장소입니다.
+- `manyak-notification/`: 마냑 알림 서비스 저장소입니다.
 - `manyak-terraform/`: 마냑 운영 AWS Terraform 저장소입니다.
-- `manyak-infra/`: GHCR `dev` 이미지 기반 로컬·통합 Docker Compose 저장소입니다.
+- `manyak-infra/`: GHCR `dev` 이미지 기반 로컬과 통합 Docker Compose 저장소입니다.
 
 예시:
 
@@ -36,13 +38,14 @@ git clone <manyak-web-repository-url>
 git clone <manyak-android-repository-url>
 git clone <manyak-server-repository-url>
 git clone <manyak-ai-repository-url>
+git clone <manyak-notification-repository-url>
 git clone <manyak-terraform-repository-url>
 git clone <manyak-infra-repository-url>
 ```
 
 ## 제품 스펙 문서
 
-[도메인 목록](docs/domain/AGENTS.md)에서 APP, ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. APP에는 CLIENT 세트가 있고 나머지 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
+[도메인 목록](docs/domain/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
 
 클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 공통 계약과 플랫폼 조건을 함께 적용하며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 
@@ -66,7 +69,7 @@ git clone <manyak-infra-repository-url>
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 운영 Terraform | `../manyak-terraform` |
-| 로컬·통합 인프라 | `../manyak-infra` |
+| 로컬과 통합 인프라 | `../manyak-infra` |
 
 ## 작업 계획과 기록
 
@@ -98,7 +101,7 @@ git clone <manyak-infra-repository-url>
 | --- | --- | --- |
 | `create-branch` | Jira 티켓 번호로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 | Jira 키, 브랜치 태그, 최신 `origin/dev` 기준 분기, 워크트리 변경사항 |
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
-| `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목·본문, 검증 결과 |
+| `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목과 본문, 검증 결과 |
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
 | `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
 
@@ -111,7 +114,7 @@ git clone <manyak-infra-repository-url>
 | Git | 전체 | `git status --short --branch` | Git 저장소인지 먼저 확인합니다. |
 | Python 3 | `create-branch` | `python3 --version` | 브랜치 이름 생성 스크립트를 실행할 수 없습니다. |
 | GitHub CLI | `create-pr` | `gh auth status` | PR 생성 전에 GitHub 로그인을 설정합니다. |
-| GitHub 원격 설정 | `create-pr` | `git remote -v` | 인증·원격 설정 확인은 push 권한을 보장하지 않습니다. 실제 push는 요청된 PR 생성 절차에서 수행하고, 실패하면 원인을 보고합니다. |
+| GitHub 원격 설정 | `create-pr` | `git remote -v` | 인증과 원격 설정 확인은 push 권한을 보장하지 않습니다. 실제 push는 요청된 PR 생성 절차에서 수행하고, 실패하면 원인을 보고합니다. |
 | Atlassian Rovo/Jira MCP | `create-branch` | Codex/Claude에서 Jira 이슈 조회 도구를 사용할 수 있는지 확인 | Jira 제목을 자동 조회할 수 없으므로 사용자가 이슈 제목을 제공해야 합니다. |
 
 ## 스킬별 외부 의존성
@@ -139,7 +142,7 @@ git clone <manyak-infra-repository-url>
 
 ### create-pr
 
-`create-pr`는 요청된 변경을 원격에 push하고 Draft PR을 생성하거나 기존 PR에 반영합니다. 기본 base는 `dev`이며 사용자 지정 또는 기존 PR의 base를 존중합니다. 본문·캡처를 준비한 뒤 PR을 생성하고, 확보한 PR URL에서 이미지를 첨부합니다. GitHub CLI(`gh`)를 사용하며, 이미지 첨부에는 로그인된 브라우저가 필요합니다. 본문은 `docs/templates/pull-request/`에서 가장 가까운 템플릿을 골라 변경에 맞게 조정합니다.
+`create-pr`는 요청된 변경을 원격에 push하고 Draft PR을 생성하거나 기존 PR에 반영합니다. 기본 base는 `dev`이며 사용자 지정 또는 기존 PR의 base를 존중합니다. 본문과 캡처를 준비한 뒤 PR을 생성하고, 확보한 PR URL에서 이미지를 첨부합니다. GitHub CLI(`gh`)를 사용하며, 이미지 첨부에는 로그인된 브라우저가 필요합니다. 본문은 `docs/templates/pull-request/`에서 가장 가까운 템플릿을 골라 변경에 맞게 조정합니다.
 
 필수:
 
