@@ -66,4 +66,4 @@
 | MY-CREDITS-43 | P1 | 회원 | `/my/credits?tab=history&utm_source=push`, `?tab=free`, `?tab=purchase`, `?tab=모르는값`으로 진입 | 각각 내역, 무료 충전, 구매, 구매 탭이 처음 선택됨. 주소에서 `tab`만 지워지고 `utm_source` 등 다른 쿼리는 남음. 그 뒤 구매 탭에서 결제하고 되감겨 와도 쿼리 탭으로 바뀌지 않음 | ◐ e2e `my/credits`(history, free) | [웹 화면 전환](../../../../spec/3-2-web-spec.md#화면-전환-규칙), KNK-1842 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](2-2-REQUIREMENTS.md#2-2-2-구매와-적립-확인), KNK-1314 |
 
-실제 결제와 기기 복귀는 MY-CREDITS-41로 검증한다. 채팅과 제작에서 시작한 부족 안내는 해당 동작의 검증과 함께 확인한다. ([채팅 한도](../../../CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-chat-limit-회원-이프-체험-표시), [제작 검증](../../../../qa/stories.md))
+실제 결제와 기기 복귀는 MY-CREDITS-41로 검증한다. 채팅과 제작에서 시작한 부족 안내는 해당 동작의 검증과 함께 확인한다. ([채팅 한도](../../../CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-chat-limit-회원-이프-체험-표시), [제작 검증](../../../STORY/CLIENT/WEB/5-1-VERIFICATION.md))

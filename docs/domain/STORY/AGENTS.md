@@ -12,7 +12,7 @@
 |---|---|
 | [`AI/`](AI/AGENTS.md) | 스토리라인 생성, 컴파일, 인물 이미지와 썸네일 생성 |
 | [`BACKEND/`](BACKEND/AGENTS.md) | 스토리 저장과 조회, 제작 흐름, 초안, 공개 스냅샷, 검색 색인, AI 서버 호출 |
-| `CLIENT/` | 공통 클라이언트 계약과 하위 WEB, ANDROID 세트. 이관 전에는 기존 공통 Spec과 플랫폼 Spec, Design, ADR을 함께 확인 |
+| [`CLIENT/`](CLIENT/AGENTS.md) | 탐색, 상세, 간편 제작과 일반 제작의 공통 계약, WEB과 ANDROID의 플랫폼 구현 및 검증 |
 
 - 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.

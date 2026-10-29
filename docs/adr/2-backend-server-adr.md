@@ -752,7 +752,7 @@
 - 근거: 채팅 세션 중앙값이 약 11턴이므로 좋아요 1개를 채팅 1회 정도로 반영하기 위해 초기 가중치를 10으로 정했습니다. 기존 좋아요 수와 누적 턴 수의 실시간 집계를 재사용해 새 집계와 컬럼 및 인덱스를 두지 않습니다.
 - 커서: 새 정렬 접두는 `s`입니다. KNK-1398 이전의 `popular`는 지금의 `likes`에 해당하며 `p`를 썼습니다. 운영 v0.5.2에 남은 `p` 커서를 새 점수 위치로 잘못 해석하지 않도록 400으로 거부합니다.
 - 수용한 한계: 요청 사이의 집계 변화로 인기순 페이지에 중복·누락이 생길 수 있습니다. 가중치 변경 전 커서도 이어 읽기 위치가 한 번 어긋날 수 있으며 이를 감수합니다. `REPEATABLE_READ`로 정렬 집계와 카드 집계의 요청 안 스냅샷은 일치시킵니다.
-- 대체 범위: 기존 `latest`, `likes`, `chats`와 동률의 `public_id` DESC는 유지합니다. 홈 기본값과 표시 명칭 변경은 [C-009](1-1-client-adr.md#c-009)로 연결합니다.
+- 대체 범위: 기존 `latest`, `likes`, `chats`와 동률의 `public_id` DESC는 유지합니다. 홈 기본값과 표시 명칭 변경은 [C-009](../domain/STORY/CLIENT/DECISIONS.md#c-009)로 연결합니다.
 - 관련 계약: [공개 목록 계약](../spec/4-backend-server-spec.md#4-3-1-스토리-조회삭제).
 - 출처: 사용자 확정 결정. ([KNK-1489](https://kimandkang.atlassian.net/browse/KNK-1489)과 [이전 정렬 KNK-1398](https://kimandkang.atlassian.net/browse/KNK-1398))
 

@@ -23,7 +23,7 @@
 - [1-2-4. 내비게이션과 화면](#1-2-4-내비게이션과-화면)
 - [1-2-5. 인증과 세션](#1-2-5-인증과-세션)
 - [1-2-6. 푸시와 알림](#1-2-6-푸시와-알림)
-- [1-2-7. 제작과 상태 복원](#1-2-7-제작과-상태-복원)
+- [1-2-7. 제작과 상태 복원](../domain/STORY/CLIENT/ANDROID/AGENTS.md)
 - [1-2-8. 관측](#1-2-8-관측)
 - [1-2-9. 검증 방법](#1-2-9-검증-방법)
 
@@ -127,9 +127,6 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-2-2 화면 조립](../do
 
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
-- [신규 가입 온보딩](../spec/3-3-android-spec.md#신규-가입-온보딩)은 `home/onboarding`이 소유합니다. `StoryOnboardingStore`가 자기 DataStore 파일(`story-onboarding`)에 표시 하나를 두고 `UserScopedStore`로 로그아웃 정리에 참여하며, 읽기 실패는 "온보딩 없음"입니다. `RootViewModel.storyOnboardingPending`(읽기 전 null)이 메인 백스택의 루트를 `StoryOnboardingRoute` 또는 `MainTabsRoute`로 정하고, null인 동안 메인 그래프를 열지 않습니다. 그래프를 연 뒤 표시가 켜지면 셸만 있는 백스택일 때만 루트를 바꿉니다. 완료는 `app`의 `rememberOnboardingFinisher`가 루트 키만 `MainTabsRoute`로 바꿔 끼우고 탭을 고른 뒤 `RootViewModel.onStoryOnboardingFinished`로 완료 이벤트를 보내고 표시를 지웁니다. 같은 실행의 완료는 메모리에도 두어 저장 실패 뒤 화면 재생성이 온보딩으로 되돌리지 않고, 저장된 표시가 꺼지면 내립니다. 상세 엔트리의 채팅 진입도 이 동작을 거쳐 온보딩 위에서 연 상세의 채팅이 완료가 됩니다. `StoryOnboardingViewModel`은 `HomeRepository.publicStories`로 오리지널 채팅순 첫 페이지를 읽고, 가운데 순번(`selectedIndex`), `ChatStarter`의 single-flight 채팅 생성, 1초 머문 카드의 노출 기록을 소유합니다. 캐러셀은 `HorizontalPager`에 큰 페이지 수를 주고 가운데에서 시작하며 `rememberPagerState`가 위치를 저장합니다. 가운데 순번은 페이지가 절반을 넘긴 `currentPage`로 올려 넘기는 도중의 채팅 시작도 보이는 카드로 시작합니다. 카드는 상세 주변 인물 카드와 같은 틀로 위에 `StoryCover`, 구분선 아래 글자 영역을 두며 카드 폭은 글자 영역 높이를 뺀 남은 높이로도 제한하고, 옆 카드는 `graphicsLayer`로 가운데 쪽 변을 기준점 삼아 줄이고 흐립니다. 카드의 옅은 그림자도 같은 층의 높이(`shadowElevation`)로 그려 반투명 층이 그림자를 자르지 않게 합니다. 창 높이가 낮으면(가로 화면) 캐러셀 높이를 고정하고 화면을 세로 스크롤해 카드가 남은 높이만큼 줄어들지 않게 합니다([A-083](../adr/1-3-android-adr.md#a-083-신규-가입-온보딩을-메인-백스택의-루트로-두고-완료를-기기-안-회원-귀속-표시로-판정하기)).
-- 제작 `MyStoryCard`와 상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를 그리고, 홈 카드는 `likeCount`를 null로 넘겨 누적 턴 수 배지만 그립니다. 좁은 표지에서는 배지 단위로 줄을 바꿉니다. `MyStoryCard`의 메타는 `StorySummary.visibility`(공개 범위)와 제작일을 그립니다. 목록과 상세가 같은 `common`의 `StoryVisibility`를 쓰며 알려진 값만 보관하고 없으면 그 항목만 생략합니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 표지 위 겹침 요소는 상세 히어로 배지를 포함해 `StoryCover`가 `CoverOverlayScope.backdrop`으로 넘기는 흐림 원천을 `coverBackdrop`으로 잘라 깝니다([A-073](../adr/1-3-android-adr.md#a-073-표지-위-뱃지에-웹과-같은-배경-흐림을-graphicslayer로-적용하기)). 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 홈 카드는 좋아요 수를 그리지 않으므로 상세의 좋아요 결과를 홈 목록에 전달하지 않습니다([A-085](../adr/1-3-android-adr.md#a-085)).
-- 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
 
 ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-3 프로필과 페르소나](../domain/ACCOUNT/CLIENT/ANDROID/4-3-STATE-MANAGEMENT.md#4-3-3-프로필과-페르소나))
 
@@ -137,17 +134,12 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-3 프로필과 페르�
 
 ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-3 프로필과 페르소나](../domain/ACCOUNT/CLIENT/ANDROID/4-3-STATE-MANAGEMENT.md#4-3-3-프로필과-페르소나))
 
-- 표지 없는 상세 히어로와 홈, 제작, 채팅 카드는 공용 `StoryCover`에서 초안과 같은 `ic_manyak_symbol`, `backgroundNeutral`, `textDisabled`를 사용합니다. 상세 헤더는 표지 유무와 무관하게 히어로 위에서 투명하게 시작해 스크롤에 따라 surface로 전환합니다. 표지가 없으면 아이콘은 처음부터 text 색을 사용하고, 별도 헤더 그라데이션은 두지 않습니다.
-- 상세 하단은 `StoryFooterBackground`가 목록의 메타 정보 위치로 전환 진행률을 계산합니다. CTA와 페이드는 메타 정보가 보이기 시작할 때부터 surface에서 backgroundNeutral로 전환하고, 200ms 애니메이션으로 진행률을 따라가며 스크롤 끝에서 메타 정보와 같은 배경색이 됩니다. 상세 색상과 모션 규격은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 시트 닫기는 `ManyakTextButton`을 사용하고, 마이 메뉴 규격·선택 컨트롤 행의 리플과 접근성 규칙은 [Android 디자인 시스템](../../../manyak-android/DESIGN.md#컴포넌트)을 따릅니다.
 - 카드 옵션·상세 옵션·채팅 메뉴는 `designsystem`의 `ManyakOptionsSheet`·`ManyakOptionItem`으로 그립니다. 시트 열림은 제작·채팅 목록에서 ViewModel의 대상 카드 상태(`optionsTarget`)가, 상세·채팅방에서 화면의 `rememberSaveable`이 들어 구성 변경에서 유지합니다. 삭제 확인·신고 시트는 옵션 시트를 닫은 뒤 엽니다. 채팅방 메뉴의 새 채팅은 `ChatRoomViewModel`이 `ChatRepository`(`ChatStarter`)로 single-flight 생성하고 진행 상태를 소유하며, `app`이 백스택 맨 위 `ChatRoomRoute`를 새 방으로 바꿔 끼웁니다. 내 이프 카드는 `designsystem/credit/CreditBalanceCard`를 마이와 함께 쓰고, 채팅방은 메뉴를 열 때 `UserProfileRepository.refresh()`로 잔액을 다시 읽습니다. 공유하기는 `ChatRepository.createShareLink`가 `DataLayerConfig.webBaseUrl`로 웹 열람 URL을 완성해 돌려주고, 화면이 `common`의 `shareText`(초대와 같은 `ACTION_SEND` 공유 시트)로 보냅니다.
-- 홈은 `HomeRepository.publicStories`로 `GET /stories`를 토큰 없는 클라이언트(`@PlainClient`)로 부릅니다. `HomeViewModel`이 조회 조건(`StoryListQuery`)·커서·다음 페이지 상태를 소유하고, 첫 페이지와 다음 페이지를 한 작업으로 직렬화해 조건을 바꾸면 진행 중인 요청을 취소합니다. 조건을 바꾸면 새 첫 페이지가 올 때까지 보던 목록을 남기고(골격은 목록이 비었을 때만), 응답이 300ms를 넘으면 그 목록을 반투명으로 흐립니다. 페이지를 이을 때 `id` 중복은 먼저 받은 쪽을 남깁니다. 필터·정렬 바는 그리드 위에 겹친 오버레이이고 그리드는 바 높이만큼 위 여백을 비워, 바가 `graphicsLayer` 이동으로 숨고 나타나도 목록 위치가 바뀌지 않습니다. 숨김은 그리드가 실제로 소비한 스크롤을 `NestedScrollConnection`으로 누적해 아래로 8dp면 숨기고 위로 32dp면 다시 보이며, 맨 위 64dp 안에서는 항상 보입니다. 모션은 웹과 같은 곡선·시간(사라짐 150ms 가속, 나타남 300ms 감속)입니다. 그리드 스크롤 상태는 첫 페이지를 받을 때마다 오르는 `firstPageVersion`을 키로 `rememberSaveable`에 두어, 조건 변경·새로고침으로 새 첫 페이지가 오면 맨 위에서 시작하고 구성 변경에서는 위치를 지킵니다. 스크롤 상태를 이어 쓰면 그리드가 첫 카드를 키로 따라가 정렬로 밀려난 카드 위치까지 내려갑니다. ORIGINAL 태그는 `StorySummary.isOriginal`로만 그립니다. 목록 끝 재시도는 이프 내역과 같은 `designsystem`의 `LoadMoreFooter`, 정렬 메뉴는 셀렉트와 같은 `ManyakSelectMenu`를 씁니다.
 - 목록의 필터·선택·로딩과 채팅 스트림 상태는 해당 ViewModel이 소유합니다. 도메인 호출·데이터 복구를 Composable 재구성에 연결하지 않습니다.
 - `designsystem`의 `FullscreenImageViewer`는 이미지 URL과 닫기 콜백을 받아 확대·이동·뒤로가기 처리를 공유합니다. 배경 탭 닫기는 Coil이 알려 준 원본 크기로 Fit 그림 영역을 계산하고 현재 확대·이동을 되돌려 판정하므로, 그림 위 탭으로는 닫지 않습니다(원본 크기를 알기 전에는 그림이 없는 것으로 봅니다). 배경 탭은 떼는 즉시 닫고, 더블 탭의 두 번째 탭 대기는 그림 위 탭에만 겁니다. 상세·채팅 ViewModel의 `imageViewerUrl`이 열린 대상을 소유하며 저장 상태나 라우트에 넣지 않습니다. 상세 재조회에서 대상 이미지가 사라지면 닫습니다. `CharacterImage`는 URL 허용 검사·로드 실패 처리 뒤 탭을 화면 콜백으로 전달하고, 분석 이벤트는 화면 ViewModel이 기록합니다.
 PAYMENT 내용은 도메인 문서에서 관리한다. ([Android 이프 부족 실행](../domain/PAYMENT/CLIENT/ANDROID/4-4-EXECUTION.md#4-4-2-부족-시트))
-- 추가 정보의 편집 버튼도 `keepKeyboardOnTap`을 사용하고, `AdditionalInfoRows`는 채팅과 같은 삭제 전 포커스 이동 순서를 적용합니다. 퇴장 중인 입력과 삭제 버튼은 비활성화합니다.
 - 구성 변경은 Activity 재생성으로 처리합니다. `configChanges`나 화면 방향 고정으로 우회하지 않습니다. 화면 폭을 제한한 스크롤 레이아웃과 상태 복원으로 대응합니다.
-- 제작 편집 저장소는 ActivityRetained 수명을 가지며, 화면 destination의 STOP을 앱 이탈로 해석하지 않습니다.
 
 채팅의 구성, 상태와 실행은 [CHAT Android](../domain/CHAT/CLIENT/ANDROID/AGENTS.md)에서 관리한다.
 
@@ -249,110 +241,7 @@ Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합
 
 ## 1-2-7. 제작과 상태 복원
 
-### 일반 제작과 수정
-
-`create/general`이 폼 entity, 순수 domain 변환, API와 Room data, MVI 화면을 소유합니다. `GeneralStoryForm`의 반복 항목은 로컬 안정 ID와 서버 ID를 구분하며 검수 경로는 제출 시 폼에서 안정 ID로 변환합니다. 수정 baseline은 처음 복원한 폼의 요청 표현을 보관하여 알 수 없는 설정 글과 폼에 없는 서버 인물 및 대표 이미지 외의 이미지를 유지합니다. 부분 수정 검증은 실제 PATCH 필드군에 한정하여 수정하지 않은 기존 값이 저장을 막지 않게 합니다.
-
-`navigation`은 `CreateMethodRoute`, `GeneralCreateRoute(draftId, resume)`, `GeneralSubmissionRoute(submissionId)`, `StoryEditRoute(storyId)`를 등록합니다. `app`이 제작 탭과 상세에서 콜백을 연결하고 일반 제작 승인 후 `ChatStarter` 결과로 상세 위에 채팅을 엽니다. 수정 완료는 기존 상세 또는 제작 탭으로 돌아가 화면 표시 시점에 새 값을 조회합니다.
-
-기본 주인공 이름은 `protagonistName`으로 따로 보내고 `userRoleSetting`에는 넣지 않습니다. 수정 폼과 반려 제출본은 `protagonistName`에서 이름을 읽고, 이전 글 맨 앞의 `## 호칭` 절은 특징 본문 맨 앞에 남깁니다. 수정 PATCH는 이름이 바뀌었고 비어 있지 않을 때만 이름을 싣습니다. 이름은 선택 입력이며, 이름을 뺀 글에 `{username}`이 있는데 이름이 비면 이름 칸에 `NAME_TOKEN_NEEDS_NAME` 오류를 두고, 이 오류는 수정에서 바뀐 필드와 상관없이 검사합니다.
-
-`GeneralStoryViewModel`은 입력, 검증과 서버 검수 상태를 MVI로 관리합니다. 탭과 펼침 및 크롭 범위는 저장 가능한 화면 상태로 유지하며 폼의 프로세스 복원은 서버 초안(옮기지 못한 기기 안 초안 포함) 또는 서버 제출본 조회로 처리합니다. 검수 폴링은 화면 STARTED에서 1초 간격, 단조 시계로 60초 상한을 적용합니다. 제출과 접수 기록은 `FunnelScope`에서 완료하고 세션 세대가 바뀐 결과를 반영하지 않습니다. 신규 POST 응답 유실은 자동 재전송하지 않으며 접수 기록만 실패하면 제출 ID를 유지한 채 기록을 재시도합니다. 성공한 등록과 수정은 `CreationProgressAccess.submissionChanges`로 알리고 제작 탭은 STARTED에서 수집해 제출본과 스토리 목록을 갱신합니다. 화면을 먼저 닫고 늦게 받은 접수도 반영하며, 수정 복귀가 이전 조회와 겹치면 그 조회 뒤에 새 조회를 예약합니다.
-
-회원의 일반 제작 임시 저장본은 서버 초안(`/users/me/story-drafts`)입니다. `GeneralDraftServerStore`가 `GeneralDraftStore`를 구현하고, payload는 웹과 같은 v1 형식으로 [`GeneralDraftPayload`](../../../manyak-android/create/src/main/java/app/manyak/create/general/data/api/GeneralDraftPayload.kt)가 쓰고 [`GeneralDraftPayloadReader`](../../../manyak-android/create/src/main/java/app/manyak/create/general/data/api/GeneralDraftPayloadReader.kt)가 읽습니다. 이미지는 객체 키만 보내고, 장르는 폼이 이름만 들고 있어 모두 `custom` 항목과 `customTags`의 이름으로 씁니다. 웹이 쓴 `tag` 항목은 제공 장르 카탈로그로 이름을 찾고, 카탈로그를 받지 못하면 장르를 잃은 채 되쓰지 않게 불러오기 실패로 처리합니다. `schemaVersion`이 1이 아니거나 `GENERAL`이 아닌 초안도 열지 않습니다. PUT 오류 본문의 `code`와 `details[field=version]`으로 상한, 용량 초과, 충돌을 가르고, 기준 버전이 있는 저장이 그 밖의 이유로 거절되면 상세 404를 확인한 뒤 같은 ID로 기준 버전 없이 다시 만듭니다. 이 저장 규칙과 목록은 간편 제작과 함께 쓰는 [`StoryDraftRemote`](../../../manyak-android/create/src/main/java/app/manyak/create/data/draft/StoryDraftRemote.kt)가 소유합니다. 목록은 두 제작 방식의 초안 카드를 계정 ID와 함께 마지막 성공 목록으로 메모리에 두고, 목록 재조회가 실패해도 같은 계정이면 유지합니다.
-
-화면 쪽은 `GeneralDraftSession`이 초안 ID별로 다음 저장의 기준 버전과 열어 둔 기기 안 초안을 화면 수명 동안 들고 있습니다. 저장은 저장 Job 하나로 하나씩 보내고 응답의 `version`을 다음 `baseVersion`으로 씁니다. 409는 상태의 `draftConflictVersion`으로 다이얼로그를 띄워 구성 변경에도 남고, 덮어쓰기는 그 버전을 기준으로 다시 보냅니다. 라우트의 `resume`은 제작 탭 카드로 이어서 연 경우만 참이며, 새로 시작한 화면도 프로세스 복원을 위해 상세를 조회해 404면 안내 없이 빈 폼을 엽니다. 등록과 재제출 요청에는 Draft 진입일 때만 `draftId`를 실어 서버가 접수와 함께 초안을 지웁니다.
-
-Room의 `general_story_draft`는 `(ownerId, draftId)` 복합 키, 버전 있는 폼 JSON, 최초 저장 시각과 접수 제출 ID를 둡니다. 스키마는 v5 그대로이며 이제 서버 연동 전에 저장한 기기 안 초안과 접수 연결 행만 남습니다. 접수하면 JSON을 비우고 제출 ID만 남겨 이후 저장을 거절하고, 연결 행은 복원된 라우트를 서버 제출본으로 연결하며 카드에서 제외합니다. 진입은 연결 행, 기기 안 초안, 서버 상세 순서로 봅니다. 제작 탭은 화면 표시, 재시도, 당겨서 새로고침 때 `CreationProgressAccess.refreshDrafts`로 서버 목록을 받고, 받았으면 기기 안 초안을 같은 ID로 PUT해 성공이거나 409인 것을 모은 뒤 목록을 다시 받고 나서 지웁니다(카드가 기기 안에서 서버로 넘어가는 동안 사라지지 않게). 상한에 걸리면 멈춥니다. `CreationProgressRepository`가 간편 제작 초안과 일반 제작 초안(같은 ID는 서버 쪽)을 최초 시각순으로 합치고, 일반 제작 카드 삭제는 서버 DELETE와 기기 안 행 삭제를 함께 합니다. 서버 카드는 내 스토리 목록보다 늦게 와 목록 맨 앞에 붙을 수 있어, `StudioScreen`은 채팅 목록과 같이 맨 위를 보던 중이면 `requestScrollToItem(0)`으로 맨 위에 둡니다.
-
-Photo Picker 입력은 실제 MIME과 크기를 확인한 뒤 샘플링 디코딩 및 EXIF 보정을 거쳐 고정 비율로 자릅니다. `GeneralImageUploader`는 API presign 이후 별도 무인증 OkHttpClient로 PUT하고 성공 결과를 계정별 앱 파일에 보관합니다. 앱 파일은 화면 수명 동안의 미리보기이고, 다시 열면 서버 초안 상세의 `imageUrls`로 미리보기를 그립니다. 화면을 닫으면 그 화면에서 본 파일을 지우되, 서버로 옮기지 못한 기기 안 초안이 참조하는 파일은 남기고 그 초안을 옮겨 지울 때 함께 정리합니다. 객체 키와 파일 참조만 저장하고 Bitmap 또는 임시 접근 권한은 저장 정본으로 사용하지 않습니다.
-
-일반 제작 화면은 간편 제작의 헤더와 임시 저장 버튼, 접는 입력 항목(`CollapsibleInputSection`)과 장르 검색 콤보박스를 함께 씁니다. 웹에만 있는 모션 컴포넌트인 제작 방식 선택 일러스트와 분량 배분 인라인 슬라이더는 `create/general`이 같은 시간과 곡선으로 구현하며, 두 번째 사용처가 생기기 전까지 `designsystem`으로 올리지 않습니다. 이미지 자르기는 바텀 시트의 검은 판 위에 비율 창을 두고 창 밖을 어둡게 남깁니다.
-
-일반 제작의 `GeneralGenreSearch`도 제공 장르 API를 사용합니다. 전체 및 대표 카탈로그를 구분하고 250ms 입력 대기, 요청 후 200ms 지연 로딩과 20개 질의 캐시를 화면 ViewModel 수명에서 사용합니다. 서버 검색 결과를 로컬 부분 문자열 매칭으로 대체하지 않습니다.
-
-### 제공 장르 검색
-
-`create`의 `StoryCreationRepository.genres(query)`가 공개 카탈로그를 조회하며 `GenreCatalog`는 전체 또는 검색 결과와 대표 장르를 구분합니다. `GenreSearch`는 키워드 ViewModel의 코루틴 수명 안에서 카탈로그와 검색 작업을 관리합니다. 검색어는 서버 상한 30자로 제한하고 입력 변경 후 250ms 대기하며 이전 작업을 취소합니다. 결과 이벤트는 현재 질의와 메뉴 열림 상태가 맞을 때만 반영합니다.
-
-`GenreSearch`는 빈 검색어에 이미 받은 전체 카탈로그를 사용하며, 초기 조회 중이면 같은 `Deferred`를 기다립니다. 서로 다른 검색어의 성공 응답은 빈 결과를 포함해 메모리에 최대 20개 보관하고 가장 먼저 조회한 항목부터 제거합니다. 실패는 보관하지 않습니다. 캐시와 카탈로그 요청은 키워드 ViewModel 수명을 따르며 구성 변경에 유지되고 새 ViewModel에서는 다시 조회합니다. 메뉴를 닫으면 검색 요청과 로딩 타이머만 취소하고 대표 칩에도 필요한 카탈로그 요청은 완료할 수 있습니다.
-
-캐시가 없는 검색은 250ms 입력 대기 뒤 실제 요청을 시작하면서 200ms 로딩 타이머를 함께 시작합니다. 타이머는 검색 작업의 자식이므로 응답 완료, 입력 변경, 선택과 닫기에 취소됩니다. `GenreSearchLoading` 이벤트는 현재 검색어와 열린 메뉴, 진행 중인 요청이 일치할 때만 표시를 켭니다. 그 전에는 기존 결과를 유지하고 첫 결과가 없으면 메뉴의 입력 높이만 유지합니다. 검색 캐시는 [A-059](../adr/1-3-android-adr.md#a-059-장르-검색-캐시와-지연-로딩-표시), 표시 기준은 [A-060](../adr/1-3-android-adr.md#a-060-장르-검색-로딩-표시-기준-조정)을 참조합니다.
-
-`GenrePickerState`가 검색어, 펼침, 결과, 실패와 지연 로딩 표시를 소유하고 `GenreCombobox`는 기존 입력 컴포넌트와 Material 3의 편집 가능한 메뉴 앵커를 사용합니다. 카탈로그 검증 전에는 장르 선택과 생성 진행을 허용하지 않습니다. `KeywordDraftSnapshot`의 `addedGenreTagIds`와 선택 ID를 기존 JSON에 저장하므로 Room 스키마 버전은 유지합니다. 누락된 필드는 빈 목록으로 복원합니다. 검색어와 펼침은 ViewModel에서 구성 변경 동안 유지하며 프로세스 재시작에는 초안 입력만 복원합니다.
-
-`GenreSelected`는 칩과 공유하는 선택 ID를 토글합니다. 대표 칩은 카탈로그의 대표 순서를 유지하며 `addedGenreTagIds`에는 유효한 비대표 ID만 최초 추가 순서로 남깁니다. 선택 해제와 재선택은 이 순서를 바꾸지 않습니다. 초안과 카탈로그 중 어느 쪽이 먼저 로드되어도 복원 시 같은 정규화를 적용하므로, 이전 추가 목록에 포함된 대표 ID는 선택 상태를 보존한 채 대표 위치로 복귀합니다. 최대 3개에서는 새 선택만 막고 기존 선택의 해제는 허용합니다. 선택과 순서는 [A-058](../adr/1-3-android-adr.md#a-058-장르-검색-선택-토글과-대표-칩-순서-유지)을 참조합니다.
-
-새 생성 입력의 `customGenreTags`는 빈 목록입니다. 기존 원문은 초안 호환용으로만 보관합니다. 스토리라인 키워드 이름 조회는 전체 장르 카탈로그를 포함해 대표 목록 밖의 ID도 해석합니다. 검색과 초안 호환 결정은 [A-057](../adr/1-3-android-adr.md#a-057-제공-장르-검색과-이전-초안-호환)을 참조합니다.
-
-### 제작 카드와 다중 완성 진행
-
-Room DB v6은 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `pending_story_creation`과 requestId별 `story_completion_request`를 분리합니다. 모든 읽기·쓰기는 현재 ownerId로 제한하며 신원을 모르면 빈 결과를 읽고 쓰기는 실패합니다. 로그아웃에도 두 테이블을 보존합니다. 탈퇴 뒤 남은 행의 물리 삭제는 미해결입니다.
-
-두 테이블은 처음 임시 저장 시각 `createdAt`을 둡니다. `PendingStoryCreationDao.save`는 행이 없을 때만 지금 시각을 쓰고 있으면 기존 값(이전 버전 행의 null 포함)을 유지합니다. 조회는 `createdAt IS NULL, createdAt DESC`(완성 요청은 이어서 `submittedAt DESC`)로 정렬해 제작 탭이 그대로 그립니다.
-
-퍼널 세 라우트는 `draftId`를 싣고, 키워드와 스토리라인 라우트는 제작 탭 카드로 연 경우만 참인 `resume`을 함께 싣습니다. 새 제작은 앱이 진입할 때 UUID를 만들고, 초안 카드는 그 초안의 ID로 재개 체인을 쌓습니다. 단계 ViewModel은 assisted 인자로 받은 ID를 `StorylineGenerationStore.bind`로 맡기며, 다른 초안을 맡으면 앞 세션의 생성 실행을 끊고 메모리를 비웁니다. 키워드 초안 → 생성 요청 → 생성 결과는 같은 행을 덮고, 스토리라인 복구는 그 초안을 재개한 퍼널에서만 합니다.
-
-회원의 간편 제작 초안은 서버 초안이며 퍼널 세션의 `draftId`를 그대로 서버 초안 ID로 씁니다. 단계 ViewModel 초기화가 부르는 `StorylineGenerationStore.ensureRestored(resume)`가 진입 판정이고, 세션의 저장 위치와 기준 버전은 [`SimpleDraftSession`](../../../manyak-android/create/src/main/java/app/manyak/create/presentation/state/SimpleDraftSession.kt)이 들고 있습니다. 기기 안 행이 있으면 그 행이 정본이고 `serverDraftVersion`이 있으면 서버 세션, 없으면(서버 연동 전 행) 기기 안 세션입니다. 행이 없으면 새로 시작한 화면도 프로세스 복원을 위해 서버 상세를 조회하고, 결과와 관계없이 서버 세션이 됩니다. 판정이 끝나면 `bind`가 다른 초안을 맡거나 이탈과 완성 제출로 스토어를 비울 때까지 다시 정하지 않습니다. 상세 조회가 실패하면 판정이 끝나지 않아 단계 화면이 다시 시도를 그립니다.
-
-서버 세션의 키워드 저장은 `KEYWORD_DRAFT`로 서버에만 쓰고, 입력을 모두 지운 저장은 서버 초안을 DELETE합니다. 생성 중(`GeneratingStorylines`)과 생성 결과(`Draft`) 행은 그때의 서버 버전을 `serverDraftVersion`에 붙여 기기 안에 두며, 아직 서버에 없으면 0을 씁니다(제작 탭의 숨김 비교 `version <= baseVersion ?? 0`과 같은 값). 사용자 저장(버튼과 백그라운드 전환)은 `STORY_DRAFT`로 PUT하고 성공하면 세션이 남긴 기기 안 행을 지웁니다. 생성 결과 직후의 기기 안 행은 저장본으로 보아 버튼을 잠그고 백그라운드 전환도 저장하지 않습니다. 저장은 퍼널 스코프의 Job으로 하나씩 보내고, 쓰는 중에 다시 부르면 앞 Job 뒤에 이어 붙여 그때도 내용이 다르면 앞 응답의 버전으로 보냅니다. 409는 `DraftSaveUiState.conflictVersion`, 버튼 저장의 상한, 용량 초과, 실패는 `draftMessages`로 화면에 알리고, 키워드 단계는 [`KeywordDraftSaver`](../../../manyak-android/create/src/main/java/app/manyak/create/keyword/presentation/KeywordDraftSaver.kt)가 같은 규칙을 화면 상태로 들고 있습니다. 덮어쓰기 성공도 기기 안 행을 지우고 "임시 저장했어요"를 띄웁니다.
-
-payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayload.kt)가 쓰고 [`SimpleDraftPayloadReader`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayloadReader.kt)가 읽습니다. 스토리라인 초안의 `generationRequest`와 최상위 `generationRequestId`는 화면에 보이는 결과를 만든 생성 요청이어야 해서, 스토어는 재시도에 쓰는 마지막 요청과 별도로 결과를 만든 요청을 들고 있습니다. 진행 순번(`selectedStorylineIndex`)은 고른 스토리라인 ID로 바꿔 쓰고 읽을 때 결과에서 찾아 순번으로 되돌리며, 찾지 못하면 스토리라인 선택 단계로 엽니다. 빠졌거나 null인 선택 필드는 기본값으로 읽고, 상세의 `generation`이 완료가 아니면 초안을 찾지 못한 것으로 보아 그 버전으로 덮어써 같은 ID로 새로 시작합니다. 서버 스토리라인 초안 카드는 단계를 몰라 스토리라인 라우트로 열고, 카드로 연 초안이 추가 정보 단계였으면 스토리라인 화면이 추가 정보 라우트를 이어 쌓습니다. 이어 갈 스토리라인이 없는 스토리라인 라우트는 같은 `draftId`의 키워드 라우트로 바꿉니다. 판정을 기다리는 동안 단계 화면은 헤더 아래에 `rememberDelayedProgressVisibility` 스피너를 둡니다.
-
-스토리라인 생성 응답이 422 `CONTENT_REJECTED`(`DomainError.isContentRejected`)이면 `StorylineGenerationStore`가 다른 상태 코드 실패와 같이 기록을 정리한 뒤(결과가 없으면 지우고, 다시 만들기였으면 직전 결과를 기기 안에 되돌림) 메모리의 생성과 편집을 비우고 `StorylineGenerationState.Rejected`로 바꿉니다. 세션의 저장 위치는 그대로 둬 키워드 단계가 진입 판정을 다시 하지 않습니다. 스토리라인 화면은 이 상태를 받으면 `RestartAtKeyword`로 같은 `draftId`의 키워드 라우트로 바꾸고, 키워드 화면은 진입 판정 뒤 `takeRejectedKeyword()`로 거절된 요청을 `KeywordDraftSnapshot`으로 꺼내 채우며 `contentRejected`로 푸터 안내를 그립니다. 기준선은 빈 입력이라 돌아온 키워드는 저장하지 않은 편집입니다. 꺼내면 스토어가 `Idle`이 되어 다음 생성이 새 요청 ID로 시작합니다. 거절 문구는 키워드 화면과 제작 탭이 함께 쓰므로 `common`의 `error_content_rejected`에 두고 `DomainErrorMessages`도 이 코드를 같은 문구로 바꿉니다([A-082](../adr/1-3-android-adr.md#a-082)).
-
-세션은 서버 상세와 PUT 응답의 `createdAt`을 들고 있다가 기기 안 행을 처음 쓸 때와 완성 요청에 넘겨, 단계가 바뀌어도 카드의 처음 저장 시각과 순서가 바뀌지 않게 합니다(이미 있는 행은 기존 시각을 유지합니다).
-
-서버 간편 제작 카드는 `SimpleDraftServerStore`가 `StoryDraftRemote` 목록에서 `SIMPLE` 항목만 골라 냅니다. `CreationProgressRepository`는 기기 안 행과 완성 요청, 서버 간편 제작 카드를 `mergeSimpleDrafts`로 합치는데, 같은 `draftId`의 기기 안 행이나 완성 요청이 서버 초안을 가리키고 서버 `version`이 그 기준 버전 이하이면 서버 카드를 숨깁니다. 숨기지 않은 서버 카드는 `CreationProgressSummary.onServer`가 참이라, 같은 ID의 기기 안 카드와 목록 키, 이어서 만들기, 삭제를 따로 합니다. 기기 안 카드 삭제는 그 카드가 숨긴 서버 초안을 먼저 DELETE하고 행을 지웁니다. 서버 카드로 이어서 만들면 라우트에 `server`를 싣고, 진입 판정이 같은 ID의 기기 안 행을 새 UUID 행으로 옮기며(`PendingStoryCreationDao.detach`, 서버 초안 연결은 버림) 서버 초안을 엽니다. 이 세션의 진행 기록이 이 기기의 다른 갈래를 덮지 않게 하려는 것이고, 옮긴 행은 기기 안 세션의 초안으로 남습니다. 완성 요청은 세션의 `draftId`를 항상 싣고(기기 안 세션의 ID는 서버가 넘깁니다) 서버 세션이면 요청 행에도 `serverDraftVersion`을 남겨, 서버가 요청을 기록하며 초안을 지우기 전까지 같은 제작의 서버 카드를 가립니다.
-
-`StudioViewModel`은 첫 조회에서 내 스토리, `refreshDrafts`, 검수 제출본이 모두 끝날 때까지(실패 포함) `isListLoading`으로 초안과 제출본, 내 스토리를 한 스켈레톤으로 덮고 완성 요청 카드만 위에 둡니다. 새 제작 인텐트는 병합한 `drafts`가 5장 이상이면 제작 방식 선택 대신 상한 토스트를 냅니다.
-
-완성 요청 삽입과 제출한 `draftId` 초안 삭제는 한 DAO 트랜잭션이며, 요청의 `createdAt`은 그 초안에서 이어받습니다(초안이 저장된 적 없으면 제출 시각). 저장 실패 시 전송하지 않습니다. `StoryCompletionExecutor`는 앱 수명, requestId별 single-flight, `SessionGate.withAuthWork/commit`으로 실행하며 서로 다른 요청을 전역 직렬화하지 않습니다.
-
-| 결과·복구 | 처리 |
-| --- | --- |
-| POST 성공 | Completed 저장 |
-| 네트워크·401·403 | 서버 수락 여부를 단정하지 않고 불확실 상태 유지 |
-| 422 `CONTENT_REJECTED` | 서버가 실패로 기록한 확정 거절이라 조회 없이 추가 정보 단계 초안으로 되돌리고 거절로 알림 |
-| 그 외 실패와 409 | GET 요청 조회로 복구하고, 조회가 FAILED나 404면 요청을 지우고 추가 정보 단계 초안으로 되돌림 |
-| 사용자 새로고침의 미수락 요청 | GET 404이면 같은 저장 명령·requestId로 다시 전송 |
-| 제작 탭의 미완료 카드 | STARTED·노출 중 5초 폴링 |
-| 스토리라인 복구 | STARTED 중 3초 폴링. 완성 요청 폴링과 별개 |
-| 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
-
-확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 `CompletionFailure`(사유를 모르는 `FAILED`, 원 응답의 수위 거절 `CONTENT_REJECTED`)를 알려 보고 있는 제작 탭이 사유에 맞는 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
-
-v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. v5→v6은 두 테이블에 nullable `serverDraftVersion` 열만 더해, 기존 행은 기기 안 세션의 것으로 남습니다. destructive migration을 사용하지 않습니다.
-
-### 검수 제출본
-
-`studio`의 `StudioRepository`가 제출본 목록과 삭제를 소유합니다. API 응답에서 CREATE이면서 스토리가 없고 알려진 미승인 상태인 항목만 카드로 변환하며, 표시할 제목과 표지, 등록 시각, 사유 수와 이미지 오류 여부만 화면 모델에 둡니다. 원문과 편집 폼을 로컬에 저장하지 않습니다.
-
-`StudioViewModel`은 제출본 조회와 삭제를 하나의 Mutex로 직렬화해 삭제 전의 늦은 목록 응답이 카드를 되살리지 못하게 합니다. 마지막 성공 목록을 기준으로 제거를 감지하고 내 스토리를 갱신하며, 스토리 조회가 이미 실행 중이면 그 응답 뒤 한 번 더 조회합니다. 실패 시 화면 카드만 숨기고 마지막 검토 중 판정은 유지해 노출 중 다음 주기에서 복구합니다. 반복 조회는 `StudioScreen`의 STARTED 수명이 소유하며 화면 이탈 시 진행 중 폴링 요청도 취소합니다. 옵션과 확인 대상은 기존 ViewModel 상태로 유지하고 최신 목록에서 상태가 달라지거나 사라지면 갱신합니다. 등록 취소와 삭제 선택은 `client_storyList_submissionCard_clicked`에 식별자, 상태, 동작만 기록합니다.
-
-### 제작 로딩 표현
-
-로고 마스코트 대기 장면은 시간에서 자세를 계산하는 순수 함수 안무와 그것을 그리기만 하는 Canvas로 나뉘며 API·폴링 상태를 소유하지 않습니다. `designsystem`의 `ManyakMascot`이 눈 모양별 몸을, `mascot` 패키지가 낱동작·막 이음·붓길 해석과 베레모·붓·붓질 그리기를 소유합니다. 자세(`MascotPose`)에는 몸 기준 붓 회전과 붓털 누름이 있어, 붓털 끝 계산(`brushTipOffset`)과 붓 그리기가 같은 값과 같은 변환 순서를 씁니다. `chat`의 `RealtimeImageStage`는 이 재료로 실시간 이미지 대기 장면을(도화지 그림 층은 `RealtimeImagePainting`, 지난 막의 층 유지는 `paintedFor`), `studio`의 `StoryCompletingStage`는 3:4 완성 중 표지를 그리고, 각 장면만의 낱동작과 소품은 해당 기능 모듈에 둡니다.
-
-`rememberTextShimmerBrush`는 채팅의 기존 브러시를 공용화한 것으로, `create`의 순환 문구와 `studio`의 완성 제목은 4초 주기, 채팅 대기 문구는 기존 2초·색을 사용합니다. 4초마다 글자 단위로 교차하는 순환 문구는 `designsystem`의 `CyclingPhrases`가 소유하며 스토리라인 생성과 채팅 실시간 이미지 턴의 로딩이 함께 씁니다. 애니메이션은 Compose 수명에 종속되며, 지연 힌트의 시작 시각과 노출 상태는 `rememberSaveable`로 구성 변경을 견딥니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#퍼널)을 따릅니다.
-
-### 인물 입력의 화면 상태
-
-`CreateKeywordUiState`가 인물 ID별 접기 집합과 삭제 확인 대상을 소유합니다. 순수 reducer로 카테고리 이동 및 구성 변경에서 상태를 유지하며, 삭제 확정은 대상 인물과 해당 접기 상태만 제거합니다. 이 상태는 편집 snapshot과 API 요청에 포함하지 않습니다. `create/presentation/component/CollapsibleInputHeader`는 값과 콜백으로 머리 줄을 그립니다. 높이 애니메이션은 인물 입력 영역이 소유하고, 공용 `ManyakDestructiveDialog`에 기능 소유 문자열을 전달해 삭제를 확인합니다.
-
-### 화풍 선택
-
-`CreateAdditionalInfoViewModel`이 화면에 들어올 때 토큰 없는 `SimpleStoryApi`로 `GET stories/art-styles`를 받아 `artStyles`(받기 전과 실패는 null)와 `artStylesFailed`로 둡니다. 조회는 Job 하나로 묶어 다시 시도 연타가 요청을 겹치지 않게 하고, 복원 스냅숏이 늦게 와도 먼저 받은 목록을 덮지 않습니다. 고른 code는 `selectedArtStyle`, 미선택 완성의 푸터 안내는 `showArtStyleRequired`가 들며, 화풍을 고르면 안내를 내립니다. 화풍은 진행 미러에 함께 실려 임시 저장되고, "다시 선택하기"와 스토리라인 재생성 결과는 화풍을 지우지 않습니다. 저장 형식과 requestId 재사용은 [A-072](../adr/1-3-android-adr.md#a-072-간편-제작-화풍을-기존-초안-json에-더하고-스토리라인을-다시-만들어도-남기기)를 참조합니다.
-
-그리드는 스크롤 목록 안이라 지연 그리드 대신 세 칸씩 나눈 줄로 그립니다. 칸은 `StoryCover`(미리보기가 없으면 기본 심벌) 위에 표지 뱃지와 같은 흐린 바탕(`coverBackdrop`)으로 이름을 얹고, `selectable`(RadioButton 역할)과 화풍 이름 하나만 읽히는 시맨틱을 둡니다. 고른 칸은 `designsystem`의 `selectionRing`으로 표지 바깥에 brand 테두리를 둘러 자리가 흔들리지 않게 하며, 스토리 상세 인물 썸네일이 같은 수식어를 씁니다.
-
-화풍 아래의 공개 스위치는 일반 제작 등록 탭과 같은 `create/presentation/component`의 `VisibilityField`를 씁니다. 값은 `CreateAdditionalInfoUiState.visibility`(기본 `PUBLIC`)가 들고 화풍과 함께 진행 미러(`CreationProgress.visibility`)에 실리며, 스토리라인 재생성과 "다시 선택하기"에도 남습니다. 완성 명령의 `visibility`로 보내고 requestId 재사용 조건에 더합니다. 저장 형식은 [A-087](../adr/1-3-android-adr.md#a-087)을 참조합니다.
-
-### 편집 저장과 복원
-
-ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 저장합니다. `isChangingConfigurations=true`는 제외하며 destination의 STOP은 저장 계기가 아닙니다. 저장은 Mutex로 직렬화하고 API 전송 전에 진행 중 저장을 join합니다.
-
-요청 명령·성공 결과는 즉시 영속화합니다. 늦게 전달되는 UiState가 아닌 실제 저장 snapshot으로 중복을 판단합니다. 재개만으로 초안을 소비하지 않고 폐기는 대상 초안만 정리하며 새 제작은 다른 초안을 건드리지 않습니다. 복원 stack은 키워드, `[storyline]`, `[storyline, additional]`로 단계에 맞춰 구성합니다.
+STORY 내용은 [도메인 문서](../domain/STORY/CLIENT/ANDROID/AGENTS.md)에서 관리한다.
 
 ## 1-2-8. 관측
 
@@ -378,5 +267,5 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 | 인증 | [5-1-1 기존 검증 경계](../domain/ACCOUNT/CLIENT/ANDROID/5-1-VERIFICATION.md#5-1-1-기존-검증-경계) |
 | 로그아웃 | [5-1-1 기존 검증 경계](../domain/ACCOUNT/CLIENT/ANDROID/5-1-VERIFICATION.md#5-1-1-기존-검증-경계) |
 | 푸시 | 회원 전환·늦은 PUT·403·recipient 불일치·Pending 5초 제한·로그아웃 알림 제거 |
-| 제작 | 저장 실패 시 미전송, 복수 요청 독립 실행, 409·404 복구, 계정 격리, DB 마이그레이션 |
+| 제작 | [STORY Android 검증](../domain/STORY/CLIENT/ANDROID/5-1-VERIFICATION.md) |
 | 화면·복원 | 회전·프로세스 재생성·back stack·SSE 중단·이미지 순서·키보드·접근성 |

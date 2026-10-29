@@ -8,7 +8,7 @@
 | 작성일 | 미기재 |
 | 수정일 | 2026-10-23 |
 | 대상 | 마냑 웹 프론트엔드 |
-| 작성 목적 | 신규 가입 초대 코드 온보딩과 앱 안내 배너의 수동 QA와 E2E 검수 기준을 정의합니다. 간편 제작 첫 진입 안내는 [STORY-TUTORIAL](stories.md#story-tutorial--간편-제작-첫-진입-안내)이 다룹니다. |
+| 작성 목적 | 신규 가입 초대 코드 온보딩과 앱 안내 배너의 수동 QA와 E2E 검수 기준을 정의합니다. 간편 제작 첫 진입 안내는 [STORY-TUTORIAL](../domain/STORY/CLIENT/WEB/5-1-VERIFICATION.md#5-1-8-story-tutorial)이 다룹니다. |
 | 화면 | 신규 가입 초대 코드 모달 바텀 시트(FE-SCREEN-008, 루트 레이아웃 마운트) · 앱 안내 배너(루트 레이아웃, 모든 화면 최상단) |
 | 기준 코드 | [manyak-web `9ab592f`](https://github.com/KIM-N-KANG/manyak-web/tree/9ab592f698d0baaf15d96c80161a5924e5c7f73c). 실행 결과·릴리스 포함 여부는 별도 기록 |
 | 관련 스펙 | [웹 사용자 모델](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), [앱 안내 배너](../spec/3-2-web-spec.md#앱-안내-배너) |
@@ -85,6 +85,6 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-17 ONBD-INVITE: 신규
 폐기한 ID(번호 재사용 금지):
 
 - `ONBD-GUEST-27`: 온보딩 장면 카드 줄의 마우스 드래그. 스크롤 소개로 바뀌며 카드 줄이 사라짐(KNK-1644)
-- `ONBD-GUEST` 전체: 게스트 온보딩 페이지와 서버 리다이렉트 제거(KNK-1804). 첫 사용 안내는 [STORY-TUTORIAL](stories.md#story-tutorial--간편-제작-첫-진입-안내)로 옮김
+- `ONBD-GUEST` 전체: 게스트 온보딩 페이지와 서버 리다이렉트 제거(KNK-1804). 첫 사용 안내는 [STORY-TUTORIAL](../domain/STORY/CLIENT/WEB/5-1-VERIFICATION.md#5-1-8-story-tutorial)로 옮김
 - `ONBD-INVITE-06`: 게스트 온보딩 페이지와 초대 코드 시트의 겹침. 온보딩 페이지 제거(KNK-1804). 간편 제작 첫 진입 안내와의 겹침은 STORY-TUTORIAL-08
 - `ONBD-BANNER-21`: 온보딩 페이지의 배너 미노출과 접속 집계. 온보딩 페이지 제거(KNK-1804)

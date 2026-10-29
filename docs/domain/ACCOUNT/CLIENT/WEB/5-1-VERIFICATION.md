@@ -223,7 +223,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 | AUTH-LOGOUT-05 | P2  | 분석 디버그 확인 가능 환경               | 로그아웃 / 세션 만료 자동 로그아웃 | 분석 사용자 식별자 재설정(공용 기기 보호). 회원 식별(`setUserId`)은 필수 동의 완료 뒤에만 설정됨                                                       | 수동   | FE-SCREEN-008 로그아웃, 구현(`my-screen`, `session-expiry-watcher`, `analytics-user-sync`)   |
 | AUTH-LOGOUT-09 | P1  | 회원, 마이 | "로그아웃" 탭 | 탭 로그인 표시(`sessionStorage`)도 함께 제거되어 다음 로그인의 동의 판정에 남지 않음 | 수동 | [로그인한 세션의 재동의](3-2-INTERACTION-FLOWS.md#3-2-2-로그인과-회원-이관) |
 | AUTH-LOGOUT-06 | P1 | 로그아웃 후 BFF 토큰 없이 빈 Auth.js 세션 쿠키 또는 빈 청크만 잔존 | 스토리 제작 진입과 공개 스토리 상세 조회 | 빈 쿠키를 만료된 회원 세션으로 오인하지 않음. 태그와 체험 횟수, 공개 상세 조회가 첫 요청부터 게스트로 정상 처리됨. 값이 있는 청크가 남으면 AUTH-SESSION-06 처리 유지 | ◐ 단위 `token-cookies.test.ts`(빈 값과 잔여 청크 판정), 실제 로그아웃 후 화면 진입은 수동 | [웹 사용자 모델](2-2-REQUIREMENTS.md#2-2-1-게스트와-회원), [웹 세션 구조](4-4-EXECUTION.md#4-4-2-토큰-재발급과-종료) |
-| AUTH-LOGOUT-08 | P0 | 제작 초안과 완성 기록, 다른 탭 편집 또는 지연 응답 존재 | 로그아웃, 탈퇴 또는 세션 만료 후 다른 계정 진입 | 제작 세대 변경 및 두 테이블 정리. 이전 회원 내용과 지연 결과를 새 세션에 반영하지 않음. DB 삭제 실패 시 다음 접근에서 선행 정리. 상세 저장소 검증은 STORY-DRAFT-17 | ◐ unit `creation-request-storage`, e2e `stories/story-creation-storage.spec.ts`(세대 변경). 실제 인증 전환은 수동 | ACCOUNT-US-012, [웹 제작](../../../../spec/3-2-web-spec.md#웹-제작-흐름) |
+| AUTH-LOGOUT-08 | P0 | 제작 초안과 완성 기록, 다른 탭 편집 또는 지연 응답 존재 | 로그아웃, 탈퇴 또는 세션 만료 후 다른 계정 진입 | 제작 세대 변경 및 두 테이블 정리. 이전 회원 내용과 지연 결과를 새 세션에 반영하지 않음. DB 삭제 실패 시 다음 접근에서 선행 정리. 상세 저장소 검증은 STORY-DRAFT-17 | ◐ unit `creation-request-storage`, e2e `stories/story-creation-storage.spec.ts`(세대 변경). 실제 인증 전환은 수동 | ACCOUNT-US-012, [웹 제작](../../../STORY/CLIENT/WEB/AGENTS.md) |
 
 <br>
 
@@ -422,7 +422,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 
 - `LEGAL-ENTRY-07` → LEGAL-DOC-04
 
-`ONBD-INVITE-06`은 게스트 온보딩 페이지 제거로 폐기됐다. 간편 제작 첫 진입 안내와의 겹침은 `STORY-TUTORIAL-08`에서 검증한다. ([STORY QA](../../../../qa/stories.md#story-tutorial--간편-제작-첫-진입-안내))
+`ONBD-INVITE-06`은 게스트 온보딩 페이지 제거로 폐기됐다. 간편 제작 첫 진입 안내와의 겹침은 `STORY-TUTORIAL-08`에서 검증한다. ([STORY QA](../../../STORY/CLIENT/WEB/5-1-VERIFICATION.md#5-1-8-story-tutorial))
 
 `MY-MENU-15`는 `AUTH-LOGOUT-01`로, `MY-INFO-04`는 `LEGAL-ENTRY-08`로 통합했다.
 

@@ -345,7 +345,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 #### 6-4-2-1. 간편 제작 첫 진입 안내
 
-간편 제작과 제작 탭에서 단계마다 여는 하단 대화창입니다. ([웹 간편 제작 첫 진입 안내](3-2-web-spec.md#간편-제작-첫-진입-안내)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 셉니다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있습니다.
+간편 제작과 제작 탭에서 단계마다 여는 하단 대화창입니다. ([웹 간편 제작 첫 진입 안내](../domain/STORY/CLIENT/WEB/3-3-LAYOUT.md#3-3-4-제작-안내와-대기)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 셉니다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있습니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -401,11 +401,11 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 `client_storyCreate_storyCompletion_requested`는 스토리 완성하기 버튼 클릭으로 완성 요청(스토리 생성 또는 실패 후 채팅 생성 재시도)이 실제 전송될 때 발생합니다. 필수 입력이 없어 요청이 전송되지 않는 클릭에는 발생하지 않으며, 완성 실패율(`client_storyCreate_completeError_shown` 대비)의 분모로 사용합니다.
 
-임시 저장 관련 이벤트([웹 제작 흐름](3-2-web-spec.md#3-2-3-웹-제작-흐름))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼과 화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼, 화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
+임시 저장 관련 이벤트([웹 제작 흐름](../domain/STORY/CLIENT/WEB/2-2-REQUIREMENTS.md))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼과 화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼, 화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
-`client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](3-1-client-spec.md#장르-검색과-선택)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+`client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-5-장르-검색)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 
 `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
@@ -761,7 +761,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 #### 6-4-2-20. 신규 가입 온보딩 — `Phase 3 · 구현`(KNK-1892)
 
-Android [신규 가입 온보딩](3-3-android-spec.md#신규-가입-온보딩) 화면의 이벤트입니다. `screen_name`은 `storyOnboarding`입니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수입니다.
+Android [신규 가입 온보딩](../domain/STORY/CLIENT/ANDROID/2-2-REQUIREMENTS.md) 화면의 이벤트입니다. `screen_name`은 `storyOnboarding`입니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수입니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |

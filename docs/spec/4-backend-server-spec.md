@@ -1345,7 +1345,7 @@ dev는 `remote` 모드에서 아웃박스와 SQS를 거쳐 `manyak-notification`
 
 - `type`은 `STORY_MODERATION_COMPLETED`, `kind`는 `SERVICE`입니다. data는 `type`, `submissionId`, `status`(`APPROVED|REJECTED|FAILED`), `storyId`(있을 때만), `deepLink`, `title`, `body`를 포함합니다. 공통 `recipientId`와 플랫폼별 표시 규칙을 유지하며 FCM data 값은 문자열입니다.
 - `title`·`body`는 아래 결과별 문구를 사용합니다. `{스토리 제목}`은 새 등록과 수정 제출 모두 검수 대상 제출본의 제목입니다. 웹은 data의 `title`·`body`로 표시하고 Android는 기존 data-only 규칙을 유지합니다.
-- `deepLink`는 결과와 `storyId` 유무에 관계없이 `{manyak.push.web-base-url}/studio`로 통일합니다. 이동 대상은 내 제작 스토리 목록([FE-SCREEN-013](3-1-client-spec.md#fe-screen-013-제작--내-스토리-목록))입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 `/studio`를 붙입니다. 스토리 수정 화면(`/stories/{storyId}/edit`)과 `/studio/story/general?submissionId=` 링크는 사용하지 않습니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
+- `deepLink`는 결과와 `storyId` 유무에 관계없이 `{manyak.push.web-base-url}/studio`로 통일합니다. 이동 대상은 내 제작 스토리 목록([FE-SCREEN-013](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-2-탐색과-제작-목록))입니다. 서버는 `manyak.push.web-base-url`(기본 `https://manyak.app`)의 끝 슬래시를 제거한 뒤 `/studio`를 붙입니다. 스토리 수정 화면(`/stories/{storyId}/edit`)과 `/studio/story/general?submissionId=` 링크는 사용하지 않습니다. Android 앱도 새 `data.type`을 처리해야 합니다(KNK-1164).
 - 반려 사유는 잠금 화면 노출과 길이를 고려해 푸시에 넣지 않습니다. 반려 사유 화면이 생기면 별도 작업에서 이동 대상을 변경합니다.
 - 종료 상태 기록 트랜잭션에서 도메인 이벤트를 발행합니다. 스토리 완성과 같이 `manyak.push.mode=local`은 커밋 뒤 서버가 FCM을 발송하고, `remote`는 같은 트랜잭션에 `push_outbox`를 기록합니다([발행 포트와 아웃박스](#발행-포트와-아웃박스)). local 발송과 remote 발송(아웃박스 → SQS → 알림 서비스)은 모두 서버가 만든 같은 data를 사용합니다. 검수 릴리스는 SQS 어댑터(KNK-1380)를 기다리지 않습니다.
 - 발송 실패나 사용자의 서비스 알림 끄기는 검수 결과를 되돌리지 않습니다. 화면 재진입 때 제출본 조회로 현재 상태를 표시합니다. 상태 조회는 푸시를 대신해 계속 폴링하도록 정한 계약이 아닙니다.
@@ -3025,15 +3025,15 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 
 | US | 흐름 | 검증 엔드포인트 |
 | --- | --- | --- |
-| US-2-1 · 2-4 · 2-6 | 스토리 목록·삭제 | `POST /stories/batch`, `DELETE /stories/{storyId}` |
-| US-2-7 | 스토리 카드 썸네일  | `POST /stories/batch` · `GET /users/me/stories`(`thumbnailUrlSm`) · 상세 `thumbnailUrl`([§4-3-9](#4-3-api-계약)) |
-| US-3-1 ~ 3-4 | 키워드 선택 | `GET /stories/simple/tags`, `POST /stories/simple/storylines` |
-| US-3-5 ~ 3-8 | 스토리라인 선택·평가 | `POST /stories/simple/storylines`, `PUT·DELETE …/rating` |
-| US-3-9 ~ 3-13 | 추가 정보·완성 | `POST /stories/simple`, `POST /chats` |
-| US-3-15 · 3-16 | 일반 제작  | `POST /stories/general` |
-| US-4-5 | 스토리 수정  | `GET /stories/{storyId}/edit`, `PATCH /stories/{storyId}` |
-| US-4-6 | 본 엔딩 표시  | `GET /stories/{storyId}`(`reachedEndings` 이름 배열), `POST /chats/batch`(`reachedEndings` 이름 배열) |
-| US-4-1 ~ 4-4 | 스토리 상세·채팅 시작·삭제 | `GET·DELETE /stories/{storyId}`, `POST /chats` |
+| STORY-US-002 · 2-4 · 2-6 | 스토리 목록·삭제 | `POST /stories/batch`, `DELETE /stories/{storyId}` |
+| STORY-US-003 | 스토리 카드 썸네일  | `POST /stories/batch` · `GET /users/me/stories`(`thumbnailUrlSm`) · 상세 `thumbnailUrl`([§4-3-9](#4-3-api-계약)) |
+| STORY-US-008 | 키워드 선택 | `GET /stories/simple/tags`, `POST /stories/simple/storylines` |
+| STORY-US-009 | 스토리라인 선택·평가 | `POST /stories/simple/storylines`, `PUT·DELETE …/rating` |
+| STORY-US-010, STORY-US-011, STORY-US-012 | 추가 정보·완성 | `POST /stories/simple`, `POST /chats` |
+| STORY-US-013 · 3-16 | 일반 제작  | `POST /stories/general` |
+| STORY-US-014 | 스토리 수정  | `GET /stories/{storyId}/edit`, `PATCH /stories/{storyId}` |
+| STORY-US-005 | 본 엔딩 표시  | `GET /stories/{storyId}`(`reachedEndings` 이름 배열), `POST /chats/batch`(`reachedEndings` 이름 배열) |
+| STORY-US-003, STORY-US-004 | 스토리 상세·채팅 시작·삭제 | `GET·DELETE /stories/{storyId}`, `POST /chats` |
 | CHAT-US-001, CHAT-US-002, CHAT-US-003 | 채팅 목록·재개·삭제 | `POST /chats/batch`, `GET·DELETE /chats/{chatId}` |
 | CHAT-US-004, CHAT-US-005, CHAT-US-006, CHAT-US-007, CHAT-US-008, CHAT-US-009 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
 | CHAT-US-011 | AI 응답 재생성  | `POST /chats/{chatId}/turns/regenerate/stream` |
