@@ -176,7 +176,7 @@ Phase 0은 **MVP 개발 단계**이며, 상세 기능 범위는 [`1-background.m
 
 > 키워드 단계 개편은 2026-07-20 팀 결정 당시 Phase 1로 잡았으나, 주변 인물 세트 입력이 아래 인물 단위 입력과 같은 작업이어서 함께 Phase 2로 옮겼습니다. 현재 입력 계약은 [공통 스펙](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-4-간편-제작-입력)을 따르며 세계관 탭 변경은 미확정입니다.
 
-> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-ai-server-spec.md §5-3-2`](../spec/5-ai-server-spec.md)·[`4-backend-server-spec.md §4-3-2`](../spec/4-backend-server-spec.md)·[`3-1-client-spec.md §3-1-4`](../spec/3-1-client-spec.md)가 정본입니다.
+> 스토리 생성 인물 단위 입력은 초기 Phase 2 계획에 없던 항목입니다. 2026-08-16 합의로 범위에 넣었습니다. 계약·설계는 [`5-ai-server-spec.md §5-3-2`](../spec/5-ai-server-spec.md)·[`4-backend-server-spec.md §4-3-2`](../spec/4-backend-server-spec.md)·[`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)가 정본입니다.
 
 > 관측은 초기 Phase 2 계획에 없던 항목입니다. 첫 광고 캠페인으로 실제 트래픽이 생긴 뒤 분석할 자료가 없다는 점이 드러나 범위에 넣었습니다. 설계는 [`4-backend-server-spec.md §4-7`](../spec/4-backend-server-spec.md)·[`4-deployment.md §4-6`](../design/4-deployment.md#4-6-런타임-설정과-시크릿)이 정본입니다.
 

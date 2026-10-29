@@ -50,21 +50,21 @@ git clone <manyak-infra-repository-url>
 | --- | --- | --- |
 | spec · 0 | [용어집](docs/spec/0-glossary.md) | 공식 용어·한영 표기·네이밍 규칙 |
 | spec · 1 | [서비스 배경](docs/spec/1-background.md) | 서비스 배경, 타겟 사용자, MVP 범위 |
-| spec · 2 | [유저 스토리](docs/spec/2-user-stories.md) | 화면·기능별 사용자 요구 |
-| spec · 3-1 | [클라이언트 공통](docs/spec/3-1-client-spec.md) | 공통 화면·상태·사용자 흐름·API 사용 계약 |
-| spec · 3-2 | [웹](docs/spec/3-2-web-spec.md) | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
-| spec · 3-3 | [Android](docs/spec/3-3-android-spec.md) | Android 사용자 계약·플랫폼 예외·수용 기준 |
+| spec · 2 | [유저 스토리](docs/client/2-1-USER-STORY.md#2-1-1-이동과-이용-환경) | 화면·기능별 사용자 요구 |
+| spec · 3-1 | [클라이언트 공통](docs/client/AGENTS.md) | 공통 화면·상태·사용자 흐름·API 사용 계약 |
+| spec · 3-2 | [웹](docs/client/WEB/AGENTS.md) | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
+| spec · 3-3 | [Android](docs/client/ANDROID/AGENTS.md) | Android 사용자 계약·플랫폼 예외·수용 기준 |
 | spec · 4 | [백엔드](docs/spec/4-backend-server-spec.md) | API·데이터 모델·오류·운영 기준 |
 | spec · 5 | [AI 서버](docs/spec/5-ai-server-spec.md) | AI 기능·입출력·실패 계약·평가 시스템 |
 | spec · 6 | [분석](docs/spec/6-analytics.md) | 이벤트·지표·관측·검수 기준 |
-| design · 1-1 | [웹 설계](docs/design/1-1-web-design.md) | 웹의 현재 기술 구조 |
-| design · 1-2 | [Android 설계](docs/design/1-2-android-design.md) | Android의 현재 기술 구조 |
+| design · 1-1 | [웹 설계](docs/client/WEB/AGENTS.md) | 웹의 현재 기술 구조 |
+| design · 1-2 | [Android 설계](docs/client/ANDROID/AGENTS.md) | Android의 현재 기술 구조 |
 | design · 2 | [백엔드 설계](docs/design/2-backend-server-design.md) | 요청 경계·저장소·동시성·운영 배선 |
 | design · 3 | [AI 설계](docs/design/3-ai-server-design.md) | 호출 계층·모델·프롬프트·관측 설정 |
 | design · 4 | [배포 설계](docs/design/4-deployment.md) | 운영·개발·통합 배포와 복구 구조 |
-| adr · 1-1 | [공통 ADR](docs/adr/1-1-client-adr.md) | 공통 결정 당시 맥락·선택·이유 |
-| adr · 1-2 | [웹 ADR](docs/adr/1-2-web-adr.md) | 웹 결정 당시 맥락·선택·이유 |
-| adr · 1-3 | [Android ADR](docs/adr/1-3-android-adr.md) | Android 결정 당시 맥락·선택·이유 |
+| adr · 1-1 | [공통 ADR](docs/client/DECISIONS.md) | 공통 결정 당시 맥락·선택·이유 |
+| adr · 1-2 | [웹 ADR](docs/client/WEB/DECISIONS.md) | 웹 결정 당시 맥락·선택·이유 |
+| adr · 1-3 | [Android ADR](docs/client/ANDROID/DECISIONS.md) | Android 결정 당시 맥락·선택·이유 |
 | adr · 2 | [백엔드 ADR](docs/adr/2-backend-server-adr.md) | 백엔드 결정의 맥락·선택·근거 |
 | adr · 3 | [AI ADR](docs/adr/3-ai-server-adr.md) | AI 설계의 배경·대안·선택 근거 |
 | adr · 4 | [배포 ADR](docs/adr/4-deployment-adr.md) | Terraform 결정의 과거 상태·변경 이유·날짜 |

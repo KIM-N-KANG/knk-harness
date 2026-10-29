@@ -1,3 +1,3 @@
-# 채팅 검증
+# chats
 
-채팅과 공유 검증은 [CHAT 웹 검증](../domain/CHAT/CLIENT/WEB/5-1-VERIFICATION.md)에서 관리한다.
+현재 계약과 기록은 [현재 문서](../domain/CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-1-chat-list-채팅-목록-chats)에서 관리한다.

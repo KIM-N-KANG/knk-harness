@@ -1,37 +1,28 @@
-# AGENTS.md
+# 공용 클라이언트
 
-여러 제품 도메인에 걸친 클라이언트 문서의 위치와 읽는 순서를 안내한다. 도메인별 사용자 동작은 `docs/domain/<DOMAIN>/CLIENT/`에서 정한다.
+앱 전체 셸, 공용 UI, 네트워크와 플랫폼 기반을 다룬다. 도메인별 동작은 `docs/domain/<DOMAIN>/CLIENT/`의 공통 문서와 WEB 및 ANDROID가 기준이다.
 
-### 1. 문서 배치
+### 1 읽는 순서
 
-| 내용 | 위치 |
+단계마다 공통 다음 플랫폼을 읽는다. [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
+
+| 문서 | 내용 |
 |---|---|
-| 도메인 공통 사용자 계약 | 해당 도메인의 `CLIENT/` |
-| 도메인별 웹과 Android 차이 및 구현 | 해당 `CLIENT/WEB/`, `CLIENT/ANDROID/` |
-| 앱 전체 셸, 공용 UI와 도메인 공통 계약 | 이 폴더 |
-| 공용 플랫폼 구조와 검증, 빌드 및 배포 | 이 폴더의 `WEB/`, `ANDROID/` |
-| 파일 역할과 이관 규칙 | [클라이언트 작성 가이드](../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 공용 클라이언트 배경 |
+| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 공용 클라이언트 유저 스토리 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 공용 클라이언트 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 공용 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 공용 화면 흐름 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 공용 화면 표현 |
+| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 공용 클라이언트 연동 계약 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 공용 클라이언트 검증 |
+| [DECISIONS.md](DECISIONS.md) | 문서 구조와 공통 결정 기록 |
 
-<br>
+### 2 작성과 검증
 
-### 2. 공통 문서 참조
+- 공용 사용자 목표는 CLIENT-US 형식으로 이 폴더의 2-1 문서에서 한 번 정의한다. 플랫폼은 같은 ID를 참조한다. 도메인 목표를 복제하지 않는다.
+- 요구사항, 화면, 연동과 구현, 검증, 배포 순서를 지키고 후속 문서 탐색과 코드 위치는 안내 문서에 둔다.
+- 공용 구조를 바꾸면 사용하는 도메인을 확인한다. 문서가 없는 플랫폼 지원과 수치를 추측하지 않는다.
+- 명세의 작성과 검토를 서브에이전트에 맡기지 않는다.
 
-| 작업 | 기준 문서 |
-|---|---|
-| 오버레이와 뒤로가기, 공통 화면 상태 | [공통 클라이언트 Spec](../spec/3-1-client-spec.md#3-1-2-공통-계약과-플랫폼-경계) |
-| 웹 앱 셸과 히스토리, 반응형, 공용 데이터 조회 | [웹 Design](../design/1-1-web-design.md) |
-| Android 모듈, 상태 관리, 앱 셸과 구성 변경 | [Android Design](../design/1-2-android-design.md) |
-| 식별자, 분석 이벤트와 개인정보 제외 | [분석](../spec/6-analytics.md) |
-| 빌드와 배포 | [배포 Design](../design/4-deployment.md) |
-
-<br>
-
-### 3. 작업 규칙
-
-- 공용 구조의 변경은 사용하는 도메인을 확인한다. 도메인 문서에 같은 구조 설명을 복사하지 않는다.
-- 아직 이관하지 않은 공통 항목은 위 기존 문서를 기준으로 읽는다. 해당 내용이 생길 때만 플랫폼 하위 문서를 추가한다.
-- 문서가 없는 플랫폼 지원이나 목표 수치를 추측하지 않는다.
-- 이관된 도메인에서도 다른 도메인의 미이관 계약은 기존 문서의 해당 절로 연결한다.
-- 문서의 작성, 수정과 검토를 서브에이전트에 맡기지 않는다.
-
-문서 배치의 결정과 대체 범위를 확인한다. ([DECISIONS](DECISIONS.md#c-011))
+작성 기준은 [클라이언트 작성 가이드](../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md), 관측은 [분석 기준](../spec/6-analytics.md), 배포는 [배포 Design](../design/4-deployment.md)을 따른다.

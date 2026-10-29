@@ -26,7 +26,7 @@
 - [notification/src/test](../../../../../../manyak-android/notification/src/test)
 - [notice/src/test](../../../../../../manyak-android/notice/src/test)
 
-첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기).
+첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../../client/ANDROID/DECISIONS.md#a-071).
 
 ### 3 작성과 검증
 

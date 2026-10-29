@@ -37,13 +37,13 @@
 | --- | --- |
 | 용어·한영 표기·네이밍 규칙 | [용어집](docs/spec/0-glossary.md) |
 | 서비스 배경·타겟 사용자·MVP 범위 | [서비스 배경](docs/spec/1-background.md) |
-| 화면·기능별 사용자 요구 | [유저 스토리](docs/spec/2-user-stories.md) |
+| 화면·기능별 사용자 요구 | [유저 스토리](docs/client/2-1-USER-STORY.md#2-1-1-이동과-이용-환경) |
 
 | 영역 | Spec — 계약 | Design — 현재 구조 | ADR — 결정 근거 |
 | --- | --- | --- | --- |
-| 공통 클라이언트 | [공통](docs/spec/3-1-client-spec.md) | 플랫폼별 Design 참조 | [공통](docs/adr/1-1-client-adr.md) |
-| 웹 | [웹](docs/spec/3-2-web-spec.md) | [웹](docs/design/1-1-web-design.md) | [웹](docs/adr/1-2-web-adr.md) |
-| Android | [Android](docs/spec/3-3-android-spec.md) | [Android](docs/design/1-2-android-design.md) · [모듈·의존 규칙](docs/design/1-2-android-design.md#1-2-2-모듈과-소유권) | [Android](docs/adr/1-3-android-adr.md) |
+| 공통 클라이언트 | [공통](docs/client/AGENTS.md) | 플랫폼별 Design 참조 | [공통](docs/client/DECISIONS.md) |
+| 웹 | [웹](docs/client/WEB/AGENTS.md) | [웹](docs/client/WEB/AGENTS.md) | [웹](docs/client/WEB/DECISIONS.md) |
+| Android | [Android](docs/client/ANDROID/AGENTS.md) | [Android](docs/client/ANDROID/AGENTS.md) · [모듈·의존 규칙](docs/client/ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-1-책임과-의존) | [Android](docs/client/ANDROID/DECISIONS.md) |
 | 백엔드 | [백엔드](docs/spec/4-backend-server-spec.md) | [백엔드](docs/design/2-backend-server-design.md) | [백엔드](docs/adr/2-backend-server-adr.md) |
 | AI | [AI](docs/spec/5-ai-server-spec.md) | [AI](docs/design/3-ai-server-design.md) | [AI](docs/adr/3-ai-server-adr.md) |
 
@@ -51,7 +51,7 @@
 | --- | --- |
 | 분석 이벤트·지표·관측·릴리스 검수 | [분석](docs/spec/6-analytics.md) |
 | 배포·인프라·CI/CD·검수·롤백 | [배포 Design](docs/design/4-deployment.md) · [배포 ADR](docs/adr/4-deployment-adr.md) |
-| QA 작업 전 지침·검증 방법 | [웹 QA 지침](docs/qa/AGENTS.md) · [Android 검증 방법](docs/design/1-2-android-design.md#1-2-9-검증-방법) |
+| QA 작업 전 지침·검증 방법 | [웹 QA 지침](docs/client/WEB/5-1-VERIFICATION.md#5-1-1-마이-메뉴와-테마) · [Android 검증 방법](docs/client/ANDROID/5-1-VERIFICATION.md#5-1-1-시나리오) |
 | Phase·목표·범위·백로그 | [로드맵](docs/planning/roadmap.md) |
 | 작업 담당·상세 일정·진행 | Jira |
 

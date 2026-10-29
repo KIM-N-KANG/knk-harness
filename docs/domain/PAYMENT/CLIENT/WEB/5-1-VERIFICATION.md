@@ -22,8 +22,8 @@
 |---|---|---|---|---|---|---|
 | MY-MENU-10   | P1  | 회원                                              | 이프 카드 확인       | "내 이프" + 잔액(천 단위 콤마) 표시. 조회 중에는 스켈레톤                                                             | ◐ e2e `visual/my-visual`(잔액 표시만)          | PAYMENT-US-001, [공통 화면 표현](../3-3-LAYOUT.md)|
 | MY-MENU-21 | P1 | 회원 | 이프 카드 확인 | 잔액 오른쪽에 강조색 버튼 "충전" 하나만 표시(출석 체크·내역 버튼은 없음). 탭하면 `/my/credits`로 이동 | ✅ e2e `my/credits`·`visual/my-visual` | [공통 화면 표현](../3-3-LAYOUT.md), KNK-1092 |
-| MY-CREDITS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/credits` | [웹 접근 조건](../../../../spec/3-2-web-spec.md#라우팅-테이블) |
-| MY-CREDITS-02 | P0 | 회원 | 마이 이프 카드 "충전" 탭 | `/my/credits`로 이동. 뒤로가기 헤더 "이프 충전" 표시, 하단 탭 없음. 진입 기본 탭은 구매 | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md), [웹 경로](../../../../spec/3-2-web-spec.md#라우팅-테이블) |
+| MY-CREDITS-01 | P0 | 게스트 | 경로 직접 진입 | `/login`으로 replace 이동 | ✅ e2e `my/credits` | [웹 접근 조건](../../../../client/WEB/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-셸과-문서) |
+| MY-CREDITS-02 | P0 | 회원 | 마이 이프 카드 "충전" 탭 | `/my/credits`로 이동. 뒤로가기 헤더 "이프 충전" 표시, 하단 탭 없음. 진입 기본 탭은 구매 | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md), [웹 경로](../../../../client/WEB/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-셸과-문서) |
 | MY-CREDITS-03 | P1 | 회원 | 최상단 잔액 상자 확인 | 중립 배경 상자에 "내 이프" 라벨이 위, 잔액이 그 아래 오른쪽에 한 단계 큰 글자·천 단위 콤마로 표시. 값은 진입마다 다시 읽은 `creditBalance`이며 내역 합산이 아님 | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md)|
 | MY-CREDITS-04 | P0 | 회원, 내역 여러 건 | 내역 탭에서 목록 확인 | 최신순 목록. 한 줄은 사유 라벨·대상 스토리·날짜와 오른쪽 금액이고, 획득은 `+`·소모/소멸은 `-`에 절대값·천 단위 콤마. 줄 위아래 여백은 8px | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md)|
 | MY-CREDITS-05  | P1  | 소모·사용 취소 행의 `title`이 null         | 항목 확인                  | 제목 줄에 "삭제된 스토리" 표시. 보상·소멸 행은 제목 줄 자체를 그리지 않음                                                                        | ✅ e2e `my/credits`           | [공통 화면 표현](../3-3-LAYOUT.md)|
@@ -35,7 +35,7 @@
 | MY-CREDITS-10 | P0 | `nextCursor`가 있는 목록 | 목록 끝까지 스크롤 | 받은 `nextCursor`를 그대로 실어 다음 페이지를 요청하고 아래에 이어 붙임. "더 보기" 버튼 없음 | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md), [웹 커서 목록](4-4-EXECUTION.md#4-4-1-정책과-체험-내역) |
 | MY-CREDITS-11 | P1 | 다음 페이지 조회가 실패 | 목록 끝까지 스크롤 | 이미 그린 목록을 지우지 않고 목록 아래 재시도 버튼만 표시하며 자동 재요청을 멈춤. 탭하면 다음 페이지를 이어 붙임 | ✅ e2e `my/credits`(실제 마지막 내역 로딩 후 스크롤) | [공통 화면 표현](../3-3-LAYOUT.md), [웹 커서 목록](4-4-EXECUTION.md#4-4-1-정책과-체험-내역), KNK-1207 |
 | MY-CREDITS-12 | P2 | 서버가 라벨 없는 `reason`을 내려줌 | 항목 확인 | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시 | 수동 | [공통 화면 표현](../3-3-LAYOUT.md)|
-| MY-CREDITS-13 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`로 복귀 | 수동 | [웹 헤더](../../../../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
+| MY-CREDITS-13 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`로 복귀 | 수동 | [웹 헤더](../../../../client/WEB/3-3-LAYOUT.md#3-3-1-셸과-공용-요소) |
 | MY-CREDITS-14 | P1 | 내역 탭을 한 번 보고 `/my`로 돌아온 상태 | "충전" → 내역 탭으로 다시 진입 | 남겨 둔 목록을 그대로 쓰지 않고 첫 페이지부터 다시 조회(스크롤 위치도 목록 맨 위). 그사이 발생한 내역이 바로 보임. 탭을 무료 충전으로 옮겼다 돌아와도 같음(비활성 탭은 언마운트) | ✅ e2e `my/credits` | [웹 커서 목록](4-4-EXECUTION.md#4-4-1-정책과-체험-내역), KNK-1083 |
 | MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "구매"·"무료 충전"·"내역" 세 탭을 밑줄 탭으로 표시하고 `tab` 쿼리 없이 진입하면 구매가 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | [공통 화면 표현](../3-3-LAYOUT.md), KNK-1092·1297 |
 | MY-CREDITS-16 | P1 | 회원, 내역이 한 화면을 넘김 | 내역 탭에서 아래로 스크롤 | 잔액 상자와 탭 줄은 제자리에 남고 탭 패널만 스크롤됨 | ◐ e2e `visual/my-visual`(정적 상태만) | [공통 화면 표현](../3-3-LAYOUT.md), KNK-1092 |
@@ -63,7 +63,7 @@
 | MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](2-2-REQUIREMENTS.md#2-2-2-구매와-적립-확인), KNK-1558 |
 | MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](2-2-REQUIREMENTS.md#2-2-2-구매와-적립-확인), KNK-1558 |
 | MY-CREDITS-42 | P1 | 회원, 알림·주소로 `/my/credits` 바로 진입(아래 기록 없음) | 뒤로가기 헤더 탭 | `/my`로 교체 이동. 결제 복귀 되감기 뒤(MY-CREDITS-39)에는 그대로 결제 전 화면으로 뒤로가기 | ✅ e2e `my/credits` | 웹 Spec 화면 전환 규칙, KNK-1613 |
-| MY-CREDITS-43 | P1 | 회원 | `/my/credits?tab=history&utm_source=push`, `?tab=free`, `?tab=purchase`, `?tab=모르는값`으로 진입 | 각각 내역, 무료 충전, 구매, 구매 탭이 처음 선택됨. 주소에서 `tab`만 지워지고 `utm_source` 등 다른 쿼리는 남음. 그 뒤 구매 탭에서 결제하고 되감겨 와도 쿼리 탭으로 바뀌지 않음 | ◐ e2e `my/credits`(history, free) | [웹 화면 전환](../../../../spec/3-2-web-spec.md#화면-전환-규칙), KNK-1842 |
+| MY-CREDITS-43 | P1 | 회원 | `/my/credits?tab=history&utm_source=push`, `?tab=free`, `?tab=purchase`, `?tab=모르는값`으로 진입 | 각각 내역, 무료 충전, 구매, 구매 탭이 처음 선택됨. 주소에서 `tab`만 지워지고 `utm_source` 등 다른 쿼리는 남음. 그 뒤 구매 탭에서 결제하고 되감겨 와도 쿼리 탭으로 바뀌지 않음 | ◐ e2e `my/credits`(history, free) | [웹 화면 전환](../../../../client/WEB/3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기), KNK-1842 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](2-2-REQUIREMENTS.md#2-2-2-구매와-적립-확인), KNK-1314 |
 
 실제 결제와 기기 복귀는 MY-CREDITS-41로 검증한다. 채팅과 제작에서 시작한 부족 안내는 해당 동작의 검증과 함께 확인한다. ([채팅 한도](../../../CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-chat-limit-회원-이프-체험-표시), [제작 검증](../../../STORY/CLIENT/WEB/5-1-VERIFICATION.md))

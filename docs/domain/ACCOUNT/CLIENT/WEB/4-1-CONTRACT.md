@@ -15,7 +15,7 @@
 | `/api/auth/popup-complete?attempt=<UUID>` | `authenticated`, `consentRequired`만 알림. 토큰과 회원 정보 전송 금지 |
 | `/api/v1/guests/consents` GET과 POST | `guestPrivacy.requiredVersion`, `needsConsent` 조회 및 해당 버전 저장. 같은 버전과 `false` 응답으로 완료 확인 |
 
-공용 BFF 프록시의 헤더와 요청 타임아웃은 공통 웹 구조를 사용한다. ([BFF 프록시](../../../../design/1-1-web-design.md#bff-프록시), [요청 타임아웃](../../../../design/1-1-web-design.md#요청-타임아웃))
+공용 BFF 프록시의 헤더와 요청 타임아웃은 공통 웹 구조를 사용한다. ([BFF 프록시](../../../../client/WEB/AGENTS.md), [요청 타임아웃](../../../../client/WEB/AGENTS.md))
 
 <br>
 

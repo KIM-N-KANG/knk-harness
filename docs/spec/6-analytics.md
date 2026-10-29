@@ -69,7 +69,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 현재 MVP는 로그인 기능이 없는 전원 게스트 서비스입니다. 사용자 단위는 익명 `device_id`로 식별합니다.
 
-**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유합니다**(로그아웃 시 재발급 — [`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 앱에 게스트가 없어 비적용입니다([`1-2-android-design.md §3-3-1`](../design/1-2-android-design.md)).
+**식별자의 논리적 의미·타입·금지 데이터·서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성·보관·복원하는지는 플랫폼 매핑입니다 — 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유합니다**(로그아웃 시 재발급 — [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string)·`session_id`(방문 흐름, number)·`user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-6-2)을 충족해야 합니다.** 게스트 체험 한도·자동 이관은 앱에 게스트가 없어 비적용입니다([`1-2-android-design.md §3-3-1`](../client/ANDROID/AGENTS.md)).
 
 | 식별자           | 분석 이벤트 타입 | 생성·관리                                      | 사용처                            |
 | ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
@@ -102,7 +102,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 - 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지합니다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않습니다. Android Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않습니다.
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급합니다.
-- **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../design/1-2-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
+- **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../client/ANDROID/AGENTS.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(ACCOUNT-US-012 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
 - 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)이 소유합니다.
 
@@ -403,7 +403,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 임시 저장 관련 이벤트([웹 제작 흐름](../domain/STORY/CLIENT/WEB/2-2-REQUIREMENTS.md))는 저장 → 재개까지의 회수 퍼널을 관찰합니다. `client_storyCreate_draftSaved`는 간편 제작의 임시 저장 버튼과 화면 숨김 저장 쓰기가 실제 성공했을 때만 발생하고(바뀐 것이 없어 다시 쓰지 않은 버튼 저장에는 발생하지 않음) 입력 원문·선택값은 싣지 않습니다. 저장 계기(버튼, 화면 숨김)는 프로퍼티로 구분하지 않습니다. 이후 `client_storyCreate_continueBanner_shown`/`_clicked`(제작 탭 진행 카드 회수)로 이어집니다. 재개는 진행 카드에서만 하므로 퍼널 재진입 다이얼로그 이벤트(`client_storyCreate_resumeDialog_*`)는 KNK-1394에서 제거했습니다. 제작 카드는 닫기 제어를 제공하지 않아 별도 이탈 이벤트를 발생시키지 않으며, 초안 삭제는 카드 더보기의 확인 뒤 수행합니다. 배너 이벤트의 `stage`로 진행 중 요청 복구(`STORYLINE_GENERATION`·`STORY_COMPLETION`)와 키워드·생성 결과 임시 저장본(`KEYWORD_DRAFT`·`STORY_DRAFT`) 회수를 구분합니다(KNK-994). 일반 제작 임시 저장본 카드는 `GENERAL_DRAFT`로 보내며, 일반 제작은 수동 저장이라 `client_storyCreate_draftSaved`를 보내지 않습니다.
 
-`client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
+`client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](../client/AGENTS.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
 `client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-5-장르-검색)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 
@@ -478,13 +478,13 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 채팅 화면은 블럭 입력(상황·대사를 나눠 입력)과 일반 입력(한 입력창에 자유 입력) 두 모드를 제공하며 기본값은 블럭 입력입니다. `client_chat_messageInput_submitted`의 `input_mode`는 메시지가 어떻게 작성·전송됐는지를 뜻하며, `block`(블럭 입력 직접 입력), `plain`(일반 입력 직접 입력), `choice`(AI 선택지 탭 전송) 중 하나입니다. 선택지 탭으로 전송된 메시지는 활성 모드와 무관하게 `choice`로 보내므로, 직접 입력 참여는 `input_mode in (block, plain)`으로, 선택지 기반 전송은 `input_mode = choice`로 바로 구분합니다. 선택지 탭은 이 이벤트와 함께 같은 `chat_id`·`turn_number`로 `client_chat_choiceOption_selected`도 발생시킵니다. `client_chat_inputMode_selected`는 입력 툴바의 모드 메뉴에서 실제로 다른 모드로 전환할 때만 발생하며(같은 모드 재선택 제외), `mode`는 전환 후 모드입니다. 기본값이 블럭 입력이므로 블럭 입력 UX 검증은 일반 입력으로 전환하는 비율로 관찰합니다. 같은 툴바의 추천 입력 켬/끔은 `client_chat_choicesToggle_clicked`로 수집하며(같은 상태 재선택 제외, `enabled`는 전환 후 상태), 기본값이 켬이므로 끄는 비율로 추천 입력의 방해 여부를 관찰합니다.
 
-`client_chatShareDialog_shown`·`client_chatShareDialog_dismissed`는 공유 확인 다이얼로그 전용 이벤트였으나, 다이얼로그를 걷어내고 헤더 메뉴 드로어에서 바로 발급하도록 바꾸면서(2026-09-16, KNK-1306 — [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)) 발화 지점이 사라졌습니다. 과거 수집분 해석을 위해 표에는 `폐기`로 남기고 신규 수집은 하지 않습니다.
+`client_chatShareDialog_shown`·`client_chatShareDialog_dismissed`는 공유 확인 다이얼로그 전용 이벤트였으나, 다이얼로그를 걷어내고 헤더 메뉴 드로어에서 바로 발급하도록 바꾸면서(2026-09-16, KNK-1306 — [`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)) 발화 지점이 사라졌습니다. 과거 수집분 해석을 위해 표에는 `폐기`로 남기고 신규 수집은 하지 않습니다.
 
-`client_chat_settingsButton_clicked`는 채팅 설정 드로어 전용 이벤트였으나, 드로어를 걷어내고 입력 툴바 메뉴 + 헤더 옵션 메뉴로 바꾸면서(2026-07-16, KNK-611 — [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)) 발화 지점이 사라졌습니다. 과거 수집분 해석을 위해 표에는 `폐기`로 남기고 신규 수집은 하지 않습니다.
+`client_chat_settingsButton_clicked`는 채팅 설정 드로어 전용 이벤트였으나, 드로어를 걷어내고 입력 툴바 메뉴 + 헤더 옵션 메뉴로 바꾸면서(2026-07-16, KNK-611 — [`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)) 발화 지점이 사라졌습니다. 과거 수집분 해석을 위해 표에는 `폐기`로 남기고 신규 수집은 하지 않습니다.
 
 `client_chat_choiceFillButton_clicked`는 선택지를 바로 전송하지 않고 입력창에 채워 수정할 때 발생합니다. 선택지 사용률(§6-5-4)은 그대로 전송한 `client_chat_choiceOption_selected`만으로 계산하고, 수정 후 사용 행동은 이 이벤트로 별도 관찰합니다.
 
-안내 투어 4종(KNK-694)은 첫 채팅 진입 안내가 실제로 읽히는지 보는 보조 계측입니다. 완주율은 `client_chat_tour_completed` ÷ `client_chat_tour_shown`으로, 이탈 지점은 `client_chat_tourSkipButton_clicked`의 `step_number` 분포로 봅니다. 투어는 기기별 1회만 노출하고 재열람 진입점이 없으므로 `tour_shown`은 사용자당 사실상 1회입니다(`localStorage` 차단 환경에서는 진입마다 반복될 수 있음 — [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)). `step_id`는 단계 번호가 아닌 안내 대상 식별자이며 입력 모드에 따라 첫 스텝이 `add-blocks`(블럭)·`add-emphasis`(일반)로 갈립니다. 같은 화면의 추천 입력 인라인 힌트는 별도 이벤트를 두지 않습니다 — 사용자가 조작하는 UI가 아니라 문구 노출이라 추천 사용률(`client_chat_choiceOption_selected`, §6-5-4)의 변화로 관찰합니다.
+안내 투어 4종(KNK-694)은 첫 채팅 진입 안내가 실제로 읽히는지 보는 보조 계측입니다. 완주율은 `client_chat_tour_completed` ÷ `client_chat_tour_shown`으로, 이탈 지점은 `client_chat_tourSkipButton_clicked`의 `step_number` 분포로 봅니다. 투어는 기기별 1회만 노출하고 재열람 진입점이 없으므로 `tour_shown`은 사용자당 사실상 1회입니다(`localStorage` 차단 환경에서는 진입마다 반복될 수 있음 — [`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)). `step_id`는 단계 번호가 아닌 안내 대상 식별자이며 입력 모드에 따라 첫 스텝이 `add-blocks`(블럭)·`add-emphasis`(일반)로 갈립니다. 같은 화면의 추천 입력 인라인 힌트는 별도 이벤트를 두지 않습니다 — 사용자가 조작하는 UI가 아니라 문구 노출이라 추천 사용률(`client_chat_choiceOption_selected`, §6-5-4)의 변화로 관찰합니다.
 
 `client_chat_loadError_shown`은 채팅 화면 진입 후 대화 내용을 불러오지 못해 에러 상태가 표시될 때 발생합니다. 채팅 진입(`client_chat_viewed`) 대비 로드 실패로 인한 이탈을 구분하는 데 사용합니다. `client_chat_streamError_shown`은 사용자가 메시지를 보낸 뒤 AI 응답 스트리밍이 클라이언트에서 실패해 에러 토스트가 표시될 때 발생하며, 사용자 취소(abort)로 인한 중단은 제외합니다. 연결이 끊겨도 [생성 이어받기](../domain/CHAT/CLIENT/2-2-REQUIREMENTS.md#2-2-3-생성-실패와-복구)로 응답을 받았거나 저장된 턴을 확인했으면 발생하지 않습니다. 두 이벤트 모두 클라이언트가 체감한 실패이며, 서버가 판단하는 AI 응답 생성 실패는 `server_chat_aiMessage_processed_failed`로 봅니다.
 
@@ -530,7 +530,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 **결정 기록 — 서버 로그인 이벤트는 provider별 이름을 유지합니다(2026-07-31, KNK-721).** `server_login_googleLogin_processed_*`는 이미 운영에서 발행 중입니다(서버 `ServerAnalytics` 구현·통합 테스트가 이름을 검증하고, 운영 user-data가 `MANYAK_ANALYTICS_AMPLITUDE_ENABLED=true`로 발행하며, Amplitude 적재를 확인 — 2026-07-31). 따라서 `server_login_socialLogin_*` + `provider` 프로퍼티로의 개명은 지표 이력 단절 또는 전환기 이중 발행(dual-write)·대시보드 이전을 요구해 기각합니다. 카카오는 `server_login_kakaoLogin_processed_*`를 새로 추가하고 고유 프로퍼티는 Google과 동일하게 둡니다. 전체 로그인 성공률·전환은 두 이벤트 합산 차트로, provider 비교는 이벤트별 시리즈로 봅니다. 클라이언트 버튼 클릭도 같은 구조입니다(`client_login_googleButton_clicked` · `client_login_kakaoButton_clicked` — 명명 규칙 `client_{화면}_{요소}_{동작}` 유지).
 
-**서버 `processed_failed`는 백엔드에 로그인 요청이 도달한 이후의 실패만 셉니다.** 토큰 교환 실패(`invalid_client`), 카카오 OIDC 비활성, redirect URI 불일치 같은 OAuth 콜백 단계 실패는 백엔드 호출 전에 끝나므로 서버 이벤트에 잡히지 않습니다 — 콜백 단계에서 로그인이 전면 실패해도 서버 실패율은 정상으로 보입니다. 이 사각지대는 `client_login_oauthError_shown`(NextAuth가 `error` 쿼리와 함께 `/login`으로 복귀시키는 시점에 발행 — [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008)이 커버합니다. 웹은 소셜 인증(`POST /auth/social/{provider}`)을 Auth.js `signIn` 콜백에서 호출하므로 이 호출의 실패는 `error_code` `AccessDenied`로 기록됩니다. 카카오 로그인 릴리스 검수는 서버 실패율과 함께 이 이벤트가 0건에 가깝게 유지되는지 확인하고, 지속 발생 시 콘솔 설정(OIDC 토글·리다이렉트 URI·클라이언트 시크릿)을 점검합니다.
+**서버 `processed_failed`는 백엔드에 로그인 요청이 도달한 이후의 실패만 셉니다.** 토큰 교환 실패(`invalid_client`), 카카오 OIDC 비활성, redirect URI 불일치 같은 OAuth 콜백 단계 실패는 백엔드 호출 전에 끝나므로 서버 이벤트에 잡히지 않습니다 — 콜백 단계에서 로그인이 전면 실패해도 서버 실패율은 정상으로 보입니다. 이 사각지대는 `client_login_oauthError_shown`(NextAuth가 `error` 쿼리와 함께 `/login`으로 복귀시키는 시점에 발행 — [`3-1-client-spec.md`](../client/AGENTS.md) FE-SCREEN-008)이 커버합니다. 웹은 소셜 인증(`POST /auth/social/{provider}`)을 Auth.js `signIn` 콜백에서 호출하므로 이 호출의 실패는 `error_code` `AccessDenied`로 기록됩니다. 카카오 로그인 릴리스 검수는 서버 실패율과 함께 이 이벤트가 0건에 가깝게 유지되는지 확인하고, 지속 발생 시 콘솔 설정(OIDC 토글·리다이렉트 URI·클라이언트 시크릿)을 점검합니다.
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`입니다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 합니다(정합 검증용). 제출 배열이 스토리·채팅 모두 비면 이벤트를 발행하지 않습니다(0건 노이즈 방지).
@@ -617,7 +617,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-13. 서비스 안내 — `Phase 1 · 구현`
 
-서비스 안내 화면([`3-1-client-spec.md` FE-SCREEN-011](3-1-client-spec.md))의 진입 이벤트입니다. 법적 고지(§6-4-2-11)와 같은 유입 경로 분석용 저우선 계측입니다.
+서비스 안내 화면([`3-1-client-spec.md` FE-SCREEN-011](../client/AGENTS.md))의 진입 이벤트입니다. 법적 고지(§6-4-2-11)와 같은 유입 경로 분석용 저우선 계측입니다.
 
 | 이벤트                      | 우선순위 | 발생 시점             | 고유 프로퍼티 |
 | --------------------------- | -------- | --------------------- | ------------- |
@@ -625,7 +625,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-14. 채팅 공유 — `Phase 1 · 구현`
 
-채팅 공유 열람 화면([`3-1-client-spec.md` FE-SCREEN-012](3-1-client-spec.md))의 이벤트입니다. 발급 클릭은 채팅 화면 이벤트(§6-4-2-6의 `client_chat_shareButton_clicked`)가 담당하고, 여기서는 링크를 받은 사람의 열람과 전환만 수집합니다.
+채팅 공유 열람 화면([`3-1-client-spec.md` FE-SCREEN-012](../client/AGENTS.md))의 이벤트입니다. 발급 클릭은 채팅 화면 이벤트(§6-4-2-6의 `client_chat_shareButton_clicked`)가 담당하고, 여기서는 링크를 받은 사람의 열람과 전환만 수집합니다.
 
 | 이벤트                               | 우선순위 | 발생 시점                        | 고유 프로퍼티             |
 | ------------------------------------ | -------- | -------------------------------- | ------------------------- |
@@ -688,7 +688,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-16. 플랫폼 적용 범위와 웹 후속 작업 — 앱 `Phase 2 · 구현` · 웹 후속 `계획`(KNK-1178)
 
-앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개, `client_inappBrowser_loginHandoffCreated`와 §6-4-2-12의 폐기 이벤트 4개는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
+앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용합니다. 현재 웹 전용 그룹은 아래 표를 따릅니다. 종료된 `client_guestLimitDialog_*` 3개, `client_inappBrowser_loginHandoffCreated`와 §6-4-2-12의 폐기 이벤트 4개는 제외합니다. 화면별 대응은 [`1-2-android-design.md §1-2-8`](../client/ANDROID/AGENTS.md)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유합니다.
 
 **앱 비적용(웹 전용) 8개** — 앱에 해당 화면·상태가 없습니다.
 
@@ -715,7 +715,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 #### 6-4-2-17. 페르소나 생성과 관리 — `Phase 3 · 구현`(KNK-1469)
 
-페르소나 생성과 관리 화면([`3-1-client-spec.md` FE-SCREEN-008](3-1-client-spec.md#fe-screen-008-로그인마이-페이지))의 이벤트입니다. 스토리 상세에서의 생성 진입은 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가, 관리 목록에서의 생성 진입은 `client_personaList_createButton_clicked`가 담당합니다.
+페르소나 생성과 관리 화면([`3-1-client-spec.md` FE-SCREEN-008](../client/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입점))의 이벤트입니다. 스토리 상세에서의 생성 진입은 `client_storyDetail_personaCreateButton_clicked`(§6-4-2-4)가, 관리 목록에서의 생성 진입은 `client_personaList_createButton_clicked`가 담당합니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -735,7 +735,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 #### 6-4-2-18. 앱 안내 배너 — `Phase 3 · 구현`(KNK-1631)
 
-[앱 안내 배너](3-2-web-spec.md#앱-안내-배너)의 이벤트입니다. 여러 화면에 걸친 전역 동작이므로 screenName 자리에 `appBanner`를 씁니다.
+[앱 안내 배너](../client/WEB/3-3-LAYOUT.md#3-3-1-셸과-공용-요소)의 이벤트입니다. 여러 화면에 걸친 전역 동작이므로 screenName 자리에 `appBanner`를 씁니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -749,7 +749,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 #### 6-4-2-19. 프로필 수정 — `Phase 3 · 구현`(KNK-1148)
 
-[프로필 수정](3-1-client-spec.md#fe-screen-008-로그인마이-페이지) 화면의 이벤트입니다.
+[프로필 수정](../client/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입점) 화면의 이벤트입니다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -959,7 +959,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6-6. 관측 구현`을 
 | Meta 픽셀        | 광고 전환 신호       | `PageView`·`StorylinesGenerated`·`StoryCompiled`·`StartTrial` — Meta 캠페인 학습·성과 측정(KNK-616) |
 | Android Meta SDK | 앱 설치 광고 전환 신호 | 자동 로깅되는 앱 설치와 앱 실행(`fb_mobile_activate_app`) 이벤트와 광고 식별자(AAID) — 앱 설치 캠페인 성과 측정(KNK-1718). 앱이 직접 정의한 이벤트는 보내지 않음 |
 | 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
-| Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal·non-fatal, API 30+ ANR, 수동 화면·P0 행동 로그. API 24~29 ANR·NDK는 초기 범위 밖([`1-2-android-design.md §1-2-8`](../design/1-2-android-design.md)) |
+| Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal·non-fatal, API 30+ ANR, 수동 화면·P0 행동 로그. API 24~29 ANR·NDK는 초기 범위 밖([`1-2-android-design.md §1-2-8`](../client/ANDROID/AGENTS.md)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공·실패, AI 응답 성공·실패, 피드백 제출 성공·실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
 | CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
@@ -975,7 +975,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 ### 6-6-2. 프론트엔드 API 헤더
 
-모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend-server-spec.md §4-3` 요청·응답 헤더](4-backend-server-spec.md)·[`§4-3-7`](4-backend-server-spec.md))입니다.
+모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend-server-spec.md §4-3` 요청·응답 헤더](4-backend-server-spec.md)·[`§4-3-7`](4-backend-server-spec.md))입니다.
 
 | 헤더                  | 전송 계약 | 값           | 설명                                                                                     |
 | --------------------- | --------- | ------------ | ----------------------------------------------------------------------------------------- |
@@ -983,7 +983,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않습니다. 백엔드가 `unknown`으로 채웁니다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성·주입하지 않습니다. 백엔드가 생성해 응답 헤더로 echo합니다(§6-6-3). |
 
-**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](3-1-client-spec.md#3-1-7-api-연동에러-처리-계약), [`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md)).
+**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](../client/AGENTS.md), [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)).
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣습니다. 백엔드는 저장 전 `device_id_hash`로 변환합니다. 프론트엔드는 별도 해시를 만들지 않습니다.
 

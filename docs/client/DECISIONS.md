@@ -46,7 +46,7 @@
 - 결정일: 2026-09-09 · 기록 확정 상태: Accepted
 - 관계: C-006의 모든 폴더에서 같은 클라이언트 번호를 사용하는 규칙과 별도 Android 모듈 파일 규칙을 일부 대체합니다. 역할별 폴더·독립 번호·문서 책임은 유지합니다.
 - **맥락:** 사용자가 각 폴더의 파일명을 변경하고 Android 모듈 설계를 상위 설계에 합치도록 요청했습니다.
-- **결정:** Spec은 공통 3-1·웹 3-2·Android 3-3, Design은 웹 1-1·Android 1-2, ADR은 공통 1-1·웹 1-2·Android 1-3을 사용합니다. 모듈 책임은 [Android Design §1-2-2](../design/1-2-android-design.md#1-2-2-모듈과-소유권)에 통합합니다. 백엔드는 Spec 4·Design 2·ADR 2, AI는 Spec 5·Design 3·ADR 3, 배포 Design은 4입니다.
+- **결정:** Spec은 공통 3-1·웹 3-2·Android 3-3, Design은 웹 1-1·Android 1-2, ADR은 공통 1-1·웹 1-2·Android 1-3을 사용합니다. 모듈 책임은 [Android Design §1-2-2](ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-1-책임과-의존)에 통합합니다. 백엔드는 Spec 4·Design 2·ADR 2, AI는 Spec 5·Design 3·ADR 3, 배포 Design은 4입니다.
 - **이유:** 폴더의 실제 문서 구성에 맞춰 독립적으로 번호를 관리하고 Android 현재 구조의 중복 정본을 없앱니다.
 - **영향:** 빈 서버 Design·ADR은 기존 본문을 이관해 채우고 출처에는 링크를 남깁니다. 제품 정책·구현·검증 상태는 변경하지 않습니다. [재구성 계획](https://github.com/KIM-N-KANG/knk-harness/blob/655dbbd68e40e0c2c77d4e7660328485e21946d6/docs/planning/product-document-reorganization.md)에 이관 범위와 남은 작업을 기록합니다.
 

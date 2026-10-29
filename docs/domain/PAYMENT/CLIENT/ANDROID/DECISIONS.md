@@ -13,7 +13,7 @@
 - **맥락:** 서버가 이프 만료 예정 알림 `CREDIT_EXPIRY_REMINDER`를 추가하고(KNK-1835), 클라이언트가 반영되면 그 `deepLink`를 이프 내역으로 가는 `/my/credits?tab=history`로 바꿉니다. 출석 리마인드는 이미 `/my/credits?tab=free`입니다. 탭 값은 웹과 `purchase`, `free`, `history`로 맞췄고 웹도 같은 쿼리를 읽습니다(KNK-1842). A-045 당시에는 사용처가 무료 탭 하나라 기본 선택만으로 도착했지만, 내역 탭이 두 번째 사용처가 됐습니다.
 - **결정:** `DeepLink`는 `/my/credits`의 쿼리에서 `tab`만 골라 값이 정확히 `history`이면 `MyCreditChargeRoute(openHistory = true)`로 엽니다. 웹 전용 `purchase`, 모르는 값, 대소문자가 다른 값, 쿼리 없음은 무료 충전 탭입니다. UTM 같은 다른 쿼리는 무시합니다. `CreditChargeScreen`은 이 값을 선택 탭의 `rememberSaveable` 초기값으로만 쓰고, 탭 전환을 라우트나 URL에 다시 쓰지 않습니다.
 - **이유:** Android 이프 충전의 탭은 무료 충전과 내역 둘이라 Boolean 하나로 충분하고, 라우트가 `my`의 탭 열거형을 참조하지 않아 기능 모듈 직접 참조 금지 규칙을 지킵니다. 탭은 여전히 목적지가 아니라 화면 상태라 처음 탭만 라우트로 받고 이후 선택은 구성 변경에서만 유지합니다. 모르는 값을 무료 탭으로 여는 것은 웹 전용 구매 탭 링크나 나중에 생길 값이 오류 없이 기본 화면에 도착하게 하기 위해서입니다.
-- **주요 영향:** `MyCreditChargeRoute`가 `data object`에서 기본값 있는 `data class`로 바뀌어 앱 안의 진입은 `MyCreditChargeRoute()`로 무료 충전 탭을 엽니다. Android에 구매 탭이 생기면 Boolean을 탭 값으로 바꿔야 합니다. `deepLink`가 없는 출석 리마인드의 `type` 매핑은 무료 충전 탭 그대로입니다. 웹 앱 열기 링크([A-071](../../../../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기))는 경로만 https로 옮기고 쿼리를 버리므로 그 경로로는 항상 무료 충전 탭이 열립니다.
+- **주요 영향:** `MyCreditChargeRoute`가 `data object`에서 기본값 있는 `data class`로 바뀌어 앱 안의 진입은 `MyCreditChargeRoute()`로 무료 충전 탭을 엽니다. Android에 구매 탭이 생기면 Boolean을 탭 값으로 바꿔야 합니다. `deepLink`가 없는 출석 리마인드의 `type` 매핑은 무료 충전 탭 그대로입니다. 웹 앱 열기 링크([A-071](../../../../client/ANDROID/DECISIONS.md#a-071))는 경로만 https로 옮기고 쿼리를 버리므로 그 경로로는 항상 무료 충전 탭이 열립니다.
 - 근거: [KNK-1843](https://kimandkang.atlassian.net/browse/KNK-1843), [KNK-1840](https://kimandkang.atlassian.net/browse/KNK-1840), [KNK-1843 계획](../../../../../../manyak-android/docs/plans/knk-1843-credit-charge-tab-query.md)
 
 <br>

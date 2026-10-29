@@ -55,7 +55,7 @@
 
 ### 제외 범위
 
-- 화면, 사용자 흐름, 프론트엔드 상태 처리 (담당: [`3-1-client-spec.md`](3-1-client-spec.md))
+- 화면, 사용자 흐름, 프론트엔드 상태 처리 (담당: [`3-1-client-spec.md`](../client/AGENTS.md))
 - AI 서버 내부 구현, 프롬프트, 레이어 구성 (담당: [`5-ai-server-spec.md`](5-ai-server-spec.md))
 - 분석 이벤트 카탈로그, 지표, CloudWatch·Sentry 수집 기준 (담당: [`6-analytics.md`](6-analytics.md))
 - 코드 구조, 클래스 설계, 테스트 작성 규칙, 로컬 실행 상세 (서버 레포 `README.md`·`CLAUDE.md`가 소유)
@@ -67,8 +67,8 @@
 | --- | --- | --- |
 | [`0-glossary.md`](0-glossary.md) | 용어, 계층별 표기 컨벤션 | 필드·테이블·로그 이름의 표기 근거 |
 | [`1-background.md`](1-background.md) | 서비스 배경, MVP 범위 | 제품 방향의 상위 근거 |
-| [`2-user-stories.md`](2-user-stories.md) | 화면별 사용자 요구(US ID) | 검수 기준을 US ID로 추적 |
-| [`3-1-client-spec.md`](3-1-client-spec.md) | 화면, API 호출 시점, 실패 처리 | API의 소비자 계약. 호출 흐름은 위임 |
+| [`2-user-stories.md`](../client/2-1-USER-STORY.md#2-1-1-이동과-이용-환경) | 화면별 사용자 요구(US ID) | 검수 기준을 US ID로 추적 |
+| [`3-1-client-spec.md`](../client/AGENTS.md) | 화면, API 호출 시점, 실패 처리 | API의 소비자 계약. 호출 흐름은 위임 |
 | [`5-ai-server-spec.md`](5-ai-server-spec.md) | AI 요청·응답 계약, 프롬프트 | AI 와이어 상세 위임 |
 | [`6-analytics.md`](6-analytics.md) | 이벤트, 식별자, 관측 수집 기준 | 관측 계약의 기준. 백엔드 구현 현황은 이 문서가 기술 |
 
@@ -384,7 +384,7 @@ status = PUBLISHED  AND  visibility = PUBLIC  AND  deleted_at IS NULL  AND  user
 
 ### 4-3-2. 간편 제작
 
-간편 제작 퍼널(키워드 선택 → 스토리라인 선택 → 추가 정보 → 완료)의 서버 계약입니다. 화면 흐름은 [`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)가 정의합니다.
+간편 제작 퍼널(키워드 선택 → 스토리라인 선택 → 추가 정보 → 완료)의 서버 계약입니다. 화면 흐름은 [`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)가 정의합니다.
 
 <br>
 
@@ -774,7 +774,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - 장르는 `genreTagIds` + `customGenreTags` 합산 20개, 인물은 `featureTagIds` + `customTags` 합산 3개가 상한입니다. 필드별 상한만 두면 합산이 두 배로 열려 옛 계약의 실질 상한을 넘기 때문에, 중복 제거 전 요청 항목 수로 세어 400을 반환합니다.
 - `genreTagIds`·`featureTagIds`는 중복 제거 후 존재·활성·사전 정의 여부를 검증하며, 무효 ID가 있으면 400을 반환합니다. **누락 ID 목록은 `message`에 담깁니다**: `details`는 Bean Validation 위반(개수 상한·원소 길이·이름 중복)에만 채워집니다([§4-6](#4-6-오류와-예외-처리)).
 - **원소 단위 검증**: `customGenreTags`와 인물 `customTags`의 각 원소는 빈 문자열이거나 30자를 넘으면 400입니다. 코틀린이 컬렉션 원소 애노테이션을 클래스 파일에 내보내지 않아 이 제약이 발동하지 않던 것을 컴파일 옵션으로 살렸습니다: 그전에는 빈 문자열이 201로 통과했고, 31자는 요청 검증을 지나 `story_creation_tags.name`(30자) 저장에서 터져 500이었습니다. 직접 입력 장르는 여기에 더해 **trim 후** 길이도 1~30자여야 합니다(KNK-859: 서버가 trim한 값을 저장하므로 저장 값 기준 상한).
-- **최소 입력 요건은 없습니다**: 장르와 인물 특징이 모두 비어도 201입니다(빈 자리는 AI가 채웁니다). 옛 계약의 "선택 태그와 직접 추가 태그 중 하나 이상" 규칙은 인물 단위 교체와 함께 사라졌습니다. 클라이언트는 장르 1개 이상 **그리고** 주인공 특징 1개 이상을 생성 조건으로 두지만([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)), 서버는 강제하지 않습니다.
+- **최소 입력 요건은 없습니다**: 장르와 인물 특징이 모두 비어도 201입니다(빈 자리는 AI가 채웁니다). 옛 계약의 "선택 태그와 직접 추가 태그 중 하나 이상" 규칙은 인물 단위 교체와 함께 사라졌습니다. 클라이언트는 장르 1개 이상 **그리고** 주인공 특징 1개 이상을 생성 조건으로 두지만([`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)), 서버는 강제하지 않습니다.
 - `customGenreTags`·인물 `customTags`는 정규화 키 기준으로 요청 내 중복을 제거하며, 동일한 기존 태그가 있으면 재사용합니다(find-or-create: 아래 정규화 블록). 원문 키 시절에는 대소문자·공백 변형(BL / Bl / bl / b l)이 별개 태그로 저장돼 파편화됐습니다(KNK-717로 교체).
 - 저장은 장르와 인물 특징 모두 `story_creation_tags`(직접 입력분은 `CUSTOM`) → `story_creation_session_tags`로 이어집니다. 인물 특징 행은 `character` FK로 어느 인물의 것인지 구분하고, 장르 행은 이 FK가 비어 있습니다. 세션 태그 저장 순서(`st.id`)가 곧 회수 재구성 응답 순서입니다.
 - AI 요청에는 `genre_tags`(제공 장르 뒤에 직접 입력 장르를 잇고 정규화 키로 중복 제거) · `protagonist` · `supporting_characters[]`로 전달합니다. 인물 객체의 `features`는 제공 특징 뒤에 직접 입력 특징을 이은 이름 배열입니다([`5-ai-server-spec.md §5-3-2`](5-ai-server-spec.md)).
@@ -796,7 +796,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 - **인물 단위 교체**: 카테고리별 태그 묶음(`selectedTagIds`·`customTags{category}`)을 장르(`genreTagIds`·`customGenreTags`)와 인물(`protagonist`·`supportingCharacters[]`)로 갈랐습니다. 인물은 이름·성별을 함께 받아 그대로 AI에 전달합니다. 제공 특징 태그(`PROTAGONIST`·`SUPPORTING_CHARACTER` 마스터)는 선택 칩의 소스이자 저장 연결 대상입니다.
 - **장르 직접 입력 복원**: 인물 단위로 교체할 때 장르 직접 입력이 함께 빠졌다가 `customGenreTags`로 되살아났습니다. 장르 직접 입력은 1단계까지 허용하고 2단계부터 종료한다. ([BE-055](../adr/2-backend-server-adr.md#be-055))
-- **인물 이름 중복 금지**: 한 요청 안에서 주인공과 주변 인물의 이름이 겹치면 400입니다. 판정 키는 NFC 정규화 → trim → 내부 공백 정리 → 공백 제거 → lowercase이며, 비운 이름(null·공백만)은 검사 대상이 아닙니다. 클라이언트도 입력 단계에서 막지만([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)) 서버가 함께 막는 이유는, AI가 이름 글자로 인물의 등장 여부를 확인하기 때문입니다. 같은 이름이 두 명이면 한 명만 등장해도 확인을 통과해, 사용자가 만든 인물이 누락될 수 있습니다([`5-ai-server-spec.md §5-3-2`](5-ai-server-spec.md)).
+- **인물 이름 중복 금지**: 한 요청 안에서 주인공과 주변 인물의 이름이 겹치면 400입니다. 판정 키는 NFC 정규화 → trim → 내부 공백 정리 → 공백 제거 → lowercase이며, 비운 이름(null·공백만)은 검사 대상이 아닙니다. 클라이언트도 입력 단계에서 막지만([`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)) 서버가 함께 막는 이유는, AI가 이름 글자로 인물의 등장 여부를 확인하기 때문입니다. 같은 이름이 두 명이면 한 명만 등장해도 확인을 통과해, 사용자가 만든 인물이 누락될 수 있습니다([`5-ai-server-spec.md §5-3-2`](5-ai-server-spec.md)).
 
 1단계부터 제공 시드는 `GENRE` 197종이며 대표는 15종이다. `PROTAGONIST` 15종과 `SUPPORTING_CHARACTER` 10종은 유지한다. 장르의 전체 순서와 대표 순서는 [카탈로그](#장르-카탈로그와-대표-순서)를 따른다. 장르·배경 분리 개편은 [BE-042](../adr/2-backend-server-adr.md#be-042)에 보존하며 현재 요청에 배경 필드를 추가하지 않습니다.
 
@@ -835,7 +835,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 | `startSettings` | object[] | 시작 설정 목록(공용 `SimpleStoryCreateResponse`: 복수화). 간편 제작은 항상 1개. 각 항목 `{id, name, prologue, startSituation, suggestedInputs[], endings[]}` |
 
 - 게스트는 `id`를 로컬 서재에 저장합니다. 회원의 서재는 서버가 정본이므로(내 콘텐츠 목록: [§4-3-5](#4-3-api-계약)) 로컬 저장이 필요 없습니다.
-- 같은 진행(`simpleCreationId`)으로 이미 스토리를 생성했다면 409를 반환합니다. 프론트엔드의 완성 재시도는 스토리 생성을 건너뛰므로 정상 흐름에서는 발생하지 않습니다([`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)).
+- 같은 진행(`simpleCreationId`)으로 이미 스토리를 생성했다면 409를 반환합니다. 프론트엔드의 완성 재시도는 스토리 생성을 건너뛰므로 정상 흐름에서는 발생하지 않습니다([`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)).
 - 존재하지 않는 `simpleCreationId`, 또는 그 진행에 속하지 않거나 존재하지 않는 `storylineId`는 404입니다(카탈로그의 404 발생 조건).
 - 소유자가 있는 진행은 같은 회원만 완료할 수 있습니다(타인·익명 403). 익명 진행을 회원이 완료하면 스토리와 진행이 그 회원에게 귀속됩니다(claim).
 - 409는 AI 호출 전 사전 검사와, 저장 트랜잭션 안의 세션 행 비관적 락(`findByIdForUpdate`) 후 상태 재판정의 이중 구조로 판정합니다(동시 완료 경합 차단).
@@ -846,7 +846,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 **`PUT · DELETE /stories/simple/storylines/{storylineId}/rating`**: 평가 설정은 `{rating: "GOOD" | "BAD"}`를 받아 200과 `{id, rating}`을 반환합니다. 평가는 스토리라인당 1행 upsert이며 새 평가가 기존 평가를 덮어씁니다(평가 주체는 저장하지 않음). 취소는 행 물리 삭제 후 204이며 평가가 없어도 성공하는 멱등 동작입니다. 존재하지 않는 스토리라인은 404, 소유자가 있는 진행의 스토리라인은 소유자만 평가·취소할 수 있고 타인·익명은 403입니다.
 
-(KNK-623, V48·V49): 생성 요청 복구입니다. 모바일에서 스토리라인 생성·스토리 완성 대기 중 앱 전환으로 연결이 끊겨도 서버가 생성을 계속 진행하고, 프론트엔드가 복귀 시 진행 상태·결과를 조회할 수 있습니다(2026-07-20 팀 결정, [`3-1-client-spec.md §3-1-4`](3-1-client-spec.md)). 두 생성 호출 모두 servlet 워커 스레드의 동기 블로킹 구조(RestClient)라, 클라이언트 연결이 끊겨도 서버는 AI 호출·저장 트랜잭션을 끝까지 진행하고 응답 쓰기에서만 실패합니다: 결과는 DB에 남지만 클라이언트가 식별자를 받지 못해 되찾을 수 없던 것이 문제였습니다(응답 쓰기 실패는 서비스 밖에서 발생하므로 이프·게스트 카운터도 성공 경로로 정산: 저장 결과와 정합). 따라서 동기 흐름은 유지하고 복구 경로만 추가했습니다(전면 비동기화·폴링 전환은 하지 않음).
+(KNK-623, V48·V49): 생성 요청 복구입니다. 모바일에서 스토리라인 생성·스토리 완성 대기 중 앱 전환으로 연결이 끊겨도 서버가 생성을 계속 진행하고, 프론트엔드가 복귀 시 진행 상태·결과를 조회할 수 있습니다(2026-07-20 팀 결정, [`3-1-client-spec.md §3-1-4`](../client/AGENTS.md)). 두 생성 호출 모두 servlet 워커 스레드의 동기 블로킹 구조(RestClient)라, 클라이언트 연결이 끊겨도 서버는 AI 호출·저장 트랜잭션을 끝까지 진행하고 응답 쓰기에서만 실패합니다: 결과는 DB에 남지만 클라이언트가 식별자를 받지 못해 되찾을 수 없던 것이 문제였습니다(응답 쓰기 실패는 서비스 밖에서 발생하므로 이프·게스트 카운터도 성공 경로로 정산: 저장 결과와 정합). 따라서 동기 흐름은 유지하고 복구 경로만 추가했습니다(전면 비동기화·폴링 전환은 하지 않음).
 
 - **요청 ID**: `POST /stories/simple/storylines` · `POST /stories/simple` 요청 본문의 클라이언트 생성 `requestId`(UUID, 필수: 위 요청 필드 표). 서버는 요청 수신 시 저장 트랜잭션과 별도 트랜잭션으로 생성 요청 행 `{request_id(유니크), stage, status=PENDING}`을 기록하고, 성공 시 `COMPLETED`로 갱신하며 결과를 연결, 실패 시 `FAILED`로 갱신합니다.
 - **복구 조회**: `GET /stories/simple/creation-requests/{requestId}` → `{stage: "STORYLINE_GENERATION" | "STORY_COMPLETION", status: "PENDING" | "COMPLETED" | "FAILED", result}`. `result`는 `COMPLETED`일 때 원 POST 응답 본문과 동일 스키마, 그 외 null입니다. 소유 주체(회원 또는 게스트 디바이스 ID)만 조회할 수 있고 미존재·타인은 404입니다.
@@ -1017,7 +1017,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 #### 게스트 데이터 마이그레이션
 
-게스트가 기기에 쌓은 스토리·채팅의 소유권을 로그인 계정으로 이관합니다. 서버에는 게스트 식별 수단이 없으므로(콘텐츠 행에 device_id를 저장하지 않음) 클라이언트가 `localStorage`에 보관한 공개 ID 목록을 제출하는 방식입니다. 프론트엔드는 로그인 성공 직후 사용자 확인 없이 자동 호출합니다([`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008).
+게스트가 기기에 쌓은 스토리·채팅의 소유권을 로그인 계정으로 이관합니다. 서버에는 게스트 식별 수단이 없으므로(콘텐츠 행에 device_id를 저장하지 않음) 클라이언트가 `localStorage`에 보관한 공개 ID 목록을 제출하는 방식입니다. 프론트엔드는 로그인 성공 직후 사용자 확인 없이 자동 호출합니다([`3-1-client-spec.md`](../client/AGENTS.md) FE-SCREEN-008).
 
 **`POST /auth/migrate`**: 인증 필수.
 
@@ -1054,7 +1054,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 #### 로그인 핸드오프
 
-인앱 브라우저에서 게스트 이용을 허용하면([`1-1-web-design.md §3-2-5`](../design/1-1-web-design.md) 인앱 게스트 허용·로그인 핸드오프) 로그인은 외부 브라우저에서 일어나는데, 게스트 데이터 ID 배열과 디바이스 ID는 인앱 저장소에 고립됩니다. 핸드오프는 외부 전환 전에 두 가지를 서버에 임시 보관했다가 로그인 계정에 잇는 장치입니다. 프론트엔드 흐름·화면은 [`1-1-web-design.md §3-2-5`](../design/1-1-web-design.md)가 정본이고, 이 절은 API 계약과 저장·보안 규칙을 고정합니다.
+인앱 브라우저에서 게스트 이용을 허용하면([`1-1-web-design.md §3-2-5`](../client/WEB/AGENTS.md) 인앱 게스트 허용·로그인 핸드오프) 로그인은 외부 브라우저에서 일어나는데, 게스트 데이터 ID 배열과 디바이스 ID는 인앱 저장소에 고립됩니다. 핸드오프는 외부 전환 전에 두 가지를 서버에 임시 보관했다가 로그인 계정에 잇는 장치입니다. 프론트엔드 흐름·화면은 [`1-1-web-design.md §3-2-5`](../client/WEB/AGENTS.md)가 정본이고, 이 절은 API 계약과 저장·보안 규칙을 고정합니다.
 
 코드는 URL path·쿼리에 싣지 않습니다. 서버가 매 요청 URI를 구조화 로그·Sentry breadcrumb에 남기므로([§4-7](#4-7-운영과-관측)), path에 두면 "코드 원문을 로그에 남기지 않는다" 규칙을 첫 호출부터 어깁니다. 확인·상태 조회는 코드를 `X-Manyak-Handoff-Code` 헤더로 받습니다: 외부 랜딩이 코드를 HttpOnly 쿠키로 옮겨 담고(`1-1-web-design.md §3-2-5` 흐름 5), 이후 BFF 프록시가 그 쿠키를 헤더로 주입합니다(세션 토큰 주입과 같은 패턴).
 
@@ -1197,7 +1197,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
 - **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.
 - **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../domain/CHAT/CLIENT/ANDROID/DECISIONS.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료는 결과와 무관하게 내 제작 스토리 목록(`/studio`)으로 연결하며 상세 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
-- **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
+- **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다: 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
 - **무효 토큰 정리.** FCM이 `UNREGISTERED`를 돌려주면 그 토큰 행만 지우고 다음 기기로 계속합니다. `INVALID_ARGUMENT`는 지우지 않습니다: 토큰 형식 오류뿐 아니라 **서버가 만든 페이로드 오류**에도 오는 코드라, 삭제 신호로 쓰면 서버 버그 하나가 회원 전체의 토큰을 지웁니다. 정리 자체가 실패해도(DB 오류) 다음 기기 발송은 이어집니다.
 - **실패는 전부 삼킵니다.** 로그(토큰은 앞 12자만)와 메트릭만 남깁니다. 푸시는 부가 기능이고 진실의 기준은 복귀 조회([§4-3-8](#4-3-api-계약) 백그라운드 복구, KNK-631)입니다. 명시적 재시도는 두지 않습니다: 일시 오류(429·5xx)는 SDK가 내부에서 재시도하고, 놓친 한 건은 복귀 조회가 덮습니다. 발송은 토큰마다 `send` 한 번씩이며, 대량 발송이 수천 건을 넘기면 `sendEachForMulticast`(500개 묶음)로 바꿉니다.
@@ -2062,7 +2062,7 @@ UPDATE의 반려·실패본은 PATCH로 같은 행을 덮어쓰며 submissionId�
 - 동시성: 이어쓰기·재생성의 저장 트랜잭션은 같은 채팅 행에 비관적 쓰기 락(`findByIdForUpdate`)을 걸어 채팅 단위로 직렬화합니다: READ COMMITTED에서 이어쓰기가 insert한 미커밋 새 턴을 재생성이 보지 못하고 낡은 마지막 턴을 교체하는 경합, 그리고 동시 재생성의 중복 과금을 방지합니다.
 - 재생성 횟수 기록: 재생성 성공(활성본 확정) 시 `story_chats.regenerated_count`를 1 증가시킵니다. 이미지 도입 시 같은 트랜잭션에서 메시지의 본문 확정 시각도 갱신합니다(`images[]` 재구성 컷오프 앵커: [§4-4](#4-4-데이터-모델)). 이프 선차감 대사([§4-3-7](#4-3-api-계약))는 채팅의 완료 소모 수를 `current_turn + regenerated_count`로 판정해 재생성 소모를 미완료 거래로 오인해 환불하지 않습니다.
 - 실패: 턴 저장이 확정되지 않고 종료되면(`error`·AI 실패·저장 전 연결 끊김·취소) 기존 활성본·선택지를 유지하고 이프를 전액 환불합니다. 활성본 확정은 저장 확정 시점에만 일어납니다.
-- 전달 실패: 저장 확정 뒤 `completed` 전송이 실패하거나 전달 구간에서 연결이 끊길 수 있습니다. 이 경우 서버 관점은 성공이므로 확정·이프 소모를 유지하고, 클라이언트는 `completed`·`error` 없는 종료(EOF)를 결과 불명으로 보고 상세 refetch로 서버 확정 상태에 수렴합니다([`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)).
+- 전달 실패: 저장 확정 뒤 `completed` 전송이 실패하거나 전달 구간에서 연결이 끊길 수 있습니다. 이 경우 서버 관점은 성공이므로 확정·이프 소모를 유지하고, 클라이언트는 `completed`·`error` 없는 종료(EOF)를 결과 불명으로 보고 상세 refetch로 서버 확정 상태에 수렴합니다([`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)).
 - 소유권: 턴 진행과 동일한 규칙입니다([§4-5](#4-5-인증과-권한)).
 
 [결정 근거 BE-017](../adr/2-backend-server-adr.md#be-017)
@@ -2244,7 +2244,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 - **턴 기록**: 도달 턴의 ASSISTANT 메시지에 `reached_ending_id`를 저장하고, SSE `completed`에 `reachedEnding`(엔딩 **이름**·null)으로 싣습니다([§4-3-3](#4-3-api-계약)). 채팅 상세 턴 항목(`GET /chats/{chatId}`)에도 같은 이름 필드로 노출합니다( KNK-527).
 - **채팅 가드**: `story_chats.reached_ending_id`와 토큰 원문 이름 스냅샷에 최초 도달을 기록합니다. FK가 없더라도 `reached_ending_name_snapshot`이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(CHAT-US-013).
 - **사용자+스토리 집계**: 회원 도달 시(게스트=`user_id` NULL은 집계하지 않음) `user_story_ending_reaches`에 `(user_id, story_id, ending_name_snapshot)` 유니크로 기록합니다(중복 도달은 무시). 집계는 별도 독립 트랜잭션(`REQUIRES_NEW`)에서 수행하고 유니크 위반은 멱등 흡수해 턴 저장을 롤백하지 않습니다. `GET /stories/{storyId}` 응답의 `reachedEndings`(엔딩 **이름** 배열, `string[]`)는 이 집계가 소스이며(`sort_order` 순), 게스트 요청은 빈 배열입니다: 서버에 게스트 식별 수단이 없기 때문입니다(마이그레이션과 동일 근거, [§4-3-5](#4-3-api-계약)).
-- **게스트 표시 경로**: 채팅 카드(`ChatSummaryResponse`)에 `reachedEndings`(엔딩 **이름** 배열, `string[]`)를 싣습니다([§4-3-3](#4-3-api-계약)). 게스트의 스토리 상세 "본 엔딩" 표시는 프론트엔드가 로컬 서재 채팅의 이 값을 스토리별로 합산해 구성합니다([`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)). 기기 종속 한계는 게스트 서재와 동일하게 수용합니다.
+- **게스트 표시 경로**: 채팅 카드(`ChatSummaryResponse`)에 `reachedEndings`(엔딩 **이름** 배열, `string[]`)를 싣습니다([§4-3-3](#4-3-api-계약)). 게스트의 스토리 상세 "본 엔딩" 표시는 프론트엔드가 로컬 서재 채팅의 이 값을 스토리별로 합산해 구성합니다([`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)). 기기 종속 한계는 게스트 서재와 동일하게 수용합니다.
 - **이관 백필**: `POST /auth/migrate`로 채팅이 이관되면 그 채팅의 도달 기록을 `user_story_ending_reaches`에 함께 upsert합니다(게스트 시절 도달의 집계 유실 방지).
 
 #### 스키마 확정과 마이그레이션
@@ -2260,7 +2260,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 4-3-11. 채팅 공유
 
-채팅 소유자가 발급 시점까지의 채팅을 읽기 전용 링크로 공유합니다(CHAT-US-014, CHAT-US-015). 화면 계약은 [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)이 정의합니다.
+채팅 소유자가 발급 시점까지의 채팅을 읽기 전용 링크로 공유합니다(CHAT-US-014, CHAT-US-015). 화면 계약은 [`3-1-client-spec.md §3-1-5`](../client/AGENTS.md)이 정의합니다.
 
 **`POST /chats/{chatId}/shares`**: 공유 링크를 발급합니다. 요청 본문은 없습니다. 접근 규칙은 채팅 상세 조회와 동일합니다([§4-5](#4-5-인증과-권한)): 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 발급할 수 있고 위반은 403, 없는 채팅은 404입니다.
 
@@ -2709,7 +2709,7 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 
 ### 토큰 세션과 재발급
 
-- 웹은 access·refresh 토큰을 브라우저 JS에 노출하지 않고 BFF 프록시가 httpOnly 쿠키로 보관합니다([`1-1-web-design.md §1-1-3`](../design/1-1-web-design.md#1-1-3-bff-프록시토큰-세션)). 기존 `POST /auth/token/refresh` · `POST /auth/logout`의 `{refreshToken}` 본문 계약은 유지하되, 그 값을 채우는 주체가 클라이언트 JS에서 BFF로 바뀝니다(계약 무변경, 호출 주체만 변경).
+- 웹은 access·refresh 토큰을 브라우저 JS에 노출하지 않고 BFF 프록시가 httpOnly 쿠키로 보관합니다([`1-1-web-design.md §1-1-3`](../client/WEB/AGENTS.md)). 기존 `POST /auth/token/refresh` · `POST /auth/logout`의 `{refreshToken}` 본문 계약은 유지하되, 그 값을 채우는 주체가 클라이언트 JS에서 BFF로 바뀝니다(계약 무변경, 호출 주체만 변경).
 - **선제 재발급.** BFF는 access TTL(30분) 만료가 임박하면 백엔드 요청 전에 `POST /auth/token/refresh`로 갱신해 만료 토큰을 백엔드로 보내지 않습니다. 이로써 회원 요청이 선택적 인증에서 익명으로 통과해 `user_id=NULL`로 저장되는 고아 콘텐츠를 방지합니다.
 - 재발급 실패(refresh 만료·회전 재사용 탐지로 family 폐기)면 BFF가 세션 쿠키를 폐기하고 게스트 모드로 되돌립니다.
 
@@ -2727,7 +2727,7 @@ Sentry 요청 필드 제거는 URL을 파싱한 path가 `/api/v1/auth/social/goo
 
 비동기 검수의 내용 반려·실행 실패는 접수 응답 202를 사후 HTTP 오류로 바꾸지 않습니다. [제출본 상태와 errorCode](#검수-실행-실패-코드)로 조회합니다. 접수 전 인증·검증·경합 오류는 아래 HTTP 오류 형식을 따릅니다.
 
-모든 오류는 다음 `ApiErrorResponse` 형태로 응답합니다. 프론트엔드 처리 계약은 [`3-1-client-spec.md §3-1-7`](3-1-client-spec.md)과 정합합니다.
+모든 오류는 다음 `ApiErrorResponse` 형태로 응답합니다. 프론트엔드 처리 계약은 [`3-1-client-spec.md §3-1-7`](../client/AGENTS.md)과 정합합니다.
 
 ```json
 {
@@ -2889,7 +2889,7 @@ AI 서버 호출 시 다음 헤더를 전달합니다. 값이 `unknown`이면 �
 
 **직접 입력 장르의 임시 관측 종료 조건.** 1단계까지 사전 정의 장르와 `customGenreTags`를 합친 `genre_tags`를 스토리 제작 트레이스의 `genre:*` 필터용 라벨로 저장하는 임시 정책을 유지한다. 2단계부터 신규 requestId의 스토리라인 요청에서 직접 입력을 차단하면서 신규 직접 입력 장르의 관측 예외를 종료한다. 배포 전 요청의 같은 requestId 재시도·복구에는 기존 소유권·상태 검증과 관측 계약을 유지한다. 인물의 직접 입력 특징과 채팅 트레이스에는 장르 라벨을 추가하지 않는다. 단, 배포 전 저장된 제작 중 세션의 컴파일에는 보존한 커스텀 장르가 여전히 포함될 수 있으므로 모든 `genre_tags`가 제공 장르라고 가정하지 않는다. 과거 트레이스와 저장된 입력을 삭제하거나 재작성하지 않는다. ([BE-055](../adr/2-backend-server-adr.md#be-055), [AI 관측 계약](5-ai-server-spec.md#5-6-운영과-관측))
 
-- 클라이언트의 선택지 노출·선택·입력 출처 전달은 [`3-1-client-spec.md §3-1-7`](3-1-client-spec.md)이 소유합니다.
+- 클라이언트의 선택지 노출·선택·입력 출처 전달은 [`3-1-client-spec.md §3-1-7`](../client/AGENTS.md)이 소유합니다.
 - 신호 카탈로그·원문 결합·원문 수집 정책과의 관계는 [`6-analytics.md §6-6-12·§6-7`](6-analytics.md)가 소유합니다.
 
 ### 구조화 로그
@@ -3049,10 +3049,10 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | ACCOUNT-US-005 | 기기 간 서재  | `GET /users/me/stories`, `GET /users/me/chats` |
 | PAYMENT-US-001 | 잔액 확인  | `GET /users/me/credits` |
 | PAYMENT-US-002 | 이프 보상 (초대 코드 입력 개편 KNK-567 포함) | 가입 자동 적립, `POST /users/me/credits/attendance`, `GET /users/me/invite` + `POST /users/me/invite/redeem`([§4-3-7](#4-3-api-계약)) |
-| PAYMENT-US-003 | 소모량 사전 고지 (수치 조회 API는 KNK-1090으로 선행 구현) | 소모 표시 UI([`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008): 스토리라인 무료. 수치는 하드코딩하지 않고 `GET /credits/policies`로 조회([§4-3-7](#4-3-api-계약)) |
+| PAYMENT-US-003 | 소모량 사전 고지 (수치 조회 API는 KNK-1090으로 선행 구현) | 소모 표시 UI([`3-1-client-spec.md`](../client/AGENTS.md) FE-SCREEN-008): 스토리라인 무료. 수치는 하드코딩하지 않고 `GET /credits/policies`로 조회([§4-3-7](#4-3-api-계약)) |
 | PAYMENT-US-004 | 부족 안내  | `POST /stories/simple`·`POST /chats/{chatId}/turns/stream`·`POST /chats/{chatId}/turns/regenerate/stream` 402 |
 | PAYMENT-US-005 | 게스트 체험 한도  | `POST /stories/simple/storylines`·`POST /stories/simple`·채팅 턴 계열의 디바이스 ID별 카운터, 402 |
-| PAYMENT-US-006 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
+| PAYMENT-US-006 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](../client/AGENTS.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
 

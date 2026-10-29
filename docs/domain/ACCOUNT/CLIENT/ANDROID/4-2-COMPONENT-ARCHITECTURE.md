@@ -14,7 +14,7 @@
 | `app` | 루트 내비게이션, 세션 종료 조정자와 `UserScopedStore` 목록 조립 |
 | 네트워크와 분석 | 요청 시 식별자 포트 사용. 네트워크의 분석 SDK 직접 의존 금지 |
 
-Hilt의 Singleton, ViewModel과 제작 저장소의 ActivityRetained 수명을 사용한다. 별도 사용자 세션 Component는 두지 않는다. 인증 클라이언트, 인터셉터, 토큰 관리자, 재발급 API와 무인증 클라이언트의 순환은 지연 주입과 단일 재발급으로 끊는다. ([Android 모듈 규칙](../../../../design/1-2-android-design.md#1-2-2-모듈과-소유권))
+Hilt의 Singleton, ViewModel과 제작 저장소의 ActivityRetained 수명을 사용한다. 별도 사용자 세션 Component는 두지 않는다. 인증 클라이언트, 인터셉터, 토큰 관리자, 재발급 API와 무인증 클라이언트의 순환은 지연 주입과 단일 재발급으로 끊는다. ([Android 모듈 규칙](../../../../client/ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-1-책임과-의존))
 
 <br>
 
