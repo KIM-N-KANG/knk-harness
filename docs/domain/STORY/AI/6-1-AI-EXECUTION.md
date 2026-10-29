@@ -39,7 +39,7 @@ flowchart LR
 | 모델 | `gemini-3.7-flash` |
 | 환경 변수명 | `STORYLINES_MODEL` |
 | 추론 강도 | `medium` |
-| 출력 토큰 한도 | `6,144` |
+| 출력 토큰 한도 | `12,288` |
 | 생성 온도 | `0.75` |
 | JSON 모드 | `True` |
 | 모델 출력 형식 | `application/json` |

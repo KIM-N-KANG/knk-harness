@@ -12,6 +12,7 @@
 |---|---|---|---|
 | 채팅 턴 | `POST /api/v1/chat/turns` | 200, SSE<br>본문 | 422, 500 또는 SSE `error` |
 | 선택지 생성 | `POST /api/v1/chat/choices` | 200, JSON<br>선택지 3개 | 422 또는 500 |
+| 대화 요약 | `POST /api/v1/chat/compact` | 200, JSON<br>갱신된 대화 요약 | 422, 500 또는 502 |
 
 <br>
 
@@ -35,11 +36,11 @@
 | `start_settings.name` | `string` | 필수 | 시작 설정 이름 |
 | `start_settings.prologue` | `string` | 필수 | 프롤로그 |
 | `start_settings.start_situation` | `string` | 필수 | 시작 상황 |
-| `history` | `object[]` | 선택 | 이번 턴 이전 대화와 오프닝, 시간순<br>기본값 `[]` |
+| `history` | `object[]` | 선택 | 백엔드가 요약 범위 이후로 잘라 전달한 이번 턴 이전의 대화 원문<br>요약을 사용하지 않으면 이번 턴 이전 원문 전체 전달<br>기본값 `[]` |
 | `history[].role` | `string` | 필수 | `USER` 또는 `ASSISTANT`<br>오프닝은 `ASSISTANT` |
 | `history[].content` | `string` | 필수 | 메시지 본문 |
 | `user_input` | `string` | 필수 | 이번 턴의 사용자 입력 |
-| `summary` | `string` | 필수 | 대화 요약<br>없으면 빈 문자열 |
+| `summary` | `string` | 필수 | 백엔드가 저장한 마지막 요약<br>없으면 빈 문자열<br>재생성 대상 턴이 요약 범위에 포함되면 빈 문자열로 전달하고 `history`에는 대상 턴 이전 원문 전체 전달 |
 | `user_source` | `string / null` | 선택 | 입력 출처: `choice`, `edited_choice`, `typed`<br>앞뒤 공백 제거, 허용값이 아니면 `null`<br>기본값 `null` |
 | `main_events` | `object[]` | 선택 | 주요 사건 최대 10개<br>기본값 `[]` |
 | `main_events[].name` | `string` | 필수 | 사건 이름 |
@@ -73,7 +74,7 @@
 | `character_image` | `imageUrl` | `string` | 이미지 URL |
 | `ping` | 없음 | `object` | 대기 중 연결 유지, `{}` |
 | `completed` | 아래 완료 필드 | `object` | 정상 종료 |
-| `error` | `code`, `message` | `string` | 실패 코드와 메시지 ([5-4 실패 계약](#5-4-실패-계약)) |
+| `error` | `code`, `message` | `string` | 실패 코드와 메시지 ([5-5 실패 계약](#5-5-실패-계약)) |
 
 <br>
 
@@ -87,7 +88,7 @@
 | `characterImages[].name` | `string` | 인물의 정식 이름 |
 | `characterImages[].imageName` | `string` | 요청의 이미지 이름<br>실시간 이미지 성공 시 `인물이름_실시간_UUID` |
 | `characterImages[].imageUrl` | `string` | 선택한 저장 이미지 URL 또는 슬롯의 `public_url` |
-| `meta` | `object` | 호출 기록 ([5-5 요청 헤더와 메타데이터](#5-5-요청-헤더와-메타데이터)) |
+| `meta` | `object` | 호출 기록 ([5-6 요청 헤더와 메타데이터](#5-6-요청-헤더와-메타데이터)) |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -216,7 +217,7 @@ data: {}
 
 | 필드명 | 타입 | 필수 | 뜻 |
 |---|---|---|---|
-| 채팅 턴 요청 필드 중 `user_id`, `model_tier`를 제외한 필드 | 5-2와 같음 | 5-2와 같음 | 같은 설정과 사용자 입력<br>`history`는 이번 턴 제외 ([5-2 계약](#5-2-채팅-턴-요청과-결과)) |
+| 채팅 턴 요청 필드 중 `user_id`, `model_tier`를 제외한 필드 | 5-2와 같음 | 5-2와 같음 | 같은 설정과 사용자 입력<br>`history`는 이번 턴 제외<br>최초 선택지 요청과 compact 요청은 같은 시점의 기존 요약으로 구성하고 서로 기다리지 않고 전송<br>최초 선택지 요청의 `summary`는 기존 요약, 없으면 빈 문자열<br>진행 중 compact가 완료돼도 이미 보낸 요청은 변경하지 않음<br>compact 완료 후 선택지를 다시 요청할 때 해당 턴이 새 요약에 포함돼 있으면 `summary`는 빈 문자열로 전달<br>이때 `history`에는 해당 턴 이전의 대화 원문 전체를 전달<br>해당 턴의 입력과 응답은 `user_input`, `ai_output`에 각각 전달. ([5-2 계약](#5-2-채팅-턴-요청과-결과)) |
 | `ai_output` | `string` | 필수 | 이번 턴의 `aiOutput` |
 
 <br>
@@ -226,7 +227,7 @@ data: {}
 | 필드명 | 타입 | 뜻 |
 |---|---|---|
 | `choices` | `string[]` | 다음 행동 후보 3개 |
-| `meta` | `object` | 호출 기록 ([5-5 요청 헤더와 메타데이터](#5-5-요청-헤더와-메타데이터)) |
+| `meta` | `object` | 호출 기록 ([5-6 요청 헤더와 메타데이터](#5-6-요청-헤더와-메타데이터)) |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -290,15 +291,107 @@ data: {}
 
 </details>
 
+
+<details>
+<summary><b>최초 선택지 요청과 compact 완료 후 재요청 예시</b></summary>
+
 <br>
 
-### 5-4 실패 계약
+**1) 20턴 완료 후 최초 선택지 요청**
+
+1~10턴 요약이 저장된 상태에서 20턴을 완료한다. 백엔드는 기존 요약을 기준으로 선택지 요청과 compact 요청을 함께 구성해 전송한다.
+
+| 필드 | 선택지 요청 | compact 요청 |
+|---|---|---|
+| `summary` | 1~10턴 요약 | 1~10턴 요약 |
+| `history` | 11~19턴 원문 | 11~20턴 원문 |
+| `user_input` | 20턴 사용자 입력 | - |
+| `ai_output` | 20턴 AI 응답 | - |
+
+compact가 먼저 완료돼도 이미 전송한 선택지 요청은 위 내용을 그대로 사용한다.
+
+<br>
+
+**2) compact 완료 후 20턴 선택지 재요청**
+
+1~20턴 요약이 저장된 뒤 20턴 선택지를 다시 요청한다. 이 요청에서만 요약을 사용하지 않으며, 저장된 요약은 유지한다.
+
+| 필드 | 선택지 요청 |
+|---|---|
+| `summary` | 빈 문자열 |
+| `history` | 1~19턴 원문 |
+| `user_input` | 20턴 사용자 입력 |
+| `ai_output` | 20턴 AI 응답 |
+
+</details>
+
+<br>
+
+### 5-4 대화 요약(compact) 요청과 결과
+
+**1. 요청 필드**
+
+| 필드명 | 타입 | 필수 | 뜻 |
+|---|---|---|---|
+| `summary` | `string` | 필수 | 기존 대화 요약<br>없으면 빈 문자열 |
+| `history` | `object[]` | 필수 | 아직 요약하지 않은 완료 턴의 대화 원문<br>방금 완료한 턴의 사용자 입력과 AI 응답도 포함 |
+| `history[].role` | `string` | 필수 | `USER` 또는 `ASSISTANT` |
+| `history[].content` | `string` | 필수 | 메시지 원문 |
+
+`summary`와 모든 `history[].content`에서 이미지 마커와 공백을 제외한 내용이 전부 비어 있으면 모델 호출 없이 422를 반환한다. 어느 한쪽에 내용이 있으면 허용한다.
+
+<br>
+
+**2. 응답 필드**
+
+| 필드명 | 타입 | 뜻 |
+|---|---|---|
+| `summary` | `string` | 갱신된 대화 요약 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) 요청**
+
+```json
+{
+  "summary": "<기존 대화 요약, 없으면 빈 문자열>",
+  "history": [
+    {
+      "role": "USER",
+      "content": "<요약 대상 턴의 사용자 입력>"
+    },
+    {
+      "role": "ASSISTANT",
+      "content": "<같은 턴의 AI 응답>"
+    }
+  ]
+}
+```
+
+<br>
+
+**2) 응답**
+
+```json
+{
+  "summary": "<갱신된 대화 요약>"
+}
+```
+
+</details>
+
+<br>
+
+### 5-5 실패 계약
 
 실패 조건, 오류 응답과 복구 방법은 오류 처리 문서에서 자세히 다룬다. ([7-1 오류 처리](7-1-ERROR-HANDLING.md))
 
 <br>
 
-### 5-5 요청 헤더와 메타데이터
+### 5-6 요청 헤더와 메타데이터
 
 **1. 요청 헤더**
 
@@ -329,27 +422,24 @@ data: {}
 
 <br>
 
-### 5-6 외부 모델 API 계약
+### 5-7 외부 모델 API 계약
 
-**1. OpenAI Text API**
+**1. OpenAI 호환 Text API (OpenAI, DeepSeek)**
 
 | 요청 항목 | API 인자와 호출 방식 |
 |---|---|
-| API | `openai` SDK의 `chat.completions.create` |
-| 모델 이름 | `model`<br>본문은 라우팅으로 선택한 OpenAI 모델, 선택지는 `CHAT_CHOICE_MODEL` |
+| API | 공급자 주소에 `openai` SDK의 `chat.completions.create`로 요청 |
+| 모델 이름 | `model` |
 | 메시지 | `messages[]`의 `role`, `content` |
-| 본문 스트리밍 | `stream=true`, `stream_options.include_usage=true` |
-| 선택지 JSON 모드 | `response_format.type="json_object"` |
+| 스트리밍 | `stream=true`, `stream_options.include_usage=true` |
+| JSON 응답 형식 | 지원 모델에서 `response_format.type="json_object"` |
 | 출력 토큰 한도 | OpenAI는 `max_completion_tokens`, DeepSeek은 `max_tokens` |
-| 추론 설정 | `gpt-6-luna`, `gpt-6.1-sol`: `reasoning_effort="low"`<br>`deepseek-flash`: `extra_body.thinking.type="disabled"` |
 | 호출 제한 시간 | `timeout`, 초 단위 |
-
-<br>
 
 | 응답 항목 | 출처 |
 |---|---|
 | 본문 조각 | `choices[0].delta.content` |
-| 선택지 JSON 문자열 | `choices[0].message.content` |
+| 비스트리밍 응답 본문 | `choices[0].message.content`<br>추론 내용은 본문에서 제외 |
 | 입력 토큰 | `usage.prompt_tokens` |
 | 출력 토큰 | `usage.completion_tokens` |
 | 실제 모델 이름 | 응답 `model`, 없으면 요청 모델 이름 |
@@ -363,7 +453,7 @@ data: {}
 
 ```text
 본문 요청
-  model: gpt-6-luna
+  model: <모델 이름>
   messages:
     - role: system
       content: <조립된 시스템 프롬프트>
@@ -372,7 +462,6 @@ data: {}
   stream: true
   stream_options:
     include_usage: true
-  reasoning_effort: low
   timeout: <호출 제한 시간, 초>
 ```
 
@@ -407,8 +496,6 @@ data: {}
 | 호출 제한 시간 | `timeout` |
 | 출력 형식 | `output_format="webp"` |
 | 장수 | `n=1` |
-
-<br>
 
 | 응답 항목 | 출처 |
 |---|---|
@@ -451,7 +538,7 @@ data:
 | 항목 | 계약 |
 |---|---|
 | API | `POST {TYPESAFE_API_URL}/v1/systemone` |
-| `model` | `JEV_MODEL` |
+| `model` | 호출할 모델 이름 |
 | `state` | 최근 대화 최대 2턴과 이번 사용자 입력, 완성된 본문<br>이미지 마커 제거, 후보의 URL 필드와 바이너리는 전송하지 않음 |
 | `questions` | 인물별 선택 질문을 한 요청으로 전달<br>`type="choice"`, `instructions`, `criteria`로 구성 |
 | `criteria` | 후보 ID와 이미지 이름의 매핑, 질문당 2~255개 |
@@ -468,7 +555,7 @@ data:
 
 ```json
 {
-  "model": "<JEV_MODEL 값>",
+  "model": "<모델 이름>",
   "state": {
     "recent_turns": [
       {
@@ -500,7 +587,7 @@ data:
 
 ```json
 {
-  "model": "<요청과 같은 JEV_MODEL 값>",
+  "model": "<요청과 같은 모델 이름>",
   "answers": {
     "1": {
       "type": "choice",
@@ -519,8 +606,6 @@ data:
 }
 ```
 
-확률, 신뢰도와 토큰 수는 구조 설명을 위한 예시 값이다.
-
 </details>
 
 <br>
@@ -530,13 +615,10 @@ data:
 | 요청 항목 | API 인자와 호출 방식 |
 |---|---|
 | API | `google-genai` SDK의 `client.aio.models.generate_content_stream` |
-| 모델 이름 | `model="gemini-3.8-flash"` |
+| 모델 이름 | `model` |
 | 시스템 지시 | `config.system_instruction` |
 | 대화 | `contents[]`의 `role`, `parts[].text`<br>`assistant`는 `model`, `user`는 `user`로 전달 |
-| 추론 설정 | `config.thinking_config.thinking_level="medium"` |
 | 호출 제한 시간 | `config.http_options.timeout`, 밀리초 단위 |
-
-<br>
 
 | 응답 항목 | 출처 |
 |---|---|
@@ -552,17 +634,73 @@ data:
 <br>
 
 ```text
-model: gemini-3.8-flash
+model: <모델 이름>
 contents:
   - role: user
     parts:
       - text: <조립된 사용자 프롬프트>
 config:
   system_instruction: <조립된 시스템 프롬프트>
-  thinking_config:
-    thinking_level: medium
   http_options:
     timeout: <호출 제한 시간, 밀리초>
+```
+
+</details>
+
+<br>
+
+**5. Anthropic Messages API**
+
+| 요청 항목 | API 인자와 호출 방식 |
+|---|---|
+| API | `anthropic` SDK의 `messages.create` |
+| 모델 이름 | `model` |
+| 시스템 지시 | `system`의 텍스트 블록 |
+| 메시지 | `messages[]`의 `role`, `content` |
+| 응답 방식 | 비스트리밍 텍스트 응답 |
+| 출력 토큰 한도 | `max_tokens`, 필수 |
+| 호출 제한 시간 | `timeout`, 초 단위 |
+
+| 응답 항목 | 출처 |
+|---|---|
+| 응답 본문 | `content[]` 중 `type="text"`인 블록의 `text`를 연결<br>추론 블록은 본문에서 제외 |
+| 입력 토큰 | `usage.input_tokens`, `usage.cache_creation_input_tokens`, `usage.cache_read_input_tokens` 합계 |
+| 출력 토큰 | `usage.output_tokens` |
+| 실제 모델 이름 | 응답 `model`, 없으면 요청 모델 이름 |
+
+<details>
+<summary><b>텍스트 요청·응답 구조 예시</b></summary>
+
+<br>
+
+**1) 요청**
+
+```text
+model: <모델 이름>
+system:
+  - type: text
+    text: <조립된 시스템 프롬프트>
+messages:
+  - role: user
+    content: <조립된 사용자 프롬프트>
+max_tokens: <출력 토큰 한도>
+timeout: <호출 제한 시간, 초>
+```
+
+<br>
+
+**2) 응답**
+
+```text
+content:
+  - type: text
+    text: <생성된 본문>
+model: <실제 응답 모델 이름>
+usage:
+  input_tokens: <일반 입력 토큰 수>
+  cache_creation_input_tokens: <캐시 생성 입력 토큰 수>
+  cache_read_input_tokens: <캐시 읽기 입력 토큰 수>
+  output_tokens: <출력 토큰 수>
 ```
 
 </details>
