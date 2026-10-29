@@ -103,7 +103,6 @@ git clone <manyak-infra-repository-url>
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
 | `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목과 본문, 검증 결과 |
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
-| `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
 
 ## 스킬 사용 전 도구 확인
 

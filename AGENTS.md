@@ -8,10 +8,11 @@
 
 - 사용자에게는 한국어와 높임말로 응답한다. 제품 문서는 '한다'체로 작성하며 공식 용어, 필드명과 사용자에게 표시되는 문구를 임의로 바꾸지 않는다.
 - 응답, 커밋 메시지, PR 본문과 코드 주석에 중간점과 em dash를 쓰지 않는다.
-- 이 파일의 상대경로는 하네스 루트 기준이다. 연결된 문서와 스킬의 상대경로는 별도 기준이 없으면 해당 파일이 있는 폴더를 기준으로 해석한다.
+- 이 파일의 상대경로는 하네스 루트 기준이다. 연결된 문서의 상대경로는 별도 기준이 없으면 해당 파일이 있는 폴더를 기준으로 해석한다.
 - 수정 전에 대상 저장소의 지침, 현재 브랜치, staged와 unstaged 변경을 확인한다. 서비스 저장소 수정은 Git worktree(같은 저장소의 별도 작업 디렉터리)에서 수행하고, 기존 작업용 worktree가 있으면 먼저 확인해 재사용한다. 사용자 작업을 옮기거나 덮어쓰지 않는다.
 - 코드와 문서로 판단할 수 있는 세부사항은 합리적으로 결정하고 진행한다. 제품 정책, API 계약이나 요청 범위가 불명확할 때만 질문하며 답변과 무관한 작업은 계속한다.
 - 시스템과 권한 정책을 지키는 범위에서 사용자의 명시적 요청을 우선한다. 서비스별 기술 규칙은 해당 저장소의 지침을 따른다. 지침 때문에 멈추거나 확인을 요청할 때는 파일 경로, 정확한 문구와 적용 이유를 밝히고 이미 승인된 사항을 다시 묻지 않는다.
+- 커밋, push, PR, 병합과 배포는 사용자가 요청하거나 이미 승인한 범위에서 수행한다. PR 담당자(Assignee)는 `alsdn1360`으로 지정한다.
 
 <br>
 
@@ -80,20 +81,3 @@
   find docs AGENTS.md README.md -name '*.md' | while read f; do d=$(dirname "$f"); grep -oE '\]\([^)#]*\.md' "$f" | sed 's/^](//' | grep -v '^http' | while read p; do [ -e "$d/$p" ] || echo "$f -> $p"; done; done
   ```
 - 기존 자동화 표시와 과거 실행 기록을 이번 검증 결과로 보고하지 않는다. 완료 보고에는 변경 범위, 실행한 검사, 확인하지 못한 범위와 남은 변경사항을 구분한다.
-
-<br>
-
-### 6 팀 작업 스킬
-
-해당 작업을 시작하기 전에 필요한 `SKILL.md`만 읽는다. 스킬의 존재를 작업 범위 확대나 외부 전송의 승인으로 해석하지 않는다.
-
-| 작업 | 스킬 |
-|---|---|
-| Jira 티켓의 브랜치 준비 | [create-branch](.agents/skills/create-branch/SKILL.md) |
-| 변경사항 커밋 | [create-commit](.agents/skills/create-commit/SKILL.md) |
-| Draft PR 생성과 기존 PR 갱신, 템플릿 선택 | [create-pr](.agents/skills/create-pr/SKILL.md) |
-| 한국어 기술 문서 작성과 검토 | [technical-writing](.agents/skills/technical-writing/SKILL.md) |
-| 코드 작성, 리뷰와 리팩터링 | [karpathy-guidelines](.agents/skills/karpathy-guidelines/SKILL.md) |
-| 요청받은 Slack 제보와 공유 | [send-slack-report](.agents/skills/send-slack-report/SKILL.md) |
-
-PR 담당자(Assignee)는 `alsdn1360`으로 지정한다. 커밋, push, PR, 병합과 배포는 사용자가 요청하거나 이미 승인한 범위에서 수행한다.
