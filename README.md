@@ -48,7 +48,7 @@ git clone <manyak-infra-repository-url>
 
 | 공용 내용 | 문서 |
 | --- | --- |
-| 셸, 테마와 서비스 안내 | [APP 클라이언트](docs/experience/AGENTS.md) |
+| 셸, 테마와 서비스 안내 | [APP 클라이언트](docs/domain/APP/CLIENT/AGENTS.md) |
 | 용어와 표기 | [용어집](docs/reference/GLOSSARY.md) |
 | 서비스와 사용자 | [서비스 배경](docs/reference/SERVICE-BACKGROUND.md) |
 | 이벤트, 지표와 관측 | [분석 기준](docs/reference/ANALYTICS.md) |

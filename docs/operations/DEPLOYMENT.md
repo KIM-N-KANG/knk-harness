@@ -1,4 +1,4 @@
-# 운영 배포
+# 4-deployment
 
 ## 문서 정보
 
@@ -18,21 +18,21 @@
 
 ## 목차
 
-- [목적과 범위](#목적과-범위)
-- [기준 레포지토리와 책임 경계](#기준-레포지토리와-책임-경계)
-- [환경 구분과 배포 단위](#환경-구분과-배포-단위)
-- [인프라 아키텍처](#인프라-아키텍처)
-- [이미지 빌드와 CI/CD](#이미지-빌드와-cicd)
-- [런타임 설정과 시크릿](#런타임-설정과-시크릿)
-- [배포 절차](#배포-절차)
-- [로컬·통합 실행](#로컬통합-실행)
-- [검수, 관측, 롤백](#검수-관측-롤백)
+- [4-1. 목적과 범위](#4-1-목적과-범위)
+- [4-2. 기준 레포지토리와 책임 경계](#4-2-기준-레포지토리와-책임-경계)
+- [4-3. 환경 구분과 배포 단위](#4-3-환경-구분과-배포-단위)
+- [4-4. 인프라 아키텍처](#4-4-인프라-아키텍처)
+- [4-5. 이미지 빌드와 CI/CD](#4-5-이미지-빌드와-cicd)
+- [4-6. 런타임 설정과 시크릿](#4-6-런타임-설정과-시크릿)
+- [4-7. 배포 절차](#4-7-배포-절차)
+- [4-8. 로컬·통합 실행](#4-8-로컬통합-실행)
+- [4-9. 검수, 관측, 롤백](#4-9-검수-관측-롤백)
 
-## 목적과 범위
+## 4-1. 목적과 범위
 
 이 문서는 현재 배포 구조와 실행 방법을 설명합니다. 기준은 2026-09-12에 확인한 `manyak-terraform`의 로컬 dev 코드입니다. Terraform 선언, 실제 AWS 리소스, 실행 중인 이미지 다이제스트는 따로 확인합니다. 실제 활성값은 배포 기록을 따릅니다.
 
-## 기준 레포지토리와 책임 경계
+## 4-2. 기준 레포지토리와 책임 경계
 
 | 레포지토리 | 책임 | 코드 위치 |
 | --- | --- | --- |
@@ -40,12 +40,12 @@
 | manyak-server·manyak-ai | 이미지 빌드·태그 승격·ECS 배포·서비스 검수 | 각 `.github/workflows/docker-image.yml` |
 | manyak-notification | 알림 이미지 빌드와 dev ECS 배포. prod ECR 및 별도 ECS 서비스 배포는 목표 구성 | `.github/workflows/docker-image.yml` |
 | manyak-infra | 로컬 통합 Docker Compose | `docker-compose.yml` |
-| manyak-web·manyak-android | 플랫폼별 빌드·배포 | 각 플랫폼 레포 및 [웹 Spec](../experience/WEB/AGENTS.md)·[Android Spec](../experience/ANDROID/AGENTS.md) |
+| manyak-web·manyak-android | 플랫폼별 빌드·배포 | 각 플랫폼 레포 및 [웹 Spec](../domain/APP/CLIENT/WEB/AGENTS.md)·[Android Spec](../domain/APP/CLIENT/ANDROID/AGENTS.md) |
 | knk-harness | 현재 구조·결정 이력 | 이 Design, 배포 ADR |
 
-Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않습니다. 애플리케이션 도메인 계약은 [백엔드 Spec](../domain/AGENTS.md#도메인과-세트)과 [AI Spec](../domain/AGENTS.md#도메인과-세트)이 소유합니다.
+Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않습니다. 애플리케이션 도메인 계약은 [백엔드 Spec](../domain/AGENTS.md#1-도메인과-세트)과 [AI Spec](../domain/AGENTS.md#1-도메인과-세트)이 소유합니다.
 
-## 환경 구분과 배포 단위
+## 4-3. 환경 구분과 배포 단위
 
 | 항목 | 개발 AWS | 운영 AWS | 로컬 통합 |
 | --- | --- | --- | --- |
@@ -61,7 +61,7 @@ Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트�
 
 서버와 AI는 같은 ECS 태스크의 네트워크를 공유합니다. AI 호출은 태스크 내부 주소를 사용하며 Compose 서비스명 DNS는 ECS에서 쓰지 않습니다. AI 컨테이너는 독립적으로 실패할 수 있으므로 서버 상태 검사만으로 AI 기능 성공을 판정하지 않습니다. 개발 태스크 교체는 PostgreSQL·Redis에도 영향을 주며 교체 중 중단을 허용합니다. 개발 검수는 운영 RDS·ElastiCache·NAT·롤링 배포를 검증하지 않습니다.
 
-## 인프라 아키텍처
+## 4-4. 인프라 아키텍처
 
 ### 네트워크와 트래픽
 
@@ -109,7 +109,7 @@ PostgreSQL이 업무 데이터 정본이며 OpenSearch 인덱스는 파생 데�
 
 prod 알림도 서버와 같은 FireLens 구성으로 `manyak-logs-prod-*`에 로그를 보내고 CloudWatch 안전망을 유지하는 것이 목표입니다. Fargate FireLens에는 영속 디스크 버퍼가 없으므로 OpenSearch 장애 때 로그 유실을 막는 별도 저장 경로가 필요합니다. CloudWatch는 OpenSearch 403 진단에 필요한 로그 라우터 자체 로그도 저장합니다. 알림 CloudWatch 보존 기간은 7일로 정합니다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
 
-## 이미지 빌드와 CI/CD
+## 4-5. 이미지 빌드와 CI/CD
 
 ### server·ai 이미지
 
@@ -148,7 +148,7 @@ release 번들(AAB)은 CI가 만들지 않습니다. 릴리스 담당자가 로�
 - **`google-services.json`은 저장소에 커밋합니다.** CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌리므로 파일이 없으면 모든 PR이 실패합니다. 값은 APK에 실려 나가고 보호는 Firebase 보안 규칙과 API 키 제한이 맡습니다. Firebase 프로젝트는 서버 FCM과 같은 하나를 쓰며 환경별로 나누지 않습니다. `applicationId`가 빌드 타입 간 같고 debug는 `firebase_crashlytics_collection_enabled=false`로 수집하지 않습니다.
 - release는 R8 축소·난독화를 적용합니다(`optimization.enable = true`, keep 규칙은 `app/proguard-rules.pro`). `bundleRelease`가 Crashlytics로 매핑 파일을 올리고 AAB의 `BUNDLE-METADATA`에도 매핑이 실립니다. 결정 이유는 [Android ADR A-047](../platform/ANDROID/DECISIONS.md#a-047)에 있습니다.
 
-## 런타임 설정과 시크릿
+## 4-6. 런타임 설정과 시크릿
 
 Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리합니다. 실제 앱 시크릿 값은 Terraform state에 저장하지 않습니다. `ignore_changes`만으로 secret_version refresh를 차단할 수 없으므로 해당 리소스를 다시 도입하지 않습니다. 태스크 실행 역할의 비밀 읽기와 애플리케이션 태스크 역할의 AWS 접근을 구분합니다. 시크릿 값 등록, 태스크 참조, 재배포의 세 단계가 모두 있어야 실행 중 컨테이너에 반영됩니다.
 
@@ -170,7 +170,7 @@ Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리합니다
 
 운영 AI 모델은 SSM Parameter Store의 컴파일·스토리라인·채팅 값 세 개로 관리합니다. 이미 존재하는 Parameter의 값은 `ignore_changes`이므로 Terraform 기본값 수정만으로 바뀌지 않습니다. Parameter 변경 후 새 태스크가 읽게 해야 합니다. 개발은 태스크 정의 환경변수이므로 apply가 필요합니다. 확인한 개발 선언은 컴파일 `gemini-3.7-flash`, 스토리라인·채팅 `deepseek-flash`입니다. 운영 Parameter 실값은 이번 문서 작업에서 조회하지 않았습니다. 옛 모델 이름과 새 AI 등록부가 호환되지 않는 전환은 모델 설정과 이미지를 같은 배포 단위로 맞춥니다.
 
-## 배포 절차
+## 4-7. 배포 절차
 
 1. 작업 코드·현재 Design·ADR과 대상 환경을 확인합니다. 새 설정은 시크릿 키 존재, IAM, 태스크 참조, 공급자 모델 호환성을 먼저 점검합니다.
 2. Terraform 변경은 저장소의 `scripts/tf-apply.sh`가 요구하는 최신 dev·작업트리·plan 검사를 통과한 뒤 적용합니다. 오래된 브랜치의 plan을 현재 운영 변경으로 사용하지 않습니다. plan의 replace·destroy 범위를 개별 리소스로 검토합니다.
@@ -196,7 +196,7 @@ DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼
 4. `jarsigner -verify`가 `jar verified.`를 내는지, 번들 매니페스트의 `versionCode`·`versionName`이 의도한 값인지 확인합니다.
 5. 같은 AAB를 내부 테스트 트랙에 올리고 실기기에서 로그인과 핵심 흐름을 완주합니다.
 6. 통과하면 같은 AAB를 비공개 테스트에서 프로덕션으로 승격합니다. 트랙마다 다시 빌드하지 않습니다. 다시 빌드하면 검증한 번들과 출시하는 번들이 달라집니다.
-7. 프로덕션은 단계적 출시로 시작하고 [§4-9](#검수-관측-롤백)의 중단 기준을 관찰합니다.
+7. 프로덕션은 단계적 출시로 시작하고 [§4-9](#4-9-검수-관측-롤백)의 중단 기준을 관찰합니다.
 
 버전 규칙입니다.
 
@@ -204,13 +204,13 @@ DB 변경은 expand/contract로 진행합니다. 신규 컬럼·테이블을 먼
 - `versionName`은 사용자용입니다. 버그 수정은 patch, 기능 추가는 minor로 올립니다.
 - 프로덕션 트랙은 Play 개인 개발자 계정 정책상 비공개 테스트 12명이 14일 연속 옵트인한 뒤에야 열립니다. 그 전까지 릴리스는 내부·비공개 테스트에서 끝납니다.
 
-## 로컬·통합 실행
+## 4-8. 로컬·통합 실행
 
 `manyak-infra`의 Compose가 로컬 실행 정본입니다. 서버·AI·웹·PostgreSQL·Redis와 Prometheus 설정을 함께 확인합니다. 서비스명 DNS는 Compose 네트워크 안에서 사용합니다. AI stub과 실제 AI 호출 여부는 명시적인 실행 설정으로 확인합니다.
 
 현재 Compose의 모델 기본값과 AWS 태스크 선언은 같다고 가정하지 않습니다. 통합 레포의 모델 기본값에는 과거 이름이 남아 있으므로 선택한 AI 이미지의 등록부와 맞는 값을 공급해야 합니다. 로컬 통합 성공은 AWS IAM·Secrets Manager 주입·CloudFront 업로드 CORS·ECS 롤링 성공의 증거가 아닙니다.
 
-## 검수, 관측, 롤백
+## 4-9. 검수, 관측, 롤백
 
 ### 서버·AI 검수와 복구
 

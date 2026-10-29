@@ -1,25 +1,25 @@
 # ANDROID 플랫폼 기반
 
-여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [공통 사용자 경험 ANDROID](../../experience/ANDROID/AGENTS.md)에서 확인한다.
+여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [APP ANDROID](../../domain/APP/CLIENT/ANDROID/AGENTS.md)에서 확인한다.
 
 <br>
 
-### 문서 역할
+### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) | Android 공용 구성 |
-| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | Android 공용 상태 관리 |
-| [EXECUTION.md](EXECUTION.md) | Android 기반 실행 |
-| [VERIFICATION.md](VERIFICATION.md) | Android 기반 검증 |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Android 공용 배포 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android 공용 구성 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android 공용 상태 관리 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 Android 기반 실행 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android 기반 검증 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 Android 공용 배포 |
 | [DECISIONS.md](DECISIONS.md) | ANDROID 결정 기록 |
 
-공통 전송 계약은 [공통 연동 계약](../CLIENT-CONTRACT.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 위 표의 계약, 구현, 검증과 배포 순서로 읽으며 사용자 목표를 새로 정의하지 않는다.
+공통 전송 계약은 [CLIENT 기반](../CLIENT/AGENTS.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 번호 문서는 구현 4, 검증 5, 배포 6 순서로 읽으며 사용자 목표를 새로 정의하지 않는다.
 
 <br>
 
-### 코드 위치
+### 2 코드 위치
 
 - [gradle/libs.versions.toml](../../../../manyak-android/gradle/libs.versions.toml)
 - [app/build.gradle.kts](../../../../manyak-android/app/build.gradle.kts)

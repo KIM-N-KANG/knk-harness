@@ -2,7 +2,7 @@
 
 기준은 기존 메트릭 문서의 Spring Boot 4.0.6과 Micrometer 1.16.5다. 코드와 수신 데이터의 검증 범위는 각 항목에 표시한다.
 
-## 메트릭과 운영 연동
+## 2-4. 메트릭과 운영 연동
 
 구조화 로그·Sentry·`ai_call_logs`가 개별 사건을 남긴다면, 메트릭은 시계열 집계로 RED(Rate·Error·Duration)와 **AI 호출 지연**을 봅니다. Micrometer로 계측하고 **OTLP push**로 Grafana Cloud에 보냅니다. Prometheus·Grafana를 별도 EC2에 자체 호스팅하지 않습니다: 단일 인스턴스 운영에서 스크레이프 대상과 관리 대상을 늘리는 비용이 이득보다 큽니다.
 
@@ -54,7 +54,7 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 **전송 주기**: 운영 60초, 로컬 10초. 주기가 짧을수록 DPM(datapoints per minute) 과금이 비례해 늘고, 단일 인스턴스 서비스에서 60초보다 촘촘한 해상도가 주는 이득은 없습니다.
 
-**OTLP는 기본으로 끕니다.** 레지스트리는 모든 프로파일에서 자동 구성되며 endpoint가 없으면 `http://localhost:4318/v1/metrics`로 전송을 시도합니다. 환경에 관계없이 endpoint와 헤더를 먼저 넣고 `MANYAK_OTLP_METRICS_ENABLED=true`를 설정합니다. 메트릭 전송 실패는 사용자 요청에 영향을 주지 않게 격리합니다([Spec §4-7](../../reference/ANALYTICS.md#관측-구현)).
+**OTLP는 기본으로 끕니다.** 레지스트리는 모든 프로파일에서 자동 구성되며 endpoint가 없으면 `http://localhost:4318/v1/metrics`로 전송을 시도합니다. 환경에 관계없이 endpoint와 헤더를 먼저 넣고 `MANYAK_OTLP_METRICS_ENABLED=true`를 설정합니다. 메트릭 전송 실패는 사용자 요청에 영향을 주지 않게 격리합니다([Spec §4-7](../../reference/ANALYTICS.md#6-6-관측-구현)).
 
 **미주입과 빈 값은 다릅니다.** Spring Boot 4.0.6의 `PropertiesConfigAdapter.obtain`은 null만 검사합니다. URL이 빈 문자열이면 기본값을 찾지 않고 빈 값 그대로 micrometer에 전달합니다.
 
@@ -65,9 +65,9 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 운영 시크릿 JSON에서 키를 빈 값으로 두면 이 경로를 타므로 **OTLP 키는 빈 값으로 남기지 않습니다.** 끄려면 키를 넣지 않거나, 토글을 `false`로 둡니다.
 
-`OtlpConfig`는 `System.getenv`에서 표준 `OTEL_*` 변수를 직접 읽습니다. Spring `Environment`와 프로파일을 거치지 않으므로 운영에서는 충돌을 피하려고 Spring 전용 변수명을 씁니다([§2-5](CONFIGURATION.md#런타임-설정)).
+`OtlpConfig`는 `System.getenv`에서 표준 `OTEL_*` 변수를 직접 읽습니다. Spring `Environment`와 프로파일을 거치지 않으므로 운영에서는 충돌을 피하려고 Spring 전용 변수명을 씁니다([§2-5](CONFIGURATION.md#2-5-런타임-설정)).
 
-**측정 범위 주의**: `manyak.story.creation.duration`은 실제 생성 콜백만 감쌉니다. AI 호출 없이 저장된 결과를 돌려주는 **조회 경로 두 가지는 의도적으로 제외**합니다: ① 멱등 재요청(`recordOrRun`의 COMPLETED replay: [§4-3-2](../../domain/AGENTS.md#도메인과-세트))은 콜백 자체가 실행되지 않아 자연히 빠지고, ② 회수 재실행 재구성은 콜백은 타지만 AI·저장이 없어 `aiCallLogId`가 `null`인 것으로 판별해 제외합니다. 포함하면 아주 짧은 시간이 섞여 p95가 실제 생성 비용보다 낙관적으로 왜곡됩니다.
+**측정 범위 주의**: `manyak.story.creation.duration`은 실제 생성 콜백만 감쌉니다. AI 호출 없이 저장된 결과를 돌려주는 **조회 경로 두 가지는 의도적으로 제외**합니다: ① 멱등 재요청(`recordOrRun`의 COMPLETED replay: [§4-3-2](../../domain/AGENTS.md#1-도메인과-세트))은 콜백 자체가 실행되지 않아 자연히 빠지고, ② 회수 재실행 재구성은 콜백은 타지만 AI·저장이 없어 `aiCallLogId`가 `null`인 것으로 판별해 제외합니다. 포함하면 아주 짧은 시간이 섞여 p95가 실제 생성 비용보다 낙관적으로 왜곡됩니다.
 
 **실패는 다시 둘로 나눕니다**. `outcome`이 3값인 이유입니다.
 
@@ -81,8 +81,8 @@ DB 커넥션 풀은 **둘 중 하나만 고릅니다.** `hikaricp.*`(Hikari 자�
 
 4xx를 `failure`에서 떼는 이유는 두 갈래를 한 히스토그램에 섞으면 **거부 비중에 따라 실패 p95가 요동치기** 때문입니다. 거부가 늘수록 밀리초 표본이 늘어 p95가 오히려 **낮아지므로**, AI가 실제로 느려지는데 지표는 개선된 것처럼 보이는 역전이 생깁니다. 실패 건수 알림도 404 급증만으로 오발화합니다. **알림과 p95는 `outcome="failure"`만 봐야 합니다.** 태그 값이 2에서 3으로 늘어도 유한 enum이라 카디널리티는 안전합니다(위 카디널리티 규칙).
 
-**알림**: 임계값은 운영 데이터가 쌓인 뒤 정합니다. 서버가 중단되면 지표가 No Data 상태가 되므로, 알림 규칙에서 이 상태를 무시할지 별도 심각도로 다룰지도 함께 정합니다. AI 호출 지연·실패율 알림도 운영 기준선을 확인한 뒤 추가합니다([배포 Design §4-9](../../operations/DEPLOYMENT.md#검수-관측-롤백)).
+**알림**: 임계값은 운영 데이터가 쌓인 뒤 정합니다. 서버가 중단되면 지표가 No Data 상태가 되므로, 알림 규칙에서 이 상태를 무시할지 별도 심각도로 다룰지도 함께 정합니다. AI 호출 지연·실패율 알림도 운영 기준선을 확인한 뒤 추가합니다([배포 Design §4-9](../../operations/DEPLOYMENT.md#4-9-검수-관측-롤백)).
 
-**현재 구현하지 않은 범위.** Langfuse는 트레이스 연결 식별자를 헤더로 전달하는 데까지 구현돼 있습니다. 사용자 반응을 도메인 데이터로 검증해 저장하고 score로 발행하는 경로(선택지 상호작용 API, 생성 버전 연결, outbox, Langfuse 클라이언트)는 코드에 없습니다. 계약은 [Spec §4-7](../../reference/ANALYTICS.md#관측-구현)에 있습니다.
+**현재 구현하지 않은 범위.** Langfuse는 트레이스 연결 식별자를 헤더로 전달하는 데까지 구현돼 있습니다. 사용자 반응을 도메인 데이터로 검증해 저장하고 score로 발행하는 경로(선택지 상호작용 API, 생성 버전 연결, outbox, Langfuse 클라이언트)는 코드에 없습니다. 계약은 [Spec §4-7](../../reference/ANALYTICS.md#6-6-관측-구현)에 있습니다.
 
 운영 readiness는 Redis를 검사하지 않습니다(`management.health.redis.enabled=false`). 재활성 시점은 정하지 않았습니다.

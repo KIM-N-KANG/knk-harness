@@ -4,31 +4,31 @@
 
 공통: [CLIENT](../AGENTS.md).
 
-### 문서 역할
+### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [REQUIREMENTS.md](REQUIREMENTS.md) | Android NOTIFICATION 요구사항 |
-| [INFORMATION-ARCHITECTURE.md](INFORMATION-ARCHITECTURE.md) | Android NOTIFICATION 화면 구성 |
-| [INTERACTION-FLOWS.md](INTERACTION-FLOWS.md) | Android NOTIFICATION 이동 |
-| [LAYOUT.md](LAYOUT.md) | Android NOTIFICATION 표현 |
-| [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) | Android NOTIFICATION 구성 |
-| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | Android NOTIFICATION 상태 관리 |
-| [EXECUTION.md](EXECUTION.md) | Android NOTIFICATION 실행 |
-| [VERIFICATION.md](VERIFICATION.md) | Android NOTIFICATION 검증 |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Android NOTIFICATION 배포 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 Android NOTIFICATION 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 Android NOTIFICATION 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 Android NOTIFICATION 이동 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 Android NOTIFICATION 표현 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android NOTIFICATION 구성 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android NOTIFICATION 상태 관리 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 Android NOTIFICATION 실행 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android NOTIFICATION 검증 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 Android NOTIFICATION 배포 |
 | [DECISIONS.md](DECISIONS.md) | NOTIFICATION Android 결정 기록 |
 
-### 코드 대응
+### 2 코드 대응
 
 - [notification/src/main/java/app/manyak/notification](../../../../../../manyak-android/notification/src/main/java/app/manyak/notification)
 - [notice/src/main/java/app/manyak/notice](../../../../../../manyak-android/notice/src/main/java/app/manyak/notice)
 - [notification/src/test](../../../../../../manyak-android/notification/src/test)
 - [notice/src/test](../../../../../../manyak-android/notice/src/test)
 
-첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../../experience/ANDROID/DECISIONS.md#a-071).
+첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../APP/CLIENT/ANDROID/DECISIONS.md#a-071).
 
-### 작성과 검증
+### 3 작성과 검증
 
 - 공지의 기기 읽음과 회원 알림의 서버 읽음을 구분한다.
 - 수신 동의, OS 권한과 회원 인증을 같은 상태로 합치지 않는다.

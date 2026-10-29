@@ -4,7 +4,7 @@
 
 <br>
 
-### 백엔드 공용 규칙
+### 1 백엔드 공용 규칙
 
 공개 비즈니스 API의 접두어는 /api/v1이다. 내부 알림 API는 /internal의 전체 경로를 쓰며 이 접두어를 붙이지 않는다. JSON 필드는 camelCase, 시각은 ISO 8601 UTC, 문자 수는 UTF-16 코드 유닛 기준이다. 공개 식별자와 엔드포인트별 입력 조건은 각 계약을 따른다.
 
@@ -16,11 +16,11 @@
 | 운영 Actuator | health와 info만 노출. 메트릭은 OTLP push, prometheus 스크레이프는 로컬 전용 |
 | GET /v3/api-docs, /swagger-ui.html | 비운영 API 문서. 운영은 springdoc 기능 비활성으로 404 |
 
-공통 오류 형식은 각 BACKEND 계약의 공통 규칙, 요청 연결과 수집 제한은 분석 기준을 따른다. ([ACCOUNT 공통 응답](../domain/ACCOUNT/BACKEND/CONTRACT.md#공통-규칙과-헤더), [분석과 관측](ANALYTICS.md))
+공통 오류 형식은 각 BACKEND 계약의 공통 규칙, 요청 연결과 수집 제한은 분석 기준을 따른다. ([ACCOUNT 공통 응답](../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더), [분석과 관측](ANALYTICS.md))
 
 <br>
 
-### AI 상태 확인
+### 2 AI 상태 확인
 
 | 항목 | 계약 |
 |---|---|

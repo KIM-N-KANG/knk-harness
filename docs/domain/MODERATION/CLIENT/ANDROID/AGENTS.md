@@ -4,22 +4,22 @@
 
 공통: [CLIENT](../AGENTS.md).
 
-### 문서 역할
+### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) | Android MODERATION 구성 |
-| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | Android MODERATION 상태 관리 |
-| [VERIFICATION.md](VERIFICATION.md) | Android MODERATION 검증 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android MODERATION 구성 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android MODERATION 상태 관리 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android MODERATION 검증 |
 
-### 코드 대응
+### 2 코드 대응
 
 - [report/src/main/java/app/manyak/report](../../../../../../manyak-android/report/src/main/java/app/manyak/report)
 - [report/src/main/res/values/strings.xml](../../../../../../manyak-android/report/src/main/res/values/strings.xml)
 
 모듈 경계의 결정은 [A-038](../../../../platform/ANDROID/DECISIONS.md#a-038)에 있다. STORY의 입력 거절 결정은 [A-082](../../../STORY/CLIENT/ANDROID/DECISIONS.md#a-082)에 있다.
 
-### 작성과 검증
+### 3 작성과 검증
 
 - 새로운 신고 기준이나 제재 결과를 구현에서 추측하지 않는다.
 - 과거 ADR은 원래 소유 범위에 보존하고 현재 계약으로 대체하지 않는다.

@@ -8,24 +8,24 @@
 
 <br>
 
-### 문서 역할
+### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [REQUIREMENTS.md](REQUIREMENTS.md) | Android STORY 요구사항 |
-| [INFORMATION-ARCHITECTURE.md](INFORMATION-ARCHITECTURE.md) | Android STORY 화면 구성 |
-| [INTERACTION-FLOWS.md](INTERACTION-FLOWS.md) | Android STORY 화면 흐름 |
-| [LAYOUT.md](LAYOUT.md) | Android STORY 화면 표현 |
-| [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) | Android STORY 구성 |
-| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | Android STORY 상태 관리 |
-| [EXECUTION.md](EXECUTION.md) | Android STORY 실행 |
-| [VERIFICATION.md](VERIFICATION.md) | Android STORY 검증 |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Android STORY 배포 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 Android STORY 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 Android STORY 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 Android STORY 화면 흐름 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 Android STORY 화면 표현 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android STORY 구성 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android STORY 상태 관리 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 Android STORY 실행 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android STORY 검증 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 Android STORY 배포 |
 | [DECISIONS.md](DECISIONS.md) | STORY Android 결정 기록 |
 
 <br>
 
-### 코드 대응
+### 2 코드 대응
 
 | 구성 | 위치 |
 |---|---|
@@ -38,7 +38,7 @@
 
 <br>
 
-### 작성과 검증
+### 3 작성과 검증
 
 - 공통 입력과 복구 의미를 유지하고 플랫폼의 수명, 공유 수단과 저장 위치를 구분한다.
 - 새 계약 없이 구현 결과로 요구를 바꾸지 않는다. 확정 ADR과 기존 QA의 조건 및 기대 결과를 보존한다.
