@@ -1,4 +1,4 @@
-# 2-2 Android STORY 요구사항
+# 2-2 요구사항: 안드로이드
 
 기준: [공통 요구사항](../2-2-REQUIREMENTS.md).
 

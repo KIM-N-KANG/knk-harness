@@ -1,4 +1,4 @@
-# 5-1 Android STORY 검증
+# 5-1 검증: 안드로이드
 
 기준: [공통 검증](../5-1-VERIFICATION.md), [Android 요구사항](2-2-REQUIREMENTS.md).
 

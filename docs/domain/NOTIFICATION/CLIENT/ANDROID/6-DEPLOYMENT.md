@@ -1,4 +1,4 @@
-# 6 Android NOTIFICATION 배포
+# 6 배포: 안드로이드
 
 기준: [Android 실행](4-4-EXECUTION.md), [Android 검증](5-1-VERIFICATION.md).
 

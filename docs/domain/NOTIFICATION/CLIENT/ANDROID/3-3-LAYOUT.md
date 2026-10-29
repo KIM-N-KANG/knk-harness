@@ -1,4 +1,4 @@
-# 3-3 Android NOTIFICATION 표현
+# 3-3 화면 배치: 안드로이드
 
 기준: [공통 표현](../3-3-LAYOUT.md), [Android 이동](3-2-INTERACTION-FLOWS.md).
 

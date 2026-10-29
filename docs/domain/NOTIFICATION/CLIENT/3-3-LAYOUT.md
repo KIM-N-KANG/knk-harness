@@ -1,4 +1,4 @@
-# 3-3 NOTIFICATION 화면 표현
+# 3-3 화면 배치
 
 기준: [화면 흐름](3-2-INTERACTION-FLOWS.md).
 

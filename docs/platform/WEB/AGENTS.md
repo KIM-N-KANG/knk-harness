@@ -1,6 +1,6 @@
 # WEB 플랫폼 기반
 
-여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [APP WEB](../../domain/APP/CLIENT/WEB/AGENTS.md)에서 확인한다.
+여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [공통 UI WEB](../../ui/WEB/AGENTS.md)에서 확인한다.
 
 <br>
 
@@ -8,15 +8,15 @@
 
 | 문서 | 내용 |
 |---|---|
-| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 웹 공용 연동 |
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 웹 공용 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 웹 기반 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 웹 기반 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 웹 기반 검증 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 웹 공용 배포 |
+| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 연동 계약: 웹 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 컴포넌트 구조: 웹 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리: 웹 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 실행: 웹 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증: 웹 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 배포: 웹 |
 | [DECISIONS.md](DECISIONS.md) | WEB 결정 기록 |
 
-공통 전송 계약은 [CLIENT 기반](../CLIENT/AGENTS.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 번호 문서는 구현 4, 검증 5, 배포 6 순서로 읽으며 사용자 목표를 새로 정의하지 않는다.
+공통 전송 계약은 [CLIENT 기반](../CLIENT/AGENTS.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 이 폴더에서 사용자 목표를 새로 정의하지 않는다.
 
 <br>
 

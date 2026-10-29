@@ -1,21 +1,19 @@
 # MODERATION 공통 클라이언트
 
-단계마다 공통 문서 다음 해당 플랫폼 문서를 읽는다. 사용자 목표, 요구사항, 화면, 연동과 구현, 검증 순서다.
-
 플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
 
 ### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 MODERATION 클라이언트 배경 |
-| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 MODERATION 유저 스토리 |
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 MODERATION 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 MODERATION 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 MODERATION 화면 흐름 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 MODERATION 화면 표현 |
-| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 MODERATION 클라이언트 연동 계약 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 MODERATION 공통 검증 |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 배경 |
+| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 유저 스토리 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 화면 흐름 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 화면 배치 |
+| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 연동 계약 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증 |
 
 ### 3 작성과 검증
 

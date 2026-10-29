@@ -1,4 +1,4 @@
-# 6 Android STORY 배포
+# 6 배포: 안드로이드
 
 <br>
 

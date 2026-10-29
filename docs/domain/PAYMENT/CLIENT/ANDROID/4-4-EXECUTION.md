@@ -1,4 +1,4 @@
-# 4-4 PAYMENT Android 실행
+# 4-4 실행: 안드로이드
 
 <br>
 

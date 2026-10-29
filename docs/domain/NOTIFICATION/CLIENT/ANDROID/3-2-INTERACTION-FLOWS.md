@@ -1,4 +1,4 @@
-# 3-2 Android NOTIFICATION 이동
+# 3-2 화면 흐름: 안드로이드
 
 기준: [공통 흐름](../3-2-INTERACTION-FLOWS.md), [Android 목적지](3-1-INFORMATION-ARCHITECTURE.md).
 

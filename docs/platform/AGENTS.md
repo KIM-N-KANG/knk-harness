@@ -14,4 +14,4 @@
 | [BACKEND](BACKEND/AGENTS.md) | 공통 요청 경계, 메트릭과 런타임 설정 |
 | [AI](AI/AGENTS.md) | 공통 모델 호출과 SDK 어댑터 경계 |
 
-앱 셸, 테마와 외부 앱 진입은 [APP](../domain/APP/AGENTS.md), 환경과 배포는 [operations](../operations/AGENTS.md), 작성 기준과 용어는 [reference](../reference/AGENTS.md)에서 확인한다.
+앱 셸, 테마와 외부 앱 진입은 [공통 UI](../ui/AGENTS.md), 환경과 배포는 [operations](../operations/AGENTS.md), 작성 기준과 용어는 [reference](../reference/AGENTS.md)에서 확인한다.

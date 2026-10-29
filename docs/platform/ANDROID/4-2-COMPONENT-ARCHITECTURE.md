@@ -1,6 +1,6 @@
-# 4-2 Android 공용 구성
+# 4-2 컴포넌트 구조: 안드로이드
 
-기준: [표현](../../domain/APP/CLIENT/ANDROID/3-3-LAYOUT.md), [공통 연동](../CLIENT/4-1-CONTRACT.md).
+기준: [표현](../../ui/ANDROID/3-3-LAYOUT.md), [공통 연동](../CLIENT/CONTRACT.md).
 
 <br>
 

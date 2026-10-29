@@ -6,11 +6,13 @@
 
 ### 1 문서와 도메인
 
+이 폴더의 번호는 도메인 BACKEND 세트의 단계 번호와 비교하지 않는다.
+
 | 공통 기반 | 위치 |
 |---|---|
-| 기술 환경과 요청 경계 | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| 메트릭 수집과 집계 | [OBSERVABILITY.md](OBSERVABILITY.md) |
-| 런타임 설정 | [CONFIGURATION.md](CONFIGURATION.md) |
+| 기술 환경과 요청 경계 | [1-ARCHITECTURE.md](1-ARCHITECTURE.md) |
+| 메트릭 수집과 집계 | [2-OBSERVABILITY.md](2-OBSERVABILITY.md) |
+| 런타임 설정 | [3-CONFIGURATION.md](3-CONFIGURATION.md) |
 | 공통 API와 상태 확인 | [서비스 인터페이스](../../reference/SERVICE-INTERFACES.md) |
 | 환경과 배포 | [배포](../../operations/DEPLOYMENT.md) |
 | 기존 BE 결정 원문 | [백엔드 결정 기록](../../reference/decisions/BACKEND.md) |

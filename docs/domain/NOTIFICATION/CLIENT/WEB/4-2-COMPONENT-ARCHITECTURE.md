@@ -1,4 +1,4 @@
-# 4-2 웹 NOTIFICATION 구성
+# 4-2 컴포넌트 구조: 웹
 
 기준: [공통 연동 계약](../4-1-CONTRACT.md), [웹 표현](3-3-LAYOUT.md).
 

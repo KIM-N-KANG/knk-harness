@@ -1,4 +1,4 @@
-# 4-3 웹 STORY 상태 관리
+# 4-3 상태 관리: 웹
 
 기준: [공통 상태](../4-3-STATE-MANAGEMENT.md), [웹 구성](4-2-COMPONENT-ARCHITECTURE.md).
 

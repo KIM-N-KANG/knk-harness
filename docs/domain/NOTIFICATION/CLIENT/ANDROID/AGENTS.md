@@ -1,22 +1,20 @@
 # NOTIFICATION Android 클라이언트
 
-단계마다 공통 다음 해당 플랫폼 문서를 읽는다. 사용자 목표와 요구사항, 화면, 연동과 구현, 검증 및 배포 순서다.
-
 공통: [CLIENT](../AGENTS.md).
 
 ### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 Android NOTIFICATION 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 Android NOTIFICATION 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 Android NOTIFICATION 이동 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 Android NOTIFICATION 표현 |
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android NOTIFICATION 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android NOTIFICATION 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 Android NOTIFICATION 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android NOTIFICATION 검증 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 Android NOTIFICATION 배포 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 요구사항: 안드로이드 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 화면 구성: 안드로이드 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 화면 흐름: 안드로이드 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 화면 배치: 안드로이드 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 컴포넌트 구조: 안드로이드 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리: 안드로이드 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 실행: 안드로이드 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증: 안드로이드 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 배포: 안드로이드 |
 | [DECISIONS.md](DECISIONS.md) | NOTIFICATION Android 결정 기록 |
 
 ### 2 코드 대응
@@ -26,7 +24,7 @@
 - [notification/src/test](../../../../../../manyak-android/notification/src/test)
 - [notice/src/test](../../../../../../manyak-android/notice/src/test)
 
-첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../APP/CLIENT/ANDROID/DECISIONS.md#a-071).
+첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../../ui/ANDROID/DECISIONS.md#a-071).
 
 ### 3 작성과 검증
 

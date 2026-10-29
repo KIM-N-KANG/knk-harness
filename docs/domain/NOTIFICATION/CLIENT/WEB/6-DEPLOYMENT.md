@@ -1,4 +1,4 @@
-# 6 웹 NOTIFICATION 배포
+# 6 배포: 웹
 
 기준: [웹 실행](4-4-EXECUTION.md), [웹 검증](5-1-VERIFICATION.md).
 

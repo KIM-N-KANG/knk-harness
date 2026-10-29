@@ -1,4 +1,4 @@
-# 4-4 Android NOTIFICATION 실행
+# 4-4 실행: 안드로이드
 
 기준: [연동 계약](../4-1-CONTRACT.md), [Android 상태](4-3-STATE-MANAGEMENT.md).
 

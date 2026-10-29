@@ -8,7 +8,6 @@
 
 | 도메인 | BACKEND 계약 | AI 계약 | CLIENT |
 |---|---|---|---|
-| [APP](APP/AGENTS.md) | 해당 없음 | 해당 없음 | [CLIENT](APP/CLIENT/AGENTS.md) |
 | [ACCOUNT](ACCOUNT/AGENTS.md) | [BACKEND](ACCOUNT/BACKEND/4-2-CONTRACT.md) | 해당 없음 | [CLIENT](ACCOUNT/CLIENT/AGENTS.md) |
 | [PAYMENT](PAYMENT/AGENTS.md) | [BACKEND](PAYMENT/BACKEND/4-2-CONTRACT.md) | 해당 없음 | [CLIENT](PAYMENT/CLIENT/AGENTS.md) |
 | [CHAT](CHAT/AGENTS.md) | [BACKEND](CHAT/BACKEND/4-2-CONTRACT.md) | [AI](CHAT/AI/5-CONTRACT.md) | [CLIENT](CHAT/CLIENT/AGENTS.md) |
@@ -18,13 +17,13 @@
 
 <br>
 
-### 2 문서 역할과 읽는 순서
+### 2 문서 역할
 
-각 세트의 안내에서 배경과 요구사항, 설계와 계약, 구현과 검증 및 배포 순서로 읽는다. CLIENT는 같은 단계에서 공통 다음 WEB 또는 ANDROID를 읽는다. 제공자 계약과 소비자 구현을 중복 정의하지 않는다.
+제공자 계약과 소비자 구현을 중복 정의하지 않는다.
 
 | 공용 내용 | 위치 |
 |---|---|
-| 앱 셸과 진입 | [APP 클라이언트](APP/CLIENT/AGENTS.md) |
+| 앱 셸과 진입 | [공통 UI](../ui/AGENTS.md) |
 | 공통 기술 규칙 | [플랫폼 기반](../platform/AGENTS.md) |
 | 용어와 표기 | [용어집](../reference/GLOSSARY.md) |
 | 서비스와 사용자 | [서비스 배경](../reference/SERVICE-BACKGROUND.md) |

@@ -1,6 +1,6 @@
 # PAYMENT 공통 클라이언트
 
-단계마다 공통 문서, 해당 플랫폼 문서 순서로 읽는다. 하위 구현과 검증을 이유로 상위 요구를 바꾸지 않는다.
+하위 구현과 검증을 이유로 상위 요구를 바꾸지 않는다.
 
 작성 규칙은 클라이언트 가이드를 적용한다. ([작성 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md))
 
@@ -12,14 +12,14 @@
 
 | 문서 | 내용 |
 |---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 PAYMENT 클라이언트 배경 |
-| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 PAYMENT 유저 스토리 |
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 PAYMENT 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 PAYMENT 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 PAYMENT 화면 흐름 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 PAYMENT 화면 표현 |
-| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 PAYMENT 연동 계약 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 PAYMENT 공통 검증 |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 배경 |
+| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 유저 스토리 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 화면 흐름 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 화면 배치 |
+| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 연동 계약 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증 |
 | [DECISIONS.md](DECISIONS.md) | 과거 선택과 대체 관계 |
 
 <br>

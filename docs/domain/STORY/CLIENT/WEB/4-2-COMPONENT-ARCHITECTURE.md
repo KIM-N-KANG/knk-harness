@@ -1,4 +1,4 @@
-# 4-2 웹 STORY 구성
+# 4-2 컴포넌트 구조: 웹
 
 기준: [공통 계약](../4-1-CONTRACT.md), [웹 흐름](3-2-INTERACTION-FLOWS.md).
 

@@ -1,4 +1,4 @@
-# 4-2 Android MODERATION 구성
+# 4-2 컴포넌트 구조: 안드로이드
 
 기준: [연동 계약](../4-1-CONTRACT.md).
 

@@ -1,4 +1,4 @@
-# 4-1 STORY 연동 계약
+# 4-1 연동 계약
 
 기준: [요구사항](2-2-REQUIREMENTS.md), [화면 흐름](3-2-INTERACTION-FLOWS.md).
 

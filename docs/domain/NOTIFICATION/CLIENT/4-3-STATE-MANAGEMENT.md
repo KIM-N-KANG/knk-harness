@@ -1,4 +1,4 @@
-# 4-3 NOTIFICATION 공통 상태 관리
+# 4-3 상태 관리
 
 기준: [연동 계약](4-1-CONTRACT.md).
 

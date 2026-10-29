@@ -1,4 +1,4 @@
-# 4-4 웹 NOTIFICATION 실행
+# 4-4 실행: 웹
 
 기준: [연동 계약](../4-1-CONTRACT.md), [웹 상태](4-3-STATE-MANAGEMENT.md).
 

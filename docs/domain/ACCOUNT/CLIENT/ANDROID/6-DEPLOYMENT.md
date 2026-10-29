@@ -1,4 +1,4 @@
-# 6 ACCOUNT Android 인증 배포 조건
+# 6 배포: 안드로이드
 
 <br>
 

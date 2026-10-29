@@ -1,4 +1,4 @@
-# 4-4 STORY 공통 실행
+# 4-4 실행
 
 기준: [연동 계약](4-1-CONTRACT.md), [상태 관리](4-3-STATE-MANAGEMENT.md).
 

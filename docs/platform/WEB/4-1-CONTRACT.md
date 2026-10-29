@@ -1,6 +1,6 @@
-# 4-1 웹 공용 연동
+# 4-1 연동 계약: 웹
 
-기준: [공통 연동](../CLIENT/4-1-CONTRACT.md), [웹 표현](../../domain/APP/CLIENT/WEB/3-3-LAYOUT.md).
+기준: [공통 연동](../CLIENT/CONTRACT.md), [웹 표현](../../ui/WEB/3-3-LAYOUT.md).
 
 <br>
 

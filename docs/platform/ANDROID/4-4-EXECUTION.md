@@ -1,4 +1,4 @@
-# 4-4 Android 기반 실행
+# 4-4 실행: 안드로이드
 
 기준: [상태 관리](4-3-STATE-MANAGEMENT.md).
 

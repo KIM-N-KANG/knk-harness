@@ -18,11 +18,10 @@
 
 ## Knowledge Base
 
-제품 문서는 [도메인 목록](docs/domain/AGENTS.md)에서 작업에 맞는 세트를 선택합니다. 각 도메인과 세트의 `AGENTS.md`가 문서 역할과 읽는 순서를 안내합니다.
+업무별 제품 문서는 [도메인 목록](docs/domain/AGENTS.md), 공통 화면과 조작은 [공통 UI](docs/ui/AGENTS.md)에서 선택합니다. 각 도메인과 세트의 `AGENTS.md`가 문서 역할을 안내합니다.
 
 | 도메인 | 다루는 것 | 세트 |
 | --- | --- | --- |
-| [APP](docs/domain/APP/AGENTS.md) | 앱 탐색, 테마, 서비스 안내와 앱 진입 | CLIENT |
 | [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 계정, 로그인, 동의, 이관과 프로필 | BACKEND, CLIENT |
 | [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프, 충전, 보상과 체험 한도 | BACKEND, CLIENT |
 | [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅, 선택지, 이미지, 공유와 피드백 | AI, BACKEND, CLIENT |
@@ -30,7 +29,7 @@
 | [MODERATION](docs/domain/MODERATION/AGENTS.md) | 검수, 15세 모드, 입력 검사와 신고 | AI, BACKEND, CLIENT |
 | [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 공지, 알림함, 수신 설정과 푸시 | BACKEND, CLIENT |
 
-- 클라이언트는 단계마다 `CLIENT/`의 공통 문서 다음 `WEB/` 또는 `ANDROID/`를 읽습니다. 앱 셸과 진입은 [APP 클라이언트](docs/domain/APP/CLIENT/AGENTS.md), 공통 기술 규칙은 [플랫폼 기반](docs/platform/AGENTS.md)에서 확인합니다.
+- 클라이언트에는 `CLIENT/`의 공통 계약과 `WEB/` 또는 `ANDROID/`의 플랫폼 조건을 함께 적용합니다. 앱 셸과 진입은 [공통 UI](docs/ui/AGENTS.md), 공통 기술 규칙은 [플랫폼 기반](docs/platform/AGENTS.md)에서 확인합니다.
 - 사용자 목표는 각 CLIENT의 `2-1-USER-STORY.md`에서 정의합니다. ID는 파일과 절 번호에 독립적이며 WEB과 ANDROID가 같은 ID를 참조합니다.
 - 문체와 파일명은 [제품 Spec 작성 가이드](docs/reference/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 구성은 [AI](docs/reference/AI-SPEC-WRITING-GUIDE.md), [백엔드](docs/reference/BACKEND-SPEC-WRITING-GUIDE.md), [클라이언트](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md) 작성 가이드를 따릅니다.
 

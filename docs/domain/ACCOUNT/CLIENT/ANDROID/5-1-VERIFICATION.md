@@ -1,4 +1,4 @@
-# 5-1 ACCOUNT Android 검증
+# 5-1 검증: 안드로이드
 
 변경 범위에 맞춰 앱의 `checkModuleArchitecture`, 루트 `check`와 기존 단위 테스트를 사용한다. 기기 검증은 구성 변경과 프로세스 재시작을 구분한다. 이 문서는 검증 절차이며 실행 결과는 PR과 CI에 기록한다. ([Android 지침](../../../../../../manyak-android/AGENTS.md))
 

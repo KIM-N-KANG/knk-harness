@@ -1,4 +1,4 @@
-# 4-3 Android 공용 상태 관리
+# 4-3 상태 관리: 안드로이드
 
 기준: [구성](4-2-COMPONENT-ARCHITECTURE.md).
 

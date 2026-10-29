@@ -1,4 +1,4 @@
-# 4-1 ACCOUNT 데이터 계약
+# 4-1 연동 계약
 
 서버 요청과 응답의 형식, 권한과 판정은 BACKEND 계약을 기준으로 한다. ([ACCOUNT BACKEND](../BACKEND/AGENTS.md))
 

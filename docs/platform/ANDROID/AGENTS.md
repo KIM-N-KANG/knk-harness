@@ -1,6 +1,6 @@
 # ANDROID 플랫폼 기반
 
-여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [APP ANDROID](../../domain/APP/CLIENT/ANDROID/AGENTS.md)에서 확인한다.
+여러 도메인이 사용하는 컴포넌트, 데이터 상태, 실행, 관측과 빌드 규칙을 관리한다. 사용자 기능은 [도메인 목록](../../domain/AGENTS.md)에서 선택하고 앱 셸과 진입은 [공통 UI ANDROID](../../ui/ANDROID/AGENTS.md)에서 확인한다.
 
 <br>
 
@@ -8,14 +8,14 @@
 
 | 문서 | 내용 |
 |---|---|
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android 공용 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android 공용 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 Android 기반 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android 기반 검증 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 Android 공용 배포 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 컴포넌트 구조: 안드로이드 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리: 안드로이드 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 실행: 안드로이드 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증: 안드로이드 |
+| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 배포: 안드로이드 |
 | [DECISIONS.md](DECISIONS.md) | ANDROID 결정 기록 |
 
-공통 전송 계약은 [CLIENT 기반](../CLIENT/AGENTS.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 번호 문서는 구현 4, 검증 5, 배포 6 순서로 읽으며 사용자 목표를 새로 정의하지 않는다.
+공통 전송 계약은 [CLIENT 기반](../CLIENT/AGENTS.md), 공통 배포 절차는 [운영 문서](../../operations/AGENTS.md)를 따른다. 이 폴더에서 사용자 목표를 새로 정의하지 않는다.
 
 <br>
 

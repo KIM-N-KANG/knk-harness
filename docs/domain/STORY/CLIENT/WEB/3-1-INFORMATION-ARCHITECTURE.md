@@ -1,4 +1,4 @@
-# 3-1 웹 STORY 화면 구성
+# 3-1 화면 구성: 웹
 
 기준: [공통 화면](../3-1-INFORMATION-ARCHITECTURE.md), [웹 요구사항](2-2-REQUIREMENTS.md).
 

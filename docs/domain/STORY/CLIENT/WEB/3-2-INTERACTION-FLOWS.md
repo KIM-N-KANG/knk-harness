@@ -1,4 +1,4 @@
-# 3-2 웹 STORY 화면 흐름
+# 3-2 화면 흐름: 웹
 
 기준: [공통 흐름](../3-2-INTERACTION-FLOWS.md), [웹 URL](3-1-INFORMATION-ARCHITECTURE.md).
 

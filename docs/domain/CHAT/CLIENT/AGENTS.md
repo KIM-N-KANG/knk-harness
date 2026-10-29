@@ -1,7 +1,5 @@
 # CHAT 공통 클라이언트
 
-단계마다 공통 문서 다음 해당 플랫폼 문서를 읽는다. 사용자 기대와 요구사항, 화면, 연동과 구현, 검증 순서로 구체화한다.
-
 작성 규칙: [클라이언트 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md).
 
 플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
@@ -12,16 +10,16 @@
 
 | 문서 | 내용 |
 |---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 CHAT 클라이언트 배경 |
-| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 CHAT 유저 스토리 |
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 CHAT 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 CHAT 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 CHAT 화면 흐름 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 CHAT 화면 표현 |
-| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 CHAT 연동 계약 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 CHAT 공통 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 CHAT 공통 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 CHAT 공통 검증 |
+| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 배경 |
+| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 유저 스토리 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 요구사항 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 화면 구성 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 화면 흐름 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 화면 배치 |
+| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 연동 계약 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 실행 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증 |
 | [DECISIONS.md](DECISIONS.md) | 확정된 결정과 대체 관계 |
 
 <br>

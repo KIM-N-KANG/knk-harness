@@ -1,6 +1,6 @@
-# 4-2 웹 공용 구성
+# 4-2 컴포넌트 구조: 웹
 
-기준: [표현](../../domain/APP/CLIENT/WEB/3-3-LAYOUT.md), [웹 연동](4-1-CONTRACT.md).
+기준: [표현](../../ui/WEB/3-3-LAYOUT.md), [웹 연동](4-1-CONTRACT.md).
 
 <br>
 

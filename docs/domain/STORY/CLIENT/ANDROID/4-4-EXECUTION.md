@@ -1,4 +1,4 @@
-# 4-4 Android STORY 실행
+# 4-4 실행: 안드로이드
 
 기준: [공통 실행](../4-4-EXECUTION.md), [Android 상태](4-3-STATE-MANAGEMENT.md).
 

@@ -1,4 +1,4 @@
-# 3-3 웹 NOTIFICATION 표현
+# 3-3 화면 배치: 웹
 
 기준: [공통 표현](../3-3-LAYOUT.md), [웹 이동](3-2-INTERACTION-FLOWS.md).
 

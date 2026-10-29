@@ -1,4 +1,4 @@
-# 4-3 Android STORY 상태 관리
+# 4-3 상태 관리: 안드로이드
 
 기준: [공통 상태](../4-3-STATE-MANAGEMENT.md), [Android 구성](4-2-COMPONENT-ARCHITECTURE.md).
 

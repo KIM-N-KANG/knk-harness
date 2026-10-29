@@ -1,4 +1,4 @@
-# 5-1 웹 MODERATION 검증
+# 5-1 검증: 웹
 
 기준: [공통 검증](../5-1-VERIFICATION.md), [웹 표현](3-3-LAYOUT.md).
 

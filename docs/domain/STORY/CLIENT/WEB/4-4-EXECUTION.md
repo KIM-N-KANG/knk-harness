@@ -1,4 +1,4 @@
-# 4-4 웹 STORY 실행
+# 4-4 실행: 웹
 
 기준: [공통 실행](../4-4-EXECUTION.md), [웹 상태](4-3-STATE-MANAGEMENT.md).
 

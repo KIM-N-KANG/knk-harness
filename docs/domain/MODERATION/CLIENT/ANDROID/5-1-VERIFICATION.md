@@ -1,4 +1,4 @@
-# 5-1 Android MODERATION 검증
+# 5-1 검증: 안드로이드
 
 기준: [공통 검증](../5-1-VERIFICATION.md), [상태 관리](4-3-STATE-MANAGEMENT.md).
 

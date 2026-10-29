@@ -1,4 +1,4 @@
-# 3-1 Android STORY 화면 구성
+# 3-1 화면 구성: 안드로이드
 
 기준: [공통 화면](../3-1-INFORMATION-ARCHITECTURE.md), [Android 요구사항](2-2-REQUIREMENTS.md).
 

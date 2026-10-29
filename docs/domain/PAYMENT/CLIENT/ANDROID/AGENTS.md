@@ -1,6 +1,6 @@
 # PAYMENT ANDROID 클라이언트
 
-단계마다 공통 문서, 해당 플랫폼 문서 순서로 읽는다. 하위 구현과 검증을 이유로 상위 요구를 바꾸지 않는다.
+하위 구현과 검증을 이유로 상위 요구를 바꾸지 않는다.
 
 작성 규칙은 클라이언트 가이드를 적용한다. ([작성 가이드](../../../../reference/CLIENT-SPEC-WRITING-GUIDE.md))
 
@@ -12,14 +12,14 @@
 
 | 문서 | 내용 |
 |---|---|
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 PAYMENT Android 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 PAYMENT Android 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 PAYMENT Android 화면 흐름 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 PAYMENT Android 화면 표현 |
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 PAYMENT Android 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 PAYMENT Android 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 PAYMENT Android 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 PAYMENT Android 검증 |
+| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 요구사항: 안드로이드 |
+| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 화면 구성: 안드로이드 |
+| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 화면 흐름: 안드로이드 |
+| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 화면 배치: 안드로이드 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 컴포넌트 구조: 안드로이드 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리: 안드로이드 |
+| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 실행: 안드로이드 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증: 안드로이드 |
 | [DECISIONS.md](DECISIONS.md) | 과거 선택과 대체 관계 |
 
 <br>

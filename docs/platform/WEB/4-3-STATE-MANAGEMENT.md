@@ -1,4 +1,4 @@
-# 4-3 웹 기반 상태 관리
+# 4-3 상태 관리: 웹
 
 기준: [구성](4-2-COMPONENT-ARCHITECTURE.md).
 

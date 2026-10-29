@@ -12,4 +12,4 @@
 | [ANALYTICS.md](ANALYTICS.md) | 이벤트, 지표와 수집 제한 |
 | [결정 원문](decisions/AGENTS.md) | 문서 배치 결정과 기존 백엔드 및 AI 결정 기록 |
 
-제품 기능은 [domain](../domain/AGENTS.md), 공통 기술 규칙은 [platform](../platform/AGENTS.md), 배포는 [operations](../operations/AGENTS.md)에 둔다.
+제품 기능은 [domain](../domain/AGENTS.md), 공통 화면과 조작은 [ui](../ui/AGENTS.md), 공통 기술 규칙은 [platform](../platform/AGENTS.md), 배포는 [operations](../operations/AGENTS.md)에 둔다.

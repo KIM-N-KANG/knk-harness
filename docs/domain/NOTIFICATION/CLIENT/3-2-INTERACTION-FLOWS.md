@@ -1,4 +1,4 @@
-# 3-2 NOTIFICATION 화면 흐름
+# 3-2 화면 흐름
 
 기준: [화면 구성](3-1-INFORMATION-ARCHITECTURE.md).
 

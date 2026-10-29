@@ -1,4 +1,4 @@
-# 4-2 Android STORY 구성
+# 4-2 컴포넌트 구조: 안드로이드
 
 기준: [공통 계약](../4-1-CONTRACT.md), [Android 화면](3-1-INFORMATION-ARCHITECTURE.md).
 

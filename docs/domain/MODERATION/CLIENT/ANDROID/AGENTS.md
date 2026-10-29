@@ -1,16 +1,14 @@
 # MODERATION Android 클라이언트
 
-단계마다 공통 문서 다음 해당 플랫폼 문서를 읽는다. 사용자 목표, 요구사항, 화면, 연동과 구현, 검증 순서다.
-
 공통: [CLIENT](../AGENTS.md).
 
 ### 1 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 Android MODERATION 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 Android MODERATION 상태 관리 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 Android MODERATION 검증 |
+| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 컴포넌트 구조: 안드로이드 |
+| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 상태 관리: 안드로이드 |
+| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 검증: 안드로이드 |
 
 ### 2 코드 대응
 
