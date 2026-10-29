@@ -38,6 +38,7 @@
 | 신규 가입자 `other` 제거 | 웹 선행<br>웹이 `signups.other`를 읽지 않고 플랫폼 필드가 없는 응답도 그리게 먼저 배포한 뒤 서버를 배포<br>그 사이 웹은 Amplitude 값 카드, 차트, 표를 준비 중으로 둠 |
 | 간편 제작 오류 제거와 새 지표 | 웹 선행<br>웹이 `users.storyCompleteError`를 읽지 않고 `storyCompletion`과 리텐션 `cohort`가 없는 응답도 그리게 먼저 배포한 뒤 서버를 배포<br>그 사이 간편 제작 실패율 차트는 준비 중, 시작 집단은 방문자로 보이고 세션 길이 분포는 그 영역만 실패 상자를 보임<br>서버는 웹 배포 뒤 바로 배포 |
 | 지표 화면 재배치 | 서버 계약과 BFF 경로가 그대로라 웹만 배포 |
+| 대화 요약 추가 | 서버 선행<br>웹 배포 전까지 AI 품질 막대와 AI 비용 표에 `chat_compact`가 코드 이름 그대로 보임<br>웹은 `summaryThroughTurn`이 없는 채팅 응답도 그림 |
 | 코드 검사 | 린트, 타입 검사, 테스트, 빌드 통과 |
 | 운영 데이터 모드 | `ADMIN_DATA_SOURCE=server` |
 | Google 클라이언트 | 관리자 주소가 Google 클라이언트의 승인된 JavaScript 원본에 있고 같은 클라이언트 ID가 서버 허용 목록에 있음 |

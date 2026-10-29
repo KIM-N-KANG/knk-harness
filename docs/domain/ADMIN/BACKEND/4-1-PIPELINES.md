@@ -255,6 +255,7 @@ STORY, ACCOUNT`"]
 | 턴 날짜 | 그 KST 날짜에 생성된 AI 응답 메시지가 하나 이상인 채팅 |
 | 이프 소모 | 참조 종류가 채팅 또는 채팅 이미지이고 참조 ID가 이 채팅인 원장 소모 행 합계의 절댓값 |
 | AI 호출 필터 | AI 호출 기록의 채팅 ID와 채팅 공개 식별자로 연결 |
+| 요약 끝 턴 | 채팅의 `summary_through_turn` 그대로<br>요약 본문 `summary`는 조회하지 않음 |
 | 메시지 원문 | 조회하지 않음<br>시각과 역할만 읽음 |
 
 <br>
@@ -824,6 +825,7 @@ ECS DescribeServices**
 | `채팅 선택지` | `choice_generation` |
 | `스토리라인 생성` | `storyline_generation` |
 | `스토리 컴파일` | `story_completion` |
+| `대화 요약` | `chat_compact` |
 
 - 추적 이름은 AI 명세의 기록 이름이다. 서버 구현 때 운영 Langfuse에서 실제 이름을 확인하고 다르면 이 표와 설정을 함께 고친다. ([CHAT AI 7-3 관측](../../CHAT/AI/7-3-OBSERVABILITY.md), [STORY AI 7-3 관측](../../STORY/AI/7-3-OBSERVABILITY.md))
 - 매핑 표는 설정 파일 값이다. 추적 이름을 바꾸면 그 이름의 비용은 매핑을 고칠 때까지 `unmapped`로 보인다.

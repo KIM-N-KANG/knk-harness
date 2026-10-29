@@ -369,7 +369,7 @@ Authorization: Bearer {adminToken}
 | `started-as` | `users` | `게스트`, `회원` | `%` | `chats`<br>`startedAs`, `from`, `to` |
 | `member-chats` | `users` | `1개`, `2개`, `3~4개`, `5~9개`, `10개+` | `명` | `members`<br>`chatBucket`(0부터 4), `chatFrom`, `chatTo` |
 | `first-message` | `engagement` | `평균`, `P50`, `P75`, `P90` | `초` | `chats`<br>`hasFirstMessage=true`, `from`, `to` |
-| `ai-latency` | `ai-quality` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
+| `ai-latency` | `ai-quality` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion`, `chat_compact` | `초` | 채팅 기능은 `chats`, 제작 기능은 `stories`<br>`aiFeature`, `aiStatus=SUCCEEDED`, `hasLatency=true`, `aiFrom`, `aiTo` |
 | `ai-success` | `ai-quality` | 같음 | `%` | 같은 목록<br>`aiFeature`, `aiStatus=FINISHED`, `aiFrom`, `aiTo` |
 | `creation-mode` | `content` | `일반 제작`, `간편 제작` | `개` | `stories`<br>`creationMode`(`GENERAL`, `SIMPLE`), `from`, `to` |
 | `characters` | `content` | `0명`부터 `5명`<br>간편 제작별 직접 입력한 주변 인물 수 | `건` | `stories`<br>`supportingCharacterCount`, `creationFrom`, `creationTo` |
@@ -772,7 +772,7 @@ Authorization: Bearer {adminToken}
 | `turnDate` | `string` | 선택 | 그 KST 날짜에 AI 응답 메시지가 생성된 채팅 |
 | `from`, `to` | `string` | 선택 | 채팅 생성일 |
 | `aiFrom`, `aiTo` | `string` | 선택 | AI 호출 기록 생성일 |
-| `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation`, `chat_image` |
+| `aiFeature` | `string` | 선택 | `chat_response`, `choice_generation`, `chat_image`, `chat_compact` |
 | `aiStatus` | `string` | 선택 | 스토리 목록과 같음 |
 | `hasLatency` | `boolean` | 선택 | 스토리 목록과 같음 |
 | `deleted` | `string` | 선택 | 삭제된 채팅의 포함 여부<br>값은 스토리 목록과 같음<br>스토리의 삭제 여부와 무관 |
@@ -790,13 +790,14 @@ Authorization: Bearer {adminToken}
 | `items[].member` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트는 `null` |
 | `items[].startedAs` | `string` | 현재 소유자 유형이며 시작 당시 유형이 아님<br>소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅은 `MEMBER` |
 | `items[].turnCount` | `integer` | 현재 턴 수 |
+| `items[].summaryThroughTurn` | `integer` | 요약 끝 턴<br>0이면 요약 없음<br>재생성으로 요약이 비워진 채팅도 0이라 요약을 만든 적 없는 채팅과 구별하지 않음 ([CHAT 3-2-3 채팅](../../CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-3-채팅)) |
 | `items[].startedAt` | `string` | 생성 시각 |
 | `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
 | `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
 | `items[].firstMessageSeconds` | `integer / null` | 생성부터 첫 사용자 메시지까지 초<br>사용자 메시지가 없으면 `null` |
 | `items[].deletedAt` | `string / null` | 삭제 시각<br>삭제되지 않았으면 `null` |
 
-- 삭제된 채팅은 `deleted`에 따라 싣는다. 메시지 원문은 어떤 필드에도 없다.
+- 삭제된 채팅은 `deleted`에 따라 싣는다. 메시지 원문과 대화 요약 본문은 어떤 필드에도 없다.
 
 <br>
 
@@ -829,6 +830,7 @@ Authorization: Bearer {adminToken}
       "member": null,
       "startedAs": "GUEST",
       "turnCount": 4,
+      "summaryThroughTurn": 0,
       "startedAt": "2026-10-20T13:02:11Z",
       "lastActiveAt": "2026-10-20T13:31:40Z",
       "creditsSpent": 0,
@@ -2531,7 +2533,7 @@ Authorization: Bearer {adminToken}
 | `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].byFeature` | `object[]` | 기능과 모델 조합마다 한 항목<br>AI 호출 기록과 Langfuse 가운데 한쪽에만 있는 조합도 항목 |
-| `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
+| `daily[].byFeature[].feature` | `string` | `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion`, `chat_compact` |
 | `daily[].byFeature[].model` | `string / null` | 모델 이름<br>AI 호출 기록의 `model`과 Langfuse의 모델 이름이 같으면 한 항목<br>모델이 없는 기록은 `null` 항목 하나로 묶음 |
 | `daily[].byFeature[].calls` | `integer` | AI 호출 기록의 성공 호출 수<br>Langfuse에만 있는 조합은 0 |
 | `daily[].byFeature[].callsWithoutTokens` | `integer` | 성공 호출 중 입력이나 출력 토큰 수가 없는 호출 수<br>`chat_image`는 항상 0 |
@@ -2542,13 +2544,14 @@ Authorization: Bearer {adminToken}
 | `unmapped[].costKrw` | `number` | 범위 비용 합 × `usdKrwRate` |
 | `totals` | `object` | 범위 합계 |
 | `totals.costKrw` | `number` | `byFeature`의 `costKrw`가 `null`이 아닌 항목과 `unmapped`의 합<br>`pendingDates`와 `expiredDates`의 날짜는 실시간 이미지 비용만 더해짐 |
-| `totals.costPerTurnKrw` | `number / null` | `chat_response`와 `choice_generation` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 호출 수이며 `pendingDates`와 `expiredDates` 날짜의 호출은 뺌<br>호출이 0이면 `null` |
+| `totals.costPerTurnKrw` | `number / null` | `chat_response`, `choice_generation`, `chat_compact` 항목의 `costKrw` 합을 `chat_response` 성공 호출 수로 나눔<br>분모는 모델과 비용 유무와 무관한 AI 호출 기록의 호출 수이며 `pendingDates`와 `expiredDates` 날짜의 호출은 뺌<br>호출이 0이면 `null` |
 | `totals.costPerStoryKrw` | `number / null` | `storyline_generation`과 `story_completion` 항목의 `costKrw` 합을 `story_completion` 성공 호출 수로 나눔<br>분모는 `costPerTurnKrw`와 같은 규칙<br>호출이 0이면 `null` |
 | `unpricedModels` | `string[]` | 범위 안에 Langfuse 사용량(토큰 합)은 있으나 비용 합이 0인 모델 이름<br>단가가 없는지, 정상 0원인지, 일부 관측의 비용이 빠졌는지는 구별하지 않음<br>이름은 호환을 위해 유지 |
 
 - 비용은 Langfuse가 입력, 출력, 캐시 입력 토큰을 모델 설정의 단가로 계산한 값이다. 서버는 단가를 갖지 않는다.
 - 금액에는 실패한 AI 호출 과정에서 생긴 관측 비용도 들어간다. 호출 수, 토큰 수, 원가의 분모는 성공한 AI 호출 기록이다.
 - 간편 제작의 표지와 인물 이미지 생성 비용은 `스토리 컴파일` 추적에 들어 있어 `story_completion`에 포함된다. 채팅의 실시간 이미지 생성 관측은 Langfuse 합에서 빼고 장당 원가로 더한다.
+- 대화 요약(`chat_compact`)은 AI 요약 응답에 `meta`가 없어 AI 호출 기록에 모델과 토큰 수가 없다. 호출 수는 모델 `null` 항목에 모이고 그 항목의 `callsWithoutTokens`는 `calls`와 같다. 금액은 Langfuse가 모델 이름별로 주므로 모델 이름 항목에 `calls` 0으로 실린다. ([CHAT 5-4-4 AI 호출 기록](../../CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-4-ai-호출-기록))
 - 실시간 이미지는 턴당 원가와 스토리당 원가에 넣지 않으므로 `totals.costKrw`는 두 원가의 분자 합보다 클 수 있다. 장당 원가 48원인 날 성공 3장은 144원이다.
 - 호출 수는 서버 기록이고 비용은 Langfuse 기록이라 한쪽이 수집에 실패하면 두 값의 대응이 어긋날 수 있다.
 - 보관 기간 밖 날짜는 서버가 미리 저장한 값으로만 응답한다. 배치가 날짜마다 확정 값을 저장하므로 배포 뒤 날짜는 보관 기간이 지나도 값이 남는다.

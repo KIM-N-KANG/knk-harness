@@ -317,7 +317,7 @@
 | 추정 행 수 도움말 | 표의 추정 행 수 머리 옆 "?" | 통계 추정치 안내 툴팁 |
 | 기간 유지 | DB 테이블에서 서비스와 요청 하위 구분으로 | URL의 `range=last7d`가 그대로 적용 |
 | AI 품질 탭 | `tab=ai-quality` | AI 품질 영역에 분포 카드 둘, 오류 표시 영역에 스트림 오류 표시 요약 카드, 스트림 오류율 차트, 오류 표시 사용자 차트<br>기간 최근 30일 |
-| AI 품질 기능 | `ai-success` 항목 5개 | 막대가 AI 응답 생성, 선택지 생성, 실시간 이미지 생성, 스토리라인 생성, 간편 제작 순서이고 색은 `--chart-1`부터 `--chart-5`<br>실시간 이미지 생성 막대를 누르면 `aiFeature=chat_image` 채팅 목록 |
+| AI 품질 기능 | `ai-latency`와 `ai-success` 항목 각 6개 | 두 차트 모두 막대가 AI 응답 생성, 선택지 생성, 실시간 이미지 생성, 스토리라인 생성, 간편 제작, 대화 요약 순서이고 색은 `--chart-1`부터 `--chart-5`와 `--muted-foreground`<br>실시간 이미지 생성 막대를 누르면 `aiFeature=chat_image` 채팅 목록<br>`ai-latency`의 대화 요약 막대를 누르면 `aiFeature=chat_compact&aiStatus=SUCCEEDED&hasLatency=true` 채팅 목록<br>`ai-success`의 대화 요약 막대를 누르면 `aiFeature=chat_compact&aiStatus=FINISHED` 채팅 목록 |
 | 플랫폼 | AI 품질 탭에서 플랫폼 웹 | 기능 사용과 안정성 요청에 `platform=web`, 분포 카드 제목 옆 "플랫폼 전체 기준"이고 대시보드 차트는 다시 요청하지 않음 |
 | 오류율 1 초과 | `streamErrorRate` 1.5 | 150.0%, 축과 값을 자르지 않음 |
 | 간편 제작 오류 계열 | `users.storyCompleteError`가 있는 응답 | 오류 표시 사용자 차트 계열이 채팅 불러오기 오류와 스토리 목록 불러오기 오류 둘 |
@@ -327,6 +327,8 @@
 | AI 비용 공통 선택 | AI 비용 탭 | 플랫폼과 대상 선택 없음 |
 | AI 비용 | `totals.costKrw` 7, `costPerTurnKrw` 3.5, `usdKrwRate` 1400 | 총 AI 비용 7원, 턴당 원가 3.5원, 출처 표시 "Langfuse" |
 | 실시간 이미지 비용 | `chatImageUnitCostKrw` 48, `chat_image` 항목 `calls` 3과 `costKrw` 144, `totals.costKrw` 151, `costPerTurnKrw` 3.5 | 총 AI 비용 151원, 턴당 원가 3.5원<br>비용 차트에 실시간 이미지 생성 계열 144원<br>비용 표의 실시간 이미지 생성 행 토큰 칸 "해당 없음"<br>출처 툴팁에 "1달러 1400원", "장당 48원" |
+| 대화 요약 비용 | 한 날짜의 `chat_compact` 모델 `null` 항목 `calls` 2, `callsWithoutTokens` 2, `costKrw` `null`과 모델 `claude-x` 항목 `calls` 0과 `costKrw` 14<br>다른 기능의 `callsWithoutTokens`는 0 | 비용 차트에 대화 요약 계열 14원<br>비용 표의 대화 요약 두 행 모두 입력 토큰, 출력 토큰, 토큰 수가 없는 호출 수 칸 "기록하지 않음"<br>모델 없는 행의 비용 칸 "비용 기록 없음"<br>토큰 없음 안내 없음 |
+| 대화 요약과 다른 기능의 토큰 없음 | `chat_compact` 항목 `callsWithoutTokens` 2, `chat_response` 항목 `callsWithoutTokens` 1 | "토큰 수가 기록되지 않은 호출 1회가 있어 토큰 합이 실제보다 작을 수 있습니다."<br>대화 요약 2회는 세지 않음 |
 | 비용 기록 없음 | `costKrw`가 `null`이고 그 날짜가 `pendingDates`와 `expiredDates`에 없음 | "비용 기록 없음", 0원으로 표시하지 않음 |
 | 저장 값 있는 옛 날짜 | 보관 시작일 전 날짜지만 `expiredDates`에 없고 한 조합의 `costKrw`만 `null` | 그 칸 "비용 기록 없음", "보관 기간 지남" 아님 |
 | 원가 계산할 수 없음 | `costPerTurnKrw` `null`, 범위의 `chat_response` 호출 수 합 12 | 턴당 원가 "계산할 수 없음" |
@@ -340,7 +342,7 @@
 | 보관 기간 밖 날짜 | `retentionDays` 30, `expiredDates` 2개, 그 날짜의 `chat_image` `costKrw` 96 | 요약 카드 아래 "Langfuse 보관 기간(30일)이 지나 비용 기록이 없는 날짜가 2일 있습니다. 해당 날짜는 턴당 원가와 스토리당 원가 계산에서 제외했습니다. 실시간 이미지 비용은 해당 날짜도 총 AI 비용에 포함합니다."<br>그 날짜의 표 칸은 "보관 기간 지남", Langfuse 계열 선은 그 날짜에서 끊기고 실시간 이미지 생성 계열은 96원으로 이어짐, 재요청 없음 |
 | 준비 중과 보관 기간 밖 함께 | `pendingDates` 1개와 `expiredDates` 2개 | 준비 중 알림과 보관 기간 안내를 함께 보이고 60초 뒤 다시 요청 |
 | 보관 기간 밖만 | 모든 날짜가 `expiredDates`, `asOf` `null` | 사용 불가 문구 대신 보관 기간 안내, 출처 툴팁의 받은 시각 자리 표시 없음 |
-| 기능 이름 | `story_completion`<br>`chat_image` | "간편 제작"<br>"실시간 이미지 생성" |
+| 기능 이름 | `story_completion`<br>`chat_image`<br>`chat_compact` | "간편 제작"<br>"실시간 이미지 생성"<br>"대화 요약" |
 
 <br>
 
@@ -470,3 +472,17 @@
 | 모르는 사유 | `takedownReason` `NEW_REASON` | 공개 중단 사유에 `NEW_REASON` 그대로 |
 | 되돌리기 없음 | 공개 중단된 상세 | 공개 중단을 되돌리는 버튼 없음 |
 | 고정 데이터 | 고정 데이터 모드에서 공개 중단 | 그 스토리의 상세와 목록 행에 공개 중단 표시가 생김 |
+
+<br>
+
+### 5-1-15 채팅 상세의 요약 끝 턴
+
+| 확인 항목 | 입력과 상황 | 기대 결과 |
+|---|---|---|
+| 위치와 값 | `turnCount` 25, `summaryThroughTurn` 20인 채팅 상세 | 턴 수와 시작 시각 사이에 "요약 끝 턴" 20 |
+| 요약 없음 | `summaryThroughTurn` 0 | "요약 없음" |
+| 필드 없음 | 응답에 `summaryThroughTurn`이 없음 | 요약 끝 턴 항목 없음<br>나머지 항목은 그대로 |
+| 도움말 | 라벨 옆 "?" | "대화 요약에 담긴 마지막 턴입니다. 요약을 아직 만들지 않았거나 재생성으로 요약이 비워지면 요약 없음으로 보입니다." |
+| 본문 없음 | 채팅 상세 | 대화 요약 본문이 없고 "이 화면에서는 대화 내용을 제공하지 않습니다."가 그대로 |
+| 목록 | 채팅 목록 | 요약 끝 턴 열 없음 |
+| 고정 데이터 | 고정 데이터 모드의 채팅 상세 | 고정 데이터의 채팅마다 `summaryThroughTurn`이 있어 항목이 보임 |

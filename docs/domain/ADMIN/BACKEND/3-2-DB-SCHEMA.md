@@ -208,6 +208,7 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `users` | `id`, `public_id`, `nickname`, `status`, `created_at`, `deleted_at`, `migrated_at` | 관리자 판정, 회원 목록과 상세, 회원 수 집계, 팀 계정 제외 판정, 소유자 요약 |
 | `social_accounts` | `user_id`, `email`, `provider`, `connected_at`, `deleted_at` | 회원 목록의 이메일 정확 일치 검색<br>신규 가입자의 가입 경로와 연동 행 없는 예전 계정 제외 |
 | `story_chats` | `id`, `public_id`, `story_id`, `user_id`, `current_turn`, `persona_name_snapshot`, `model_code`, `created_at`, `updated_at`, `deleted_at` | 채팅 시작 수, 채팅 목록과 상세, 턴 분포, 기준 턴 도달률, 턴 도달률과 게스트 이관 비율, 페르소나와 모델 비중, 회원의 채팅 수와 최근 활동, 회원 목록과 상세의 누적 턴 수<br>관리자 조회용 인덱스 `(user_id, created_at)`은 삭제된 채팅도 포함 |
+| `story_chats` | `summary_through_turn` | 채팅 목록과 상세의 요약 끝 턴<br>`summary`는 읽지 않음 |
 | `chat_models` | `code` | 모델 비중의 키<br>플랫폼별 모델 턴 수의 조회 대상 모델 |
 | `story_messages` | `chat_id`, `role`, `created_at`, `model_code` | 채팅 턴 수, 모델별 턴 수(`model_code`), 회원 목록과 상세의 누적 턴 수, 첫 사용자 메시지 시각, 턴 날짜 필터<br>`content`는 읽지 않음 |
 | `stories` | `id`, `public_id`, `user_id`, `title`, `description`, `genre`, `visibility`, `created_at`, `deleted_at` | 스토리 수, 스토리 목록과 상세, 장르 필터, 범위 판정 |
@@ -217,7 +218,7 @@ Amplitude에서 받은 지표 값과 Langfuse에서 받은 AI 비용(`metric` `l
 | `story_creation_session_tags` | `creation_session_id`, `character_id`, `tag_id` | 스토리의 태그<br>인물에 연결된 특징 태그로 입력 여부 판정 |
 | `story_creation_tags` | `id`, `name`, `tag_type` | 태그 이름 |
 | `story_creation_requests` | `user_id`, `stage`, `status`, `created_at` | 간편 제작 실패율 |
-| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `device_id_hash`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용, 게스트 채팅의 사용자 수<br>`feature`는 CHAT이 기록하는 `chat_image`를 포함하고 AI 비용은 그 값을 장당 원가로 계산 |
+| `ai_call_logs` | `feature`, `status`, `model`, `input_token_count`, `output_token_count`, `latency_ms`, `story_id`, `chat_id`, `device_id_hash`, `created_at` | AI 호출 차트, 스토리와 채팅의 AI 호출 필터, AI 비용, 게스트 채팅의 사용자 수<br>`feature`는 CHAT이 기록하는 `chat_image`와 `chat_compact`를 포함하고 AI 비용은 `chat_image`를 장당 원가로 계산<br>`chat_compact`는 `model`과 토큰 수가 `NULL` |
 | `credit_transactions` | `id`, `user_id`, `amount`, `reason`, `ref_type`, `ref_id`, `created_at` | 이프 적립과 소모, 출석, 회원 이프 내역과 소모량, 채팅 소모량, 결제 전후 비교 |
 | `credit_orders` | `id`, `public_id`, `user_id`, `product_id`, `status`, `price_krw`, `credit_amount`, `completed_at`, `refunded_at`, `reversal_shortfall` | 결제 건수와 금액, 결제 내역과 상세, 회원 결제액 |
 | `story_submissions` | `story_id`, `status`, `held_at` | 스토리의 보류 상태 |

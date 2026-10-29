@@ -99,6 +99,7 @@
 | 기능 사용과 안정성의 `users.storyCompleteError` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 기능 사용과 안정성의 `storyCompletion` | 응답에 없으면 간편 제작 실패율 차트 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 Amplitude 값 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
+| 채팅의 `summaryThroughTurn` | 채팅 상세의 요약 끝 턴 ([2-1-18 채팅 상세의 요약 끝 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-18-채팅-상세의-요약-끝-턴))<br>응답에 없으면 항목을 두지 않음 |
 | 회원의 `turnCount`, `periodTurnCount` | 정보 구조의 누적 턴 표시 ([2-1-12 회원 목록과 상세의 누적 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-12-회원-목록과-상세의-누적-턴))<br>`periodTurnCount`가 `null`이면 기간 표시 없음 |
 | 스토리의 `takenDownAt`, `takedownReason`, `takedownReasonDetail` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김<br>`ETC`면 사유에 `takedownReasonDetail`을 함께 보임 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
 | 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-15 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-15-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |

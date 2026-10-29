@@ -106,7 +106,9 @@
 | 회원별 채팅 | 회원 A 채팅 1, 회원 B 채팅 5 | `1개` 1, `5~9개` 1 |
 | 첫 메시지 시간 | 첫 사용자 메시지가 30초, 60초, 1000초인 채팅과 메시지 없는 채팅 | `평균` 45<br>`description`에 900초 초과 1과 입력 없음 1 |
 | AI 지연과 성공률 | `chat_response` 성공 2(지연 1초, 3초), 실패 1, 진행 중 1 | `ai-latency`의 `chat_response` 2<br>`ai-success`의 `chat_response` 66.67 |
-| 실시간 이미지 AI 지표 | `chat_image` 성공 2(지연 4초, 지연 없음 1), 실패 2, 팀 계정 채팅의 성공 1 | `ai-latency`의 `chat_image` 4<br>`ai-success`의 `chat_image` 50, 팀 계정 채팅 제외<br>두 차트 항목 순서가 `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion` |
+| 실시간 이미지 AI 지표 | `chat_image` 성공 2(지연 4초, 지연 없음 1), 실패 2, 팀 계정 채팅의 성공 1 | `ai-latency`의 `chat_image` 4<br>`ai-success`의 `chat_image` 50, 팀 계정 채팅 제외<br>두 차트 항목 순서가 `chat_response`, `choice_generation`, `chat_image`, `storyline_generation`, `story_completion`, `chat_compact` |
+| 대화 요약 AI 지표 | `chat_compact` 성공 2(지연 20초와 40초), 실패 1, `STARTED`로 남은 기록 1, 팀 계정 채팅의 성공 1 | `ai-latency`의 `chat_compact` 30<br>`ai-success`의 `chat_compact` 66.67<br>팀 계정 채팅과 `STARTED` 제외<br>막대 링크가 `chats`와 `aiFeature=chat_compact` |
+| 대화 요약 저장 무관 | `chat_compact` 성공 3과 실패 1<br>성공 3 가운데 요약 저장에 실패한 호출(`SAVE_FAILED`) 1, 폐기된 호출(`REGENERATED`) 1, 저장 뒤 재생성으로 요약이 비워진 호출 1 | `ai-success`의 `chat_compact` 75<br>호출 기록의 `SUCCEEDED`만 성공으로 셈 |
 | 제작 방식별 스토리 수 | 간편 제작으로 완성한 스토리 2, 일반 제작 스토리 1<br>삭제된 간편 제작 스토리 1, 제외 목록에 있는 공식 계정의 간편 제작 스토리 1, 범위 밖에 생성된 일반 제작 스토리 1 | `일반 제작` 1, `간편 제작` 2<br>항목 순서가 `일반 제작`, `간편 제작`이고 `characters` 바로 앞 |
 | 간편 제작별 입력 주변 인물 수 | 주변 인물 행 없는 세션, 입력한 주변 인물 2명 세션<br>공식 계정의 세션 1건 | `0명` 1, `2명` 1<br>공식 계정 세션 포함 |
 | 빈 자리 인물 제외 | 주변 인물 행 3개 중 이름만 있는 1개, 특징 태그만 연결된 1개, 이름, 성별, 태그가 모두 빈 1개 | `2명` 1<br>스토리 목록 `supportingCharacterCount=2`에 그 스토리 포함 |
@@ -131,6 +133,7 @@
 | 채팅 기간 | `chatFrom`, `chatTo` 안에 채팅 1건, 밖에 2건인 스토리와 기간에 채팅 없는 스토리 | `chatCount` 1, `totalTurns`는 그 채팅의 턴<br>채팅 없는 스토리 제외 |
 | AI 호출 필터 | `aiFeature=story_completion&aiStatus=FAILED` | 실패 기록이 연결된 스토리만 |
 | 이미지 호출 필터 | 채팅 목록 `aiFeature=chat_image&aiStatus=FAILED` | 실패한 `chat_image` 기록이 연결된 채팅만 |
+| 요약 호출 필터 | 채팅 목록 `aiFeature=chat_compact&aiStatus=FAILED` | 실패한 `chat_compact` 기록이 연결된 채팅만 |
 | 스토리 검색 | 제목 일부, 소유자 닉네임 일부, 스토리 공개 식별자 | 각각 일치하는 스토리 |
 | 삭제 필터 | 삭제된 스토리 1, 삭제되지 않은 스토리 2<br>`deleted` 없음, `include`, `only` | 2건, 3건, 1건<br>삭제된 스토리의 `deletedAt`은 삭제 시각이고 나머지는 `null` |
 | 범위 목록 삭제 필터 | 회원 A의 삭제된 스토리 1과 삭제되지 않은 스토리 1, 다른 회원의 삭제된 스토리 1<br>`memberId`가 A이고 `deleted=only` | 회원 A의 삭제된 스토리 1건 |
@@ -156,7 +159,8 @@
 | 첫 메시지 필터 | `hasFirstMessage=true`<br>`false` | 900초 이내 메시지 있는 채팅<br>초과와 없는 채팅 |
 | 턴 날짜 | `turnDate`에 AI 응답이 있는 채팅과 그 전날만 있는 채팅 | 전자만 |
 | 이프 소모 | 채팅 턴 -20 두 건과 이미지 -5 한 건을 참조하는 채팅 | `creditsSpent` 45 |
-| 원문 없음 | 채팅 목록과 상세 응답 | 메시지, 요약, 추천 입력, 페르소나 필드 없음 |
+| 요약 끝 턴 | `summary_through_turn` 20이고 `summary`가 있는 채팅<br>요약을 만든 적 없는 채팅<br>재생성으로 `summary`가 `NULL`이고 `summary_through_turn`이 0이 된 채팅 | 목록 항목과 상세의 `summaryThroughTurn` 20<br>0<br>0 |
+| 원문 없음 | 채팅 목록과 상세 응답<br>`summary`가 있는 채팅 포함 | 메시지, 대화 요약 본문(`summary`), 추천 입력, 페르소나 필드 없음 |
 | 채팅 검색 | 스토리 제목 일부, 회원 닉네임 일부, 채팅 공개 식별자 | 각각 일치 |
 | 채팅 삭제 필터 | 삭제된 채팅 1, 삭제되지 않은 채팅 2, 삭제된 스토리의 삭제되지 않은 채팅 1<br>`deleted` 없음, `include`, `only` | 3건(삭제된 스토리의 채팅 포함), 4건, 1건 |
 | 범위 목록 채팅 삭제 필터 | 스토리 S의 삭제된 채팅 1과 삭제되지 않은 채팅 1<br>`storyId`가 S이고 `deleted=include` | 2건 |
@@ -384,6 +388,7 @@
 | 한쪽에만 있는 조합 | AI 호출 기록에만 있는 모델 `gpt-y`, Langfuse에만 있는 모델 `gpt-z` | `gpt-y` 항목 `costKrw` `null`, `gpt-z` 항목 `calls` 0과 비용 |
 | 매핑 없는 이름 | Langfuse 추적 이름 `새 기능` 0.002 USD | `unmapped`에 `새 기능`과 2.8, `totals.costKrw`에 포함 |
 | 실시간 이미지 | 장당 원가 48, `chat_image` 성공 3회와 실패 1회, Langfuse에 `이미지 생성:자식` 관측 | `chat_image` `costKrw` 144<br>Langfuse 질의에 `이미지 생성:자식` 제외 조건 |
+| 대화 요약 비용 | 설정 매핑 `대화 요약` → `chat_compact`<br>AI 비용 행의 상태에 Langfuse 대역이 같은 날 `대화 요약` 모델 `claude-x` 0.01 USD이고 AI 호출 기록에 `chat_compact` 성공 2회(모델과 토큰 수 `NULL`) | 기동 정상<br>`chat_compact`의 모델 `null` 항목 `calls` 2, `callsWithoutTokens` 2, `inputTokens`와 `outputTokens` 0<br>모델 `claude-x` 항목 `calls` 0과 `costKrw` 14<br>`unmapped`에 `대화 요약` 없음<br>`costPerTurnKrw` 10.5 |
 | 비용 0 모델 | Langfuse 모델 `gpt-w`의 토큰 1,000과 비용 0 | `unpricedModels`에 `gpt-w` |
 | 저장과 확정 | 고정 시계 10-23, 범위 10-15~10-23 첫 요청 뒤 두 번째 요청 | 첫 요청은 3일 구간 세 번으로 받고, 두 번째는 오늘 값이 10분 안이면 호출 없음<br>10-15~10-21은 `finalized_at` 기록<br>`value`는 `traceName`, `model`, `costUsd`, `totalTokens` 배열 |
 | 빈 날 저장 | 정상 응답에 10-17 데이터가 없음 | 10-17 행이 빈 배열로 저장되고 다음 요청에서 다시 받지 않음, 비용 0 |
