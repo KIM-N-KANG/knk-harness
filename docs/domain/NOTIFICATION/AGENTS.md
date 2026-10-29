@@ -11,7 +11,7 @@
 | 세트 | 다루는 것 |
 |---|---|
 | [`BACKEND/`](BACKEND/AGENTS.md) | 토큰 등록과 정리, 발송 자격, 메시지 큐 중계, 알림 서비스 |
-| `CLIENT/` | 공통 클라이언트 계약과 하위 WEB, ANDROID 세트. 이관 전에는 기존 공통 Spec과 플랫폼 Spec, Design, ADR을 함께 확인 |
+| [`CLIENT/`](CLIENT/AGENTS.md) | 공지와 알림함, 푸시 등록과 수신 및 동의, WEB과 ANDROID 구현 및 검증 |
 
 - 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.

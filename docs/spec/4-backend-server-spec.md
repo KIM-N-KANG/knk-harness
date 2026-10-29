@@ -1192,7 +1192,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 | `ANDROID` | data-only. 서비스 알림은 우선순위 `HIGH`, 광고 알림은 `NORMAL`. `notification`은 싣지 않음 | 앱이 알림 문구를 조립하고, `deepLink`가 있으면 검증한 뒤 이동 |
 | `WEB` | data + webpush notification. 제목·본문·아이콘과 클릭 링크 포함 | 브라우저가 자동 표시 |
 
-웹 앱은 안드로이드 및 서버 FCM과 같은 Firebase 프로젝트에 등록해야 합니다. VAPID 키와 서비스 워커 구성은 웹이 담당합니다. 광고성 알림의 동의 API와 `(광고)` 접두 및 data의 `recipientId`는 두 플랫폼에 공통으로 적용합니다. 웹의 제공 범위는 [웹 PWA 푸시](3-2-web-spec.md#pwa-푸시)를 따릅니다.
+웹 앱은 안드로이드 및 서버 FCM과 같은 Firebase 프로젝트에 등록해야 합니다. VAPID 키와 서비스 워커 구성은 웹이 담당합니다. 광고성 알림의 동의 API와 `(광고)` 접두 및 data의 `recipientId`는 두 플랫폼에 공통으로 적용합니다. 웹의 제공 범위는 [웹 PWA 푸시](../domain/NOTIFICATION/CLIENT/WEB/AGENTS.md)를 따릅니다.
 
 - data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
 - **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.

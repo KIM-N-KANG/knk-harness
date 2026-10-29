@@ -22,7 +22,7 @@
 - [1-2-3. UI 상태와 작업 수명](#1-2-3-ui-상태와-작업-수명)
 - [1-2-4. 내비게이션과 화면](#1-2-4-내비게이션과-화면)
 - [1-2-5. 인증과 세션](#1-2-5-인증과-세션)
-- [1-2-6. 푸시와 알림](#1-2-6-푸시와-알림)
+- [1-2-6. 푸시와 알림](../domain/NOTIFICATION/CLIENT/ANDROID/AGENTS.md)
 - [1-2-7. 제작과 상태 복원](../domain/STORY/CLIENT/ANDROID/AGENTS.md)
 - [1-2-8. 관측](#1-2-8-관측)
 - [1-2-9. 검증 방법](#1-2-9-검증-방법)
@@ -40,7 +40,7 @@
 | 빌드 | 빌드 JDK 25, JVM bytecode 11. AGP·Gradle은 [앱 빌드 설정](../../../manyak-android/app/build.gradle.kts)·[Wrapper](../../../manyak-android/gradle/wrapper/gradle-wrapper.properties) 참조 |
 | 구조 | 직접 구현 MVI, Hilt, Navigation 3 |
 | 통신·이미지 | Retrofit, OkHttp, kotlinx.serialization, okhttp-sse, Coil |
-| 푸시 | Firebase Cloud Messaging — Crashlytics와 같은 Firebase 프로젝트·BOM |
+| 푸시 | [NOTIFICATION Android 검증](../domain/NOTIFICATION/CLIENT/ANDROID/5-1-VERIFICATION.md) |
 | 저장 | Room, DataStore, Android Keystore |
 | 관측 | Amplitude, Firebase Crashlytics |
 
@@ -121,6 +121,8 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-2-1 모듈과 공용 포
 
 ## 1-2-4. 내비게이션과 화면
 
+웹 앱 안내 배너의 앱 열기는 `MainActivity`의 전용 스킴 intent-filter(`manyak://manyak.app`, VIEW와 BROWSABLE)로 들어옵니다. `PushEntry.readAppLinkFrom`이 VIEW 인텐트의 주소를 `TYPE_APP_LINK` 진입으로 바꾸고 경로를 같은 주소의 https로 옮겨 `DeepLink`로 해석합니다. 이 진입은 수신자를 비교하지 않고 회원과 프로필 확인 뒤 소비하며, 푸시 진입 extra가 있으면 푸시를 먼저 읽습니다([A-071](../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기)).
+
 
 ACCOUNT 내용은 다음 문서에서 관리한다. ([4-2-2 화면 조립](../domain/ACCOUNT/CLIENT/ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-2-화면-조립))
 
@@ -130,7 +132,7 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-2-2 화면 조립](../do
 
 ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-3 프로필과 페르소나](../domain/ACCOUNT/CLIENT/ANDROID/4-3-STATE-MANAGEMENT.md#4-3-3-프로필과-페르소나))
 
-- 공지사항 목록(`NoticeListRoute`)과 상세(`NoticeDetailRoute(noticeId)`)는 `notice`가 소유합니다. `NoticeApi`는 공개 API라 `@PlainClient`로 토큰 없이 부르고, 읽은 공지 ID는 `NoticeReadStore`가 기기 귀속 `@DeviceDataStore`의 `notice_read_ids` 키에 최신순 JSON 배열(최대 100개)로 두며 `UserScopedStore`에 참여하지 않습니다. 안 읽음 판정(`notice/domain`의 `isUnread`: 게시 30일 안이고 읽은 목록에 없음)은 `NoticeUnreadViewModel`이 소유하고 `app`의 `MainTabsScreen`이 셸 수명으로 들어 `ON_RESUME`마다 첫 페이지를 다시 읽습니다. 셸은 그 값으로 `MyScreen`의 "새 공지" 배지를 그립니다. 홈, 채팅, 제작 헤더의 종 버튼과 점은 회원 알림함이 관리합니다. `NoticeListViewModel`은 커서 페이지를 이어 붙이고 읽은 ID 흐름을 관찰해 상세에서 돌아온 줄의 점만 끄며, `NoticeDetailViewModel`은 공지를 받으면 `markRead`를 호출하고 404는 읽음으로 기록하지 않습니다. 게시일·수정일은 `formatNoticeDate`가 KST `yyyy-MM-dd`로 그립니다.
+- 공지 목록과 읽음 상태는 [NOTIFICATION Android 상태](../domain/NOTIFICATION/CLIENT/ANDROID/4-3-STATE-MANAGEMENT.md)를 따른다.
 
 ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-3 프로필과 페르소나](../domain/ACCOUNT/CLIENT/ANDROID/4-3-STATE-MANAGEMENT.md#4-3-3-프로필과-페르소나))
 
@@ -197,47 +199,7 @@ PAYMENT 내용은 도메인 문서에서 관리한다. ([체험 잔여 조회](.
 
 ## 1-2-6. 푸시와 알림
 
-### 회원 알림함
-
-`notification/inbox`가 회원 알림 API, 분류별 목록과 커서, 읽음 상태, 화면을 관리합니다. 인증 클라이언트와 공통 오류 변환을 사용하며 본문 없는 읽음 성공은 `emptyBodyApiCall`로 처리합니다. 서버 목록과 읽음 기록을 디스크에 복제하지 않습니다. 카드 제목은 공지 목록과 같이 제목 글만 한 줄로 줄이고 안 읽음 점은 별도 글로 줄 끝에 둬 말줄임에 잘리지 않게 합니다.
-
-알림함 ViewModel은 선택한 분류와 두 분류의 목록을 유지합니다. 목록 조회와 읽음 요청은 같은 Mutex로 순서를 맞춰 이전 응답이 읽음 표시를 되돌리지 않게 합니다. 한 건 읽음은 요청 결과와 관계없이 목적지로 이동하고, 모두 읽음 실패는 두 분류의 읽음과 개수를 복원합니다. 화면 재생성은 읽음 요청을 다시 실행하지 않으며 탭별 스크롤은 저장 가능한 화면 상태입니다. 알림 내용은 회원 그래프 안의 ViewModel 수명에만 존재합니다.
-
-`app`이 메인 헤더 종 버튼을 `NotificationInboxRoute`에 연결합니다. 헤더의 안 읽은 수는 셸이 다시 보일 때 갱신하며 조회 실패는 점을 끕니다. 마이 공지 메뉴는 기존 `NoticeUnreadViewModel`과 기기 읽음 기록을 사용합니다. 알림함의 링크는 기존 `DeepLink` 해석을 사용하고 해석할 수 없으면 공지 ID, 스토리 ID 순으로 대체합니다. 허용 HTTPS origin은 기본 포트만 받고 사용자 정보가 포함된 URL은 거절합니다. 공지와 스토리 상세는 알림함 위에 쌓고 제작은 기존 탭으로 전환합니다. 공지 응답의 태그는 `notice`의 목록과 상세에서 같은 배지로 표시합니다.
-
-### 푸시 토큰 등록
-
-회원 세션과 `MemberConsent.isSatisfied`가 모두 참일 때만 최초 등록 및 FCM 토큰 갱신 등록을 실행합니다. 같은 세션 generation에서 성공한 동일 토큰은 반복 등록하지 않으며 새 토큰이나 새 세션은 다시 등록합니다. 토큰 조회 중 동의 상태가 초기화되면 등록 작업을 취소하고 요청 직전에도 상태를 재확인합니다.
-
-`notification`이 FirebaseMessagingService·등록기·토큰 API·권한·수신·표시·수신 동의를 소유합니다. `app`은 google-services 플러그인과 권한 UI·세션 종료 연결을 조립합니다.
-
-앱 수명의 registrar가 필수 동의 확인 후의 `getToken()`과 `onNewToken()`을 같은 직렬 경로로 처리하고 `platform=ANDROID`로 PUT합니다. 별도 FCM 토큰 영속 저장·재전송 큐는 없으며 네트워크·5xx 실패는 다음 등록 계기에서 재시도합니다.
-
-푸시 등록의 403은 generation을 검사하는 `SessionGate.commit` 안에서 `ACCOUNT_SUSPENDED` 종료로 넘깁니다. 공통 Interceptor는 401 재발급만 담당합니다. 로그아웃 barrier와 등록 작업의 순서는 앞 절을 따릅니다.
-
-### 수신·표시와 계정 격리
-
-payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프로필 대기는 합계 최대 5초이며 일치하는 회원을 확인하지 못하면 폐기합니다. 표시 직전 다시 확인하고 계정 전환을 넘어 알림을 보관하지 않습니다. 로그아웃의 `UserScopedStore` 정리는 표시 알림을 `cancelAll`합니다.
-
-서비스 채널은 HIGH·PRIVATE, 마케팅 채널은 DEFAULT·PUBLIC입니다. foreground·background 모두 시스템 알림을 사용하며 type+target에서 안정된 알림 ID를 만듭니다. `STORY_MODERATION_COMPLETED`의 target은 `submissionId`이며, `APPROVED`, `REJECTED`, `FAILED`만 수신합니다. 이 타입은 서버 `title`과 `body`를 그대로 사용하고 서비스 알림의 공개 버전은 제목 줄만 표시합니다. title이 없으면 표시하지 않고 알 수 없는 type의 진입 목적지는 홈입니다. 검수 결과를 화면에서 확인하는 제출본은 `common`의 `ReviewWatch` 계약으로 알립니다. `create`의 `GeneralReviewWatch`가 결과 조회 중인 제출본과 화면에 보여 준 결과를 프로세스 메모리에만 두고, `PushNotificationTray`가 표시 직전에 이를 물어 걸러 냅니다.
-
-### 알림 진입과 권한
-
-`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리 중 `tab`만 읽어 `history`면 `MyCreditChargeRoute(openHistory = true)`로 내역 탭, 그 밖의 값과 쿼리 없음은 무료 충전 탭. 화면은 이 값을 처음 탭으로만 쓰고 탭 전환을 라우트에 다시 쓰지 않음), `/studio`→제작 탭, `/notices`→공지 목록, `/notices/{noticeId}`→공지 상세(`openExternalDestination`이 `NoticeListRoute`를 먼저 쌓아 뒤로가기가 목록으로 감)이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
-
-웹 앱 안내 배너의 앱 열기는 `MainActivity`의 전용 스킴 intent-filter(`manyak://manyak.app`, VIEW와 BROWSABLE)로 들어옵니다. `PushEntry.readAppLinkFrom`이 VIEW 인텐트의 주소를 `TYPE_APP_LINK` 진입으로 바꾸고 경로를 같은 주소의 https로 옮겨 `DeepLink`로 해석합니다. 이 진입은 수신자를 비교하지 않고 회원과 프로필 확인 뒤 소비하며, 푸시 진입 extra가 있으면 푸시를 먼저 읽습니다([A-071](../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기)).
-
-`onCreate`·`onNewIntent`에서 루트 ViewModel의 pending 값을 SavedStateHandle로 전달합니다. 프로세스 복원 때 최초 Intent를 다시 해석하지 않습니다. 로그인 대기 진입은 회원·프로필 확인 뒤 recipient가 일치할 때만 소비하고 불일치하면 홈으로 보냅니다.
-
-Android 13+ 알림 권한 안내는 설치 단위 플래그로 한 번 수행합니다. 로그아웃 시 플래그를 지우지 않으며 권한 거부는 세션·토큰 등록을 막지 않고 반복 요청하지 않습니다.
-
-### 광고 알림 수신 동의
-
-`notification/consent`가 재질문 시트·처리 결과 다이얼로그·질문 단계 저장소를 소유합니다. 첫 질문은 약관 동의 시트의 선택 항목이며, 루트가 그 답을 `MarketingConsentIntent.AnsweredInConsentSheet`로 같은 ViewModel에 넘깁니다. 허용이면 `GET /users/me/push-settings`로 서비스 값을 읽어 광고만 켠 `PUT`으로 저장하고 통지하며, 거절이면 첫 거절로 기록합니다. 루트는 이 저장·통지가 도는 동안(`isBusy`) 알림 권한·초대 코드 안내를 시작하지 않습니다.
-
-재질문 순서는 루트가 정합니다 — 알림 권한 응답과 약관 동의가 끝난 뒤 루트 ViewModel이 초대 코드 안내의 `pending`(초기값 참)을 읽어 끝났을 때만 `MarketingConsentSheet(enabled = true)`입니다. 시트는 `claimPrompt()`가 참이고 `areNotificationsEnabled`가 참이며 서버 `marketingPush`가 거짓일 때만 뜹니다.
-
-질문 단계는 사용자 귀속 DataStore(`marketing-consent`)에 거절 횟수(0 미질문·1 한 번 거절·2 닫힘)와 첫 거절 뒤 재진입 횟수로 두고 `UserScopedStore`로 로그아웃 정리 대상입니다. `claimPrompt()`는 호출마다 재진입을 세어 거절 1회일 때 세 번째부터 참을 돌려주고, 두 번째 거절·허용은 닫힘으로 기록합니다. 단계 도입 전의 "물었음" 값은 한 번 거절로 읽습니다. 기록은 사용자가 답한 뒤에 남기며 저장 실패는 시트를 유지합니다. ViewModel은 세션이 회원이 아니게 되면 준비 표시를 되돌려 같은 프로세스의 재로그인에서도 판정합니다. 처리 결과 통지(`ConsentNotice`)의 일시는 서버 응답이 아니라 의사 표시 시점의 기기 시각이며, 시트 허용과 설정 화면의 광고·야간 토글이 같은 `ConsentNoticeDialog`를 씁니다. 세부 결정은 [Android 계획](../../../manyak-android/docs/plans/legal-consent.md)과 [A-044](../domain/ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044)를 참조합니다.
+NOTIFICATION 내용은 [도메인 문서](../domain/NOTIFICATION/CLIENT/ANDROID/AGENTS.md)에서 관리한다.
 
 ## 1-2-7. 제작과 상태 복원
 
@@ -266,6 +228,6 @@ STORY 내용은 [도메인 문서](../domain/STORY/CLIENT/ANDROID/AGENTS.md)에�
 | 모듈 이동 | 허용 의존·PSI 검사, Hilt 생성 코드, Manifest·경로 직렬화·저장 식별자 호환 |
 | 인증 | [5-1-1 기존 검증 경계](../domain/ACCOUNT/CLIENT/ANDROID/5-1-VERIFICATION.md#5-1-1-기존-검증-경계) |
 | 로그아웃 | [5-1-1 기존 검증 경계](../domain/ACCOUNT/CLIENT/ANDROID/5-1-VERIFICATION.md#5-1-1-기존-검증-경계) |
-| 푸시 | 회원 전환·늦은 PUT·403·recipient 불일치·Pending 5초 제한·로그아웃 알림 제거 |
+| 푸시 | [NOTIFICATION Android 검증](../domain/NOTIFICATION/CLIENT/ANDROID/5-1-VERIFICATION.md) |
 | 제작 | [STORY Android 검증](../domain/STORY/CLIENT/ANDROID/5-1-VERIFICATION.md) |
 | 화면·복원 | 회전·프로세스 재생성·back stack·SSE 중단·이미지 순서·키보드·접근성 |
