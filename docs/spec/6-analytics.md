@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.36 |
+| 버전 | v0.38 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-23 |
+| 수정일 | 2026-10-28 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -105,6 +105,18 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../design/1-2-android-design.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(US-9-5 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
 - 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)이 소유합니다.
+
+**유입 귀속 사용자 속성.** 웹과 Android는 첫 유입 경로를 같은 Amplitude 사용자 속성 이름으로 남겨 웹 가입과 앱 가입을 같은 기준으로 비교합니다. 값은 처음 한 번만 쓰고(`setOnce`) 이후 유입으로 덮어쓰지 않습니다.
+
+| 속성 | 웹 | Android |
+| --- | --- | --- |
+| `initial_utm_source`<br>`initial_utm_medium`<br>`initial_utm_campaign`<br>`initial_utm_content` | 첫 방문 URL의 UTM<br>Amplitude Browser SDK가 자동 수집 | Play Install Referrer의 같은 이름 UTM<br>앱이 설치당 한 번 보냄 |
+
+- Android는 값이 있는 키만 보냅니다. Play 밖에서 설치해 referrer를 조회할 수 없으면 보내지 않습니다.
+- 자연 설치는 `utm_source=google-play`, `utm_medium=organic`입니다. 웹 배너를 거친 설치는 `utm_source=manyak_web`이며 `utm_medium`으로 배너(`app_banner`)와 공유 링크(`share_link`)를 나눕니다(§6-4-2-18).
+- Meta 앱 광고 설치는 `utm_source`(`apps.facebook.com`, `apps.instagram.com`)로 구분합니다. `utm_content`는 Meta가 암호화한 광고 정보라 복호화 없이는 광고 단위로 나누지 않습니다.
+- Play는 광고를 누르고 설치한 경우에만 광고 경로를 넘깁니다. 광고를 보기만 하고 나중에 설치하면 자연 설치로 남습니다.
+- referrer는 설치 후 90일 동안 조회됩니다. 이 기능 이전 버전으로 설치한 사용자도 그 안에 업데이트하고 실행하면 속성이 붙지만, 그 전에 기록된 이벤트에는 붙지 않으므로 사용자 단위로 집계합니다.
 
 ## 6-3. 이벤트 네이밍과 공통 프로퍼티
 
@@ -284,6 +296,14 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_personaEdit_completed`                           |
 | P1 `Phase 3 · 구현` | client | `client_profileEdit_viewed`                              |
 | P1 `Phase 3 · 구현` | client | `client_profileEdit_completed`                           |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_viewed`                          |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_chatStartButton_clicked`         |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_createButton_clicked`            |
+| P0 `Phase 3 · 구현` | client | `client_storyOnboarding_completed`                       |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_storyCard_impressed`             |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_detailButton_clicked`            |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_chatStartError_shown`            |
+| P1 `Phase 3 · 구현` | client | `client_storyOnboarding_loadError_shown`                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
@@ -534,12 +554,14 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_inviteOnboarding_shown`                  | P1       | 신규 가입 온보딩의 초대 코드 모달 바텀 시트 노출(KNK-567·1045)                   | 없음                                                                                                           |
 | `client_inviteOnboarding_skipped`                | P1       | 초대 코드 스텝 건너뛰기 — "닫기" 버튼·배경 탭·ESC 공통(KNK-567·1045)           | 없음                                                                                                           |
 | `server_credit_earn_processed_succeeded`         | P1       | 적립 처리 성공(가입 500 · 초대 500, 초대자 월 10회 · 출석 250)                   | `reason` (string, 필수: `signup` / `invite` / `attendance`), `amount` (number, 필수), `balance` (number, 필수) |
-| `client_creditShortageDialog_shown`              | P0       | 402 `INSUFFICIENT_CREDIT`로 회원 이프 부족 토스트 노출. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
+| `client_creditShortageDialog_shown`              | P0       | 회원 이프 부족 안내 노출. 화면에 머문 경우(선검사, 채팅 402) 바텀 시트(KNK-1844), 제작 탭으로 떠난 뒤 확정된 완성 402는 토스트. 이벤트 이름은 하위 호환을 위해 유지(KNK-1045) | `trigger` (string, 필수: `story_create` / `chat_turn`)                                                          |
+| `client_creditShortageDialog_chargeButton_clicked` | P1     | 이프 부족 시트의 "이프 충전하기" 클릭(KNK-1844) | `trigger` (동일) |
+| `client_creditShortageDialog_attendanceButton_clicked` | P1 | 이프 부족 시트의 "출석 체크하기" 클릭(KNK-1844). 이프 충전 무료 충전 탭의 출석 버튼(`client_account_attendanceButton_clicked`)과 구분 | `trigger` (동일) |
 
 - `creditShortageDialog` 노출은 회원 잔액 소진 → 향후 과금(Phase 3) 수요의 선행 지표입니다.
 - **폐기(2026-09-19).** `client_guestLimitDialog_shown`·`client_guestLimitDialog_loginButton_clicked`·`client_guestLimitDialog_dismissed`는 웹 게스트 제작·채팅 체험이 신규 경로에서 사라지면서 더 이상 발화하지 않습니다(코드 정의도 제거). 이전 시계열은 대시보드에 남지만 새 값은 들어오지 않습니다. 게스트가 보호 기능(제작·채팅)에서 보는 로그인 필요 바텀 시트와 로그인 직후 필수 동의 시트는 별도 이벤트를 두지 않습니다 — 가입 전환은 `client_login_*`·`client_loginContinue_*`와 서버 로그인 이벤트로, 동의 완료는 서버 기록으로 봅니다. 로그인 필요 시트 노출 이벤트 추가 여부는 후속 결정 사항입니다.
 - 게스트 동의 후 체험을 복원한 현재 경로에서도 위 한도 이벤트 3개는 재도입하지 않습니다. 체험 소진 시 로그인 필요 시트를 표시하며 게스트 동의 완료는 서버 기록으로 확인합니다.
-- 회원 이프 부족은 KNK-1045부터 토스트만 표시합니다. `client_creditShortageDialog_shown` 이름은 시계열을 끊지 않기 위해 유지하되 `trigger`는 실제 유료 동작인 `story_create`·`chat_turn`만 허용합니다. 사라진 다이얼로그의 보상 CTA·닫기 이벤트 3종은 더 이상 수집하지 않습니다.
+- 회원 이프 부족은 KNK-1045부터 토스트만 표시하다가 KNK-1844부터 화면에 머문 경우 바텀 시트로 안내합니다. `client_creditShortageDialog_*` 이름은 시계열을 끊지 않기 위해 유지하고 `trigger`는 실제 유료 동작인 `story_create`, `chat_turn`만 허용합니다. KNK-1045 전 다이얼로그의 출석 버튼 이벤트 이름(`attendanceButton_clicked`)은 다시 쓰고, 친구 초대 버튼(`earnButton_clicked`)과 닫기(`dismissed`)는 재도입하지 않습니다.
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
@@ -723,7 +745,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | `client_appBanner_escapeGuide_shown` | P2 | iOS 인앱에서 외부 전환 1.5초 뒤에도 화면이 그대로라 안내 시트를 열 때 | 없음 |
 
 - `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표입니다.
-- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 설치는 Play Console과 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)로 봅니다.
+- Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없습니다. 배너를 거친 설치는 앱이 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)를 `initial_utm_*` 사용자 속성으로 남겨 구분합니다(§6-2).
 
 #### 6-4-2-19. 프로필 수정 — `Phase 3 · 구현`(KNK-1148)
 
@@ -736,6 +758,25 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 - 닉네임과 프리셋 키는 싣지 않습니다. 닉네임은 사용자 입력이고([§6-7](#6-7-개인정보와-원문-수집-원칙)), 프리셋 분포가 필요해지면 서버 데이터로 봅니다.
 - 프로필 수정에는 서버 분석 이벤트가 없어 `viewed` 대비 `completed`를 수정 완료율로 봅니다. 409 같은 실패율은 이 두 이벤트로 구분하지 않습니다.
+
+#### 6-4-2-20. 신규 가입 온보딩 — `Phase 3 · 구현`(KNK-1892)
+
+Android [신규 가입 온보딩](3-3-android-spec.md#신규-가입-온보딩) 화면의 이벤트입니다. `screen_name`은 `storyOnboarding`입니다. 웹에 같은 화면이 생기면 같은 이름을 씁니다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수입니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_storyOnboarding_viewed` | P0 | 온보딩 화면 진입. 상세에서 돌아오거나 구성 변경으로 다시 그려도 다시 보내지 않음 | 없음 |
+| `client_storyOnboarding_storyCard_impressed` | P1 | 가운데 카드로 1초 이상 머문 스토리. 진입당 스토리별 1회(처음 보이는 카드 포함) | `story_id` (string, 필수), `position` (number, 필수) |
+| `client_storyOnboarding_detailButton_clicked` | P1 | "상세 보기" 또는 가운데 카드 탭 | `story_id` (string, 필수), `position` (number, 필수), `source` (string, 필수: `button` / `card`) |
+| `client_storyOnboarding_chatStartButton_clicked` | P0 | "채팅 시작하기" 클릭(채팅 생성 요청 전) | `story_id` (string, 필수), `position` (number, 필수), `browsed_count` (number, 필수) |
+| `client_storyOnboarding_chatStartError_shown` | P1 | 채팅 생성 실패 토스트 | `story_id` (string, 필수) |
+| `client_storyOnboarding_createButton_clicked` | P0 | "직접 만들기" 클릭 | `browsed_count` (number, 필수) |
+| `client_storyOnboarding_loadError_shown` | P1 | 오리지널 목록 조회 실패 화면 노출 | 없음 |
+| `client_storyOnboarding_completed` | P0 | 온보딩을 벗어남: 채팅 생성 성공 또는 간편 제작 진입 | `action` (string, 필수: `chat` / `create`), `source` (string, chat 필수: `carousel` / `storyDetail`), `story_id` (string, chat 필수), `chat_id` (string, chat 필수) |
+
+- 버튼 클릭(`chatStartButton_clicked`)과 실제 시작(`completed`의 `action=chat`)을 나눠 채팅 생성 실패와 이탈을 봅니다. 온보딩 위에서 연 상세의 채팅은 상세의 `client_storyDetail_chatStartButton_clicked`가 클릭을, `completed`(`source=storyDetail`)가 실제 시작을 맡습니다.
+- `completed`의 `chat_id`로 채팅 활성화 퍼널([§6-5-3-2](#6-5-3-2-채팅-활성화-퍼널))의 첫 메시지와 첫 AI 응답을 잇습니다. `action=create`는 간편 제작 진입 시점에 보내며, 이후는 스토리 제작 퍼널([§6-5-3-1](#6-5-3-1-스토리-제작-퍼널))이 이어 봅니다.
+- 스와이프마다 보내는 이벤트는 두지 않습니다. 스쳐 간 카드까지 세면 둘러본 정도가 부풀려지므로 1초 머문 카드의 노출과 `browsed_count`로 탐색을 봅니다.
 
 ### 6-4-3. impression 수집 기준
 
@@ -831,6 +872,21 @@ MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확�
 | 5    | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded`                  | `chat_id` |
 
 완성과 채팅 생성이 분리돼 3단계에는 `chat_id`가 없습니다. 3~4단계는 `device_id` 순차 기준으로 근사하고, 4단계 `chat_id`로 5단계를 연결합니다.
+
+#### 6-5-3-4. 신규 가입 온보딩 퍼널
+
+신규 가입 회원이 온보딩에서 실제 대화까지 가는지 측정합니다(Android).
+
+| 순서 | 단계 | 이벤트 | 고정값 |
+| ---- | ---- | ---- | ---- |
+| 1 | 온보딩 진입 | `client_storyOnboarding_viewed` | device |
+| 2 | 스토리 탐색 | `client_storyOnboarding_storyCard_impressed` | device |
+| 3 | 채팅 시작 클릭 | `client_storyOnboarding_chatStartButton_clicked` | device |
+| 4 | 채팅 생성 | `client_storyOnboarding_completed` where `action = chat` | `chat_id` |
+| 5 | 첫 메시지 | `client_chat_messageInput_submitted` where `turn_number = 1` | `chat_id` |
+| 6 | 첫 AI 응답 | `server_chat_aiMessage_processed_succeeded` | `chat_id` |
+
+상세를 거친 시작은 3단계 대신 `client_storyOnboarding_detailButton_clicked` → `client_storyDetail_chatStartButton_clicked`를 거칩니다. 경로 비교는 4단계의 `source`로, 직접 만들기로 빠진 비율은 `completed`의 `action=create`로 봅니다.
 
 ### 6-5-4. 핵심 지표
 

@@ -1,6 +1,6 @@
 # 4-2 계약
 
-이 문서는 NOTIFICATION 도메인의 클라이언트 API, 서버와 알림 서비스 사이의 내부 API, 관리자 API, 큐 메시지, 기기에 도착하는 푸시 데이터, 다른 도메인과의 경계를 정한다.
+이 문서는 NOTIFICATION 도메인의 클라이언트 API, 서버와 알림 서비스 사이의 내부 API, 관리자의 캠페인과 문구 템플릿 API, 큐 메시지, 기기에 도착하는 푸시 데이터, 다른 도메인과의 경계를 정한다.
 
 처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 비밀값 취급은 보안에, 관리자 토큰과 권한 판정은 관리자 계약에 있다. ([4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-7 비밀값과 개인정보](5-1-SECURITY.md#5-1-7-비밀값과-개인정보), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
@@ -28,7 +28,7 @@
 |---|---|---|---|
 | `필수` | 거절 | 회원으로 처리 | 거절 |
 | `내부` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>공유 시크릿 헤더로 인증 | 토큰을 읽지 않음 |
-| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 통과 |
+| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 관리자 권한이 있는 회원으로 처리<br>권한이 없으면 403 |
 
 <br>
 
@@ -76,7 +76,7 @@
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 401 | `UNAUTHORIZED` | 인증 필수 경로의 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>내부 API의 시크릿 누락 또는 불일치<br>관리자 경로의 토큰 누락, 만료, 위조, 관리자 표식 없음 |
-| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴, 회원 없음 |
+| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 권한 없는 회원(역할 없음, 정지, 탈퇴, 회원 없음) |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 404 | `NOT_FOUND` | 내부 API의 시크릿 미설정 환경 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
@@ -597,9 +597,9 @@ Content-Type: application/json
 | `messageId` | `string` | 필수 | 시나리오별 메시지 식별자<br>재발행과 재전달에도 바뀌지 않음 |
 | `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
 | `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
-| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
+| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER`, `PROMOTION`<br>`data.type`과 같아야 함 |
 | `data` | `object` | 필수 | 푸시 데이터<br>동의와 토큰을 담지 않음 |
-| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>생략하면 만료 없음 |
+| `expiresAt` | `string` | 선택 | 발송 가능 기한<br>출석 리마인드는 당일 KST 자정<br>이프 만료 예정 알림은 회원의 창 안 로트 중 가장 늦은 만료 시각<br>생략하면 만료 없음 |
 | `requestId` | `string` | 필수 | 발행 원인의 요청 ID<br>없으면 `unknown` |
 | `sessionId` | `string` | 필수 | 발행 원인의 세션 ID<br>없으면 `unknown` |
 | `schemaVersion` | `integer` | 필수 | `1` |
@@ -611,10 +611,11 @@ Content-Type: application/json
 | `STORY_TAKEN_DOWN` | `SERVICE` | `story-taken-down:{스토리 공개 식별자}:{공개 중단 시각의 epoch 밀리초}` |
 | `NOTICE` | `SERVICE` | `notice:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 | `ATTENDANCE_REMINDER` | `MARKETING` | `attendance:{회원 공개 식별자}:{KST 날짜}` |
+| `CREDIT_EXPIRY_REMINDER` | `SERVICE` | `credit-expiry:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
 - 추적 헤더 `traceparent`, `tracestate`는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
-- 출석 리마인드와 캠페인은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
+- 출석 리마인드, 이프 만료 예정 알림, 캠페인은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>
 <summary><b>메시지 예시</b></summary>
@@ -684,11 +685,14 @@ Content-Type: application/json
 | `NOTICE` | `deepLink` | `string` | `/notices/{noticeId}` |
 | `ATTENDANCE_REMINDER` | `date` | `string` | KST 날짜 |
 | `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
-| `ATTENDANCE_REMINDER` | `body` | `string` | 템플릿 본문 |
+| `ATTENDANCE_REMINDER` | `body` | `string` | 수신거부 안내가 붙은 템플릿 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 | `ATTENDANCE_REMINDER` | `deepLink` | `string` | `/my/credits?tab=free` |
+| `CREDIT_EXPIRY_REMINDER` | `title` | `string` | 템플릿 제목<br>광고 표기 없음 |
+| `CREDIT_EXPIRY_REMINDER` | `body` | `string` | 템플릿 본문 |
+| `CREDIT_EXPIRY_REMINDER` | `deepLink` | `string` | `/my/credits?tab=history` |
 | `PROMOTION` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `PROMOTION` | `title` | `string` | 광고 표기가 붙은 제목 |
-| `PROMOTION` | `body` | `string` | 본문 |
+| `PROMOTION` | `body` | `string` | 수신거부 안내가 붙은 본문<br>원문 최대 300자에 줄바꿈과 안내를 더해 최대 317자 |
 | `PROMOTION` | `noticeId` | `string` | 광고성 공지일 때만<br>공지 공개 식별자 |
 | `PROMOTION` | `noticeTag` | `string` | 광고성 공지일 때만<br>`EVENT`, `PROMOTION` |
 | `PROMOTION` | `storyId` | `string` | 이동 대상 스토리가 있을 때만<br>스토리 공개 식별자 |
@@ -712,6 +716,8 @@ Content-Type: application/json
 
 - 알림 내역 본문과 푸시 본문은 같은 문자열이다. 제목을 줄이면 본문은 입력 사유 100자를 넣어도 250자 이하라 알림 내역 본문 상한 300자를 넘지 않는다.
 - 이미 비공개였던 스토리도 같은 문구다. 사용자 화면에서는 관리자 용어 "공개 중단" 대신 "공개 제한"으로 부른다.
+- `CREDIT_EXPIRY_REMINDER`에는 금액, 수량, 만료 시각 필드가 없다. 회원이 이프 내역 탭에서 만료 예정일을 확인한다. 알림 내역의 제목, 본문, 딥링크도 이 데이터와 같다.
+- `tab` 값은 `purchase`, `free`, `history`다. 모르는 값을 받은 클라이언트는 이프 화면의 기본 탭을 연다.
 
 <br>
 
@@ -725,6 +731,7 @@ Content-Type: application/json
 | `STORY_MODERATION_COMPLETED` | `push` | `push` | `story_moderation_completed` | `story_moderation_completed` |
 | `STORY_TAKEN_DOWN` | `push` | `push` | `story_taken_down` | `story_taken_down` |
 | `ATTENDANCE_REMINDER` | `push` | `push` | `attendance_reminder` | `attendance_reminder` |
+| `CREDIT_EXPIRY_REMINDER` | `push` | `push` | `credit_expiry_reminder` | `credit_expiry_reminder` |
 | `NOTICE` | `push` | `push` | 캠페인 공개 식별자 | `notice` |
 | `PROMOTION` | `push` | `push` | 캠페인 공개 식별자 | `promotion` |
 
@@ -738,7 +745,7 @@ Content-Type: application/json
 
 | 플랫폼 | 구성 |
 |---|---|
-| Android | 데이터만<br>서비스 알림은 높은 우선순위, 광고 알림은 보통<br>출석 리마인드는 당일 KST 자정까지의 TTL |
+| Android | 데이터만<br>서비스 알림은 높은 우선순위, 광고 알림은 보통<br>유효 기한이 있는 시나리오는 유효 기한까지의 TTL |
 | 웹 | 데이터와 함께 제목, 본문, 아이콘, 클릭 링크의 알림 구성<br>스토리 완성은 제목 `스토리가 완성됐어요`, 본문은 스토리 제목<br>그 외는 데이터의 `title`과 `body`<br>클릭 링크는 `deepLink`, 없으면 운영 웹 주소 |
 
 <details>
@@ -754,7 +761,7 @@ Content-Type: application/json
   "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
   "date": "2026-10-16",
   "title": "(광고) 이프 250이 도착했어요 🍃",
-  "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
+  "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?\n수신거부: 마이 > 알림 설정",
   "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=push&utm_medium=push&utm_campaign=attendance_reminder&utm_content=attendance_reminder"
 }
 ```
@@ -780,11 +787,200 @@ Content-Type: application/json
 { "body": "「푸른 바다」는 실존 인물 비방 사유로 공개할 수 없어요. 내용을 수정해 검수를 통과하면 공개할 수 있어요." }
 ```
 
+**4) `CREDIT_EXPIRY_REMINDER` 푸시 데이터**
+
+```json
+{
+  "type": "CREDIT_EXPIRY_REMINDER",
+  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "title": "이프 만료 예정 안내",
+  "body": "곧 만료되는 이프가 있어요",
+  "deepLink": "https://manyak.app/my/credits?tab=history&utm_source=push&utm_medium=push&utm_campaign=credit_expiry_reminder&utm_content=credit_expiry_reminder"
+}
+```
+
 </details>
 
 <br>
 
-### 4-2-11 캠페인 목록
+### 4-2-11 발송 결과 보고
+
+서버가 제공하고 알림 서비스가 메시지 처리를 마친 뒤 호출한다. 로컬 모드 발송기는 같은 내용을 직접 기록한다.
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /internal/push-deliveries` |
+| 인증 | 내부 |
+| 성공 | 204, 본문 없음 |
+
+**1. 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `messageId` | `string` | 필수 | 메시지 식별자, 1~255자 |
+| `type` | `string` | 필수 | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER`, `PROMOTION`<br>큐 메시지의 `type` |
+| `kind` | `string` | 필수 | `SERVICE`, `MARKETING` |
+| `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
+| `campaignId` | `string` | 선택 | 캠페인 공개 식별자<br>캠페인 발송만 |
+| `outcome` | `string` | 필수 | `DELIVERED`, `UNDELIVERED`, `DISCARDED` |
+| `reason` | `string` | 필수 | 알림 발송 응답의 `reason` 값, 1~40자 |
+| `deliveredDevices` | `integer` | 필수 | 0 이상<br>`DELIVERED`일 때만 1 이상 |
+| `failedDevices` | `integer` | 필수 | 0 이상 |
+| `completedAt` | `string` | 필수 | 처리 완료 시각 |
+
+- 같은 메시지 식별자의 두 번째 보고는 기록하지 않고 성공으로 응답한다. 저장된 행은 바꾸지 않는다.
+- 보고에 실패해도 알림 서비스는 소비를 되돌리지 않는다. `type`에 없는 시나리오를 보고하면 거절되므로 새 시나리오는 이 목록을 함께 확장한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류, 목록에 없는 `type`, `outcome`과 `deliveredDevices`의 불일치, 없는 캠페인 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /internal/push-deliveries
+X-Manyak-Internal-Secret: {sharedSecret}
+Content-Type: application/json
+
+{
+  "messageId": "credit-expiry:3f2504e0-4f89-41d3-9a0c-0305e82c3301:2026-10-26",
+  "type": "CREDIT_EXPIRY_REMINDER",
+  "kind": "SERVICE",
+  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "outcome": "DELIVERED",
+  "reason": "OK",
+  "deliveredDevices": 1,
+  "failedDevices": 0,
+  "completedAt": "2026-10-26T01:00:12Z"
+}
+```
+
+**2) 204 Response**
+
+본문 없음
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-26T01:00:12.345Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "도달 결과와 도달 기기 수가 일치하지 않습니다.",
+  "path": "/internal/push-deliveries",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-12 문구 템플릿 관리
+
+관리자가 키별 문구 오버라이드를 조회, 변경, 기본값으로 복귀한다. 허용하는 `templateKey`는 `attendance_reminder`, `credit_expiry_reminder`다. 광고 표기는 저장하지 않으며 발송 시 서버가 붙인다.
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/push/templates/{templateKey}`<br>`PUT /admin/push/templates/{templateKey}`<br>`DELETE /admin/push/templates/{templateKey}` |
+| 인증 | 관리자 |
+| 성공 | 200, 세 요청 모두 같은 응답 |
+
+**1. 본문**
+
+| 요청 | 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|---|
+| `PUT` | `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
+| `PUT` | `body` | `string` | 필수 | 1~300자 |
+| `PUT` | `effectiveFrom` | `string` | 선택 | 적용 시작<br>생략하면 현재 시각<br>현재 이전이면 거절 |
+| `PUT` | `effectiveUntil` | `string` | 선택 | 적용 종료<br>생략하면 상시 적용<br>시작 이전이면 거절 |
+| `PUT` | `reason` | `string` | 필수 | 변경 사유, 1~500자<br>감사 기록에 남음 |
+| `DELETE` | `reason` | `string` | 필수 | 복귀 사유, 1~500자 |
+
+- `PUT`은 오버라이드 행을 추가한다. 기존 행을 고치지 않으므로 예약 교체가 가능하다. 같은 시점에 유효한 행이 여럿이면 적용 시작이 가장 늦은 행, 그것도 같으면 나중에 추가된 행을 쓴다.
+- `DELETE`는 유효한 행과 예약된 행의 종료 시각을 지금 또는 그 행의 시작 시각으로 당겨 기본 문구로 돌린다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `templateKey` | `string` | |
+| `effective` | `object` | 지금 발송하면 쓰는 문구<br>저장소의 현재 행으로 계산하며 발송기는 스냅샷을 읽으므로 갱신 주기 안에 같아짐 |
+| `effective.title` | `string` | 광고 표기 없는 제목 |
+| `effective.body` | `string` | |
+| `effective.isDefault` | `boolean` | 기본 문구인지 여부 |
+| `overrides` | `object[]` | 키의 모든 오버라이드 행, 시작 시각 내림차순 |
+| `overrides[].title` | `string` | |
+| `overrides[].body` | `string` | |
+| `overrides[].effectiveFrom` | `string` | |
+| `overrides[].effectiveUntil` | `string / null` | `null`은 상시 |
+| `overrides[].active` | `boolean` | 지금 유효한지 여부 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 시각 형식 오류, 시작이 현재 이전, 종료가 시작 이전 |
+| 404 | `NOT_FOUND` | 허용 목록에 없는 `templateKey` |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+PUT /api/v1/admin/push/templates/credit_expiry_reminder
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "title": "이프 만료 예정 안내", "body": "내일이면 사라지는 이프가 있어요", "reason": "문구 다듬기" }
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "templateKey": "credit_expiry_reminder",
+  "effective": { "title": "이프 만료 예정 안내", "body": "내일이면 사라지는 이프가 있어요", "isDefault": false },
+  "overrides": [
+    { "title": "이프 만료 예정 안내", "body": "내일이면 사라지는 이프가 있어요", "effectiveFrom": "2026-10-26T01:00:00Z", "effectiveUntil": null, "active": true }
+  ]
+}
+```
+
+**3) 404 Response body**
+
+```json
+{
+  "timestamp": "2026-10-26T01:00:12.345Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "문구 템플릿이 없습니다.",
+  "path": "/api/v1/admin/push/templates/unknown_key",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-13 캠페인 목록
 
 | 항목 | 값 |
 |---|---|
@@ -859,7 +1055,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-12 캠페인 예약
+### 4-2-14 캠페인 예약
 
 | 항목 | 값 |
 |---|---|
@@ -879,7 +1075,7 @@ Authorization: Bearer {adminToken}
 
 - 알림 성격은 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
 - `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다.
-- 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-15 대상 수 미리보기](#4-2-15-대상-수-미리보기))
+- 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-17 대상 수 미리보기](#4-2-17-대상-수-미리보기))
 
 <br>
 
@@ -930,7 +1126,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-13 캠페인 취소
+### 4-2-15 캠페인 취소
 
 | 항목 | 값 |
 |---|---|
@@ -957,7 +1153,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-14 캠페인 재실행
+### 4-2-16 캠페인 재실행
 
 | 항목 | 값 |
 |---|---|
@@ -986,7 +1182,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-15 대상 수 미리보기
+### 4-2-17 대상 수 미리보기
 
 | 항목 | 값 |
 |---|---|
@@ -1044,226 +1240,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-16 문구 템플릿 조회
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `GET /admin/push/templates/{templateKey}` |
-| 인증 | 관리자 |
-| 성공 | 200 |
-
-**1. 경로**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `templateKey` | 경로 | 필수 | `attendance_reminder` |
-
-<br>
-
-**2. 응답**
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `templateKey` | `string` | |
-| `effective` | `object` | 저장소의 현재 행으로 계산한 지금 적용되는 문구<br>발송기는 스냅샷을 읽으므로 갱신 주기 안에 같아짐 |
-| `effective.title` | `string` | 광고 표기 없는 제목 |
-| `effective.body` | `string` | |
-| `effective.isDefault` | `boolean` | 기본 문구면 `true` |
-| `overrides` | `object[]` | 오버라이드 행<br>적용 시작 내림차순 |
-| `overrides[].title` | `string` | |
-| `overrides[].body` | `string` | |
-| `overrides[].effectiveFrom` | `string` | |
-| `overrides[].effectiveUntil` | `string / null` | `null`은 상시 |
-| `overrides[].active` | `boolean` | 현재 유효한 행이면 `true` |
-
-<br>
-
-**3. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 404 | `NOT_FOUND` | 없는 템플릿 키 |
-
-<br>
-
-### 4-2-17 문구 템플릿 변경
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `PUT /admin/push/templates/{templateKey}` |
-| 인증 | 관리자 |
-| 성공 | 200<br>문구 템플릿 조회와 같은 응답 |
-
-**1. 경로와 본문**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `templateKey` | 경로 | 필수 | `attendance_reminder` |
-| `title` | `string` | 필수 | 1~100자<br>광고 표기 없이 |
-| `body` | `string` | 필수 | 1~300자 |
-| `effectiveFrom` | `string` | 선택 | 적용 시작, 현재 이후<br>생략하면 현재 |
-| `effectiveUntil` | `string` | 선택 | 적용 종료<br>생략하면 상시 |
-| `reason` | `string` | 필수 | 사유<br>1~500자 |
-
-- 오버라이드 행을 추가한다. 기존 행은 바꾸지 않는다. 같은 시점에 유효한 행이 여럿이면 적용 시작이 가장 늦은 행, 그것도 같으면 나중에 추가된 행을 쓴다.
-
-<br>
-
-**2. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시작, 종료가 시작 이전, 시각 형식 오류 |
-| 404 | `NOT_FOUND` | 없는 템플릿 키 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-**1) Request**
-
-```http
-PUT /api/v1/admin/push/templates/attendance_reminder
-Authorization: Bearer {adminToken}
-Content-Type: application/json
-
-{
-  "title": "할로윈 출석 이프가 도착했어요",
-  "body": "오늘 출석하고 받아 가세요.",
-  "effectiveFrom": "2026-10-25T15:00:00Z",
-  "effectiveUntil": "2026-10-31T15:00:00Z",
-  "reason": "할로윈 이벤트 문구"
-}
-```
-
-**2) 200 Response body**
-
-```json
-{
-  "templateKey": "attendance_reminder",
-  "effective": { "title": "이프 250이 도착했어요 🍃", "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?", "isDefault": true },
-  "overrides": [
-    { "title": "할로윈 출석 이프가 도착했어요", "body": "오늘 출석하고 받아 가세요.", "effectiveFrom": "2026-10-25T15:00:00Z", "effectiveUntil": "2026-10-31T15:00:00Z", "active": false }
-  ]
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-18 기본 문구 복귀
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `DELETE /admin/push/templates/{templateKey}` |
-| 인증 | 관리자 |
-| 성공 | 200<br>문구 템플릿 조회와 같은 응답 |
-
-**1. 경로와 본문**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `templateKey` | 경로 | 필수 | `attendance_reminder` |
-| `reason` | `string` | 필수 | 사유<br>1~500자 |
-
-- 현재 유효한 행의 종료 시각을 현재로, 아직 시작하지 않은 행의 종료 시각을 그 행의 시작 시각으로 바꾼다. 행을 지우지 않으며 종료할 행이 없어도 성공이다.
-
-<br>
-
-**2. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | `reason` 누락 |
-| 404 | `NOT_FOUND` | 없는 템플릿 키 |
-
-<br>
-
-### 4-2-19 발송 결과 보고
-
-서버가 제공하고 알림 서비스가 호출한다.
-
-| 항목 | 값 |
-|---|---|
-| 요청 | `POST /internal/push-deliveries` |
-| 인증 | 내부 |
-| 성공 | 204, 본문 없음 |
-
-**1. 본문**
-
-| 필드명 | 타입 | 필수 | 의미와 기본값 |
-|---|---|---|---|
-| `messageId` | `string` | 필수 | 메시지 식별자, 1~255자 |
-| `type` | `string` | 필수 | 큐 메시지의 `type` |
-| `kind` | `string` | 필수 | `SERVICE`와 `MARKETING` |
-| `recipientId` | `string` | 필수 | 수신 회원 공개 식별자 |
-| `campaignId` | `string` | 선택 | 푸시 데이터의 캠페인 공개 식별자<br>캠페인 메시지만 |
-| `outcome` | `string` | 필수 | `DELIVERED`, `UNDELIVERED`, `DISCARDED` |
-| `reason` | `string` | 필수 | 알림 발송 응답의 `reason` 값, 1~40자 |
-| `deliveredDevices` | `integer` | 필수 | 0 이상<br>`DELIVERED`면 1 이상이고 그 외는 0 |
-| `failedDevices` | `integer` | 필수 | 0 이상 |
-| `completedAt` | `string` | 필수 | 처리가 끝난 시각 |
-
-- 같은 `messageId`의 재보고는 저장된 행을 바꾸지 않고 성공으로 응답한다.
-
-<br>
-
-**2. 실패 응답**
-
-| 상태 | `code` | 조건 |
-|---|---|---|
-| 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류, `outcome`과 `deliveredDevices`의 불일치, 없는 캠페인 |
-
-<details>
-<summary><b>요청·응답 예시</b></summary>
-
-<br>
-
-**1) Request**
-
-```http
-POST /internal/push-deliveries
-X-Manyak-Internal-Secret: {sharedSecret}
-Content-Type: application/json
-
-{
-  "messageId": "promotion:6f1d2c3b-4a5e-4f60-9b7c-8d9e0f1a2b3c:3f2504e0-4f89-41d3-9a0c-0305e82c3301",
-  "type": "PROMOTION",
-  "kind": "MARKETING",
-  "recipientId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
-  "campaignId": "6f1d2c3b-4a5e-4f60-9b7c-8d9e0f1a2b3c",
-  "outcome": "DELIVERED",
-  "reason": "PARTIAL_FAILURE",
-  "deliveredDevices": 1,
-  "failedDevices": 1,
-  "completedAt": "2026-10-24T01:00:12.345Z"
-}
-```
-
-**2) 204 Response**
-
-본문 없음
-
-**3) 400 Response body**
-
-```json
-{
-  "timestamp": "2026-10-24T01:00:12.345Z",
-  "status": 400,
-  "code": "BAD_REQUEST",
-  "message": "도달 결과는 도달 기기 수가 1 이상이어야 합니다.",
-  "path": "/internal/push-deliveries",
-  "details": []
-}
-```
-
-</details>
-
-<br>
-
-### 4-2-20 캠페인 상세
+### 4-2-18 캠페인 상세
 
 | 항목 | 값 |
 |---|---|
@@ -1288,7 +1265,7 @@ Content-Type: application/json
 
 <br>
 
-### 4-2-21 알림 통계
+### 4-2-19 알림 통계
 
 | 항목 | 값 |
 |---|---|
@@ -1375,7 +1352,7 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-22 알림 내역 목록
+### 4-2-20 알림 내역 목록
 
 | 항목 | 값 |
 |---|---|
@@ -1404,8 +1381,8 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `notificationId` | `string` | 알림 식별자 |
 | `category` | `string` | `NEWS`, `ACTIVITY` |
-| `type` | `string` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `PROMOTION`<br>모르는 값은 클라이언트가 기본 표시로 처리 |
-| `title` | `string` | 표시 제목<br>광고 알림은 광고 표기 포함 |
+| `type` | `string` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `NOTICE`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER`, `PROMOTION`<br>모르는 값은 클라이언트가 기본 표시로 처리 |
+| `title` | `string` | 표시 제목<br>광고 알림도 광고 표기 없는 원문 |
 | `body` | `string` | 표시 본문 |
 | `deepLink` | `string / null` | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 `null` |
 | `storyId` | `string / null` | 관련 스토리 공개 식별자 |
@@ -1414,7 +1391,7 @@ Authorization: Bearer {adminToken}
 | `createdAt` | `string` | 기록 시각 |
 | `readAt` | `string / null` | 읽은 시각<br>`null`이면 안 읽음 |
 
-- 종류와 분류의 대응은 처리 흐름이 정한다. ([4-1-18 알림 내역 기록](4-1-PIPELINES.md#4-1-18-알림-내역-기록))
+- 종류와 분류의 대응은 처리 흐름이 정한다. ([4-1-19 알림 내역 기록](4-1-PIPELINES.md#4-1-19-알림-내역-기록))
 - 보관 기간이 없어 커서로 가장 오래된 내역까지 내려 볼 수 있다.
 
 <br>
@@ -1459,7 +1436,7 @@ Authorization: Bearer {accessToken}
       "notificationId": "0a7c4e21-93d5-4b8f-a6e2-71c0d9b8f3a4",
       "category": "ACTIVITY",
       "type": "ATTENDANCE_REMINDER",
-      "title": "(광고) 이프 250이 도착했어요 🍃",
+      "title": "이프 250이 도착했어요 🍃",
       "body": "출석하고 받아 가세요. 오늘은 어떤 스토리를 시작해 볼까요?",
       "deepLink": "https://manyak.app/my/credits?tab=free&utm_source=inbox&utm_medium=inbox&utm_campaign=attendance_reminder&utm_content=attendance_reminder",
       "storyId": null,
@@ -1492,7 +1469,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-23 안 읽은 알림 수
+### 4-2-21 안 읽은 알림 수
 
 | 항목 | 값 |
 |---|---|
@@ -1538,7 +1515,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-24 알림 읽음
+### 4-2-22 알림 읽음
 
 | 항목 | 값 |
 |---|---|
@@ -1596,7 +1573,7 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-25 모든 알림 읽음
+### 4-2-23 모든 알림 읽음
 
 | 항목 | 값 |
 |---|---|
@@ -1641,16 +1618,16 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-26 다른 도메인과의 경계
+### 4-2-24 다른 도메인과의 경계
 
 | 도메인 | NOTIFICATION이 제공하는 것 | NOTIFICATION이 사용하는 것 |
 |---|---|---|
 | STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트, 캠페인 이동 대상 스토리의 공개 판정 |
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구<br>공개 중단 이벤트의 알림 내역 기록, 발송 경로와 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트<br>공개 중단 트랜잭션, 공개 중단 이벤트 |
 | NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
-| ADMIN | 기간의 캠페인 도달 요약 연산<br>종류별 날짜별 도달 회원 수 연산 | 관리자 요청자와 변경 감사 기록 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산<br>회원의 알림 내역 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
-| PAYMENT | 없음 | 출석 보상 멱등 키의 존재 |
+| PAYMENT | 없음 | 출석 보상 멱등 키의 존재, 만료 창 안에 잔여 있는 로트를 가진 회원 조회 |
+| ADMIN | 캠페인과 문구 템플릿 관리<br>기간의 캠페인 도달 요약 연산<br>종류별 날짜별 도달 회원 수 연산 | 관리자 권한 판정과 요청자, 변경 감사 기록 |
 | 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
 다른 도메인이 호출하거나 발행하는 연산의 입력과 결과는 다음과 같다.

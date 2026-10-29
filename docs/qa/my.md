@@ -122,7 +122,7 @@
 | MY-CREDITS-12 | P2 | 서버가 라벨 없는 `reason`을 내려줌 | 항목 확인 | 그 줄만 "이프 변동"으로 그리고 나머지 목록은 그대로 표시 | 수동 | FE-SCREEN-008 항목 구성(라벨은 클라이언트 소유) |
 | MY-CREDITS-13 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
 | MY-CREDITS-14 | P1 | 내역 탭을 한 번 보고 `/my`로 돌아온 상태 | "충전" → 내역 탭으로 다시 진입 | 남겨 둔 목록을 그대로 쓰지 않고 첫 페이지부터 다시 조회(스크롤 위치도 목록 맨 위). 그사이 발생한 내역이 바로 보임. 탭을 무료 충전으로 옮겼다 돌아와도 같음(비활성 탭은 언마운트) | ✅ e2e `my/credits` | [웹 커서 목록](../design/1-1-web-design.md#커서-목록-패칭-웹), KNK-1083 |
-| MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "구매"·"무료 충전"·"내역" 세 탭을 밑줄 탭으로 표시하고 진입 시 구매가 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 골격, KNK-1092·1297 |
+| MY-CREDITS-15 | P1 | 회원 | 탭 줄 확인 | "구매"·"무료 충전"·"내역" 세 탭을 밑줄 탭으로 표시하고 `tab` 쿼리 없이 진입하면 구매가 선택됨. 탭을 바꿔도 URL은 `/my/credits` 그대로 | ✅ e2e `my/credits` | FE-SCREEN-008 화면 골격, KNK-1092·1297 |
 | MY-CREDITS-16 | P1 | 회원, 내역이 한 화면을 넘김 | 내역 탭에서 아래로 스크롤 | 잔액 상자와 탭 줄은 제자리에 남고 탭 패널만 스크롤됨 | ◐ e2e `visual/my-visual`(정적 상태만) | FE-SCREEN-008 화면 골격, KNK-1092 |
 | MY-CREDITS-17 | P1 | 회원 | 무료 충전 탭 확인 | 중립 배경 상자에 "매일 출석하고 / 매일 N 이프 받으세요" 두 줄 제목(N은 `GET /credits/policies`의 `attendanceReward`), 그 아래 가로 전폭 강조색 "출석 하기" 버튼, 버튼 아래 오른쪽 정렬 보조 문구 2줄("매일 오전 00시에 초기화돼요" → "보상으로 받은 이프는 적립일로부터 30일 동안 사용할 수 있어요") 순으로 표시 | ✅ e2e `my/credits`·`visual/my-visual` | FE-SCREEN-008 무료 충전 탭, §3-1-7 이프 정책 수치 표시, KNK-1092·1095 |
 | MY-CREDITS-18 | P1 | 회원, 오늘 미출석(`attendedToday: false`) | "출석 하기" 버튼 탭 | "출석 체크 보상으로 {amount} 이프를 받았어요" 토스트 + 잔액 상자 자동 갱신(me 재조회) + 버튼이 "출석 완료" 비활성으로 전환 | ✅ e2e `my/credits` | US-10-2 (구 MY-MENU-11) |
@@ -148,6 +148,7 @@
 | MY-CREDITS-40 | P2 | 되감을 기록 없음(다른 탭에서 결제, 기록 삭제) | `/my/credits/return` 진입 | 되감지 않고 `/my/credits`로 바꿔 끼움 | ✅ e2e `my/credits`·단위 `payment-return-history`(상한·손상 기록) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-41 | P1 | 그로블 상품 설정의 이동·진입 페이지가 `/my/credits/return` | iOS Safari·Android Chrome·인앱 브라우저 실기기에서 실제 결제 후 복귀, 결제 완료 화면 닫기로도 복귀 | MY-CREDITS-39와 같은 결과. 결제창에서 결제 없이 뒤로 돌아온 뒤 다시 결제해도 같음 | 수동 | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1558 |
 | MY-CREDITS-42 | P1 | 회원, 알림·주소로 `/my/credits` 바로 진입(아래 기록 없음) | 뒤로가기 헤더 탭 | `/my`로 교체 이동. 결제 복귀 되감기 뒤(MY-CREDITS-39)에는 그대로 결제 전 화면으로 뒤로가기 | ✅ e2e `my/credits` | 웹 Spec 화면 전환 규칙, KNK-1613 |
+| MY-CREDITS-43 | P1 | 회원 | `/my/credits?tab=history&utm_source=push`, `?tab=free`, `?tab=purchase`, `?tab=모르는값`으로 진입 | 각각 내역, 무료 충전, 구매, 구매 탭이 처음 선택됨. 주소에서 `tab`만 지워지고 `utm_source` 등 다른 쿼리는 남음. 그 뒤 구매 탭에서 결제하고 되감겨 와도 쿼리 탭으로 바뀌지 않음 | ◐ e2e `my/credits`(history, free) | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙), KNK-1842 |
 | MY-CREDITS-36 | P1 | 대기 주문 기록이 있는 회원 | 로그아웃·세션 만료 로그아웃·회원 탈퇴 | 대기 주문 기록 삭제. 같은 기기의 다음 계정에 이전 계정의 확인 카드가 뜨지 않음 | ✅ e2e `my/session-expiry`(만료)·수동(로그아웃·탈퇴) | [웹 유료 충전](../spec/3-2-web-spec.md#유료-충전), KNK-1314 |
 
 ## MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)
@@ -302,6 +303,8 @@ Android(KNK-1819)는 같은 계약을 따르며 아래 케이스만 다릅니다
 | MY-INBOX-10 | P2 | 주소로 바로 연 `/notifications` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-INBOX-11 | P1 | 목록이 맨 위 | 아래로 당겼다 놓기 | 홈과 같은 표시자로 그 탭의 첫 페이지부터 다시 조회 | 수동 | [웹 화면 전환](../spec/3-2-web-spec.md#화면-전환-규칙) |
 | MY-INBOX-12 | P2 | 회원, 알림함 조회 성공 | 알림함 주소로 직접 진입, 홈 헤더 종 버튼으로 알림함 열기 | 두 진입 모두 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notifications/notifications` | [문서 열람과 검색 노출](../spec/3-2-web-spec.md#문서-열람과-검색-노출) |
+| MY-INBOX-13 | P1 | 활동에 `CREDIT_EXPIRY_REMINDER` 알림 1건(`deepLink` 이프 충전) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "이프 만료" 라벨. 탭하면 읽음을 기록하고 `deepLink`의 이프 충전 탭으로 이동 | 수동 | FE-SCREEN-015 카드, KNK-1842 |
+| MY-INBOX-14 | P1 | 활동에 `STORY_TAKEN_DOWN` 알림 1건(`deepLink` `/studio`) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "공개 제한" 라벨과 서버가 보낸 제목·본문. 탭하면 읽음을 기록하고 제작 탭으로 이동 | 수동 | FE-SCREEN-015 카드, KNK-1886 |
 
 Android(KNK-1827)는 미착수입니다.
 

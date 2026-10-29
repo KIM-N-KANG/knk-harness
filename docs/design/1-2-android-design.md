@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.6 |
+| 버전 | v0.9 |
 | 작성일 | 2026-09-09 |
-| 수정일 | 2026-10-17 |
+| 수정일 | 2026-10-28 |
 | 대상 | manyak-android |
 | 작성 목적 | 모듈 책임, 상태 수명, 인증·제작·알림의 실패와 복구 경계를 설명합니다. |
 | 기준 코드 | [manyak-android](../../../manyak-android) |
@@ -85,15 +85,16 @@ Android는 BFF 없이 백엔드에 직접 요청합니다. `network`는 공용 H
 | `ChatStarter` | `common` 계약, `chat` 구현. 다른 기능의 채팅 시작 요청을 연결 |
 | `PersonaAccess` | `common` 계약, `my`의 `PersonaRepositoryImpl` 구현. 상세가 내 페르소나 목록과 상세에서 만든 페르소나의 미리 선택을 관찰하고 다시 읽기와 미리 선택 지우기만 호출. 생성, 수정, 삭제는 마이가 소유 |
 | `CreationProgressAccess` | `common` 계약, `create` 구현. 제작 요약 관찰·폐기·새로고침(완성 요청 상태, 서버 초안 목록)만 노출 |
-| `StoryLikeUpdates` | `common` 계약, `home` 구현. 상세의 성공한 좋아요 수를 홈 목록으로 전달 |
 | `StoryDeletion` | `common` 계약, `studio` 구현. 상세 화면의 삭제와 목록 상태를 연결 |
-| `SignupOnboardingWriter` | `common` 계약, `my`의 초대 상태 구현. `auth`가 토큰 발급 응답(`COMPLETED`의 토큰 또는 가입 완료 응답)의 가입 결과를 전달 |
+| `SignupOnboardingWriter` | `common` 계약, `my`의 초대 안내와 `home`의 스토리 온보딩이 각자 `@IntoSet`으로 구현. `auth`가 토큰 발급 응답(`COMPLETED`의 토큰 또는 가입 완료 응답)이 신규 가입이면 등록된 기록기를 모두 부름 |
 | `MemberConsent` | `common` 계약, `legal`의 `ConsentRepositoryImpl` 구현. 서버에서 확인한 필수 동의 완료 상태를 분석 식별과 푸시 등록이 관찰 |
 | `SessionIdAccess` | `network` 포트, `app`이 `AnalyticsIdentity`에 연결. Amplitude의 현재 세션 ID를 조회하며 값이 없으면 헤더 생략 |
 | `SessionTokenAccess` | `network` 포트, `auth`의 `SessionTokenManager` 구현 |
 | `UserProfile`·초대 온보딩 | `my` 저장소가 정본. 같은 DataStore 파일에 여러 인스턴스를 만들지 않음 |
 | `CreditPolicy`, 공유 `StorySummary`·DTO | 기존 공유 타입은 `common`에 유지. 비즈니스 Repository 구현은 옮기지 않음 |
 | `StoryReportController` | 채팅 목록·채팅방·제작·스토리 상세에서 사용. 별도 공용 ViewModel·Singleton을 추가하지 않음 |
+| `AttendanceClaimer` | `common` 계약, `my`의 `CreditRepositoryImpl` 구현. 이프 부족 시트의 출석 요청을 연결 |
+| `CreditShortageController` | `common`. 채팅방과 간편 제작 추가 정보 단계에서 사용. 시트 상태는 각 ViewModel 상태에 싣고 분석 이벤트는 ViewModel이 보냄 |
 
 `SessionTerminationCoordinator`와 `UserScopedStore` 목록 조립은 `app`이 소유합니다. Hilt는 Singleton·ViewModel·제작 저장소의 ActivityRetained 수명을 사용하며 별도 사용자 세션 Component는 두지 않습니다. 인증 클라이언트 → Interceptor → 토큰 관리자 → 재발급 API → 무인증 클라이언트 경로는 지연 주입과 재발급 single-flight로 순환·재귀 호출을 막습니다.
 
@@ -124,7 +125,8 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 로그인·탭·상세·제작·채팅·마이 화면의 사용자 동작은 [공통 Spec](../spec/3-1-client-spec.md), 플랫폼 적용 차이는 [Android Spec](../spec/3-3-android-spec.md)이 정본입니다. 화면 구현에서는 다음 경계를 유지합니다.
 
-- 홈 카드·제작 `MyStoryCard`·상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를 그리고, 좁은 표지에서는 배지 단위로 줄을 바꿉니다. `MyStoryCard`의 메타는 `StorySummary.visibility`(공개 범위)와 제작일을 그립니다. 목록과 상세가 같은 `common`의 `StoryVisibility`를 쓰며 알려진 값만 보관하고 없으면 그 항목만 생략합니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 표지 위 겹침 요소는 상세 히어로 배지를 포함해 `StoryCover`가 `CoverOverlayScope.backdrop`으로 넘기는 흐림 원천을 `coverBackdrop`으로 잘라 깝니다([A-073](../adr/1-3-android-adr.md#a-073-표지-위-뱃지에-웹과-같은-배경-흐림을-graphicslayer로-적용하기)). 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 성공한 수는 `common`의 `StoryLikeUpdates`로 `HomeRepositoryImpl`에 전달합니다. 저장소의 replay 없는 `SharedFlow`를 `HomeViewModel`이 자신의 수명 동안 수집해 같은 카드만 갱신하며, 조회 중 수신한 변경은 해당 응답에 합쳐 늦은 응답의 덮어쓰기를 막습니다. 새 조회가 시작되면 임시 합산 값을 비워 서버 값을 다시 정본으로 씁니다.
+- [신규 가입 온보딩](../spec/3-3-android-spec.md#신규-가입-온보딩)은 `home/onboarding`이 소유합니다. `StoryOnboardingStore`가 자기 DataStore 파일(`story-onboarding`)에 표시 하나를 두고 `UserScopedStore`로 로그아웃 정리에 참여하며, 읽기 실패는 "온보딩 없음"입니다. `RootViewModel.storyOnboardingPending`(읽기 전 null)이 메인 백스택의 루트를 `StoryOnboardingRoute` 또는 `MainTabsRoute`로 정하고, null인 동안 메인 그래프를 열지 않습니다. 그래프를 연 뒤 표시가 켜지면 셸만 있는 백스택일 때만 루트를 바꿉니다. 완료는 `app`의 `rememberOnboardingFinisher`가 루트 키만 `MainTabsRoute`로 바꿔 끼우고 탭을 고른 뒤 `RootViewModel.onStoryOnboardingFinished`로 완료 이벤트를 보내고 표시를 지웁니다. 같은 실행의 완료는 메모리에도 두어 저장 실패 뒤 화면 재생성이 온보딩으로 되돌리지 않고, 저장된 표시가 꺼지면 내립니다. 상세 엔트리의 채팅 진입도 이 동작을 거쳐 온보딩 위에서 연 상세의 채팅이 완료가 됩니다. `StoryOnboardingViewModel`은 `HomeRepository.publicStories`로 오리지널 채팅순 첫 페이지를 읽고, 가운데 순번(`selectedIndex`), `ChatStarter`의 single-flight 채팅 생성, 1초 머문 카드의 노출 기록을 소유합니다. 캐러셀은 `HorizontalPager`에 큰 페이지 수를 주고 가운데에서 시작하며 `rememberPagerState`가 위치를 저장합니다. 가운데 순번은 페이지가 절반을 넘긴 `currentPage`로 올려 넘기는 도중의 채팅 시작도 보이는 카드로 시작합니다. 카드는 상세 주변 인물 카드와 같은 틀로 위에 `StoryCover`, 구분선 아래 글자 영역을 두며 카드 폭은 글자 영역 높이를 뺀 남은 높이로도 제한하고, 옆 카드는 `graphicsLayer`로 가운데 쪽 변을 기준점 삼아 줄이고 흐립니다. 카드의 옅은 그림자도 같은 층의 높이(`shadowElevation`)로 그려 반투명 층이 그림자를 자르지 않게 합니다. 창 높이가 낮으면(가로 화면) 캐러셀 높이를 고정하고 화면을 세로 스크롤해 카드가 남은 높이만큼 줄어들지 않게 합니다([A-083](../adr/1-3-android-adr.md#a-083-신규-가입-온보딩을-메인-백스택의-루트로-두고-완료를-기기-안-회원-귀속-표시로-판정하기)).
+- 제작 `MyStoryCard`와 상세 히어로의 `StoryThumbnail`은 좋아요 수·누적 턴 수 배지를 그리고, 홈 카드는 `likeCount`를 null로 넘겨 누적 턴 수 배지만 그립니다. 좁은 표지에서는 배지 단위로 줄을 바꿉니다. `MyStoryCard`의 메타는 `StorySummary.visibility`(공개 범위)와 제작일을 그립니다. 목록과 상세가 같은 `common`의 `StoryVisibility`를 쓰며 알려진 값만 보관하고 없으면 그 항목만 생략합니다. 두 수는 `designsystem`의 `formatCompactCount`로 축약합니다. 표지 위 겹침 요소는 상세 히어로 배지를 포함해 `StoryCover`가 `CoverOverlayScope.backdrop`으로 넘기는 흐림 원천을 `coverBackdrop`으로 잘라 깝니다([A-073](../adr/1-3-android-adr.md#a-073-표지-위-뱃지에-웹과-같은-배경-흐림을-graphicslayer로-적용하기)). 상세 `StartChatCta`는 `StoryDetailUiState.canLike`(내 스토리가 아님)일 때 채팅 시작 버튼 왼쪽에 좋아요 버튼을 두고 `StoryDetailViewModel`의 `ToggleLike`로 등록·취소합니다. 요청 중에는 버튼을 잠그고 응답 뒤 0.5초 쿨다운으로 연타를 거르며, 요청 즉시 상태와 수를 바꾸고 실패하면 요청 직전 값으로 복원하며 토스트를 띄웁니다. 진행 중 상세 재조회는 취소하고 좋아요 요청 중 화면 복귀는 새 조회를 시작하지 않습니다. 홈 카드는 좋아요 수를 그리지 않으므로 상세의 좋아요 결과를 홈 목록에 전달하지 않습니다([A-085](../adr/1-3-android-adr.md#a-085)).
 - 상세의 `StoryCharacter.description`은 공백 값을 null로 정규화하고 이름 아래에 표시합니다. `StoryDetail.visibility`는 알려진 값만 보관하고 소유자 메타에만 표시합니다. 채팅 생성 실패는 일회성 Effect로 토스트를 보내며, 삭제 성공은 `app` 콜백이 메인 셸까지 백스택을 정리하고 제작 탭을 선택합니다.
 - 상세의 페르소나 셀렉트는 `StoryPersonaControl`이 소유합니다. 내 페르소나 목록과 상세에서 만든 페르소나(`CreatedPersona`)는 `PersonaAccess`의 메모리 StateFlow를 관찰하고, 직접 고른 값은 컨트롤 안의 장부에 둬 고른 직후의 채팅 시작이 이벤트 채널보다 앞선 값을 읽습니다. 화면이 보일 때마다 목록을 다시 읽고, 목록에 없는 선택은 기본 주인공으로 돌아갑니다. "페르소나 생성하기"는 `ManyakSelectField`의 동작 항목(`ManyakSelectAction`)이며 `app`이 `PersonaCreateRoute(originStoryId)`를 쌓습니다. 생성에 성공하면 저장소가 그 스토리의 미리 선택을 남기고, 다른 주인공을 고르거나 채팅을 시작하면 지웁니다. 채팅을 시작할 때 고른 주인공은 직접 고른 값으로 굳혀, 백스택에 남은 상세가 채팅방에서 돌아왔을 때 같은 선택을 보입니다. 하단 CTA는 라벨 아래 `labelTiny` 한 줄로 고른 페르소나와 시작 상황을 요약하며, 두 줄이 하트 버튼과 같은 48dp 안에 들도록 버튼의 세로 안쪽 여백을 걷습니다.
 - 마이의 페르소나 관리(`MyPersonasRoute`), 생성(`PersonaCreateRoute`), 수정(`PersonaEditRoute(personaId)`)은 `my/persona`가 소유합니다. 목록 ViewModel은 저장소 목록을 관찰하고 진입 때 다시 읽으며, 옵션 시트와 삭제 확인의 대상을 `optionsTarget`, `deleteTarget`으로 둡니다. 줄은 채팅 카드, 내 스토리 카드와 같이 줄 전체가 펼치기이고 이름 줄 오른쪽 더보기와 길게 누르기가 같은 옵션 시트를 엽니다. 줄 펼침은 화면의 `rememberSaveable`입니다. 생성과 수정은 같은 `PersonaFormViewModel`이고 소개 글(`# 주인공`, `## 성별`, 성별 값, 특징)의 조립과 분해는 `my/persona/domain`의 순수 함수입니다. 저장소는 성공한 변경을 응답으로 먼저 목록에 반영한 뒤 서버 목록을 다시 읽어, 다시 읽기가 실패해도 상세가 새 페르소나를 미리 선택할 수 있습니다. 회원 귀속 메모리라 `UserScopedStore`로 로그아웃 정리에 참여합니다.
@@ -145,6 +147,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 - 채팅의 텍스트·인물 이미지 순서를 유지하고 진행 중 렌더와 저장된 턴의 렌더를 같은 표현 규칙으로 연결합니다. SSE 완료·실패·재생성·선택지 계약은 공통 Spec을 따릅니다. `CharacterImage`의 허용 경로는 `/characters/generated/`·`/characters/originals/`·`/characters/uploaded/`·`/chat-images/`(실시간 인물 이미지, `chat-images/{chatId}/{turn}-{uuid}.webp`)·`/scenes/originals/`(오리지널 장면 이미지)입니다. 이미지 마커 파서 `parsePassageSegments`와 조각 타입 `PassageSegment`는 `designsystem`의 `text` 패키지에 두고 채팅 AI 출력·프롤로그와 스토리 상세의 상황 설명이 함께 씁니다. 장면 경로 마커는 대사 라벨 없이 `SceneImage`가 되고 `CharacterImage`는 이름 없이 "장면 이미지 크게 보기"를 버튼 이름으로 씁니다. 상세의 장면 이미지 탭은 뷰어만 열고 인물 이미지 클릭 이벤트를 남기지 않습니다.
 - 채팅 설정 시트의 실시간 이미지·AI 추천 입력·블럭 입력은 기기 귀속 `@DeviceDataStore`(`device_id`와 같은 파일)의 `chat_realtime_image_enabled`·`chat_choices_enabled`·`chat_input_mode` 키에 저장하며 `UserScopedStore`에 참여하지 않습니다. `ChatPreferencesRepository`는 진입 시 한 번 읽는 값이고 화면 상태가 정본이라 저장 실패가 방금 바꾼 선택을 되돌리지 않습니다. 실시간 이미지는 전송 시점 값을 `StreamingTurn`에 스냅샷해 요청 본문 `realtimeImage`(항상 명시)와 진행 블록이 같은 값을 쓰고, 시트 열림은 `ChatRoomViewModel`의 `settingsOpen`이 소유하며 구성 변경에서 유지합니다. 실시간 이미지 미저장 기본값은 false입니다.
 - 헤더 모델 버튼이 여는 채팅 응답 시트의 AI 모델과 긴 응답은 기기에 저장하지 않습니다. `ChatRoomViewModel`이 방을 열 때 `GET /chats/models`(실패해도 방은 열고 다시 시도할 때 다시 읽음)와 상세 `model`, `longResponse`를 함께 들고, 칸을 고르거나 스위치를 바꾸면 상태를 먼저 바꾼 뒤 `PATCH /chats/{chatId}`에 바뀐 필드만 실어 저장합니다. 긴 응답도 저장에 실패하면 그 사이 다시 바꾸지 않았을 때만 되돌리고 토스트를 올립니다. 저장에 실패하면 그 사이 다른 모델을 고르지 않았을 때만 이전 모델로 되돌리고 토스트를 올립니다. 고른 모델의 `turnCost`는 전송 버튼 옆 비용과 이프 부족 사전 판단에 쓰며, 이어쓰기와 재생성 요청에는 모델을 싣지 않습니다(서버가 채팅의 모델로 청구). 채팅 응답 시트 열림은 화면의 `rememberSaveable`이 소유합니다.
+- 이프 부족 시트는 `designsystem`의 `CreditShortageSheet`가 그리고 절차는 `common`의 `CreditShortageController`가 맡습니다([A-081](../adr/1-3-android-adr.md#a-081)). `ChatRoomViewModel`과 `CreateAdditionalInfoViewModel`이 시트 상태(`creditShortage`)를 화면 상태에 실어 구성 변경에서 유지합니다. 시트를 열 때 `UserProfileRepository.refresh()`로 잔액과 `attendedToday`를 다시 읽고, 프로필을 모르면 출석 버튼을 숨깁니다. 출석은 `AttendanceClaimer`로 요청해 성공(보상 또는 이미 출석)하면 시트를 닫고 프로필을 다시 읽으며, 실패하면 시트에 머뭅니다. 채팅의 충전은 입력을 든 `ChatRoomViewModel`을 백스택에 둔 채 `MyCreditChargeRoute`를 쌓습니다. 간편 제작의 충전은 `StorylineGenerationStore.saveDraftAndAwait()`로 저장이 끝나야 퍼널 이탈을 처리하고, `app`이 퍼널을 걷어낸 뒤 제작 탭 위에 이프 충전을 쌓습니다. 완성 선검사는 프로필 잔액, 정책 `storyCreationCost`, 체험 `storyCreation`을 모두 알고 체험이 소진됐을 때만 막습니다.
 - 실시간 이미지 안내의 기기 누적 횟수는 같은 `@DeviceDataStore`의 정수 키 `chat_completed_turn_count`로 저장합니다. `ChatPreferencesStore.recordCompletedTurn()`이 `edit` 안에서 원자적으로 증가시키고 3에서 멈추며 IO 실패는 null로 돌려줍니다. `ChatRoomViewModel`은 이어쓰기의 정상 `Completed`만 기록하며 재생성, 실패, 중단은 제외합니다. 2를 반환한 완료 순간의 이미지 설정이 false이면 예약을 만들고 입력 잠금이 풀린 뒤 500ms에 `settingsOpen`과 `realtimeImageNudgeOpen`을 함께 올립니다. 그 사이 다음 전송이나 재생성이 시작되면 대기를 취소하고 응답 종료 뒤 다시 기다립니다. 예약 Job과 표시 상태는 ViewModel 수명이며 영속 저장하거나 SavedStateHandle에 넣지 않습니다.
 - `ManyakBottomSheet.onExpanded`로 시트가 펼쳐진 뒤 `RealtimeImageNudge`를 엽니다. 시트의 별도 창 위에 focusable `Popup`을 두고 행과 팝업의 화면 좌표 차이로 하이라이트를 배치합니다. 기존 투어에서 분리한 `ChatSpotlightDim`을 재사용하고 구멍 위의 투명한 Switch 의미 영역이 기존 행의 토글 콜백을 호출합니다. 나머지 시트 의미 정보는 `clearAndSetSemantics`로 가립니다. 실시간 이미지 활성화 콜백은 안내 닫기 의도도 함께 전달합니다. 활성화, 뒤로가기, 딤, 확인은 안내 상태만 닫고 딤과 카드는 퇴장 애니메이션 뒤 제거합니다. 표현 값은 [디자인 시스템](../../../manyak-android/DESIGN.md#모션)을 따릅니다.
 - 채팅 스트리밍 블록은 로딩과 본문을 같은 자리에 두고 첫 조각(글자·이미지)에서 로딩을 페이드로 뺍니다. 로딩이 그려지는 동안 잰 높이를 `rememberSaveable`에 두고 본문이 그만큼 자랄 때까지 최소 높이로 유지해 상단 앵커가 내려앉지 않게 하며, 재생성도 같은 블록을 씁니다. 실시간 이미지를 켠 턴은 `designsystem`의 `CyclingPhrases`와 `chat`의 `RealtimeImageStage`(4:3, `CharacterImage`와 같은 모서리)를, 끈 턴은 기존 시머 한 줄을 보입니다. 대화 최상단의 AI 생성 안내 문구는 목록 항목이라 재생성 앵커 인덱스가 안내·프롤로그 수를 더합니다.
@@ -165,7 +168,7 @@ Navigation 3의 typed `NavKey`와 루트 back stack을 사용합니다. 경로 �
 
 ### 약관 동의 게이트
 
-`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트가 `LegalConsentViewModel`을 먼저 만들고 `MemberConsentGate`에서 저장소의 완료 상태와 ViewModel의 `isSatisfied`를 함께 확인합니다. 확인 전에는 회원 그래프를 구성하지 않습니다. 가입 완료 뒤 회원 동의 조회 중에는 로그인 화면에 지연 진행 표시와 뒤로가기 로그아웃을 제공합니다. `LoginViewModel`은 회원 상태의 새 소셜 로그인을 거부합니다. 완료 후 회원 그래프의 `MemberOverlays`가 알림 권한 요청을 시작하고, 권한 응답 뒤 선택 동의 처리와 초대 코드, 광고 재질문을 순서대로 연결합니다. 동의 ViewModel을 루트 수명에서 유지해 화면 전환 시 선택 동의 답을 잃지 않습니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 회원 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. 가입 완료로 세션이 열려도 같은 조회로 다시 확인하므로 정지 회원은 기존 `FORBIDDEN` 상태로 갑니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
+`legal/consent`가 동의 조회·기록 API(`GET·POST /users/me/consents`)·`ConsentRepository`·`LegalConsentViewModel`·시트를 소유합니다. 루트가 `LegalConsentViewModel`을 먼저 만들고 `MemberConsentGate`에서 저장소의 완료 상태와 ViewModel의 `isSatisfied`를 함께 확인합니다. 확인 전에는 회원 그래프를 구성하지 않습니다. 가입 완료 뒤 회원 동의 조회 중에는 로그인 화면에 지연 진행 표시와 뒤로가기 로그아웃을 제공합니다. `LoginViewModel`은 회원 상태의 새 소셜 로그인을 거부합니다. 완료 후 회원 그래프의 `MemberOverlays`가 알림 권한 요청을 시작하고, 권한 응답 뒤 선택 동의 처리와 초대 코드, 광고 재질문을 순서대로 연결합니다. 초대 코드 시트는 `MainNavDisplay`가 알리는 홈 탭 표시 여부(메인 백스택 맨 위가 `MainTabsRoute`이고 홈 탭을 고름)가 참일 때만 그립니다. 동의 ViewModel을 루트 수명에서 유지해 화면 전환 시 선택 동의 답을 잃지 않습니다. 선택 항목은 OS 권한 상태와 무관하게 항상 싣습니다. 회원 완료 판정은 서버 조회 또는 기록 응답에서 모든 필수 항목의 `needsConsent`가 false인 경우이며, 로컬 영속 완료 플래그를 두지 않습니다. 가입 완료로 세션이 열려도 같은 조회로 다시 확인하므로 정지 회원은 기존 `FORBIDDEN` 상태로 갑니다. `ConsentRepositoryImpl`이 `MemberConsent.isSatisfied` 메모리 상태를 공개하고 `SessionGate`의 작업과 commit으로 늦은 응답을 거부합니다. 응답 항목이나 판정 필드가 누락되면 직렬화 실패이며 상태는 미완료입니다. `UserScopedStore` 정리에서 이 상태를 비웁니다.
 
 로그인 중 가입 대기는 `auth`가 소유합니다. `SessionRepositoryImpl`이 `POST /auth/social/{provider}`를 호출하고 `COMPLETED`면 기존처럼 토큰을 저장해 회원을 공개합니다. `CONSENT_REQUIRED`면 토큰을 만들지 않고 대기 코드는 저장소 필드에만, 필요한 항목과 요구 버전은 `SignupRepository.pendingSignup`(`PendingSignup`)에 둡니다. 대기 코드는 엔티티·로그·Crashlytics·분석·디스크에 싣지 않으며 프로세스가 재시작되면 사라집니다. 새 로그인을 시작할 때 이전 대기를 버리고, 대기를 공개할 때 직전 종료 안내를 지웁니다. `LegalConsentViewModel`은 세션 상태와 대기를 함께 보고 `SignedOut`에 대기가 있으면 `isSignup` 시트를, 회원이면 회원 동의 조회를 시작합니다. 루트는 `SignedOut`에서 `SignupConsentGate`로 로그인 화면 위에 같은 시트를 얹습니다. 가입 모드의 제출은 `completeSignup`이 `POST /auth/social/complete`(`X-Manyak-Consent-Token`)로 보내고, 성공하면 같은 인증 작업 안에서 토큰 저장과 회원 공개를 마친 뒤 대기를 비웁니다. 회원 공개가 대기 해제보다 먼저라 동의 ViewModel이 가입 취소로 오인하지 않고 선택 동의 답(`marketingAnswer`)을 회원 그래프로 넘깁니다. 401 `CONSENT_TOKEN_INVALID`와 400 `CONSENT_VERSION_MISMATCH`·`CONSENT_REQUIRED_MISSING`은 대기를 버리고 `SessionEndNotice.SIGNUP_EXPIRED`·`SIGNUP_OUTDATED`를 로그인 화면 안내로 남기며 소셜 인증을 자동으로 다시 시작하지 않습니다. 그 밖의 실패는 대기를 유지해 같은 시트에서 다시 제출합니다. 가입 모드의 로그아웃 버튼과 뒤로가기는 `cancelSignup`으로 대기만 버리고 로그아웃을 호출하지 않습니다. 광고 동의는 완료 본문에 싣지 않고 세션이 열린 뒤 기존 알림 경로로 저장합니다.
 
@@ -221,7 +224,7 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 `MyViewModel`은 프로필 갱신 중 상태를 보유하고, 캐시가 없는 조회 중에는 `ProfileHeader`가 연동 Chip 골격 두 개를 표시합니다. 응답의 연동 목록이 비어 있거나 조회가 실패하면 연동 버튼을 추측해 만들지 않습니다. 기존 프로필이 있으면 갱신 중에도 그 값을 유지합니다.
 
-`InviteOnboardingRepository.acknowledge()`는 닫기 기록의 저장 성공 여부를 반환합니다. DataStore의 I/O 실패는 false이며 코루틴 취소는 전파합니다. `InviteOnboardingViewModel`은 보상 지급 결과와 닫기 기록 결과를 별도로 처리해 `Redeemed(closeFailed)` 또는 `DismissFailed` Effect로 안내하고, 현재 실행의 dismissed 상태로 시트 재표시와 재제출을 막습니다. 서버 지급과 로컬 기록을 하나의 성공으로 취급하지 않습니다.
+`InviteOnboardingStore.pending`은 디스크의 안내 표시와 프로세스 메모리의 "이번 실행에 가입함"을 합쳐, 가입한 실행에서는 거짓이고 다음 실행부터 참입니다([A-086](../adr/1-3-android-adr.md#a-086)). `InviteOnboardingRepository.acknowledge()`는 닫기 기록의 저장 성공 여부를 반환합니다. DataStore의 I/O 실패는 false이며 코루틴 취소는 전파합니다. `InviteOnboardingViewModel`은 보상 지급 결과와 닫기 기록 결과를 별도로 처리해 `Redeemed(closeFailed)` 또는 `DismissFailed` Effect로 안내하고, 현재 실행의 dismissed 상태로 시트 재표시와 재제출을 막습니다. 서버 지급과 로컬 기록을 하나의 성공으로 취급하지 않습니다.
 
 ### 이프 정책 캐시
 
@@ -235,7 +238,7 @@ Google은 서버 Web client ID의 `aud`와 Android `azp` allowlist를, Kakao는 
 
 ### 회원 알림함
 
-`notification/inbox`가 회원 알림 API, 분류별 목록과 커서, 읽음 상태, 화면을 관리합니다. 인증 클라이언트와 공통 오류 변환을 사용하며 본문 없는 읽음 성공은 `emptyBodyApiCall`로 처리합니다. 서버 목록과 읽음 기록을 디스크에 복제하지 않습니다.
+`notification/inbox`가 회원 알림 API, 분류별 목록과 커서, 읽음 상태, 화면을 관리합니다. 인증 클라이언트와 공통 오류 변환을 사용하며 본문 없는 읽음 성공은 `emptyBodyApiCall`로 처리합니다. 서버 목록과 읽음 기록을 디스크에 복제하지 않습니다. 카드 제목은 공지 목록과 같이 제목 글만 한 줄로 줄이고 안 읽음 점은 별도 글로 줄 끝에 둬 말줄임에 잘리지 않게 합니다.
 
 알림함 ViewModel은 선택한 분류와 두 분류의 목록을 유지합니다. 목록 조회와 읽음 요청은 같은 Mutex로 순서를 맞춰 이전 응답이 읽음 표시를 되돌리지 않게 합니다. 한 건 읽음은 요청 결과와 관계없이 목적지로 이동하고, 모두 읽음 실패는 두 분류의 읽음과 개수를 복원합니다. 화면 재생성은 읽음 요청을 다시 실행하지 않으며 탭별 스크롤은 저장 가능한 화면 상태입니다. 알림 내용은 회원 그래프 안의 ViewModel 수명에만 존재합니다.
 
@@ -259,7 +262,7 @@ payload의 `recipientId`를 현재 프로필 ID와 대조합니다. Pending·프
 
 ### 알림 진입과 권한
 
-`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리는 무시, 무료 탭이 기본), `/studio`→제작 탭, `/notices`→공지 목록, `/notices/{noticeId}`→공지 상세(`openExternalDestination`이 `NoticeListRoute`를 먼저 쌓아 뒤로가기가 목록으로 감)이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
+`PushEntry`는 payload의 `deepLink`가 있으면 그 URL을 정본으로 삼아 `:navigation`의 `DeepLink`가 내부 목적지로 해석합니다 — `https`이고 호스트가 `manyak.app`·`www.manyak.app`일 때 `/stories/{id}`→스토리 상세, `/my/credits`→이프 충전(쿼리 중 `tab`만 읽어 `history`면 `MyCreditChargeRoute(openHistory = true)`로 내역 탭, 그 밖의 값과 쿼리 없음은 무료 충전 탭. 화면은 이 값을 처음 탭으로만 쓰고 탭 전환을 라우트에 다시 쓰지 않음), `/studio`→제작 탭, `/notices`→공지 목록, `/notices/{noticeId}`→공지 상세(`openExternalDestination`이 `NoticeListRoute`를 먼저 쌓아 뒤로가기가 목록으로 감)이며 그 외는 홈입니다. 해석에 실패해도 `type` 매핑으로 되돌아가지 않습니다. `deepLink`가 없는 payload(프로모션·업데이트 전에 만든 PendingIntent)만 스토리 완성→storyId 상세, 검수 완료→제작 탭(submissionId 필수), 출석→이프, 프로모션·미지원·필수 값 누락→홈으로 매핑합니다. 이동 시 공통 셸+목적지로 정리해 상세 화면을 중복 적재하지 않습니다. 제작 진입은 `StudioRoute`를 루트에 쌓지 않고 기존 셸의 제작 탭을 선택합니다. 루트의 재조회 번호를 셸을 통해 `StudioScreen`에 전달하므로 이미 선택된 탭도 즉시 재조회하며, 홈 도착은 실제 홈 탭을 선택합니다. 파서는 `java.net.URI`를 쓰며 App Links(HTTPS intent-filter·`assetlinks.json`)는 아직 없습니다.
 
 웹 앱 안내 배너의 앱 열기는 `MainActivity`의 전용 스킴 intent-filter(`manyak://manyak.app`, VIEW와 BROWSABLE)로 들어옵니다. `PushEntry.readAppLinkFrom`이 VIEW 인텐트의 주소를 `TYPE_APP_LINK` 진입으로 바꾸고 경로를 같은 주소의 https로 옮겨 `DeepLink`로 해석합니다. 이 진입은 수신자를 비교하지 않고 회원과 프로필 확인 뒤 소비하며, 푸시 진입 extra가 있으면 푸시를 먼저 읽습니다([A-071](../adr/1-3-android-adr.md#a-071-웹의-앱-열기-링크를-https-대신-전용-스킴으로-받기)).
 
@@ -327,6 +330,8 @@ Room DB v6은 퍼널 세션의 `draftId`를 기본 키로 여러 행을 두는 `
 
 payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayload.kt)가 쓰고 [`SimpleDraftPayloadReader`](../../../manyak-android/create/src/main/java/app/manyak/create/data/api/SimpleDraftPayloadReader.kt)가 읽습니다. 스토리라인 초안의 `generationRequest`와 최상위 `generationRequestId`는 화면에 보이는 결과를 만든 생성 요청이어야 해서, 스토어는 재시도에 쓰는 마지막 요청과 별도로 결과를 만든 요청을 들고 있습니다. 진행 순번(`selectedStorylineIndex`)은 고른 스토리라인 ID로 바꿔 쓰고 읽을 때 결과에서 찾아 순번으로 되돌리며, 찾지 못하면 스토리라인 선택 단계로 엽니다. 빠졌거나 null인 선택 필드는 기본값으로 읽고, 상세의 `generation`이 완료가 아니면 초안을 찾지 못한 것으로 보아 그 버전으로 덮어써 같은 ID로 새로 시작합니다. 서버 스토리라인 초안 카드는 단계를 몰라 스토리라인 라우트로 열고, 카드로 연 초안이 추가 정보 단계였으면 스토리라인 화면이 추가 정보 라우트를 이어 쌓습니다. 이어 갈 스토리라인이 없는 스토리라인 라우트는 같은 `draftId`의 키워드 라우트로 바꿉니다. 판정을 기다리는 동안 단계 화면은 헤더 아래에 `rememberDelayedProgressVisibility` 스피너를 둡니다.
 
+스토리라인 생성 응답이 422 `CONTENT_REJECTED`(`DomainError.isContentRejected`)이면 `StorylineGenerationStore`가 다른 상태 코드 실패와 같이 기록을 정리한 뒤(결과가 없으면 지우고, 다시 만들기였으면 직전 결과를 기기 안에 되돌림) 메모리의 생성과 편집을 비우고 `StorylineGenerationState.Rejected`로 바꿉니다. 세션의 저장 위치는 그대로 둬 키워드 단계가 진입 판정을 다시 하지 않습니다. 스토리라인 화면은 이 상태를 받으면 `RestartAtKeyword`로 같은 `draftId`의 키워드 라우트로 바꾸고, 키워드 화면은 진입 판정 뒤 `takeRejectedKeyword()`로 거절된 요청을 `KeywordDraftSnapshot`으로 꺼내 채우며 `contentRejected`로 푸터 안내를 그립니다. 기준선은 빈 입력이라 돌아온 키워드는 저장하지 않은 편집입니다. 꺼내면 스토어가 `Idle`이 되어 다음 생성이 새 요청 ID로 시작합니다. 거절 문구는 키워드 화면과 제작 탭이 함께 쓰므로 `common`의 `error_content_rejected`에 두고 `DomainErrorMessages`도 이 코드를 같은 문구로 바꿉니다([A-082](../adr/1-3-android-adr.md#a-082)).
+
 세션은 서버 상세와 PUT 응답의 `createdAt`을 들고 있다가 기기 안 행을 처음 쓸 때와 완성 요청에 넘겨, 단계가 바뀌어도 카드의 처음 저장 시각과 순서가 바뀌지 않게 합니다(이미 있는 행은 기존 시각을 유지합니다).
 
 서버 간편 제작 카드는 `SimpleDraftServerStore`가 `StoryDraftRemote` 목록에서 `SIMPLE` 항목만 골라 냅니다. `CreationProgressRepository`는 기기 안 행과 완성 요청, 서버 간편 제작 카드를 `mergeSimpleDrafts`로 합치는데, 같은 `draftId`의 기기 안 행이나 완성 요청이 서버 초안을 가리키고 서버 `version`이 그 기준 버전 이하이면 서버 카드를 숨깁니다. 숨기지 않은 서버 카드는 `CreationProgressSummary.onServer`가 참이라, 같은 ID의 기기 안 카드와 목록 키, 이어서 만들기, 삭제를 따로 합니다. 기기 안 카드 삭제는 그 카드가 숨긴 서버 초안을 먼저 DELETE하고 행을 지웁니다. 서버 카드로 이어서 만들면 라우트에 `server`를 싣고, 진입 판정이 같은 ID의 기기 안 행을 새 UUID 행으로 옮기며(`PendingStoryCreationDao.detach`, 서버 초안 연결은 버림) 서버 초안을 엽니다. 이 세션의 진행 기록이 이 기기의 다른 갈래를 덮지 않게 하려는 것이고, 옮긴 행은 기기 안 세션의 초안으로 남습니다. 완성 요청은 세션의 `draftId`를 항상 싣고(기기 안 세션의 ID는 서버가 넘깁니다) 서버 세션이면 요청 행에도 `serverDraftVersion`을 남겨, 서버가 요청을 기록하며 초안을 지우기 전까지 같은 제작의 서버 카드를 가립니다.
@@ -339,13 +344,14 @@ payload는 웹과 같은 v1 형식으로 [`SimpleDraftPayload`](../../../manyak-
 | --- | --- |
 | POST 성공 | Completed 저장 |
 | 네트워크·401·403 | 서버 수락 여부를 단정하지 않고 불확실 상태 유지 |
+| 422 `CONTENT_REJECTED` | 서버가 실패로 기록한 확정 거절이라 조회 없이 추가 정보 단계 초안으로 되돌리고 거절로 알림 |
 | 그 외 실패와 409 | GET 요청 조회로 복구하고, 조회가 FAILED나 404면 요청을 지우고 추가 정보 단계 초안으로 되돌림 |
 | 사용자 새로고침의 미수락 요청 | GET 404이면 같은 저장 명령·requestId로 다시 전송 |
 | 제작 탭의 미완료 카드 | STARTED·노출 중 5초 폴링 |
 | 스토리라인 복구 | STARTED 중 3초 폴링. 완성 요청 폴링과 별개 |
 | 완료 카드 제거 | 서버 목록에서 storyId를 확인한 뒤 제거. 아직 없으면 추가 조회와 완료 카드 유지 |
 
-확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 알려 보고 있는 제작 탭이 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
+확정 실패는 `StoryCompletionRequestStore.demoteToDraft`가 요청 행 삭제와 편집 초안 쓰기를 한 트랜잭션으로 합니다. 초안은 `toReturnedDraft`가 제출한 명령(같은 입력의 재완성이 같은 requestId를 쓰도록)과 화풍, 서버 초안 연결, 처음 저장 시각을 그대로 담아 명령의 `draftId`(이 기능 전 요청은 새 UUID) 행으로 씁니다. 되돌리면 `CreationProgressAccess.completionFailures`로 `CompletionFailure`(사유를 모르는 `FAILED`, 원 응답의 수위 거절 `CONTENT_REJECTED`)를 알려 보고 있는 제작 탭이 사유에 맞는 토스트를 띄웁니다. 이전 버전이 FAILED로 남긴 행은 새로고침이 같은 방식으로 되돌리고 그 전까지 카드로 그리지 않습니다. 실패 카드와 같은 요청 재전송(`retryCompletionRequest`)은 없앴습니다. 서버가 완성 요청을 기록하며 초안을 지운 뒤라면 되돌린 초안의 다음 저장은 기준 버전 저장이 거절되고 상세 404를 확인한 뒤 같은 ID로 새로 만듭니다.
 
 v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못하는 원문을 보존합니다. v2→v3의 빈 ownerId는 다음 회원 세션에서 귀속합니다. v3→v4는 기본 키가 바뀌어 편집 테이블을 새로 만들어 옮기며, 남은 초안은 `legacy-{id}` ID와 빈 `createdAt`을 받습니다. v5→v6은 두 테이블에 nullable `serverDraftVersion` 열만 더해, 기존 행은 기기 안 세션의 것으로 남습니다. destructive migration을 사용하지 않습니다.
 
@@ -371,6 +377,8 @@ v1→v2는 레거시 완성 요청을 pending으로 옮기고 해석하지 못�
 
 그리드는 스크롤 목록 안이라 지연 그리드 대신 세 칸씩 나눈 줄로 그립니다. 칸은 `StoryCover`(미리보기가 없으면 기본 심벌) 위에 표지 뱃지와 같은 흐린 바탕(`coverBackdrop`)으로 이름을 얹고, `selectable`(RadioButton 역할)과 화풍 이름 하나만 읽히는 시맨틱을 둡니다. 고른 칸은 `designsystem`의 `selectionRing`으로 표지 바깥에 brand 테두리를 둘러 자리가 흔들리지 않게 하며, 스토리 상세 인물 썸네일이 같은 수식어를 씁니다.
 
+화풍 아래의 공개 스위치는 일반 제작 등록 탭과 같은 `create/presentation/component`의 `VisibilityField`를 씁니다. 값은 `CreateAdditionalInfoUiState.visibility`(기본 `PUBLIC`)가 들고 화풍과 함께 진행 미러(`CreationProgress.visibility`)에 실리며, 스토리라인 재생성과 "다시 선택하기"에도 남습니다. 완성 명령의 `visibility`로 보내고 requestId 재사용 조건에 더합니다. 저장 형식은 [A-087](../adr/1-3-android-adr.md#a-087)을 참조합니다.
+
 ### 편집 저장과 복원
 
 ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 저장합니다. `isChangingConfigurations=true`는 제외하며 destination의 STOP은 저장 계기가 아닙니다. 저장은 Mutex로 직렬화하고 API 전송 전에 진행 중 저장을 join합니다.
@@ -382,6 +390,8 @@ ActivityRetained 제작 저장소는 저장 버튼과 `Activity.onStop`에서 �
 분석 이벤트·식별자·수집 제한은 [분석 Spec](../spec/6-analytics.md)이 정본입니다. Android는 Amplitude와 Firebase Crashlytics를 사용하고 Firebase Analytics는 사용하지 않습니다.
 
 - 첫 이벤트 이전에 공용 device ID를 주입합니다. 로그인은 공개 사용자 ID, 로그아웃은 세션 정리 순서에 맞춰 사용자 해제와 device ID 교체를 수행합니다.
+- 사용자 속성(`setOnce`)도 이벤트와 같은 대기열을 타서 device ID 주입 뒤에 나갑니다.
+- `InstallReferrerReporter`는 앱 시작마다 기기 DataStore의 `install_referrer_reported` 키를 보고, 없을 때만 Play Install Referrer를 읽어 유입 귀속 속성을 보냅니다([분석 Spec §6-2](../spec/6-analytics.md#6-2-식별자-정책)). 조회 실패와 서비스 연결 끊김은 키를 남기지 않고 다음 실행에 다시 읽으며, Play 밖 설치(`FEATURE_NOT_SUPPORTED`)는 보낼 값 없이 완료로 남깁니다. 키는 device ID와 별개라 로그아웃의 device ID 교체 뒤에도 다시 보내지 않습니다.
 - Crashlytics는 release에서 활성화하고 debug에서는 끕니다. release는 R8을 적용하고 빌드마다 mapping 파일을 Crashlytics에 올립니다. 빌드·매핑 상태는 [배포 Design](4-deployment.md#manyak-android-ci)에서 확인합니다. 토큰·입력 원문·PII를 보내지 않으며 개별 오류 연결은 request ID를 사용합니다. 예상한 4xx·취소는 보고 대상에서 제외합니다.
 - 화면 이벤트는 현재 화면 소유 ViewModel의 노출 guard로 구성 변경 중 중복을 막습니다. 노출 집계 조건은 분석 Spec을 따릅니다. reducer에 관측 호출을 넣지 않습니다.
 - breadcrumb는 Amplitude 어댑터에서 연결해 화면에서 중복 발화하지 않습니다. 지속 Crashlytics 키는 `screen_name`을 사용하고 개별 식별자는 breadcrumb로 연결합니다.

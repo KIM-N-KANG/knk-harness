@@ -171,7 +171,7 @@ erDiagram
 
 | 테이블 | 컬럼 | ACCOUNT가 하는 일 |
 |---|---|---|
-| `stories` | `user_id` | 이관 시 NULL인 행에 요청자 설정<br>닉네임 변경 시 소유 스토리의 재색인 요청<br>내 스토리 목록 조회 |
+| `stories` | `user_id` | 이관 시 NULL인 행에 요청자 설정하고 설정한 스토리의 재색인 요청<br>닉네임 변경 시 소유 스토리의 재색인 요청<br>내 스토리 목록 조회 |
 | `story_creation_sessions` | `user_id` | 스토리 이관 시 연결된 간편 제작 진행의 소유자도 요청자로 설정 |
 | `story_chats` | `user_id`, `reached_ending_id`, `reached_ending_name_snapshot` | 이관 시 NULL인 행에 요청자 설정<br>도달 엔딩이 있으면 집계 보정<br>내 채팅 목록 조회 |
 | `user_story_ending_reaches` | 전체 | 이관한 채팅의 도달 엔딩을 회원 집계에 최초 1회 삽입 |

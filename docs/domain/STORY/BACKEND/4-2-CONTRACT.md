@@ -893,6 +893,7 @@ Authorization: Bearer <accessToken>
 | 400 | `CUSTOM_GENRE_NOT_ALLOWED` | `customGenreTags`에 값 존재 |
 | 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트 체험 한도 소진 |
 | 409 | `CONFLICT` | 같은 `requestId`가 진행 중<br>소유자나 단계가 다른 `requestId` 재사용 |
+| 422 | `CONTENT_REJECTED` | AI가 입력 내용을 이유로 생성을 거절 |
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답 |
 
 <details>
@@ -1001,6 +1002,7 @@ Authorization: Bearer <accessToken>
 | `storylineId` | `integer` | 필수 | 선택한 스토리라인 ID |
 | `additionalInfos` | `string[]` | 선택 | 추가 정보 최대 13개, 항목당 100자<br>선택한 추천 정보와 직접 입력한 정보를 합쳐 보냄<br>기본값 `[]` |
 | `artStyle` | `string` | 선택 | 활성 화풍 코드, 기본값 `ANIME`<br>빈 문자열은 기본값으로 보지 않고 거절<br>`NONE`이면 인물 이미지와 표지를 만들지 않음<br>차감액은 같음 |
+| `visibility` | `string` | 선택 | `PUBLIC` 또는 `PRIVATE`, 기본값 `PRIVATE`<br>게스트도 `PUBLIC`을 지정할 수 있음<br>게스트 스토리는 이관으로 회원 소유가 된 뒤 공개 목록과 검색에 실림 |
 | `isRegenerated` | `boolean` | 선택 | AI 호출 헤더로 그대로 전달 |
 | `draftId` | `string` | 선택 | 접수 시 삭제할 내 초안<br>회원 요청만 처리하고 없거나 타인의 초안이면 무시 |
 
@@ -1029,6 +1031,7 @@ Authorization: Bearer <accessToken>
 | 403 | `FORBIDDEN` | 정지 계정, 회원 소유 진행의 소유권 위반 |
 | 404 | `NOT_FOUND` | 진행이나 스토리라인 없음 |
 | 409 | `CONFLICT` | 이미 완성된 진행, 같은 `requestId`가 진행 중<br>소유자나 단계가 다른 `requestId` 재사용 |
+| 422 | `CONTENT_REJECTED` | AI가 입력 내용을 이유로 생성을 거절 |
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답<br>컴파일 결과의 사건이나 엔딩 이름 중복, 본문에 이름 토큰이 있는데 주인공 이름 없음 |
 
 <details>
@@ -1047,6 +1050,7 @@ Authorization: Bearer <accessToken>
     "지워진 기록은 지하 보관실에 흔적으로 남는다.",
     "결말은 서린이 기록을 되찾는 여운 있는 해피엔딩"
   ],
+  "visibility": "PUBLIC",
   "isRegenerated": false
 }
 ```
@@ -1103,6 +1107,23 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 }
 ```
 
+<br>
+
+**4) 422 Response body**
+
+AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프는 환불된다. 같은 입력은 다시 거절되므로 입력을 고쳐 새 `requestId`로 요청한다.
+
+```json
+{
+  "timestamp": "2026-06-10T12:00:00Z",
+  "status": 422,
+  "code": "CONTENT_REJECTED",
+  "message": "입력 내용이 안전 정책에 맞지 않아 생성할 수 없습니다.",
+  "path": "/api/v1/stories/simple",
+  "details": []
+}
+```
+
 </details>
 
 <br>
@@ -1115,7 +1136,7 @@ AI 호출이 실패한 경우다. 차감한 이프는 환불되고 같은 `reque
 | 인증 | 선택 |
 | 성공 | 200 |
 
-스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회한다. `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
+스토리라인 생성과 스토리 완성 요청의 진행 상태를 반환한다. 응답을 받지 못한 채 연결이 끊겼을 때 쓴다. `PENDING`이면 다시 조회한다. `COMPLETED`이면 `result`를 원래 응답으로 쓴다. `FAILED`이거나 회수 기준 시간을 넘긴 `PENDING`이면 같은 `requestId`로 원래 생성 요청을 다시 보낸다. 다시 보낸 요청이 422 `CONTENT_REJECTED`로 실패하면 같은 입력은 다시 거절되므로 입력을 고쳐 새 `requestId`로 요청한다. ([5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도))
 
 **1. 응답**
 
@@ -2480,6 +2501,6 @@ Content-Length: 204800
 | PAYMENT |  | 정책값 `story_creation_cost` |
 | NOTIFICATION | 완성 이벤트(회원, 요청 ID, 스토리 공개 ID, 제목), 캠페인 이동 대상 스토리의 공개 판정 | 없음 |
 | ADMIN | 공식 계정 식별, 스토리와 제작 세션 조회 | 관리자 요청자, 관리자 판정 필터, 변경 감사 기록 |
-| ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보 |
+| ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보와 이관된 스토리의 색인 요청 이벤트 |
 | ACCOUNT |  | 동의 게이트 허용 목록 |
 | 검색 | 색인 요청 이벤트(스토리 ID) | 검색 결과 카드 |

@@ -109,14 +109,14 @@ erDiagram
 
 **`push_message_templates`**
 
-출석 리마인드 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 관리자 API가 행을 추가한다.
+출석 리마인드와 이프 만료 예정 알림 문구의 오버라이드 1건이 한 행이다. 행이 없으면 기본 문구를 쓴다. 관리자 API가 행을 추가한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
-| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder` 하나 |
+| `template_key` | varchar(64) | NOT NULL | 템플릿 키<br>값은 `attendance_reminder`, `credit_expiry_reminder` |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
-| `body` | varchar(300) | NOT NULL | |
+| `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
 | `effective_from` | timestamptz | NOT NULL, 기본 `now()` | 적용 시작<br>유효한 행이 여럿이면 가장 늦게 시작한 행, 같으면 `id`가 큰 행 |
 | `effective_until` | timestamptz | | 적용 종료<br>`NULL`은 상시 적용<br>기본 문구로 복귀할 때 현재 시각으로 갱신 |
 
@@ -141,7 +141,7 @@ erDiagram
 | `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 게시 시점의 공지 태그<br>프로모션은 NULL |
 | `story_id` | bigint | FK `stories.id` | 이동 대상 스토리<br>없으면 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
-| `body` | varchar(300) | NOT NULL | |
+| `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
 | `scheduled_at` | timestamptz | NOT NULL | 발송 예약 시각 |
 | `status` | varchar(20) | NOT NULL, CHECK `SCHEDULED` `SENDING` `SENT` `CANCELED` `FAILED` | |
 | `target_count` | integer | | 마지막 회차에서 조회된 대상 수 |
@@ -179,54 +179,76 @@ erDiagram
 
 <br>
 
-### 3-2-8 발송 결과
+### 3-2-8 참조하는 다른 도메인의 컬럼
 
-**`push_delivery_results`**
-
-처리가 끝난 발송 요청 1건을 한 행으로 기록한다. 서버가 알림 서비스의 보고를 받아 기록하고 로컬 모드에서는 서버 안 발송기가 기록한다.
-
-| 컬럼 | 타입 | 제약 | 의미 |
-|---|---|---|---|
-| `id` | bigint | PK | |
-| `message_id` | varchar(255) | NOT NULL, UNIQUE | 메시지 식별자 |
-| `type` | varchar(40) | NOT NULL | 시나리오 식별자 |
-| `kind` | varchar(16) | NOT NULL, CHECK `SERVICE` `MARKETING` | |
-| `campaign_id` | bigint | FK `push_campaigns.id` | 캠페인 메시지만<br>그 외 NULL |
-| `user_id` | bigint | FK `users.id` | 수신 회원<br>공개 식별자에 해당하는 회원이 없으면 NULL |
-| `outcome` | varchar(16) | NOT NULL, CHECK `DELIVERED` `UNDELIVERED` `DISCARDED` | |
-| `reason` | varchar(40) | NOT NULL | 알림 발송 응답의 `reason` 값 |
-| `delivered_devices` | integer | NOT NULL, CHECK `>= 0` | 재전달을 포함해 FCM이 받아들인 기기 수 |
-| `failed_devices` | integer | NOT NULL, CHECK `>= 0` | 마지막 처리에서 영구 실패한 기기 수<br>무효 토큰은 포함하지 않음 |
-| `completed_at` | timestamptz | NOT NULL | 처리가 끝난 시각<br>통계의 날짜 기준 |
-
-| 인덱스 | 컬럼 |
-|---|---|
-| `idx_push_delivery_results_campaign` | `campaign_id` WHERE `campaign_id IS NOT NULL` |
-| `idx_push_delivery_results_type_completed` | `type`, `completed_at` |
+| 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
+|---|---|---|
+| `users` | `status` | 발송 자격 판정<br>알림 내역 대상과 요청자 상태 판정 |
+| `users` | `public_id` | 수신자 식별자<br>발송 결과의 수신 회원 해석 |
+| `users` | `reward_identity_user_id` | 출석 미수령 판정 |
+| `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
+| `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
+| `credit_lots` | `remaining` | 잔여가 있는 로트만 만료 예정 판정 |
+| `credit_lots` | `expires_at` | 만료 예정 판정과 발송 요청의 유효 기한 |
+| `notices` | `id`<br>`public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
 
 <br>
 
-### 3-2-9 알림 내역
+### 3-2-9 Redis 키
+
+`push:` 키는 서버가 쓴다. `notification:` 키는 알림 서비스가 쓴다.
+
+| 키 | 값 | 삭제 |
+|---|---|---|
+| `push:attendance-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
+| `push:credit-expiry-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
+| `push:credit-expiry-reminder:cooldown:{회원 내부 ID}` | `1` | 쿨다운 수명 만료 |
+| `notification:processed:{메시지 식별자}` | 처리 중이면 소유자 값, 완료면 `done` | 처리 중 선점 수명 만료<br>완료 후 멱등 기록 수명 만료 |
+| `notification:sent:{메시지 식별자}` | 성공한 토큰의 SHA-256 해시 집합 | 멱등 기록 수명 만료 |
+
+<br>
+
+### 3-2-10 메시지 큐
+
+| 큐 | 내용 | 설정 |
+|---|---|---|
+| `push-requested` | 발송 요청 | SQS 표준 큐<br>실제 이름에는 프로젝트와 환경 접두를 붙임<br>수신 상한을 넘기면 실패 메시지 큐로 이동 |
+| `push-requested-dlq` | 재전달 상한을 넘긴 메시지 | 보존 기간 만료 시 삭제 |
+
+<br>
+
+### 3-2-11 데이터 수명
+
+| 데이터 | 삭제 |
+|---|---|
+| 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
+| 수신 동의 | 없음<br>철회는 값을 비움 |
+| 문구 템플릿, 캠페인, 아웃박스, 발송 결과 | 없음 |
+| 알림 내역 | 탈퇴, 회원 행 삭제 시 연쇄 삭제<br>보관 기간과 정리 작업 없음 |
+
+<br>
+
+### 3-2-12 알림 내역과 발송 결과
 
 **`user_notifications`**
 
-회원이 받은 알림 1건이 한 행이다. 시나리오별 기록 시점에 서버가 추가하고 푸시 설정이나 토큰 보유와 무관하게 남긴다. ([4-1-18 알림 내역 기록](4-1-PIPELINES.md#4-1-18-알림-내역-기록))
+회원이 받은 알림의 사본 1건이 한 행이다. 알림함이 읽는다. 시나리오별 기록 시점에 서버가 추가하고 푸시 설정이나 토큰 보유와 무관하게 남긴다. 이프 만료 예정 알림은 회차 트랜잭션에서 대상 회원마다 기록한다. ([4-1-19 알림 내역 기록](4-1-PIPELINES.md#4-1-19-알림-내역-기록))
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | 같은 생성 시각 안의 정렬 기준 |
-| `public_id` | uuid | NOT NULL, UNIQUE | 응답의 알림 식별자<br>읽음 처리 경로값과 목록 커서 |
+| `public_id` | uuid | NOT NULL, UNIQUE | 알림함 API의 식별자<br>읽음 처리 경로값과 목록 커서 |
 | `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
-| `message_key` | varchar(255) | NOT NULL | 큐 메시지와 같은 규칙의 메시지 식별자<br>발송 모드와 무관하게 같은 값 |
-| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `PROMOTION` | 시나리오 식별자 |
-| `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>기록 시 종류에서 정함 |
-| `title` | varchar(120) | NOT NULL | 표시 제목<br>광고 알림은 광고 표기 포함 |
-| `body` | varchar(300) | NOT NULL | 표시 본문 |
+| `message_key` | varchar(255) | NOT NULL | 메시지 식별자와 같은 값<br>발송 모드와 무관하게 같은 값 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`는 CHECK 확장 마이그레이션이 필요 |
+| `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>기록 시 종류에서 정함<br>`CREDIT_EXPIRY_REMINDER`는 `ACTIVITY` |
+| `title` | varchar(120) | NOT NULL | 표시 제목<br>광고 알림도 광고 표기 없는 원문 |
+| `body` | varchar(300) | NOT NULL | 표시 본문<br>광고 알림도 수신거부 안내 없는 원문 |
 | `deep_link` | varchar(512) | | 눌렀을 때 열 절대 URL<br>딥링크가 없는 프로모션은 NULL |
-| `story_public_id` | uuid | | 관련 스토리 공개 식별자<br>FK 없음 |
-| `notice_public_id` | uuid | | 관련 공지 공개 식별자<br>FK 없음 |
+| `story_public_id` | uuid | | 관련 스토리 공개 식별자<br>FK 없음<br>이프 만료 예정 알림은 NULL |
+| `notice_public_id` | uuid | | 관련 공지 공개 식별자<br>FK 없음<br>이프 만료 예정 알림은 NULL |
 | `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 캠페인의 공지 태그<br>그 외 NULL |
-| `read_at` | timestamptz | | 읽은 시각<br>`NULL`이면 안 읽음 |
+| `read_at` | timestamptz | | 읽음 시각<br>`NULL`이면 안 읽음 |
 
 | 제약과 인덱스 | 컬럼 | 쓰임 |
 |---|---|---|
@@ -240,45 +262,25 @@ erDiagram
 
 <br>
 
-### 3-2-10 참조하는 다른 도메인의 컬럼
+**`push_delivery_results`**
 
-| 테이블 | 컬럼 | NOTIFICATION이 하는 일 |
-|---|---|---|
-| `users` | `status` | 발송 자격 판정<br>알림 내역 대상과 요청자 상태 판정 |
-| `users` | `public_id` | 수신자 식별자<br>발송 결과의 수신 회원 해석 |
-| `users` | `reward_identity_user_id` | 출석 미수령 판정 |
-| `users` | `service_push_enabled`, `marketing_push_agreed_at`, `marketing_push_night_agreed_at` | 이 도메인이 관리하는 컬럼<br>캠페인 대상 조회와 대상 수 미리보기 |
-| `credit_transactions` | `idempotency_key` | 당일 출석 보상 키의 존재 여부로 미수령 판정 |
-| `notices` | `id`<br>`public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
+메시지 식별자별 최종 발송 결과 1건이 한 행이다. 알림 서비스의 보고와 로컬 모드 발송기가 기록한다.
 
-<br>
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `message_id` | varchar(255) | NOT NULL, UNIQUE | 메시지 식별자 |
+| `type` | varchar(40) | NOT NULL | 시나리오 식별자<br>허용 값은 발송 결과 보고의 `type`과 같음 |
+| `kind` | varchar(16) | NOT NULL, CHECK `SERVICE` `MARKETING` | |
+| `campaign_id` | bigint | FK `push_campaigns.id` | 캠페인 발송만<br>그 외 NULL |
+| `user_id` | bigint | FK `users.id` | 수신 회원<br>보고 시점에 존재한 회원만<br>공개 식별자에 해당하는 회원이 없으면 NULL |
+| `outcome` | varchar(16) | NOT NULL, CHECK `DELIVERED` `UNDELIVERED` `DISCARDED` | |
+| `reason` | varchar(40) | NOT NULL | 발송 응답의 `reason` 값 |
+| `delivered_devices` | integer | NOT NULL, CHECK `>= 0` | 재전달을 포함해 FCM이 받아들인 기기 수 |
+| `failed_devices` | integer | NOT NULL, CHECK `>= 0` | 마지막 처리에서 영구 실패한 기기 수<br>무효 토큰은 포함하지 않음 |
+| `completed_at` | timestamptz | NOT NULL | 처리가 끝난 시각<br>통계의 날짜 기준 |
 
-### 3-2-11 Redis 키
-
-`push:` 키는 서버가 쓴다. `notification:` 키는 알림 서비스가 쓴다.
-
-| 키 | 값 | 삭제 |
-|---|---|---|
-| `push:attendance-reminder:{KST 날짜}` | `1` | 선점 키 수명 만료 |
-| `notification:processed:{메시지 식별자}` | 처리 중이면 소유자 값, 완료면 `done` | 처리 중 선점 수명 만료<br>완료 후 멱등 기록 수명 만료 |
-| `notification:sent:{메시지 식별자}` | 성공한 토큰의 SHA-256 해시 집합 | 멱등 기록 수명 만료 |
-
-<br>
-
-### 3-2-12 메시지 큐
-
-| 큐 | 내용 | 설정 |
-|---|---|---|
-| `push-requested` | 발송 요청 | SQS 표준 큐<br>실제 이름에는 프로젝트와 환경 접두를 붙임<br>수신 상한을 넘기면 실패 메시지 큐로 이동 |
-| `push-requested-dlq` | 재전달 상한을 넘긴 메시지 | 보존 기간 만료 시 삭제 |
-
-<br>
-
-### 3-2-13 데이터 수명
-
-| 데이터 | 삭제 |
+| 인덱스 | 컬럼 |
 |---|---|
-| 푸시 토큰 | 삭제 요청, 탈퇴, 무효 통지, 기기 상한 초과 삭제 |
-| 수신 동의 | 없음<br>철회는 값을 비움 |
-| 문구 템플릿, 캠페인, 아웃박스, 발송 결과 | 없음 |
-| 알림 내역 | 탈퇴<br>보관 기간과 정리 작업 없음 |
+| `idx_push_delivery_results_campaign` | `campaign_id` WHERE `campaign_id IS NOT NULL` |
+| `idx_push_delivery_results_type_completed` | `type`, `completed_at` |

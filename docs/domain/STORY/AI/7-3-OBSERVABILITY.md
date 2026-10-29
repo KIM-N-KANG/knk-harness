@@ -88,6 +88,7 @@
 | 호출량 제한 | `provider_rate_limited` | 공급자 호출량 한도와 동시 호출량 확인 |
 | 공급자 요청 거부(400) | `provider_bad_request` | 오류 원문에서 거부된 인자 확인 <br> 해당 요청 인자와 모델 설정 수정 |
 | 그 밖의 공급자 오류 | `provider_unavailable` | 공급자 장애 공지 확인 <br> 공급자 장애면 복구 대기 |
+| 내용 거절 | `content_refused` | Langfuse 출력에서 거절 사유 확인 <br> 수위 높은 입력이면 조치 없음 <br> 평범한 입력이 거절되면 프롬프트 점검 |
 | 파싱과 형식 위반 | `invalid_ai_response` | Langfuse 출력과 검증 코드 대조 <br> 출력 위반은 프롬프트, 검증 오류는 코드 수정 |
 | 인물 누락 지속 | `invalid_ai_response`, 경고 | 후보 번호로 출력과 입력 인물 대조 |
 | 명세와 출력 변환 실패 | `schema_validation_failed` | 스택과 스키마 위반 필드 확인 <br> 명세 검증과 변환 코드 점검 |

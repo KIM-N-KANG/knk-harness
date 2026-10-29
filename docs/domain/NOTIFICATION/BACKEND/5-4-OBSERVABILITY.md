@@ -75,6 +75,10 @@ Fluent Bit`"]
 | 출석 회차 | 회차 종료<br>`attendance_reminder_sent` | `targets`, `sent`<br>원격 모드의 `sent`는 기록한 요청 수, 로컬 모드는 발송기 호출 수 |
 | 출석 회차 실패 | 회차 예외<br>`attendance_reminder_failed` | `error` |
 | 출석 회차 선점 실패 | Redis 장애<br>`attendance_reminder_claim_failed` | `error` |
+| 이프 만료 예정 회차 | 회차 종료<br>`credit_expiry_reminder_sent` | `targets`, `cooldown`, `sent`<br>`targets`는 쿨다운 제외 전 대상 수, `cooldown`은 쿨다운으로 제외한 회원 수<br>원격 모드의 `sent`는 기록한 요청 수, 로컬 모드는 발송기 호출 수<br>알림 내역 행 수는 `targets - cooldown` |
+| 발송 결과 보고 실패 | 알림 서비스와 로컬 모드 발송기<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자, 상태 코드 또는 예외 클래스 |
+| 이프 만료 예정 회차 실패 | 회차 예외<br>`credit_expiry_reminder_failed` | `error` |
+| 이프 만료 예정 회차 선점 실패 | Redis 장애<br>`credit_expiry_reminder_claim_failed` | `error` |
 | 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`<br>실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
 | 캠페인 전송 중 시간 초과 | 실패 자동 전환<br>평문 WARN `promotion_push_timed_out` | `campaignId`, `startedAt` |
 | 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자<br>발송 실패는 예외 클래스 포함 |
@@ -88,7 +92,6 @@ Fluent Bit`"]
 | 큐 소비 결과 | 처리마다<br>평문 INFO | 메시지 식별자, 소비 결과, 알림 발송 응답의 `reason` 값 |
 | 큐 소비 재시도 | 예외<br>평문 WARN | 메시지 식별자, 예외 클래스 |
 | 자격 조회 실패 | 알림 서비스<br>평문 WARN | 회원 공개 식별자, 예외 클래스 |
-| 결과 보고 실패 | 알림 서비스<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자와 HTTP 상태 또는 예외 클래스 |
 
 <details>
 <summary><b>예시: 출석 회차 로그 1줄</b></summary>
@@ -112,6 +115,7 @@ Fluent Bit`"]
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성, 검수, 공개 중단 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
 | 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
+| 이프 만료 예정 알림 | 로그 `credit_expiry_reminder_sent`의 `targets`, `cooldown`, `sent`, 선점 실패 로그<br>회원별 최종 결과는 `push_delivery_results`의 `type`이 `CREDIT_EXPIRY_REMINDER`인 행<br>발송 결과는 출석 리마인드와 같음 |
 | 캠페인 | 캠페인 목록 API의 결과 필드<br>회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 관리자 API | 요청 로그의 `/api/v1/admin/push/` 접두 경로 상태 분포<br>변경 이력은 관리자 도메인의 감사 로그 |
 | 알림 통계 | 알림 통계 API와 캠페인 상세<br>보고 실패 WARN<br>요청 로그의 `/internal/push-deliveries` 상태 분포<br>누락 규모는 지표 `manyak.push.send.result`의 `success`와 결과 행의 도달 기기 수 합을 비교 |

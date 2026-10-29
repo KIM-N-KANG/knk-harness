@@ -127,7 +127,8 @@ erDiagram
 | `creation_id` | uuid | | 간편 제작 스토리의 스토리라인 생성 요청 ID<br>일반 제작 스토리는 `NULL` |
 | `story_prologue_snapshot` | text | | 시작 시점의 프롤로그<br>읽을 수 없는 스토리에서 시작 설정 참조가 끊겼을 때 표시 |
 | `title` | varchar(100) | | 사용하지 않음 |
-| `summary` | text | | 사용하지 않음 |
+| `summary` | text | | 대화 요약<br>`summary_through_turn`이 0이면 값과 무관하게 요약 없음 |
+| `summary_through_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 요약 끝 턴<br>0은 요약 없음 |
 | `current_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 완료된 턴 수 |
 | `regenerated_count` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 재생성 완료 횟수 |
 | `target_main_event_id` | bigint | FK `story_main_events.id` SET NULL | 목표 사건 |
@@ -304,7 +305,7 @@ erDiagram
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
 | `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>턴 소모와 그 환불의 `ref_type`은 `CHAT_TURN`, 이미지는 `CHAT_IMAGE`<br>`CHAT_TURN` 소모 행의 `id`를 메시지와 버전 이력에 연결<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
-| `ai_call_logs` | CHAT이 기록하는 `chat_response`, `choice_generation`, `chat_image` 행과 [5-4-4 AI 호출 기록](5-4-OBSERVABILITY.md#5-4-4-ai-호출-기록)의 컬럼<br>`ck_ai_call_logs_feature`가 `chat_image`를 허용해야 함 |
+| `ai_call_logs` | CHAT이 기록하는 `chat_response`, `choice_generation`, `chat_image`, `chat_compact` 행과 [5-4-4 AI 호출 기록](5-4-OBSERVABILITY.md#5-4-4-ai-호출-기록)의 컬럼<br>`ck_ai_call_logs_feature`가 `chat_image`와 `chat_compact`를 허용해야 함 |
 
 <br>
 
@@ -315,6 +316,7 @@ erDiagram
 | 채팅과 하위 데이터 | `deleted_at` 기록<br>물리 삭제 없음 |
 | 메시지 버전 이력 | 삭제 없음 |
 | 선택지 | 재생성 시 활성 선택지만 교체<br>이전 값은 버전 이력에 남음 |
+| 대화 요약 | 새 요약이 덮어씀<br>재생성이 요약 범위의 턴을 바꾸면 비움 |
 | 실시간 이미지 객체 | 삭제 없음 |
 | 공유 | 삭제 없음<br>원본 채팅의 `deleted_at`으로 열람 차단 |
 | 모델 | 노출 중단만 수행<br>물리 삭제 없음 |

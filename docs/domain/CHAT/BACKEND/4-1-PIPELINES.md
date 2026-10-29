@@ -20,28 +20,29 @@
 
 **AI 호출**
 
-턴 본문은 SSE로 받고 선택지는 동기 HTTP로 받는다. 백엔드는 재시도하지 않는다. 요청 필드 이름은 snake_case이고 완료 이벤트의 필드 이름은 camelCase다. 스텁 설정이 켜진 환경에서는 AI를 호출하지 않고 정해진 더미 응답을 반환한다.
+턴 본문은 SSE로 받고 선택지는 동기 HTTP로 받는다. 대화 요약은 턴 저장 커밋 후 비동기로 요청한다. 백엔드는 재시도하지 않는다. 요청 필드 이름은 snake_case이고 완료 이벤트의 필드 이름은 camelCase다. 스텁 설정이 켜진 환경에서는 AI를 호출하지 않고 정해진 더미 응답을 반환한다.
 
 | 요청 | 방식 | 성공 | 실패 |
 |---|---|---|---|
 | 턴 | `POST /api/v1/chat/turns` | 200, SSE<br>`token`, `character_image`, `ping`, `completed` | 4xx, 5xx, SSE `error`, 시간 초과 |
 | 선택지 | `POST /api/v1/chat/choices` | 200, JSON<br>선택지 3개 | 4xx, 5xx, 시간 초과 |
+| 대화 요약 | `POST /api/v1/chat/compact` | 200, JSON<br>갱신된 `summary` | 4xx, 5xx, 시간 초과 |
 
 요청 헤더는 값이 없으면 생략한다.
 
-| 요청 헤더 | 값 | 턴 | 선택지 |
-|---|---|---|---|
-| `X-Manyak-Request-Id`, `X-Manyak-Session-Id` | 클라이언트 요청 헤더를 전달<br>`unknown`이면 생략 | 보냄 | 보냄 |
-| `X-Manyak-Device-Id-Hash` | `X-Manyak-Device-Id`의 해시 | 보냄 | 보냄 |
-| `X-Manyak-Creation-Id` | 채팅에 저장한 간편 제작의 스토리라인 생성 요청 ID<br>일반 제작 스토리는 생략 | 보냄 | 보냄 |
-| `X-Manyak-Story-Id` | 스토리 공개 ID | 보냄 | 보냄 |
-| `X-Manyak-Chat-Id` | 채팅 공개 ID | 보냄 | 보냄 |
-| `X-Manyak-Start-Setting-Id` | 시작 설정 공개 ID<br>참조가 끊겼으면 생략 | 보냄 | 보냄 |
-| `X-Manyak-Turn-Number` | 이어쓰기는 `current_turn + 1`의 예측치<br>재생성과 선택지는 `current_turn` | 보냄 | 보냄 |
-| `X-Manyak-Is-Regenerated` | 재생성이면 `true`, 그 외 `false` | 보냄 | 보냄 |
-| `traceparent` | 추적이 켜진 환경의 현재 스팬 | 보냄 | 보냄 |
+| 요청 헤더 | 값 | 턴 | 선택지 | 요약 |
+|---|---|---|---|---|
+| `X-Manyak-Request-Id`, `X-Manyak-Session-Id` | 클라이언트 요청 헤더를 전달<br>`unknown`이면 생략<br>요약은 요약을 일으킨 이어쓰기 요청의 값 | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Device-Id-Hash` | `X-Manyak-Device-Id`의 해시 | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Creation-Id` | 채팅에 저장한 간편 제작의 스토리라인 생성 요청 ID<br>일반 제작 스토리는 생략 | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Story-Id` | 스토리 공개 ID | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Chat-Id` | 채팅 공개 ID | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Start-Setting-Id` | 시작 설정 공개 ID<br>참조가 끊겼으면 생략 | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Turn-Number` | 이어쓰기는 `current_turn + 1`의 예측치<br>재생성과 선택지는 `current_turn`<br>요약은 이번 요약 범위의 끝 턴 | 보냄 | 보냄 | 보냄 |
+| `X-Manyak-Is-Regenerated` | 재생성이면 `true`, 그 외 `false` | 보냄 | 보냄 | 생략 |
+| `traceparent` | 추적이 켜진 환경의 현재 스팬 | 보냄 | 보냄 | 보냄 |
 
-응답의 `meta`는 AI 호출 기록에 적재한다. 턴은 완료 이벤트의 camelCase 필드, 선택지는 응답 본문의 snake_case 필드다.
+응답의 `meta`는 AI 호출 기록에 적재한다. 턴은 완료 이벤트의 camelCase 필드, 선택지는 응답 본문의 snake_case 필드다. 대화 요약 응답에는 `meta`가 없다.
 
 | `meta` 필드명 | 타입 | 처리 |
 |---|---|---|
@@ -239,9 +240,9 @@ presigned PUT 1개
 | `story_settings` | `object` | 세계관, 주변 인물, 주인공, 규칙 본문을 플레이 이름으로 치환<br>주인공 본문은 페르소나 설명이 있으면 그 값으로 대체 |
 | `story_settings.protagonist_name` | `string` | 플레이 이름<br>없으면 빈 문자열 |
 | `start_settings` | `object` | 선택한 시작 설정의 이름, 프롤로그, 시작 상황을 치환<br>읽을 수 없는 스토리에서 참조가 끊겼으면 프롤로그만 채팅에 보관한 값 |
-| `history` | `object[]` | 이 채팅의 사용자 입력과 AI 응답 전체를 순서대로 전달<br>시스템 메시지 제외, 이번 입력 제외 |
+| `history` | `object[]` | 요약 끝 턴 다음 턴부터 마지막 턴까지의 사용자 입력과 AI 응답을 순서대로 전달<br>요약이 없거나 대화 요약이 꺼져 있으면 첫 턴부터 전달<br>시스템 메시지 제외, 이번 입력 제외 |
 | `user_input` | `string` | 요청의 `userInput` |
-| `summary` | `string` | 빈 문자열 |
+| `summary` | `string` | 채팅에 저장한 대화 요약<br>요약이 없거나 대화 요약이 꺼져 있으면 빈 문자열<br>요약과 요약 끝 턴은 채팅 행의 같은 읽기에서 가져옴 |
 | `user_source` | `string` | 요청의 `userSource`<br>없으면 필드 생략 |
 | `character_images` | `object[]` | 스토리 데이터의 인물 이미지 전체<br>`name`, `image_name`, `image_url` |
 | `main_events` | `object[]` | 스토리 데이터의 주요 사건 전체<br>이름은 AI 전달 이름, 설명과 핵심 문장은 치환 |
@@ -272,6 +273,8 @@ presigned PUT 1개
 
 <br>
 
+요약 끝 턴이 10인 채팅의 12번째 턴 요청이다. `history`에는 11번째 턴만 싣는다.
+
 **1) Request**
 
 ```text
@@ -284,7 +287,7 @@ X-Manyak-Creation-Id: 6d0f4a2e-1b7c-4e2a-9f11-2a4d1c9e8b10
 X-Manyak-Story-Id: 3f2504e0-4f89-41d3-9a0c-0305e82c3301
 X-Manyak-Chat-Id: 7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d
 X-Manyak-Start-Setting-Id: 0b7c9d1e-3f4a-4b5c-8d6e-7f8091a2b3c4
-X-Manyak-Turn-Number: 3
+X-Manyak-Turn-Number: 12
 X-Manyak-Is-Regenerated: false
 ```
 
@@ -311,7 +314,7 @@ X-Manyak-Is-Regenerated: false
     { "role": "ASSISTANT", "content": "*기록장 가장자리에 푸른 흔적이 떠오른다.*" }
   ],
   "user_input": "흔적을 따라 지하 보관실로 내려간다.",
-  "summary": "",
+  "summary": "서린은 폐관 뒤 기록 열람실에서 도윤과 함께 빛나는 기록장을 발견했다. 기록장에 떠오른 문장을 따라 사라진 기록의 원본이 도서관 지하에 남아 있다는 단서를 얻었다. 도윤은 서린의 조사 능력을 인정하고 지하 보관실 열쇠를 건넸다.",
   "user_source": "typed",
   "character_images": [
     { "name": "도윤", "image_name": "도윤_기본", "image_url": "https://cdn.example.com/characters/generated/3f2504e0/doyun.webp" }
@@ -324,9 +327,9 @@ X-Manyak-Is-Regenerated: false
   "endings": [],
   "image_slots": [
     {
-      "key": "chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
-      "upload_url": "https://assets.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp?X-Amz-Signature=...",
-      "public_url": "https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"
+      "key": "chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp",
+      "upload_url": "https://assets.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp?X-Amz-Signature=...",
+      "public_url": "https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"
     }
   ]
 }
@@ -341,7 +344,7 @@ event: token
 data: {"text":"*계단 아래로 "}
 
 event: character_image
-data: {"name":"도윤","imageName":"도윤_실시간_4c9e2b7a","imageUrl":"https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"}
+data: {"name":"도윤","imageName":"도윤_실시간_4c9e2b7a","imageUrl":"https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"}
 
 event: token
 data: {"text":"도윤: 여기부터는 "}
@@ -350,7 +353,7 @@ event: ping
 data: {}
 
 event: completed
-data: {"aiOutput":"*계단 아래로 푸른 빛이 이어진다.*\n[[https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp]]\n\n도윤: 여기부터는 기록이 지워진 구역입니다.","choices":[],"characterImages":[{"name":"도윤","imageName":"도윤_실시간_4c9e2b7a","imageUrl":"https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/3-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"}],"targetMainEvent":{"name":"원본 발견","progressTurns":2},"occurredMainEventName":null,"endingName":null,"meta":{"model":"gpt-6-luna","provider":"openai","promptVersions":{"CORE":1,"SAFETY":1},"inputTokenCount":1200,"outputTokenCount":300,"retryCount":0}}
+data: {"aiOutput":"*계단 아래로 푸른 빛이 이어진다.*\n[[https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp]]\n\n도윤: 여기부터는 기록이 지워진 구역입니다.","choices":[],"characterImages":[{"name":"도윤","imageName":"도윤_실시간_4c9e2b7a","imageUrl":"https://cdn.example.com/chat-images/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/12-4c9e2b7a-1d3f-4a5b-8c6d-9e0f1a2b3c4d.webp"}],"targetMainEvent":{"name":"원본 발견","progressTurns":2},"occurredMainEventName":null,"endingName":null,"meta":{"model":"gpt-6-luna","provider":"openai","promptVersions":{"CORE":1,"SAFETY":1},"inputTokenCount":1200,"outputTokenCount":300,"retryCount":0}}
 ```
 
 </details>
@@ -381,12 +384,20 @@ flowchart LR
 ```
 
 - 동기 검증 순서는 정지 계정, 채팅 존재, 소유, 엔딩 도달 여부, 턴 존재, `turnId` 일치, 생성 중 키 선점, 시작 상태 재확인, 과금이다. 실패가 확정된 요청에는 선차감과 환불을 수행하지 않는다.
-- `history`는 마지막 턴의 사용자 입력과 AI 응답을 제외한 1번째부터 N-1번째 턴이다. `user_input`은 마지막 턴의 입력을 그대로 보낸다. 턴 번호는 `current_turn`이다.
+- 대상 턴은 마지막 턴이다. `user_input`은 대상 턴의 입력을 그대로 보낸다. 턴 번호는 `current_turn`이다.
+- `summary`와 `history`는 대상 턴이 요약 범위에 드는지에 따라 정한다. 요약과 요약 끝 턴은 채팅 행의 같은 읽기에서 가져온다.
+
+| 조건 | `summary` | `history` |
+|---|---|---|
+| 대상 턴이 요약 범위에 듦<br>대화 요약이 꺼짐 | 빈 문자열 | 첫 턴부터 대상 턴 앞까지의 원문 |
+| 대상 턴이 요약 범위 밖 | 저장한 요약<br>요약이 없으면 빈 문자열 | 요약 끝 턴 다음 턴부터 대상 턴 앞까지의 원문 |
+
 - 청구 모델은 재생성 요청 시점에 다시 정한다. 원래 턴을 생성한 모델을 이어받지 않는다.
 - 출력 분량도 재생성 요청 시점에 채팅에서 읽은 값을 쓴다. 원래 턴을 생성할 때의 값을 이어받지 않는다.
 - 판정 결과는 반영하지 않는다. 목표 사건, 거쳐온 사건, 도달 엔딩은 직전 상태를 유지한다.
 - 저장 시 마지막 턴이 여전히 같은 메시지인지 재확인한다. 다르면 결과를 폐기하고 `error`로 끝내며 환불한다.
 - 성공하면 재생성 횟수를 1 올린다. 턴 수는 올리지 않는다.
+- 대상 턴이 요약 범위에 들어 있었으면 같은 저장에서 요약을 비운다. 그 범위는 다음 요약 경계에서 다시 요약한다.
 - 이미지 업로드 위치는 새로 발급한다. 객체 키의 UUID로 이전 파일과 구분한다. 이전 본문의 마커는 이력에 남고 객체는 삭제하지 않는다.
 
 <br>
@@ -420,6 +431,7 @@ flowchart LR
 
 - 마지막 턴 검증을 멱등 검사보다 먼저 한다. 다른 채팅의 턴이나 마지막이 아닌 턴에 대한 선택지 요청이 성공하지 않도록 한다.
 - 요청 본문은 턴 요청과 같은 데이터에 저장된 AI 응답을 `ai_output`으로 더한 것이다. `history`는 이번 턴을 제외해 같은 장면이 두 번 실리지 않게 한다.
+- `summary`와 `history`는 재생성과 같은 기준으로 정한다. 대상 턴이 요약 범위에 들면 요약 없이 원문으로 보낸다. 선택지 생성은 저장된 요약을 바꾸지 않는다.
 - 비용을 부과하거나 체험 한도를 소모하지 않는다. 이어쓰기와 재생성의 생성 중 키를 사용하지 않는다.
 - 저장 시 마지막 턴이 바뀌었거나 본문이 재생성으로 달라졌으면 결과를 폐기하고 충돌로 응답한다. 그 사이 다른 요청이 선택지를 채웠으면 저장된 값을 반환한다.
 - AI 호출 기록의 턴 번호는 저장 시 확정된 값으로 기록해 턴 본문 기록과 조인할 수 있게 한다.
@@ -516,8 +528,11 @@ AI 응답에 차감 행 연결`"]
     F --> G["`**턴 수 +1**`"]
     F -.->|독립 트랜잭션| H["`**회원 도달 집계**
 *도달 집계*`"]
+    G -.->|커밋 후| K["`**대화 요약 시작**
+완료 턴 수가 요약 간격의 배수일 때
+*대화 요약*`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
-    class A,V,X,P,B,C,D,E,F,G,H comp
+    class A,V,X,P,B,C,D,E,F,G,H,K comp
 ```
 
 - 이어쓰기와 재생성은 같은 채팅 행 잠금을 쓴다. 두 경로의 저장이 채팅 단위로 직렬화된다. 잠금 안에서 생성 시작 시점의 마지막 턴과 교체 상태를 재확인하고 다르면 결과를 폐기한다.
@@ -529,7 +544,7 @@ AI 응답에 차감 행 연결`"]
 - 거쳐온 사건은 이름 스냅샷에 먼저 추가한다. 현재 행이 있으면 조인 행도 만든다. 목표 사건은 현재 행이 있을 때만 FK로 저장하고 없으면 해제한다.
 - 도달하면 채팅에 엔딩 ID와 이름을 기록하고 상태를 `ENDED`로 바꾼다. 회원이면 도달 집계를 독립 트랜잭션에서 기록한다. 유니크 위반은 이미 기록된 것으로 보고 무시한다.
 - AI 응답 행에는 그 턴의 청구 모델 코드를 `model_code`로 함께 저장한다. 게스트 턴은 채팅에 보관한 모델과 무관하게 `LITE`다. 채팅의 현재 모델이 아니라 이 턴을 실제로 생성한 등급이다.
-- 재생성으로 교체할 때는 같은 잠금 안에서 마지막 턴을 재확인한 뒤 이전 응답과 선택지를 버전 이력으로 보관한다. 이전 활성본의 차감 행 ID도 버전 행으로 옮기고 메시지 행에는 이번 재생성의 차감 행 ID를 기록한다. 기존 선택지를 지우고 새 선택지를 넣는다. 재생성 횟수를 1 올린다. AI 응답 행의 `model_code`는 그 재생성의 청구 모델로 바꾼다.
+- 재생성으로 교체할 때는 같은 잠금 안에서 마지막 턴을 재확인한 뒤 이전 응답과 선택지를 버전 이력으로 보관한다. 이전 활성본의 차감 행 ID도 버전 행으로 옮기고 메시지 행에는 이번 재생성의 차감 행 ID를 기록한다. 기존 선택지를 지우고 새 선택지를 넣는다. 재생성 횟수를 1 올린다. AI 응답 행의 `model_code`는 그 재생성의 청구 모델로 바꾼다. 요약 끝 턴이 교체한 턴 이상이면 `summary`는 `NULL`로 바꾸고 `summary_through_turn`은 0으로 바꾼다.
 - 선택지를 채울 때는 같은 잠금 안에서 마지막 턴과 본문이 일치하는지 재확인한다. 이미 선택지가 있으면 저장된 값을 반환한다.
 
 <br>
@@ -682,3 +697,65 @@ flowchart LR
 - 생성 중 키를 확인하지 않고 채팅 행도 잠그지 않는다. 진행 중인 턴은 시작 시점에 정한 청구 모델, 가격, 출력 분량으로 끝난다. 바꾼 값은 다음 이어쓰기와 재생성부터 쓴다.
 - 채팅의 갱신 시각은 턴 진행 시각이므로 바꾸지 않는다. 목록 정렬이 설정 변경으로 바뀌지 않는다.
 - 같은 값으로 다시 보내도 성공으로 응답한다.
+
+<br>
+
+### 4-1-18 대화 요약
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
+flowchart LR
+    A["`**이어쓰기 턴 저장 커밋**`"] --> B{"`**대화 요약 켬이고
+완료 턴 수가 요약 간격의 배수**`"}
+    B -->|아니오| Z["`**요약하지 않음**`"]
+    B -->|예| C["`**요약 범위 고정**
+저장한 요약, 요약 끝 턴, 재생성 횟수
+요약 끝 턴 다음 턴부터 완료 턴까지의 원문
+*대화 요약*`"]
+    C --> D["`**AI 요약 호출**
+*AI 호출*`"]
+    D -->|실패나 시간 초과| F["`**기존 요약 유지**
+실패 기록`"]
+    D -->|성공| E["`**채팅 행 잠금**
+*대화 요약*`"]
+    E --> DL{"`**채팅 삭제됨**`"}
+    DL -->|예| XD["`**결과 폐기**
+CHAT_DELETED`"]
+    DL -->|아니오| R{"`**재생성 횟수가
+시작 시점과 같음**`"}
+    R -->|아니오| X["`**결과 폐기**
+REGENERATED`"]
+    R -->|예| M{"`**새 끝 턴이
+저장된 끝 턴보다 큼**`"}
+    M -->|아니오| Y["`**결과 폐기**
+SUPERSEDED`"]
+    M -->|예| S["`**요약과 끝 턴 저장**`"]
+    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    class A,B,Z,C,F,E,DL,XD,R,X,M,Y,S comp
+    class D task
+```
+
+- 요약 범위의 끝 턴은 요약을 일으킨 턴 저장의 완료 턴 수다. 요약을 시작한 뒤 저장된 턴은 범위에 넣지 않고 원문으로 남긴다.
+- 저장한 요약, 요약 끝 턴, 재생성 횟수, 원문은 짧은 `REPEATABLE_READ` 읽기 전용 트랜잭션에서 하나의 스냅샷으로 읽는다. 커밋 후 AI를 호출한다.
+- 원문 범위의 경계는 턴 번호에서 순서 번호를 계산하지 않고 해당 번째 AI 응답의 순서 번호로 정한다. 시스템 메시지가 끼어 있어도 결과가 같다.
+- 요약하는 사이 채팅이 삭제됐으면 결과를 버린다.
+- 요약마다 첫 턴부터 끝 턴까지를 모두 담으므로 끝 턴이 더 큰 요약만 남긴다.
+- 저장은 `summary`와 `summary_through_turn`만 갱신한다. 채팅의 갱신 시각은 턴 진행 시각이므로 바꾸지 않는다.
+
+<br>
+
+**1. AI 요청 구성**
+
+| 요청 필드명 | 타입 | 출처 |
+|---|---|---|
+| `summary` | `string` | 채팅에 저장한 대화 요약<br>요약이 없으면 빈 문자열 |
+| `history` | `object[]` | 요약 끝 턴 다음 턴부터 이번 요약 범위의 끝 턴까지의 사용자 입력과 AI 응답을 순서대로 전달<br>시스템 메시지 제외<br>이미지 마커를 포함한 저장 원문 그대로 |
+
+<br>
+
+**2. AI 응답 처리**
+
+| 응답 필드명 | 타입 | 처리 |
+|---|---|---|
+| `summary` | `string` | 저장 조건을 통과하면 채팅의 대화 요약으로 저장<br>공백만 있으면 AI 호출 실패로 처리 |
