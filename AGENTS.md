@@ -31,7 +31,7 @@
 
 - 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
 - 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
-- 클라이언트 세트는 `CLIENT/`의 공통 계약과 하위 `WEB/`, `ANDROID/`의 차이와 구현을 함께 확인합니다. ACCOUNT는 [CLIENT](docs/domain/ACCOUNT/CLIENT/AGENTS.md)가 기준입니다. 도메인 공통 기반과 아직 이관하지 않은 플랫폼 구조는 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다. 다른 도메인은 이관 전까지 기존 Spec, Design, ADR과 QA를 함께 확인합니다.
+- 클라이언트 세트는 `CLIENT/`의 공통 계약과 하위 `WEB/`, `ANDROID/`의 차이와 구현을 함께 확인합니다. [ACCOUNT](docs/domain/ACCOUNT/CLIENT/AGENTS.md)와 [PAYMENT](docs/domain/PAYMENT/CLIENT/AGENTS.md)는 CLIENT 세트가 기준입니다. 도메인 공통 기반과 아직 이관하지 않은 플랫폼 구조는 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다. 다른 도메인은 이관 전까지 기존 Spec, Design, ADR과 QA를 함께 확인합니다.
 
 | 작업 상황 | 먼저 확인할 문서 |
 | --- | --- |

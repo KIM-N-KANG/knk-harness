@@ -3047,12 +3047,12 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | ACCOUNT-US-006 | 랜덤 프로필 발급: 닉네임·이미지  | `POST /auth/login/{provider}`(가입 시 닉네임·프리셋 이미지 배정: KNK-388), `GET /auth/me` |
 | ACCOUNT-US-003 | 게스트 데이터 이관  | `POST /auth/migrate` |
 | ACCOUNT-US-005 | 기기 간 서재  | `GET /users/me/stories`, `GET /users/me/chats` |
-| US-10-1 | 잔액 확인  | `GET /users/me/credits` |
-| US-10-2 | 이프 보상 (초대 코드 입력 개편 KNK-567 포함) | 가입 자동 적립, `POST /users/me/credits/attendance`, `GET /users/me/invite` + `POST /users/me/invite/redeem`([§4-3-7](#4-3-api-계약)) |
-| US-10-3 | 소모량 사전 고지 (수치 조회 API는 KNK-1090으로 선행 구현) | 소모 표시 UI([`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008): 스토리라인 무료. 수치는 하드코딩하지 않고 `GET /credits/policies`로 조회([§4-3-7](#4-3-api-계약)) |
-| US-10-4 | 부족 안내  | `POST /stories/simple`·`POST /chats/{chatId}/turns/stream`·`POST /chats/{chatId}/turns/regenerate/stream` 402 |
-| US-10-5 | 게스트 체험 한도  | `POST /stories/simple/storylines`·`POST /stories/simple`·채팅 턴 계열의 디바이스 ID별 카운터, 402 |
-| US-10-6 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
+| PAYMENT-US-001 | 잔액 확인  | `GET /users/me/credits` |
+| PAYMENT-US-002 | 이프 보상 (초대 코드 입력 개편 KNK-567 포함) | 가입 자동 적립, `POST /users/me/credits/attendance`, `GET /users/me/invite` + `POST /users/me/invite/redeem`([§4-3-7](#4-3-api-계약)) |
+| PAYMENT-US-003 | 소모량 사전 고지 (수치 조회 API는 KNK-1090으로 선행 구현) | 소모 표시 UI([`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008): 스토리라인 무료. 수치는 하드코딩하지 않고 `GET /credits/policies`로 조회([§4-3-7](#4-3-api-계약)) |
+| PAYMENT-US-004 | 부족 안내  | `POST /stories/simple`·`POST /chats/{chatId}/turns/stream`·`POST /chats/{chatId}/turns/regenerate/stream` 402 |
+| PAYMENT-US-005 | 게스트 체험 한도  | `POST /stories/simple/storylines`·`POST /stories/simple`·채팅 턴 계열의 디바이스 ID별 카운터, 402 |
+| PAYMENT-US-006 | 이프 내역 조회 (서버 API는 KNK-1044로 선행 구현) | `GET /users/me/credits/transactions`(KNK-1044: [§4-3-7](#4-3-api-계약) 이용내역 조회). 클라이언트 화면은 [`3-1-client-spec.md`](3-1-client-spec.md) FE-SCREEN-008 이프 내역 |
 
 ### 엔드포인트 검수 기준
 

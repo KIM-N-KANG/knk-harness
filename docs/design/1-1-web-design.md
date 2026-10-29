@@ -74,7 +74,7 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-2 게스트 목록](..
 | 저장소 | 값·소유 코드 |
 | --- | --- |
 | localStorage 스토리·채팅 ID | [4-3-1 저장 위치와 수명](../domain/ACCOUNT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명) |
-| localStorage 안내 | 간편 제작 첫 진입 안내에서 마지막으로 마친 단계 `manyak:create-tutorial-stage`(끝까지 보거나 건너뛰면 `done`), `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](#체험-잔여-패칭-웹))를 따른다 |
+| localStorage 안내 | 간편 제작 첫 진입 안내에서 마지막으로 마친 단계 `manyak:create-tutorial-stage`(끝까지 보거나 건너뛰면 `done`), `manyak:chat-tour-seen`·`manyak:chat-choices-hint-seen`, 실시간 이미지 안내 판단용 기기 누적 턴 전송 완료 횟수 `manyak:chat-completed-turn-count`(3에서 더 세지 않음, [판정](../../../manyak-web/src/features/chats/room/utils/realtime-image-nudge.ts)). 체험 사용량은 브라우저에 두지 않고 서버 조회([체험 잔여 패칭](../domain/PAYMENT/CLIENT/WEB/4-4-EXECUTION.md#4-4-1-정책과-체험-내역))를 따른다 |
 | localStorage 채팅 설정 | `manyak:chat-input-mode`의 `'block' \| 'plain'`, `manyak:chat-choices-enabled`·`manyak:chat-realtime-image-enabled`의 `'true' \| 'false'`(추천 입력 기본 on, 실시간 이미지 기본 off). 채팅 모델과 긴 응답은 서버가 채팅마다 저장하므로 기기에 두지 않는다. [입력 모드](../../../manyak-web/src/features/chats/room/hooks/use-chat-input-mode.ts)·[on/off 저장](../../../manyak-web/src/features/chats/room/hooks/use-stored-toggle.ts) |
 | IndexedDB 제작 | Dexie DB `manyak-creation`의 `pendingCreations`, `storyCompletions`, `metadata`. [DB 정의](../../../manyak-web/src/features/stories/_shared/utils/creation-db.ts), [제작 저장소](../../../manyak-web/src/features/stories/_shared/utils/creation-request-storage.ts). 일반 제작 `GENERAL_DRAFT`는 서버 초안으로 옮기기 전의 레거시만 남음. 회원 간편 제작 서버 세션의 사용자 저장은 서버 초안이고, 이 DB에는 진행 기록과 기기 안 세션의 초안만 남음 |
 | localStorage 공지 읽음 기록 | `manyak:notice-read-ids`의 공지 ID JSON 배열(최신순, 최대 100개). 상세가 공지를 받으면 그 ID를 맨 앞에 넣는다. 안 읽음 판정은 "게시 30일 안이고 이 목록에 없음"이며 헤더 버튼의 점, 마이 메뉴 배지, 목록 줄 제목 끝의 점이 모두 이 판정을 쓴다. [공지 읽음 저장소](../../../manyak-web/src/features/notices/_shared/utils/notice-read-storage.ts) |
@@ -83,8 +83,8 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-2 게스트 목록](..
 | sessionStorage 재개 의도 | `manyak:story-draft-resume-intent`의 `requestId`. 진행 카드가 이동 전에 기록하고 퍼널이 진입 시 한 번 읽어 그 레코드만 복원. 없으면 새 세션 |
 | sessionStorage 게스트 채팅·로그인 초안 | [4-3-1 저장 위치와 수명](../domain/ACCOUNT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명) |
 | sessionStorage 로그인 진행 표시 | [4-3-1 저장 위치와 수명](../domain/ACCOUNT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명) |
-| localStorage 결제 대기 주문 | `manyak:pending-credit-order`의 `{orderId, savedAt}`. 그로블 결제창 이동 직전에 기록하고 복귀 폴링에 쓴다(24시간 TTL). 결과 확정·닫기·로그아웃·세션 만료·탈퇴에서 지우며, 확정 뒤 카드 유지는 컴포넌트 상태가 맡는다. [주문 저장소](../../../manyak-web/src/features/my/credits/utils/pending-credit-order-storage.ts) |
-| sessionStorage 결제 전 히스토리 길이 | `manyak:payment-history-length`의 정수. 결제창 이동 직전 같은 주소를 `pushState`로 한 칸 쌓아 앞으로 항목을 자른 뒤 길이를 기록하고, 그 칸을 `location.replace`로 결제창으로 바꾼다. 복귀 화면 `/my/credits/return`은 앱 셸 없는 Route Handler 정적 문서이며, 인라인 스크립트가 기록을 읽어 지우고 `history.go`로 결제 전 충전 화면까지 되감는다. 길이가 50(Chrome·Firefox 상한)에 닿았거나 기록이 없으면 `/my/credits`로 replace한다. 앱 셸을 쓰지 않는 이유는 [W-023](../adr/1-2-web-adr.md#w-023). [되감기 계산](../../../manyak-web/src/features/my/credits/utils/payment-return-history.ts)·[복귀 문서](../../../manyak-web/src/app/%28my%29/my/credits/return/route.ts) |
+| localStorage 결제 대기 주문 | [저장 위치와 수명](../domain/PAYMENT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명) |
+| sessionStorage 결제 전 히스토리 길이 | [저장 위치와 수명](../domain/PAYMENT/CLIENT/WEB/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명) |
 
 편집 테이블은 `KEYWORD_DRAFT`, `STORY_DRAFT`, `STORYLINE_GENERATION`과 서버로 옮기기 전의 일반 제작 임시 저장본 `GENERAL_DRAFT`(폼 전체 스냅숏. 이미지는 객체 키와 원본 `Blob`)를, 완성 테이블은 `STORY_COMPLETION`을 requestId 기본 키로 보관합니다. 초기화는 Effect에서 이관을 마친 뒤 읽기 전용 `useLiveQuery`를 시작합니다. 두 목록은 같은 읽기 트랜잭션으로 조회하고 같은 origin의 Dexie 변경을 구독합니다. 비동기 조회 중 상태, 빈 목록, 오류를 구분합니다.
 
@@ -112,19 +112,15 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([4-3-2 게스트 목록](..
 
 ### 이프 정책 수치 패칭 (웹)
 
-[useCreditPolicy](../../../manyak-web/src/hooks/use-credit-policy.ts)는 생성 훅의 200 본문을 반환하고 미수신·실패에는 `undefined`를 반환합니다. 기본 staleTime을 사용합니다. `formatCreditAmount`는 미수신 값에 `000`, 화면은 `animate-pulse`를 적용합니다. 토스트·공유 제목은 `useCreditPolicySnapshot`으로 이벤트 시점의 캐시를 읽으며 캐시 도착을 보장하지는 않습니다. 표시 계약·남은 확인은 [공통 Spec](../spec/3-1-client-spec.md#이프-정책-수치-표시)을 따릅니다.
+PAYMENT 내용은 도메인 문서에서 관리한다. ([이프 정책 수치 패칭 (웹)](../domain/PAYMENT/CLIENT/WEB/4-4-EXECUTION.md#4-4-1-정책과-체험-내역))
 
 ### 체험 잔여 패칭 (웹)
 
-[useTrials](../../../manyak-web/src/hooks/use-trials.ts)는 `GET /users/me/trials`의 200 본문을 반환하고 미수신·실패에는 `undefined`를 반환합니다. 세션 상태(`useSession().status`)를 쿼리 키에 넣어 로그인·로그아웃 때 게스트·회원 응답이 섞이지 않게 하고 `loading` 동안은 조회하지 않습니다. 잔여 계산(`limit - used`, `limit: null`은 무제한)·게스트 선차단 판정·잔여 표시 여부는 [guest-trial.ts](../../../manyak-web/src/features/auth/_shared/utils/guest-trial.ts)가 소유합니다. 채팅 턴 완료([chat-room.tsx](../../../manyak-web/src/features/chats/room/components/chat-room.tsx))와 스토리라인 생성·스토리 완성 부수효과([creation-side-effects.ts](../../../manyak-web/src/features/stories/_shared/utils/creation-side-effects.ts))가 `getGetTrialsQueryKey()`로 무효화해 세션별 키를 모두 다시 조회합니다. 잔여 문구·자리표시는 채팅 [constants.ts](../../../manyak-web/src/features/chats/room/constants.ts)의 `buildTrialRemainingLabel`·`formatTrialRemaining`이 만듭니다. 표시 계약은 [공통 Spec](../spec/3-1-client-spec.md#입력창과-선택지)을 따릅니다.
+PAYMENT 내용은 도메인 문서에서 관리한다. ([체험 잔여 패칭 (웹)](../domain/PAYMENT/CLIENT/WEB/4-4-EXECUTION.md#4-4-1-정책과-체험-내역))
 
 ### 커서 목록 패칭 (웹)
 
-이프 내역만 `getMyCreditTransactions`를 `useInfiniteQuery`로 감쌉니다. `nextCursor`를 그대로 넘기고 `limit`·`type`은 생략해 서버 기본 50건·전체를 사용합니다.
-
-- sentinel은 `useInView(initialInView: false)`로 관찰합니다. 다음 요청 진행·실패 중에는 자동 요청을 멈추고 실패는 재시도 버튼으로 처리합니다.
-- 받은 항목이 없을 때만 전체 오류를 표시합니다. 다음 페이지 오류는 `isFetchNextPageError`로 목록 아래에 표시해 기존 항목을 유지합니다.
-- `gcTime: 0`으로 이탈 시 페이지를 버리고 재진입 때 첫 페이지부터 읽습니다. 잔액은 별도 `useMe(refetchOnMount: 'always')`를 사용합니다.
+PAYMENT 내용은 도메인 문서에서 관리한다. ([커서 목록 패칭 (웹)](../domain/PAYMENT/CLIENT/WEB/4-4-EXECUTION.md#4-4-1-정책과-체험-내역))
 
 ### 제공 장르 조회와 선택 (웹)
 
