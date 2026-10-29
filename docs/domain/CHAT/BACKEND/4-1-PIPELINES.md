@@ -26,7 +26,7 @@
 |---|---|---|---|
 | 턴 | `POST /api/v1/chat/turns` | 200, SSE<br>`token`, `character_image`, `ping`, `completed` | 4xx, 5xx, SSE `error`, 시간 초과 |
 | 선택지 | `POST /api/v1/chat/choices` | 200, JSON<br>선택지 3개 | 4xx, 5xx, 시간 초과 |
-| 대화 요약 | AI 5-CONTRACT 확정 후 채움 | 갱신된 `summary` | AI 5-CONTRACT 확정 후 채움<br>시간 초과 |
+| 대화 요약 | `POST /api/v1/chat/compact` | 200, JSON<br>갱신된 `summary` | 4xx, 5xx, 시간 초과 |
 
 요청 헤더는 값이 없으면 생략한다.
 
