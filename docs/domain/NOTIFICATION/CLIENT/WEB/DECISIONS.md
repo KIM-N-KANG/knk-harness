@@ -9,7 +9,7 @@
 ## W-018. 웹 푸시는 Firebase 토큰 SDK와 제작 직후 프롬프트로 도입
 
 - 결정일: 2026-09-22, 기록 확정 상태: Accepted
-- 근거: [웹 PWA 푸시](AGENTS.md), [디바이스 푸시 토큰·발송 모듈](../../BACKEND/4-2-CONTRACT.md), [BE-039](../../../../reference/decisions/BACKEND.md#be-039), [Android 알림 계약](../ANDROID/AGENTS.md)
+- 근거: [웹 PWA 푸시](AGENTS.md), [디바이스 푸시 토큰·발송 모듈](../../BACKEND/CONTRACT.md), [BE-039](../../../../reference/decisions/BACKEND.md#be-039), [Android 알림 계약](../ANDROID/AGENTS.md)
 - **맥락:** 서버는 `platform=WEB` 토큰 등록과 webpush notification 발송을 이미 지원했지만 웹에는 매니페스트·서비스 워커·토큰 등록이 없었습니다. Next.js PWA 가이드는 순수 Web Push(`PushSubscription`+VAPID 서버 액션)를 쓰는데 서버는 FCM 토큰으로 발송합니다.
 - **결정:** Firebase JS SDK의 `getToken`/`deleteToken`으로 FCM 등록 토큰을 받아 기존 토큰 API에 등록하고, 서비스 워커는 compat SDK 초기화만 두어 표시·클릭을 브라우저와 SDK에 맡깁니다. 오프라인 캐싱·next-pwa·Serwist·커스텀 push 핸들러는 두지 않습니다. 알림 권한은 Android처럼 회원 화면이 처음 열릴 때 기기당 한 번 자동으로 묻되, 신규 회원은 필수 동의 시트의 제출 클릭(사용자 제스처) 직전에 묻습니다. 광고 동의는 필수 동의 시트의 "[선택]" 항목으로 먼저 받고 첫 거절 뒤 세 번째 재진입(페이지 로드)에서 재질문 시트로 한 번 더 묻습니다. 설정은 마이 > 알림 설정에서 서비스·광고·야간을 전체 교체 PUT으로 저장하고 광고·야간 변경마다 처리 결과 다이얼로그를 표시합니다.
 - **이유:** 토큰 기반이 서버·Android와 같은 계약이라 서버 변경 없이 동작합니다. SDK 12가 권고하는 FID 기반 `register`는 서버 발송 대상과 토큰 테이블 계약을 함께 바꿔야 하므로 미룹니다. Android와 같은 시점·문구로 맞춰 두 플랫폼의 동의 규칙을 하나로 유지합니다. 브라우저는 제스처 없는 권한 요청을 무시할 수 있어(Safari) 동의 시트의 제출 클릭과 알림 설정의 버튼을 제스처 경로로 둡니다. 정보통신망법 제50조의 사전 동의·야간 별도 동의·처리 결과 통지는 Android와 같은 문구·규칙을 씁니다.

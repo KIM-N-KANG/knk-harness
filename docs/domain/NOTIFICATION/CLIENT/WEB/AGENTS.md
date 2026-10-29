@@ -4,22 +4,22 @@
 
 공통: [CLIENT](../AGENTS.md).
 
-### 1 문서 역할
+### 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 웹 NOTIFICATION 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 웹 NOTIFICATION 경로 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 웹 NOTIFICATION 이동 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 웹 NOTIFICATION 표현 |
-| [4-2-COMPONENT-ARCHITECTURE.md](4-2-COMPONENT-ARCHITECTURE.md) | 4-2 웹 NOTIFICATION 구성 |
-| [4-3-STATE-MANAGEMENT.md](4-3-STATE-MANAGEMENT.md) | 4-3 웹 NOTIFICATION 상태 관리 |
-| [4-4-EXECUTION.md](4-4-EXECUTION.md) | 4-4 웹 NOTIFICATION 실행 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 웹 NOTIFICATION 검증 |
-| [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 6 웹 NOTIFICATION 배포 |
+| [REQUIREMENTS.md](REQUIREMENTS.md) | 웹 NOTIFICATION 요구사항 |
+| [INFORMATION-ARCHITECTURE.md](INFORMATION-ARCHITECTURE.md) | 웹 NOTIFICATION 경로 |
+| [INTERACTION-FLOWS.md](INTERACTION-FLOWS.md) | 웹 NOTIFICATION 이동 |
+| [LAYOUT.md](LAYOUT.md) | 웹 NOTIFICATION 표현 |
+| [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) | 웹 NOTIFICATION 구성 |
+| [STATE-MANAGEMENT.md](STATE-MANAGEMENT.md) | 웹 NOTIFICATION 상태 관리 |
+| [EXECUTION.md](EXECUTION.md) | 웹 NOTIFICATION 실행 |
+| [VERIFICATION.md](VERIFICATION.md) | 웹 NOTIFICATION 검증 |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | 웹 NOTIFICATION 배포 |
 | [DECISIONS.md](DECISIONS.md) | NOTIFICATION 웹 결정 기록 |
 
-### 2 코드 대응
+### 코드 대응
 
 - [src/features/notices](../../../../../../manyak-web/src/features/notices)
 - [src/features/notifications](../../../../../../manyak-web/src/features/notifications)
@@ -31,7 +31,7 @@
 - [e2e/notifications](../../../../../../manyak-web/e2e/notifications)
 - [e2e/notices](../../../../../../manyak-web/e2e/notices)
 
-### 3 작성과 검증
+### 작성과 검증
 
 - 공지의 기기 읽음과 회원 알림의 서버 읽음을 구분한다.
 - 수신 동의, OS 권한과 회원 인증을 같은 상태로 합치지 않는다.

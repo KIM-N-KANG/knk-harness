@@ -11,22 +11,22 @@
 
 <br>
 
-### 1 문서 역할
+### 문서 역할
 
 | 문서 | 내용 |
 |---|---|
-| [1-BACKGROUND.md](1-BACKGROUND.md) | 1 ACCOUNT 클라이언트 배경 |
-| [2-1-USER-STORY.md](2-1-USER-STORY.md) | 2-1 ACCOUNT 유저 스토리 |
-| [2-2-REQUIREMENTS.md](2-2-REQUIREMENTS.md) | 2-2 ACCOUNT 요구사항 |
-| [3-1-INFORMATION-ARCHITECTURE.md](3-1-INFORMATION-ARCHITECTURE.md) | 3-1 ACCOUNT 화면 구성 |
-| [3-2-INTERACTION-FLOWS.md](3-2-INTERACTION-FLOWS.md) | 3-2 ACCOUNT 화면 흐름 |
-| [3-3-LAYOUT.md](3-3-LAYOUT.md) | 3-3 ACCOUNT 화면 배치 |
-| [4-1-CONTRACT.md](4-1-CONTRACT.md) | 4-1 ACCOUNT 데이터 계약 |
-| [5-1-VERIFICATION.md](5-1-VERIFICATION.md) | 5-1 ACCOUNT 공통 검증 |
+| [BACKGROUND.md](BACKGROUND.md) | ACCOUNT 클라이언트 배경 |
+| [USER-STORY.md](USER-STORY.md) | ACCOUNT 유저 스토리 |
+| [REQUIREMENTS.md](REQUIREMENTS.md) | ACCOUNT 요구사항 |
+| [INFORMATION-ARCHITECTURE.md](INFORMATION-ARCHITECTURE.md) | ACCOUNT 화면 구성 |
+| [INTERACTION-FLOWS.md](INTERACTION-FLOWS.md) | ACCOUNT 화면 흐름 |
+| [LAYOUT.md](LAYOUT.md) | ACCOUNT 화면 배치 |
+| [CONTRACT.md](CONTRACT.md) | ACCOUNT 데이터 계약 |
+| [VERIFICATION.md](VERIFICATION.md) | ACCOUNT 공통 검증 |
 
 <br>
 
-### 3 작성과 검증
+### 작성과 검증
 
 - 요구사항에는 사용자 결과, 화면 설계에는 배치와 전환, 구현 설계에는 책임과 수명을 작성한다.
 - 공통 본문을 플랫폼별로 복제하지 않는다. 의도된 차이는 공통 적용 범위 안에서 구체화한다.

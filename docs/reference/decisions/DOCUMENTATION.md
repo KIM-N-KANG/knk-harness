@@ -9,6 +9,7 @@
 | [C-007](#c-007) | 폴더별 파일 번호와 Android 설계 통합 |
 | [C-011](#c-011) | 클라이언트 문서를 도메인 공통과 플랫폼 하위로 배치 |
 | [C-012](#c-012) | 앱 기능, 플랫폼 기반과 운영 문서를 분리 |
+| [C-013](#c-013) | 역할 기반 파일명과 공통 사용자 경험 분류 |
 
 <br>
 
@@ -47,7 +48,7 @@
 - 결정일: 2026-09-09 · 기록 확정 상태: Accepted
 - 관계: C-006의 모든 폴더에서 같은 클라이언트 번호를 사용하는 규칙과 별도 Android 모듈 파일 규칙을 일부 대체합니다. 역할별 폴더·독립 번호·문서 책임은 유지합니다.
 - **맥락:** 사용자가 각 폴더의 파일명을 변경하고 Android 모듈 설계를 상위 설계에 합치도록 요청했습니다.
-- **결정:** Spec은 공통 3-1·웹 3-2·Android 3-3, Design은 웹 1-1·Android 1-2, ADR은 공통 1-1·웹 1-2·Android 1-3을 사용합니다. 모듈 책임은 [Android Design §1-2-2](../../platform/ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-1-책임과-의존)에 통합합니다. 백엔드는 Spec 4·Design 2·ADR 2, AI는 Spec 5·Design 3·ADR 3, 배포 Design은 4입니다.
+- **결정:** Spec은 공통 3-1·웹 3-2·Android 3-3, Design은 웹 1-1·Android 1-2, ADR은 공통 1-1·웹 1-2·Android 1-3을 사용합니다. 모듈 책임은 [Android Design §1-2-2](../../platform/ANDROID/COMPONENT-ARCHITECTURE.md#책임과-의존)에 통합합니다. 백엔드는 Spec 4·Design 2·ADR 2, AI는 Spec 5·Design 3·ADR 3, 배포 Design은 4입니다.
 - **이유:** 폴더의 실제 문서 구성에 맞춰 독립적으로 번호를 관리하고 Android 현재 구조의 중복 정본을 없앱니다.
 - **영향:** 빈 서버 Design·ADR은 기존 본문을 이관해 채우고 출처에는 링크를 남깁니다. 제품 정책·구현·검증 상태는 변경하지 않습니다. [재구성 계획](https://github.com/KIM-N-KANG/knk-harness/blob/655dbbd68e40e0c2c77d4e7660328485e21946d6/docs/planning/product-document-reorganization.md)에 이관 범위와 남은 작업을 기록합니다.
 
@@ -79,3 +80,18 @@
 - 대안: 공용 문서 전체를 APP으로 옮기면 제품 계약과 기술 기반의 경계가 계속 섞인다. 기능별 기술 기반을 각 도메인에 복제하면 수정 시 불일치가 생긴다.
 - 영향: 기존 CLIENT-US ID와 QA ID를 유지하고 링크를 새 위치로 연결한다. 원문의 확정 ID와 본문은 유지하며 과거 커밋에 고정된 출처를 바꾸지 않는다.
 - 근거: KNK-1914 작업 대화의 adr 및 design 폴더 삭제, REFERENCE 소문자 변경과 docs/client 분리 요청.
+
+<br>
+
+<a id="c-013"></a>
+
+### C-013. 역할 기반 파일명과 공통 사용자 경험 분류
+
+- 결정일: 2026-10-29, 상태: Accepted
+- 관계: C-006 및 C-007의 파일과 절 번호 규칙, C-012의 `domain/APP/CLIENT` 배치를 대체한다. 도메인의 CLIENT 공통 계약과 WEB, ANDROID 구분, 플랫폼 및 운영 경계는 유지한다.
+- 배경: 파일의 숫자 접두사는 다른 폴더로 옮긴 뒤에도 과거 위치를 나타냈다. APP은 계정, 결제 같은 업무 책임을 설명하지 못하고 CLIENT를 한 번 더 거쳐야 했다.
+- 결정: 현재 문서는 `CONTRACT.md`, `VERIFICATION.md`처럼 역할로 이름을 짓고 제목에 배치 번호를 넣지 않는다. 읽는 순서는 `AGENTS.md`에서 관리한다. 탐색, 테마, 공통 화면 상태, 서비스 안내와 앱 진입은 `docs/experience/` 공통 문서 및 그 아래 WEB, ANDROID에서 관리한다. 공통 전송 계약은 `docs/platform/CLIENT-CONTRACT.md`에 둔다.
+- 대안: APP을 다른 도메인 이름으로만 바꾸면 업무와 공통 경험의 경계가 여전히 모호하다. 플랫폼에 사용자 요구사항까지 넣으면 구현 기반과 제품 계약이 섞인다. 탐색과 테마마다 별도 도메인을 만들면 같은 사용자 목표를 여러 폴더에서 따라가야 한다.
+- 영향: 파일과 절 링크, 목차, 작성 가이드와 구현 저장소의 참조를 함께 갱신한다. 기존 CLIENT-US ID, QA ID와 확정된 결정 본문은 유지한다. 새 공통 사용자 목표는 사용하지 않은 CLIENT-US 번호를 이어서 부여한다. 과거 커밋 링크와 이미지 자산의 순번은 변경하지 않는다.
+- 재검토 조건: 공통 경험의 기능이 별도 업무 정책과 생명주기를 갖게 되면 해당 책임을 도메인으로 분리한다. 파일 정렬을 위해 번호나 빈 문서를 추가하지 않는다.
+- 근거: KNK-1914의 전체 문서 번호 재검토와 APP 분류 재검토 요청. ([KNK-1914](https://kimandkang.atlassian.net/browse/KNK-1914), [제품 작성 가이드](../PRODUCT-SPEC-WRITING-GUIDE.md), [클라이언트 작성 가이드](../CLIENT-SPEC-WRITING-GUIDE.md))
