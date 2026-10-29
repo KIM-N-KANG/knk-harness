@@ -234,6 +234,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `user_id` | 회원이면 공개 식별자 |
 | `device_id` | 요청 헤더 `X-Manyak-Device-Id` 원본<br>헤더가 없으면 게스트는 `unknown`, 회원은 생략 |
 | `session_id`, `request_id`, `is_logged_in` | 요청 문맥 |
+| `platform`, `app_version` | ACCOUNT와 같음 ([ACCOUNT 5-4-9 분석 이벤트](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-분석-이벤트)) |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server` |
 

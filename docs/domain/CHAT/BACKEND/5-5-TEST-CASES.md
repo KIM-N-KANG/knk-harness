@@ -60,6 +60,7 @@
 | AI 요청 구성 | 턴 2개 있는 채팅, 입력 출처 지정, 시작 설정 참조 끊김 | 전체 내역과 이번 입력 분리, `user_source` 전달과 생략, 보관한 프롤로그 |
 | 헤더 | 간편 제작 스토리와 일반 제작 스토리, 재생성 | 생성 요청 ID 헤더 유무, 턴 번호와 재생성 값 |
 | 비공개 전환 격리 | 소유자가 비공개로 바꾼 뒤 설정, 사건, 엔딩, 인물 이미지 수정 | 타인의 채팅은 공개본으로 AI 요청 구성, 소유자 채팅은 현재 값 |
+| 응답 모델 기록 | 회원의 `AURORA` 채팅 턴<br>채팅 모델이 `AURORA`인 게스트 턴<br>`LITE` 턴 뒤 채팅 모델을 `AURORA`로 바꿈<br>`AURORA`로 바꾼 뒤 그 턴을 재생성 | AI 응답 행 `model_code` `AURORA`, 사용자 입력 행 `NULL`<br>`LITE`<br>이미 저장된 행은 `LITE` 그대로<br>그 행이 `AURORA`로 바뀜 |
 | 과금 | `LITE` 채팅의 회원 체험 잔여, 체험 소진, 잔액 부족, 게스트 한도 소진, 디바이스 헤더 누락 | 체험 소모, 선차감, 402, 402, 400과 모두 스트림 미개시 |
 | 모델별 과금 | `AURORA` 채팅에서 회원 체험 잔여, 체험 잔여와 잔액 49, 체험 소진, `LITE`으로 변경 뒤 체험 잔여, `LITE`으로 변경 뒤 체험 소진 | 50 차감과 `model_tier=AURORA` 전달과 체험 카운터 유지, 402와 체험 카운터 유지, 50 차감, 체험 소모와 `model_tier=LITE` 전달, 20 차감 |
 | AI 요청의 식별자와 모델 코드 | 회원 턴, 게스트 턴(`AURORA` 저장), 재생성 | `user_id`는 공개 UUID와 `model_tier`는 청구 모델, `user_id`는 `null`과 `model_tier=LITE`, 요청 시점 모델 |
@@ -135,6 +136,11 @@
 | 검증 | 발급 URL 마커와 객체 존재, 발급하지 않은 실시간 URL, 객체 없음, 목록에만 있는 URL | 그대로 저장, 마커 제거와 환불, 제거와 환불, 실패 처리 |
 | 환불 범위 | 이미지만 실패, 본문 실패 | 이미지 행만 환불, 두 행 모두 환불 |
 | 발급 실패 | presign 예외 | 업로드 위치 없이 진행, 체험 복원 |
+| 이미지 호출 기록 적재 | 업로드 위치 발급 성공<br>미발급(끔, 저장소 미설정, 게스트 체험 소진, presign 예외) | `feature=chat_image`, `STARTED` 행 하나<br>`chat_image` 행 없음 |
+| 이미지 호출 성공 기록 | 발급 URL 마커와 객체 존재, 발급 URL이 실린 `character_image` 이벤트가 시작 1.2초 뒤 도착 | `SUCCEEDED`, `latency_ms` 1200, `turn_number`가 저장된 턴 번호, `chat_id`가 채팅 공개 ID, 토큰 컬럼 `null` |
+| 이미지 호출 실패 기록 | 마커에 발급 URL 없음<br>객체 없음<br>턴이 저장 전에 스트림 실패 | `FAILED`와 `AI_IMAGE_MISSING`<br>`FAILED`와 `AI_IMAGE_NOT_FOUND`<br>`FAILED`와 `AI_IMAGE_TURN_FAILED`, `turn_number` `null` |
+| 이미지 이벤트 없음 | 검증은 통과했지만 발급 URL이 실린 `character_image` 이벤트가 없음 | `SUCCEEDED`, `latency_ms` `null` |
+| 이미지 기록 실패 격리 | `chat_image` 행 적재 또는 전이가 예외 | 턴 저장과 `completed` 정상, 이미지 처리 결과 그대로, WARN 로그 |
 
 <br>
 

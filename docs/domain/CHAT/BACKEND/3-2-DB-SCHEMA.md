@@ -188,6 +188,7 @@ erDiagram
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
 | `credit_transaction_id` | bigint | FK `credit_transactions.id` | 활성본을 생성한 턴의 `CHAT_TURN` 차감 행<br>체험 턴, 게스트 턴, 사용자 입력 행은 `NULL`<br>선차감 대사가 저장 여부를 판정하는 연결 |
+| `model_code` | varchar(20) | FK `chat_models.code` | AI 응답 행에 그 활성본을 만든 턴의 청구 모델 코드<br>게스트 턴은 채팅에 보관한 모델과 무관하게 `LITE`<br>재생성으로 활성본이 바뀌면 그 재생성의 청구 모델로 바뀜<br>사용자 입력 행과 컬럼 추가 전의 행은 `NULL` |
 
 | 인덱스 | 컬럼 |
 |---|---|
@@ -304,6 +305,7 @@ erDiagram
 | `users` | `id`, 계정 상태 |
 | `user_personas` | 이름, 설명 |
 | `credit_transactions` | `CHAT_TURN`, `CHAT_IMAGE`, `REFUND` 행의 `ref_type`과 `ref_id`<br>턴 소모와 그 환불의 `ref_type`은 `CHAT_TURN`, 이미지는 `CHAT_IMAGE`<br>`CHAT_TURN` 소모 행의 `id`를 메시지와 버전 이력에 연결<br>`CHAT_TURN` 행의 `amount`는 청구 모델의 가격이라 같은 채팅 안에서 섞일 수 있음 |
+| `ai_call_logs` | CHAT이 기록하는 `chat_response`, `choice_generation`, `chat_image`, `chat_compact` 행과 [5-4-4 AI 호출 기록](5-4-OBSERVABILITY.md#5-4-4-ai-호출-기록)의 컬럼<br>`ck_ai_call_logs_feature`가 `chat_image`와 `chat_compact`를 허용해야 함 |
 
 <br>
 

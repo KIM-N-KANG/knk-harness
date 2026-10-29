@@ -141,6 +141,8 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
+| AI 호출 기록의 기능 값 | `ck_ai_call_logs_feature`에 `chat_image`를 더하는 마이그레이션이 `chat_image` 행을 쓰는 코드와 같은 릴리스에 있어야 함<br>제약은 DROP 뒤 ADD로 다시 만들고 기존 네 값을 유지 | 기동 시 자동 적용<br>체크 제약은 테스트 프로파일에서 검증되지 않아 DB 문서 생성 스크립트로 확인 |
+| 응답 모델 컬럼 | `story_messages.model_code`(NULL 허용, `chat_models.code` FK)를 추가하는 마이그레이션이 그 값을 쓰는 코드와 같은 릴리스에 있어야 함<br>기존 행은 채우지 않고 `NULL`로 둠 | 기동 시 자동 적용<br>DB 문서 생성 스크립트로 FK와 `dbdoc/` 확인 |
 | 생성 중 상태와 재연결 | 1단계 KNK-1677은 생성 중 상태, 중복 생성 거절, 저장 시 재확인 적용<br>연결과 분리된 생성 수명과 마감 적용<br>2단계 KNK-1678은 Redis Streams와 재연결 적용<br>2단계 전까지 재진입한 클라이언트는 `generatingTurn`이 있으면 2초 간격으로 상세 재조회 | 수동 검토<br>`lastTurnId`는 선택 필드로 유지해 구버전 앱 허용 |
 | 코드 테스트 | 전체 테스트 통과 | CI 자동 |
 | 컨테이너 기동 | 컨테이너 헬스체크와 `/actuator/health` `UP` | CI 자동<br>AI 서버 실제 호출과 업로드 동작은 검사하지 않음 |
@@ -213,7 +215,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 턴 실패 | `manyak.chat.turn.result`의 `failure` 비율 | 배포 전과 같은 수준 |
 | 환불 | `manyak.chat.turn.refund`의 `failure` | 0 |
 | AI 호출 | `ai_call_logs`의 `STARTED` 잔존과 `turn_number IS NULL`인 `SUCCEEDED` | `STARTED` 장기 잔존 없음<br>`turn_number`가 없는 `SUCCEEDED`는 생성 마감 초과, 시작 상태 불일치, 저장 실패, 저장 후 관측 실패 중 어느 경로인지 확인 |
-| 실시간 이미지 | 새 턴 본문의 `chat-images/` 마커 | 업로드 위치 발급과 업로드 성공 |
+| 실시간 이미지 | 새 턴 본문의 `chat-images/` 마커<br>`ai_call_logs`의 `chat_image` 행 | 업로드 위치 발급과 업로드 성공<br>발급한 턴마다 `chat_image` 행이 있고 `STARTED`가 오래 남지 않음 |
 | 스트림 | 이어쓰기 호출의 `started`부터 `completed`까지 | 이벤트 순서와 한글 인코딩 정상<br>이탈 뒤 저장과 재연결 시 처음부터 수신 |
 | 모델 | 모델 목록 응답, 오로라 모델 채팅의 턴 1회, 원장과 `ai_call_logs.model`, AI 서버의 Langfuse metadata | 목록에 기본 모델 하나<br>차감액이 모델 가격과 같음<br>AI가 받은 `user_id`와 `model_tier`가 회원 공개 식별자와 청구 모델<br>실제 모델이 라우팅 규칙과 일치 |
 | 출력 분량 | 출력 분량을 켠 채팅의 턴 1회, 턴 저장 로그의 `long_response`, AI 서버의 Langfuse 트레이스 입력 | AI가 받은 `long_response`가 `true` |
