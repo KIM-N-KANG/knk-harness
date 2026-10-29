@@ -42,7 +42,7 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-제품 문서는 `docs/domain/` 아래 도메인별 세트로 구성합니다. 클라이언트는 `CLIENT/`에 공통 계약을 두고 `WEB/`, `ANDROID/`에 플랫폼 차이와 구현, 검증을 둡니다. [ACCOUNT 클라이언트](docs/domain/ACCOUNT/CLIENT/AGENTS.md)와 [PAYMENT 클라이언트](docs/domain/PAYMENT/CLIENT/AGENTS.md)는 이 구조를 사용합니다. 여러 도메인이 사용하는 기반은 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다.
+제품 문서는 `docs/domain/` 아래 도메인별 세트로 구성합니다. 클라이언트는 `CLIENT/`에 공통 계약을 두고 `WEB/`, `ANDROID/`에 플랫폼 차이와 구현, 검증을 둡니다. [ACCOUNT 클라이언트](docs/domain/ACCOUNT/CLIENT/AGENTS.md)와 [PAYMENT 클라이언트](docs/domain/PAYMENT/CLIENT/AGENTS.md), [CHAT 클라이언트](docs/domain/CHAT/CLIENT/AGENTS.md)는 이 구조를 사용합니다. 여러 도메인이 사용하는 기반은 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다.
 
 아직 이관하지 않은 내용은 아래 Spec, Design, ADR과 QA를 기준으로 사용합니다. 이전 위치의 참조는 새 기준 문서로 연결하며, 파일 역할과 배치는 [클라이언트 작성 가이드](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 

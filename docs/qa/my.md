@@ -27,7 +27,7 @@
 - [MY-CREDITS — 이프 충전 `/my/credits` (FE-SCREEN-008, KNK-1083·1092·1297)](../domain/PAYMENT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-2-충전과-내역-케이스)
 - [MY-PERSONA — 페르소나 생성과 관리 `/my/personas` (FE-SCREEN-008, KNK-1469)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-14-my-persona-페르소나-생성과-관리-mypersonas-fe-screen-008-knk-1469)
 - [MY-PROFILE — 프로필 수정 `/my/profile/edit` (FE-SCREEN-008, KNK-1148)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-15-my-profile-프로필-수정-myprofileedit-fe-screen-008-knk-1148)
-- [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](#my-feedback--피드백-myfeedback-fe-screen-006)
+- [MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)](../domain/CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-15-my-feedback-피드백-myfeedback-fe-screen-006)
 - [MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-16-my-invite-친구-초대-myinvite-fe-screen-008)
 - [MY-ONBOARD — 신규 가입 초대 코드 모달 바텀 시트 (FE-SCREEN-008)](#my-onboard--신규-가입-초대-코드-모달-바텀-시트-fe-screen-008)
 - [MY-INFO — 서비스 안내 `/about` (FE-SCREEN-011)](#my-info--서비스-안내-about-fe-screen-011)
@@ -52,7 +52,7 @@
 | ------------ | --- | ------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------- |
 | MY-MENU-02 | P1 | 게스트 | 메뉴·카드 구성 확인 | 화면(테마 변경)·알림(공지사항만, 알림 설정 없음)·기타(서비스 안내·피드백) 섹션만 표시. 이벤트(친구 초대)·계정(로그아웃·회원 탈퇴) 섹션과 이프 카드는 없음 | ✅ e2e `my/my-page`·`visual/my-visual` | FE-SCREEN-008 |
 | MY-MENU-05 | P1 | 회원 | 메뉴 구성 확인 | 이벤트(친구 초대) / 화면(테마 변경) / 알림(알림 설정 → 공지사항 순) / 기타(서비스 안내 → 피드백 순) / 계정(기본 전경색 로그아웃 → 위험색 회원 탈퇴 순) 5개 섹션 표시 | ✅ e2e `visual/my-visual` | FE-SCREEN-008, FE-SCREEN-011 진입점 |
-| MY-MENU-17 | P1 | 게스트/회원 | 피드백 메뉴 탭 | `/my/feedback`으로 이동 | ◐ e2e `my/my-page`(링크 표시만) | US-7-1, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) |
+| MY-MENU-17 | P1 | 게스트/회원 | 피드백 메뉴 탭 | `/my/feedback`으로 이동 | ◐ e2e `my/my-page`(링크 표시만) | CHAT-US-016, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) |
 | MY-MENU-18   | P1  | 게스트/회원                                       | 테마 변경 메뉴 반복 탭      | 시스템 설정 → 라이트 모드 → 다크 모드 순으로 순환. 왼쪽 아이콘(모니터·해·달)과 오른쪽 문구가 함께 바뀌고 테마 즉시 적용 | ✅ e2e `my/my-page`                            | 구현(`theme-menu-item`)                      |
 
 ## MY-ACCOUNT-DELETION — 회원 탈퇴 `/my/account-deletion` (FE-SCREEN-008, KNK-1052)
@@ -93,21 +93,7 @@ ACCOUNT 내용은 다음 문서에서 관리한다. ([5-1-15 MY-PROFILE: 프로�
 
 ## MY-FEEDBACK — 피드백 `/my/feedback` (FE-SCREEN-006)
 
-기준: [계약·구조](../spec/3-1-client-spec.md#피드백-폼).
-
-| ID          | P   | 사전조건                                               | 절차                                | 기대 결과                                                                                                                         | 자동화                                     | 근거                                      |
-| ---------------- | --- | -------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------- |
-| MY-FEEDBACK-01 | P1 | 게스트/회원 | `/my/feedback` 진입 | 뒤로가기 헤더("피드백") + 제목("써보면서 아쉬웠던 점이 있나요?" / "불편한 점이나 바라는 기능을 알려주세요") + 안내("보내주신 피드백은 다음 개선에 꼼꼼히 참고할게요") + 본문 카운터 `0 / 500` + 이메일 필드("답변이 필요하시면 이메일을 남겨주세요") 표시. 하단 탭 없음 | ✅ e2e `visual/my-visual` | FE-SCREEN-006, [웹 라우팅](../spec/3-2-web-spec.md#3-2-4-라우팅레이아웃공통-셸) |
-| MY-FEEDBACK-02   | P1  | 폼 표시됨                        | 본문 미입력 상태에서 제출 버튼 확인 | 본문이 비어 있어도 "피드백 보내기" 버튼은 활성화                                                                                                                                                                                                                        | ✅ e2e `feedback/feedback`                      | §3-1-8 피드백 폼               |
-| MY-FEEDBACK-03   | P0  | 폼 표시됨                        | 본문+이메일 입력 → 제출(성공 응답)  | "소중한 피드백을 보내주셔서 감사해요" 토스트 + 폼 초기화. 페이로드 `{body, email, platform: "WEB"}` 전송                                                                                                                                                                | ✅ e2e `feedback/feedback`                      | US-7-1·7-3, FE-SCREEN-006    |
-| MY-FEEDBACK-04   | P0  | 폼 표시됨                        | 이메일 없이 본문만 제출             | 정상 제출되고 `email: null`로 전송                                                                                                                                                                                                                                      | ✅ e2e `feedback/feedback`                      | US-7-2                       |
-| MY-FEEDBACK-05   | P1  | 본문 비어 있음(공백만 입력 포함) | 제출 버튼 탭                        | 버튼 위에 "피드백 내용을 입력해주세요" 인라인 오류(`role=alert`). API 요청 없음. 유효한 본문을 입력하면 오류 즉시 제거                                                                                                                                                  | ◐ e2e `feedback/feedback`(요청 미발생은 미검증) | FE-SCREEN-006 상태표, §3-1-8   |
-| MY-FEEDBACK-06   | P1  | 제출 요청 진행 중                | 폼 관찰                             | 본문·이메일 입력과 버튼 비활성화 + 버튼 크기를 유지한 중앙 스피너("피드백 전송 중")                                                                                                                                                                                     | ◐ e2e `feedback/feedback`(입력 비활성은 미검증) | FE-SCREEN-006 상태표         |
-| MY-FEEDBACK-07   | P0  | 제출이 4xx·5xx로 실패            | 제출                                | "피드백 전송에 실패했어요" 토스트 + 입력값 유지(재제출 가능)                                                                                                                                                                                                            | ◐ e2e `feedback/feedback`(입력 유지는 미검증)   | US-7-3, FE-SCREEN-006 상태표 |
-| MY-FEEDBACK-08   | P2  | 폼 표시됨                        | 본문 500자 초과 입력 시도           | 500자에서 입력 차단(`maxLength`) + 카운터 `500 / 500`. 이메일도 320자 제한                                                                                                                                                                                              | 수동                                            | §3-1-8 피드백 폼               |
-| MY-FEEDBACK-09   | P2  | 본문 앞뒤에 공백 포함 입력       | 제출                                | `body`는 trim되어 전송. 이메일이 공백뿐이면 `null`로 전송                                                                                                                                                                                                               | 수동                                            | 구현(`use-feedback-form`)    |
-| MY-FEEDBACK-10 | P2 | `/my`에서 진입 | 뒤로가기 헤더 탭 | `/my`(마이)로 복귀 | 수동 | [웹 헤더](../design/1-1-web-design.md#상단-헤더하단-네비게이션) |
-| MY-FEEDBACK-11 | P2 | 폼 표시됨 | 필드·하단 CTA 여백 확인 | 피드백 내용과 이메일 필드의 행 간격은 24px, 필드 그룹 하단 여백은 32px. 스크롤 본문의 하단 fade 바로 아래에 추가 상단 패딩 없이 CTA 푸터가 붙음 | ✅ e2e `feedback/feedback`·`visual/my-visual` | [웹 레이아웃](../design/1-1-web-design.md#레이아웃-구조), KNK-1012 |
+CHAT 내용은 도메인 문서에서 관리한다. ([새 문서](../domain/CHAT/CLIENT/WEB/5-1-VERIFICATION.md#5-1-15-my-feedback-피드백-myfeedback-fe-screen-006))
 
 ## MY-INVITE — 친구 초대 `/my/invite` (FE-SCREEN-008)
 

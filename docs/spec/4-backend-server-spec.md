@@ -952,7 +952,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 - `error.code`는 AI 서버가 보낸 오류 코드를 그대로 중계하고, AI 이벤트 외 실패는 `AI_STREAM_FAILED`로 분류합니다.
 - **SSE 전체 상한**: 120초입니다. 초과하면 작업에 취소를 표시하고 `error` 이벤트 없이 스트림을 닫습니다. 취소가 저장 진입보다 먼저면 늦게 도착한 완료 결과를 저장하지 않고 작업 종료 시 환불합니다. 저장 진입이 먼저면 저장 결과로 정산합니다.
 - **AI 스트림 제한**: 연결 5초, 이벤트 간 60초입니다. 이벤트가 60초 동안 없으면 `AI_STREAM_FAILED`를 보냅니다([§4-6](#4-6-오류와-예외-처리)).
-- **클라이언트 처리**: EOF는 [공통 SSE 계약](3-1-client-spec.md#3-1-5-채팅-플레이와-sse-스트리밍), 자체 제한은 플랫폼 Design을 따릅니다.
+- **클라이언트 처리**: EOF는 [공통 SSE 계약](../domain/CHAT/CLIENT/AGENTS.md), 자체 제한은 플랫폼 Design을 따릅니다.
 - 서버 재개(resume) 스트림은 없습니다. 클라이언트는 재진입 시 상세를 다시 조회합니다.
 
 ### 4-3-4. 피드백
@@ -1196,7 +1196,7 @@ KNK-1537의 목표 계약이다. 서버 dev `6aca4ae`에서 확인한 구현에�
 
 - data 키는 camelCase이며 시나리오별 필드는 각 시나리오 계약이 정합니다.
 - **우선순위·TTL은 시나리오가 정합니다.** 발송 모듈은 호출자가 지정한 Android 우선순위와 TTL을 사용합니다. 기본값은 우선순위 `HIGH`, TTL 미지정(FCM 기본값)입니다. 스토리 완성은 Doze에서 data-only 메시지가 지연되지 않도록 `HIGH`를 사용합니다. 광고 알림인 출석 리마인드와 프로모션은 `NORMAL`을 사용하며, TTL은 출석 리마인드에만 둡니다. 웹 푸시 구성에는 이 값을 적용하지 않습니다.
-- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../adr/1-3-android-adr.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료는 결과와 무관하게 내 제작 스토리 목록(`/studio`)으로 연결하며 상세 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
+- **선택 키 `deepLink`.** 알림을 탭했을 때 열 절대 URL입니다. `manyak.push.web-base-url`(기본 `https://manyak.app`)에 시나리오별 경로를 붙입니다. 환경 변수 `MANYAK_PUSH_WEB_BASE_URL`로 재정의할 수 있습니다. dev 웹은 SSO 뒤에 있어 공개 origin이 없으므로 운영 origin 기본값을 사용합니다([A-043](../domain/CHAT/CLIENT/ANDROID/DECISIONS.md#a-043)). 웹은 이 값을 클릭 링크로 사용합니다. Android 앱은 호스트·경로 허용 목록으로 검증한 뒤 이동하고, 허용하지 않는 URL이면 홈을 엽니다. 스토리 완성과 출석 리마인드는 이 키를 싣고 프로모션은 생략합니다. 검수 완료는 결과와 무관하게 내 제작 스토리 목록(`/studio`)으로 연결하며 상세 규칙은 [검수 완료 푸시](#스토리-검수-완료-푸시)를 따릅니다. 앱의 시나리오 판정과 하위 호환을 위해 `type`·식별자 키도 유지합니다.
 - **공통 키 `recipientId`**: 모듈이 모든 시나리오 데이터에 수신 회원의 `public_id`(`GET /auth/me`의 `id`와 같은 문자열)를 `recipientId`로 덧붙입니다. 푸시는 회원이 아니라 기기(토큰)로 도착하므로, A가 로그아웃하고 같은 기기에 B가 로그인한 뒤 남은 토큰이나 늦게 도착한 A 대상 메시지가 B 화면에 뜰 수 있습니다. 앱([`1-2-android-design.md §1-2-5`](../design/1-2-android-design.md))은 이 값이 현재 로그인 회원과 같을 때만 알림을 띄우고 없거나 다르면 버립니다. 시나리오 구현은 이 키를 직접 싣지 않습니다(모듈이 한 곳에서 붙이며, 시나리오가 같은 키를 넘겨도 모듈 값이 이깁니다).
 - **대상.** 회원의 등록 기기(최근 갱신 10개). 발송 전에 계정 상태를 확인해 `ACTIVE`가 아니면(정지·탈퇴) 토큰 조회조차 하지 않습니다: 등록 뒤에 정지된 회원의 기존 토큰으로 계속 보내는 것을 막습니다.
 - **무효 토큰 정리.** FCM이 `UNREGISTERED`를 돌려주면 그 토큰 행만 지우고 다음 기기로 계속합니다. `INVALID_ARGUMENT`는 지우지 않습니다: 토큰 형식 오류뿐 아니라 **서버가 만든 페이로드 오류**에도 오는 코드라, 삭제 신호로 쓰면 서버 버그 하나가 회원 전체의 토큰을 지웁니다. 정리 자체가 실패해도(DB 오류) 다음 기기 발송은 이어집니다.
@@ -2242,7 +2242,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 도달 이벤트는 채팅 턴에 기록하고, 스토리 상세 표시는 사용자+스토리 단위로 집계합니다(팀 결정).
 
 - **턴 기록**: 도달 턴의 ASSISTANT 메시지에 `reached_ending_id`를 저장하고, SSE `completed`에 `reachedEnding`(엔딩 **이름**·null)으로 싣습니다([§4-3-3](#4-3-api-계약)). 채팅 상세 턴 항목(`GET /chats/{chatId}`)에도 같은 이름 필드로 노출합니다( KNK-527).
-- **채팅 가드**: `story_chats.reached_ending_id`와 토큰 원문 이름 스냅샷에 최초 도달을 기록합니다. FK가 없더라도 `reached_ending_name_snapshot`이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(US-6-14).
+- **채팅 가드**: `story_chats.reached_ending_id`와 토큰 원문 이름 스냅샷에 최초 도달을 기록합니다. FK가 없더라도 `reached_ending_name_snapshot`이 있으면 이후 턴 요청에 `endings`를 싣지 않아 채팅당 최초 1회가 구조적으로 보장됩니다. 도달 후에도 턴 진행은 계속 허용합니다(CHAT-US-013).
 - **사용자+스토리 집계**: 회원 도달 시(게스트=`user_id` NULL은 집계하지 않음) `user_story_ending_reaches`에 `(user_id, story_id, ending_name_snapshot)` 유니크로 기록합니다(중복 도달은 무시). 집계는 별도 독립 트랜잭션(`REQUIRES_NEW`)에서 수행하고 유니크 위반은 멱등 흡수해 턴 저장을 롤백하지 않습니다. `GET /stories/{storyId}` 응답의 `reachedEndings`(엔딩 **이름** 배열, `string[]`)는 이 집계가 소스이며(`sort_order` 순), 게스트 요청은 빈 배열입니다: 서버에 게스트 식별 수단이 없기 때문입니다(마이그레이션과 동일 근거, [§4-3-5](#4-3-api-계약)).
 - **게스트 표시 경로**: 채팅 카드(`ChatSummaryResponse`)에 `reachedEndings`(엔딩 **이름** 배열, `string[]`)를 싣습니다([§4-3-3](#4-3-api-계약)). 게스트의 스토리 상세 "본 엔딩" 표시는 프론트엔드가 로컬 서재 채팅의 이 값을 스토리별로 합산해 구성합니다([`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)). 기기 종속 한계는 게스트 서재와 동일하게 수용합니다.
 - **이관 백필**: `POST /auth/migrate`로 채팅이 이관되면 그 채팅의 도달 기록을 `user_story_ending_reaches`에 함께 upsert합니다(게스트 시절 도달의 집계 유실 방지).
@@ -2260,7 +2260,7 @@ AI의 `completed` 판정 메타(`endingName` · `targetMainEvent` · `occurredMa
 
 ### 4-3-11. 채팅 공유
 
-채팅 소유자가 발급 시점까지의 채팅을 읽기 전용 링크로 공유합니다(US-6-17·6-18). 화면 계약은 [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)이 정의합니다.
+채팅 소유자가 발급 시점까지의 채팅을 읽기 전용 링크로 공유합니다(CHAT-US-014, CHAT-US-015). 화면 계약은 [`3-1-client-spec.md §3-1-5`](3-1-client-spec.md)이 정의합니다.
 
 **`POST /chats/{chatId}/shares`**: 공유 링크를 발급합니다. 요청 본문은 없습니다. 접근 규칙은 채팅 상세 조회와 동일합니다([§4-5](#4-5-인증과-권한)): 소유 채팅은 소유자만, `user_id`가 NULL인 채팅은 익명(게스트) 요청만 발급할 수 있고 위반은 403, 없는 채팅은 404입니다.
 
@@ -3034,14 +3034,14 @@ V88·V89 마이그레이션을 해당 코드를 실행하기 전에 적용합니
 | US-4-5 | 스토리 수정  | `GET /stories/{storyId}/edit`, `PATCH /stories/{storyId}` |
 | US-4-6 | 본 엔딩 표시  | `GET /stories/{storyId}`(`reachedEndings` 이름 배열), `POST /chats/batch`(`reachedEndings` 이름 배열) |
 | US-4-1 ~ 4-4 | 스토리 상세·채팅 시작·삭제 | `GET·DELETE /stories/{storyId}`, `POST /chats` |
-| US-5-1 ~ 5-3 | 채팅 목록·재개·삭제 | `POST /chats/batch`, `GET·DELETE /chats/{chatId}` |
-| US-6-1 ~ 6-8 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
-| US-6-10 | AI 응답 재생성  | `POST /chats/{chatId}/turns/regenerate/stream` |
-| US-6-12 | 주요 사건 기반 선택지  | `POST /chats/{chatId}/turns/stream`(AI 전달 계약: [§4-3-10](#4-3-api-계약)) |
-| US-6-13 · 6-14 | 엔딩 도달 표시·도달 후 계속  | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527: [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](3-1-client-spec.md#엔딩-도달-표시)에서 확인합니다 |
-| US-6-11 | 채팅 이미지 표시  | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
-| US-6-17 · 6-18 | 채팅 공유 발급·열람  | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
-| US-7-1 ~ 7-3 | 피드백 | `POST /feedbacks` |
+| CHAT-US-001, CHAT-US-002, CHAT-US-003 | 채팅 목록·재개·삭제 | `POST /chats/batch`, `GET·DELETE /chats/{chatId}` |
+| CHAT-US-004, CHAT-US-005, CHAT-US-006, CHAT-US-007, CHAT-US-008, CHAT-US-009 | 채팅 플레이 | `GET /chats/{chatId}`, `POST /chats/{chatId}/turns/stream` |
+| CHAT-US-011 | AI 응답 재생성  | `POST /chats/{chatId}/turns/regenerate/stream` |
+| CHAT-US-007 | 주요 사건 기반 선택지  | `POST /chats/{chatId}/turns/stream`(AI 전달 계약: [§4-3-10](#4-3-api-계약)) |
+| CHAT-US-013 | 엔딩 도달 표시·도달 후 계속  | SSE `completed`의 `reachedEnding`(이름·null). 채팅 상세 턴 항목에도 같은 이름 필드로 노출합니다(KNK-527: [§4-3-10](#4-3-api-계약) 턴 기록). 클라이언트 배지·도달 후 턴 진행 계약은 [공통 스펙](../domain/CHAT/CLIENT/2-2-REQUIREMENTS.md#2-2-4-읽기-이미지와-엔딩)에서 확인합니다 |
+| CHAT-US-012 | 채팅 이미지 표시  | `GET /chats/{chatId}`·SSE `completed`의 `aiOutput` 본문 내 이미지 마커([§4-3-9](#4-3-api-계약)) |
+| CHAT-US-014, CHAT-US-015 | 채팅 공유 발급·열람  | `POST /chats/{chatId}/shares`, `GET /shares/{shareId}`([§4-3-11](#4-3-api-계약)) |
+| CHAT-US-016 | 피드백 | `POST /feedbacks` |
 | ACCOUNT-US-001, ACCOUNT-US-012 | 로그인·로그아웃  | `POST /auth/login/google`, `POST /auth/logout` |
 | ACCOUNT-US-001 | 카카오 로그인  | `POST /auth/login/kakao`(KNK-721, [§4-5](#4-5-인증과-권한)) |
 | ACCOUNT-US-006 | 랜덤 프로필 발급: 닉네임·이미지  | `POST /auth/login/{provider}`(가입 시 닉네임·프리셋 이미지 배정: KNK-388), `GET /auth/me` |

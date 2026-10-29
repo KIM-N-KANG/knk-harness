@@ -13,7 +13,7 @@
 
 | 문서                               | 화면                                           |
 | ---------------------------------- | ---------------------------------------------- |
-| [`chats.md`](chats.md)           | 채팅 목록 · 채팅 화면 · 공유 열람              |
+| [`chats.md`](../domain/CHAT/CLIENT/WEB/5-1-VERIFICATION.md)           | 채팅 목록 · 채팅 화면 · 공유 열람              |
 | [`stories.md`](stories.md)       | 스토리 목록 · 상세 · 생성 퍼널                 |
 | [`auth.md`](../domain/ACCOUNT/CLIENT/WEB/5-1-VERIFICATION.md)             | 로그인 · 세션 · 데이터 이관 · 로그아웃         |
 | [`my.md`](my.md)                 | 마이 · 회원 탈퇴 · 피드백 · 초대 · 서비스 안내 · 공지사항 · 알림함 · 하단 탭 |
