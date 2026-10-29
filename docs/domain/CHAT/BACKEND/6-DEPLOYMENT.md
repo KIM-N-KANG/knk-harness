@@ -15,7 +15,7 @@
 | 의존 대상 | 내용 | CHAT 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 채팅, 메시지, 선택지, 버전 이력, 거쳐온 사건, 공유, 모델, 피드백 테이블 |
-| AI 서버 | 운영은 독립 ECS 서비스, 개발은 같은 태스크의 컨테이너 | 턴 스트림, 선택지<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
+| AI 서버 | 운영은 독립 ECS 서비스, 개발은 같은 태스크의 컨테이너 | 턴 스트림, 선택지, 대화 요약<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
 | S3 assets 버킷과 CloudFront | Terraform 관리 | 실시간 이미지 경로 `chat-images/*`의 presigned PUT과 HEAD<br>AI 서버의 업로드 허용 호스트에 버킷 주소 등록 |
 | Redis | 생성 중 키와 생성별 이벤트 스트림<br>체험 카운터 | 생성 상태와 Redis Streams는 CHAT이 직접 접근<br>체험은 PAYMENT 도메인의 서비스로 접근 |
 | Slack 웹훅, Google Form | 피드백 전달 | 커밋 후 비동기 발송 |
@@ -25,7 +25,7 @@
 
 | 의존 대상 | 연결과 설정 실패 시 동작 |
 |---|---|
-| AI 서버 | 주소에 `http` 또는 `https` 스킴이나 호스트가 없으면 기동 실패<br>연결 실패와 이벤트 간 시간 초과는 스트림 실패로 응답하고 환불<br>AI가 모르는 모델 코드를 거절하면 스트림 실패로 응답하고 환불<br>선택지 호출 실패는 AI 실패로 응답 |
+| AI 서버 | 주소에 `http` 또는 `https` 스킴이나 호스트가 없으면 기동 실패<br>연결 실패와 이벤트 간 시간 초과는 스트림 실패로 응답하고 환불<br>AI가 모르는 모델 코드를 거절하면 스트림 실패로 응답하고 환불<br>선택지 호출 실패는 AI 실패로 응답<br>대화 요약 호출 실패는 기존 요약을 유지하고 다음 요약 경계에서 다시 요청<br>요약 간격이 1 미만이거나 요약 응답 대기가 0 이하이면 기동 실패 |
 | PostgreSQL | 연결할 수 없으면 기동 실패<br>모델 표에 노출 중인 기본 모델이 없으면 채팅 생성과 턴 요청이 서버 오류 |
 | S3 assets 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 실시간 이미지 업로드 위치를 발급하지 않고 턴은 진행<br>업로드 경로의 IAM 권한이 없으면 AI의 업로드가 실패해 인물 기본 이미지로 대체<br>AI 허용 호스트에 없으면 AI가 생성을 생략 |
 | Redis | 필요한 시점에 연결하므로 기동은 진행<br>회원 체험 카운터 장애는 예약 실패로 보고 이프 소모로 전환<br>턴 체험 복원 실패는 환불 실패 지표로 기록되고 이미지 체험 복원 실패는 WARN만<br>생성 중 키 획득 오류는 과금 전에 일시 장애로 거절<br>생성 도중 이벤트 기록 실패는 생성과 저장을 계속하고 상세 재조회로 복구<br>재연결의 스트림 존재 확인과 생성 중 키 확인 오류는 사용 불가로 응답<br>수신 중 읽기 오류는 종료 이벤트 없이 연결 종료 |
@@ -61,6 +61,9 @@
 | `MANYAK_AI_CHAT_STUB` | `false` | 주입 없음 | |
 | `MANYAK_CHAT_SSE_CONCURRENCY` | 64 | 주입 없음 | 턴을 처리하는 백그라운드 작업 스레드 수 |
 | `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | 100 | 주입 없음 | 대기 큐 크기<br>초과하면 거부 |
+| `MANYAK_CHAT_COMPACT_ENABLED` | `false` | 켤 환경의 태스크 환경 변수 | 끄면 요약을 요청하지 않고 저장된 요약도 AI 요청에 싣지 않음<br>재생성의 요약 무효화는 설정과 무관하게 수행 |
+| `MANYAK_CHAT_COMPACT_INTERVAL_TURNS` | 10 | 주입 없음 | 완료 턴 수가 이 값의 배수일 때 요약 요청 |
+| `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | 300 | 주입 없음 | 요약 호출의 응답 대기 |
 
 <br>
 
@@ -134,6 +137,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 차감 행 연결 컬럼 | 메시지와 버전 이력의 `credit_transaction_id` 마이그레이션은 행 단위 선차감 대사 코드와 같은 릴리스에 포함<br>새 코드의 턴 차감은 참조 종류 `CHAT_TURN`으로 기록하고 행 단위 대사는 이 참조 종류만 다루므로 혼재 배포 중 구버전이 만든 `CHAT` 차감은 그룹 규칙으로 처리됨 | 수동 검토<br>참조 종류 규칙은 PAYMENT 세트의 대사 규칙 |
 | 채팅 설정 컬럼의 DB 기본값 | `story_chats.model_code`는 `NOT NULL DEFAULT 'LITE'`, `story_chats.long_response`는 `NOT NULL DEFAULT false`로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>전체 행 UPDATE 없음 | 수동 검토<br>롤링 교체 중과 이전 이미지 복구 시 구버전 채팅 생성이 실패하지 않음 |
 | 부분 유니크 인덱스 생성 | `story_messages`, `story_message_versions`의 행 수를 확인하고 마이그레이션 트랜잭션 안의 일반 `CREATE INDEX`로 적용<br>현재 운영 규모에서는 잠금 시간이 짧음 | 수동 검토<br>행 수가 수백만을 넘으면 `lock_timeout`을 두고 배포 시간대 조정 |
+| 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음<br>요약을 켠 뒤 이전 이미지로 되돌렸다가 다시 배포하면 설정을 끈 채 배포<br>구버전 태스크가 모두 내려간 뒤 설정을 켜기 전에 `UPDATE story_chats SET summary = NULL, summary_through_turn = 0 WHERE summary_through_turn > 0` 실행<br>최초 도입은 저장된 요약이 없어 일괄 비우기 해당 없음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>구버전은 재생성 때 요약을 비우지 않아 되돌린 기간의 재생성이 이전 응답을 담은 요약을 남길 수 있음<br>일괄 비우기 뒤 모든 채팅은 다음 요약 경계까지 원문으로 진행 |
 | S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
@@ -152,6 +156,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 이미지 소모 이프 | 운영 중 조정은 `credit_policies`의 `chat_image_cost` 오버라이드, 스냅샷 갱신 주기 60초<br>기본값 변경은 코드 수정 후 재빌드 | 이미지 비용은 0 이상<br>정책 반영 뒤 턴 요청의 차감량 |
 | 체험 한도 | 환경 변수 변경 후 새 태스크 시작 | 카운터는 초기화하지 않으므로 축소 시 이미 새 한도 이상 쓴 기기는 즉시 소진 상태 |
 | AI 시간 한도 | 코드 기본값 변경 후 이미지 재빌드 | 생성 마감을 이벤트 간격 한도보다 길게 유지 |
+| 대화 요약 켜기, 요약 간격, 요약 응답 대기 | 환경 변수 변경 후 새 태스크 시작 | 켜기 전에 AI 서버의 요약 API 배포<br>응답 대기는 AI 서버 내부 호출의 최악 시간 240초보다 길게 유지<br>켠 뒤 `ai_call_logs` `chat_compact`의 실패 비율 |
 | 생성 중 상태와 이벤트 보관 기간 | 코드 상수 변경 후 이미지 재빌드 | 생성 중 키의 TTL, 스트림 신규 생성 기한, 스트림 생성 시 TTL, 종료 후 스트림 보관 기간, 전용 읽기 연결의 명령 타임아웃 |
 | 백그라운드 작업 스레드 수와 큐 | 환경 변수 변경 후 새 태스크 시작 | `chat.turn.queue` 대기 시간과 거부 로그<br>수신 연결 상한도 함께 바뀜 |
 | 이미지 저장소 | assets 모듈 출력이 태스크 정의로 전달되므로 버킷과 CDN 변경 후 Terraform apply<br>AI 허용 호스트 갱신 | 턴 요청의 업로드 위치 발급, AI 업로드 성공, 본문의 실시간 마커 |
@@ -214,6 +219,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 출력 분량 | 출력 분량을 켠 채팅의 턴 1회, 턴 저장 로그의 `long_response`, AI 서버의 Langfuse 트레이스 입력 | AI가 받은 `long_response`가 `true` |
 | 정책값 응답 | `GET /credits/policies`의 `chatTurnCost` | 라이트(`LITE`)의 가격과 같음 |
 | 생성 중 상태 | 상세 응답과 Redis TTL | 생성 중 상태 표시와 종료 시 해제<br>종료 스트림 보관 후 만료 |
+| 대화 요약 | 켠 환경에서 10번째 턴을 넘긴 채팅, `ai_call_logs` `chat_compact`, 로그 `chat_compact_saved`, `chat_compact_saved` 이후에 구성한 턴 요청의 AI 서버 Langfuse 트레이스 입력 | 10번째 턴 뒤 요약 1회 저장<br>`chat_compact_saved` 이후에 구성한 턴 요청의 `summary`가 저장한 요약이고 `history`가 요약 범위 뒤 원문<br>저장 전에 구성한 요청은 기존 요약과 원문으로 나가는 것이 정상<br>끈 환경은 `chat_compact` 행 없음 |
 
 <br>
 
@@ -221,10 +227,11 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 실패 상황 | 확인할 자료와 위치 | 원인별 조치 |
 |---|---|---|
-| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, 백그라운드 작업 스레드 수 1 미만, 추적 주소 누락 중 해당 값 수정 후 apply |
+| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, 백그라운드 작업 스레드 수 1 미만, 요약 간격 1 미만, 요약 응답 대기 0 이하, 추적 주소 누락 중 해당 값 수정 후 apply |
 | health 정상, 턴이 스트림 실패로 끝남 | 요청 ID의 `ai_call_logs`, 로그 `ai_stream_failed`, AI 서버 로그 | AI 서비스 상태와 내부 주소 확인<br>이벤트 간 시간 초과와 AI 오류 응답 구분<br>AI가 422로 거절하면 모델 표의 코드와 AI 라우팅의 허용값, 회원 공개 식별자 형식 대조 |
 | 오로라 모델 턴만 실패 | `ai_call_logs`의 `model`, AI 서버 로그의 공급자 응답 | AI 컨테이너의 `GEMINI_API_KEY` 주입과 공급자 인증 확인 |
 | 차감액이 기대와 다름 | 원장 `CHAT_TURN` 행의 `amount`, 턴 저장 로그의 `model_code`와 `turn_cost`, `chat_models` | 체험 턴은 0, 청구 모델의 행 가격과 비교<br>모델 변경 전에 시작한 턴은 이전 모델 가격 |
 | 턴이 큐에서 밀리거나 거부됨 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`, 스팬 `chat.turn.queue` | 백그라운드 작업 스레드 수와 큐 크기 조정, AI 지연 확인 |
 | 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 태스크 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
+| 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
 | 환불 실패 알림 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`, Redis와 DB 상태 | 회원 차감은 원장에서 사후 환불<br>체험 복원 실패는 카운터 수동 보정 |
