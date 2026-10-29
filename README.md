@@ -42,32 +42,20 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-제품 문서는 `docs/domain/` 아래 도메인별 세트로 구성합니다. 클라이언트는 `CLIENT/`에 공통 계약을 두고 `WEB/`, `ANDROID/`에 플랫폼 차이와 구현, 검증을 둡니다. [ACCOUNT 클라이언트](docs/domain/ACCOUNT/CLIENT/AGENTS.md)와 [PAYMENT 클라이언트](docs/domain/PAYMENT/CLIENT/AGENTS.md), [CHAT 클라이언트](docs/domain/CHAT/CLIENT/AGENTS.md), [STORY 클라이언트](docs/domain/STORY/CLIENT/AGENTS.md), [MODERATION 클라이언트](docs/domain/MODERATION/CLIENT/AGENTS.md), [NOTIFICATION 클라이언트](docs/domain/NOTIFICATION/CLIENT/AGENTS.md)는 이 구조를 사용합니다. 여러 도메인이 사용하는 기반은 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다.
+[도메인 목록](docs/domain/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있고, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
 
-아직 이관하지 않은 내용은 아래 Spec, Design, ADR과 QA를 기준으로 사용합니다. 이전 위치의 참조는 새 기준 문서로 연결하며, 파일 역할과 배치는 [클라이언트 작성 가이드](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
+클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 단계마다 공통 다음 해당 플랫폼 문서를 읽으며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 
-| 분류·번호 | 문서 | 역할 |
-| --- | --- | --- |
-| spec · 0 | [용어집](docs/spec/0-glossary.md) | 공식 용어·한영 표기·네이밍 규칙 |
-| spec · 1 | [서비스 배경](docs/spec/1-background.md) | 서비스 배경, 타겟 사용자, MVP 범위 |
-| spec · 2 | [유저 스토리](docs/client/2-1-USER-STORY.md#2-1-1-이동과-이용-환경) | 화면·기능별 사용자 요구 |
-| spec · 3-1 | [클라이언트 공통](docs/client/AGENTS.md) | 공통 화면·상태·사용자 흐름·API 사용 계약 |
-| spec · 3-2 | [웹](docs/client/WEB/AGENTS.md) | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
-| spec · 3-3 | [Android](docs/client/ANDROID/AGENTS.md) | Android 사용자 계약·플랫폼 예외·수용 기준 |
-| spec · 4 | [백엔드](docs/spec/4-backend-server-spec.md) | API·데이터 모델·오류·운영 기준 |
-| spec · 5 | [AI 서버](docs/spec/5-ai-server-spec.md) | AI 기능·입출력·실패 계약·평가 시스템 |
-| spec · 6 | [분석](docs/spec/6-analytics.md) | 이벤트·지표·관측·검수 기준 |
-| design · 1-1 | [웹 설계](docs/client/WEB/AGENTS.md) | 웹의 현재 기술 구조 |
-| design · 1-2 | [Android 설계](docs/client/ANDROID/AGENTS.md) | Android의 현재 기술 구조 |
-| design · 2 | [백엔드 설계](docs/design/2-backend-server-design.md) | 요청 경계·저장소·동시성·운영 배선 |
-| design · 3 | [AI 설계](docs/design/3-ai-server-design.md) | 호출 계층·모델·프롬프트·관측 설정 |
-| design · 4 | [배포 설계](docs/design/4-deployment.md) | 운영·개발·통합 배포와 복구 구조 |
-| adr · 1-1 | [공통 ADR](docs/client/DECISIONS.md) | 공통 결정 당시 맥락·선택·이유 |
-| adr · 1-2 | [웹 ADR](docs/client/WEB/DECISIONS.md) | 웹 결정 당시 맥락·선택·이유 |
-| adr · 1-3 | [Android ADR](docs/client/ANDROID/DECISIONS.md) | Android 결정 당시 맥락·선택·이유 |
-| adr · 2 | [백엔드 ADR](docs/adr/2-backend-server-adr.md) | 백엔드 결정의 맥락·선택·근거 |
-| adr · 3 | [AI ADR](docs/adr/3-ai-server-adr.md) | AI 설계의 배경·대안·선택 근거 |
-| adr · 4 | [배포 ADR](docs/adr/4-deployment-adr.md) | Terraform 결정의 과거 상태·변경 이유·날짜 |
+| 공용 내용 | 문서 |
+| --- | --- |
+| 셸, 테마, 서비스 안내와 플랫폼 기반 | [공용 클라이언트](docs/client/AGENTS.md) |
+| 용어와 표기 | [용어집](docs/REFERENCE/GLOSSARY.md) |
+| 서비스와 사용자 | [서비스 배경](docs/REFERENCE/SERVICE-BACKGROUND.md) |
+| 이벤트, 지표와 관측 | [분석 기준](docs/REFERENCE/ANALYTICS.md) |
+| 공용 API 규칙과 상태 확인 | [서비스 인터페이스](docs/REFERENCE/SERVICE-INTERFACES.md) |
+| 배포와 복구 | [배포 Design](docs/design/4-deployment.md), [배포 ADR](docs/adr/4-deployment-adr.md) |
+
+각 세트의 `AGENTS.md`가 읽는 순서와 코드 위치를 안내합니다. 결정 기록은 해당 세트의 `DECISIONS.md`에 보존합니다. 기존 백엔드와 AI의 통합 Design 및 ADR은 보존하되 현재 도메인 명세를 우선합니다.
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
@@ -80,9 +68,9 @@ git clone <manyak-infra-repository-url>
 | 운영 Terraform | `../manyak-terraform` |
 | 로컬·통합 인프라 | `../manyak-infra` |
 
-## 계획 문서
+## 작업 계획과 기록
 
-Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업 담당·일정·진행은 Jira에서 관리합니다. 기능별 변경 순서·검증·복구와 실행 결과는 구현 저장소의 기존 계획·PR에 남깁니다.
+개발 목표, 우선순위, 작업 담당, 일정과 진행 상태는 Jira에서 관리합니다. 기능별 변경 순서와 검증, 복구 계획 및 실행 결과는 구현 저장소의 계획 문서와 PR에 남깁니다. 이전 문서와 로드맵은 Git 이력에서 확인합니다.
 
 ## 개발 레포지토리에 하네스 연결
 

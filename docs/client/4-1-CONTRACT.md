@@ -14,7 +14,7 @@
 | `X-Manyak-Request-Id` | 백엔드가 생성해 응답하는 상관관계 값. 클라이언트가 생성하지 않음 |
 | 제작 본문 `requestId` | 제작 멱등과 복구용 별도 값. 응답 request ID와 혼용하지 않음 |
 
-식별자 수명과 수집 제한은 [분석 기준](../spec/6-analytics.md#6-2-식별자-정책)을 따른다. 게스트와 최초 회원의 체험 조건은 [PAYMENT 계약](../domain/PAYMENT/CLIENT/4-1-CONTRACT.md), 인증 정보는 [ACCOUNT 계약](../domain/ACCOUNT/CLIENT/4-1-CONTRACT.md)을 따른다.
+식별자 수명과 수집 제한은 [분석 기준](../REFERENCE/ANALYTICS.md#6-2-식별자-정책)을 따른다. 게스트와 최초 회원의 체험 조건은 [PAYMENT 계약](../domain/PAYMENT/CLIENT/4-1-CONTRACT.md), 인증 정보는 [ACCOUNT 계약](../domain/ACCOUNT/CLIENT/4-1-CONTRACT.md)을 따른다.
 
 <br>
 

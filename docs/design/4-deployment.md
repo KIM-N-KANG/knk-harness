@@ -43,7 +43,7 @@
 | manyak-web·manyak-android | 플랫폼별 빌드·배포 | 각 플랫폼 레포 및 [웹 Spec](../client/WEB/AGENTS.md)·[Android Spec](../client/ANDROID/AGENTS.md) |
 | knk-harness | 현재 구조·결정 이력 | 이 Design, 배포 ADR |
 
-Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않습니다. 애플리케이션 도메인 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md)과 [AI Spec](../spec/5-ai-server-spec.md)이 소유합니다.
+Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않습니다. 애플리케이션 도메인 계약은 [백엔드 Spec](../domain/AGENTS.md#1-도메인과-세트)과 [AI Spec](../domain/AGENTS.md#1-도메인과-세트)이 소유합니다.
 
 ## 4-3. 환경 구분과 배포 단위
 

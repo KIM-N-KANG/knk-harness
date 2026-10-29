@@ -25,4 +25,4 @@
 - 공용 구조를 바꾸면 사용하는 도메인을 확인한다. 문서가 없는 플랫폼 지원과 수치를 추측하지 않는다.
 - 명세의 작성과 검토를 서브에이전트에 맡기지 않는다.
 
-작성 기준은 [클라이언트 작성 가이드](../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md), 관측은 [분석 기준](../spec/6-analytics.md), 배포는 [배포 Design](../design/4-deployment.md)을 따른다.
+작성 기준은 [클라이언트 작성 가이드](../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md), 관측은 [분석 기준](../REFERENCE/ANALYTICS.md), 배포는 [배포 Design](../design/4-deployment.md)을 따른다.

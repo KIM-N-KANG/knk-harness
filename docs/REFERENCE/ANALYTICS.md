@@ -1,4 +1,5 @@
-# 6-analytics
+# 분석과 관측 기준
+
 
 ## 문서 정보
 
@@ -17,14 +18,14 @@
 
 ## 목차
 
-- [6-1. 목적과 범위](#6-1-목적과-범위)
-- [6-2. 식별자 정책](#6-2-식별자-정책)
-- [6-3. 이벤트 네이밍과 공통 프로퍼티](#6-3-이벤트-네이밍과-공통-프로퍼티)
-- [6-4. 이벤트 카탈로그](#6-4-이벤트-카탈로그)
-- [6-5. 퍼널과 지표](#6-5-퍼널과-지표)
-- [6-6. 관측 구현](#6-6-관측-구현)
-- [6-7. 개인정보와 원문 수집 원칙](#6-7-개인정보와-원문-수집-원칙)
-- [6-8. 검수 체크리스트](#6-8-검수-체크리스트)
+- [6-1. 목적과 범위](ANALYTICS.md#6-1-목적과-범위)
+- [6-2. 식별자 정책](ANALYTICS.md#6-2-식별자-정책)
+- [6-3. 이벤트 네이밍과 공통 프로퍼티](ANALYTICS.md#6-3-이벤트-네이밍과-공통-프로퍼티)
+- [6-4. 이벤트 카탈로그](ANALYTICS.md#6-4-이벤트-카탈로그)
+- [6-5. 퍼널과 지표](ANALYTICS.md#6-5-퍼널과-지표)
+- [6-6. 관측 구현](ANALYTICS.md#6-6-관측-구현)
+- [6-7. 개인정보와 원문 수집 원칙](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)
+- [6-8. 검수 체크리스트](ANALYTICS.md#6-8-검수-체크리스트)
 
 ---
 
@@ -94,7 +95,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 `request_id`는 제품 분석 프로퍼티가 아니라 요청 진단 상관 키입니다. 서버 로그·Sentry·AI 호출을 잇고, Android는 응답 헤더 값을 예상하지 못한 API non-fatal의 event-local Crashlytics key로만 사용할 수 있습니다. 프론트엔드 `client_*`와 백엔드 `server_*` 이벤트를 분석에서 직접 연결하는 용도로는 아직 쓰지 않으며, 현재 제품 퍼널 연결은 `analytics_creation_id`와 `chat_id`를 사용합니다(`analytics_creation_id` 경로의 잔여 간극은 §6-8-7 A1~A3).
 
-> **두 종류의 `creation_id`를 구분합니다.** 제품 분석 이벤트의 `creation_id`는 **`analytics_creation_id`**(진행 세션 식별자 `simpleCreationId`의 문자열 표기)이고, AI 트레이스·`ai_call_logs`·`X-Manyak-Creation-Id`의 `creation_id`는 **`trace_creation_id`**(스토리라인 생성 요청의 클라이언트 생성 UUID `story_creation_requests.request_id`)입니다 — 값도 타입도 다르며(정의: [`0-glossary.md §0-3-2`](0-glossary.md)) **두 값을 직접 조인하면 안 됩니다.** 제품 퍼널·지표는 `analytics_creation_id`만, AI 호출·Langfuse 트레이스 연결은 `trace_creation_id`만 씁니다. **Android도 같은 규칙을 따릅니다** — `client_*`·`server_*` 분석 이벤트에는 `analytics_creation_id`를, AI 호출 상관 헤더에는 `trace_creation_id`를 싣습니다(§6-6-3·§6-6-8).
+> **두 종류의 `creation_id`를 구분합니다.** 제품 분석 이벤트의 `creation_id`는 **`analytics_creation_id`**(진행 세션 식별자 `simpleCreationId`의 문자열 표기)이고, AI 트레이스·`ai_call_logs`·`X-Manyak-Creation-Id`의 `creation_id`는 **`trace_creation_id`**(스토리라인 생성 요청의 클라이언트 생성 UUID `story_creation_requests.request_id`)입니다 — 값도 타입도 다르며(정의: [`0-glossary.md §0-3-2`](GLOSSARY.md)) **두 값을 직접 조인하면 안 됩니다.** 제품 퍼널·지표는 `analytics_creation_id`만, AI 호출·Langfuse 트레이스 연결은 `trace_creation_id`만 씁니다. **Android도 같은 규칙을 따릅니다** — `client_*`·`server_*` 분석 이벤트에는 `analytics_creation_id`를, AI 호출 상관 헤더에는 `trace_creation_id`를 싣습니다(§6-6-3·§6-6-8).
 
 스토리 생성 요청은 `analytics_creation_id`가 발급되기 전에도 발생할 수 있습니다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계합니다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `analytics_creation_id`를 발급합니다. 이후 `server_*` 이벤트의 `analytics_creation_id` 적재는 **목표 계약과 현재 구현이 다릅니다** — 목표 계약은 성공·실패 모두 `string` 필수이지만, **현재 구현은 성공 이벤트만 값을 싣고(타입은 `string`이 아닌 `simpleCreationId` Long) 실패 이벤트는 AI 호출 실패·세션 저장 실패처럼 발급 전 단계에서 끝나면 값 없이 발행될 수 있습니다**(§6-8-7 A1·A3). `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 CloudWatch 운영 로그로만 추적합니다.
 
@@ -104,7 +105,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급합니다.
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않습니다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급·영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리합니다([`1-2-android-design.md §1-2-5·§1-2-8`](../client/ANDROID/AGENTS.md)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않습니다.
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊습니다(ACCOUNT-US-012 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선합니다.
-- 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)이 소유합니다.
+- 공통 프로퍼티에 `is_logged_in`(boolean)·`user_id`(public_id 문자열)를 로그인 시점부터 추가합니다(§6-3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용합니다. 서버 구조화 로그의 `user_id` 필드 추가는 [`4-backend-server-spec.md §4-7`](../domain/AGENTS.md#1-도메인과-세트)이 소유합니다.
 
 **유입 귀속 사용자 속성.** 웹과 Android는 첫 유입 경로를 같은 Amplitude 사용자 속성 이름으로 남겨 웹 가입과 앱 가입을 같은 기준으로 비교합니다. 값은 처음 한 번만 쓰고(`setOnce`) 이후 유입으로 덮어쓰지 않습니다.
 
@@ -200,7 +201,7 @@ event_time, event_id
 
 P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 안정적으로 수집된 뒤 추가합니다. P2 이벤트는 세부 인터랙션 계측으로, P1 이후 필요에 따라 추가합니다.
 
-> **P0·P1·P2는 수집 우선순위이며, 로드맵의 Phase 0~3과 무관합니다.** 로드맵 단계 표기는 3·4·5 스펙 문서와 동일하게 `{로드맵 Phase} · {구현 상태}` 라벨(예: `Phase 1 · 계획`)을 사용합니다([`roadmap.md`](../planning/roadmap.md). 유저 스토리 문서만 `Phase 1` 단축 라벨을 씁니다). Phase 1 기능(계정 · 이프 · 제작/채팅 확장)의 이벤트는 Phase 1 스펙 반영에서 이 라벨로 추가합니다.
+> **P0·P1·P2는 수집 우선순위이며, 로드맵의 Phase 0~3과 무관합니다.** 로드맵 단계 표기는 3·4·5 스펙 문서와 동일하게 `{로드맵 Phase} · {구현 상태}` 라벨(예: `Phase 1 · 계획`)을 사용합니다([`roadmap.md`](https://github.com/KIM-N-KANG/knk-harness/blob/8aa505cbf7a5390e67ca48a42fb94d89d21eb3ad/docs/planning/roadmap.md). 유저 스토리 문서만 `Phase 1` 단축 라벨을 씁니다). Phase 1 기능(계정 · 이프 · 제작/채팅 확장)의 이벤트는 Phase 1 스펙 반영에서 이 라벨로 추가합니다.
 
 | 우선순위            | 소유   | 이벤트                                                   |
 | ------------------- | ------ | -------------------------------------------------------- |
@@ -405,7 +406,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 `client_storyCreate_tagCategory_selected`는 키워드 단계의 세 카테고리(장르·주인공·주변 인물) 사이 이동을 다음/이전 버튼·탭·스와이프 공통으로 한 곳에서 계측합니다. `direction`으로 진행(`forward`)과 되돌아감(`backward`)을 구분하고, 카테고리별 이탈 퍼널은 `from_category` + `direction=forward`로 관찰합니다. `Phase 2 · 계획`(KNK-621) — 세계관 탭 개편([`3-1-client-spec.md §3-1-4`](../client/AGENTS.md))이 구현되면 카테고리 축이 세계관(장르·배경)·주인공·주변 인물로 바뀌므로 `from_category`/`to_category` 값 집합을 함께 갱신합니다.
 
-`client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-5-장르-검색)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+`client_storyCreate_addTag_submitted`의 `category`는 주인공·주변 인물에서만 발생합니다. 장르는 제공 장르 검색으로만 고르게 되어(KNK-1542·KNK-1543, [공통 Spec 장르 검색과 선택](../domain/STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-5-장르-검색)) 직접 추가가 없으므로 `GENRE`는 그 전에 수집한 데이터에만 남습니다. **인물의 이름·성별은 어떤 이벤트에도 싣지 않습니다** — 사용자가 자유 입력하는 값이라 원문 수집 원칙([§6-7](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙))에 걸립니다. 인물 수·성별 선택 여부 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 
 `client_storyCreate_completeError_shown`은 클라이언트가 완성 요청 실패로 에러 상태를 표시할 때 발생하며, `stage`로 스토리 생성(`story`)과 채팅 생성(`chat`) 실패를 구분합니다.
 
@@ -431,9 +432,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 | `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
 
-`persona_type`은 채팅을 시작하거나 고른 주인공의 종류로 `default`(기본 주인공)·`persona`(내 페르소나) 중 하나입니다(KNK-1469). 페르소나의 이름·소개는 사용자가 자유 입력한 값이라 어떤 이벤트에도 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). Android는 `persona_type`을 KNK-1473에서 같은 값으로 보냅니다.
+`persona_type`은 채팅을 시작하거나 고른 주인공의 종류로 `default`(기본 주인공)·`persona`(내 페르소나) 중 하나입니다(KNK-1469). 페르소나의 이름·소개는 사용자가 자유 입력한 값이라 어떤 이벤트에도 싣지 않습니다([§6-7](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)). Android는 `persona_type`을 KNK-1473에서 같은 값으로 보냅니다.
 
-스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
+스토리 신고 이벤트(`client_report_*`)는 상세·제작 목록·채팅 목록·채팅방이 시트 하나를 공유하므로 화면별 이벤트를 두지 않고 [§6-4-2-15 신고 시트](ANALYTICS.md#6-4-2-15-안드로이드-앱-보강-이벤트--phase-2--구현knk-1178)의 이름·프로퍼티를 웹도 그대로 씁니다(KNK-1186). 웹의 `target_type`은 항상 `story`이고 `error_type`은 `http_{status}` 또는 `network`입니다.
 
 추천 스토리 카드는 아직 도입되지 않은 기능입니다. 기능 도입 시 `client_storyDetail_recommendStoryCard_clicked`와 `client_storyDetail_recommendStoryCard_impressed`(P1, `story_id` string 필수, `position` number 선택)를 추가합니다. 이때 `story_id`는 현재 보는 스토리가 아니라 추천 카드의 스토리 ID입니다.
 
@@ -490,9 +491,9 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 
 AI 응답 성공·실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행합니다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결합니다.
 
-`Phase 1 · 계획` — AI 응답 재생성([`4-backend-server-spec.md §4-3-9`](4-backend-server-spec.md))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답·SSE `completed`의 `imageKey` 필드([`4-backend-server-spec.md §4-3-9`](4-backend-server-spec.md))에서 채우며, 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
+`Phase 1 · 계획` — AI 응답 재생성([`4-backend-server-spec.md §4-3-9`](../domain/AGENTS.md#1-도메인과-세트))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분합니다(일반 턴 `false`, 재생성 `true` — 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당합니다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§6-5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 봅니다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답·SSE `completed`의 `imageKey` 필드([`4-backend-server-spec.md §4-3-9`](../domain/AGENTS.md#1-도메인과-세트))에서 채우며, 이미지 자산 키(팀 프리셋·업로드 키)라 원문 수집 원칙(§6-7)에 저촉되지 않습니다.
 
-`Phase 1 · 계획` — 엔딩 도달([`4-backend-server-spec.md §4-3-10`](4-backend-server-spec.md))도 별도 서버 이벤트 없이 `server_chat_aiMessage_processed_succeeded`의 `ending_id` 프로퍼티로 구분합니다(같은 AI 처리 — 재생성과 동일 근거). 엔딩 도달률은 `ending_id is not null` 필터로 계산하고, 도달의 정본 기록은 이벤트가 아니라 백엔드의 턴 기록·집계 테이블입니다. `client_chat_endingBadge_impressed`는 도달 표시(CHAT-US-013)가 실제로 사용자에게 보였는지를 확인하는 노출 신호이며, `ending_id`는 엔딩 이름 원문이 아니라 식별자라 §6-7에 저촉되지 않습니다.
+`Phase 1 · 계획` — 엔딩 도달([`4-backend-server-spec.md §4-3-10`](../domain/AGENTS.md#1-도메인과-세트))도 별도 서버 이벤트 없이 `server_chat_aiMessage_processed_succeeded`의 `ending_id` 프로퍼티로 구분합니다(같은 AI 처리 — 재생성과 동일 근거). 엔딩 도달률은 `ending_id is not null` 필터로 계산하고, 도달의 정본 기록은 이벤트가 아니라 백엔드의 턴 기록·집계 테이블입니다. `client_chat_endingBadge_impressed`는 도달 표시(CHAT-US-013)가 실제로 사용자에게 보였는지를 확인하는 노출 신호이며, `ending_id`는 엔딩 이름 원문이 아니라 식별자라 §6-7에 저촉되지 않습니다.
 
 #### 6-4-2-7. 피드백
 
@@ -540,7 +541,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 #### 6-4-2-9. 이프 — `Phase 1 · 구현`
 
-이프 적립 인터랙션과 이프 부족 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 이프 원장(`credit_transactions`)이 정본이고([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
+이프 적립 인터랙션과 이프 부족 거절(402) 신호입니다. 소모·환불 자체는 이벤트가 아니라 이프 원장(`credit_transactions`)이 정본이고([`4-backend-server-spec.md §4-3-7`](../domain/AGENTS.md#1-도메인과-세트)), 분석 이벤트는 사용자 행동과 전환 신호만 수집합니다.
 
 | 이벤트                                           | 우선순위 | 발생 시점                                                                        | 고유 프로퍼티                                                                                                  |
 | ------------------------------------------------ | -------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -562,7 +563,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - **폐기(2026-09-19).** `client_guestLimitDialog_shown`·`client_guestLimitDialog_loginButton_clicked`·`client_guestLimitDialog_dismissed`는 웹 게스트 제작·채팅 체험이 신규 경로에서 사라지면서 더 이상 발화하지 않습니다(코드 정의도 제거). 이전 시계열은 대시보드에 남지만 새 값은 들어오지 않습니다. 게스트가 보호 기능(제작·채팅)에서 보는 로그인 필요 바텀 시트와 로그인 직후 필수 동의 시트는 별도 이벤트를 두지 않습니다 — 가입 전환은 `client_login_*`·`client_loginContinue_*`와 서버 로그인 이벤트로, 동의 완료는 서버 기록으로 봅니다. 로그인 필요 시트 노출 이벤트 추가 여부는 후속 결정 사항입니다.
 - 게스트 동의 후 체험을 복원한 현재 경로에서도 위 한도 이벤트 3개는 재도입하지 않습니다. 체험 소진 시 로그인 필요 시트를 표시하며 게스트 동의 완료는 서버 기록으로 확인합니다.
 - 회원 이프 부족은 KNK-1045부터 토스트만 표시하다가 KNK-1844부터 화면에 머문 경우 바텀 시트로 안내합니다. `client_creditShortageDialog_*` 이름은 시계열을 끊지 않기 위해 유지하고 `trigger`는 실제 유료 동작인 `story_create`, `chat_turn`만 허용합니다. KNK-1045 전 다이얼로그의 출석 버튼 이벤트 이름(`attendanceButton_clicked`)은 다시 쓰고, 친구 초대 버튼(`earnButton_clicked`)과 닫기(`dismissed`)는 재도입하지 않습니다.
-- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
+- 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했습니다. 초대 방식 개편(KNK-567 — 링크 어트리뷰션 → 코드 입력, [`4-backend-server-spec.md §4-3-7`](../domain/AGENTS.md#1-도메인과-세트) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했습니다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분합니다 — 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표입니다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생 — KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분합니다.
 - 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch·Sentry)으로 추적합니다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
@@ -583,7 +584,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - 웹은 제작 FAB로 들어오는 제작 방식 선택 화면에서 선택지를 누를 때 `client_storyCreate_methodOption_selected`를 발화합니다. `client_storyList_createButton_clicked`는 FAB를 눌러 선택 화면으로 이동하는 시점에 그대로 발화하므로 제작 시작률의 분자는 바뀌지 않습니다.
 - 간편 제작 퍼널 이벤트(`client_storyCreate_*`)는 방식 선택 이후의 간편 경로에서만 발생합니다. 일반 제작 완료율은 `generalCreate_viewed → completed`로 계산합니다.
-- 일반 제작 등록은 검수 제출본만 만들어 접수 시점에 스토리 ID가 없으므로 `completed`는 `submission_id`를 싣고, 반려 뒤 재제출도 접수마다 발화합니다. 검수 통과 여부는 `reviewResult_shown`의 `result`로 봅니다. 장르 이름은 직접 입력한 키워드가 섞여 사용자 입력 원문이 되므로 보내지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)).
+- 일반 제작 등록은 검수 제출본만 만들어 접수 시점에 스토리 ID가 없으므로 `completed`는 `submission_id`를 싣고, 반려 뒤 재제출도 접수마다 발화합니다. 검수 통과 여부는 `reviewResult_shown`의 `result`로 봅니다. 장르 이름은 직접 입력한 키워드가 섞여 사용자 입력 원문이 되므로 보내지 않습니다([§6-7](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)).
 
 #### 6-4-2-11. 법적 고지
 
@@ -633,7 +634,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | `client_chatShare_ctaButton_clicked` | P1       | 열람 화면 하단 CTA 버튼 클릭     | `story_id` (string, 필수) |
 | `client_chatShare_characterImage_clicked` | P2 | 열람 화면 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
 
-- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend-server-spec.md §4-3-11`](4-backend-server-spec.md)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다. 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다.
+- **공유 식별자(`shareId`)는 이벤트·Sentry에 넣지 않습니다.** `shareId`는 곧 열람 토큰이라([`4-backend-server-spec.md §4-3-11`](../domain/AGENTS.md#1-도메인과-세트)) 관측 저장소에 실으면 접근 권한이 새는 경로가 됩니다. 페이지뷰 자동수집·Sentry가 남기는 URL도 `/share/{shareId}` 경로는 식별자 구간을 마스킹합니다.
 - 열람 화면은 원본 `chat_id`도 알 수 없으므로(응답에 비노출) `chat_id` 공통 프로퍼티 대신 `story_id`만 보냅니다.
 - CTA 클릭은 공유 링크가 신규 유입으로 이어졌는지를 보는 지표입니다. 열람 대비 클릭(`client_chatShare_viewed` 수 대비 `client_chatShare_ctaButton_clicked` 수)이 공유 열람 화면의 전환율입니다.
 - 발급 대비 열람 비율은 건수 집계(`client_chat_shareButton_clicked` 수 대비 `client_chatShare_viewed` 수, 필요 시 `story_id` 단위)로 관찰합니다. 공유 건별 정밀 조인이 필요해지면 과거 로그인 핸드오프의 `handoff_id`(§6-4-2-12)처럼 비밀 토큰과 분리된 분석용 ID를 서버가 발급해 추가합니다.
@@ -729,7 +730,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | `client_personaEdit_form_submitted` | P1 | "저장하기"를 눌러 입력 검증을 통과하고 수정 요청을 보낼 때 | 없음 |
 | `client_personaEdit_completed` | P1 | 수정 응답 200을 받았을 때 | 없음 |
 
-- 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
+- 이름·성별·특징은 사용자 입력이라 싣지 않습니다([§6-7](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)). 성별 분포 같은 파생 지표가 필요해지면 값이 아니라 집계 형태로 따로 설계합니다.
 - 페르소나 생성과 수정에는 서버 분석 이벤트가 없어 `completed`로 성공을 봅니다. `form_submitted` 대비 `completed`가 생성 성공률이고, 실패(10개 상한 409 포함)는 그 차이로 봅니다.
 - 페르소나 사용률은 `client_storyDetail_chatStartButton_clicked`의 `persona_type = persona` 비율로 봅니다.
 
@@ -756,7 +757,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 | `client_profileEdit_viewed` | P1 | 프로필 수정 화면 진입 | 없음 |
 | `client_profileEdit_completed` | P1 | 수정 응답 200을 받았을 때 | `nickname_changed` (boolean, 필수), `image_changed` (boolean, 필수) |
 
-- 닉네임과 프리셋 키는 싣지 않습니다. 닉네임은 사용자 입력이고([§6-7](#6-7-개인정보와-원문-수집-원칙)), 프리셋 분포가 필요해지면 서버 데이터로 봅니다.
+- 닉네임과 프리셋 키는 싣지 않습니다. 닉네임은 사용자 입력이고([§6-7](ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)), 프리셋 분포가 필요해지면 서버 데이터로 봅니다.
 - 프로필 수정에는 서버 분석 이벤트가 없어 `viewed` 대비 `completed`를 수정 완료율로 봅니다. 409 같은 실패율은 이 두 이벤트로 구분하지 않습니다.
 
 #### 6-4-2-20. 신규 가입 온보딩 — `Phase 3 · 구현`(KNK-1892)
@@ -775,7 +776,7 @@ Android [신규 가입 온보딩](../domain/STORY/CLIENT/ANDROID/2-2-REQUIREMENT
 | `client_storyOnboarding_completed` | P0 | 온보딩을 벗어남: 채팅 생성 성공 또는 간편 제작 진입 | `action` (string, 필수: `chat` / `create`), `source` (string, chat 필수: `carousel` / `storyDetail`), `story_id` (string, chat 필수), `chat_id` (string, chat 필수) |
 
 - 버튼 클릭(`chatStartButton_clicked`)과 실제 시작(`completed`의 `action=chat`)을 나눠 채팅 생성 실패와 이탈을 봅니다. 온보딩 위에서 연 상세의 채팅은 상세의 `client_storyDetail_chatStartButton_clicked`가 클릭을, `completed`(`source=storyDetail`)가 실제 시작을 맡습니다.
-- `completed`의 `chat_id`로 채팅 활성화 퍼널([§6-5-3-2](#6-5-3-2-채팅-활성화-퍼널))의 첫 메시지와 첫 AI 응답을 잇습니다. `action=create`는 간편 제작 진입 시점에 보내며, 이후는 스토리 제작 퍼널([§6-5-3-1](#6-5-3-1-스토리-제작-퍼널))이 이어 봅니다.
+- `completed`의 `chat_id`로 채팅 활성화 퍼널([§6-5-3-2](ANALYTICS.md#6-5-3-2-채팅-활성화-퍼널))의 첫 메시지와 첫 AI 응답을 잇습니다. `action=create`는 간편 제작 진입 시점에 보내며, 이후는 스토리 제작 퍼널([§6-5-3-1](ANALYTICS.md#6-5-3-1-스토리-제작-퍼널))이 이어 봅니다.
 - 스와이프마다 보내는 이벤트는 두지 않습니다. 스쳐 간 카드까지 세면 둘러본 정도가 부풀려지므로 1초 머문 카드의 노출과 `browsed_count`로 탐색을 봅니다.
 
 ### 6-4-3. impression 수집 기준
@@ -975,7 +976,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 ### 6-6-2. 프론트엔드 API 헤더
 
-모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend-server-spec.md §4-3` 요청·응답 헤더](4-backend-server-spec.md)·[`§4-3-7`](4-backend-server-spec.md))입니다.
+모든 클라이언트(웹·Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송합니다(플랫폼 공통 계약 — 현재 웹에서 검증됨, Android 배선은 [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([`4-backend-server-spec.md §4-3` 요청·응답 헤더](../domain/AGENTS.md#1-도메인과-세트)·[`§4-3-7`](../domain/AGENTS.md#1-도메인과-세트))입니다.
 
 | 헤더                  | 전송 계약 | 값           | 설명                                                                                     |
 | --------------------- | --------- | ------------ | ----------------------------------------------------------------------------------------- |
@@ -983,7 +984,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않습니다. 백엔드가 `unknown`으로 채웁니다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성·주입하지 않습니다. 백엔드가 생성해 응답 헤더로 echo합니다(§6-6-3). |
 
-**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](4-backend-server-spec.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](4-backend-server-spec.md)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](../client/AGENTS.md), [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)).
+**`X-Manyak-Device-Id`가 정책상 필수인 경로** — ① 게스트 체험 한도 대상 요청(스토리라인 생성·스토리 완성·채팅 턴의 게스트 호출): 누락 시 400([`4-backend-server-spec.md §4-3-7`](../domain/AGENTS.md#1-도메인과-세트)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정됩니다([`4-backend-server-spec.md §4-3-5`](../domain/AGENTS.md#1-도메인과-세트)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청합니다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막습니다**([`3-1-client-spec.md §3-1-7`](../client/AGENTS.md), [`1-2-android-design.md §1-2-5`](../client/ANDROID/AGENTS.md)).
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣습니다. 백엔드는 저장 전 `device_id_hash`로 변환합니다. 프론트엔드는 별도 해시를 만들지 않습니다.
 
@@ -1008,7 +1009,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | 관측 계층                                          | 싣는 개념               | 값                                                          | 현재 구현 상태                                                                                             |
 | --------------------------------------------------- | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | 제품 분석 이벤트(`client_*`·`server_*`)            | `analytics_creation_id` | `simpleCreationId`(원본 `story_creation_sessions.id`)        | 구현. 단 타입·누락 간극이 있습니다(§6-8-7 A1~A3)                                                           |
-| AI 호출 요청 헤더(`X-Manyak-Creation-Id`)·Langfuse | `trace_creation_id`     | 스토리라인 단계 `story_creation_requests.request_id`(UUID)   | 구현([`4-backend-server-spec.md §4-7`](4-backend-server-spec.md))                                                                |
+| AI 호출 요청 헤더(`X-Manyak-Creation-Id`)·Langfuse | `trace_creation_id`     | 스토리라인 단계 `story_creation_requests.request_id`(UUID)   | 구현([`4-backend-server-spec.md §4-7`](../domain/AGENTS.md#1-도메인과-세트))                                                                |
 | CloudWatch 구조화 로그                             | `analytics_creation_id` | 제작 로그 이벤트(`story_create_requested` 등)의 `creation_id` 필드에 `simpleCreationId`를 싣습니다 | 구현. 요청 전역 MDC 필드가 아니라 **해당 로그 이벤트의 개별 필드**입니다(MDC 전역 키는 위 공통 상관 필드 중 `request_id`·`session_id`·`device_id_hash` 3종) |
 | 서버 Sentry scope                                  | —                       | —                                                            | **현재 `creation_id`를 부착하지 않습니다**(MDC 전역 키만 tag·context로 올림 — §6-6-6)                      |
 | `ai_call_logs`                                     | `trace_creation_id`     | 위 AI 호출 상관값                                            | **목표 계약** — 현재 테이블에 `creation_id` 컬럼이 없습니다(§6-6-9)                                        |
@@ -1126,7 +1127,7 @@ MVP에서 분석 대상이 되는 AI 기능은 다음 네 가지입니다.
 | `storyline_generation`  | 선택 키워드로 스토리라인 후보 생성                                                        | `client_storyCreate_storyGeneration_requested`, `server_storyCreate_storyGeneration_processed_*`                  |
 | `story_completion`      | 선택 스토리라인과 추가 정보로 스토리 상세 생성                                            | `client_storyCreate_storyCompletion_requested`, `client_storyCreate_completed`                                    |
 | `chat_response`         | 사용자 메시지에 대한 AI 응답 생성(`Phase 1 · 계획` 재생성 포함 — `is_regenerated`로 구분) | `client_chat_messageInput_submitted`, `client_chat_regenerateButton_clicked`, `server_chat_aiMessage_processed_*` |
-| `choice_generation`     | 선택지 생성 — 현행은 `chat_response` 내부 호출로 합산 적재. `Phase 1 · 계획`(KNK-622) 선택지 전용 엔드포인트 분리 후 별도 행 적재 시작(백엔드 feature enum `CHOICE_GENERATION` 기정의 — [`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)) | `client_chat_choiceOption_selected`                                                                               |
+| `choice_generation`     | 선택지 생성 — 현행은 `chat_response` 내부 호출로 합산 적재. `Phase 1 · 계획`(KNK-622) 선택지 전용 엔드포인트 분리 후 별도 행 적재 시작(백엔드 feature enum `CHOICE_GENERATION` 기정의 — [`4-backend-server-spec.md §4-7`](../domain/AGENTS.md#1-도메인과-세트)) | `client_chat_choiceOption_selected`                                                                               |
 
 AI feature는 프론트엔드 이벤트명에 넣지 않습니다. 상세 원인은 `feature`와 `error_code`로 구분합니다.
 
@@ -1240,7 +1241,7 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 ### 6-6-11. AI 품질 평가 로깅과 자가개선 루프 수집 기준 — `Phase 1 · 계획`
 
-평가 대상·연구 시스템은 [`5-ai-server-spec.md §5-8`](5-ai-server-spec.md#5-8-평가-시스템)이 설명하며, 실행·채택 규칙은 연결된 연구 레포 문서가 소유합니다. 이 절은 평가 결과의 로깅 계약과, 자가개선 루프가 사용할 수 있는 데이터의 수집 기준을 고정합니다.
+평가 대상·연구 시스템은 [`5-ai-server-spec.md §5-8`](../domain/CHAT/AI/6-4-AI-EVALUATION-METHOD.md)이 설명하며, 실행·채택 규칙은 연결된 연구 레포 문서가 소유합니다. 이 절은 평가 결과의 로깅 계약과, 자가개선 루프가 사용할 수 있는 데이터의 수집 기준을 고정합니다.
 
 **평가 로그 이벤트** — 평가 에이전트가 벤치 실행 결과를 JSON 로그로 남깁니다. Amplitude 이벤트가 아닙니다(사용자 행동이 아니라 내부 품질 실측이므로 CloudWatch 로그 축).
 
@@ -1258,9 +1259,9 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | 벤치 지표 점수               | `ai_evaluation_*` 로그                                                                                     | 프롬프트 버전 간 품질 비교, 회귀 게이트     |
 | `output_char_count`          | `ai_call_completed` 로그에 필드 추가(채팅 본문 문자 수 — 원문이 아니라 길이, `message_length_bucket` 선례) | 분량 고정(약 600자) 준수 분포 실측          |
-| 폴백·빈 블록 발동 로그       | AI 형식 보정 로그([`5-ai-server-spec.md §5-5`](5-ai-server-spec.md))                                               | 프롬프트 점검 신호                          |
+| 폴백·빈 블록 발동 로그       | AI 형식 보정 로그([`5-ai-server-spec.md §5-5`](../domain/AGENTS.md#1-도메인과-세트))                                               | 프롬프트 점검 신호                          |
 | `retry_count` · `error_code` | `ai_call_logs`                                                                                             | 형식 위반·실패 추세                         |
-| 스토리라인 GOOD/BAD 평가     | `story_creation_storyline_ratings`([`4-backend-server-spec.md §4-3-2`](4-backend-server-spec.md))                                | 운영 품질의 사용자 신호(원문 없이 평가값만) |
+| 스토리라인 GOOD/BAD 평가     | `story_creation_storyline_ratings`([`4-backend-server-spec.md §4-3-2`](../domain/AGENTS.md#1-도메인과-세트))                                | 운영 품질의 사용자 신호(원문 없이 평가값만) |
 
 **수집하지 않는 것** — 운영 채팅·생성 원문, 프롬프트 전문, 사용자 입력 원문은 위 표의 수집 경로(로그·이벤트)에 싣지 않습니다. 운영 원문이 필요한 작업은 §6-7의 Langfuse 예외 경로로만 수행합니다. 개인정보 처리방침 v1.3(2026-09-01 시행)은 트레이스 원문을 품질 점검·평가 데이터 구성·평가 지표 생성에 활용하되 **운영자 자체 AI 모델의 훈련에는 사용하지 않는 것**으로 범위를 정정했습니다. 벤치 평가 자산은 합성 데이터를 원칙으로 관리하고, 운영 원문에서 만든 평가 자산은 아래 보존·접근·삭제 조건을 그대로 적용합니다.
 
@@ -1268,7 +1269,7 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
 
 - **무엇.** AI 프로덕션 호출의 원문은 Langfuse trace에 축적하고, 사용자의 평가·재생성·완주·선택지 행동은 해당 생성 결과의 Langfuse score로 붙입니다. 이번 범위는 행동 신호 기록까지이며 대시보드·목표치·평가 계산식·알림은 만들지 않습니다.
 - **왜.** Sentry와 `ai_call_logs`에는 오류·토큰·지연만 있고 원문이 없으며, Amplitude에는 행동만 있고 어떤 AI 결과에 대한 반응인지 확정할 생성 버전 연결이 없습니다. 행동 라벨은 나중에 소급 복원하기 어렵지만, 지표와 계산식은 라벨이 쌓인 뒤 다시 설계할 수 있습니다. 따라서 지표를 정하기 전에 생성 결과와 반응의 정확한 연결부터 저장합니다.
-- **어떻게.** AI는 요청마다 별도 trace를 유지하고 구조화된 요청 입력과 제품 연결 metadata를 기록합니다([`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)). 백엔드는 `request_id`와 버전별 생성 연결로 정확한 trace를 지목해 아래 score를 발행합니다([`4-backend-server-spec.md §4-7`](4-backend-server-spec.md)).
+- **어떻게.** AI는 요청마다 별도 trace를 유지하고 구조화된 요청 입력과 제품 연결 metadata를 기록합니다([`5-ai-server-spec.md §5-6`](../domain/AGENTS.md#1-도메인과-세트)). 백엔드는 `request_id`와 버전별 생성 연결로 정확한 trace를 지목해 아래 score를 발행합니다([`4-backend-server-spec.md §4-7`](../domain/AGENTS.md#1-도메인과-세트)).
 
   | score 이름 | 타입·값 | 붙이는 생성 결과 | 필수 metadata |
   | --- | --- | --- | --- |
@@ -1291,7 +1292,26 @@ AI 서비스 로그도 JSON 형태로 남깁니다.
   아직 정하지 않은 구현 세부사항은 담당 레포가 결정합니다. manyak-ai는 KNK-752에서 합의한 `request_id`를 Langfuse trace metadata에 기록하며 추가 연결 정책을 결정하지 않습니다. manyak-server는 `request_id`로 정확한 trace ID를 조회·보관하는 방식, API 세부 계약, 공개 ID와 저장 스키마, score 갱신·삭제 호출, outbox와 재시도, 백엔드 Langfuse 설정을 결정합니다. manyak-web은 `selectionAttemptId`의 생성·수명과 노출·선택 상태 보존 방식을 결정합니다. `inputAttemptId`의 생성 주체·형식·수명은 manyak-server와 manyak-web이 함께 확정합니다. manyak-terraform과 manyak-infra는 백엔드 키 주입·재기동·롤백 배선을 결정합니다. 이미 정한 score 의미와 행동 시점은 이 구현 결정으로 바꾸지 않습니다.
 - **왜 이 방법.** 서로 다른 API 요청을 하나의 trace로 합치면 실패·재시도 경계가 사라지므로 trace는 요청 단위로 유지하고 검증된 제품 ID로 조인합니다. 반응이 며칠 뒤 발생할 수 있어 AI 서버를 다시 거치지 않고 도메인 상태를 가진 백엔드가 직접 score를 발행합니다. 노출·선택·반영·실패를 나누면 사용자가 볼 수 있었는지, 눌렀는지, 실제 채팅에 반영됐는지를 섞지 않습니다. outbox는 사용자 기능과 Langfuse 장애를 분리하면서 커밋된 행동의 유실을 막습니다. 원문은 기존 Langfuse 예외 저장소에만 두고 score에는 비원문 식별자만 추가해 §6-7의 수집 경계를 유지합니다.
 
-**트레이스 분석 차원.** 현재 AI가 기록하는 분석 차원은 장르 라벨·프롬프트 버전 맵·`retry_count`·`request_id`이며, KNK-762에서 생성·스토리·채팅·턴 연결 식별자와 선택적인 `user_source`를 추가합니다([`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)). 장르 라벨은 사전 정의 장르와 직접 입력 장르(`customTags` category `GENRE`)를 구분하지 않고 모두 `genre:*`로 저장하는 KNK-669 임시 정책을 유지합니다. 적용 범위는 스토리 제작의 장르뿐이며, 주인공·주변 인물의 직접 입력값은 라벨이나 metadata에 올리지 않습니다. KNK-621이 장르 직접 입력을 차단하면 이 예외는 종료됩니다. 장르 라벨은 채팅 trace에는 달지 않습니다(KNK-652).
+**트레이스 분석 차원.** 현재 AI가 기록하는 분석 차원은 장르 라벨·프롬프트 버전 맵·`retry_count`·`request_id`이며, KNK-762에서 생성·스토리·채팅·턴 연결 식별자와 선택적인 `user_source`를 추가합니다([`5-ai-server-spec.md §5-6`](../domain/AGENTS.md#1-도메인과-세트)). 장르 라벨은 사전 정의 장르와 직접 입력 장르(`customTags` category `GENRE`)를 구분하지 않고 모두 `genre:*`로 저장하는 KNK-669 임시 정책을 유지합니다. 적용 범위는 스토리 제작의 장르뿐이며, 주인공·주변 인물의 직접 입력값은 라벨이나 metadata에 올리지 않습니다. KNK-621이 장르 직접 입력을 차단하면 이 예외는 종료됩니다. 장르 라벨은 채팅 trace에는 달지 않습니다(KNK-652).
+
+**백엔드 선호 행동 연동 조건, 미구현**
+
+- **무엇.** 백엔드는 스토리라인 평가·재생성·엔딩 도달과 선택지 노출·선택·건너뜀·반영·전송 실패를 도메인 데이터로 검증해 저장하고, 정확한 Langfuse trace에 score로 비동기 발행합니다. 선택지 원본과 생성 trace의 버전별 연결도 함께 보존합니다.
+- **왜.** 사용자 반응은 AI 호출이 끝난 뒤 발생하므로 무상태 AI 서버가 알 수 없습니다. 프론트가 보낸 클릭만 신뢰하면 다른 채팅의 ID나 폐기된 선택지를 선호로 기록할 수 있고, Langfuse 전송을 사용자 트랜잭션 안에서 동기 실행하면 관측 장애가 제작·채팅 기능을 실패시킵니다. 재생성 뒤 활성 답변만 남기면 어느 이전 생성물이 버려졌는지도 잃습니다.
+- **어떻게.** 다음 계약을 함께 구현합니다.
+
+  1. 시작 추천 입력과 턴 선택지 응답에 `{choiceId, choiceOrder, text}` 객체 배열을 추가합니다. `GET /chats/{chatId}`는 `suggestedInputItems`와 `turns[].choiceItems`, `POST /chats/{chatId}/turns/{turnId}/choices`는 `choiceItems`를 반환합니다. 기존 문자열 배열은 프론트 전환이 끝날 때까지 유지합니다. 컴파일이 만든 시작 추천 입력에는 컴파일 trace 연결을 보존하고, 일반 제작이나 편집으로 교체한 수동 추천 입력에는 AI 연결을 물려주지 않습니다.
+  2. 시작 추천 입력과 턴 선택지를 공통으로 받는 선택지 상호작용 기록 API를 제공합니다. API 경로는 구현 티켓에서 확정하되 요청 계약은 고정합니다. 공통 필드는 `interactionType=PRESENTED|SELECTED`, `choiceSource=START_SUGGESTION|TURN_CHOICE`, `choiceId`입니다. `SELECTED`에는 `selectionAction=FILL|SEND|RANDOM`과 `selectionAttemptId`가 필수이고 `PRESENTED`에는 두 필드를 받지 않습니다.
+  3. `choiceId`가 요청 채팅에 속한 현재 활성 선택지인지 확인하고 `choiceOrder`는 DB에서 읽습니다. 턴 선택지는 `sourceTurnId`, 시작 추천 입력은 `startSettingId`와 생성 trace 연결을 서버 데이터로 확인합니다. 폐기됐거나 다른 채팅에 속한 ID는 409로 거절합니다. 노출과 선택은 결정적 ID로 멱등 저장합니다.
+  4. 다음 턴 요청의 기존 `userSource=choice|edited_choice|typed`는 유지합니다. 특정 선택지를 가리키는 `choiceId`·`choiceSource`·`sourceTurnId`·`selectionAttemptId`는 선택지 계약에 추가하며 동일 의미의 `inputSource`를 만들지 않습니다. 저장된 선택지 원문과 최종 `userInput`을 같은 정규화 규칙으로 비교해 `choice_edited`를 확정합니다. 선택지 출처가 있는 턴 요청이 들어오면 별도 상호작용 API 호출이 유실됐더라도 같은 `selectionAttemptId`의 `choice_selected`를 멱등하게 보충합니다. 턴 요청의 `sourceTurnId`·`choiceOrder`로 선택 행을 특정해 `story_choices`의 `is_selected`·`selected_at`·`is_edited`를 기록하는 계약과 정규화 규칙(NFC → 앞뒤 공백 제거 → 내부 공백 런 축약)은 [§4-3-3](../domain/AGENTS.md#1-도메인과-세트)이 소유합니다. 이 절은 여기에 `choiceId`·`choiceSource`·`selectionAttemptId`와 노출(`PRESENTED`) 기록, score 발행을 더합니다.
+  5. `choice_selected`는 다음 턴 성공 여부와 무관하게 선택 시점에 저장합니다. 다음 턴 저장 트랜잭션이 성공할 때만 `choice_applied`를 만들고, 서버가 저장 실패를 확인한 경우에만 `choice_submission_failed`를 만듭니다. 현재 선택지의 노출 기록 뒤 `typed` 입력이 오면 `choice_set_skipped`를 만듭니다. 클라이언트 연결만 끊겨 결과를 확인할 수 없으면 성공·실패 score를 추정하지 않습니다.
+  6. 스토리라인 GOOD/BAD는 후보별 고정 `score_id`로 등록·변경·취소를 직렬화합니다. 값 변경은 같은 score를 덮어쓰고 취소는 삭제합니다. 스토리라인 재생성과 채팅 답변 재생성은 새 결과가 저장된 뒤 **버려진 이전 생성 결과**에 붙입니다. 엔딩 도달은 엔딩 본문을 만든 마지막 채팅 응답에만 붙입니다.
+  7. `request_id`와 저장된 생성 연결로 score 대상 Langfuse trace ID를 확정합니다. KNK-752 합의대로 AI는 같은 `request_id`를 Langfuse trace metadata에 기록하고 백엔드는 `ai_call_logs`와 생성 버전에 보존합니다. 백엔드는 이 값을 Langfuse에서 조회해 정확한 trace ID를 얻습니다. 조회 API·캐시·저장 방식은 manyak-server 구현 티켓이 결정하며, 비슷한 시각이나 원문 비교로 대상을 추정하지 않습니다. 사용자 행동과 score outbox 행은 같은 DB 트랜잭션에 저장하고, 커밋 뒤 별도 작업자가 전송합니다. 결정적 `score_id`로 재시도 중복을 막고, 제한 재시도 소진·대기 건수·실패 사유는 원문 없는 운영 로그로 관측합니다. Langfuse 클라이언트는 prod·JP 가드를 적용하며 AI 서버와 같은 프로젝트의 별도 키를 우선합니다.
+  8. 자동 테스트는 다른 채팅·폐기 선택지 거절, 중복 노출·선택, 평가 변경·취소 순서, 재생성 이전 결과와 엔딩 마지막 턴 연결, 선택·반영·확정 실패의 시점 분리, outbox 롤백·재시도·중복 방지, Langfuse 장애 격리를 검증합니다.
+
+  아직 정하지 않은 세부 계약(상호작용 API 경로·와이어 형식·`selectionAttemptId` 규약 등)은 구현 티켓이 정합니다. 확정한 내용은 이 절에 기록하며, 위에서 정한 도메인 검증·멱등성·장애 격리 원칙은 바꾸지 않습니다.
+
+- **왜 이 방법.** 프론트는 화면 노출과 클릭처럼 자신만 아는 사실을 보내고, 백엔드는 소유 관계·현재 버전·저장 결과처럼 DB만 아는 사실을 확정하는 책임 분리가 가장 정확합니다. 생성 결과와 사용자 반응을 같은 버전으로 보존해야 재생성된 이전 결과에 score를 붙일 수 있습니다. 트랜잭션 outbox는 사용자 기능과 외부 관측 전송을 분리하면서도 DB 커밋된 행동을 누락하지 않으며, 결정적 ID는 재시도와 순서 역전이 최종 score를 오염시키는 것을 막습니다. score payload에는 사용자 입력·선택지 문장·프롬프트·AI 출력 원문을 추가로 싣지 않습니다.
 
 ### 6-6-13. Sentry 오류 일일 요약 (슬랙) — `Phase 1 · 구현`
 
@@ -1337,14 +1357,14 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry·Crashlytics context/log, `ai_ca
 
 **AI LLM 트레이싱(Langfuse) 예외 — `Phase 1 · 구현`.** 위 표의 "저장 금지"는 운영 로그·Sentry·Crashlytics·`ai_call_logs`·분석 이벤트에 대한 규칙입니다. AI 서버의 LLM 트레이싱(Langfuse)은 이 원칙의 **명시적 예외**로, 정상·실패 LLM 호출의 프롬프트·응답 원문을 별도 관측 저장소(Langfuse Cloud)에 남깁니다. 위 문단이 요구하는 "별도 보안 정책과 제한된 저장소"에 해당하며, 확정된 조건은 다음과 같습니다:
 
-- **저장 리전**: 일본(JP) — HOST `https://jp.cloud.langfuse.com`. 운영에서 반드시 이 값을 주입합니다. 활성화 가드가 실린 릴리스에서는 HOST가 JP가 아니면(누락 포함) 켜지지 않아 원문이 다른 리전으로 갈 경로가 막히지만, 가드 이전 릴리스에서는 코드 기본값(JP 아님)으로 전송될 수 있습니다([`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)).
+- **저장 리전**: 일본(JP) — HOST `https://jp.cloud.langfuse.com`. 운영에서 반드시 이 값을 주입합니다. 활성화 가드가 실린 릴리스에서는 HOST가 JP가 아니면(누락 포함) 켜지지 않아 원문이 다른 리전으로 갈 경로가 막히지만, 가드 이전 릴리스에서는 코드 기본값(JP 아님)으로 전송될 수 있습니다([`5-ai-server-spec.md §5-6`](../domain/AGENTS.md#1-도메인과-세트)).
 - **접근·삭제·권한 책임**: AI 담당자로 한정.
 - **보존 기간**: 수집일로부터 1년(개인정보 처리방침 v1.3과 동일 값 — Langfuse 프로젝트 retention 설정에 반영하고, 설정이 불가한 플랜이면 주기 삭제 운영으로 보장).
 - **범위**: 프로덕션 전용(실험·로컬 제외).
 - **평가 활용**: 저장된 원문은 결과 점검, 실패·재생성 원인 분석, 평가 데이터 구성, 평가 지표 생성과 서비스 품질 개선에 사용합니다. 운영자는 이 원문으로 자체 AI 모델을 훈련하지 않습니다(개인정보 처리방침 v1.3·이용약관 v1.2, 2026-09-01 시행). 이용자가 평가 활용 제외·삭제를 요청하면 관련 평가 자산에서 제외하고 해당 트레이스를 보존 의무가 없는 범위에서 삭제합니다(방침 13항). 외부 AI 제공자의 별도 처리는 방침에 구분해 고지하며, OpenAI API 입력·출력은 기본적으로 모델 훈련에 사용되지 않지만 DeepSeek는 제공자 정책상 모델 최적화·훈련에 사용할 수 있어 거부 요청 경로를 제공합니다.
-- **조건의 코드 강제**: 위 "prod 전용·JP 리전" 조건은 코드가 검사합니다. 키가 있어도 HOST가 JP가 아니거나 환경이 `prod`가 아니면 켜지지 않습니다(활성화 가드, [`5-ai-server-spec.md §5-6`](5-ai-server-spec.md)). 가드는 KNK-652로 구현돼 AI `v0.2.1`(2026-07-22)에 실렸습니다. 키 주입은 가드가 실린 릴리스가 배포된 뒤에 합니다([`4-deployment.md §4-9`](../design/4-deployment.md#4-9-검수-관측-롤백)).
+- **조건의 코드 강제**: 위 "prod 전용·JP 리전" 조건은 코드가 검사합니다. 키가 있어도 HOST가 JP가 아니거나 환경이 `prod`가 아니면 켜지지 않습니다(활성화 가드, [`5-ai-server-spec.md §5-6`](../domain/AGENTS.md#1-도메인과-세트)). 가드는 KNK-652로 구현돼 AI `v0.2.1`(2026-07-22)에 실렸습니다. 키 주입은 가드가 실린 릴리스가 배포된 뒤에 합니다([`4-deployment.md §4-9`](../design/4-deployment.md#4-9-검수-관측-롤백)).
 
-사용자 식별은 원본이 아니라 기기 해시(`device_id_hash`)로만 싣습니다. 사용자 자유입력(`user_input`·`additional_info`·커스텀 태그)은 LLM 프롬프트의 일부라 Langfuse 요청 원문에 저장됩니다. 원칙적으로 tags·metadata 같은 색인 차원에는 올리지 않습니다. 다만 **직접 입력 장르는 사용자 수요 관측을 위해 `genre:*` 필터용 라벨로 임시 저장합니다**(KNK-669). 이 예외는 장르에만 적용하고, KNK-621이 장르 직접 입력을 차단하면 종료합니다. 평가 벤치는 원칙적으로 합성 데이터를 사용하며, 운영 트레이스 원문으로 평가 데이터·지표를 만들 때는 위 "평가 활용" 조건을 따릅니다(§6-6-11). 구현은 [`5-ai-server-spec.md §5-6`](5-ai-server-spec.md), 선호 신호 결합은 §6-6-12입니다.
+사용자 식별은 원본이 아니라 기기 해시(`device_id_hash`)로만 싣습니다. 사용자 자유입력(`user_input`·`additional_info`·커스텀 태그)은 LLM 프롬프트의 일부라 Langfuse 요청 원문에 저장됩니다. 원칙적으로 tags·metadata 같은 색인 차원에는 올리지 않습니다. 다만 **직접 입력 장르는 사용자 수요 관측을 위해 `genre:*` 필터용 라벨로 임시 저장합니다**(KNK-669). 이 예외는 장르에만 적용하고, KNK-621이 장르 직접 입력을 차단하면 종료합니다. 평가 벤치는 원칙적으로 합성 데이터를 사용하며, 운영 트레이스 원문으로 평가 데이터·지표를 만들 때는 위 "평가 활용" 조건을 따릅니다(§6-6-11). 구현은 [`5-ai-server-spec.md §5-6`](../domain/AGENTS.md#1-도메인과-세트), 선호 신호 결합은 §6-6-12입니다.
 
 ## 6-8. 검수 체크리스트
 
@@ -1497,6 +1517,6 @@ Android도 같은 이벤트 카탈로그를 구현해야 하므로(§6-2), 아�
 | A1  | `server_storyCreate_storyGeneration_processed_failed`의 `creation_id` | `creation_id` (string, 필수) — §6-4-2-3                                        | 서버는 `creation_id` 없이도 발행할 수 있습니다(발급 전 실패 경로에서 프로퍼티 생략)                              | `creation_id` 기준 실패 조인이 일부 누락됩니다. `device_id`·`session_id` 기준 집계는 영향 없음                            | 필수를 유지하고 발급 전 실패를 별도 이벤트·로그로 분리할지, `creation_id`를 선택으로 완화할지 **결정 필요**    |
 | A2  | `client_storyCreate_completed`의 `creation_id`                | §6-5-3-1 퍼널 5단계와 "생성 후 완료율"이 `creation_id`로 조인한다고 정의       | 이벤트 프로퍼티에 `creation_id`가 없습니다(§6-4-2-3 정의·웹 타입·웹 발행 모두 없음)                              | **"생성 후 완료율(`creation_id` 기준)"은 현재 계산할 수 없습니다** — 현 상태에서는 `device_id`·`session_id` 순차 근사치만 가능 | 이벤트에 `creation_id`를 추가할지, 지표 정의를 device 기준으로 바꿀지 **결정 필요**. 결정 전까지 이 지표는 `계획` |
 | A3  | `creation_id` 타입                                            | `string`(§6-2 — 분석 이벤트는 문자열)                                          | 웹 클라이언트 이벤트는 문자열로 변환해 보내고, 서버 성공 이벤트(`..._succeeded`)는 `Long` 값을 그대로 전달합니다 | 같은 프로퍼티가 이벤트 출처에 따라 문자열·숫자로 섞여 조인·필터가 어긋날 수 있습니다                                      | 서버 전송 시 문자열 변환과 계약 변경 중 하나로 정렬 **결정 필요**. 임의 변경 금지                              |
-| A4  | `creation_id` 이름의 의미 충돌                                | 개념 이름을 분리해 `analytics_creation_id`(분석)와 `trace_creation_id`(AI 트레이스)로 구분(§6-2·[`0-glossary.md`](0-glossary.md)) | **와이어 키는 양쪽 다 `creation_id`입니다** — 분석 이벤트는 진행 세션 ID(`simpleCreationId`, Long 원본), AI 트레이스·`ai_call_logs`·`X-Manyak-Creation-Id`는 스토리라인 요청 UUID | 두 값을 같은 연결 키로 오인하면 조인 결과가 전부 비거나 잘못 붙습니다. Android가 어느 값을 실을지 혼동할 위험도 같습니다 | 문서 개념 분리는 전파 완료(용어집 §0-3-2 · §6-2 · §6-6-3 계층별 표 · `3-1-client-spec.md` · `4-backend-server-spec.md §4-3·§4-7` · `5-ai-server-spec.md §5-6`). **와이어 키·헤더·DB 컬럼 이름 변경은 배포된 계약이라 팀 결정 필요**(임의 개명 금지) — 이름이 같은 한 오인 위험은 남으므로 항목을 닫지 않습니다 |
+| A4  | `creation_id` 이름의 의미 충돌                                | 개념 이름을 분리해 `analytics_creation_id`(분석)와 `trace_creation_id`(AI 트레이스)로 구분(§6-2·[`0-glossary.md`](GLOSSARY.md)) | **와이어 키는 양쪽 다 `creation_id`입니다** — 분석 이벤트는 진행 세션 ID(`simpleCreationId`, Long 원본), AI 트레이스·`ai_call_logs`·`X-Manyak-Creation-Id`는 스토리라인 요청 UUID | 두 값을 같은 연결 키로 오인하면 조인 결과가 전부 비거나 잘못 붙습니다. Android가 어느 값을 실을지 혼동할 위험도 같습니다 | 문서 개념 분리는 전파 완료(용어집 §0-3-2 · §6-2 · §6-6-3 계층별 표 · `3-1-client-spec.md` · `4-backend-server-spec.md §4-3·§4-7` · `5-ai-server-spec.md §5-6`). **와이어 키·헤더·DB 컬럼 이름 변경은 배포된 계약이라 팀 결정 필요**(임의 개명 금지) — 이름이 같은 한 오인 위험은 남으므로 항목을 닫지 않습니다 |
 
 Android 구현 시에도 이 간극이 해소되기 전까지는 `creation_id` 관련 프로퍼티를 임의로 추가하지 않고 웹과 동일한 현재 계약을 따릅니다(이벤트 이름·기존 프로퍼티 재사용 원칙은 §6-3-2). **Android가 실을 값은 문맥으로 갈립니다** — `client_*`·`server_*` 분석 이벤트의 `creation_id`에는 `analytics_creation_id`를, AI 호출 상관 헤더(`X-Manyak-Creation-Id`)에는 `trace_creation_id`를 싣습니다(A4).

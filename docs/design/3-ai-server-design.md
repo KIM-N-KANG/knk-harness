@@ -9,7 +9,7 @@
 | 수정일 | 2026-09-29 |
 | 대상 | manyak-ai |
 | 작성 목적 | AI 호출 계층, 모델·프롬프트 설정과 관측 실패의 격리 구조를 설명합니다. |
-| 기준 | [Spec](../spec/5-ai-server-spec.md)의 기준 코드·브랜치를 따릅니다. 운영 배포 검증과 구분합니다. |
+| 기준 | 과거 통합 구조를 보존합니다. 현재 계약과 구현 기준은 [도메인별 AI 세트](../domain/AGENTS.md#1-도메인과-세트)를 따릅니다. |
 
 ## 읽는 순서
 
@@ -75,7 +75,7 @@ DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google�
 개발 도구는 같은 요청 모델로 서비스를 직접 호출해 완성 응답을 받습니다. HTTP 라우터의
 요청 단위 관측은 직접 호출에 포함되지 않습니다. 컴파일은 기존부터
 `compile_story(request) -> StoryCompileResponse` 방식으로 생성과 응답 조립을 담당합니다.
-외부 계약은 [Spec](../spec/5-ai-server-spec.md#5-9-1-스토리라인-생성), 선택 이유는
+외부 계약은 [Spec](../domain/STORY/AI/5-CONTRACT.md#5-2-스토리라인-요청과-결과), 선택 이유는
 [ADR](../adr/3-ai-server-adr.md#스토리라인-생성-준비와-응답-조립을-서비스에서-수행)을 따릅니다.
 
 ### 스토리 인물 구성과 컴파일 검증
@@ -86,7 +86,7 @@ DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google�
 
 기존 최대 2회 보완 한도 안에서 다른 블록·인물 필드 문제와 함께 처리합니다. 보완 후 사용자 이름을 ID로 다시 적용하고 같은 검사를 반복합니다. 불일치가 남으면 이미지·표지 호출 전에 502를 반환하고, 통과하면 내부 ID를 제거한 뒤 응답 스키마 검사와 이미지 생성을 수행합니다. 0명 입력은 입력 ID 대응 검사를 건너뛰되 필수 필드·이름·카드 1~5명 스키마 검증은 유지합니다.
 
-보완 프롬프트는 직전 결과의 잘못 만든 인물이 아니라 원래 선택한 이야기의 인물·관계를 기준으로 삼도록 지시합니다. 별도 인물 명단 API나 의미 판정 LLM 호출은 없습니다. API 계약과 품질 기준의 구분은 [Spec의 컴파일](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
+보완 프롬프트는 직전 결과의 잘못 만든 인물이 아니라 원래 선택한 이야기의 인물·관계를 기준으로 삼도록 지시합니다. 별도 인물 명단 API나 의미 판정 LLM 호출은 없습니다. API 계약과 품질 기준의 구분은 [Spec의 컴파일](../domain/STORY/AI/6-1-AI-EXECUTION.md#6-1-2-컴파일)을 따릅니다.
 
 ### 공개 인물 소개 생성과 응답 변환
 
@@ -94,7 +94,7 @@ DeepSeek과 GPT는 OpenAI SDK 어댑터를 공유합니다. Anthropic과 Google�
 
 `_find_character_field_repairs()`는 같은 타입의 `TypeAdapter`로 소개를 검사한다. 카드 목록이 유효하면 잘못된 소개를 인물 index별 `character_updates`로 요청하고, 요청한 필드만 병합한다. 카드 블록 전체를 다시 받는 차수에는 개별 필드 보완을 함께 요청하지 않는다. 이름, 소개, 외형과 다른 블록 문제는 기존 보완 한도를 공유하며, 소개 오류가 남으면 이미지 생성 전에 502를 반환한다. ([컴파일 서비스](../../../manyak-ai/src/services/story_llm.py))
 
-`spec_to_response()`는 최종 인물 카드의 이름과 소개를 `character_introductions` 배열로 옮긴다. `story_settings`의 마크다운 4필드와 인물 외형은 각자의 기존 변환을 거치고, 인물 소개를 채팅용 마크다운이나 이미지 프롬프트에 넣지 않는다. 이미지 생성 결과가 실패여도 소개 배열은 유지한다. 외부 필드와 검증 조건은 Spec을 따른다. ([응답 변환](../../../manyak-ai/src/services/story_compile_render.py), [컴파일 계약](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일))
+`spec_to_response()`는 최종 인물 카드의 이름과 소개를 `character_introductions` 배열로 옮긴다. `story_settings`의 마크다운 4필드와 인물 외형은 각자의 기존 변환을 거치고, 인물 소개를 채팅용 마크다운이나 이미지 프롬프트에 넣지 않는다. 이미지 생성 결과가 실패여도 소개 배열은 유지한다. 외부 필드와 검증 조건은 Spec을 따른다. ([응답 변환](../../../manyak-ai/src/services/story_compile_render.py), [컴파일 계약](../domain/STORY/AI/6-1-AI-EXECUTION.md#6-1-2-컴파일))
 
 ### 자식 이미지가 있는 채팅 흐름
 
@@ -145,7 +145,7 @@ flowchart LR
 이벤트와 저장 본문을 함께 만듭니다. 성공하면 선택한 인물의 매핑만 복사본에서 바꾸고 다시
 렌더링합니다. 같은 부모 URL을 쓰는 다른 인물은 바꾸지 않으며 요청 원본을 보존합니다.
 이벤트와 본문·목록에 base64는 넣지 않습니다. 저장·표시 규칙은
-[Spec의 부모·자식 이미지](../spec/5-ai-server-spec.md#부모-이미지와-자식-이미지)를 따릅니다.
+[Spec의 부모·자식 이미지](../domain/CHAT/AI/6-1-AI-EXECUTION.md#6-1-2-실시간-이미지)를 따릅니다.
 
 `_stream_rendered`는 완성된 본문의 텍스트 이벤트를 최대 12자씩 나눠 전송합니다. 조각마다
 기본 30ms를 기다리되, 전체 대기 합계가 8초와 전송 시작 시 남은 시간의 절반을 넘지 않도록
@@ -192,15 +192,15 @@ Flare의 Langfuse 단가 설정과 실제 이미지 생성은 아직 검증하�
 (버전 7)는 모두 내부 생성 필드 `meta.description`에 6~8문장 소개문을 지시합니다.
 [응답 조립](../../../manyak-ai/src/services/story_compile_render.py)은 이 값을 `stories.description`으로
 옮깁니다. `meta.one_line_intro`는 별도의 한 줄 소개이며, 주요 내용의 작성 기준은
-[Spec §5-3-3](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일)을 따릅니다.
+[Spec §5-3-3](../domain/STORY/AI/6-1-AI-EXECUTION.md#6-1-2-컴파일)을 따릅니다.
 [컴파일 검증](../../../manyak-ai/src/services/story_llm.py)은 소개문의 누락·빈 값과 스키마를 확인하지만
 문장 수는 세지 않습니다. 문장 수만으로 보완 호출·502 응답을 발생시키는 로직은 없습니다.
 
-두 템플릿은 인물 카드의 `description`에 공개용 짧은 소개를 지시하고, 문장마다 이중 개행하는 공통 규칙에서 이 필드를 제외한다. 생성 기준과 코드 검증의 범위는 컴파일 계약을 따른다. ([Spec §5-3-3](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일))
+두 템플릿은 인물 카드의 `description`에 공개용 짧은 소개를 지시하고, 문장마다 이중 개행하는 공통 규칙에서 이 필드를 제외한다. 생성 기준과 코드 검증의 범위는 컴파일 계약을 따른다. ([Spec §5-3-3](../domain/STORY/AI/6-1-AI-EXECUTION.md#6-1-2-컴파일))
 
 ## 3-3. 관측과 런타임 설정
 
-Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 텍스트 호출(DeepSeek·GPT)은 `langfuse.openai` 자동 계측이 하위 호출 관측을 만듭니다. 이 자동 계측은 google-genai 호출을 감싸지 않으므로 [Google 어댑터](../../../manyak-ai/src/services/llm/google_sdk.py)가 단발 호출(컴파일·스토리라인)마다 `observe_generation`으로 `Gemini-generation` 관측을 직접 엽니다. 모델명·모델 인자(temperature·출력 한도·추론 강도·JSON 모드)·입력 메시지·응답 본문·usage를 기록하고, 공급자 실패는 관측에 ERROR로 남긴 뒤 예외를 그대로 전파합니다. usage는 Langfuse 관리 단가가 가격을 매기는 키에 맞춰 `input`(프롬프트에서 캐시 적중분을 뺀 값)·`input_cached_tokens`·`output`·`output_reasoning`(추론 토큰)·`total`로 나눕니다. 추론 토큰을 `output`에 합치면 `output_reasoning`과 두 번 과금되므로 따로 보냅니다. Gemini 스트리밍 호출은 관측이 yield를 넘나들며 부모가 틀어지는 문제로 아직 기록하지 않으며, Gemini는 현재 단발 호출에만 쓰입니다. Anthropic 호출의 관측은 미완입니다. 이미지 호출(`images.generate`·`images.edit`)은 자동 계측이 감싸지 않으므로 [이미지 어댑터](../../../manyak-ai/src/services/image/openai_api.py)가 [`observe_generation`](../../../manyak-ai/src/core/langfuse.py)으로 generation 관측을 직접 엽니다. 인물 이미지는 병렬 작업마다 관측이 따로 열리고 모두 컴파일 trace 아래에 붙습니다. 응답을 받은 직후 usage를 먼저 기록해 응답 해석에 실패해도 과금분이 남습니다. 비용 계산은 Langfuse 프로젝트의 모델 단가에 의존하며, 이미지는 세부 키(`input_text`·`input_image`·`output_image`)에만 단가를 등록해 표준 키와 이중 계산되지 않게 합니다. deepseek-flash 단가는 피크·오프피크 두 구간으로 등록돼 있습니다. gpt-image-2 단가도 등록돼 있습니다. DeepSeek 텍스트 호출은 어댑터가 호출마다 피크 시간(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 여부를 판정해 metadata `pricing_window`(`peak`·`off_peak`)를 싣고, Langfuse의 조건 구간이 이 값으로 단가를 고릅니다. 이 인자는 `langfuse.openai` 래퍼가 걷어내는 것이라 Langfuse가 꺼져 있을 때는 공급자 API로 새지 않도록 붙이지 않습니다. 판정은 호출 시작 시각 기준이며 시간대 경계를 넘는 긴 호출은 한쪽 구간으로 잡힙니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](../spec/6-analytics.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
+Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. 요청마다 trace를 분리하고 SDK 기록 실패는 AI 응답에 전파하지 않습니다. 본 작업 예외는 그대로 전파합니다. 종료 시 flush하며 실패하면 마지막 미전송 배치가 유실될 수 있습니다. OpenAI SDK 텍스트 호출(DeepSeek·GPT)은 `langfuse.openai` 자동 계측이 하위 호출 관측을 만듭니다. 이 자동 계측은 google-genai 호출을 감싸지 않으므로 [Google 어댑터](../../../manyak-ai/src/services/llm/google_sdk.py)가 단발 호출(컴파일·스토리라인)마다 `observe_generation`으로 `Gemini-generation` 관측을 직접 엽니다. 모델명·모델 인자(temperature·출력 한도·추론 강도·JSON 모드)·입력 메시지·응답 본문·usage를 기록하고, 공급자 실패는 관측에 ERROR로 남긴 뒤 예외를 그대로 전파합니다. usage는 Langfuse 관리 단가가 가격을 매기는 키에 맞춰 `input`(프롬프트에서 캐시 적중분을 뺀 값)·`input_cached_tokens`·`output`·`output_reasoning`(추론 토큰)·`total`로 나눕니다. 추론 토큰을 `output`에 합치면 `output_reasoning`과 두 번 과금되므로 따로 보냅니다. Gemini 스트리밍 호출은 관측이 yield를 넘나들며 부모가 틀어지는 문제로 아직 기록하지 않으며, Gemini는 현재 단발 호출에만 쓰입니다. Anthropic 호출의 관측은 미완입니다. 이미지 호출(`images.generate`·`images.edit`)은 자동 계측이 감싸지 않으므로 [이미지 어댑터](../../../manyak-ai/src/services/image/openai_api.py)가 [`observe_generation`](../../../manyak-ai/src/core/langfuse.py)으로 generation 관측을 직접 엽니다. 인물 이미지는 병렬 작업마다 관측이 따로 열리고 모두 컴파일 trace 아래에 붙습니다. 응답을 받은 직후 usage를 먼저 기록해 응답 해석에 실패해도 과금분이 남습니다. 비용 계산은 Langfuse 프로젝트의 모델 단가에 의존하며, 이미지는 세부 키(`input_text`·`input_image`·`output_image`)에만 단가를 등록해 표준 키와 이중 계산되지 않게 합니다. deepseek-flash 단가는 피크·오프피크 두 구간으로 등록돼 있습니다. gpt-image-2 단가도 등록돼 있습니다. DeepSeek 텍스트 호출은 어댑터가 호출마다 피크 시간(UTC 월~금 01:00~04:00·06:00~10:00, 시작 포함·끝 제외) 여부를 판정해 metadata `pricing_window`(`peak`·`off_peak`)를 싣고, Langfuse의 조건 구간이 이 값으로 단가를 고릅니다. 이 인자는 `langfuse.openai` 래퍼가 걷어내는 것이라 Langfuse가 꺼져 있을 때는 공급자 API로 새지 않도록 붙이지 않습니다. 판정은 호출 시작 시각 기준이며 시간대 경계를 넘는 긴 호출은 한쪽 구간으로 잡힙니다. 장르 라벨은 스토리 제작에만 붙이며 직접 입력 장르 예외·원문 보존·평가 활용·제외·삭제는 [분석 명세 §6-7](../REFERENCE/ANALYTICS.md#6-7-개인정보와-원문-수집-원칙)을 따릅니다.
 
 자식 이미지 generation의 이름은 `이미지 생성:자식`이며 병렬 작업에 복사된 호출 컨텍스트를
 통해 같은 채팅 trace에 붙습니다. 입력 프롬프트는 기존 원문 수집 규칙을 따르고 부모 첨부
@@ -246,11 +246,11 @@ Langfuse는 키·JP 주소·prod 환경이 모두 충족될 때만 켭니다. �
 
 기능별 서비스가 요청 단위로 프롬프트·검증·보완 호출을 조정하고 공통 어댑터가 공급자 결과·usage·오류를 정규화합니다. 스토리·채팅의 영속 상태는 백엔드가 소유합니다. 모델 등록부와 프롬프트는 기동 설정이며 제품 진행 상태 저장소가 아닙니다.
 
-- 기능별 보완·fallback·시간 예산은 [API 처리 계약](../spec/5-ai-server-spec.md#5-3-api-기능과-처리-흐름)을 따릅니다. 본문 SSE 실패와 판정 실패의 처리 결과를 합치지 않습니다.
-- 공급자 SDK 재시도와 서비스 추가 호출은 별개입니다. `retry_count`·토큰 누락 의미는 [관측 계약](../spec/5-ai-server-spec.md#5-6-운영과-관측)을 따릅니다.
+- 기능별 보완·fallback·시간 예산은 [API 처리 계약](../domain/AGENTS.md#1-도메인과-세트)을 따릅니다. 본문 SSE 실패와 판정 실패의 처리 결과를 합치지 않습니다.
+- 공급자 SDK 재시도와 서비스 추가 호출은 별개입니다. `retry_count`·토큰 누락 의미는 [관측 계약](../domain/CHAT/AI/7-3-OBSERVABILITY.md)을 따릅니다.
 - 자식 이미지 요청은 본문·판정·이미지 생성·업로드 작업을 취소하고 정리 완료를 기다립니다. `_ChatStreamingResponse`는 전송 도중 연결 종료도 스트림을 명시적으로 닫아 처리합니다. 정리 구간은 반복 취소로 중단되지 않도록 보호합니다. 취소는 이미 업로드된 S3 파일의 삭제를 보장하지 않으며 AI에는 삭제 경로가 없습니다.
 - 관측 실패는 본 작업 실패와 분리합니다. SDK 기록 실패가 응답을 실패시키지 않으며 본 작업 예외는 그대로 전달합니다.
-- API·부분 실패·관측 격리는 기존 `scripts/test.sh`·`scripts/test.ps1`을 사용합니다. 라이브 프롬프트 품질·비용 실측은 [검수 기준](../spec/5-ai-server-spec.md#5-7-검수와-남은-제약)의 별도 범위입니다.
+- API·부분 실패·관측 격리는 기존 `scripts/test.sh`·`scripts/test.ps1`을 사용합니다. 라이브 프롬프트 품질·비용 실측은 [검수 기준](../domain/CHAT/AI/7-2-TEST-CASES.md)의 별도 범위입니다.
 
 자식 이미지 직접 업로드 구현 단계에서 관련 Docker 테스트 130개가 통과했고, 같은 부모 URL을
 쓰는 다른 인물 보존 테스트를 추가해 1개 별도 실행·통과했습니다. 병렬 실행·시간 초과·연결 종료·
@@ -284,7 +284,7 @@ OpenAI 추론 강도는 `high`, SDK 내부 재시도는 0이며 서비스가 기
 
 모델이 `rule: null`로 보고한 이미지 경로를 모두 `IMAGE_UNREADABLE`로 변환합니다. 준비 오류와 합쳐
 `image_errors`를 원래 입력 순서로 반환합니다. 이미지 오류가 하나라도 있으면 최종 `REJECTED`로
-응답하되, 모델이 찾은 텍스트·이미지 내용 위반은 `issues`에 보존합니다. 대표 오류의 우선순위는 [Spec §5-9-6](../spec/5-ai-server-spec.md#5-9-6-게시물-검수)을 따릅니다.
+응답하되, 모델이 찾은 텍스트·이미지 내용 위반은 `issues`에 보존합니다. 대표 오류의 우선순위는 [Spec §5-9-6](../domain/MODERATION/AI/5-CONTRACT.md)을 따릅니다.
 합계 용량 초과는 백엔드가 검수 요청 전에 차단하고 사용자에게 이미지 크기·장수 축소를 안내합니다.
 백엔드 사전 계산에는 원본 이미지의 base64 변환 크기와 텍스트·JSON·AI 프롬프트를 위한 여유가 필요합니다.
 구체적인 상한·계산 방식은 백엔드 명세에서 정합니다. 현재 AI 서버는 마지막 방어로 대체 모델
@@ -326,6 +326,6 @@ DeepSeek의 요청 본문을 미리 조립해 48MiB를 검사합니다. 첫 모�
 검수 응답에 전파하지 않으며 기존 JP 리전·prod 활성화 조건을 유지합니다. 별도 출력 토큰 상한은
 설정하지 않고 호출·요청 시간 제한을 적용합니다.
 
-승인된 입력·판정·오류 계약은 [Spec §5-3-6](../spec/5-ai-server-spec.md#5-3-6-게시물-검수)과
-[§5-9-6](../spec/5-ai-server-spec.md#5-9-6-게시물-검수), 결정 근거는
+승인된 입력·판정·오류 계약은 [Spec §5-3-6](../domain/MODERATION/AI/6-1-AI-EXECUTION.md)과
+[§5-9-6](../domain/MODERATION/AI/5-CONTRACT.md), 결정 근거는
 [검수 결정 기록](../adr/3-ai-server-adr.md#게시물의-명백한-금지-내용-검수와-실패-시-게시-차단)에 있습니다.

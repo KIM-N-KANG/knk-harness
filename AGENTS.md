@@ -18,42 +18,32 @@
 
 ## Knowledge Base
 
-작업과 관련된 문서만 선택합니다. 제품 문서는 `docs/domain/` 아래 도메인 단위로 재구성 중입니다. 도메인 폴더에 해당 세트가 있으면 그 문서가 기준이고, 아직 없으면 아래 기존 Spec·Design·ADR이 기준입니다.
+제품 문서는 [도메인 목록](docs/domain/AGENTS.md)에서 작업에 맞는 세트를 선택합니다. 각 도메인과 세트의 `AGENTS.md`가 문서 역할과 읽는 순서를 안내합니다.
 
 | 도메인 | 다루는 것 | 세트 |
 | --- | --- | --- |
-| [STORY](docs/domain/STORY/AGENTS.md) | 스토리 탐색·제작·상세·공개·검색 | AI, BACKEND, CLIENT |
-| [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅 플레이·선택지·실시간 이미지·피드백 | AI, BACKEND, CLIENT |
-| [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 게스트·회원·로그인·동의·이관·프로필 | BACKEND, CLIENT |
-| [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프·충전 결제·보상·체험 한도 | BACKEND, CLIENT |
-| [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND, CLIENT |
-| [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI, BACKEND, CLIENT |
+| [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 계정, 로그인, 동의, 이관과 프로필 | BACKEND, CLIENT |
+| [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프, 충전, 보상과 체험 한도 | BACKEND, CLIENT |
+| [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅, 선택지, 이미지, 공유와 피드백 | AI, BACKEND, CLIENT |
+| [STORY](docs/domain/STORY/AGENTS.md) | 스토리 탐색, 제작, 상세, 공개와 검색 | AI, BACKEND, CLIENT |
+| [MODERATION](docs/domain/MODERATION/AGENTS.md) | 검수, 15세 모드, 입력 검사와 신고 | AI, BACKEND, CLIENT |
+| [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 공지, 알림함, 수신 설정과 푸시 | BACKEND, CLIENT |
 
-- 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
-- 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
-- 클라이언트 세트는 `CLIENT/`의 공통 계약과 하위 `WEB/`, `ANDROID/`의 차이와 구현을 함께 확인합니다. [ACCOUNT](docs/domain/ACCOUNT/CLIENT/AGENTS.md)와 [PAYMENT](docs/domain/PAYMENT/CLIENT/AGENTS.md), [CHAT](docs/domain/CHAT/CLIENT/AGENTS.md), [STORY](docs/domain/STORY/CLIENT/AGENTS.md), [MODERATION](docs/domain/MODERATION/CLIENT/AGENTS.md), [NOTIFICATION](docs/domain/NOTIFICATION/CLIENT/AGENTS.md)는 CLIENT 세트가 기준입니다. 도메인 공통 기반과 아직 이관하지 않은 플랫폼 구조는 [공용 클라이언트 안내](docs/client/AGENTS.md)에서 찾습니다. 다른 도메인은 이관 전까지 기존 Spec, Design, ADR과 QA를 함께 확인합니다.
+- 클라이언트는 단계마다 `CLIENT/`의 공통 문서 다음 `WEB/` 또는 `ANDROID/`를 읽습니다. 여러 도메인이 사용하는 셸과 플랫폼 기반은 [공용 클라이언트](docs/client/AGENTS.md)에서 확인합니다.
+- 사용자 목표는 각 CLIENT의 `2-1-USER-STORY.md`에서 정의합니다. ID는 파일과 절 번호에 독립적이며 WEB과 ANDROID가 같은 ID를 참조합니다.
+- 문체와 파일명은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md), [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md), [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 작성 가이드를 따릅니다.
 
-| 작업 상황 | 먼저 확인할 문서 |
+| 작업 상황 | 확인할 문서 |
 | --- | --- |
-| 용어·한영 표기·네이밍 규칙 | [용어집](docs/spec/0-glossary.md) |
-| 서비스 배경·타겟 사용자·MVP 범위 | [서비스 배경](docs/spec/1-background.md) |
-| 화면·기능별 사용자 요구 | [유저 스토리](docs/client/2-1-USER-STORY.md#2-1-1-이동과-이용-환경) |
+| 용어, 한영 표기와 네이밍 | [용어집](docs/REFERENCE/GLOSSARY.md) |
+| 서비스 배경과 대상 사용자 | [서비스 배경](docs/REFERENCE/SERVICE-BACKGROUND.md) |
+| 분석 이벤트, 지표와 관측 | [분석 기준](docs/REFERENCE/ANALYTICS.md) |
+| 공용 서비스 인터페이스와 상태 확인 | [서비스 인터페이스](docs/REFERENCE/SERVICE-INTERFACES.md) |
+| 배포, 인프라, CI/CD와 복구 | [배포 Design](docs/design/4-deployment.md), [배포 ADR](docs/adr/4-deployment-adr.md) |
+| 클라이언트 검증 | 공용 또는 해당 도메인의 플랫폼 세트 `5-1-VERIFICATION.md` |
+| 작업 담당, 일정, 우선순위와 미결 사항 | Jira |
 
-| 영역 | Spec — 계약 | Design — 현재 구조 | ADR — 결정 근거 |
-| --- | --- | --- | --- |
-| 공통 클라이언트 | [공통](docs/client/AGENTS.md) | 플랫폼별 Design 참조 | [공통](docs/client/DECISIONS.md) |
-| 웹 | [웹](docs/client/WEB/AGENTS.md) | [웹](docs/client/WEB/AGENTS.md) | [웹](docs/client/WEB/DECISIONS.md) |
-| Android | [Android](docs/client/ANDROID/AGENTS.md) | [Android](docs/client/ANDROID/AGENTS.md) · [모듈·의존 규칙](docs/client/ANDROID/4-2-COMPONENT-ARCHITECTURE.md#4-2-1-책임과-의존) | [Android](docs/client/ANDROID/DECISIONS.md) |
-| 백엔드 | [백엔드](docs/spec/4-backend-server-spec.md) | [백엔드](docs/design/2-backend-server-design.md) | [백엔드](docs/adr/2-backend-server-adr.md) |
-| AI | [AI](docs/spec/5-ai-server-spec.md) | [AI](docs/design/3-ai-server-design.md) | [AI](docs/adr/3-ai-server-adr.md) |
-
-| 작업 상황 | 확인할 곳 |
-| --- | --- |
-| 분석 이벤트·지표·관측·릴리스 검수 | [분석](docs/spec/6-analytics.md) |
-| 배포·인프라·CI/CD·검수·롤백 | [배포 Design](docs/design/4-deployment.md) · [배포 ADR](docs/adr/4-deployment-adr.md) |
-| QA 작업 전 지침·검증 방법 | [웹 QA 지침](docs/client/WEB/5-1-VERIFICATION.md#5-1-1-마이-메뉴와-테마) · [Android 검증 방법](docs/client/ANDROID/5-1-VERIFICATION.md#5-1-1-시나리오) |
-| Phase·목표·범위·백로그 | [로드맵](docs/planning/roadmap.md) |
-| 작업 담당·상세 일정·진행 | Jira |
+기존 백엔드와 AI의 통합 Design 및 ADR은 `docs/design/`과 `docs/adr/`에 보존합니다. 현재 도메인 명세가 우선이며, 과거 결정은 현재 계약을 대체하지 않습니다.
 
 ## Agent Skills
 
@@ -73,7 +63,7 @@
 - Spec을 작성하거나 수정하기 전에 제품 Spec 작성 가이드 전체를 반드시 읽고, 문체와 표 구성, 문서 참조 규칙을 적용합니다. ([제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md))
 - 관련 문서의 해당 절을 전체로 읽습니다. 요구사항·동작 계약은 Spec, 현재 구현 구조는 Design, 중요한 결정의 이유는 ADR에 기록합니다. 중복 본문 대신 링크를 사용합니다.
 - 제품 동작·분석 기준을 바꿀 때 관련 Spec을 확인하고, 계약 변경을 먼저 반영합니다. 구현 변경 시 영향받는 문서와 검증 항목을 같은 작업에서 갱신하며, 미래 구조를 현재 Design에 먼저 반영하지 않습니다. 계약·예외·보안·실패·복구 조건을 보존하며, 코드만으로 제품 정책의 승인 여부나 과거 결정 이유를 추정하지 않습니다.
-- 일정·진행 상태·미결 사항은 Jira, Phase는 roadmap, 구현 계획과 검증 결과는 기존 계획 문서·PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.
+- 일정, 진행 상태, 우선순위와 미결 사항은 Jira, 구현 계획과 검증 결과는 구현 저장소의 계획 문서와 PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.
 - 기존 문서 유형의 형식과 명명 규칙을 따릅니다. 코드에서 확인할 수 있는 목록은 원본 링크를 우선하며, 중복된 문서나 목록을 만들지 않습니다. `AGENTS.md`·`CLAUDE.md`는 간결한 작업 지침으로 작성합니다.
 - 확정된 ADR의 ID·본문과 과거 근거를 보존합니다. 결정 변경은 해당 ADR의 기록 규칙에 따라 후속 기록에 대체하는 결정 ID와 적용 범위를 명시합니다.
 - 파일이나 절을 이동·삭제·통합하거나 제목을 바꾸면 하네스와 관련 구현 저장소의 참조도 갱신합니다. 변경 후 링크·앵커·목차·ID 중복과 ADR 보존 여부를 확인하고 `git diff --check`를 실행합니다.

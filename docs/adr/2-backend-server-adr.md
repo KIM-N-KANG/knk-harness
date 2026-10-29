@@ -9,11 +9,11 @@
 | 수정일 | 2026-10-06 |
 | 대상 | manyak-server |
 | 작성 목적 | 백엔드 결정의 맥락, 선택, 근거 보존 |
-| 기준 | [백엔드 Spec](../spec/4-backend-server-spec.md)에서 이관한 결정 기록과 후속 Git·PR 이력 |
+| 기준 | [백엔드 Spec](../domain/AGENTS.md#1-도메인과-세트)에서 이관한 결정 기록과 후속 Git·PR 이력 |
 
 ## 읽는 순서
 
-- 현재 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md), 현재 내부 구조는 [백엔드 Design](../design/2-backend-server-design.md)에서 확인합니다.
+- 현재 계약은 [백엔드 Spec](../domain/AGENTS.md#1-도메인과-세트), 현재 내부 구조는 [백엔드 Design](../design/2-backend-server-design.md)에서 확인합니다.
 
 ## 목차
 
@@ -85,7 +85,7 @@
 - `BE-NNN`은 이관 순서이며 날짜나 구현 순서가 아닙니다.
 - 확정 기록은 고치지 않고 변경을 새 ID로 추가해 대체 범위를 연결합니다.
 - 날짜가 없으면 미상입니다. Phase·Jira·당시 상태는 역사적 근거로 남깁니다.
-- 현재 계약은 [백엔드 Spec](../spec/4-backend-server-spec.md), 현재 내부 구조는 [백엔드 Design](../design/2-backend-server-design.md)이 소유합니다.
+- 현재 계약은 [백엔드 Spec](../domain/AGENTS.md#1-도메인과-세트), 현재 내부 구조는 [백엔드 Design](../design/2-backend-server-design.md)이 소유합니다.
 
 <a id="be-001"></a>
 
@@ -93,10 +93,10 @@
 
 
 - **결정.** `user_id`가 NULL인 스토리는 공개 목록에서 제외합니다. 작성자 신원이 없어 카드에 작성자를 표기할 수 없고, 좋아요·신고 같은 소셜 기능의 책임 주체가 없기 때문입니다.
-- **실제 대상.** 간편 제작은 회원·게스트 구분 없이 `PRIVATE`으로 저장하므로([§4-3-2](../spec/4-backend-server-spec.md#4-3-api-계약)) 이 조건으로 걸러지는 것은 일반 제작에서 `PUBLIC`을 지정한 게스트 스토리와 향후 경로입니다. `stories.visibility` 기본값이 `PUBLIC`이라 새 경로가 생기면 다시 발생할 수 있어 조건 자체는 유지합니다.
-- **영구 배제가 아닙니다.** 게스트가 로그인해 이관([§4-3-5](../spec/4-backend-server-spec.md#4-3-api-계약))하면 회원 소유가 되어 자연히 노출됩니다. 게스트 서재(로컬 ID → `POST /stories/batch`)와 상세 조회도 그대로라 **목록 노출만 빠집니다**.
-- **함께 확정: 게스트는 `PUBLIC`을 지정할 수 없습니다(400).** 목록에서 거르는 것만으로는 부족합니다: 소유자 없는 PUBLIC 스토리는 상세·채팅 경로에서 여전히 열려 있고, 데이터에 남으면 다음 소비자가 같은 판정을 또 해야 합니다. 등록·수정 계약은 [§4-3-8](../spec/4-backend-server-spec.md#4-3-api-계약)이 정의합니다.
-- 마냑 오리지널은 공식 계정(회원) 소유라 이 조건에 걸리지 않고 그대로 포함됩니다. 조회 경로는 `GET /stories?filter=original`이며 폐기 예정인 `GET /stories/originals`도 같은 범위입니다([§4-3-1](../spec/4-backend-server-spec.md#4-3-api-계약)).
+- **실제 대상.** 간편 제작은 회원·게스트 구분 없이 `PRIVATE`으로 저장하므로([§4-3-2](../domain/AGENTS.md#1-도메인과-세트)) 이 조건으로 걸러지는 것은 일반 제작에서 `PUBLIC`을 지정한 게스트 스토리와 향후 경로입니다. `stories.visibility` 기본값이 `PUBLIC`이라 새 경로가 생기면 다시 발생할 수 있어 조건 자체는 유지합니다.
+- **영구 배제가 아닙니다.** 게스트가 로그인해 이관([§4-3-5](../domain/AGENTS.md#1-도메인과-세트))하면 회원 소유가 되어 자연히 노출됩니다. 게스트 서재(로컬 ID → `POST /stories/batch`)와 상세 조회도 그대로라 **목록 노출만 빠집니다**.
+- **함께 확정: 게스트는 `PUBLIC`을 지정할 수 없습니다(400).** 목록에서 거르는 것만으로는 부족합니다: 소유자 없는 PUBLIC 스토리는 상세·채팅 경로에서 여전히 열려 있고, 데이터에 남으면 다음 소비자가 같은 판정을 또 해야 합니다. 등록·수정 계약은 [§4-3-8](../domain/AGENTS.md#1-도메인과-세트)이 정의합니다.
+- 마냑 오리지널은 공식 계정(회원) 소유라 이 조건에 걸리지 않고 그대로 포함됩니다. 조회 경로는 `GET /stories?filter=original`이며 폐기 예정인 `GET /stories/originals`도 같은 범위입니다([§4-3-1](../domain/AGENTS.md#1-도메인과-세트)).
 
 <a id="be-002"></a>
 
@@ -147,7 +147,7 @@
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
-| RDB 테이블 | 만료 행 청소 배치가 별도로 필요합니다. 해시 키 조회·TTL 만료·원자적 일회 소비는 게스트 체험 한도가 이미 쓰는 Redis 패턴([§4-3-7](../spec/4-backend-server-spec.md#4-3-api-계약))이 그대로 맞습니다 |
+| RDB 테이블 | 만료 행 청소 배치가 별도로 필요합니다. 해시 키 조회·TTL 만료·원자적 일회 소비는 게스트 체험 한도가 이미 쓰는 Redis 패턴([§4-3-7](../domain/AGENTS.md#1-도메인과-세트))이 그대로 맞습니다 |
 
 - **영향.** 게스트 한도와 같은 Redis 인프라를 재사용합니다. TTL 만료가 곧 소멸이므로 별도 만료 처리가 없고, 소비 결과만 24시간 연장 보관합니다.
 
@@ -182,7 +182,7 @@
 | 링크 유지 + 인앱 브라우저 탈출만 추가 | 탈출 스킴(`kakaotalk://web/openExternal`)은 카카오가 문서로 보장하지 않는 비공식 진입점이라 앱 업데이트로 깨질 수 있습니다. 보상 어트리뷰션의 단일 경로로 삼기엔 취약합니다(탈출은 가입 성공률 보조 수단으로만 도입: [`3-2-web-spec.md §3-2-5`](../client/WEB/AGENTS.md)) |
 | 링크·코드 하이브리드 | 어트리뷰션 경로 2개의 유지 비용과 중복 판정 규칙(링크로 연결된 사용자의 코드 재입력)이 추가로 필요합니다. 링크 방식 실사용자가 없어 남길 실익이 없습니다 |
 
-- **영향.** `/invite/[code]` 경로, httpOnly 쿠키, 24시간 귀속 기간([클라이언트 Spec](../client/AGENTS.md)), 로그인 요청의 `inviteCode`, 자동 재적립(KNK-393), `inviteUrl`, `MANYAK_INVITE_BASE_URL`을 폐기했습니다. 자격이 "초대 URL로 가입한 신규 회원"에서 "회원당 평생 1회"로 넓어져 기존 계정끼리 서로 코드를 입력할 수 있습니다. 이 위험은 B21에 기록했습니다. 서버와 프론트엔드는 코드 입력 방식으로 정렬됐으며 운영 동시 릴리스만 B22에서 추적합니다([§4-8](../spec/4-backend-server-spec.md#4-8-검수-체크리스트)).
+- **영향.** `/invite/[code]` 경로, httpOnly 쿠키, 24시간 귀속 기간([클라이언트 Spec](../client/AGENTS.md)), 로그인 요청의 `inviteCode`, 자동 재적립(KNK-393), `inviteUrl`, `MANYAK_INVITE_BASE_URL`을 폐기했습니다. 자격이 "초대 URL로 가입한 신규 회원"에서 "회원당 평생 1회"로 넓어져 기존 계정끼리 서로 코드를 입력할 수 있습니다. 이 위험은 B21에 기록했습니다. 서버와 프론트엔드는 코드 입력 방식으로 정렬됐으며 운영 동시 릴리스만 B22에서 추적합니다([§4-8](../domain/AGENTS.md#2-문서-역할과-읽는-순서)).
 
 <a id="be-009"></a>
 
@@ -261,7 +261,7 @@
 ## BE-014. 사용자 이미지 업로드 허용(2026-09-05, KNK-1126)
 
 
-- **배경.** Phase 1 이미지 정책은 "팀 제작 자산만, 사용자 업로드 없음"이었습니다(검수·스토리지 부담). 스토리 수정에서 표지와 인물 이미지를 사용자가 바꿀 수 있어야 한다는 요구가 확정돼 이 범위에서 원칙을 뒤집습니다. 프로필 이미지는 여전히 프리셋 전용입니다([§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한)).
+- **배경.** Phase 1 이미지 정책은 "팀 제작 자산만, 사용자 업로드 없음"이었습니다(검수·스토리지 부담). 스토리 수정에서 표지와 인물 이미지를 사용자가 바꿀 수 있어야 한다는 요구가 확정돼 이 범위에서 원칙을 뒤집습니다. 프로필 이미지는 여전히 프리셋 전용입니다([§4-5](../domain/ACCOUNT/BACKEND/5-1-SECURITY.md)).
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
@@ -281,7 +281,7 @@
 | --- | --- |
 | 사용자 업로드 + 프리셋 선택 자산을 백엔드가 `trigger_text` 부분 문자열 매칭으로 턴에 연결(원안: KNK-443, 2026-07-04. 당시 채택 이유는 AI 계약 무변경·결정적 판정) | ① 팀 제작 확정으로 업로드 API·프리셋 카탈로그 API가 사용자 가치 없이 표면만 넓히고(스토리지 남용·검수 부담), ② 문자열 매칭은 키워드가 본문에 그대로 등장할 때만 동작하며 삽입 위치를 제어할 수 없고(턴 끝 메타 1장), ③ 장면 적합성은 본문을 생성하는 AI가 이미 아는 정보라 별도 매칭 계층이 이중 판정이 됩니다 |
 
-- **영향.** AI 계약 변경이 필요합니다(이미지 목록 전달·마커 포맷: [`5-ai-server-spec.md`](../spec/5-ai-server-spec.md) 정렬 예정). 업로드·프리셋 API와 턴 메타 필드(`imageUrl`·`imageKey`)가 계약에서 빠지고, [`6-analytics.md`](../spec/6-analytics.md)의 `image_key` 프로퍼티 재정렬이 따라옵니다.
+- **영향.** AI 계약 변경이 필요합니다(이미지 목록 전달·마커 포맷: [`5-ai-server-spec.md`](../domain/AGENTS.md#1-도메인과-세트) 정렬 예정). 업로드·프리셋 API와 턴 메타 필드(`imageUrl`·`imageKey`)가 계약에서 빠지고, [`6-analytics.md`](../REFERENCE/ANALYTICS.md)의 `image_key` 프로퍼티 재정렬이 따라옵니다.
 
 <a id="be-016"></a>
 
@@ -298,7 +298,7 @@
 | 주인공(PROTAGONIST) 태그로 인물 이미지 배정 | 주인공은 사용자가 1인칭으로 연기하는 쪽이라 본문에 "등장"하지 않습니다. 등장 인물은 NPC이므로 매칭 대상이 어긋납니다 |
 | `completed`에 `{오프셋, imageKey}`를 싣고 백엔드가 본문에 삽입 | 오프셋 단위가 언어마다 다르고(AI Python 코드포인트 vs 백엔드 UTF-16 code unit: §4-3 공통 규칙), AI의 완료 직전 후처리(화자 볼드 정규화)로 본문 길이가 변해 오류를 감지하기 어렵습니다. 마커가 위치를 자체 표현하면 오프셋이 필요 없습니다 |
 
-- **영향.** 컴파일 응답에 `character_images[]` 필드가 추가됩니다([`5-ai-server-spec.md §5-3-3`](../spec/5-ai-server-spec.md)). 백엔드는 base64를 디코딩해 S3에 올리고 URL을 DB에 저장합니다. 컴파일이 없는 일반 제작은 인물 이미지가 생성되지 않습니다(배경·썸네일만). 이전 계획의 "카탈로그 후보에서 AI 선택" 방식은 "AI 직접 생성"으로 대체됐습니다(KNK-414).
+- **영향.** 컴파일 응답에 `character_images[]` 필드가 추가됩니다([`5-ai-server-spec.md §5-3-3`](../domain/AGENTS.md#1-도메인과-세트)). 백엔드는 base64를 디코딩해 S3에 올리고 URL을 DB에 저장합니다. 컴파일이 없는 일반 제작은 인물 이미지가 생성되지 않습니다(배경·썸네일만). 이전 계획의 "카탈로그 후보에서 AI 선택" 방식은 "AI 직접 생성"으로 대체됐습니다(KNK-414).
 
 <a id="be-017"></a>
 
@@ -369,7 +369,7 @@
 ## BE-021. 공유와 채팅 상세 비공개의 관계
 
 
-- **배경.** 채팅 상세는 개인 플레이 기록이라 비공개이며, 열람 허용 대안은 이미 기각됐습니다([§4-5](../spec/4-backend-server-spec.md#4-5-인증과-권한) 결정 기록 2026-07-07). 공유 기능이 이 결정과 충돌하지 않으려면 열람 경로의 분리가 필요했습니다.
+- **배경.** 채팅 상세는 개인 플레이 기록이라 비공개이며, 열람 허용 대안은 이미 기각됐습니다([§4-5](../domain/ACCOUNT/BACKEND/5-1-SECURITY.md) 결정 기록 2026-07-07). 공유 기능이 이 결정과 충돌하지 않으려면 열람 경로의 분리가 필요했습니다.
 
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
@@ -402,7 +402,7 @@
 | 계정 병합(merge) API | 이프는 로트별 만료일을 물고 FIFO로 소진되므로(V39) 잔액 합산이 아니라 로트 단위 이관이 필요하고, `users.inviter_user_id` 초대 그래프의 자기참조 루프, `user_story_ending_reaches` 유니크 충돌, 이관 1회 잠금(`migrated_at`)·정지 상태의 어느 쪽을 남길지까지 전부 새 정책이 필요합니다. 수요가 확인되면 문의 기반 수동 처리를 우선합니다 |
 | PASS 등 본인확인 CI(연계정보) 기반 통합 | 실명·휴대폰번호 수집이 전제라 실명 노출 회피 프로필 정책(아래 B7)·최소수집 원칙과 정면 충돌하고 가입 퍼널이 길어집니다. 카카오 `account_ci`는 이미 본인확인을 도입한 서비스용이라 선행 조건이 순환합니다. CI를 얻어도 위의 병합 비용(로트·초대 그래프·유니크 충돌)은 그대로 남습니다. 연령 등급 의무나 파밍 피해가 실측되면 그 목적으로 별도 판단합니다 |
 
-계정 연동(로그인된 세션에서 다른 provider를 같은 `user_id`에 추가)은 갈라진 계정을 사후에 합치는 것보다 훨씬 싸므로, 계정 통합 대신 이 방식을 제공합니다(바로 아래 [계정 연동](../spec/4-backend-server-spec.md#계정-연동--phase-1--구현knk-739) 절). 표기는 "계정 연동"으로 통일합니다([`0-glossary.md §0-3-4`](../spec/0-glossary.md): "계정 연결"은 지양, KNK-737).
+계정 연동(로그인된 세션에서 다른 provider를 같은 `user_id`에 추가)은 갈라진 계정을 사후에 합치는 것보다 훨씬 싸므로, 계정 통합 대신 이 방식을 제공합니다(바로 아래 [계정 연동](../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-9-계정-연동) 절). 표기는 "계정 연동"으로 통일합니다([`0-glossary.md §0-3-4`](../REFERENCE/GLOSSARY.md): "계정 연결"은 지양, KNK-737).
 
 <a id="be-024"></a>
 
@@ -431,9 +431,9 @@
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
 | 프리셋 풀에서 무작위 랜덤 배정(원안) | 닉네임과 무관한 이미지가 배정되어 조합의 정체성이 없고, 제작량은 명사 매핑과 동일해 절감 이점도 없습니다 |
-| 사용자 업로드 | Phase 1 이미지 정책(팀 제작 자산만: [§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)) 범위 밖이며 검수·스토리지 부담이 생깁니다 |
+| 사용자 업로드 | Phase 1 이미지 정책(팀 제작 자산만: [§4-3-9](../domain/AGENTS.md#1-도메인과-세트)) 범위 밖이며 검수·스토리지 부담이 생깁니다 |
 
-- **영향.** 명사와 이미지가 1:1로 연결되므로 명사를 추가할 때 이미지도 제작·등록해야 합니다. 매핑이 없으면 기본 아바타를 사용합니다. 닉네임 변경 기능에는 이미지 재매핑 정책이 필요합니다. 자산은 `manyak-server`의 정적 리소스(`src/main/resources/static/profile-presets/`)로 두고 `api.manyak.app`에서 제공합니다. `profile_image_url`에 전체 URL을 저장하므로 S3로 옮길 때는 base URL만 바꿉니다([§4-3-9](../spec/4-backend-server-spec.md#4-3-api-계약)).
+- **영향.** 명사와 이미지가 1:1로 연결되므로 명사를 추가할 때 이미지도 제작·등록해야 합니다. 매핑이 없으면 기본 아바타를 사용합니다. 닉네임 변경 기능에는 이미지 재매핑 정책이 필요합니다. 자산은 `manyak-server`의 정적 리소스(`src/main/resources/static/profile-presets/`)로 두고 `api.manyak.app`에서 제공합니다. `profile_image_url`에 전체 URL을 저장하므로 S3로 옮길 때는 base URL만 바꿉니다([§4-3-9](../domain/AGENTS.md#1-도메인과-세트)).
 
 <a id="be-027"></a>
 
@@ -445,7 +445,7 @@
 | 대안 | 채택 안 한 이유 |
 | --- | --- |
 | NULL 리소스에 익명·회원 모두 허용: 현행 구현 | 회원이 이관 없이 게스트 콘텐츠를 플레이·소비할 수 있어 이관 1회 제한이 무력화됩니다 |
-| 게스트 간 접근까지 차단(콘텐츠에 디바이스 식별자 저장) | 원본 디바이스 ID를 콘텐츠에 저장해야 해 PII를 저장하지 않는 관측 경계([§4-7](../spec/4-backend-server-spec.md#4-7-운영과-관측))를 깹니다. 게스트 간 접근은 UUID 유출 시에만 가능한 좁은 경로라 수용합니다 |
+| 게스트 간 접근까지 차단(콘텐츠에 디바이스 식별자 저장) | 원본 디바이스 ID를 콘텐츠에 저장해야 해 PII를 저장하지 않는 관측 경계([§4-7](../REFERENCE/ANALYTICS.md#6-6-관측-구현))를 깹니다. 게스트 간 접근은 UUID 유출 시에만 가능한 좁은 경로라 수용합니다 |
 | 채팅 상세 조회는 공개 유지(변경·플레이만 차단) | 채팅은 스토리와 달리 개인 플레이 기록이라 공개할 제품 이유가 없고, 열람이 허용되면 교차 차단의 취지(상호 행위 차단)가 반쪽이 됩니다 |
 
 - **영향.** NULL 리소스의 플레이·변경·채팅 생성·채팅 상세 조회가 회원에게 403이 되고, 소유 채팅 상세 조회가 소유자 전용으로 강화됩니다. 회원은 게스트 시절 데이터를 이관을 통해서만 계속 쓸 수 있게 되어 체험 한도 축소(B8)와 함께 파밍 경로를 닫습니다. 로그인 상태에서 게스트 시절 URL로 진입하면 403을 받으므로 프론트엔드 안내가 필요합니다([`3-1-client-spec.md`](../client/AGENTS.md) 후속 정렬).
@@ -638,7 +638,7 @@
 - 날짜: 2026-09-19.
 - 결정: 게스트 체험을 유지하고 전용 바텀 시트에서 회원 처리방침의 필요한 항목을 발췌한 별도 문서에 동의를 받는다. `GUEST_PRIVACY` 하나를 정의하며 디바이스 해시 단위의 `guest_consents`에 버전별 최초 동의 시각을 기록한다. 서버 게이트와 회원 기록 이관은 두지 않는다.
 - 근거: 팀이 결정 근거로 든 게스트에서 로그인으로의 전환율은 40~50%이며, 게스트 체험 유지가 전환 지표에 유리하다. 게스트 문서는 처리방침 발췌이므로 회원 문서와 버전 수명이 다르다. 로그인 시 회원 동의를 다시 받으므로 이관이 필요 없다.
-- 관계: [회원 동의 계약](../spec/4-backend-server-spec.md#약관개인정보-처리방침-동의)은 유지하고 [게스트 계약](../spec/4-backend-server-spec.md#게스트-개인정보-수집-동의)을 추가한다. [BE-011](#be-011)의 체험 한도와 [BE-004](#be-004)의 콘텐츠 이관 정책은 유지하며, 게스트 동의 기록은 콘텐츠 이관 대상에 포함하지 않는다.
+- 관계: [회원 동의 계약](../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-17-회원-동의-조회)은 유지하고 [게스트 계약](../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-1-공통-처리)을 추가한다. [BE-011](#be-011)의 체험 한도와 [BE-004](#be-004)의 콘텐츠 이관 정책은 유지하며, 게스트 동의 기록은 콘텐츠 이관 대상에 포함하지 않는다.
 - 출처: [KNK-1349](https://kimandkang.atlassian.net/browse/KNK-1349), 2026-09-19 팀 슬랙 결정.
 
 <a id="be-047"></a>
@@ -646,7 +646,7 @@
 ## BE-047. 알림 서비스 분리와 큐 도입
 
 - 날짜: 2026-09-18 멘토링 결정, 2026-09-21 계약 초안 기록.
-- 결정: `push`의 발송 책임만 `manyak-notification`으로 분리한다. 토큰 등록 API, 동의 API와 동의 컬럼, `device_push_tokens`, `push_campaigns`, `push_message_templates`는 서버가 소유한다. 동기 HTTP 발송기 → 큐 전환 → 서버 로컬 발송 경로 제거 순서로 진행하며, 전환 중 기존 코드는 롤백용으로 보존하고 `manyak.push.mode=local|remote`로 실행 주체를 하나만 선택한다. 운영과 dev는 SQS 표준 큐, 로컬은 Kafka를 포트 뒤의 프로파일별 어댑터로 사용한다. 도메인 트랜잭션의 `push_outbox`와 소비자의 `processed_messages`(2026-09-26 멱등 저장소를 Redis 키로 변경)로 유실과 중복을 제어한다. 구현 전 계획이며 세부 계약은 [알림 서비스 계약](../spec/4-backend-server-spec.md#알림-서비스-계약)을 따른다.
+- 결정: `push`의 발송 책임만 `manyak-notification`으로 분리한다. 토큰 등록 API, 동의 API와 동의 컬럼, `device_push_tokens`, `push_campaigns`, `push_message_templates`는 서버가 소유한다. 동기 HTTP 발송기 → 큐 전환 → 서버 로컬 발송 경로 제거 순서로 진행하며, 전환 중 기존 코드는 롤백용으로 보존하고 `manyak.push.mode=local|remote`로 실행 주체를 하나만 선택한다. 운영과 dev는 SQS 표준 큐, 로컬은 Kafka를 포트 뒤의 프로파일별 어댑터로 사용한다. 도메인 트랜잭션의 `push_outbox`와 소비자의 `processed_messages`(2026-09-26 멱등 저장소를 Redis 키로 변경)로 유실과 중복을 제어한다. 구현 전 계획이며 세부 계약은 [알림 서비스 계약](../domain/NOTIFICATION/BACKEND/4-2-CONTRACT.md)을 따른다.
 - 근거: 2026-09-18 김태완 멘토링에서 학습 범위를 알림만으로 제한하고 운영 SQS, 로컬 Kafka, 동기 경로 선행과 기존 코드 보존을 정했다. 코드 조사에서는 `push`가 시나리오 데이터와 회원 자격 조회를 경계로 발송 책임을 떼기 가장 고립된 후보였다. 현행 `StoryCompletionPushListener`와 `FcmPushSender`는 커밋 뒤 실패를 로그로 남기고 앱 수준 재시도를 하지 않는다. 검색도 `StorySearchIndexListener`의 색인 실패를 삼키지만 PostgreSQL 정본에서 재색인할 수 있다. 반면 알림 발송 요청은 별도 기록이 없어 실패 후 재개할 근거가 없으므로 아웃박스와 멱등 소비를 학습할 대상으로 삼는다. 색인 실패와 복구 사례가 보여 준 커밋 이후 외부 전달의 공백을 다루되 검색 분리로 범위를 넓히지 않는다.
 - 관계: [BE-035](#be-035)의 토큰 소유권과 동의 계약, 발송 직전 재확인은 유지한다. 실행 주체와 큐 재전달만 이 결정으로 확장하며 메시지에 동의나 토큰 스냅샷을 싣지 않는다. [BE-036](#be-036)의 검색 파생 사본과 재색인 구조는 유지하고 검색은 분리하지 않는다. 출석 리마인드와 프로모션 스케줄러 이전은 큐 전환 결과를 보고 판단한다.
 - 출처: [KNK-1361](https://kimandkang.atlassian.net/browse/KNK-1361), [KNK-1368](https://kimandkang.atlassian.net/browse/KNK-1368), [KNK-1370](https://kimandkang.atlassian.net/browse/KNK-1370), 노션 멘토링 정리(2026-09-18 김태완, 티켓에 정리된 결정), 2026-09-19 코드 조사. 코드 근거는 `manyak-server`의 `push/event/StoryCompletionPushListener.kt`, `push/service/FcmPushSender.kt`, `search/event/StorySearchIndexListener.kt`다.
@@ -664,7 +664,7 @@
 - 이미지 연결 API 폐지 이유: 개별 인물 이미지 연결 POST는 PATCH와 기능이 겹치고 검수 우회 경로가 됩니다. presign은 유지하며 이미지 추가는 등록·PATCH 본문으로만 받습니다. 이미지별 moderation_status를 PENDING으로 전환하는 계획 대신 게시물 제출본에서 판정합니다.
 - 대안과 기각 이유: 동기 검수는 최대 150초 대기와 연결 유지를 요구하므로 비동기 접수·알림을 선택했습니다. 저장 후 공개 대기 상태 머신은 미승인 데이터를 라이브에 넣어 공개 게이트·목록·검색·공개 스냅샷·진행 중 채팅의 읽기 규칙까지 바꿔야 하므로 채택하지 않았습니다. 라이브를 승인된 버전으로 유지하면 기존 읽기 계약을 보존할 수 있습니다.
 - 이전 결정과의 관계: [BE-013](#be-013)의 전체 입력 한 번 제출·컴파일 없음은 유지하되 즉시 라이브 등록을 검수 후 반영으로 대체합니다. [BE-014](#be-014)의 이미지별 자동 검수 도입 방식과 개별 연결 경로를 대체합니다. [BE-001](#be-001)의 게스트 공개 지정 400과 [BE-027](#be-027)·[BE-045](#be-045)의 게스트 쓰기 허용 중 일반 제작 등록·PATCH 범위를 인증 필수 401로 대체합니다. 나머지 조회·삭제·간편 제작·채팅·이관 계약과 과거 결정 기록은 보존합니다. [BE-030](#be-030)의 공개 스냅샷과 [BE-035](#be-035)·[BE-047](#be-047)의 서비스 알림 수신 설정·원격 발송 책임은 유지합니다.
-- 영향: 등록 201·수정 200 완성본 응답이 202 제출본으로 바뀌므로 서버·웹·앱 동반 배포가 필요합니다. 상세 계약은 [Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
+- 영향: 등록 201·수정 200 완성본 응답이 202 제출본으로 바뀌므로 서버·웹·앱 동반 배포가 필요합니다. 상세 계약은 [Spec](../domain/MODERATION/BACKEND/4-1-PIPELINES.md)을 따릅니다.
 - 출처: 2026-09-26 사용자·클라이언트 담당 합의, [KNK-1120](https://kimandkang.atlassian.net/browse/KNK-1120), [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164), [KNK-1378](https://kimandkang.atlassian.net/browse/KNK-1378).
 
 <a id="be-049"></a>
@@ -678,9 +678,9 @@
 - 회차와 수명: 미승인 제출본은 같은 submissionId로 덮어쓰며 판정 필드를 비웁니다. 제출·재제출·회수마다 attempt를 증가시키고 PENDING·attempt 일치 조건에서만 결과를 반영합니다. CREATE 승인은 제출본 행을 잠가 중복 생성을 막습니다. dispatched_at부터 기본 300초가 지난 PENDING을 회수하며 DB 일시 장애는 롤백 후 회수합니다. APPROVED는 감사용으로 보존하고 이후 PATCH는 새 행을 만듭니다. 스토리 삭제·회원 탈퇴 시 해당 제출본은 하드 삭제합니다.
 - 알림 식별: type은 STORY_MODERATION_COMPLETED, kind는 SERVICE, messageId는 `story-moderation:{submissionId}:{attempt}`입니다. 웹 화면의 딥링크 경로와 Android의 새 type 처리는 클라이언트와 함께 반영합니다.
 - 입력과 오류: 수정 폼과 재제출 검증은 현재 라이브에 PATCH payload를 다시 적용하고 삭제된 기존 이미지 id를 제외합니다. 서버 실행 실패는 MODERATION_UNAVAILABLE과 APPLY_FAILED로 구분합니다. 최초 CREATE에는 멱등키를 두지 않고 중복 제출을 허용합니다.
-- 대체 범위: [BE-048](#be-048)의 모든 종료 알림을 아웃박스와 함께 커밋한다는 조건은 remote 모드에만 적용합니다. 제출본 폐기·재제출·복구의 세부 규칙은 이 결정과 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)으로 구체화합니다. 승인 후 라이브 반영, 게스트 제한, 검수 예외 등 나머지 결정은 유지합니다.
+- 대체 범위: [BE-048](#be-048)의 모든 종료 알림을 아웃박스와 함께 커밋한다는 조건은 remote 모드에만 적용합니다. 제출본 폐기·재제출·복구의 세부 규칙은 이 결정과 [현재 Spec](../domain/MODERATION/BACKEND/4-1-PIPELINES.md)으로 구체화합니다. 승인 후 라이브 반영, 게스트 제한, 검수 예외 등 나머지 결정은 유지합니다.
 - 보완 결정: 미구현(KNK-1161). dispatched_at은 제출·재제출 트랜잭션 시각으로 채우고 호출 시작마다 갱신하며 회수 기준은 항상 `dispatched_at + 300초`입니다. issues.path는 원본 기준으로 보관하되 조회 응답에서는 기존 이미지 id·새 이미지 objectKey·인물 id 또는 이름으로 현재 폼 인덱스에 재매핑하고 사라진 대상의 이슈는 제외합니다. 제출본 DELETE는 PENDING을 포함한 모든 미승인 상태에서 허용하며 중복 CREATE 정리와 수정 취소에 사용합니다. 삭제된 행의 늦은 결과는 PENDING·attempt 조건으로 무시합니다. 이 보완은 2026-09-26 3차 확정 결정입니다.
-- 구현 대조 보완: 미구현(KNK-1161). 서버 [PR #280](https://github.com/KIM-N-KANG/manyak-server/pull/280)의 c8b0031은 V87에 input_form을 두고 DB 원본 요청과 API 복원 폼을 분리합니다. 승인 락은 회원 → 스토리 → 제출본 → 인물 순서이고 회수 시간은 reclaim-after 설정(기본 300초)을 따릅니다. 실행 설정·응답 검증·딥링크 세부값은 [현재 Spec](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)을 따릅니다.
+- 구현 대조 보완: 미구현(KNK-1161). 서버 [PR #280](https://github.com/KIM-N-KANG/manyak-server/pull/280)의 c8b0031은 V87에 input_form을 두고 DB 원본 요청과 API 복원 폼을 분리합니다. 승인 락은 회원 → 스토리 → 제출본 → 인물 순서이고 회수 시간은 reclaim-after 설정(기본 300초)을 따릅니다. 실행 설정·응답 검증·딥링크 세부값은 [현재 Spec](../domain/MODERATION/BACKEND/4-1-PIPELINES.md)을 따릅니다.
 - 불변 이미지·임대 선점 보완: 미구현(KNK-1161). 서버 PR #280의 653c157을 기준으로 앞선 dispatched_at 초기화·직접 실행·회수 규칙을 대체합니다. 10분 유효 presign을 재사용해 승인 뒤 원본을 덮어쓸 수 있으므로 새 이미지를 서버 전용 moderated 키에 복사하고 검수·승인 저장에 같은 복사본 URL을 사용합니다. image_copies는 재선점 때 재사용하고 재제출 때 비웁니다. 메모리 큐 대기 작업이 회수돼 중복 실행이 증폭되는 문제를 막기 위해 제출은 PENDING·dispatched_at NULL만 저장하고 빈 슬롯 기반 DB 임대 선점 폴러를 사용합니다. 실행기 큐는 0이며 선점마다 dispatched_at·attempt를 갱신합니다. 별도 회수 스케줄러는 없고 임대 만료도 같은 폴러가 처리합니다. 선점마다 새 UUID를 발급해 AI·아웃박스 상관관계의 시작점으로 삼습니다. 세부 설정과 오류는 현재 Spec을 따릅니다.
 - 출처: 2026-09-26 2차 확정 결정, [KNK-1161](https://kimandkang.atlassian.net/browse/KNK-1161), [KNK-1118](https://kimandkang.atlassian.net/browse/KNK-1118), [KNK-1380](https://kimandkang.atlassian.net/browse/KNK-1380), [KNK-1163](https://kimandkang.atlassian.net/browse/KNK-1163), [KNK-1164](https://kimandkang.atlassian.net/browse/KNK-1164).
 
@@ -694,7 +694,7 @@
 - 용량 예산: 이미지 base64 예상 크기와 입력 JSON UTF-8 크기를 합해 기본 40MiB를 넘으면 접수 전에 IMAGES_TOO_LARGE로 거절합니다. AI의 실제 본문 48MiB 방어 검사는 유지합니다. 새 이미지의 검증 HEAD 값을 재사용하고 유지 이미지의 크기 확인 실패는 장당 5MiB로 계산합니다.
 - 근거: 일시적인 다운로드·모델·통신 장애는 사용자가 입력을 고칠 사유가 아니므로 제한된 재시도로 복구합니다. 자동 시도가 소진되면 실패 확정 대신 운영 조치를 기다립니다. 내용 위반·영구 이미지 오류는 사용자 수정이 필요하므로 반복 호출하지 않습니다. 사전 용량 예산은 base64 증가량과 프롬프트 여유를 고려해 AI 호출 전 수정 가능한 오류를 반환합니다.
 - 대체 범위: KNK-1161의 기존 Spec에 있던 서버 자동 재시도 없음 결정을 위 일시 실패에 한해 대체합니다. [BE-048](#be-048)·[BE-049](#be-049)의 실행 실패 종료 규칙을 이 범위에서 PENDING 재시도·보류로 확장합니다. 종료된 REJECTED·FAILED의 사용자 재제출, DB 장애의 임대 복구, 승인 후 라이브 반영과 종료 푸시의 모드별 발송은 유지합니다. 기존 ADR 본문·ID·당시 근거는 보존합니다.
-- 관련 계약: [검수 제출 흐름](../spec/4-backend-server-spec.md#스토리-검수-제출-흐름)은 관측 전용 submissionId·UPDATE storyId, 이미지 오류 3종과 issues·imageErrors 동시 보존도 반영합니다. [AI 검수 계약](../spec/5-ai-server-spec.md#5-9-6-게시물-검수)이 판정 의미를 소유합니다.
+- 관련 계약: [검수 제출 흐름](../domain/MODERATION/BACKEND/4-1-PIPELINES.md)은 관측 전용 submissionId·UPDATE storyId, 이미지 오류 3종과 issues·imageErrors 동시 보존도 반영합니다. [AI 검수 계약](../domain/MODERATION/AI/5-CONTRACT.md)이 판정 의미를 소유합니다.
 - 출처: [KNK-1438](https://kimandkang.atlassian.net/browse/KNK-1438), [KNK-1444](https://kimandkang.atlassian.net/browse/KNK-1444), 서버 [PR #283](https://github.com/KIM-N-KANG/manyak-server/pull/283)·[PR #284](https://github.com/KIM-N-KANG/manyak-server/pull/284), AI 계약 [하네스 PR #291](https://github.com/KIM-N-KANG/knk-harness/pull/291).
 
 <br>
@@ -729,7 +729,7 @@
 4. 알림 서비스를 기동하고 큐 소비를 확인한다.
 5. SQS 발행 코드가 포함된 서버 릴리스 뒤 `MANYAK_PUSH_MODE=remote`로 전환한다.
 
-- 관계: BE-047의 분리와 큐 도입을 prod 운영 배치로 구체화한다. BE-047의 책임 경계, 모드별 배타 실행, 아웃박스와 소비자 멱등 계약은 유지하며 과거 기록을 대체하거나 수정하지 않는다. 트레이싱은 이 결정의 범위 밖이며 KNK-1464의 OpenSearch Trace Analytics에서 다룬다. ([BE-047](#be-047), [알림 서비스 계약](../spec/4-backend-server-spec.md#알림-서비스-계약))
+- 관계: BE-047의 분리와 큐 도입을 prod 운영 배치로 구체화한다. BE-047의 책임 경계, 모드별 배타 실행, 아웃박스와 소비자 멱등 계약은 유지하며 과거 기록을 대체하거나 수정하지 않는다. 트레이싱은 이 결정의 범위 밖이며 KNK-1464의 OpenSearch Trace Analytics에서 다룬다. ([BE-047](#be-047), [알림 서비스 계약](../domain/NOTIFICATION/BACKEND/4-2-CONTRACT.md))
 - 출처: [KNK-1440](https://kimandkang.atlassian.net/browse/KNK-1440)의 운영 구성 결정, [KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367), [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464). 현재 구현은 서버 `a0a89ca`의 `push/outbox/`, 알림 `ac51603`의 `push/consumer/`, Terraform `ae315c3`의 `envs/dev/sqs.tf`, `envs/dev/alarms.tf`, `modules/compute-ecs/main.tf`로 대조했다. prod 실서비스 상태는 별도로 조회하지 않았다.
 
 <a id="be-052"></a>
@@ -740,7 +740,7 @@
 - 결정: 간편 제작과 일반 제작 모두 등록 시 프리셋 키를 저장하지 않습니다. AI 생성 표지는 유지하되 생성 실패 시 프리셋으로 대체하지 않고 null로 둡니다. 표지 삭제는 URL과 프리셋 키를 함께 지우며 멱등 204와 검수 중 409를 유지합니다.
 - 근거: 표지가 없는 스토리는 프론트엔드가 라이트 모드와 다크 모드에 맞는 기본 이미지를 표시합니다.
 - 대체 범위: [BE-014](#be-014)의 업로드 허용과 [BE-016](#be-016)의 AI 인물 이미지 생성은 유지하며, 기존 Spec의 표지 자동 연결과 삭제 후 프리셋 폴백 계약을 대체합니다. 기존 스토리의 프리셋 키, 카탈로그와 FK는 유지하고 마이그레이션과 백필은 하지 않습니다. URL과 검수 상태에 따른 노출 판정, 와이어 필드 이름과 타입도 유지합니다. 과거 ADR 본문과 ID는 보존합니다.
-- 관련 계약: [썸네일 저장과 노출 규칙](../spec/4-backend-server-spec.md#썸네일-저장과-노출-규칙).
+- 관련 계약: [썸네일 저장과 노출 규칙](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-7-재생성).
 - 출처: 2026-10-01 사용자 확정 결정, [KNK-1522](https://kimandkang.atlassian.net/browse/KNK-1522).
 
 <a id="be-053"></a>
@@ -753,7 +753,7 @@
 - 커서: 새 정렬 접두는 `s`입니다. KNK-1398 이전의 `popular`는 지금의 `likes`에 해당하며 `p`를 썼습니다. 운영 v0.5.2에 남은 `p` 커서를 새 점수 위치로 잘못 해석하지 않도록 400으로 거부합니다.
 - 수용한 한계: 요청 사이의 집계 변화로 인기순 페이지에 중복·누락이 생길 수 있습니다. 가중치 변경 전 커서도 이어 읽기 위치가 한 번 어긋날 수 있으며 이를 감수합니다. `REPEATABLE_READ`로 정렬 집계와 카드 집계의 요청 안 스냅샷은 일치시킵니다.
 - 대체 범위: 기존 `latest`, `likes`, `chats`와 동률의 `public_id` DESC는 유지합니다. 홈 기본값과 표시 명칭 변경은 [C-009](../domain/STORY/CLIENT/DECISIONS.md#c-009)로 연결합니다.
-- 관련 계약: [공개 목록 계약](../spec/4-backend-server-spec.md#4-3-1-스토리-조회삭제).
+- 관련 계약: [공개 목록 계약](../domain/STORY/BACKEND/4-2-CONTRACT.md).
 - 출처: 사용자 확정 결정. ([KNK-1489](https://kimandkang.atlassian.net/browse/KNK-1489)과 [이전 정렬 KNK-1398](https://kimandkang.atlassian.net/browse/KNK-1398))
 
 <br>
@@ -768,7 +768,7 @@
 - 동시성과 실패: 기존 생성 트랜잭션 밖에서 동의를 기록하면 `REQUIRES_NEW` 계정만 남을 수 있으므로 동의 삽입을 같은 경계 안에 둡니다. 기존 유니크 제약, tombstone 잠금, 동의 PK 충돌 무시, 보상 멱등 키와 체험 시드 장치를 유지합니다. 완료 성공 시에만 코드를 소비하고 동시 완료의 토큰 중복 발급은 허용합니다.
 - 적용 범위: 회원에게 현행 필수 동의가 없으면 서버 게이트로 일반 API 접근을 제한합니다. 허용 목록과 기본 false 스위치로 기존 세션의 재동의와 단계적 전환을 지원합니다. 기존 로그인은 웹과 Android 전환 동안 동작을 유지하고 종료는 후속 결정으로 분리합니다.
 - 대체 범위: 회원 동의의 서버 게이트 없음과 로그인 뒤에만 동의를 받던 기존 Spec 계약을 대체합니다. [BE-006](#be-006), [BE-029](#be-029)의 재가입 승계와 보상 신원은 유지하며 [BE-046](#be-046)의 게스트 동의와 게스트 게이트 미도입은 변경하지 않습니다. 과거 ADR 본문과 ID는 보존합니다.
-- 관련 계약: [인증 API](../spec/4-backend-server-spec.md#4-3-5-인증-api), [동의 후 가입 완료 흐름](../spec/4-backend-server-spec.md#동의-후-가입-완료-흐름), [미동의 회원 서버 게이트](../spec/4-backend-server-spec.md#미동의-회원-서버-게이트).
+- 관련 계약: [인증 API](../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md), [동의 후 가입 완료 흐름](../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-3-동의-완료), [미동의 회원 서버 게이트](../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-1-공통-처리).
 - 출처: 2026-10-04 요청과 KNK-1536 설계 지시서. ([KNK-1536](https://kimandkang.atlassian.net/browse/KNK-1536))
 
 <br>
@@ -785,7 +785,7 @@
 - 이행: 조회와 검색, 마스터와 로어북 문자열 동기화를 1단계로 선배포한다. 웹과 앱이 제공 목록 선택으로 전환하는 시점에 2단계 입력 제한을 함께 머지하고 배포한다. 일반 제작은 `genres: string[]` 형식을 유지하면서 제출 시 정식 이름을 검증한다. 승인 시 재검증하지 않아 이미 접수된 제출본을 보존한다.
 - 데이터 보존: 기존 장르를 그 자리 개명해 ID를 최대한 보존하고 비활성 행과 충돌하면 PREDEFINED 참조를 먼저 병합한다. 중세 판타지는 사용자 결정에 따라 정통판타지로 개명한다. 세션 회수 표기는 바뀔 수 있으나 기존 스토리 문자열, 공개 스냅샷, 색인과 제출본은 일괄 수정하지 않는다. CUSTOM과 인물 특징 행은 그대로 두며 기존 세션 컴파일과 PATCH의 기존 장르 유지 예외를 보장한다. 로어북은 표시명 정확 일치이므로 같은 마이그레이션에서 개명하고 이미지 프리셋 FK는 보존한다.
 - 대체 범위: [BE-042](#be-042)의 GENRE 15종 마스터를 1단계에서 197개와 대표 15개로 대체하고, `customGenreTags` 유지 결정을 2단계의 신규 입력 금지로 대체한다. 인물 단위 입력과 특징 직접 입력은 유지한다. 장르와 배경 분리는 이번 결정에 포함하지 않는다. BE-042의 ID, 본문과 당시 근거는 보존한다.
-- 관련 계약: [제공 장르와 검색](../spec/4-backend-server-spec.md#genre-catalog), [장르 입력 검증](../spec/4-backend-server-spec.md#genre-validation).
+- 관련 계약: [제공 장르와 검색](../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-4-제공-장르), [장르 입력 검증](../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-15-일반-제작-등록).
 - 출처: [KNK-1537](https://kimandkang.atlassian.net/browse/KNK-1537), 2026-10-04 요청의 `스토리 장르 모음.csv`와 `스토리 대표 장르 15개.md`, 2026-10-05 설계 지시 및 중세 판타지 매핑 결정.
 
 <a id="be-056"></a>
@@ -815,7 +815,7 @@
 - 대체 범위: 채팅이 스토리의 주인공 설정만 사용하던 계약에 페르소나 선택을 추가합니다. [BE-030](#be-030)의 읽는 사람 기준 공개 스냅샷과 [BE-021](#be-021)의 공유 권한은 유지합니다. 인물 소개 길이는 일반 제작·수정 150자와 AI 컴파일 80자를 유지합니다. 두 상한 모두 토큰 포함 원문 기준이며 실제 플레이 이름으로 치환한 뒤에는 재검사하지 않습니다. AI #155의 컴파일 소개가 토큰화 뒤 80자를 넘으면 응답 검증에 실패하는 제한은 유지합니다. 과거 ADR 본문과 ID는 보존합니다.
 - 판정과 기록: 치환 뒤 겹친 사건·엔딩 이름은 AI 요청에만 번호 구분을 붙여 유일하게 만듭니다. 반환 이름을 대응표의 토큰 원문 이름으로 복원하고 라이브 행에 이름으로 재연결합니다. 공개 스냅샷 ID를 현재 FK로 직접 저장하지 않으며 연결할 행이 없으면 이름 스냅샷을 유지합니다. 기록과 집계는 원문 이름을 보존하고 사용자 응답에서 치환합니다. 저장 상한으로 자를 때는 토큰과 조사 표기를 한 단위로 보존합니다.
 - 후속 결정(2026-10-06): BE-057의 이행 절에서 구버전 AI의 이름 누락을 null로 수용하는 범위는 생성 글에도 이름 토큰이 없는 경우로 한정합니다. 생성 글에 `{username}`이 있는데 이름이 없거나 null 또는 trim 후 빈 값이면 기존 컴파일 응답 검증 실패 경로의 502와 저장 롤백 및 전액 환불·체험 카운터 복원을 적용합니다. 일반 제작·수정 입력의 400 계약은 유지합니다. 기본 주인공 이름은 공개 글에 들어가므로 검수 대상이며 서버는 토큰 없는 원문 이름을 `protagonist_name`으로 보내고 없으면 생략하거나 null을 보냅니다. 현재 AI는 이 필드를 무시하므로 실제 검사는 AI 후속 작업이며 그 전까지 검사되지 않습니다. 후속 구현은 이름 위반의 `issues[].path`로 `protagonist_name`을 반환할 수 있습니다. 토큰 자체는 위반 사유가 아니며 페르소나 설명은 계속 검수하지 않습니다.
-- 관련 계약: [페르소나 관리](../spec/4-backend-server-spec.md#persona-management), [이름 토큰](../spec/4-backend-server-spec.md#protagonist-name-token), [채팅](../spec/4-backend-server-spec.md#4-3-3-채팅과-sse-스트리밍).
+- 관련 계약: [페르소나 관리](../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-13-페르소나-목록), [이름 토큰](../domain/STORY/BACKEND/4-1-PIPELINES.md#4-1-28-이름-토큰-치환), [채팅](../domain/CHAT/BACKEND/4-2-CONTRACT.md).
 - 출처: KNK-1482 사용자 확정 계약. ([KNK-1477](https://kimandkang.atlassian.net/browse/KNK-1477), [KNK-1482](https://kimandkang.atlassian.net/browse/KNK-1482), [manyak-ai #155](https://github.com/KIM-N-KANG/manyak-ai/pull/155))
 
 <br>
@@ -844,7 +844,7 @@
 - 대안과 기각 이유: 서버 enum은 이름·순서·숨김을 바꿀 때마다 서버 배포가 필요하므로 기각한다. AI가 목록을 제공하는 안은 거의 바뀌지 않는 목록 때문에 AI 장애가 제작 화면을 깨뜨리므로 기각한다. 표시 문구와 CDN 이미지는 무상태 AI가 소유할 데이터가 아니며 숨기기에도 AI 배포가 필요하다.
 - 선택과 호환: 간편 제작의 선택 필드 `artStyle`은 누락·null이면 `ANIME`이고 활성 코드만 허용한다. AI `art_style`로 그대로 전달한다. 구버전 AI는 모르는 필드를 무시하고 `ANIME`으로 그리므로 필드 호환에 따른 서버·AI 배포 순서 제약은 없다. 신규 화풍 활성화는 AI 지원 배포 뒤에 한다.
 - 범위와 영향: `NONE`은 인물 이미지와 표지 생성을 생략하며 기존 제작가는 유지한다. [KNK-1257](https://kimandkang.atlassian.net/browse/KNK-1257)의 이미지 끄기 요청은 이 선택에 흡수한다. 서버는 `thumbnail_image.error=skipped`를 기존 표지 실패 경로로 수용한다. 선택 화풍은 스토리에 저장하지 않으며 필요해지면 `stories` 컬럼 추가를 별도로 정한다. 일반 제작은 범위 밖이다. [BE-052](#be-052)의 새 스토리 프리셋 자동 연결 제거와 표지 없는 저장 계약은 유지한다. 과거 ADR의 ID와 본문은 보존한다.
-- 관련 계약: [제공 화풍과 선택](../spec/4-backend-server-spec.md#art-style-catalog), [화풍 저장 계약](../spec/4-backend-server-spec.md#art-style-storage), [AI 컴파일](../spec/5-ai-server-spec.md#5-3-3-스토리-컴파일).
+- 관련 계약: [제공 화풍과 선택](../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-10-화풍-목록), [화풍 저장 계약](../domain/STORY/BACKEND/3-2-DB-SCHEMA.md), [AI 컴파일](../domain/STORY/AI/6-1-AI-EXECUTION.md#6-1-2-컴파일).
 - 출처: [KNK-1481](https://kimandkang.atlassian.net/browse/KNK-1481)의 2026-10-12 사용자 확정 결정.
 
 <br>
@@ -856,7 +856,7 @@
 - 날짜: 2026-10-15.
 - 상태: 채택. 서버 구현(KNK-1645, manyak-server #321).
 - 배경: access TTL 30분이 만료된 직후 웹 BFF가 같은 refresh 토큰으로 `POST /auth/token/refresh`를 동시에 2~3건 보냅니다. 첫 요청의 회전 이후 나머지 요청을 탈취에 따른 재사용으로 판정해 family 전체가 폐기됩니다. 첫 응답의 새 토큰도 무효가 돼 사용자가 `/login?expired`로 이동합니다. 운영 실측에서 요청 간격은 7ms~1초이며 10월 재사용 탐지는 사용자 14명에게 41건 발생했습니다.
-- 결정: 회전 시 제시 토큰 해시에 대응하는 새 refresh 원문을 Redis에 기본 10초 동안 보관합니다. Lua 스크립트 안에서 family 존재와 유예 키 생존 및 보관된 원문의 해시가 family 현재 토큰 해시와 같은지 원자적으로 판정합니다. 조건을 만족하는 재사용에는 같은 refresh 원문과 새 access를 반환하고 family와 family TTL은 유지합니다. 유예 만료나 후속 회전으로 조건을 만족하지 않으면 기존대로 family 전체를 폐기합니다. 설정과 상태 코드 및 계정 상태 검사는 [토큰 정책](../spec/4-backend-server-spec.md#토큰-정책)을 따릅니다.
+- 결정: 회전 시 제시 토큰 해시에 대응하는 새 refresh 원문을 Redis에 기본 10초 동안 보관합니다. Lua 스크립트 안에서 family 존재와 유예 키 생존 및 보관된 원문의 해시가 family 현재 토큰 해시와 같은지 원자적으로 판정합니다. 조건을 만족하는 재사용에는 같은 refresh 원문과 새 access를 반환하고 family와 family TTL은 유지합니다. 유예 만료나 후속 회전으로 조건을 만족하지 않으면 기존대로 family 전체를 폐기합니다. 설정과 상태 코드 및 계정 상태 검사는 [토큰 정책](../domain/ACCOUNT/BACKEND/5-1-SECURITY.md)을 따릅니다.
 - 같은 원문을 반환하는 이유: 웹 BFF는 응답마다 httpOnly 쿠키를 덮어씁니다. 유예 응답에 다른 새 refresh를 발급하면 도착 순서에 따라 브라우저에 과거 토큰이 남아 다음 회전에서 재사용 탐지가 다시 발생합니다. 같은 원문을 반환하면 어느 응답이 나중에 도착해도 같은 토큰이 남습니다.
 - 대안과 기각 이유: 클라이언트 단일 비행(single-flight)만 적용하면 서버가 BFF 외 클라이언트와 여러 탭의 동시 요청을 막을 수 없습니다. 유예 응답에 다른 새 토큰을 발급하면 쿠키 덮어쓰기 경쟁이 재발합니다. access TTL 연장은 재발급 빈도만 줄이며 동시 요청 문제를 해결하지 못합니다. 재사용 탐지 제거는 탈취 대응을 잃으므로 기각합니다.
 - 보안상 영향: 평소 해시만 저장하던 Redis에 새 refresh 원문이 설정한 유예 시간 동안 남습니다. 기본값에서는 최대 10초입니다. 유예 안에 과거 토큰을 가진 요청자가 현재 토큰을 받을 수 있지만 해당 토큰은 직전까지 유효했으므로 탈취자는 유예 없이도 회전할 수 있었습니다. 유예 밖의 탐지는 유지합니다. 로그아웃·탈퇴·정지로 family가 폐기되면 남은 유예 키만으로 토큰을 재발급할 수 없습니다. 유예 응답에도 정상 회전과 같은 계정 상태 검사를 적용합니다.
