@@ -18,16 +18,16 @@ Fluent Bit`"]
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
 안전망`"]
-    S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
+    S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
+    C --> DP["`**Data Prepper**`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**Grafana Cloud**`"]
+    S -->|OTLP 지표| C
+    C -->|SigV4 remote write| G["`**AMP**`"]
     S -->|AI 호출 기록| PG["`**PostgreSQL**
 ai_call_logs`"]
-    PG --> G
-    G -->|환불 실패, AI 실패 급증 알림| SL["`**Slack**`"]
     S -->|5xx, 스트림 실패| SE["`**Sentry**`"]
-    SE -->|일일 요약| SL
+    SE -->|일일 요약| SL["`**Slack**`"]
     S -->|헤더 전달| AI["`**AI 서버**`"]
     AI --> LF["`**Langfuse**`"]
     S -->|서버 이벤트| AM["`**Amplitude**`"]
@@ -36,6 +36,8 @@ ai_call_logs`"]
     class S comp
     class F,OS,CW,DP,OD,G,PG,SE,SL,AI,LF,AM ext
 ```
+
+운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -177,7 +179,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 AMP로 전송 |
 | 전송 주기 | 60초 간격 |
 | 인스턴스 | 리소스 속성 `service.instance.id`가 기동마다 바뀜<br>여러 태스크의 누적 건수는 인스턴스별로 합산 |
 | 스텁 환경 | AI를 호출하지 않아 지연이 실제와 다름 |
@@ -197,10 +199,12 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 ### 5-4-9 알림
 
+아래 임계값은 기존 Grafana 알림 기준을 보존한 것이다. 현재 AMP 경로에서 규칙 실행과 Slack 전달이 유지되는지는 배포 검수로 확인하며, Terraform의 수집 설정만으로 알림 연동 완료를 판단하지 않는다.
+
 | 항목 | 기준 |
 |---|---|
-| 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 Grafana가 Slack으로 알림<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 <br>이미지 환불과 이미지 체험 복원 실패는 지표에 없어 알림 대상이 아님 |
-| AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 Grafana가 Slack으로 알림<br>턴 본문, 선택지, 대화 요약 호출이 모두 포함됨 |
+| 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 알림 대상<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 <br>이미지 환불과 이미지 체험 복원 실패는 지표에 없어 알림 대상이 아님 |
+| AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 알림 대상<br>턴 본문, 선택지, 대화 요약 호출이 모두 포함됨 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, 대화 요약 실패, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
 

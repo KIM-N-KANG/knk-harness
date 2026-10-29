@@ -179,7 +179,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 400 | `BAD_REQUEST` | `filter`, `sort`의 허용 범위를 벗어난 값, `limit`이 숫자가 아님<br>잘못된 커서, 정렬이 다른 커서, 옛 `p` 커서 |
 
 <details>
-<summary><b>목록 요청·응답 예시</b></summary>
+<summary><b>목록 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -372,7 +372,7 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 | 400 | `BAD_REQUEST` | 검색어 30자 초과 |
 
 <details>
-<summary><b>장르 요청·응답 예시</b></summary>
+<summary><b>장르 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -502,7 +502,7 @@ GET /stories/genres?query=로판
 | 400 | `BAD_REQUEST` | `storyIds` 개수 위반 |
 
 <details>
-<summary><b>일괄 조회 요청·응답 예시</b></summary>
+<summary><b>일괄 조회 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -896,7 +896,7 @@ Authorization: Bearer <accessToken>
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답 |
 
 <details>
-<summary><b>스토리라인 생성 요청·응답 예시</b></summary>
+<summary><b>스토리라인 생성 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1034,7 +1034,7 @@ Authorization: Bearer <accessToken>
 | 502 | `BAD_GATEWAY` | AI 호출 실패, 빈 응답<br>컴파일 결과의 사건이나 엔딩 이름 중복, 본문에 이름 토큰이 있는데 주인공 이름 없음 |
 
 <details>
-<summary><b>스토리 완성 요청·응답 예시</b></summary>
+<summary><b>스토리 완성 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1247,7 +1247,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 | 404 | `NOT_FOUND` | 없는 스토리라인 |
 
 <details>
-<summary><b>평가 요청·응답 예시</b></summary>
+<summary><b>평가 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1355,7 +1355,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 | 409 | `CONFLICT` | 같은 인물 안의 이미지 이름 중복 |
 
 <details>
-<summary><b>등록 요청·응답 예시</b></summary>
+<summary><b>등록 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1595,7 +1595,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 | 409 | `CONFLICT` | 검수 중인 스토리, 같은 인물 안의 이미지 이름 중복 |
 
 <details>
-<summary><b>수정 요청·응답 예시</b></summary>
+<summary><b>수정 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1710,7 +1710,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 | 503 | `SERVICE_UNAVAILABLE` | 이미지 저장소 미설정 |
 
 <details>
-<summary><b>presign 요청·응답 예시</b></summary>
+<summary><b>presign 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -2157,7 +2157,7 @@ Content-Length: 204800
 | 409 | `DRAFT_VERSION_CONFLICT` | 내용이 다른데 `baseVersion`이 현재 버전과 다름<br>`details`에 `version`과 `updatedAt` |
 
 <details>
-<summary><b>초안 저장 요청·응답 예시</b></summary>
+<summary><b>초안 저장 요청, 응답 예시</b></summary>
 
 <br>
 

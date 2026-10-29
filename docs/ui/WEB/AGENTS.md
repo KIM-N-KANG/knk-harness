@@ -1,6 +1,6 @@
 # 공통 UI WEB
 
-네트워크, 공통 상태와 검증 도구는 [WEB 기반](../../platform/WEB/AGENTS.md)에 둔다.
+네트워크, 공통 상태와 검증 도구는 [WEB 기반](../../platform/CLIENT/WEB/AGENTS.md)에 둔다.
 
 <br>
 
@@ -49,4 +49,4 @@
 - [src/hooks/use-delayed-loading.ts](../../../../manyak-web/src/hooks/use-delayed-loading.ts)
 - [src/components/layout/in-app-scroll-anchor.tsx](../../../../manyak-web/src/components/layout/in-app-scroll-anchor.tsx)
 
-공통 실행과 검증 도구의 확인 항목은 [플랫폼 검증](../../platform/WEB/5-1-VERIFICATION.md)을 함께 확인한다.
+공통 실행과 검증 도구의 확인 항목은 [플랫폼 검증](../../platform/CLIENT/WEB/5-VERIFICATION.md)을 함께 확인한다.

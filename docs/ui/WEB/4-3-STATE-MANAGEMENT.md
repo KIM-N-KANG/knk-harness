@@ -1,6 +1,6 @@
 # 4-3 상태 관리: 웹
 
-기준: [구성](../../platform/WEB/4-2-COMPONENT-ARCHITECTURE.md).
+기준: [구성](../../platform/CLIENT/WEB/2-COMPONENT-ARCHITECTURE.md).
 
 <br>
 

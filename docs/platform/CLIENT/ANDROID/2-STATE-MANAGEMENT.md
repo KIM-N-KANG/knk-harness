@@ -1,12 +1,21 @@
-# 4-3 상태 관리: 안드로이드
+# 2 상태 관리: 안드로이드
 
-기준: [구성](4-2-COMPONENT-ARCHITECTURE.md).
+기준: [구성](1-COMPONENT-ARCHITECTURE.md).
 
 <br>
 
-### 4-3-1 MVI와 작업 수명
+### 2-1 MVI와 작업 수명
 
-Intent → side effect → ReducerEvent → 순수 reducer → 불변 UiState 순서다. ViewModel 밖이나 비동기 작업에서 MutableStateFlow를 직접 갱신하지 않는다.
+```mermaid
+flowchart LR
+    I["Intent"] --> E["side effect"]
+    E --> R["ReducerEvent"]
+    R --> F["순수 reducer"]
+    F --> S["불변 UiState"]
+    S --> U["화면 렌더링"]
+```
+
+ViewModel 밖이나 비동기 작업에서 MutableStateFlow를 직접 갱신하지 않는다.
 
 | 상태와 작업 | 수명과 처리 |
 |---|---|
@@ -23,6 +32,6 @@ Intent → side effect → ReducerEvent → 순수 reducer → 불변 UiState �
 
 <br>
 
-### 4-3-2 저장 호환
+### 2-2 저장 호환
 
 모듈이나 패키지 이동으로 DB 파일명, 버전과 스키마 identity hash, DataStore 파일과 키, Keystore alias, 직렬화 경로 이름과 패키지, Application ID, Manifest 및 백업 제외 규칙을 바꾸지 않는다. 구조 변경을 이유로 destructive migration이나 저장소 일괄 삭제를 사용하지 않는다.

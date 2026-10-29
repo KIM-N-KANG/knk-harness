@@ -1,6 +1,6 @@
 # 공통 UI ANDROID
 
-네트워크, 공통 상태와 검증 도구는 [ANDROID 기반](../../platform/ANDROID/AGENTS.md)에 둔다.
+네트워크, 공통 상태와 검증 도구는 [ANDROID 기반](../../platform/CLIENT/ANDROID/AGENTS.md)에 둔다.
 
 <br>
 
@@ -18,4 +18,4 @@
 
 <br>
 
-공통 실행과 검증 도구의 확인 항목은 [플랫폼 검증](../../platform/ANDROID/5-1-VERIFICATION.md)을 함께 확인한다.
+공통 실행과 검증 도구의 확인 항목은 [플랫폼 검증](../../platform/CLIENT/ANDROID/4-VERIFICATION.md)을 함께 확인한다.

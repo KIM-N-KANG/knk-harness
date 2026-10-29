@@ -124,7 +124,7 @@
 
 ### 4-1 파일명
 파일 이름은 영문 대문자로 쓰고 단어 사이는 하이픈으로 연결한다. 확장자는 `.md`로 유지하고 번호 앞에 `0`을 붙이지 않는다.
-단계별 명세 세트는 한 단계에 한 파일이면 단계 번호를, 여러 파일이면 단계 번호 뒤에 문서 번호를 붙인다. 같은 단계의 파일은 같은 폴더에 나란히 둔다. 도메인 세트, 공통 UI 세트와 웹 및 Android 기반 세트의 기존 단계 번호를 유지한다.
+단계별 명세 세트는 한 단계에 한 파일이면 단계 번호를, 여러 파일이면 단계 번호 뒤에 문서 번호를 붙인다. 같은 단계의 파일은 같은 폴더에 나란히 둔다. 도메인 세트와 공통 UI 세트의 기존 단계 번호를 유지한다. 플랫폼 기반 세트는 각 폴더에서 1부터 순서대로 번호를 부여한다.
 
 ```text
 1-BACKGROUND.md
@@ -137,8 +137,8 @@
 
 | 구성 | 파일 번호 | 예시 |
 |---|---|---|
-| 여러 단계로 읽는 명세 세트 | 세트의 단계 번호 유지 | `domain/ACCOUNT/CLIENT/2-1-USER-STORY.md`, `ui/3-3-LAYOUT.md`, `platform/WEB/4-2-COMPONENT-ARCHITECTURE.md` |
-| 별도 단계표가 없는 여러 문서의 기술 기반 세트 | 해당 폴더의 문서 순서로 번호 부여 | `platform/BACKEND/1-ARCHITECTURE.md`, `2-OBSERVABILITY.md`, `3-CONFIGURATION.md` |
+| 여러 단계로 읽는 명세 세트 | 세트의 단계 번호 유지 | `domain/ACCOUNT/CLIENT/2-1-USER-STORY.md`, `ui/3-3-LAYOUT.md` |
+| 여러 문서의 기술 기반 세트 | 해당 폴더에서 1부터 문서 순서로 번호 부여 | `platform/CLIENT/WEB/1-CONTRACT.md`, `platform/CLIENT/ANDROID/1-COMPONENT-ARCHITECTURE.md`, `platform/BACKEND/1-ARCHITECTURE.md` |
 | 안내와 결정 기록을 제외하면 본문이 하나인 독립 폴더 | 파일 접두사 생략 | `operations/DEPLOYMENT.md`, `platform/CLIENT/CONTRACT.md`, `platform/AI/ARCHITECTURE.md` |
 | 개별 조회용 참조 자료, 결정 원문과 템플릿 | 기존 이름 유지 | `reference/PRODUCT-SPEC-WRITING-GUIDE.md`, `reference/decisions/AI.md` |
 

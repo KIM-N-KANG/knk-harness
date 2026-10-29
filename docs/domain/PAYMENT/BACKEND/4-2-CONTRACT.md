@@ -112,7 +112,7 @@
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -166,7 +166,7 @@ GET /api/v1/credits/products
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -222,7 +222,7 @@ GET /api/v1/credits/policies
 | 400 | `BAD_REQUEST` | 게스트 요청에 기기 헤더가 없거나 공백 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -282,7 +282,7 @@ X-Manyak-Device-Id: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -328,7 +328,7 @@ Authorization: Bearer {accessToken}
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -403,7 +403,7 @@ Authorization: Bearer {accessToken}
 | 400 | `BAD_REQUEST` | 지원하지 않는 `type`, 형식 오류이거나 변조된 `cursor`, `limit` 타입 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -492,7 +492,7 @@ Authorization: Bearer {accessToken}
 | 503 | `SERVICE_UNAVAILABLE` | 상품의 결제창 주소 또는 웹훅 시크릿 미설정 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -569,7 +569,7 @@ Content-Type: application/json
 | 404 | `NOT_FOUND` | 없는 주문, 타인의 주문 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -649,7 +649,7 @@ Authorization: Bearer {accessToken}
 | 503 | `SERVICE_UNAVAILABLE` | 웹훅 시크릿 미설정 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 

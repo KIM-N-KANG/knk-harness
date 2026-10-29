@@ -6,6 +6,21 @@
 
 ### 3-2-1 열람과 복귀
 
+```mermaid
+flowchart TD
+    Tap["외부 푸시 탭"] --> Login{"로그인 상태"}
+    Login -->|비로그인| Pending["목적지 보류 및 프로세스 복원"]
+    Pending -->|로그인 완료| Recipient{"수신자 재검증"}
+    Login -->|로그인| Recipient
+    Recipient -->|다른 회원| Home["홈"]
+    Recipient -->|일치| Target{"목적지"}
+    Target -->|공지 상세| Detail["공지 목록 위 상세"]
+    Detail -->|뒤로가기| List["공지 목록"]
+    List -->|뒤로가기| Home
+    Target -->|제작| Studio["기존 제작 탭 선택과 새로고침"]
+    Target -->|홈| Home
+```
+
 | 진입 | 복귀 |
 |---|---|
 | 마이에서 공지 목록 | 들어온 탭 |

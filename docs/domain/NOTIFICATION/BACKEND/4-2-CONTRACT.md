@@ -107,7 +107,7 @@
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과, 플랫폼 누락이나 미지원 값 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -167,7 +167,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -225,7 +225,7 @@ Content-Type: application/json
 공통 실패만 있다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -274,7 +274,7 @@ Authorization: Bearer {accessToken}
 | 400 | `NIGHT_PUSH_REQUIRES_MARKETING` | 광고 동의 없이 야간만 켬 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -359,7 +359,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | `kind` 또는 `at` 누락, 형식 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -430,7 +430,7 @@ X-Manyak-Internal-Secret: {sharedSecret}
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -517,7 +517,7 @@ Content-Type: application/json
 | 502 | 없음 | 자격 조회 실패<br>본문은 공통 실패 형식이 아니라 응답과 같은 구조이며 `outcome`은 `FAILED`, `reason`은 `ELIGIBILITY_UNAVAILABLE` |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -742,7 +742,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 필수 필드 누락, 목록에 없는 `type`, `outcome`과 `deliveredDevices`의 불일치, 없는 캠페인 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -839,7 +839,7 @@ Content-Type: application/json
 | 404 | `NOT_FOUND` | 허용 목록에 없는 `templateKey` |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 

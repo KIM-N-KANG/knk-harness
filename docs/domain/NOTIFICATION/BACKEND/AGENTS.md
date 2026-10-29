@@ -79,12 +79,12 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 | 구성 요소 | 구현 위치 (`manyak-notification` 기준, 인프라는 `manyak-terraform` 기준) | 사용 범위 |
 |---|---|---|
-| 소비자와 멱등 | [push/consumer/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/consumer/) | 4-1-12, 5-2-5 |
-| 발송과 자격 조회 | [push/service/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/service/), [push/client/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/client/) | 4-1-13, 4-1-14 |
-| API와 필터 | [push/controller/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/push/controller/), [global/](../../../../../manyak-notification/src/main/kotlin/com/knk/manyak/notification/global/) | 4-2-8, 5-1-6 |
+| 소비자와 멱등 | [push/consumer/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/main/kotlin/com/knk/manyak/notification/push/consumer) | 4-1-12, 5-2-5 |
+| 발송과 자격 조회 | [push/service/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/main/kotlin/com/knk/manyak/notification/push/service), [push/client/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/main/kotlin/com/knk/manyak/notification/push/client) | 4-1-13, 4-1-14 |
+| API와 필터 | [push/controller/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/main/kotlin/com/knk/manyak/notification/push/controller), [global/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/main/kotlin/com/knk/manyak/notification/global) | 4-2-8, 5-1-6 |
 | 메시지 큐와 운영 배치 | [envs/dev/sqs.tf](../../../../../manyak-terraform/terraform/envs/dev/sqs.tf), [envs/prod/sqs.tf](../../../../../manyak-terraform/terraform/envs/prod/sqs.tf), [envs/prod/notification.tf](../../../../../manyak-terraform/terraform/envs/prod/notification.tf) | 3-2-10, 6 배포 |
-| 테스트 | [src/test/kotlin/com/knk/manyak/notification/](../../../../../manyak-notification/src/test/kotlin/com/knk/manyak/notification/), [http/notifications.http](../../../../../manyak-notification/http/notifications.http) | 5-5 테스트 케이스 |
-| 배포 | [docker-image.yml](../../../../../manyak-notification/.github/workflows/docker-image.yml), [Dockerfile](../../../../../manyak-notification/Dockerfile) | 6 배포 |
+| 테스트 | [src/test/kotlin/com/knk/manyak/notification/](https://github.com/KIM-N-KANG/manyak-notification/tree/dev/src/test/kotlin/com/knk/manyak/notification), [http/notifications.http](https://github.com/KIM-N-KANG/manyak-notification/blob/dev/http/notifications.http) | 5-5 테스트 케이스 |
+| 배포 | [docker-image.yml](https://github.com/KIM-N-KANG/manyak-notification/blob/dev/.github/workflows/docker-image.yml), [Dockerfile](https://github.com/KIM-N-KANG/manyak-notification/blob/dev/Dockerfile) | 6 배포 |
 
 <br>
 

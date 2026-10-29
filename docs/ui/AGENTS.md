@@ -23,7 +23,7 @@ UI는 사용자 인터페이스를 뜻한다. 이 세트는 여러 업무에 공
 ### 2 공통 기반과 작성 규칙
 
 - 기존 `CLIENT-US-001`부터 `CLIENT-US-004`까지는 이동 뒤에도 유지한다. 새 공통 UI 목표는 사용하지 않은 `CLIENT-US-005`부터 부여하며 폐기한 ID를 재사용하지 않는다.
-- 네트워크와 전송 계약은 [CLIENT 기반](../platform/CLIENT/AGENTS.md), 플랫폼 구조는 [WEB](../platform/WEB/AGENTS.md)과 [ANDROID](../platform/ANDROID/AGENTS.md)에서 정의한다.
+- 네트워크와 전송 계약은 [CLIENT 기반](../platform/CLIENT/AGENTS.md), 플랫폼 구조는 [WEB](../platform/CLIENT/WEB/AGENTS.md)과 [ANDROID](../platform/CLIENT/ANDROID/AGENTS.md)에서 정의한다.
 - 서비스 안내가 계정 동의, 이프 정책과 알림 권한을 다시 정의하지 않는다. 해당 도메인 문서를 연결한다.
 - 문서 구조 변경 이력은 [문서 결정 기록](../reference/decisions/DOCUMENTATION.md), 작성 기준은 [클라이언트 작성 가이드](../reference/CLIENT-SPEC-WRITING-GUIDE.md)를 따른다.
 - 명세 작성과 검토를 서브에이전트에 맡기지 않는다.

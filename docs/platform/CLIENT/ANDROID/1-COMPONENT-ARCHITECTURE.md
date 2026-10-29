@@ -1,18 +1,18 @@
-# 4-2 컴포넌트 구조: 안드로이드
+# 1 컴포넌트 구조: 안드로이드
 
-기준: [표현](../../ui/ANDROID/3-3-LAYOUT.md), [공통 연동](../CLIENT/CONTRACT.md).
+기준: [표현](../../../ui/ANDROID/3-3-LAYOUT.md), [공통 연동](../CONTRACT.md).
 
 <br>
 
-### 4-2-1 책임과 의존
+### 1-1 책임과 의존
 
 ```mermaid
 flowchart LR
     UI[Compose] --> VM[ViewModel / MVI]
-    VM --> Domain[기능 domain]
-    Domain --> Data[기능 data]
+    VM --> Domain[기능 domain의 계약]
+    Data[기능 data 구현] -. 계약 구현 .-> Domain
     Data --> Network[공용 network]
-    Network --> Server[백엔드 API]
+    Network -->|HTTP 요청| Server[백엔드 API]
     Data --> Store[Room / DataStore]
 ```
 

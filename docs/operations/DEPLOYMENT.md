@@ -4,7 +4,7 @@
 
 ### 1 목적과 범위
 
-기본 배포 구성은 2026-09-12에 확인한 `manyak-terraform` dev `4c9921970160`을 기준으로 한다. 알림 구성은 2026-09-30에 확인한 Terraform `ae315c3`과 알림 서비스 `ac51603`을 기준으로 하며, prod 알림은 BE-051의 미적용 목표로 구분한다. Terraform 선언, 실제 AWS 리소스, 실행 중인 이미지 다이제스트는 따로 확인한다. 실제 활성값은 배포 기록을 따른다.
+AWS 구성은 2026-10-30에 확인한 [Terraform 선언](https://github.com/KIM-N-KANG/manyak-terraform/tree/c3b590d352f6b47292121c179b3196cfea8e3eb0/terraform/envs)을 기준으로 한다. 알림 배포는 [워크플로](https://github.com/KIM-N-KANG/manyak-notification/blob/5c0ae2f5dfaa6e73437056504a111c6d7597b1a8/.github/workflows/docker-image.yml)를 기준으로 한다. 이 문서의 선언값은 AWS 리소스 실측값이나 배포 완료 증거가 아니다. 실제 활성값과 실행 이미지 다이제스트는 배포 기록으로 확인한다.
 
 <br>
 
@@ -14,9 +14,9 @@
 | --- | --- | --- |
 | manyak-terraform | AWS 리소스, IAM, 태스크 정의, 설정 참조, Terraform 검증 | `terraform/envs/dev`, `terraform/envs/prod`, `terraform/modules`, `scripts/tf-apply.sh` |
 | manyak-server, manyak-ai | 이미지 빌드, 태그 승격, ECS 배포, 서비스 검수 | 각 `.github/workflows/docker-image.yml` |
-| manyak-notification | 알림 이미지 빌드와 dev ECS 배포. prod ECR 및 별도 ECS 서비스 배포는 목표 구성 | `.github/workflows/docker-image.yml` |
+| manyak-notification | 알림 이미지 빌드, dev 공유 ECS 태스크와 prod 별도 ECS 서비스 배포 | `.github/workflows/docker-image.yml` |
 | manyak-infra | 로컬 통합 Docker Compose | `docker-compose.yml` |
-| manyak-web, manyak-android | 플랫폼별 빌드, 배포 | 각 플랫폼 레포 및 [웹 배포](../platform/WEB/6-DEPLOYMENT.md), [Android 배포](../platform/ANDROID/6-DEPLOYMENT.md) |
+| manyak-web, manyak-android | 플랫폼별 빌드, 배포 | 각 플랫폼 레포 및 [웹 배포](../platform/CLIENT/WEB/6-DEPLOYMENT.md), [Android 배포](../platform/CLIENT/ANDROID/5-DEPLOYMENT.md) |
 | knk-harness | 현재 구조, 결정 이력 | 이 문서와 배포 결정 기록 |
 
 Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../domain/AGENTS.md#1-도메인과-세트))
@@ -28,16 +28,16 @@ Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트�
 | 항목 | 개발 AWS | 운영 AWS | 로컬 통합 |
 | --- | --- | --- | --- |
 | 선언 위치 | `terraform/envs/dev` | `terraform/envs/prod` | manyak-infra Compose |
-| 컴퓨트 | ECS Fargate Spot, 단일 태스크 | ECS Fargate, 단일 서비스, 태스크 수 선언 1 | Docker Compose |
-| 태스크 구성 | server, ai, notification, postgres, redis, FireLens | server, ai, FireLens | 독립 Compose 서비스 |
-| DB | PostgreSQL 컨테이너, EFS 영속 | RDS PostgreSQL | PostgreSQL 컨테이너 |
-| Redis | 태스크 내 비영속 Redis | ElastiCache Redis | 비영속 Redis 컨테이너 |
+| 컴퓨트 | ECS Fargate Spot, 단일 태스크 | ECS Fargate, server와 ai 및 notification을 별도 서비스로 배포. 서비스별 Auto Scaling 2~4개 | Docker Compose |
+| 태스크 구성 | server, ai, notification, postgres, redis, FireLens | server + FireLens, ai + FireLens, notification + FireLens로 분리 | 독립 Compose 서비스 |
+| DB | PostgreSQL 컨테이너, EFS 영속 | RDS PostgreSQL Multi-AZ | PostgreSQL 컨테이너 |
+| Redis | 태스크 내 비영속 Redis | ElastiCache Redis 복제 그룹, Multi-AZ | 비영속 Redis 컨테이너 |
 | 서버 프로파일 | 독립 `dev` | `prod` | `local` |
 | 외부 API | `https://dev-api.manyak.app` | `https://api.manyak.app` | Compose 포트 매핑 |
 | 자산 | dev S3, `dev-cdn.manyak.app` | prod S3, `cdn.manyak.app` | 실행 설정에 따른 URL |
 | 이미지 기본 좌표 | GHCR `dev` | ECR `latest` | Compose의 이미지, 빌드 선언 |
 
-서버와 AI는 같은 ECS 태스크의 네트워크를 공유한다. AI 호출은 태스크 내부 주소를 사용하며 Compose 서비스명 DNS는 ECS에서 쓰지 않는다. AI 컨테이너는 독립적으로 실패할 수 있으므로 서버 상태 검사만으로 AI 기능 성공을 판정하지 않는다. 개발 태스크 교체는 PostgreSQL과 Redis에도 영향을 주며 교체 중 중단을 허용한다. 개발 검수는 운영 RDS, ElastiCache, NAT, 롤링 배포를 검증하지 않는다.
+개발은 서버와 AI 및 알림이 같은 ECS 태스크의 네트워크를 공유하므로 내부 호출에 `localhost`를 사용한다. 운영은 별도 서비스이며 AWS Cloud Map private DNS를 사용한다. 서버는 AI를 `http://ai.manyak-prod.local:8000`으로 호출한다. Compose 서비스명 DNS는 ECS에서 쓰지 않는다. 서버 상태 검사만으로 AI 기능 성공을 판정하지 않는다. 개발 태스크 교체는 PostgreSQL과 Redis에도 영향을 주며 교체 중 중단을 허용한다. 개발 검수는 운영 RDS, ElastiCache, NAT, 롤링 배포를 검증하지 않는다.
 
 <br>
 
@@ -45,20 +45,48 @@ Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트�
 
 ### 4-1 네트워크와 트래픽
 
-운영 VPC는 `10.0.0.0/16`, 개발은 `10.1.0.0/16`으로 분리한다. 운영 태스크는 사설 app subnet에서 NAT를 통해 외부로 나가며 공인 IP를 받지 않는다. 개발은 NAT 없이 공인 IP를 가진 태스크를 사용한다. 운영의 다중 AZ subnet 구성은 애플리케이션 태스크 여러 개나 DB Multi-AZ를 뜻하지 않는다.
+```mermaid
+flowchart TD
+    U["클라이언트"] -->|HTTPS| A["운영 ALB"]
+    A -->|서버 8080| S
+    A -->|/internal/*| X["404 응답"]
+    subgraph V["운영 VPC"]
+        subgraph APP["사설 app subnet: 독립 ECS 서비스"]
+            S["서버와 FireLens"]
+            AI["AI와 FireLens"]
+            N["알림과 FireLens"]
+        end
+        S -->|Cloud Map: ai:8000| AI
+        N -->|Cloud Map: server:8080| S
+        S --> D["RDS PostgreSQL Multi-AZ"]
+        S --> R["ElastiCache Redis Multi-AZ"]
+        N --> R
+        S --> NAT["AZ별 NAT"]
+        AI --> NAT
+        N --> NAT
+    end
+    S -->|SendMessage| Q["SQS"]
+    Q -->|수신과 삭제| N
+    Q -->|재시도 한도 초과| DLQ["DLQ"]
+    NAT --> E["외부 서비스"]
+```
+
+운영 서버, AI, 알림은 배포 단위와 태스크 역할을 분리한다. AI는 서버 보안 그룹에서 오는 8000 포트 요청만 받으며 DB, Redis, SQS 접근 권한을 갖지 않는다. 이미지 업로드는 서버가 발급한 presigned PUT URL을 사용한다.
+
+운영 VPC는 `10.0.0.0/16`, 개발은 `10.1.0.0/16`으로 분리한다. 운영 태스크는 사설 app subnet에서 NAT를 통해 외부로 나가며 공인 IP를 받지 않는다. 개발은 NAT 없이 공인 IP를 가진 태스크를 사용한다. 운영은 AZ별 NAT, RDS Multi-AZ, Redis 자동 장애 조치와 서비스별 Auto Scaling을 선언한다. 실제 태스크 배치와 장애 조치 결과는 별도 검수한다.
 
 HTTPS ALB는 IP target group의 서버 8080으로 전달한다. 운영 상태 검사 경로는 `/actuator/health`, 성공 코드는 200이다. ALB에서 태스크 보안 그룹으로 가는 8080 egress가 필요하다. 태스크 보안 그룹의 DB와 Redis egress는 대상 보안 그룹으로 제한한다. 현재 Terraform에는 운영 EC2, 운영 Compose, EC2 `deploy.sh`, SSM 배포 경로가 없다.
 
-dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내부 API를 호출한다. 아래 prod 알림 구성은 결정된 목표이며 현재 Terraform에 적용되지 않았다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
+dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내부 API를 호출한다. prod는 아래 구성을 Terraform에 선언한다. 분리 배포의 결정 근거는 BE-051에 있다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
 
-| 항목 | prod 목표 구성 |
+| 항목 | prod 선언 |
 | --- | --- |
 | 배포 단위 | prod ECS 클러스터의 별도 알림 서비스. FireLens 사이드카를 포함해 0.25 vCPU, 1GB |
 | 내부 호출 | 서버 ECS 서비스를 AWS Cloud Map private DNS에 등록하고 `http://server.manyak-prod.local:8080`으로 호출. 레코드 TTL 10초 |
-| 공개 경로 차단 | 공개 ALB의 `/internal/*`는 404 고정 응답. 서버 공유 시크릿 주입 전이나 같은 적용에서 차단 |
+| 공개 경로 차단 | 공개 ALB의 `/internal/*`는 404 고정 응답. 내부 API는 private DNS와 공유 시크릿 사용 |
 | 큐와 역할 | SQS 표준 본 큐와 DLQ. 서버 태스크 역할은 `SendMessage`, 알림 태스크 역할은 `ReceiveMessage`와 `DeleteMessage`로 메시지 권한 분리 |
 
-오래된 DNS 레코드로 자격 조회가 실패하면 소비자는 `ELIGIBILITY_UNAVAILABLE`을 `RETRY`로 처리한다. SQS는 메시지를 삭제하지 않고 가시성 60초 뒤 재전달하며 재시도 한도 이후에는 DLQ에 보존한다. dev의 큐와 DLQ는 `envs/dev/sqs.tf`, 알림 컨테이너는 `modules/compute-ecs/main.tf`에 구현되어 있다. dev DLQ 경보는 가시 메시지 수가 0보다 크면 SNS 이메일로 알리며 구독 확인이 필요하다. prod에도 같은 경보를 두는 것이 목표다. 본 큐 적체 경보는 임계값 근거가 부족해 보류한 결정을 유지한다. ([KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381))
+오래된 DNS 레코드로 자격 조회가 실패하면 소비자는 `ELIGIBILITY_UNAVAILABLE`을 `RETRY`로 처리한다. SQS는 메시지를 삭제하지 않고 가시성 60초 뒤 재전달하며 재시도 한도 이후에는 DLQ에 보존한다. dev의 큐와 DLQ는 `envs/dev/sqs.tf`, 알림 컨테이너는 `modules/compute-ecs/main.tf`에 구현되어 있다. dev와 prod의 DLQ 경보는 가시 메시지 수가 0보다 크면 SNS 이메일로 알린다. 환경별 수신 주소 설정과 SNS 구독 확인이 필요하다. 본 큐 적체 경보는 임계값 근거가 부족해 보류한 결정을 유지한다. ([KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381))
 
 <br>
 
@@ -70,10 +98,13 @@ dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내
 | --- | --- | --- |
 | ALB idle timeout | dev, prod 200초 | `modules/edge/variables.tf`의 `idle_timeout`, 환경 호출부에 override 없음 |
 | ECS 배포 중 태스크 비율 | dev 최소 0%, 최대 100%, prod 최소 100%, 최대 200% | `modules/compute-ecs/main.tf`, `modules/compute-ecs-app/main.tf` |
-| 개발 target draining | 30초 | `envs/dev/main.tf`의 `deregistration_delay` |
-| 운영 RDS | PostgreSQL 16, db.t3.micro, 20GB, Single-AZ | `modules/data/variables.tf`, `main.tf`, `envs/prod/main.tf` |
+| target draining | dev 30초, prod 240초 | `envs/dev/main.tf`, `envs/prod/ecs.tf` |
+| 운영 AI 종료 대기 | `stopTimeout=120`초 | `envs/prod/ai.tf`. 모든 진행 중 요청의 완료를 보장하는 값은 아님 |
+| 운영 Auto Scaling | server, ai, notification 각각 최소 2개, 최대 4개. CPU 목표 70%, 증감 대기 300초 | `prod.auto.tfvars`, `autoscaling.tf`. CPU 목표는 KNK-1498 부하 검증 전 잠정값 |
+| 운영 RDS | PostgreSQL 16, db.t3.micro, 20GB, Multi-AZ | `modules/data/variables.tf`, `main.tf`, `envs/prod/main.tf` |
 | RDS 자동 백업 | 7일 | `db_backup_retention_days` |
-| RDS 삭제 관련 설정 | `deletion_protection=false`, `skip_final_snapshot=true` | data 모듈 기본값, prod 호출부 override 없음. 삭제 시 자동으로 최종 스냅샷이 생긴다고 가정하지 않음 |
+| 운영 Redis | 2노드 복제 그룹, Multi-AZ와 자동 장애 조치. 스냅샷 7일 보관, KST 04:00~05:00 | `modules/data/main.tf`, `envs/prod/main.tf` |
+| RDS 삭제 관련 설정 | `deletion_protection=true`, `skip_final_snapshot=true` | prod는 삭제 보호만 override. 최종 스냅샷 생략은 data 모듈 기본값이므로 삭제 시 자동 생성된다고 가정하지 않음 |
 
 <br>
 
@@ -81,7 +112,7 @@ dev 알림은 서버와 같은 태스크에서 `http://localhost:8080`으로 내
 
 PostgreSQL이 업무 데이터의 기준이며 OpenSearch 인덱스는 파생 데이터다. 운영 DB와 Redis는 태스크 수명과 분리된다. 개발 PostgreSQL의 EFS는 태스크 교체 후 데이터를 유지하지만 Redis는 교체 시 유실된다. 운영 Redis는 `volatile-ttl` 축출 정책으로 짧은 TTL 키부터 축출한다. TTL 없는 카운터와 TTL 있는 세션의 수명은 백엔드 Spec을 따른다.
 
-알림의 멱등 기록은 dev 태스크 안 Redis의 `notification:` 접두어 키에 저장한다. prod 목표는 서버와 같은 ElastiCache를 사용하는 것이며 Redis 보안 그룹에 알림 태스크에서 오는 ingress를 추가한다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
+알림의 멱등 기록은 `notification:` 접두어 키에 저장한다. dev는 태스크 내 Redis를 사용하고, prod는 서버와 같은 ElastiCache 복제 그룹을 사용한다. 알림 보안 그룹의 Redis 접근도 Terraform에 선언한다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
 
 이미지는 비공개 S3에서 CloudFront OAC로 서빙한다. 프리셋 키는 불변이며 변경은 새 키로 만든다. 썸네일 원본과 `_sm` 파생은 `scripts/upload-image-presets.sh`가 재현한다. 생성 이미지와 사용자 업로드는 서버 태스크 역할에 허용된 prefix 안에서 저장한다. `characters/generated/*`와 `thumbnails/generated/*` 권한을 구분하며 업로드 prefix도 별도로 제한한다. S3 PUT, HEAD CORS는 브라우저 업로드용이며 CDN GET 서빙 정책과 별개다.
 
@@ -93,7 +124,13 @@ PostgreSQL이 업무 데이터의 기준이며 OpenSearch 인덱스는 파생 �
 
 태스크 IAM의 `es:ESHttp*`만으로 검색 접근이 완성되지 않는다. 서버의 `opensearch/setup-search.sh`가 관리하는 세분 접근 제어 역할과 backend role 매핑도 필요하다. `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP`은 초기 적재, 복구 때 일시적으로 켠 뒤 되돌린다. 서버의 재색인 대상과 검색 가시성은 백엔드 Spec을 따른다.
 
-prod 알림도 서버와 같은 FireLens 구성으로 `manyak-logs-prod-*`에 로그를 보내고 CloudWatch 안전망을 유지하는 것이 목표다. Fargate FireLens에는 영속 디스크 버퍼가 없으므로 OpenSearch 장애 때 로그 유실을 막는 별도 저장 경로가 필요하다. CloudWatch는 OpenSearch 403 진단에 필요한 로그 라우터 자체 로그도 저장한다. 알림 CloudWatch 보존 기간은 7일로 정한다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
+prod 알림은 서버와 같은 FireLens 구성으로 `manyak-logs-prod-*`에 로그를 보내고 CloudWatch 안전망을 유지한다. Fargate FireLens에는 영속 디스크 버퍼가 없으므로 OpenSearch 장애 때 로그 유실을 막는 별도 저장 경로가 필요하다. CloudWatch는 OpenSearch 403 진단에 필요한 로그 라우터 자체 로그도 저장한다. 알림 CloudWatch 보존 기간은 7일로 정한다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
+
+<br>
+
+### 4-5 관측 수집 경로
+
+운영은 OpenTelemetry Collector를 OTLP 수신점으로 사용한다. 트레이스는 Data Prepper를 거쳐 OpenSearch로, 메트릭은 SigV4 인증을 사용하는 Prometheus remote write로 Amazon Managed Service for Prometheus(AMP)에 보낸다. `otel_logs_enabled=true`에서는 FireLens의 기존 OpenSearch 직접 전송과 CloudWatch 경로를 유지하면서 Collector, Data Prepper를 거치는 로그 경로도 함께 사용한다. 새 로그 인덱스는 `logs-otel-v1-YYYY.MM.dd`다. 수집 흐름과 지표 조회 기준은 [백엔드 운영 관측](../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다.
 
 <br>
 
@@ -103,13 +140,13 @@ prod 알림도 서버와 같은 FireLens 구성으로 `manyak-logs-prod-*`에 �
 
 서비스 워크플로는 SHA 이미지를 빌드하고 환경 태그를 갱신한 뒤 ECS `force-new-deployment`를 실행한다. ECS는 기존 태스크 정의로 새 태스크를 띄워 갱신된 환경 태그를 다시 받는다. Terraform은 태스크 정의와 서비스 설정을 관리한다. 개발 역할은 각 서비스 저장소의 dev 브랜치, 운영 역할은 운영 워크플로만 맡는다. AWS 인증은 GitHub OIDC를 사용한다.
 
-배포 작업은 최신 브랜치 SHA를 확인하고 같은 저장소, 환경의 배포를 직렬화한다. GitHub concurrency는 저장소마다 동작하므로 server와 ai가 공유 태스크를 동시에 배포할 수 있다. 성공 여부는 deployment ID의 완료 상태, 실행 태스크의 이미지 digest, 각 컨테이너와 외부 API의 상태를 함께 확인한다. 가변 태그 이름만 같다고 같은 이미지로 판단하지 않는다.
+배포 작업은 최신 브랜치 SHA를 확인하고 같은 저장소, 환경의 배포를 직렬화한다. GitHub concurrency는 저장소마다 동작하므로 개발에서는 server, ai, notification이 공유 태스크를 동시에 배포할 수 있다. 운영은 세 서비스가 독립된 배포 단위다. 성공 여부는 deployment ID의 완료 상태, 실행 태스크의 이미지 digest, 각 컨테이너와 외부 API의 상태를 함께 확인한다. 가변 태그 이름만 같다고 같은 이미지로 판단하지 않는다.
 
-Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리한다. 비밀이 아닌 운영값은 `dev.auto.tfvars`와 `prod.auto.tfvars`에 보관한다. `desired_count`의 기본값 0만 보고 현재 서비스의 목표 수를 판단하지 않는다. 커밋된 값은 환경별 1이며 일시 변경은 실행 기록에 남긴다.
+Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리한다. 비밀이 아닌 운영값은 `dev.auto.tfvars`와 `prod.auto.tfvars`에 보관한다. `desired_count`의 기본값 0만 보고 현재 서비스의 목표 수를 판단하지 않는다. 개발은 1개, 운영은 서비스별 2~4개 범위에서 Auto Scaling이 수량을 관리한다. 운영에서 `desired_count=0`만 바꾸어서는 중지되지 않으며 비상 중지는 `ecs_autoscaling_capacity={min=0,max=0}`으로 지정한다. 일시 변경은 실행 기록에 남긴다.
 
 알림 서비스의 현재 `.github/workflows/docker-image.yml`은 dev push에서 GHCR SHA 이미지를 빌드하고 최신 SHA 확인 후 `ghcr.io/kim-n-kang/manyak-notification:dev`로 승격해 dev ECS를 자동 배포한다. 같은 태스크의 server, ai, notification이 함께 갱신되며 각 컨테이너의 실행 상태와 헬스를 검증한다.
 
-prod는 알림 저장소 main push에서 prod ECR `manyak-notification` 이미지를 빌드하고 별도 알림 ECS 서비스를 배포하는 목표 구성이다. 배포 실패 시 이전 이미지 digest를 복원한다. 현재 알림 워크플로에는 prod CD가 없으며 적용 순서는 BE-051을 따른다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
+prod 알림 워크플로는 main push에서 ECR SHA 이미지를 빌드하고 최신 main SHA 확인 후 `latest`로 승격한다. 별도 `manyak-prod-notification` 서비스의 새 deployment ID가 완료되고 해당 태스크의 알림 컨테이너가 정상인지 검증한다. 서비스의 desired count가 0이면 이미지만 승격하고 배포와 헬스 검사를 생략한다. 태그 승격 후 실패하거나 취소되면 이전 digest를 복원하고 복구 배포를 요청하지만, 복구 완료는 별도로 확인해야 한다. 이전 digest가 없는 최초 배포는 수동 복구가 필요하다. ([알림 배포 워크플로](https://github.com/KIM-N-KANG/manyak-notification/blob/5c0ae2f5dfaa6e73437056504a111c6d7597b1a8/.github/workflows/docker-image.yml))
 
 <br>
 
@@ -142,7 +179,7 @@ release 번들(AAB)은 CI가 만들지 않는다. 릴리스 담당자가 로컬�
 - **서명키 보관.** Play 앱 서명을 쓰므로 배포 인증서는 Google이 보관하고 팀은 업로드 키만 가진다. 업로드 키스토어는 저장소 밖에 두고 `local.properties`의 `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`로 주입한다. 키 파일과 비밀번호는 암호화 백업 두 곳에 둔다. 잃으면 Google 지원으로 업로드 키를 재설정할 때까지 업데이트를 올릴 수 없다. 키 값과 실제 경로는 문서에도 저장소에도 적지 않는다.
 - **release BuildConfig 주입값**도 `local.properties`에서 읽는다(`GOOGLE_SERVER_CLIENT_ID_RELEASE`, `KAKAO_NATIVE_APP_KEY_RELEASE`, `AMPLITUDE_API_KEY_RELEASE`). 비어 있어도 빌드는 성공하고 해당 공급자만 런타임에 실패하므로 번들을 만들기 전에 세 값을 확인한다. 운영 `BASE_URL`은 `app/build.gradle.kts`에 고정돼 있다.
 - **`google-services.json`은 저장소에 커밋한다.** CI에 주입할 시크릿이 없는데 PR마다 `assembleDebug`를 돌리므로 파일이 없으면 모든 PR이 실패한다. 값은 APK에 실려 나가고 보호는 Firebase 보안 규칙과 API 키 제한이 맡는다. Firebase 프로젝트는 서버 FCM과 같은 하나를 쓰며 환경별로 나누지 않는다. `applicationId`가 빌드 타입 간 같고 debug는 `firebase_crashlytics_collection_enabled=false`로 수집하지 않는다.
-- release는 R8 축소, 난독화를 적용한다(`optimization.enable = true`, keep 규칙은 `app/proguard-rules.pro`). `bundleRelease`가 Crashlytics로 매핑 파일을 올리고 AAB의 `BUNDLE-METADATA`에도 매핑이 실린다. 결정 이유는 [Android ADR A-047](../platform/ANDROID/DECISIONS.md#a-047)에 있다.
+- release는 R8 축소, 난독화를 적용한다(`optimization.enable = true`, keep 규칙은 `app/proguard-rules.pro`). `bundleRelease`가 Crashlytics로 매핑 파일을 올리고 AAB의 `BUNDLE-METADATA`에도 매핑이 실린다. 결정 이유는 [Android ADR A-047](../platform/CLIENT/ANDROID/DECISIONS.md#a-047)에 있다.
 
 <br>
 
@@ -157,20 +194,35 @@ Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리한다. �
 | LLM 공급자 키, Langfuse | AI 컨테이너. AI가 선택 모델의 공급자와 관측 설정을 검사 |
 | 이미지 bucket, region, base URL | server 생성 이미지 저장. 필요한 값과 IAM을 함께 공급 |
 | OpenSearch endpoint, index, 재색인 | server 검색, 색인. IAM과 검색 역할 매핑을 별도로 확인 |
-| OTLP | server에 endpoint, 인증 참조와 활성 토글을 함께 공급. prod 선언은 `enable_otlp_metrics=true` |
+| OTLP | server, ai, notification에 Collector endpoint와 활성 토글을 공급. prod는 `enable_otlp_metrics=true`, `otel_collector_enabled=true`, `tracing_enabled=true`. AMP 인증은 Collector의 IAM과 SigV4가 담당 |
 | 신고, 피드백 webhook | server에 목적별 참조. 값이 없을 때 저장과 알림의 실패 경계는 백엔드 계약을 따름 |
-| FCM | 현재 dev는 server와 notification, prod는 server에 `MANYAK_FCM_SERVICE_ACCOUNT_JSON` 참조. prod 목표에서는 알림에도 주입하며 서버 값은 `local` 롤백 창 동안 유지 |
-| 내부 API 인증 | dev server와 notification에 `MANYAK_INTERNAL_SHARED_SECRET`을 같은 값으로 주입. prod는 공개 ALB 차단 후 양쪽 주입이 목표 |
-| 알림의 서버 주소 | `MANYAK_SERVER_INTERNAL_BASE_URL`: dev는 `http://localhost:8080`, prod 목표는 `http://server.manyak-prod.local:8080` |
+| FCM | dev와 prod의 server, notification에 `MANYAK_FCM_SERVICE_ACCOUNT_JSON` 참조. prod 서버 참조도 현재 선언에 남아 있음 |
+| 내부 API 인증 | dev와 prod의 server, notification에 같은 `MANYAK_INTERNAL_SHARED_SECRET` 참조를 주입. prod 공개 ALB는 `/internal/*` 차단 |
+| 알림의 서버 주소 | `MANYAK_SERVER_INTERNAL_BASE_URL`: dev는 `http://localhost:8080`, prod는 `http://server.manyak-prod.local:8080` |
 | Groble, Google Play | dev, prod server에 HMAC, 서비스 계정 JSON, 패키지명 참조. 비어 있으면 구매는 503, 대사는 실행하지 않음 |
 
-알림 시크릿은 저장 전에 값의 길이를 검사해 빈 값을 거부한다. dev 빈 값 저장 사고를 반복하지 않도록 저장 결과의 길이도 확인하며 값 자체는 로그나 문서에 출력하지 않는다. 빈 값 거부 외에 최소 길이 수치는 미정이다. prod 서버의 FCM 값 제거는 롤백 창이 끝난 뒤 KNK-1367에서 처리한다. 시크릿 등록부터 `remote` 전환까지의 순서는 BE-051을 따른다. ([BE-051](../reference/decisions/BACKEND.md#be-051), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367))
+알림 시크릿은 저장 전에 값의 길이를 검사해 빈 값을 거부한다. dev 빈 값 저장 사고를 반복하지 않도록 저장 결과의 길이도 확인하며 값 자체는 로그나 문서에 출력하지 않는다. 빈 값 거부 외에 최소 길이 수치는 미정이다. prod는 `push_mode="remote"`를 선언하지만 서버의 FCM 참조도 유지한다. 롤백 창 종료 후 서버 참조를 제거하는 결정과 적용 순서는 BE-051 및 KNK-1367에서 확인한다. 선언만으로 시크릿 값 등록이나 운영 전환 검수가 끝났다고 판단하지 않는다. ([BE-051](../reference/decisions/BACKEND.md#be-051), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367))
 
-운영 AI 모델은 SSM Parameter Store의 컴파일, 스토리라인, 채팅 값 세 개로 관리한다. 이미 존재하는 Parameter의 값은 `ignore_changes`이므로 Terraform 기본값 수정만으로 바뀌지 않는다. Parameter 변경 후 새 태스크가 읽게 해야 한다. 개발은 태스크 정의 환경변수이므로 apply가 필요하다. 확인한 개발 선언은 컴파일 `gemini-3.7-flash`, 스토리라인과 채팅 `deepseek-flash`이다. 운영 Parameter 실값은 이번 문서 작업에서 조회하지 않았다. 옛 모델 이름과 새 AI 등록부가 호환되지 않는 전환은 모델 설정과 이미지를 같은 배포 단위로 맞춘다.
+운영은 `STORY_COMPILE_MODEL`, `STORYLINES_MODEL`, `CHAT_MODEL`의 SSM Parameter 참조를 주입한다. 기존 Parameter 값은 `ignore_changes` 대상이므로 Terraform 기본값만 바꾸어서는 갱신되지 않는다. Parameter 변경 후 새 태스크가 읽게 해야 한다. 개발은 태스크 정의 환경변수이므로 apply가 필요하다. 실제 모델 선택은 [AI 배포의 모델 라우팅](../domain/CHAT/AI/7-4-DEPLOYMENT.md)을 따른다. 특히 채팅의 `model_tier` 라우팅과 단일 `CHAT_MODEL` 설정을 동일시하지 않는다. 운영 Parameter 실값은 이 문서 검토에서 조회하지 않았다. 모델 이름과 AI 등록부가 바뀌는 전환은 설정과 이미지를 같은 배포 단위로 맞춘다.
 
 <br>
 
 ### 7 배포 절차
+
+```mermaid
+flowchart TD
+    A["코드와 명세 및 환경 확인"] --> B["시크릿 키와 IAM 및 모델 호환성 점검"]
+    B --> C{"Terraform 변경"}
+    C -->|있음| D["최신 dev와 작업트리 및 plan 검토 후 적용"]
+    C -->|없음| E["호환 서비스 이미지 배포"]
+    D --> E
+    E --> F["deployment ID와 revision 및 digest 확인"]
+    F --> G["컨테이너와 ALB 및 실제 기능 검수"]
+    G --> H{"검수 결과"}
+    H -->|통과| I["배포 증거 기록"]
+    H -->|실패| J["복구 절차 실행 후 재검수"]
+    J --> I
+```
 
 1. 작업 코드, 현재 명세, 결정 기록과 대상 환경을 확인한다. 새 설정은 시크릿 키 존재, IAM, 태스크 참조, 공급자 모델 호환성을 먼저 점검한다.
 2. Terraform 변경은 저장소의 `scripts/tf-apply.sh`가 요구하는 최신 dev, 작업트리, plan 검사를 통과한 뒤 적용한다. 오래된 브랜치의 plan을 현재 운영 변경으로 사용하지 않는다. plan의 replace, destroy 범위를 개별 리소스로 검토한다.
@@ -191,6 +243,21 @@ DB 변경은 expand/contract로 진행한다. 신규 컬럼, 테이블을 먼저
 <br>
 
 ### 7-2 Android 앱 릴리스
+
+```mermaid
+flowchart TD
+    A["origin/dev에서 release 브랜치 생성"] --> B["버전 커밋"]
+    B --> C["main 릴리스 PR과 dev 버전 동기화 PR"]
+    C --> D["main 병합 커밋에서 AAB 빌드"]
+    D --> E["서명과 버전 검증"]
+    E --> F["내부 테스트에서 실기기 검수"]
+    F --> G{"검수 통과"}
+    G -->|아니오| X["수정 후 새 버전으로 다시 검증"]
+    G -->|예| H["동일 AAB를 비공개 테스트로 승격"]
+    H --> I{"프로덕션 트랙 사용 가능"}
+    I -->|아니오| W["테스트 트랙 유지"]
+    I -->|예| J["단계적 출시와 중단 기준 관찰"]
+```
 
 스토어에 올라가는 번들은 `main`에서만 만든다. v1.0.2까지는 이 규칙이 없어 `versionCode 3`을 `dev`에서 바로 빌드해 올렸고, 그 결과 스토어에 있는 코드가 `main`에 없었다(그래서 `main`은 2에서 4로 건너뛴다). 어느 코드가 사용자 손에 있는지 `main`으로 답할 수 없게 되므로 반복하지 않는다.
 
@@ -219,6 +286,17 @@ DB 변경은 expand/contract로 진행한다. 신규 컬럼, 테이블을 먼저
 ### 9 검수, 관측, 롤백
 
 ### 9-1 서버, AI 검수와 복구
+
+```mermaid
+flowchart TD
+    F["배포 장애 확인"] --> C{"원인"}
+    C -->|이미지| I["이전 정상 digest로 환경 태그 복원"]
+    C -->|모델 설정| M["이전 모델 설정과 호환 이미지 복원"]
+    I --> D["새 ECS 배포 실행"]
+    M --> D
+    D --> V["실행 digest와 컨테이너 및 실제 AI 기능 검수"]
+    V --> R["복구 결과 기록"]
+```
 
 - 서버와 AI 컨테이너의 상태, 실제 AI 기능을 각각 확인한다.
 - FireLens 로그의 환경 인덱스와 OTLP 수집을 각각 확인한다. 로그 수집 성공으로 메트릭 export를 판정하지 않는다.

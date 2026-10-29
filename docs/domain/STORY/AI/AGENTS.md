@@ -93,5 +93,5 @@
 | 실제 모델 포함 | `./scripts/test.sh --live` | `.env`의 실제 키 필요, 호출 비용 발생 <br> 실제 모델 테스트 실행 조건은 `RUN_LIVE_TESTS=1` |
 | CI | `pytest --cov --cov-report=term-missing --cov-fail-under=90` | `src/` 분기 커버리지 90% 이상 <br> 린트와 타입 검사 미실행 |
 
-- 단위 테스트는 `tests/unit/`, API 테스트는 `tests/`, 실제 모델과 컴파일·채팅 연결 테스트는 `tests/integration/`에서 찾는다.
+- 단위 테스트는 `tests/unit/`, API 테스트는 `tests/`, 실제 모델과 컴파일, 채팅 연결 테스트는 `tests/integration/`에서 찾는다.
 - 실행 결과는 대상 커밋, 명령과 통과, 실패, 건너뜀 건수를 PR에 기록한다.

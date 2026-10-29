@@ -18,10 +18,12 @@ Fluent Bit`"]
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
 안전망`"]
-    S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
+    S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
+    C --> DP["`**Data Prepper**`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표, 결제 결과 카운터| G["`**Grafana Cloud**`"]
+    S -->|OTLP 지표, 결제 결과 카운터| C
+    C -->|SigV4 remote write| G["`**AMP**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     S -->|출석, 결제 이벤트| AM["`**Amplitude**`"]
@@ -30,6 +32,8 @@ Fluent Bit`"]
     class S comp
     class F,OS,CW,DP,OD,G,SE,SL,AM ext
 ```
+
+운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -119,7 +123,7 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 AMP로 전송 |
 | 전송 주기 | 60초 간격 |
 | 카운트 시점 | 거래 처리 결과는 트랜잭션 커밋 뒤 기록하고 롤백된 처리는 세지 않음<br>검증 실패 `invalid`는 즉시 기록 |
 

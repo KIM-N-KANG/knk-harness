@@ -6,6 +6,17 @@
 
 ### 3-2-1 기록과 뒤로가기
 
+```mermaid
+flowchart TD
+    Back["뒤로가기"] --> Overlay{"사용자가 연 오버레이 있음"}
+    Overlay -->|예| Close["최상위 오버레이와 기록 소비"]
+    Overlay -->|아니요| History{"같은 문서에서 이동한 실제 화면 기록"}
+    History -->|있음| Previous["이전 화면"]
+    History -->|없음| Default["도메인의 기본 복귀 화면으로 교체"]
+    Navigate["시트에서 다른 화면 이동"] --> Consume["오버레이 기록 먼저 소비"]
+    Consume --> Destination["목적 화면 이동"]
+```
+
 | 조작 | 결과 |
 |---|---|
 | 하단 탭 이동 | 현재 기록 교체, 탭 전환 이력을 뒤로 순회하지 않음 |
@@ -31,6 +42,16 @@
 <br>
 
 ### 3-2-3 앱 열기와 복귀
+
+```mermaid
+flowchart TD
+    Open["Android 배너의 앱 열기"] --> App["상세는 같은 스토리, 다른 화면은 앱 홈"]
+    App --> Visibility{"0.7초 안에 화면이 숨겨짐"}
+    Visibility -->|예| Cancel["스토어 이동 취소"]
+    Visibility -->|아니요| Store["Play 스토어 앱 이동"]
+    IOS["iOS 외부 브라우저 열기"] --> Check{"1.5초 뒤 같은 화면"}
+    Check -->|예| Help["여는 방법과 링크 복사 안내"]
+```
 
 Android 배너는 상세에서 같은 스토리, 다른 화면에서 앱 홈을 연다. 앱이 열리지 않으면 0.7초 뒤 Play 스토어 앱으로 이동하고 이미 화면이 숨겨졌으면 취소한다. iOS 외부 전환은 1.5초 동안 화면이 그대로면 여는 방법과 링크 복사를 안내한다.
 

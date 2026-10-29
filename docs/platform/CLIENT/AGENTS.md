@@ -1,5 +1,5 @@
 # 공통 클라이언트 기반
 
-공통 헤더, 오류 형식, 응답 사용과 시각 해석은 [CONTRACT.md](CONTRACT.md)에서 정의한다. 플랫폼별 구현은 [WEB](../WEB/AGENTS.md)과 [ANDROID](../ANDROID/AGENTS.md)를 따른다.
+공통 헤더, 오류 형식, 응답 사용과 시각 해석은 [CONTRACT.md](CONTRACT.md)에서 정의한다. 플랫폼별 구현은 하위 [WEB](WEB/AGENTS.md)과 [ANDROID](ANDROID/AGENTS.md)에서 관리한다. 각 플랫폼의 파일 번호는 1부터 시작하며 해당 폴더 안의 기술 문서 순서를 나타낸다.
 
 앱 탐색과 서비스 안내의 요구사항은 [공통 UI](../../ui/AGENTS.md), 기능별 요구사항은 [도메인 목록](../../domain/AGENTS.md)에서 확인한다. 이 폴더에는 유저 스토리나 화면 목록을 중복 정의하지 않는다.

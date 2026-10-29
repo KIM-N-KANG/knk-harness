@@ -40,7 +40,7 @@
 | 분석 이벤트, 지표와 관측 | [분석 기준](docs/reference/ANALYTICS.md) |
 | 공용 서비스 인터페이스와 상태 확인 | [서비스 인터페이스](docs/reference/SERVICE-INTERFACES.md) |
 | 배포, 인프라, CI/CD와 복구 | [배포 Design](docs/operations/DEPLOYMENT.md), [배포 ADR](docs/operations/DECISIONS.md) |
-| 클라이언트 검증 | 공용 또는 해당 도메인의 플랫폼 세트 `5-1-VERIFICATION.md` |
+| 클라이언트 검증 | 도메인과 UI의 `WEB/5-1-VERIFICATION.md`, `ANDROID/5-1-VERIFICATION.md`. 기술 기반은 [웹 검증](docs/platform/CLIENT/WEB/5-VERIFICATION.md)과 [Android 검증](docs/platform/CLIENT/ANDROID/4-VERIFICATION.md) |
 | 작업 담당, 일정, 우선순위와 미결 사항 | Jira |
 
 기존 백엔드와 AI 결정 원문은 [결정 기록](docs/reference/decisions/AGENTS.md)에 보존합니다. 통합 Design의 기능 설명은 도메인 문서로 대체하며 공통 기술 기반은 `docs/platform/`, 배포는 `docs/operations/`에서 관리합니다.

@@ -6,6 +6,18 @@
 
 ### 3-2-1 제작과 상세
 
+```mermaid
+flowchart TD
+    Keyword["키워드 목적지"] -->|생성| Storyline["스토리라인 목적지로 대체"]
+    Storyline -->|선택| Info["추가 정보"]
+    Info -->|다시 선택과 손실 확인| Storyline
+    Storyline -->|내용 거절| Reject["같은 초안의 키워드로 대체"]
+    Reject --> Unsaved["거절된 요청의 선택 입력을 미저장 편집으로 표시"]
+    Storyline -->|닫기 또는 뒤로가기| Exit["퍼널 이탈 확인"]
+    Info -->|닫기 또는 뒤로가기| Exit
+    Exit -->|확정 또는 잃을 내용 없음| Studio["제작 탭"]
+```
+
 | 조작 | 결과 |
 |---|---|
 | 키워드에서 생성 | 키워드 목적지를 스토리라인 목적지로 대체 |
@@ -22,6 +34,20 @@
 <br>
 
 ### 3-2-2 가입 온보딩
+
+```mermaid
+flowchart TD
+    Onboard["가입 온보딩"] -->|상세 보기| Detail["온보딩 위 상세"]
+    Detail -->|채팅 전 뒤로가기| Onboard
+    Onboard -->|바로 채팅 시작| Chat["채팅방"]
+    Chat -->|뒤로가기| Home["홈"]
+    Detail -->|채팅 시작| DetailChat["상세 위 채팅방"]
+    DetailChat -->|뒤로가기| DetailDone["상세"]
+    DetailDone -->|뒤로가기| Home
+    Onboard -->|직접 만들기| Create["새 간편 제작 및 온보딩 완료"]
+    Create -->|이탈 또는 제출| Studio["제작 탭"]
+    Onboard -->|완료 전 시스템 뒤로가기| Outside["앱 밖"]
+```
 
 1. 좌우로 넘기거나 옆 카드를 눌러 가운데 스토리를 바꾼다. 마지막 다음에 첫 스토리로 이어지며 한 편이면 넘기지 않는다.
 2. 가운데 카드나 상세 보기는 상세를 온보딩 위에 연다. 상세 뒤로가기는 온보딩이다.
