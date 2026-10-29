@@ -20,7 +20,7 @@
 | STORY-RECOVER-01, STORY-RECOVER-03, STORY-DRAFT-02 | 복원은 제작 카드의 이어서 만들기로 진입한다. 직접 URL과 새로고침은 새 세션 |
 | STORY-TUTORIAL-08 | 초대 시트는 홈에서 열리므로 제작 안내와 보통 겹치지 않는다. 실제 열린 모달이 있으면 안내를 미룬다 |
 
-폐기된 STORY-GATE-05와 통합된 STORY-DRAFT-08은 재사용하지 않는다. STORY-DRAFT-08의 검증은 STORY-FINAL-04로 이어진다. 신고 입력과 전송의 사례는 MODERATION 이관 전까지 [기존 신고 검증](../../../../qa/stories.md#스토리-신고-폼)에 둔다.
+폐기된 STORY-GATE-05와 통합된 STORY-DRAFT-08은 재사용하지 않는다. STORY-DRAFT-08의 검증은 STORY-FINAL-04로 이어진다. 신고 입력과 전송은 [MODERATION 검증](../../../MODERATION/CLIENT/WEB/5-1-VERIFICATION.md#5-1-1-신고-폼)을 따른다.
 
 ### 5-1-2 STORY-LIST
 

@@ -209,7 +209,7 @@ STORY 내용은 [도메인 문서](../domain/STORY/CLIENT/WEB/4-4-EXECUTION.md)�
 
 ### 바텀 시트 닫기 버튼 (웹)
 
-닫기는 `variant="ghost"`·`size="lg"`·`w-full`(양옆 꽉 채움, 보조색 텍스트)입니다. 신고 버튼 아래 간격은 4px입니다. 초대의 간격과 닫기 재시도는 [ACCOUNT 웹 UI](../domain/ACCOUNT/CLIENT/WEB/3-3-LAYOUT.md#3-3-2-회원-시트와-팝업)에서 정합니다. 요청 잠금·실패 복구는 공통 Spec을 따릅니다.
+닫기는 `variant="ghost"`·`size="lg"`·`w-full`(양옆 꽉 채움, 보조색 텍스트)입니다. 신고 버튼 배치는 [MODERATION 웹 표현](../domain/MODERATION/CLIENT/WEB/3-3-LAYOUT.md)을 따른다. 초대의 간격과 닫기 재시도는 [ACCOUNT 웹 UI](../domain/ACCOUNT/CLIENT/WEB/3-3-LAYOUT.md#3-3-2-회원-시트와-팝업)에서 정합니다. 요청 잠금·실패 복구는 공통 Spec을 따릅니다.
 
 ### 법적 콘텐츠 소스 (웹)
 
@@ -237,7 +237,7 @@ STORY 내용은 [도메인 문서](../domain/STORY/CLIENT/WEB/4-3-STATE-MANAGEME
 
 ### 스토리 신고 진입점 (웹)
 
-상세·오리지널 카드 `story-options-menu`(`card-options-sheet` 래퍼), 채팅 `chat-menu-drawer`(바텀 시트, 시트를 닫은 뒤 신고 시트를 엶), 목록 `card-options-sheet`(바텀 시트)가 공용 `story-report-sheet`를 엽니다. 세 곳의 항목 버튼은 공용 `option-menu-button`입니다. 채팅 시작 훅 `use-start-chat`은 스토리 상세 CTA와 채팅 메뉴 드로어가 함께 쓰므로 `stories/_shared/hooks`에 둡니다. 상세 메뉴는 `canReport`·`canDelete`가 모두 거짓이면 트리거도 숨깁니다. 채팅의 삭제된 참조 스토리는 `useChatDetail`이 신고 ID를 `null`로 정리합니다. 삭제는 공용 훅을 공유합니다.
+신고 구성은 [MODERATION 웹](../domain/MODERATION/CLIENT/WEB/4-2-COMPONENT-ARCHITECTURE.md)에서 관리한다.
 
 <a id="1-1-6-웹-컴포넌트-표현"></a>
 
@@ -262,7 +262,7 @@ STORY 내용은 [도메인 문서](../domain/STORY/CLIENT/WEB/4-3-STATE-MANAGEME
 | 인물·추가 정보 | [STORY 웹 표현](../domain/STORY/CLIENT/WEB/3-3-LAYOUT.md) |
 | 입력·추천 | [CHAT 웹](../domain/CHAT/CLIENT/WEB/AGENTS.md) |
 | 재생성·인물 이미지 | [CHAT 웹](../domain/CHAT/CLIENT/WEB/AGENTS.md) |
-| 계정·공유 | 잔액 카드 안쪽 16px. 초대와 탈퇴 표현은 [ACCOUNT 웹 UI](../domain/ACCOUNT/CLIENT/WEB/3-3-LAYOUT.md#3-3-2-회원-시트와-팝업). 신고 사유는 motion `RadioGroup`(20px·2px 보더, 선택 점은 `layoutId` 스프링 이동)·행 높이 40px. 공유 화면 진입 opacity 150ms |
+| 계정·공유 | 잔액 카드 안쪽 16px. 초대와 탈퇴 표현은 [ACCOUNT 웹 UI](../domain/ACCOUNT/CLIENT/WEB/3-3-LAYOUT.md#3-3-2-회원-시트와-팝업). 신고 사유 표현은 [MODERATION 웹](../domain/MODERATION/CLIENT/WEB/3-3-LAYOUT.md). 공유 화면 진입 opacity 150ms |
 
 ## 1-1-3. BFF 프록시·토큰 세션
 

@@ -1,13 +1,3 @@
 # 스토리 검증 안내
 
-목록, 상세와 제작 검증은 [STORY 웹](../domain/STORY/CLIENT/WEB/5-1-VERIFICATION.md)에서 관리한다.
-
-## 스토리 신고 폼
-
-MODERATION 이관 전 신고 입력과 전송의 검증을 보존한다.
-
-| ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
-|---|---|---|---|---|---|---|
-| STORY-DETAIL-29 | P0  | 회원                        | "신고하기" → 시트에서 사유 선택 → 상세 입력(선택) → "신고하기" | 바텀 시트(제목·설명·사유 라디오 3개·"자세한 내용 (선택)" 500자+카운터·전송·닫기). 웹 닫기는 ghost lg(48px)·전체 폭, 전송 버튼과 4px 간격. 사유 선택 전에는 전송 비활성. 전송은 `POST /stories/{id}/reports {reason, detail}`(빈 서술은 `null`), 201이면 "신고가 접수되었어요" 토스트 + 시트 닫힘 | ✅ e2e `stories/story-detail`·`visual/stories-visual` | §3-1-3 스토리 신고, KNK-1186 |
-| STORY-DETAIL-30 | P1  | 신고 API가 5xx로 실패       | 사유·상세 입력 후 전송                             | "신고를 접수하지 못했어요" 토스트. 시트는 열린 채 고른 사유와 입력한 상세가 그대로 남음 | ✅ e2e `stories/story-detail` | §3-1-3 스토리 신고, KNK-1186 |
-| STORY-DETAIL-31 | P2  | 신고 전송 진행 중           | 전송 직후 시트 관찰                                | 전송 버튼이 문구 공간을 유지한 스피너("신고 접수 중")로 잠기고, 닫기·바깥 탭으로 시트를 닫을 수 없음 | 수동 | §3-1-3 스토리 신고, 구현(`story-report-sheet`) |
+목록, 상세와 제작은 [STORY 웹](../domain/STORY/CLIENT/WEB/5-1-VERIFICATION.md), 신고 폼은 [MODERATION 웹](../domain/MODERATION/CLIENT/WEB/5-1-VERIFICATION.md)에서 관리한다.
