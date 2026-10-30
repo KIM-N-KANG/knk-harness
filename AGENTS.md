@@ -1,81 +1,83 @@
 # KNK Workspace LLM Working Harness
 
-## Repository Context
+이 저장소는 마냑의 제품 명세, 공통 작업 지침과 팀 스킬을 관리한다. 작업과 관련된 문서와 구현 저장소만 확인한다.
 
-- 이 파일의 상대경로는 이 파일이 위치한 하네스 루트(`knk-harness/`)를 기준으로 해석합니다. 연결된 문서와 스킬 안의 상대경로는 별도 기준이 명시되지 않았다면 해당 파일이 위치한 디렉터리를 기준으로 해석합니다.
-- 제품·스펙 문서는 하네스의 `docs/`에서 작업과 관련된 항목만 확인합니다.
+<br>
 
-- 구현 맥락이 필요하면 다음 서비스 레포지토리 중 관련된 곳을 함께 참조합니다.
+### 1 작업 기준
 
-| 영역 | 참조 경로 |
-| --- | --- |
+- 사용자에게는 한국어와 높임말로 응답한다. 제품 문서는 '한다'체로 작성하며 공식 용어, 필드명과 사용자에게 표시되는 문구를 임의로 바꾸지 않는다.
+- 응답, 커밋 메시지, PR 본문과 코드 주석에 중간점과 em dash를 쓰지 않는다.
+- 이 파일의 상대경로는 하네스 루트 기준이다. 연결된 문서의 상대경로는 별도 기준이 없으면 해당 파일이 있는 폴더를 기준으로 해석한다.
+- 수정 전에 대상 저장소의 지침, 현재 브랜치, staged와 unstaged 변경을 확인한다. 서비스 저장소 수정은 Git worktree(같은 저장소의 별도 작업 디렉터리)에서 수행하고, 기존 작업용 worktree가 있으면 먼저 확인해 재사용한다. 사용자 작업을 옮기거나 덮어쓰지 않는다.
+- 코드와 문서로 판단할 수 있는 세부사항은 합리적으로 결정하고 진행한다. 제품 정책, API 계약이나 요청 범위가 불명확할 때만 질문하며 답변과 무관한 작업은 계속한다.
+- 시스템과 권한 정책을 지키는 범위에서 사용자의 명시적 요청을 우선한다. 서비스별 기술 규칙은 해당 저장소의 지침을 따른다. 지침 때문에 멈추거나 확인을 요청할 때는 파일 경로, 정확한 문구와 적용 이유를 밝히고 이미 승인된 사항을 다시 묻지 않는다.
+- 커밋, push, PR, 병합과 배포는 사용자가 요청하거나 이미 승인한 범위에서 수행한다. PR 담당자(Assignee)는 `alsdn1360`으로 지정한다.
+
+<br>
+
+### 2 작업별 문서 선택
+
+| 작업 대상 | 진입점과 범위 |
+|---|---|
+| 업무별 기능 | [도메인 목록](docs/domain/AGENTS.md). ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION, ADMIN, NOTICE의 요구사항, 설계, 계약과 검증 |
+| 여러 업무에 공통인 화면과 조작 | [공통 UI](docs/ui/AGENTS.md). 앱 셸, 내비게이션, 테마, 공통 화면 상태와 앱 진입 |
+| 여러 도메인에 공통인 기술 규칙 | [플랫폼 기반](docs/platform/AGENTS.md). 클라이언트 전송, 플랫폼별 구조와 상태 수명, 백엔드와 AI의 공통 구현 |
+| 환경, 인프라, 배포와 복구 | [운영](docs/operations/AGENTS.md). Terraform 선언, CI/CD, 설정 주입과 배포 검수 |
+| 공통 정의와 작성 기준 | [참조 자료](docs/reference/AGENTS.md). 용어, 서비스 배경, 공용 인터페이스, 분석과 작성 가이드 |
+
+- 도메인은 해당 폴더의 `AGENTS.md`에서 `BACKEND`, `AI`, `CLIENT` 중 관련 세트를 선택한다. 문서 역할과 코드 진입점은 세트의 `AGENTS.md`를 따른다.
+- 클라이언트 작업은 `docs/domain/<DOMAIN>/CLIENT/`의 공통 문서와 하위 `WEB/` 또는 `ANDROID/`를 함께 확인한다. 유저 스토리는 공통 세트에서 정의하고 플랫폼별 요구와 검증이 같은 ID를 참조한다.
+- 공통 UI는 `docs/ui/` 아래에 `WEB/`과 `ANDROID/`를 둔다. 공통 기술 기반은 [CLIENT](docs/platform/CLIENT/AGENTS.md) 아래에 [WEB](docs/platform/CLIENT/WEB/AGENTS.md)과 [ANDROID](docs/platform/CLIENT/ANDROID/AGENTS.md)를 둔다. 공통 화면과 기술 규칙을 업무별 세트에 복제하지 않는다.
+- API의 요청과 응답은 제공자 세트의 계약을 참조한다. 백엔드는 `BACKEND/4-2-CONTRACT.md`, AI는 `AI/5-CONTRACT.md`에서 정의하며 클라이언트의 연동 문서는 소비 조건과 플랫폼 처리를 설명한다.
+
+<br>
+
+### 3 구현 저장소 확인
+
+아래는 기본 작업 디렉터리 배치다. 작업용 worktree에서는 실제 저장소 경로와 하네스 연결을 확인한 뒤 명령과 링크를 해석한다. 로컬에 없는 저장소는 원격의 기준 브랜치나 커밋을 확인하며 존재한다고 가정하지 않는다.
+
+| 영역 | 기본 경로 |
+|---|---|
 | 웹 프론트엔드 | `../manyak-web` |
-| 안드로이드 앱 | `../manyak-android` |
+| Android 앱 | `../manyak-android` |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
+| 알림 서비스 | `../manyak-notification` |
 | 운영 Terraform | `../manyak-terraform` |
-| 로컬·통합 인프라 | `../manyak-infra` |
+| 로컬 통합 인프라 | `../manyak-infra` |
 
-## Knowledge Base
+- 명세와 구현이 다르면 불일치의 위치와 영향을 확인한다. 요구사항과 계약을 구현에 맞춰 임의로 바꾸거나 코드만으로 제품 정책의 승인 여부를 추정하지 않는다.
+- 현재 구현 구조와 설정은 해당 코드 및 선언과 대조한다. 코드에 존재하는 기능, 배포 선언, 실행 중인 서비스와 실제 검증 결과를 구분한다.
+- 여러 저장소에 걸친 변경은 영향받는 문서, 구현과 검증 항목을 같은 작업 범위에서 갱신한다. 서비스별 상세 구현 규칙과 테스트 명령을 이 파일에 복사하지 않는다.
 
-작업과 관련된 문서만 선택합니다. 제품 문서는 `docs/domain/` 아래 도메인 단위로 재구성 중입니다. 도메인 폴더에 해당 세트가 있으면 그 문서가 기준이고, 아직 없으면 아래 기존 Spec·Design·ADR이 기준입니다.
+<br>
 
-| 도메인 | 다루는 것 | 세트 |
-| --- | --- | --- |
-| [STORY](docs/domain/STORY/AGENTS.md) | 스토리 탐색·제작·상세·공개·검색 | AI · BACKEND · WEB · ANDROID |
-| [CHAT](docs/domain/CHAT/AGENTS.md) | 채팅 플레이·선택지·실시간 이미지·피드백 | AI · BACKEND · WEB · ANDROID |
-| [ACCOUNT](docs/domain/ACCOUNT/AGENTS.md) | 게스트·회원·로그인·동의·이관·프로필 | BACKEND · WEB · ANDROID |
-| [PAYMENT](docs/domain/PAYMENT/AGENTS.md) | 이프·충전 결제·보상·체험 한도 | BACKEND · WEB · ANDROID |
-| [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND · WEB · ANDROID |
-| [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI · BACKEND · WEB · ANDROID |
-| [ADMIN](docs/domain/ADMIN/AGENTS.md) | 관리자 인증·권한·감사 로그·대시보드·회원 조회 | BACKEND · WEB |
-| [NOTICE](docs/domain/NOTICE/AGENTS.md) | 공지사항 작성·게시·공개 조회·게시 알림 | BACKEND · WEB · ANDROID |
+### 4 문서 작성과 결정 기록
 
-- 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
-- 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
-- 웹·Android의 사용자 계약은 공통 Spec과 해당 플랫폼 Spec을 함께 확인합니다. 내부 구조는 Design, 선택 이유는 ADR에서 확인합니다.
+명세를 작성하거나 수정하기 전에 [제품 Spec 작성 가이드](docs/reference/PRODUCT-SPEC-WRITING-GUIDE.md) 전체와 해당 세트의 [클라이언트](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md), [백엔드](docs/reference/BACKEND-SPEC-WRITING-GUIDE.md), [AI](docs/reference/AI-SPEC-WRITING-GUIDE.md) 가이드를 읽는다. 수정할 절은 연결된 조건과 예외까지 확인한다.
 
-| 작업 상황 | 먼저 확인할 문서 |
-| --- | --- |
-| 용어·한영 표기·네이밍 규칙 | [용어집](docs/spec/0-glossary.md) |
-| 서비스 배경·타겟 사용자·MVP 범위 | [서비스 배경](docs/spec/1-background.md) |
-| 화면·기능별 사용자 요구 | [유저 스토리](docs/spec/2-user-stories.md) |
+- 요구사항, 화면과 구현 설계, 계약, 검증은 각 세트의 역할별 문서에 기록한다. 변경한 단계와 영향을 받는 이후 문서를 갱신하며 구현이나 검증 결과를 이유로 상위 요구를 바꾸지 않는다.
+- 도메인과 UI 세트는 단계 번호를 유지한다. 플랫폼 기반의 여러 본문은 폴더별로 1부터 번호를 붙인다. `AGENTS.md`와 `DECISIONS.md`를 제외한 본문이 하나인 폴더는 파일 접두사를 생략한다. 참조 자료와 템플릿은 기존 이름을 유지한다.
+- 첫 제목은 공통 문서에서 `# 1 배경`, `# 2-1 유저 스토리`처럼 역할을 쓰고 플랫폼 문서에서 `# 2-2 요구사항: 웹`, `# 2-2 요구사항: 안드로이드`처럼 구분한다. 도메인명과 CLIENT를 반복하지 않는다.
+- 명세 본문에 문서 정보, 읽는 순서나 목차 블록을 두지 않는다. 조건과 결과는 표로, 분기와 상태 전이를 포함하는 흐름은 Mermaid로 표현한다. 문서 역할과 코드 위치는 간결한 `AGENTS.md`에서 안내한다.
+- 현재 결정과 후속 결정은 해당 세트의 `DECISIONS.md`에 기록한다. 결정 하나를 상태, 배경, 채택, 대안과 영향의 표로 정리하고 날짜와 근거가 있으면 보존한다. 없는 대안이나 상태를 추측해서 채우지 않는다.
+- 확정된 결정의 ID, 당시 사실과 판단 근거는 보존한다. 결정이 바뀌면 새 기록에 대체하는 ID와 적용 범위를 명시한다. [기존 결정 원문](docs/reference/decisions/AGENTS.md)의 과거 구현 상태를 현재 상태로 고쳐 쓰지 않는다. 문서 배치 결정은 [DOCUMENTATION.md](docs/reference/decisions/DOCUMENTATION.md)에 둔다.
+- 유저 스토리, QA와 결정 ID는 파일명이나 절 번호가 바뀌어도 유지하며 폐기한 ID를 재사용하지 않는다. 일정, 담당자, 우선순위와 미결 사항은 Jira, 구현 계획과 실행 결과는 구현 저장소의 계획 문서와 PR에서 관리한다.
+- 제품 정책, 이벤트 이름, 로그 필드와 API 계약을 만들어 넣지 않는다. 실제 비밀값, 로컬 전용 파일의 내용, 사용자 입력 원문, 프롬프트 전문과 채팅 원문을 문서나 예시에 넣지 않는다.
+- 명세 작성, 수정과 검토를 서브에이전트에 위임하지 않는다.
 
-| 영역 | Spec — 계약 | Design — 현재 구조 | ADR — 결정 근거 |
-| --- | --- | --- | --- |
-| 공통 클라이언트 | [공통](docs/spec/3-1-client-spec.md) | 플랫폼별 Design 참조 | [공통](docs/adr/1-1-client-adr.md) |
-| 웹 | [웹](docs/spec/3-2-web-spec.md) | [웹](docs/design/1-1-web-design.md) | [웹](docs/adr/1-2-web-adr.md) |
-| Android | [Android](docs/spec/3-3-android-spec.md) | [Android](docs/design/1-2-android-design.md) · [모듈·의존 규칙](docs/design/1-2-android-design.md#1-2-2-모듈과-소유권) | [Android](docs/adr/1-3-android-adr.md) |
-| 백엔드 | [백엔드](docs/spec/4-backend-server-spec.md) | [백엔드](docs/design/2-backend-server-design.md) | [백엔드](docs/adr/2-backend-server-adr.md) |
-| AI | [AI](docs/spec/5-ai-server-spec.md) | [AI](docs/design/3-ai-server-design.md) | [AI](docs/adr/3-ai-server-adr.md) |
+<br>
 
-| 작업 상황 | 확인할 곳 |
-| --- | --- |
-| 분석 이벤트·지표·관측·릴리스 검수 | [분석](docs/spec/6-analytics.md) |
-| 배포·인프라·CI/CD·검수·롤백 | [배포 Design](docs/design/4-deployment.md) · [배포 ADR](docs/adr/4-deployment-adr.md) |
-| QA 작업 전 지침·검증 방법 | [웹 QA 지침](docs/qa/AGENTS.md) · [Android 검증 방법](docs/design/1-2-android-design.md#1-2-9-검증-방법) |
-| Phase·목표·범위·백로그 | [로드맵](docs/planning/roadmap.md) |
-| 작업 담당·상세 일정·진행 | Jira |
+### 5 변경 후 검증
 
-## Agent Skills
+- 파일이나 절의 이동, 삭제, 통합과 제목 변경은 하네스 및 관련 구현 저장소의 참조에 반영한다. 링크 표시 이름, 상대경로, 대소문자, 앵커와 문서 내부 번호를 함께 확인한다.
+- 요구사항과 QA의 연결, ID 중복과 누락, 결정의 대체 관계, 예외와 실패 및 복구 조건이 보존됐는지 확인한다. Mermaid는 문법뿐 아니라 분기, 화살표 방향과 실제 렌더링도 확인한다.
+- 현재 작업 디렉터리에 없는 과거 자료는 원래 경로와 미포함 상태를 명시한다. Git 이력에 있는 원문은 확인한 커밋으로 연결하고, 존재하지 않는 파일을 열 수 있는 링크나 현재 검증 증거로 제시하지 않는다.
+- 문서만 바꾸면 내용, 경로와 참조를 검증한다. 구현도 바꾸면 해당 저장소의 필수 검사를 수행한다. 변경한 모든 저장소에서 `git diff --check`를 실행한다.
+- 상대 링크의 대상 존재는 아래 명령으로 확인한다. 앵커는 대상 문서의 제목과 대조한다.
 
-- 브랜치 생성, 커밋, PR 생성 등 팀 워크플로 스킬은 `.agents/skills/`에 있습니다. 스킬을 자동 로드하지 않는 에이전트는 해당 작업 전에 관련 `SKILL.md`를 직접 확인합니다.
-- PR 생성·템플릿 선택은 [create-pr](.agents/skills/create-pr/SKILL.md), Slack 제보·양식은 [send-slack-report](.agents/skills/send-slack-report/SKILL.md)를 따릅니다.
-
-## Working Principle
-
-- 시스템·권한 정책을 준수하는 범위에서 사용자의 명시적 요청을 우선합니다. 서비스 레포지토리의 구체적인 기술 규칙은 범용 스킬의 권고보다 우선합니다.
-- 기존 코드와 문서로 판단할 수 있는 구현 세부사항은 합리적으로 결정하고 진행합니다. 제품 정책·API 계약·변경 범위에 영향을 주는 불확실성만 질문하며, 답변과 무관하게 진행 가능한 작업은 계속합니다.
-- 지침 때문에 확인을 요청하거나 작업을 중단할 때는 해당 파일의 경로 또는 링크와 정확한 문구, 적용 이유를 알립니다. 명시적인 요구사항과 에이전트의 해석을 구분하고, 이미 승인된 작업은 같은 이유로 다시 확인하지 않습니다.
-- 레포지토리에 없는 제품 정책, 이벤트 이름, 로그 필드, API 계약은 추측하지 않습니다.
-- 실제 secret, 로컬 전용 파일, 사용자 입력 원문, 프롬프트 전문, 채팅 원문은 문서나 예시에 넣지 않습니다.
-
-## Documentation Guidelines
-
-- Spec을 작성하거나 수정하기 전에 제품 Spec 작성 가이드 전체를 반드시 읽고, 문체와 표 구성, 문서 참조 규칙을 적용합니다. ([제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md))
-- 관련 문서의 해당 절을 전체로 읽습니다. 요구사항·동작 계약은 Spec, 현재 구현 구조는 Design, 중요한 결정의 이유는 ADR에 기록합니다. 중복 본문 대신 링크를 사용합니다.
-- 제품 동작·분석 기준을 바꿀 때 관련 Spec을 확인하고, 계약 변경을 먼저 반영합니다. 구현 변경 시 영향받는 문서와 검증 항목을 같은 작업에서 갱신하며, 미래 구조를 현재 Design에 먼저 반영하지 않습니다. 계약·예외·보안·실패·복구 조건을 보존하며, 코드만으로 제품 정책의 승인 여부나 과거 결정 이유를 추정하지 않습니다.
-- 일정·진행 상태·미결 사항은 Jira, Phase는 roadmap, 구현 계획과 검증 결과는 기존 계획 문서·PR에서 관리합니다. 현재 계약과 구조를 설명하는 문서에 작업 이력을 섞지 않습니다.
-- 기존 문서 유형의 형식과 명명 규칙을 따릅니다. 코드에서 확인할 수 있는 목록은 원본 링크를 우선하며, 중복된 문서나 목록을 만들지 않습니다. `AGENTS.md`·`CLAUDE.md`는 간결한 작업 지침으로 작성합니다.
-- 확정된 ADR의 ID·본문과 과거 근거를 보존합니다. 결정 변경은 해당 ADR의 기록 규칙에 따라 후속 기록에 대체하는 결정 ID와 적용 범위를 명시합니다.
-- 파일이나 절을 이동·삭제·통합하거나 제목을 바꾸면 하네스와 관련 구현 저장소의 참조도 갱신합니다. 변경 후 링크·앵커·목차·ID 중복과 ADR 보존 여부를 확인하고 `git diff --check`를 실행합니다.
+  ```bash
+  find docs AGENTS.md README.md -name '*.md' | while read f; do d=$(dirname "$f"); grep -oE '\]\([^)#]*\.md' "$f" | sed 's/^](//' | grep -v '^http' | while read p; do [ -e "$d/$p" ] || echo "$f -> $p"; done; done
+  ```
+- 기존 자동화 표시와 과거 실행 기록을 이번 검증 결과로 보고하지 않는다. 완료 보고에는 변경 범위, 실행한 검사, 확인하지 못한 범위와 남은 변경사항을 구분한다.

@@ -13,6 +13,7 @@ knk-workspace/
 ├── manyak-android/
 ├── manyak-server/
 ├── manyak-ai/
+├── manyak-notification/
 ├── manyak-terraform/
 └── manyak-infra/
 ```
@@ -22,8 +23,9 @@ knk-workspace/
 - `manyak-android/`: 마냑 안드로이드 앱 저장소입니다.
 - `manyak-server/`: 마냑 백엔드 서버 저장소입니다.
 - `manyak-ai/`: 마냑 AI 서버 저장소입니다.
+- `manyak-notification/`: 마냑 알림 서비스 저장소입니다.
 - `manyak-terraform/`: 마냑 운영 AWS Terraform 저장소입니다.
-- `manyak-infra/`: GHCR `dev` 이미지 기반 로컬·통합 Docker Compose 저장소입니다.
+- `manyak-infra/`: GHCR `dev` 이미지 기반 로컬과 통합 Docker Compose 저장소입니다.
 
 예시:
 
@@ -36,36 +38,27 @@ git clone <manyak-web-repository-url>
 git clone <manyak-android-repository-url>
 git clone <manyak-server-repository-url>
 git clone <manyak-ai-repository-url>
+git clone <manyak-notification-repository-url>
 git clone <manyak-terraform-repository-url>
 git clone <manyak-infra-repository-url>
 ```
 
 ## 제품 스펙 문서
 
-제품 문서는 `docs/spec/`(배경·요구·계약), `docs/design/`(현재 내부 구조), `docs/adr/`(누적 결정 기록)로 나눕니다. 세 폴더는 `docs/` 바로 아래에 둡니다. 숫자 접두어는 각 폴더에서 독립적으로 관리합니다. 클라이언트는 Spec에서 `3-1` 공통·`3-2` 웹·`3-3` Android, Design에서 `1-1` 웹·`1-2` Android, ADR에서 `1-1` 공통·`1-2` 웹·`1-3` Android를 사용합니다. Android 모듈 구조는 Android Design에 통합하며 없는 역할의 파일을 번호를 채우려고 만들지 않습니다.
+[도메인 목록](docs/domain/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
 
-| 분류·번호 | 문서 | 역할 |
-| --- | --- | --- |
-| spec · 0 | [용어집](docs/spec/0-glossary.md) | 공식 용어·한영 표기·네이밍 규칙 |
-| spec · 1 | [서비스 배경](docs/spec/1-background.md) | 서비스 배경, 타겟 사용자, MVP 범위 |
-| spec · 2 | [유저 스토리](docs/spec/2-user-stories.md) | 화면·기능별 사용자 요구 |
-| spec · 3-1 | [클라이언트 공통](docs/spec/3-1-client-spec.md) | 공통 화면·상태·사용자 흐름·API 사용 계약 |
-| spec · 3-2 | [웹](docs/spec/3-2-web-spec.md) | 웹 사용자 계약·라우팅·브라우저 지원·검수 기준 |
-| spec · 3-3 | [Android](docs/spec/3-3-android-spec.md) | Android 사용자 계약·플랫폼 예외·수용 기준 |
-| spec · 4 | [백엔드](docs/spec/4-backend-server-spec.md) | API·데이터 모델·오류·운영 기준 |
-| spec · 5 | [AI 서버](docs/spec/5-ai-server-spec.md) | AI 기능·입출력·실패 계약·평가 시스템 |
-| spec · 6 | [분석](docs/spec/6-analytics.md) | 이벤트·지표·관측·검수 기준 |
-| design · 1-1 | [웹 설계](docs/design/1-1-web-design.md) | 웹의 현재 기술 구조 |
-| design · 1-2 | [Android 설계](docs/design/1-2-android-design.md) | Android의 현재 기술 구조 |
-| design · 2 | [백엔드 설계](docs/design/2-backend-server-design.md) | 요청 경계·저장소·동시성·운영 배선 |
-| design · 3 | [AI 설계](docs/design/3-ai-server-design.md) | 호출 계층·모델·프롬프트·관측 설정 |
-| design · 4 | [배포 설계](docs/design/4-deployment.md) | 운영·개발·통합 배포와 복구 구조 |
-| adr · 1-1 | [공통 ADR](docs/adr/1-1-client-adr.md) | 공통 결정 당시 맥락·선택·이유 |
-| adr · 1-2 | [웹 ADR](docs/adr/1-2-web-adr.md) | 웹 결정 당시 맥락·선택·이유 |
-| adr · 1-3 | [Android ADR](docs/adr/1-3-android-adr.md) | Android 결정 당시 맥락·선택·이유 |
-| adr · 2 | [백엔드 ADR](docs/adr/2-backend-server-adr.md) | 백엔드 결정의 맥락·선택·근거 |
-| adr · 3 | [AI ADR](docs/adr/3-ai-server-adr.md) | AI 설계의 배경·대안·선택 근거 |
-| adr · 4 | [배포 ADR](docs/adr/4-deployment-adr.md) | Terraform 결정의 과거 상태·변경 이유·날짜 |
+클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 공통 계약과 플랫폼 조건을 함께 적용하며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
+
+| 공용 내용 | 문서 |
+| --- | --- |
+| 셸, 테마와 서비스 안내 | [공통 UI](docs/ui/AGENTS.md) |
+| 용어와 표기 | [용어집](docs/reference/GLOSSARY.md) |
+| 서비스와 사용자 | [서비스 배경](docs/reference/SERVICE-BACKGROUND.md) |
+| 이벤트, 지표와 관측 | [분석 기준](docs/reference/ANALYTICS.md) |
+| 공용 API 규칙과 상태 확인 | [서비스 인터페이스](docs/reference/SERVICE-INTERFACES.md) |
+| 배포와 복구 | [배포 Design](docs/operations/DEPLOYMENT.md), [배포 ADR](docs/operations/DECISIONS.md) |
+
+각 세트의 `AGENTS.md`가 문서 역할과 코드 위치를 안내합니다. 결정 기록은 해당 세트의 `DECISIONS.md`에 보존합니다. 기존 백엔드와 AI 결정 원문은 [reference/decisions](docs/reference/decisions/AGENTS.md)에 보존합니다. 공통 기술 규칙은 [platform](docs/platform/AGENTS.md), 배포는 [operations](docs/operations/AGENTS.md)에서 관리합니다.
 
 구현 맥락이 필요하면 `knk-harness/`만 보지 말고 같은 `knk-workspace/` 아래의 서비스 저장소도 함께 확인합니다.
 
@@ -76,11 +69,11 @@ git clone <manyak-infra-repository-url>
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 운영 Terraform | `../manyak-terraform` |
-| 로컬·통합 인프라 | `../manyak-infra` |
+| 로컬과 통합 인프라 | `../manyak-infra` |
 
-## 계획 문서
+## 작업 계획과 기록
 
-Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업 담당·일정·진행은 Jira에서 관리합니다. 기능별 변경 순서·검증·복구와 실행 결과는 구현 저장소의 기존 계획·PR에 남깁니다.
+개발 목표, 우선순위, 작업 담당, 일정과 진행 상태는 Jira에서 관리합니다. 기능별 변경 순서와 검증, 복구 계획 및 실행 결과는 구현 저장소의 계획 문서와 PR에 남깁니다. 이전 문서와 로드맵은 Git 이력에서 확인합니다.
 
 ## 개발 레포지토리에 하네스 연결
 
@@ -108,9 +101,8 @@ Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업
 | --- | --- | --- |
 | `create-branch` | Jira 티켓 번호로 팀 브랜치 규칙에 맞는 Git 브랜치를 만들 때 | Jira 키, 브랜치 태그, 최신 `origin/dev` 기준 분기, 워크트리 변경사항 |
 | `create-commit` | 로컬 변경사항을 팀 커밋 메시지 규칙에 맞게 커밋할 때 | 변경사항 diff, 브랜치의 Jira 키, 커밋 태그, 테스트 결과 |
-| `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목·본문, 검증 결과 |
+| `create-pr` | 현재 브랜치의 변경사항으로 Draft PR을 만들거나 기존 PR에 반영할 때 | 선택한 base(기본 `dev`), 기존 PR 재사용, PR 제목과 본문, 검증 결과 |
 | `technical-writing` | 개발자나 제품 사용자를 위한 한국어 기술 문서를 작성, 검토, 재작성할 때 | 독자, 문서 목적, 용어 일관성, 환경/버전 맥락, Markdown 형식, 검토 체크리스트 |
-| `karpathy-guidelines` | 코드를 작성, 리뷰, 리팩터링할 때 흔한 LLM 코딩 실수를 줄일 때 | 변경 최소화, 복잡성 관리, 기존 패턴 준수, 검증 |
 
 ## 스킬 사용 전 도구 확인
 
@@ -121,7 +113,7 @@ Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업
 | Git | 전체 | `git status --short --branch` | Git 저장소인지 먼저 확인합니다. |
 | Python 3 | `create-branch` | `python3 --version` | 브랜치 이름 생성 스크립트를 실행할 수 없습니다. |
 | GitHub CLI | `create-pr` | `gh auth status` | PR 생성 전에 GitHub 로그인을 설정합니다. |
-| GitHub 원격 설정 | `create-pr` | `git remote -v` | 인증·원격 설정 확인은 push 권한을 보장하지 않습니다. 실제 push는 요청된 PR 생성 절차에서 수행하고, 실패하면 원인을 보고합니다. |
+| GitHub 원격 설정 | `create-pr` | `git remote -v` | 인증과 원격 설정 확인은 push 권한을 보장하지 않습니다. 실제 push는 요청된 PR 생성 절차에서 수행하고, 실패하면 원인을 보고합니다. |
 | Atlassian Rovo/Jira MCP | `create-branch` | Codex/Claude에서 Jira 이슈 조회 도구를 사용할 수 있는지 확인 | Jira 제목을 자동 조회할 수 없으므로 사용자가 이슈 제목을 제공해야 합니다. |
 
 ## 스킬별 외부 의존성
@@ -149,7 +141,7 @@ Phase·개발 목표·백로그는 [로드맵](docs/planning/roadmap.md), 작업
 
 ### create-pr
 
-`create-pr`는 요청된 변경을 원격에 push하고 Draft PR을 생성하거나 기존 PR에 반영합니다. 기본 base는 `dev`이며 사용자 지정 또는 기존 PR의 base를 존중합니다. 본문·캡처를 준비한 뒤 PR을 생성하고, 확보한 PR URL에서 이미지를 첨부합니다. GitHub CLI(`gh`)를 사용하며, 이미지 첨부에는 로그인된 브라우저가 필요합니다. 본문은 `docs/templates/pull-request/`에서 가장 가까운 템플릿을 골라 변경에 맞게 조정합니다.
+`create-pr`는 요청된 변경을 원격에 push하고 Draft PR을 생성하거나 기존 PR에 반영합니다. 기본 base는 `dev`이며 사용자 지정 또는 기존 PR의 base를 존중합니다. 본문과 캡처를 준비한 뒤 PR을 생성하고, 확보한 PR URL에서 이미지를 첨부합니다. GitHub CLI(`gh`)를 사용하며, 이미지 첨부에는 로그인된 브라우저가 필요합니다. 본문은 `docs/templates/pull-request/`에서 가장 가까운 템플릿을 골라 변경에 맞게 조정합니다.
 
 필수:
 

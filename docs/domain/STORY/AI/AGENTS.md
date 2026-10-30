@@ -2,18 +2,17 @@
 
 간편 제작 스토리 생성 AI 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 이 파일의 상대경로는 `docs/domain/STORY/AI/` 기준이다.
 
-제품 명세 문서는 하네스의 `docs/domain/` 아래 AI 세트와 `docs/REFERENCE/` 안에서만 참조한다. 그 밖의 과거 문서와 해당 문서로 연결된 링크는 근거로 사용하지 않는다.
+제품 명세 문서는 하네스의 `docs/domain/` 아래 AI 세트와 `docs/reference/` 안에서만 참조한다. 그 밖의 과거 문서와 해당 문서로 연결된 링크는 근거로 사용하지 않는다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다. 모델 이름, 제한 시간과 횟수는 해당 명세에서 확인한다.
 
 <br>
 
-### 1. 대상과 읽는 순서
+### 1. 대상
 
 이 세트는 스토리라인 생성, 컴파일, 인물 이미지와 썸네일 생성을 다룬다. ([1 배경](1-BACKGROUND.md))
 
 - 채팅 AI 세트([CHAT/AI](../../CHAT/AI/AGENTS.md))와 파일명과 절 번호가 같아도 내용은 다르다. 한쪽의 정책과 계약을 다른 쪽에 그대로 적용하지 않는다.
-- 처음에는 1번부터 5번까지 순서대로 읽어 요구사항, 설계와 계약을 확인한다. 6번 문서들은 구현과 평가를, 7번 문서들은 운영을 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추려고 앞 단계의 결정을 임의로 바꾸지 않는다. 구현과 설계가 다르면 6번이나 7번 문서에 차이를 적는다.
 - 앞 단계의 결정이 바뀌면 해당 문서를 먼저 고친다. 영향을 받는 이후 문서도 같은 작업에서 수정한다.
 - 제작 결과를 채팅 입력으로 전달하는 부분을 바꾸면 채팅 세트의 태스크 정의와 계약도 함께 확인한다.
@@ -68,8 +67,8 @@
 
 | 항목 | 위치 |
 |---|---|
-| 공통 문체와 형식 | [PRODUCT-SPEC-WRITING-GUIDE.md](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
-| 문서별 작성 기준과 그림 규칙 | [AI-SPEC-WRITING-GUIDE.md](../../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) |
+| 공통 문체와 형식 | [PRODUCT-SPEC-WRITING-GUIDE.md](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 문서별 작성 기준과 그림 규칙 | [AI-SPEC-WRITING-GUIDE.md](../../../reference/AI-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체의 문서 지침 | [AGENTS.md](../../../../AGENTS.md) |
 | 코드 규칙 | `manyak-ai`의 `AGENTS.md`, `.agents/STYLEGUIDE.md` |
 | 문서 변경 뒤의 검사 | `git diff --check`를 실행함 <br> 링크, 앵커와 참조한 절 번호도 확인함 |
@@ -94,5 +93,5 @@
 | 실제 모델 포함 | `./scripts/test.sh --live` | `.env`의 실제 키 필요, 호출 비용 발생 <br> 실제 모델 테스트 실행 조건은 `RUN_LIVE_TESTS=1` |
 | CI | `pytest --cov --cov-report=term-missing --cov-fail-under=90` | `src/` 분기 커버리지 90% 이상 <br> 린트와 타입 검사 미실행 |
 
-- 단위 테스트는 `tests/unit/`, API 테스트는 `tests/`, 실제 모델과 컴파일·채팅 연결 테스트는 `tests/integration/`에서 찾는다.
+- 단위 테스트는 `tests/unit/`, API 테스트는 `tests/`, 실제 모델과 컴파일, 채팅 연결 테스트는 `tests/integration/`에서 찾는다.
 - 실행 결과는 대상 커밋, 명령과 통과, 실패, 건너뜀 건수를 PR에 기록한다.

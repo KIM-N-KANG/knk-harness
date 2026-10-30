@@ -68,8 +68,8 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 | 항목 | 위치 |
 |---|---|
-| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) |
-| 문체와 파일명 | [제품 Spec 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../reference/BACKEND-SPEC-WRITING-GUIDE.md) |
+| 문체와 파일명 | [제품 Spec 작성 가이드](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체 지침 | 하네스 루트의 `AGENTS.md` |
 | 코드 규칙 | `manyak-server`의 `CLAUDE.md` |
 | 문서 변경 뒤 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |

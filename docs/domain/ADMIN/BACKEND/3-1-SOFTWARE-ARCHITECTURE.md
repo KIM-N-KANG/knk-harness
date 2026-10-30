@@ -38,8 +38,8 @@ ACCOUNT, MODERATION, STORY**
     S --> DB["`**PostgreSQL**`"]
     S -->|비어 있는 날짜만 조회, 비용 예산| AM["`**Amplitude**`"]
     S -->|보고서 내려받기, 1시간 캐시| GCS["`**Google Cloud Storage**
-    S -->|지표 조회, 60초 캐시| CW["`**CloudWatch, ECS**`"]
 Play 일괄 보고서`"]
+    S -->|지표 조회, 60초 캐시| CW["`**CloudWatch, ECS**`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     class A,DB,AM,GCS,CW ext
