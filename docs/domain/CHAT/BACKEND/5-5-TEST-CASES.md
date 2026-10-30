@@ -36,6 +36,9 @@
 |---|---|---|
 | 채팅 생성 | 공개 스토리, 비공개 스토리의 소유자와 타인, 삭제된 스토리, 시작 설정 지정과 타 스토리 소속, 게스트의 페르소나 지정, 소유자 없는 스토리에 회원 | 201과 치환된 프롤로그와 `model`가 기본 모델, 404, 404, 지정 시작 설정 또는 404, 401, 403 |
 | 모델 목록 | 활성 2종과 비활성 1종, 게스트 요청, 노출 순서 역전 | 활성만 노출 순서로, 같은 목록, 순서 반영 |
+| 모델 목록 프로모션 | `LITE` 프로모션 0 진행 중에 회원과 게스트 요청, 시작 전 회원 요청 | 모두 `turnCost` 20<br>회원만 `promotion`이 가격 0과 종료 시각, 게스트 `null`, 시작 전 `null` |
+| 체험 사용량 프로모션 | `LITE` 프로모션 0 진행 중에 회원과 게스트 조회, `LITE` 프로모션 10 진행 중 회원, `AURORA` 프로모션 0 진행 중 회원 | 회원 `chatTurn.limit` `null`과 `used` 유지, 게스트 기존 한도, 기존 한도, 기존 한도 |
+| 모델 프로모션 관리 | 조회<br>설정: 정상, 기존 덮어쓰기, `turnCost` -1과 10001, 종료가 시작 이전이거나 같음, 종료가 현재 이전, 사유 누락, 없는 코드, 비활성 모델<br>해제: 정상, 프로모션 없음, 사유 누락<br>관리자 표식 없는 앱 토큰, 토큰 없음, 역할 없는 관리자 토큰 | 비활성 포함 노출 순서와 `status`<br>200과 감사 로그 `CHAT_MODEL_PROMOTION_UPSERTED`, 200과 덮어쓴 값, 400, 400, 400, 400, 404, 200<br>200과 `promotion` `null`과 감사 로그 `CHAT_MODEL_PROMOTION_DELETED`, 404, 400<br>401, 401, 403 |
 | 모델 변경 | 소유자, 타인, 게스트 채팅에 회원, 비활성 코드, 없는 코드, 빈 값, `null`, 정지 계정, 같은 모델 재요청 | 200과 저장, 403, 403, 400, 400, 400, 400, 403, 200 |
 | 출력 분량 변경 | 소유자가 `longResponse`만 `true`로, `model`과 `longResponse`를 함께, 두 필드 모두 생략, `longResponse`가 `null`, `model`만 보내는 기존 요청, 게스트 채팅에 익명 요청, 타인 채팅, 정지 계정 | 200과 출력 분량만 저장되고 모델 유지, 200과 둘 다 저장, 400, 400, 200과 출력 분량 유지, 200과 저장, 403, 403<br>응답의 `model`은 유효 모델, `longResponse`는 변경 뒤 보관한 값 |
 | 설정 변경과 갱신 시각 | 모델 변경과 출력 분량 변경 뒤 일괄 조회 | `updatedAt`과 정렬 순서 유지 |
@@ -63,6 +66,8 @@
 | 응답 모델 기록 | 회원의 `AURORA` 채팅 턴<br>채팅 모델이 `AURORA`인 게스트 턴<br>`LITE` 턴 뒤 채팅 모델을 `AURORA`로 바꿈<br>`AURORA`로 바꾼 뒤 그 턴을 재생성 | AI 응답 행 `model_code` `AURORA`, 사용자 입력 행 `NULL`<br>`LITE`<br>이미 저장된 행은 `LITE` 그대로<br>그 행이 `AURORA`로 바뀜 |
 | 과금 | `LITE` 채팅의 회원 체험 잔여, 체험 소진, 잔액 부족, 게스트 한도 소진, 디바이스 헤더 누락 | 체험 소모, 선차감, 402, 402, 400과 모두 스트림 미개시 |
 | 모델별 과금 | `AURORA` 채팅에서 회원 체험 잔여, 체험 잔여와 잔액 49, 체험 소진, `LITE`으로 변경 뒤 체험 잔여, `LITE`으로 변경 뒤 체험 소진 | 50 차감과 `model_tier=AURORA` 전달과 체험 카운터 유지, 402와 체험 카운터 유지, 50 차감, 체험 소모와 `model_tier=LITE` 전달, 20 차감 |
+| 프로모션 과금 | `LITE` 프로모션 0 진행 중에 회원 체험 잔여, 체험 소진과 잔액 0, 재생성, 게스트<br>`LITE` 프로모션 10 진행 중에 체험 잔여, 체험 소진<br>`AURORA` 프로모션 30 진행 중<br>시작 전, 종료 시각과 같은 시각, 해제 뒤 | 원장 행과 체험 카운터 변화 없이 진행하고 AI 응답의 `credit_transaction_id`는 `NULL`, 같은 결과, 같은 결과, 게스트 체험 예약<br>체험 소모, 10 차감<br>30 차감<br>모델 가격 규칙 그대로 |
+| 프로모션 경계와 진행 중 턴 | 프로모션 0 진행 중 시작한 턴이 종료 시각 뒤 저장, 프로모션 밖에서 시작한 턴이 설정 뒤 저장 | 시작 시점 가격 유지, 무료와 20 차감 그대로 |
 | AI 요청의 식별자와 모델 코드 | 회원 턴, 게스트 턴(`AURORA` 저장), 재생성 | `user_id`는 공개 UUID와 `model_tier`는 청구 모델, `user_id`는 `null`과 `model_tier=LITE`, 요청 시점 모델 |
 | 생성 중 모델 변경 | AI 호출 중 `AURORA`에서 `LITE`으로 변경 뒤 완료, 변경 뒤 AI 실패 | 50 차감 유지와 `model_tier=AURORA`, 환불 50 |
 | AI 요청의 출력 분량 | 출력 분량을 켠 회원 채팅의 이어쓰기, 끈 상태에서 만든 턴을 켠 뒤 재생성, 출력 분량을 켠 게스트 채팅의 이어쓰기, 출력 분량을 끈 채팅의 이어쓰기 | `long_response=true`, `true`, `true`, `false`<br>`false`도 필드를 생략하지 않음 |
@@ -155,7 +160,7 @@
 | AI 호출 기록 | 본문 성공과 실패, 선택지, 대화 요약 성공과 실패 | `chat_response`, `choice_generation` 행과 `meta`, 실패 코드<br>요약은 `chat_compact` 행과 요약 범위의 끝 턴, `meta` 없음, AI 호출 실패에만 실패 코드 `AI_COMPACT_FAILED` |
 | 지표 | 이탈 뒤 저장 성공, AI 실패, 생성 마감 초과, 생성 중 거절 | `success`, `failure`, `failure`, `rejected`<br>`model_code` 태그는 청구 모델, 거절은 `none`<br>연결 종료만으로 `cancelled` 기록 없음 |
 | 분석 이벤트 | 저장 성공, 도달 턴, 저장 전 실패, 저장 후 전송 실패 | 성공 이벤트에 `model_code`, `turn_cost`, `long_response`, `ending_id` 포함, 실패 이벤트에 `model_code`와 `long_response`, 중복 실패 없음 |
-| 턴 저장 로그 | 체험 턴, 유료 `AURORA` 턴 | `ai_response_saved`에 `model_code=LITE`과 `turn_cost=0`, `model_code=AURORA`와 `turn_cost=50` |
+| 턴 저장 로그 | 체험 턴, 유료 `AURORA` 턴, 프로모션 0 턴 | `ai_response_saved`에 `model_code=LITE`과 `turn_cost=0`, `model_code=AURORA`와 `turn_cost=50`, `model_code=LITE`과 `turn_cost=0` |
 | 출력 분량 기록 | 출력 분량을 켠 채팅의 턴 저장과 재생성 저장 | `ai_response_saved`와 `ai_response_regenerated`에 `long_response=true` |
 | 기존 채팅 마이그레이션 | 모델 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `model_code=LITE`로 채워지고 NOT NULL 통과, 생략 삽입도 `LITE`로 성공 |
 | 기존 채팅의 출력 분량 마이그레이션 | 출력 분량 컬럼 추가 전 채팅 행, 컬럼을 생략한 삽입 | 실제 PostgreSQL에서 `long_response=false`로 채워지고 NOT NULL 통과, 생략 삽입도 `false`로 성공 |

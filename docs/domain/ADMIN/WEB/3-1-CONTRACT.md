@@ -41,6 +41,9 @@
 | 운영 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-34 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-34-인프라-지표) |
 | 운영 DB 테이블 | `GET /api/infra/db-tables` | [4-2-35 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-35-db-테이블-크기) |
 | 이프 내역 | `GET /api/credits/transactions` | [4-2-14 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-14-이프-내역) |
+| 프로모션 목록 | `GET /api/credits/promotions` | [CHAT 4-2-16 모델 프로모션 조회](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-16-모델-프로모션-조회) |
+| 프로모션 설정 | `PUT /api/credits/promotions/{code}` | [CHAT 4-2-17 모델 프로모션 설정](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-17-모델-프로모션-설정) |
+| 프로모션 해제 | `DELETE /api/credits/promotions/{code}` | [CHAT 4-2-18 모델 프로모션 해제](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-18-모델-프로모션-해제) |
 | 검수 제출 목록 | `GET /api/moderation/submissions` | [MODERATION 4-2-8 관리자 제출본 목록](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-8-관리자-제출본-목록) |
 | 검수 제출 상세 | `GET /api/moderation/submissions/{submissionId}` | [MODERATION 4-2-9 관리자 제출본 상세](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-9-관리자-제출본-상세) |
 | 검수 보류 해제 | `POST /api/moderation/holds/{submissionId}/release` | [MODERATION 4-2-7 보류 해제](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-7-보류-해제) |

@@ -160,10 +160,19 @@ erDiagram
 | `sort_order` | integer | NOT NULL, CHECK `>= 1` | 노출 순서 |
 | `is_active` | boolean | NOT NULL, 기본 `true` | 목록 노출과 선택 허용 여부 |
 | `is_default` | boolean | NOT NULL, 기본 `false`, CHECK `is_active OR NOT is_default` | 새 채팅과 비활성 모델 대체에 쓰는 기본 모델<br>노출 중인 행만 가능 |
+| `promo_turn_cost` | bigint | CHECK `0 이상 10000 이하` | 프로모션 기간에 회원 턴에 적용하는 턴당 이프<br>0은 무료 |
+| `promo_starts_at` | timestamptz | | 프로모션 시작 시각, 포함 |
+| `promo_ends_at` | timestamptz | | 프로모션 종료 시각, 제외 |
+
+| 제약 | 조건 |
+|---|---|
+| `ck_chat_models_promo` | 프로모션 세 컬럼이 모두 `NULL`이거나 모두 값이 있고 `promo_ends_at > promo_starts_at` |
 
 | 인덱스 | 컬럼 |
 |---|---|
 | `uq_chat_models_default` | `(is_default)` UNIQUE WHERE `is_default` |
+
+프로모션은 모델당 하나만 둔다. 새로 설정하면 덮어쓰고 이력은 관리자 감사 로그에 남는다. 종료 시각이 지난 값은 지우지 않아도 적용되지 않는다.
 
 | `code` | `name` | `turn_cost` | `sort_order` | `is_default` |
 |---|---|---|---|---|

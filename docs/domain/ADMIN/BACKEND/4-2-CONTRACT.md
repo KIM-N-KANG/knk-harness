@@ -3425,7 +3425,7 @@ Authorization: Bearer {adminToken}
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별 |
-| CHAT | 없음 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
+| CHAT | 관리자 요청자 식별과 감사 기록 연산 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |

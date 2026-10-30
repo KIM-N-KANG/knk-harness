@@ -25,11 +25,12 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 **2. 인증 수준**
 
-모든 엔드포인트의 인증 수준은 `선택`이다. 인증 필수 경로는 없다.
+관리자 경로(`/admin/**`)를 제외한 엔드포인트의 인증 수준은 `선택`이다. 관리자 경로의 판정은 ADMIN 세트의 관리자 판정 필터가 맡는다. ([4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
-| 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
-|---|---|---|
-| `선택` | 익명으로 처리 | 회원으로 처리 |
+| 수준 | 토큰 없음 또는 무효 | 유효한 앱 토큰 | 관리자 토큰 |
+|---|---|---|---|
+| `선택` | 익명으로 처리 | 회원으로 처리 | 익명으로 처리 |
+| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 통과 |
 
 <br>
 
@@ -51,7 +52,8 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 |---|---|
 | 채팅 생성 | 읽을 수 있는 스토리<br>소유자 없는 스토리는 익명 요청만 |
 | 상세, 생성 스트림 재연결, 삭제, 이어쓰기, 재생성, 선택지, 공유 발급, 채팅 설정 변경 | 회원 소유 채팅은 소유자만<br>소유자 없는 채팅은 익명 요청만<br>위반은 403 |
-| 모델 목록 | 누구나 |
+| 모델 목록 | 누구나<br>프로모션 정보는 회원에게만 |
+| 모델 프로모션 조회, 설정, 해제 | 관리자 |
 | 일괄 조회 | 열람할 수 없는 채팅은 제외 |
 | 공유 열람 | 토큰을 아는 누구나<br>회원이면 스토리 읽기 권한 판정에만 회원 정보 사용 |
 | 페르소나 지정 | 회원만<br>본인 페르소나만 |
@@ -432,7 +434,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 인증 | 선택 |
 | 성공 | 200, SSE |
 
-회원 턴은 채팅의 유효 모델로 생성한다. 유효 모델이 라이트(`LITE`)이면 턴 체험 잔여를 먼저 써서 무료이고 잔여가 없으면 라이트 가격을 선차감한다. 다른 모델은 체험 잔여와 무관하게 그 모델의 가격을 선차감한다. 게스트 턴은 선택한 모델과 무관하게 라이트(`LITE`)로 생성하고 체험 횟수를 예약한다. 모델별 가격은 모델 목록이 기준이다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다. 생성 중 재전송은 거절한다. 생성이 끝난 뒤 같은 입력을 다시 보내면 마지막 턴 검사를 거쳐 새 턴으로 과금한다. 연결이 끊겨도 생성과 저장을 계속한다. 엔딩에 도달한 채팅도 이어쓰기와 선택지 생성은 할 수 있다.
+회원 턴은 채팅의 유효 모델로 생성하고 그 모델의 적용 가격을 매긴다. 적용 가격이 0이면 체험을 쓰지 않고 무료다. 적용 가격이 0보다 크면 유효 모델이 라이트(`LITE`)일 때 턴 체험 잔여를 먼저 써서 무료이고 잔여가 없으면 적용 가격을 선차감한다. 다른 모델은 체험 잔여와 무관하게 적용 가격을 선차감한다. 게스트 턴은 선택한 모델과 무관하게 라이트(`LITE`)로 생성하고 체험 횟수를 예약한다. 모델별 가격은 모델 목록이 기준이다. 잔액 부족과 한도 소진은 스트림을 열기 전에 JSON으로 거절한다. 생성 중 재전송은 거절한다. 생성이 끝난 뒤 같은 입력을 다시 보내면 마지막 턴 검사를 거쳐 새 턴으로 과금한다. 연결이 끊겨도 생성과 저장을 계속한다. 엔딩에 도달한 채팅도 이어쓰기와 선택지 생성은 할 수 있다.
 
 **1. 요청 본문**
 
@@ -945,7 +947,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 인증 | 선택 |
 | 성공 | 200 |
 
-노출 중인 모델을 노출 순서로 반환한다. 식별자는 문자열 `code`다. 채팅 설정 변경 요청의 `model`에 그대로 쓴다. 게스트도 같은 목록과 가격을 받는다. 가격은 회원 턴에 적용된다. 회원의 턴 체험은 라이트(`LITE`)에만 적용되므로 라이트의 가격은 체험을 소진한 뒤의 턴부터 적용된다.
+노출 중인 모델을 노출 순서로 반환한다. 식별자는 문자열 `code`다. 채팅 설정 변경 요청의 `model`에 그대로 쓴다. 게스트도 같은 목록과 가격을 받는다. 가격은 회원 턴에 적용된다. 회원 요청이고 그 모델의 프로모션이 진행 중이면 `promotion`에 프로모션 가격을 싣고 그동안 회원 턴은 그 가격을 적용한다. 회원의 턴 체험은 적용 가격이 0보다 큰 라이트(`LITE`) 턴에만 적용되므로 그 가격은 체험을 소진한 뒤의 턴부터 적용된다. 라이트의 프로모션 가격이 0이면 체험 사용량 조회의 회원 턴 `limit`이 `null`이다. ([4-2-4 체험 사용량 조회](../../PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-4-체험-사용량-조회))
 
 **1. 응답**
 
@@ -953,7 +955,10 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 |---|---|---|
 | `[].code` | `string` | 모델 코드 |
 | `[].name` | `string` | 표시 이름 |
-| `[].turnCost` | `integer` | 턴당 소모 이프<br>재생성 포함<br>라이트(`LITE`)는 회원 체험을 소진한 뒤 적용 |
+| `[].turnCost` | `integer` | 모델 가격<br>턴당 소모 이프, 재생성 포함<br>라이트(`LITE`)는 회원 체험을 소진한 뒤 적용<br>프로모션이 진행 중이어도 바뀌지 않음 |
+| `[].promotion` | `object / null` | 진행 중인 프로모션<br>회원 요청에만 싣고 게스트와 진행 중이 아닌 모델은 `null` |
+| `[].promotion.turnCost` | `integer` | 회원 턴에 적용하는 프로모션 가격<br>0이면 무료 |
+| `[].promotion.endsAt` | `string` | 종료 시각, 제외 |
 | `[].isDefault` | `boolean` | 새 채팅의 기본 모델<br>목록에 정확히 하나 |
 
 <br>
@@ -980,8 +985,19 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 ```json
 [
-  { "code": "LITE", "name": "라이트", "turnCost": 20, "isDefault": false },
-  { "code": "AURORA", "name": "오로라", "turnCost": 50, "isDefault": true }
+  { "code": "LITE", "name": "라이트", "turnCost": 20, "isDefault": false, "promotion": null },
+  { "code": "AURORA", "name": "오로라", "turnCost": 50, "isDefault": true, "promotion": null }
+]
+```
+
+<br>
+
+**2) 200 Response body: 라이트 프로모션 진행 중, 회원 요청**
+
+```json
+[
+  { "code": "LITE", "name": "라이트", "turnCost": 20, "isDefault": false, "promotion": { "turnCost": 0, "endsAt": "2026-11-05T15:00:00Z" } },
+  { "code": "AURORA", "name": "오로라", "turnCost": 50, "isDefault": true, "promotion": null }
 ]
 ```
 
@@ -1071,3 +1087,165 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 ```
 
 </details>
+
+<br>
+
+### 4-2-16 모델 프로모션 조회
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/chat-models` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+비활성 모델을 포함한 모든 모델을 노출 순서로 반환한다.
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 모델<br>노출 순서 |
+| `items[].code` | `string` | 모델 코드 |
+| `items[].name` | `string` | 표시 이름 |
+| `items[].turnCost` | `integer` | 모델 가격 |
+| `items[].isActive` | `boolean` | 노출 여부 |
+| `items[].isDefault` | `boolean` | 기본 모델 여부 |
+| `items[].promotion` | `object / null` | 프로모션<br>없으면 `null` |
+| `items[].promotion.turnCost` | `integer` | 프로모션 가격<br>0 이상 |
+| `items[].promotion.startsAt` | `string` | 시작 시각, 포함 |
+| `items[].promotion.endsAt` | `string` | 종료 시각, 제외 |
+| `items[].promotion.status` | `string` | 응답 시각 기준 상태<br>`SCHEDULED`: 시작 전<br>`ACTIVE`: 진행 중<br>`ENDED`: 종료 |
+
+<br>
+
+**2. 실패 응답**
+
+공통 실패만 있다.
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/chat-models
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "code": "LITE", "name": "라이트", "turnCost": 20, "isActive": true, "isDefault": false,
+      "promotion": { "turnCost": 0, "startsAt": "2026-10-31T01:00:00Z", "endsAt": "2026-11-05T15:00:00Z", "status": "SCHEDULED" }
+    },
+    { "code": "AURORA", "name": "오로라", "turnCost": 50, "isActive": true, "isDefault": true, "promotion": null }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-17 모델 프로모션 설정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `PUT /admin/chat-models/{code}/promotion` |
+| 인증 | 관리자 |
+| 성공 | 200<br>모델 프로모션 조회의 항목 구조 |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `code` | 경로 | 필수 | 모델 코드<br>비활성 모델도 허용 |
+| `turnCost` | `integer` | 필수 | 프로모션 가격<br>0 이상 10,000 이하 |
+| `startsAt` | `string` | 필수 | 시작 시각<br>과거도 허용하며 과거면 즉시 진행 |
+| `endsAt` | `string` | 필수 | 종료 시각<br>`startsAt`과 현재보다 이후 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 모델당 한 프로모션이며 이미 있으면 덮어쓴다.
+- 변경 감사 기록(`CHAT_MODEL_PROMOTION_UPSERTED`)과 모델 행 갱신을 한 트랜잭션에서 수행한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 범위 밖 `turnCost`<br>`endsAt`이 `startsAt` 이전이거나 같음<br>`endsAt`이 현재 이전<br>필수 필드 누락, `reason` 길이 위반 |
+| 404 | `NOT_FOUND` | 없는 모델 코드 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+PUT /api/v1/admin/chat-models/LITE/promotion
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "turnCost": 0, "startsAt": "2026-10-31T01:00:00Z", "endsAt": "2026-11-05T15:00:00Z", "reason": "할로윈 이벤트 라이트 무료" }
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "code": "LITE", "name": "라이트", "turnCost": 20, "isActive": true, "isDefault": false,
+  "promotion": { "turnCost": 0, "startsAt": "2026-10-31T01:00:00Z", "endsAt": "2026-11-05T15:00:00Z", "status": "SCHEDULED" }
+}
+```
+
+**3) 400 Response body**
+
+```json
+{
+  "timestamp": "2026-10-30T15:00:00Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "종료 시각은 시작 시각 이후여야 합니다.",
+  "path": "/api/v1/admin/chat-models/LITE/promotion",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-18 모델 프로모션 해제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `DELETE /admin/chat-models/{code}/promotion` |
+| 인증 | 관리자 |
+| 성공 | 200<br>모델 프로모션 조회의 항목 구조, `promotion`은 `null` |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `code` | 경로 | 필수 | 모델 코드 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 진행 중인 프로모션도 즉시 끝난다. 이미 시작한 턴은 시작 시점의 적용 가격으로 끝난다.
+- 변경 감사 기록(`CHAT_MODEL_PROMOTION_DELETED`)과 모델 행 갱신을 한 트랜잭션에서 수행한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reason` 누락, 길이 위반 |
+| 404 | `NOT_FOUND` | 없는 모델 코드<br>프로모션 없음 |
