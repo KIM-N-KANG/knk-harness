@@ -213,7 +213,7 @@ GET /api/v1/credits/policies
 | `storyCreation` | `object` | 간편 제작 |
 | `storylineGeneration` | `object` | 스토리라인 생성 |
 | `*.used` | `integer` | 사용 횟수 |
-| `*.limit` | `integer / null` | 한도<br>회원의 스토리라인 생성은 `null`이고 사용 횟수는 0 |
+| `*.limit` | `integer / null` | 한도<br>회원의 스토리라인 생성은 `null`이고 사용 횟수는 0<br>회원의 채팅 턴은 라이트(`LITE`)의 프로모션 가격 0이 진행 중인 동안 `null`이고 사용 횟수는 그대로 ([4-2-14 모델 목록](../../CHAT/BACKEND/4-2-CONTRACT.md#4-2-14-모델-목록)) |
 
 <br>
 
