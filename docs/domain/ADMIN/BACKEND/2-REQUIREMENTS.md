@@ -196,8 +196,10 @@ AI 호출 기록의 팀 계정 판정은 채팅 기능(`chat_response`, `choice_
 | `STORY_COMPLETED` | `story_completed` |
 | `STORY_MODERATION_COMPLETED` | `story_moderation_completed` |
 | `ATTENDANCE_REMINDER` | `attendance_reminder` |
+| `CREDIT_EXPIRY_REMINDER` | `credit_expiry_reminder` |
 
-- 활동 알림은 알림 내역의 `ACTIVITY` 분류 가운데 공개 중단 알림을 뺀 세 종류이며 캠페인 없이 종류 코드로 묶는다.
+- 활동 알림은 알림 내역의 `ACTIVITY` 분류 가운데 공개 중단 알림을 뺀 네 종류이며 캠페인 없이 종류 코드로 묶는다.
+- 이프 만료 예정 알림은 알림함 사본에도 푸시와 같은 딥링크(`utm_source` `push`)를 저장한다. 그래서 알림함에서 누른 열람도 푸시 열람에 들고 알림함 열람은 0이다. 도달 회원 수는 푸시 도달만 세고 푸시를 꺼 둔 회원도 알림함에서 열 수 있어 열람률이 높게 나올 수 있다. ([NOTIFICATION 4-1-19 알림 내역 기록](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-19-알림-내역-기록))
 - 페이지 조회의 UTM 이벤트 속성은 그 페이지를 연 주소의 쿼리 값이다. 웹 푸시를 누르면 브라우저가 딥링크 주소를 연다. 웹 화면이 열려 있을 때 뜨는 알림 안내와 알림함 항목도 딥링크의 경로와 쿼리로 이동한다.
 - 앱은 푸시를 누른 순간과 알림함 항목을 누른 순간 딥링크 쿼리의 UTM 네 값을 알림 열기 이벤트에 싣는다. 로그인하지 않았거나 다른 계정의 알림이라 홈으로 이동해도 보낸다. 딥링크나 UTM이 없으면 보내지 않는다. ([6-analytics 6-4-2-21 알림 열기](../../../spec/6-analytics.md#6-4-2-21-알림-열기-phase-3--계획knk-1927))
 - 앱 측정 시작일 전 버전의 앱은 알림 열기 이벤트를 보내지 않는다. 그 버전을 쓰는 회원이 앱에서 연 알림은 측정 시작일 뒤에도 앱 열람에 들지 않는다.

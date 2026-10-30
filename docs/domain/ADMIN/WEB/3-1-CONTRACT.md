@@ -25,7 +25,7 @@
 | 스토리 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-22 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-간편-제작-퍼널) |
 | 스토리 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-23 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-상세-진입-퍼널) |
 | 성장 유입 소스 | `GET /api/campaigns/sources` | [4-2-24 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-24-캠페인-유입-소스) |
-| 성장 푸시 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
+| 성장 알림 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
 | 캠페인 상세의 열람 | `GET /api/campaigns/push-opens/{campaignId}` | [4-2-42 캠페인 열람](../BACKEND/4-2-CONTRACT.md#4-2-42-캠페인-열람) |
 | 성장 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
 | 성장 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |

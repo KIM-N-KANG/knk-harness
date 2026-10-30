@@ -2873,7 +2873,7 @@ Authorization: Bearer {adminToken}
 | `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
 | `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
 | `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 가장 이른 측정 시작일 가운데 늦은 날<br>집계 구간이 없으면 `null` |
-| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목<br>항목마다 아래 필드와 열람 값 구조 |
+| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` 순서의 4항목<br>항목마다 아래 필드와 열람 값 구조 |
 | `activityTypes[].type` | `string` | 시나리오 식별자 |
 | `activityTypes[].deliveredMembers` | `integer` | 종류와 날짜마다 중복 없이 센 도달 회원 수의 합<br>`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체 |
 
@@ -2893,6 +2893,7 @@ Authorization: Bearer {adminToken}
 - 플랫폼은 측정 시작일이 설정돼 있고 대상의 시작이 그 날 이후일 때 측정한다. 대상의 시작은 캠페인이면 `startedAt`의 KST 날짜, 활동 알림이면 `activityFrom`이다.
 - 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 같은 날 웹과 앱에서 모두 연 회원은 합계에 두 번 든다. 서버는 값을 자르지 않는다.
 - 알림함 열람에는 열람률이 없다.
+- `CREDIT_EXPIRY_REMINDER`는 알림함 사본의 딥링크도 푸시 UTM이라 알림함에서 누른 열람이 푸시 열람에 들고 알림함 열람은 0이다.
 
 <br>
 
@@ -2981,7 +2982,8 @@ Authorization: Bearer {adminToken}
   "activityTypes": [
     { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "webPushOpens": 27, "androidPushOpens": null, "pushOpenRate": 0.4426, "inboxOpens": 6, "webInboxOpens": 6, "androidInboxOpens": null },
     { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "webPushOpens": 4, "androidPushOpens": null, "pushOpenRate": 0.3636, "inboxOpens": 1, "webInboxOpens": 1, "androidInboxOpens": null },
-    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "webPushOpens": 104, "androidPushOpens": null, "pushOpenRate": 0.0862, "inboxOpens": 12, "webInboxOpens": 12, "androidInboxOpens": null }
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "webPushOpens": 104, "androidPushOpens": null, "pushOpenRate": 0.0862, "inboxOpens": 12, "webInboxOpens": 12, "androidInboxOpens": null },
+    { "type": "CREDIT_EXPIRY_REMINDER", "deliveredMembers": 40, "openState": "MEASURED", "pushOpens": 9, "webPushOpens": 9, "androidPushOpens": null, "pushOpenRate": 0.225, "inboxOpens": 0, "webInboxOpens": 0, "androidInboxOpens": null }
   ]
 }
 ```
