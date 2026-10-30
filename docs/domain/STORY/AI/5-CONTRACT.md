@@ -1,8 +1,8 @@
 # 5. 계약
 
-본 문서는 AI 서버가 백엔드·외부 모델 API와 통신할 때 지켜야 하는 규약을 정의한다.
+본 문서는 AI 서버가 백엔드, 외부 모델 API와 통신할 때 지켜야 하는 규약을 정의한다.
 
-백엔드와의 스토리라인·컴파일 API 계약, 외부 모델과의 텍스트·이미지 생성 API 계약을 다룬다.
+백엔드와의 스토리라인, 컴파일 API 계약, 외부 모델과의 텍스트, 이미지 생성 API 계약을 다룬다.
 
 <br>
 
@@ -24,11 +24,11 @@
 |---|---|---|---|
 | `genre_tags` | `string[]` | 필수 | 장르 태그 |
 | `protagonist` | `object` | 필수 | 주인공 |
-| `protagonist.name` | `string / null` | 선택 | 이름<br>생략·`null`·공백만 있는 값은 AI가 결정 |
+| `protagonist.name` | `string / null` | 선택 | 이름<br>생략, `null`, 공백만 있는 값은 AI가 결정 |
 | `protagonist.gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>생략하거나 `null`이면 AI가 결정 |
 | `protagonist.features` | `string[] / null` | 선택 | 특징 태그 최대 3개 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열 |
 | `supporting_characters` | `object[] / null` | 선택 | 주변 인물 0~5명 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열<br>빈 객체 `{}`도 한 명으로 취급 |
-| `supporting_characters[].name` | `string / null` | 선택 | 이름<br>생략·`null`·공백만 있는 값은 AI가 결정 |
+| `supporting_characters[].name` | `string / null` | 선택 | 이름<br>생략, `null`, 공백만 있는 값은 AI가 결정 |
 | `supporting_characters[].gender` | `string / null` | 선택 | `MALE` 또는 `FEMALE`<br>생략하거나 `null`이면 AI가 결정 |
 | `supporting_characters[].features` | `string[] / null` | 선택 | 특징 태그 최대 3개 (백엔드 검증)<br>생략하거나 `null`이면 빈 배열 |
 
@@ -45,7 +45,7 @@
 | `meta` | `object` | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-요청-헤더와-메타데이터)) |
 
 <details>
-<summary><strong>요청·응답 예시</strong></summary>
+<summary><strong>요청, 응답 예시</strong></summary>
 
 <br>
 
@@ -185,7 +185,7 @@
 | `meta` | `object` | 필수 | 호출 기록<br>계약에 정한 집계 기준 적용 ([5-5 계약](#5-5-요청-헤더와-메타데이터)) |
 
 <details>
-<summary><strong>요청·응답 예시</strong></summary>
+<summary><strong>요청, 응답 예시</strong></summary>
 
 <br>
 
@@ -219,7 +219,7 @@
 
 <br>
 
-**2) 200 Response body — 전체 완료**
+**2) 200 Response body, 전체 완료**
 
 스토리 설정, 인물 이미지와 썸네일이 모두 생성된 예시다. 이미지의 Base64 문자열은 생략했다.
 
@@ -327,7 +327,7 @@
 
 <br>
 
-**3) 200 Response body — 부분 완료**
+**3) 200 Response body, 부분 완료**
 
 인물 이미지와 썸네일 생성이 시간 초과로 실패한 경우다. 전체 완료 예시와 달라지는 필드만 표시했다.
 
@@ -357,7 +357,7 @@
 
 ### 5-4 실패 계약
 
-422·500·502의 조건, 본문 형식, 502 메시지와 이미지 `error` 값은 오류 처리에서 정한다. ([7-1-5 실패 출력](7-1-ERROR-HANDLING.md#7-1-5-실패-출력))
+422, 500, 502의 조건, 본문 형식, 502 메시지와 이미지 `error` 값은 오류 처리에서 정한다. ([7-1-5 실패 출력](7-1-ERROR-HANDLING.md#7-1-5-실패-출력))
 
 <br>
 
@@ -383,9 +383,9 @@
 |---|---|---|
 | `model` | `string` | 본 텍스트 호출의 실제 모델 이름 |
 | `provider` | `string` | 모델 공급자 |
-| `prompt_versions` | `map<string, integer>` | 실제 사용한 템플릿의 이름별 버전<br>컴파일 요청은 컴파일·인물 이미지·썸네일 템플릿 버전 포함 |
-| `input_token_count` | `integer / null` | 본 호출·전체 재생성·부분 보완의 입력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
-| `output_token_count` | `integer / null` | 본 호출·전체 재생성·부분 보완의 출력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
+| `prompt_versions` | `map<string, integer>` | 실제 사용한 템플릿의 이름별 버전<br>컴파일 요청은 컴파일, 인물 이미지, 썸네일 템플릿 버전 포함 |
+| `input_token_count` | `integer / null` | 본 호출, 전체 재생성, 부분 보완의 입력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
+| `output_token_count` | `integer / null` | 본 호출, 전체 재생성, 부분 보완의 출력 토큰 합계<br>이미지 호출 제외, 알 수 없으면 `null`<br>응답 없는 호출은 누락될 수 있어 실제 청구량과 다를 수 있음 |
 | `retry_count` | `integer` | 전체 재생성과 부분 보완의 호출 횟수<br>SDK 재시도 제외<br>스토리라인 0~4회, 컴파일 0~2회 |
 
 <br>
@@ -396,7 +396,7 @@
 
 **1. 요청**
 
-| 항목 | API 인자·호출 방식 |
+| 항목 | API 인자, 호출 방식 |
 |---|---|
 | API | `google-genai` SDK의 `generate_content` |
 | 모델 이름 | `model` |
@@ -420,7 +420,7 @@
 | 실제 모델 이름 | 응답의 모델 이름. 비어 있으면 요청에 쓴 이름 |
 
 <details>
-<summary><strong>텍스트 요청·응답 구조 예시</strong></summary>
+<summary><strong>텍스트 요청, 응답 구조 예시</strong></summary>
 
 <br>
 
@@ -454,13 +454,13 @@
 
 **1. 요청**
 
-| 항목 | API 인자·호출 방식 |
+| 항목 | API 인자, 호출 방식 |
 |---|---|
 | API | `openai` SDK의 `images.generate` |
 | 모델 이름 | `model` |
 | 화질 | `quality` |
 | 이미지 크기 | `size` (`가로x세로`) |
-| 호출·연결 제한 시간 | `timeout` |
+| 호출, 연결 제한 시간 | `timeout` |
 | 이미지 프롬프트 | `prompt` |
 | 출력 형식 | `output_format="webp"` |
 | 장수 | `n=1` |
@@ -475,7 +475,7 @@
 | 실제 모델 이름 | 요청에 쓴 이름 |
 
 <details>
-<summary><strong>이미지 요청·응답 구조 예시</strong></summary>
+<summary><strong>이미지 요청, 응답 구조 예시</strong></summary>
 
 <br>
 

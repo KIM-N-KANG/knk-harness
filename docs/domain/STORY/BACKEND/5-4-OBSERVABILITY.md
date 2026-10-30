@@ -15,12 +15,13 @@ flowchart LR
     S -->|표준 출력 JSON| F["<b>FireLens</b><br/>Fluent Bit"]
     F -->|로그 인덱스| OS["<b>OpenSearch</b>"]
     F --> CW["<b>CloudWatch</b><br/>안전망"]
-    S -->|OTLP 트레이스| DP["<b>Data Prepper</b>"]
+    S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
+    C --> DP["<b>Data Prepper</b>"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["<b>OpenSearch Dashboards</b>"]
-    S -->|OTLP 지표| G["<b>Grafana Cloud</b>"]
+    S -->|OTLP 지표| C
+    C -->|SigV4 remote write| G["<b>AMP</b>"]
     S -->|AI 호출 기록| PG["<b>PostgreSQL</b><br/>ai_call_logs"]
-    PG --> G
     S -->|5xx| SE["<b>Sentry</b>"]
     SE --> SL["<b>Slack</b><br/>일일 요약"]
     S -->|헤더 전달| AI["<b>AI 서버</b>"]
@@ -31,6 +32,8 @@ flowchart LR
     class S comp
     class F,OS,CW,DP,OD,G,PG,SE,SL,AI,LF,AM ext
 ```
+
+운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -94,7 +97,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`, 5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>5xx는 `error_code`(예외 클래스 이름 또는 상태 이름)<br>actuator, swagger, `/error` 제외 |
-| 추적 헤더 누락 | `/api/` 요청에 기기·세션 헤더가 없을 때 WARN<br>웹훅 경로 제외 | 누락 헤더 이름, 메서드, 경로<br>평문 로그 |
+| 추적 헤더 누락 | `/api/` 요청에 기기, 세션 헤더가 없을 때 WARN<br>웹훅 경로 제외 | 누락 헤더 이름, 메서드, 경로<br>평문 로그 |
 | AI 호출 | 호출 직전 `ai_call_started`, 종료 시 `ai_call_completed` | `feature`, `ai_call_log_id`<br>종료 시 `outcome`(`success`, `failure`), `duration_ms` |
 | 완성 요청 | 요청 수신<br>`story_create_requested` | `creation_id`(진행 ID) |
 | 완성 성공 | 저장 성공<br>`story_created` | `story_id`(공개 ID), `ai_call_log_id`, `duration_ms`<br>회수 재구성은 `ai_call_log_id`가 null |
@@ -157,7 +160,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경만 Grafana Cloud에 있음 |
+| 전송 여부 | 지표 전송을 켠 환경만 AMP에 있음 |
 | 전송 주기 | 60초 간격 |
 | 인스턴스 | 리소스 속성 `service.instance.id`가 기동마다 바뀜<br>여러 태스크의 누적 건수는 인스턴스별로 합산 |
 | 스텁 환경 | AI를 호출하지 않아 지연이 실제와 다름 |

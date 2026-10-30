@@ -6,7 +6,7 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 
 <br>
 
-### 1. 문서의 역할과 읽는 순서
+### 1. 문서의 역할
 
 | 문서 | 정하는 것 |
 |---|---|
@@ -25,7 +25,6 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 | [6-DEPLOYMENT.md](6-DEPLOYMENT.md) | 배포 단위, 환경 변수, 조건, 되돌리기 |
 | [DECISIONS.md](DECISIONS.md) | 결정의 이력 |
 
-- 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 미정으로 표시된 항목을 추측으로 채우지 않는다.
 - 등록과 수정 요청의 본문과 실패 조건은 STORY 세트가 정한다. 검수 기준과 응답 의미는 AI 서버가 정한다. 검수 완료 알림과 공개 중단 알림은 NOTIFICATION 세트가 정한다. 공개 중단 표시 컬럼은 STORY 세트의 스토리 테이블에 있다.
@@ -82,8 +81,8 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 
 | 항목 | 위치 |
 |---|---|
-| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) |
-| 문체와 파일명 | [제품 Spec 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../reference/BACKEND-SPEC-WRITING-GUIDE.md) |
+| 문체와 파일명 | [제품 Spec 작성 가이드](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체 지침 | 하네스 루트의 `AGENTS.md` |
 | 코드 규칙 | `manyak-server`의 `CLAUDE.md` |
 | 문서 변경 후 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |

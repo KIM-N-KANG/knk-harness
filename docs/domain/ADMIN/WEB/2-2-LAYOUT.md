@@ -2,7 +2,7 @@
 
 이 문서는 관리자 웹 화면의 영역 순서와 격자, 너비별 열 수를 정한다.
 
-간격, 글자 크기, 모서리 같은 토큰 값은 관리자 저장소의 디자인 문서에, 각 영역에 담을 정보는 정보 구조에 있다. ([manyak-admin DESIGN.md](../../../../../manyak-admin/docs/DESIGN.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
+간격, 글자 크기, 모서리 같은 토큰 값은 관리자 저장소의 디자인 문서에, 각 영역에 담을 정보는 정보 구조에 있다. ([manyak-admin DESIGN.md](https://github.com/KIM-N-KANG/manyak-admin/blob/dev/docs/DESIGN.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
 
 <br>
 

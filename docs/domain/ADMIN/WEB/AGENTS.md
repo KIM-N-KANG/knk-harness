@@ -28,7 +28,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 
 - 처음 읽을 때는 1-1부터 3-4까지 순서대로 읽는다. 4는 품질, 5는 검증과 배포다.
 - 서버 계약의 기준은 BACKEND 세트의 4-2다. 이 세트는 웹이 쓰는 범위와 화면 규칙만 정한다. ([BACKEND 4-2 계약](../BACKEND/4-2-CONTRACT.md))
-- 색, 글꼴, 간격 같은 디자인 토큰의 기준은 관리자 저장소의 디자인 문서다. ([manyak-admin DESIGN.md](../../../../../manyak-admin/docs/DESIGN.md))
+- 색, 글꼴, 간격 같은 디자인 토큰의 기준은 관리자 저장소의 디자인 문서다. ([manyak-admin DESIGN.md](https://github.com/KIM-N-KANG/manyak-admin/blob/dev/docs/DESIGN.md))
 
 <br>
 
@@ -79,9 +79,9 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 
 | 항목 | 위치 |
 |---|---|
-| 문서별 작성 기준 | [클라이언트 명세 작성 가이드](../../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) |
-| 문체와 파일명 | [제품 Spec 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
-| 화면 용어 | [용어집](../../../spec/0-glossary.md)과 [BACKEND DECISIONS](../BACKEND/DECISIONS.md) 결정 11 |
+| 문서별 작성 기준 | [클라이언트 명세 작성 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md) |
+| 문체와 파일명 | [제품 Spec 작성 가이드](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 화면 용어 | [용어집](../../../reference/GLOSSARY.md)과 [BACKEND DECISIONS](../BACKEND/DECISIONS.md) 결정 11 |
 | 코드 규칙과 명령 | `manyak-admin`의 `AGENTS.md` |
 | 문서 변경 뒤 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |
 | 코드 검증 | 관리자 저장소에서 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` |

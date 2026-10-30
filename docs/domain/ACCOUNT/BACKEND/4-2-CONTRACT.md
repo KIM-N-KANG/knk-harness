@@ -163,7 +163,7 @@
 | 500 | `INTERNAL_SERVER_ERROR` | 계정 저장 중 DB 오류<br>원인을 포함하지 않는 고정 문구 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -258,7 +258,7 @@ X-Manyak-Device-Id: 2b7e1c4a-5d6f-4a8b-9c0d-1e2f3a4b5c6d
 | 500 | `INTERNAL_SERVER_ERROR` | 재조회로도 계정을 확정하지 못함, DB 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -332,7 +332,7 @@ X-Manyak-Consent-Token: <opaque-code>
 | 401 | `UNAUTHORIZED` | ID 토큰 검증 실패 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -374,7 +374,7 @@ Content-Type: application/json
 실패는 공통 실패뿐이다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -428,7 +428,7 @@ Content-Type: application/json
 | 403 | `FORBIDDEN` | 정지 계정<br>세션 폐기 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -497,7 +497,7 @@ Content-Type: application/json
 이미 폐기됐거나 발급된 적 없는 토큰도 204다. 접근 토큰은 폐기하지 않으므로 만료까지 유효하다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -554,7 +554,7 @@ Content-Type: application/json
 | 403 | `REAUTH_FAILED` | ID 토큰 검증 실패, 발급 시각이 없거나 오래됨, 연동되지 않은 제공자, 제공자 쪽 식별자 불일치<br>사유를 구분하지 않음 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -617,7 +617,7 @@ Content-Type: application/json
 403과 409는 링크 코드를 소비하지 않는다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -694,7 +694,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 식별자 형식 오류, 배열 100개 초과 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -767,7 +767,7 @@ Content-Type: application/json
 | 409 | `NICKNAME_TAKEN` | 다른 회원이 정규화 기준으로 같은 닉네임을 사용 중 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -820,7 +820,7 @@ Content-Type: application/json
 순서는 고정이다. 실패는 공통 실패뿐이다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -863,7 +863,7 @@ Content-Type: application/json
 페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 최신인 순으로 정렬한다. 실패는 공통 실패뿐이다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -910,7 +910,7 @@ Content-Type: application/json
 | 409 | `CONFLICT` | 삭제되지 않은 페르소나가 10개 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -985,7 +985,7 @@ Content-Type: application/json
 | 404 | `NOT_FOUND` | 식별자 형식 오류, 없음, 삭제됨, 타인 소유 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1065,7 +1065,7 @@ Content-Type: application/json
 실패는 공통 실패뿐이다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1111,7 +1111,7 @@ Content-Type: application/json
 | 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름<br>클라이언트는 현행 문서를 다시 표시해 동의를 받은 뒤 재제출. 동의 없이 버전 값만 바꿔 자동 재전송하지 않음 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1177,7 +1177,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 디바이스 헤더 누락이나 공백 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1217,7 +1217,7 @@ Content-Type: application/json
 | 400 | `CONSENT_VERSION_MISMATCH` | 보낸 값이 현행 버전과 다름 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1304,7 +1304,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1386,7 +1386,7 @@ Authorization: Bearer <access>
 | 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1438,7 +1438,7 @@ Authorization: Bearer <access>
 실패는 공통 실패뿐이다.
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1496,7 +1496,7 @@ Authorization: Bearer <access>
 | 409 | `INVITE_INVITER_NEWER` | 초대자가 제출자보다 나중에 가입 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 

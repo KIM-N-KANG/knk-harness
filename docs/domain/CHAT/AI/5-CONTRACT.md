@@ -91,7 +91,7 @@
 | `meta` | `object` | 호출 기록 ([5-6 요청 헤더와 메타데이터](#5-6-요청-헤더와-메타데이터)) |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -230,7 +230,7 @@ data: {}
 | `meta` | `object` | 호출 기록 ([5-6 요청 헤더와 메타데이터](#5-6-요청-헤더와-메타데이터)) |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -349,7 +349,7 @@ compact가 먼저 완료돼도 이미 전송한 선택지 요청은 위 내용�
 | `summary` | `string` | 갱신된 대화 요약 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -445,7 +445,7 @@ compact가 먼저 완료돼도 이미 전송한 선택지 요청은 위 내용�
 | 실제 모델 이름 | 응답 `model`, 없으면 요청 모델 이름 |
 
 <details>
-<summary><b>텍스트 요청·응답 구조 예시</b></summary>
+<summary><b>텍스트 요청, 응답 구조 예시</b></summary>
 
 <br>
 
@@ -503,7 +503,7 @@ compact가 먼저 완료돼도 이미 전송한 선택지 요청은 위 내용�
 | 실제 모델 이름 | 요청에 쓴 이름 |
 
 <details>
-<summary><b>이미지 요청·응답 구조 예시</b></summary>
+<summary><b>이미지 요청, 응답 구조 예시</b></summary>
 
 <br>
 
@@ -547,7 +547,7 @@ data:
 | 응답 검사 | 모델, 질문과 후보 ID 일치<br>확률은 0~1, 합은 1에서 오차 0.010001 이내<br>선택 후보가 최고 확률이며 신뢰도는 0~1<br>하나라도 위반하면 해당 호출의 선택 결과 전체를 거부 |
 
 <details>
-<summary><b>이미지 선택 요청·응답 구조 예시</b></summary>
+<summary><b>이미지 선택 요청, 응답 구조 예시</b></summary>
 
 <br>
 
@@ -669,7 +669,7 @@ config:
 | 실제 모델 이름 | 응답 `model`, 없으면 요청 모델 이름 |
 
 <details>
-<summary><b>텍스트 요청·응답 구조 예시</b></summary>
+<summary><b>텍스트 요청, 응답 구조 예시</b></summary>
 
 <br>
 
