@@ -730,7 +730,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 온보딩을 셸 위에 쌓으면 시스템 뒤로가기와 예측형 뒤로가기가 홈을 드러내 우회가 된다. 루트에 두면 뒤로가기는 앱을 떠나고 다시 열면 같은 화면이며, 뒤로가기를 가로채는 별도 처리가 필요 없다. 루트 키만 바꾸면 상세에서 시작한 채팅의 "상세로, 그다음 탭으로" 규칙이 그대로 이어진다. 완료를 서버에 두면 새 API 계약이 필요하고, 기기 안 표시는 앱을 지우거나 다른 기기에서 로그인했을 때 온보딩을 건너뛰는 정도의 손실만 있다. 기록기를 묶음으로 바꾸면 `auth`가 가입 뒤 안내의 종류를 알 필요가 없다. 메모리 완료 표시는 저장 실패 뒤 화면 재생성이 채팅방에 있던 사용자를 온보딩으로 되돌리지 않게 한다. |
 | 영향 | 신규 가입 회원의 첫 회원 화면은 홈이 아니라 온보딩이고, 알림 권한과 초대 코드 안내, 알림이나 웹 링크로 연 화면은 온보딩 위에 뜬다. 완료 저장이 실패하면 다음 실행에서 온보딩이 다시 열린다. 다른 기기나 재설치 뒤의 로그인은 `isNewUser`가 거짓이라 온보딩이 열리지 않는다. 오리지널은 첫 페이지(20편)만 읽는다. |
-| 근거 | [Android 신규 가입 온보딩](2-2-REQUIREMENTS.md), [Android 내비게이션과 화면](../../../../platform/CLIENT/ANDROID/3-EXECUTION.md#3-1-요청과-취소), [분석 Spec](../../../../reference/ANALYTICS.md#4-2-20-신규-가입-온보딩-구현knk-1892), [KNK-1892](https://kimandkang.atlassian.net/browse/KNK-1892), [KNK-1892 계획](../../../../../../manyak-android/docs/plans/knk-1892-signup-story-onboarding.md) |
+| 근거 | [Android 신규 가입 온보딩](2-2-REQUIREMENTS.md), [Android 내비게이션과 화면](../../../../ui/ANDROID/3-2-INTERACTION-FLOWS.md#3-2-1-탭과-화면-복귀), [분석 Spec](../../../../reference/ANALYTICS.md#4-2-20-신규-가입-온보딩-구현knk-1892), [KNK-1892](https://kimandkang.atlassian.net/browse/KNK-1892), [KNK-1892 계획](../../../../../../manyak-android/docs/plans/knk-1892-signup-story-onboarding.md) |
 
 <br>
 

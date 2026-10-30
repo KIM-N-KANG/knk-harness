@@ -43,7 +43,7 @@
 | MY-NAV-06 | P1 | `/my/feedback`, `/my/invite`, `/my/account-deletion`, `/login` | 각 화면 진입 | 상단 헤더, 하단 탭 없이 뒤로가기 헤더만 표시 | 수동 | [웹 검수](#5-1-1-마이-메뉴와-테마) |
 | MY-NAV-07 | P2 | 하단 안전 영역이 있는 기기(iOS 등) | 하단 탭 확인 | 링크 상하 패딩 16px + `safe-area-inset-bottom` 추가 확보로 탭이 잘리지 않음 | ◐ e2e `smoke/navigation`(패딩만) | [웹 검수](#5-1-1-마이-메뉴와-테마) |
 | MY-NAV-08 | P2 | 구경로 `/more`, `/more/invite`, `/more/feedback` 진입 | 관찰 | 리다이렉트 없이 Not Found 표시(구경로 shim을 두지 않는 방침) | 수동 | [웹 화면 전환](3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기) |
-| MY-NAV-09 | P1 | iOS Safari 실기기, 회원 또는 게스트 | 아무 화면을 새로고침한 뒤 하단 탭으로 다른 화면에 이동 → 입력 칸(예: 마이 > 피드백 본문)을 탭 → 두 손가락으로 벌림 | 입력 칸에 포커스해도 화면이 확대되지 않고, 두 손가락으로 벌리면 확대됨. Android Chrome에서도 두 손가락 확대가 됨 | ◐ e2e `smoke/ios-input-zoom-lock`(viewport 값만) | [웹 모바일 검수](2-2-REQUIREMENTS.md#2-2-1-지원과-접근성), [웹 레이아웃](4-4-EXECUTION.md#4-4-1-이동과-레이어-정리), KNK-1605 |
+| MY-NAV-09 | P1 | iOS Safari 실기기, 회원 또는 게스트 | 아무 화면을 새로고침한 뒤 하단 탭으로 다른 화면에 이동 → 입력 칸(예: 마이 > 피드백 본문)을 탭 → 두 손가락으로 벌림 | 입력 칸에 포커스해도 화면이 확대되지 않고, 두 손가락으로 벌리면 확대됨. Android Chrome에서도 두 손가락 확대가 됨 | ◐ e2e `smoke/ios-input-zoom-lock`(viewport 값만) | [웹 모바일 검수](2-2-REQUIREMENTS.md#2-2-1-지원과-접근성), [웹 레이아웃](4-4-EXECUTION.md#4-4-2-레이아웃과-입력), KNK-1605 |
 | MY-NAV-10 | P2 | 없는 경로 | 새 탭, 외부 링크로 바로 진입 / 사이트 안에서 이동해 진입 | "페이지를 찾을 수 없어요"와 홈 링크. 같은 사이트의 이전 기록이 있을 때만 "이전 화면으로" 버튼이 함께 보이고 누르면 이전 화면으로 돌아감 | ✅ e2e `smoke/navigation` | 웹 Spec 라우팅 [3-3-1 테마와 상태](../3-3-LAYOUT.md#3-3-1-테마와-상태), KNK-1613 |
 
 <br>
@@ -63,7 +63,7 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 |---|---|---|---|---|---|---|
-| ONBD-BANNER-01 | P0 | Android Chrome, 첫 접속 | 홈 진입 | 헤더 위에 Android 배너(앱 아이콘, 앱 이름과 문구 두 줄, 앱 열기, 닫기) 표시 | ✅ e2e `smoke/app-banner` | [앱 안내 배너](3-3-LAYOUT.md#3-3-1-셸과-공용-요소) |
+| ONBD-BANNER-01 | P0 | Android Chrome, 첫 접속 | 홈 진입 | 헤더 위에 Android 배너(앱 아이콘, 앱 이름과 문구 두 줄, 앱 열기, 닫기) 표시 | ✅ e2e `smoke/app-banner` | [앱 안내 배너](3-3-LAYOUT.md#3-3-2-앱-안내) |
 | ONBD-BANNER-02 | P1 | Android Chrome | 새 탭으로 2, 3, 4번째 접속 | 2, 4번째는 미노출, 3번째는 노출 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-03 | P0 | Android 카카오톡 인앱 | 접속할 때마다 진입 | 매 접속 Android 배너 표시 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-04 | P0 | Android, KNK-1632 반영 앱 설치 | 스토리 상세에서 앱 열기 | 앱이 열리고 같은 스토리 상세로 진입 | ◐ e2e `smoke/app-banner`(링크 주소만) | 같음, KNK-1632 |
@@ -90,7 +90,7 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 |---|---|---|---|---|---|---|
-| ONBD-APPLINK-01 | P1 | 데스크톱 또는 iOS 브라우저 | `/app` 열기 | 웹 홈(`/`)으로 교체 이동하고 뒤로가기가 `/app`으로 돌아오지 않음 | ✅ e2e `smoke/app-share` | [앱 공유 링크](3-3-LAYOUT.md#3-3-1-셸과-공용-요소) |
+| ONBD-APPLINK-01 | P1 | 데스크톱 또는 iOS 브라우저 | `/app` 열기 | 웹 홈(`/`)으로 교체 이동하고 뒤로가기가 `/app`으로 돌아오지 않음 | ✅ e2e `smoke/app-share` | [앱 공유 링크](3-3-LAYOUT.md#3-3-3-앱-소개와-메타데이터) |
 | ONBD-APPLINK-02 | P0 | 카카오톡 스크래퍼 UA(`kakaotalk-scrap`) | `/app` 첫 HTML 요청 | `og:title`, `og:description`, `og:image`(절대 URL), `og:url`(`/app`), `twitter:card`가 들어 있고 `robots`는 `noindex, follow` | ✅ e2e `smoke/app-share` | 같음 |
 | ONBD-APPLINK-03 | P0 | Android, 앱 미설치 | `/app` 열기 후 0.7초 대기 | 플레이스토어의 마냑 페이지가 열림(귀속값 `utm_medium=share_link`). 카카오톡 인앱은 외부 브라우저 열기를 거쳐 1.4초 안에 열림 | ◐ e2e `smoke/app-share`(카카오톡 UA의 이동만) | 같음 |
 | ONBD-APPLINK-04 | P1 | Android, 앱 설치 | `/app` 열기 | 앱 홈이 열리고 플레이스토어는 열리지 않음. 앱에서 돌아오면 `/app`에 머물며 "Google Play에서 받기" 버튼이 보임 | ◐ e2e `smoke/app-share`(머무는 화면만) | 같음 |

@@ -134,7 +134,7 @@
 | 소셜 연동 | `social_accounts` | 사용자 계정과 소셜 제공자 계정의 연결. 제공자 신원이 다르면 기본적으로 별개 계정이며 계정 연동으로 기존 계정에 다른 로그인 수단을 추가한다. 계정 병합과 구분한다. ([ACCOUNT 요구사항](../domain/ACCOUNT/CLIENT/2-2-REQUIREMENTS.md)) | "계정 연결"(연동으로 통일, KNK-737), "SNS 계정" |
 | 닉네임 | `nickname` | 사용자 표시 이름. 가입 시 부여하며 프로필 변경 규칙은 ACCOUNT 계약을 따른다 | 없음 |
 | 프로필 이미지 | `profileImageUrl`(와이어) | 사용자 대표 이미지. 닉네임에 대응하는 프리셋과 프로필 변경 범위는 ACCOUNT 계약을 따른다 | "아바타" |
-| 알림함 | notification inbox, `user_notifications` | 회원이 받은 알림의 서버 사본 목록. 분류는 소식(`NEWS`: 공지, 이벤트)과 활동(`ACTIVITY`: 스토리 완성, 검토 결과, 출석 체크)이며 읽음(`readAt`)은 서버에 기록한다. 웹 `/notifications` | "알림 내역"(화면 이름으로는 "알림"), "알림 센터" |
+| 알림함 | notification inbox, `user_notifications` | 회원이 받은 알림의 서버 사본 목록. 분류는 소식(`NEWS`)과 활동(`ACTIVITY`)이며 읽음(`readAt`)은 서버에 기록한다. 분류별 유형은 [알림함 요구사항](../domain/NOTIFICATION/CLIENT/2-2-REQUIREMENTS.md#2-2-3-회원-알림함)을 따른다. 웹 `/notifications` | "알림 내역"(화면 이름으로는 "알림"), "알림 센터" |
 | 데이터 마이그레이션 | migration | 웹 게스트의 스토리와 채팅 소유권을 로그인 계정으로 이관하는 것. 회원 필수 동의 완료 뒤 서버가 평가한 결과에 따라 로컬 ID를 정리한다. ([로그인과 이관](../domain/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-3-로그인과-이관)) | "동기화"(양방향 유지로 오해) |
 
 <br>

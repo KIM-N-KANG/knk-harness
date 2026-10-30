@@ -212,7 +212,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 알림함 API의 식별자 |
 | `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
 | `message_key` | varchar(255) | NOT NULL | 메시지 식별자와 같은 값 |
-| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`는 CHECK 확장 마이그레이션이 필요 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`와 `STORY_TAKEN_DOWN`은 각각 V114와 V115 마이그레이션에서 CHECK에 추가 |
 | `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>`CREDIT_EXPIRY_REMINDER`는 `ACTIVITY` |
 | `title` | varchar(120) | NOT NULL | |
 | `body` | varchar(300) | NOT NULL | |
@@ -220,7 +220,7 @@ erDiagram
 | `story_public_id` | uuid | | 이프 만료 예정 알림은 NULL |
 | `notice_public_id` | uuid | | 이프 만료 예정 알림은 NULL |
 | `notice_tag` | varchar(16) | | 이프 만료 예정 알림은 NULL |
-| `read_at` | timestamptz | | 읽음 시각 |
+| `read_at` | timestamptz | | 최초 읽음 시각 |
 
 | 인덱스 | 컬럼 |
 |---|---|

@@ -42,7 +42,7 @@
 | MY-NOTICES-11 | P2 | 헤더 점 표시 중, 안 읽은 공지 1건 | 푸시 딥링크로 그 공지 상세 직접 진입 → 홈 복귀 | 그 공지가 읽음으로 기록되고 헤더 점과 마이 배지가 사라짐 | 수동 | [3-3-1 공지](../3-3-LAYOUT.md#3-3-1-공지) 안 읽은 공지 표시 |
 | MY-NOTICES-12 | P2 | 주소로 바로 연 `/notices` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../../../../ui/WEB/3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기) |
 | MY-NOTICES-14 | P1 | 공지 목록이 맨 위 | 목록을 아래로 당겼다 놓기 | 홈과 같은 표시자("당겨서 새로고침" → "놓으면 새로고침" → "새로고침 중")로 첫 페이지부터 다시 조회하고 응답 전까지 기존 줄 유지 | ✅ e2e `notices/notices` | [웹 화면 전환](../../../../ui/WEB/3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기) |
-| MY-NOTICES-15 | P2 | 공지 목록과 상세 조회 성공 | 목록과 상세 주소로 직접 진입, 홈 공지 버튼에서 목록으로 이동한 뒤 상세 열기와 뒤로가기 | 모든 진입과 이동에서 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notices/notices` | [문서 열람과 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-1-지원과-접근성) |
+| MY-NOTICES-15 | P2 | 공지 목록과 상세 조회 성공 | 목록과 상세 주소로 직접 진입, 홈 공지 버튼에서 목록으로 이동한 뒤 상세 열기와 뒤로가기 | 모든 진입과 이동에서 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notices/notices` | [문서 열람과 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
 
 <br>
 
@@ -61,7 +61,7 @@
 | MY-INBOX-09 | P1 | `deepLink`가 서비스 origin이 아닌 알림, `noticeId`, `storyId` 없음 | 카드 탭 | 이동 없이 읽음만 기록(카드는 링크가 아닌 버튼) | ◐ 단위 `tests/features/notifications/inbox/utils/notification-link` | [3-3-2 알림함](../3-3-LAYOUT.md#3-3-2-알림함) 읽음과 이동 |
 | MY-INBOX-10 | P2 | 주소로 바로 연 `/notifications` | 뒤로가기 헤더 탭 | 홈(`/`)으로 교체 이동 | 수동 | [웹 화면 전환](../../../../ui/WEB/3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기) |
 | MY-INBOX-11 | P1 | 목록이 맨 위 | 아래로 당겼다 놓기 | 홈과 같은 표시자로 그 탭의 첫 페이지부터 다시 조회 | 수동 | [웹 화면 전환](../../../../ui/WEB/3-2-INTERACTION-FLOWS.md#3-2-1-기록과-뒤로가기) |
-| MY-INBOX-12 | P2 | 회원, 알림함 조회 성공 | 알림함 주소로 직접 진입, 홈 헤더 종 버튼으로 알림함 열기 | 두 진입 모두 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notifications/notifications` | [문서 열람과 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-1-지원과-접근성) |
+| MY-INBOX-12 | P2 | 회원, 알림함 조회 성공 | 알림함 주소로 직접 진입, 홈 헤더 종 버튼으로 알림함 열기 | 두 진입 모두 웹 Spec의 기본 문서 제목 유지 | ✅ e2e `notifications/notifications` | [문서 열람과 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
 | MY-INBOX-13 | P1 | 활동에 `CREDIT_EXPIRY_REMINDER` 알림 1건(`deepLink` 이프 충전) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "이프 만료" 라벨. 탭하면 읽음을 기록하고 `deepLink`의 이프 충전 탭으로 이동 | 수동 | [3-3-2 알림함](../3-3-LAYOUT.md#3-3-2-알림함) 카드, KNK-1842 |
 | MY-INBOX-14 | P1 | 활동에 `STORY_TAKEN_DOWN` 알림 1건(`deepLink` `/studio`) | 활동 탭 카드 확인 → 카드 탭 | 카드 위 줄에 "공개 제한" 라벨과 서버가 보낸 제목, 본문. 탭하면 읽음을 기록하고 제작 탭으로 이동 | 수동 | [3-3-2 알림함](../3-3-LAYOUT.md#3-3-2-알림함) 카드, KNK-1886 |
 

@@ -12,7 +12,7 @@
 
 | 항목 | 규칙 |
 |---|---|
-| 경로 | 회원 API는 `/api/v1`을 생략해 적음<br>내부 API는 전체 경로 |
+| 경로 | 공개 API, 회원 API와 관리자 API는 `/api/v1`을 생략해 적음<br>내부 API는 전체 경로 |
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
 | 식별자 | 회원과 캠페인은 UUID 공개 식별자<br>토큰 행 ID는 노출하지 않음 |
@@ -25,6 +25,7 @@
 
 | 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
 |---|---|---|
+| `없음` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>공지 공개 조회에 적용 |
 | `필수` | 거절 | 회원으로 처리 |
 | `내부` | 토큰을 읽지 않음 | 토큰을 읽지 않음<br>공유 시크릿 헤더로 인증 |
 | `관리자` | 거절 | 관리자 권한이 있는 회원으로 처리<br>권한이 없으면 403 |
@@ -47,7 +48,7 @@
 
 | 요청 | 정지 계정 | 탈퇴 계정 |
 |---|---|---|
-| 토큰 등록, 토큰 삭제, 수신 동의 조회, 수신 동의 변경 | 403 | 401 |
+| 토큰 등록, 토큰 삭제, 수신 동의 조회, 수신 동의 변경, 회원 알림함 조회와 읽음 변경 | 403 | 401 |
 
 <br>
 
@@ -900,3 +901,108 @@ Content-Type: application/json
 | 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
+
+<br>
+
+### 4-2-14 공지 공개 조회
+
+[공지 공개 조회 요구사항](2-REQUIREMENTS.md#2-2-기능-요구사항)에 따라 게시된 공지만 제공한다. 공지 읽음 기록은 기기에 있으므로 조회로 회원 알림함의 읽음 상태를 바꾸지 않는다.
+
+| 요청 | 인증 | 성공 |
+|---|---|---|
+| `GET /notices` | 없음 | 200, 목록 |
+| `GET /notices/{noticeId}` | 없음 | 200, 상세 |
+
+**1. 경로와 쿼리**
+
+| 요청 | 필드 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|---|
+| 목록 | `limit` | `integer` | 선택 | 기본 20, 1 미만은 1, 50 초과는 50으로 보정 |
+| 목록 | `cursor` | `string` | 선택 | 이전 응답의 `nextCursor`를 그대로 전달<br>생략하면 첫 페이지, 클라이언트가 해석하거나 조합하지 않음 |
+| 목록 | `tag` | `string` | 선택 | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`<br>생략하면 전체 태그 |
+| 상세 | `noticeId` | `string` | 필수 | 공지 공개 식별자 UUID |
+
+**2. 응답**
+
+| 응답 | 필드 | 타입 | 의미 |
+|---|---|---|---|
+| 목록 | `items` | `object[]` | 게시 시각 내림차순, 같은 시각은 내부 ID 내림차순<br>각 항목은 `noticeId`, `title`, `tag`, `publishedAt` |
+| 목록 | `nextCursor` | `string / null` | 다음 페이지 커서, 더 없으면 `null` |
+| 목록 항목과 상세 | `noticeId` | `string` | 공지 공개 식별자 UUID |
+| 목록 항목과 상세 | `title` | `string` | 제목 |
+| 목록 항목과 상세 | `tag` | `string` | 쿼리와 같은 태그 값 |
+| 목록 항목과 상세 | `publishedAt` | `string` | 게시 시각 |
+| 상세 | `updatedAt` | `string` | 수정 시각 |
+| 상세 | `body` | `string` | 최대 5,000자 평문<br>Markdown 또는 HTML로 해석하지 않음 |
+
+목록에는 본문과 작성자 정보를 싣지 않는다. 빈 목록은 `items: []`, `nextCursor: null`로 응답한다.
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 해석할 수 없거나 변조된 커서, 정수로 변환할 수 없는 `limit`, 미지원 `tag` |
+| 404 | `NOT_FOUND` | 상세의 UUID 형식 오류, 없는 공지, 미게시 공지 |
+
+<br>
+
+### 4-2-15 회원 알림함
+
+[회원 알림함 요구사항](2-REQUIREMENTS.md#2-2-기능-요구사항)에 따라 본인에게 기록된 사본만 제공한다. 네 요청 모두 인증 필수이며 정지 403, 탈퇴 401을 적용한다.
+
+| 요청 | 성공 | 입력 |
+|---|---|---|
+| `GET /users/me/notifications` | 200, 목록 | 선택 쿼리 `category`, `limit`, `cursor` |
+| `GET /users/me/notifications/unread-count` | 200, 안 읽은 수 | 없음 |
+| `POST /users/me/notifications/{notificationId}/read` | 204, 본문 없음 | 경로 `notificationId`, UUID |
+| `POST /users/me/notifications/read-all` | 204, 본문 없음 | 선택 쿼리 `category`, 본문 없음 |
+
+**1. 쿼리와 페이지**
+
+| 필드 | 타입 | 의미와 기본값 |
+|---|---|---|
+| `category` | `string` | `NEWS`, `ACTIVITY`<br>생략하면 전체, 지정하면 해당 분류 |
+| `limit` | `integer` | 목록의 기본 20, 1 미만은 1, 50 초과는 50으로 보정 |
+| `cursor` | `string` | 목록의 이전 `nextCursor`인 알림 UUID<br>생략하면 첫 페이지, 본인 내역에 존재하는 식별자만 허용 |
+
+목록은 기록 시각 내림차순, 같은 시각은 내부 ID 내림차순이다. 응답은 `items` 배열과 `nextCursor`로 구성하며 다음 페이지가 없으면 `nextCursor`는 `null`이다. 빈 목록은 `items: []`, `nextCursor: null`이다.
+
+**2. 목록 항목**
+
+| 필드 | 타입 | 의미 |
+|---|---|---|
+| `notificationId` | `string` | 알림 공개 식별자 UUID |
+| `category` | `string` | `NEWS`, `ACTIVITY` |
+| `type` | `string` | 아래 유형 표의 값 |
+| `title` | `string` | 기록 시점 제목 |
+| `body` | `string` | 기록 시점 본문 |
+| `deepLink` | `string / null` | 이동할 서비스 주소 |
+| `storyId` | `string / null` | 연결된 스토리 공개 식별자 UUID |
+| `noticeId` | `string / null` | 연결된 공지 공개 식별자 UUID |
+| `noticeTag` | `string / null` | 공지의 태그, 값은 공지 공개 조회와 같음 |
+| `createdAt` | `string` | 알림 기록 시각 |
+| `readAt` | `string / null` | 최초 읽음 시각, `null`이면 안 읽음 |
+
+| `type` | `category` |
+|---|---|
+| `NOTICE`, `PROMOTION` | `NEWS` |
+| `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `STORY_TAKEN_DOWN`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` | `ACTIVITY` |
+
+**3. 안 읽은 수와 읽음 변경**
+
+| 항목 | 결과 |
+|---|---|
+| 안 읽은 수 | `total`, `news`, `activity`를 정수로 응답<br>본인의 `readAt`이 없는 내역 수이며 `total`은 두 분류의 합 |
+| 한 건 읽음 | 안 읽은 본인 내역에 읽음 시각 기록<br>이미 읽었으면 최초 시각을 유지하고 204 |
+| 모두 읽음 | 본인의 안 읽은 내역만 변경<br>분류를 생략하면 전체, 지정하면 해당 분류만 처리<br>이미 읽은 내역의 시각은 유지하며 변경 대상이 없어도 204 |
+
+CLIENT의 모두 읽음 버튼은 [공통 요구사항](../CLIENT/2-2-REQUIREMENTS.md#2-2-3-회원-알림함)에 따라 `category`를 생략한다. API의 선택 쿼리가 화면의 전체 적용 범위를 바꾸지 않는다.
+
+**4. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | UUID 형식 오류, 본인 내역에 없는 커서, 정수로 변환할 수 없는 `limit`, 미지원 `category` |
+| 404 | `NOT_FOUND` | 한 건 읽음의 알림이 없거나 타인 소유 |
+
+읽음 요청의 재전송은 이미 읽은 내역의 시각을 바꾸지 않는다. 모두 읽음을 다시 요청하기 전에 새 알림이 기록됐다면 그 새 알림도 요청 범위에 포함된다.
