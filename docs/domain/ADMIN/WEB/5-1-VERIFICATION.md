@@ -131,6 +131,7 @@
 | 첫 방문 활성화 단계 | 퍼널 응답 `steps`의 `event`가 `_active`, `client_chat_messageInput_submitted`, 같은 이벤트와 `minTurnNumber` 5, `signup_succeeded` | 단계 이름 "첫 활동", "채팅 메시지 전송", "5턴 이상 채팅 메시지 전송", "신규 가입" |
 | 첫 방문 활성화 상한 | 3차 기간(35일)에서 첫 방문 활성화 | 퍼널과 누적 도달 두 영역 모두 기간 확인 필요 상자, 요청 없음 |
 | 광고 소재 | URL에 `tab=creatives`, `totals.signups`가 `ORIGINAL_0HOSUN_VIDEO` 41, `COMMUNITY_POST_IMAGE` 27, `null` 3 | 광고 구분 선택 없음, 두 차트의 계열이 이 순서이고 `null` 계열 이름 "소재 정보 없음"<br>두 차트에서 같은 소재가 같은 색<br>소재별 가입 합계 표 3행 |
+| 광고 소재 색 범위 | 위 상태에서 기간을 바꿔 `totals.signups`가 `COMMUNITY_POST_IMAGE` 30, `ORIGINAL_0HOSUN_VIDEO` 12 순서가 됨 | 두 차트 모두 `COMMUNITY_POST_IMAGE`가 `--chart-1`, `ORIGINAL_0HOSUN_VIDEO`가 `--chart-2`로 다시 정해짐<br>한 화면의 두 차트에서 같은 소재는 같은 색 |
 | 앱 유입 | URL에 `tab=app` | 광고 캠페인 선택 없음, 캠페인 목록을 기다리지 않고 최근 30일로 앱 유입 요청과 `web-to-android` 퍼널 요청을 따로 보냄<br>퍼널 요청에 `platform` 없음 |
 | 배너 클릭률 없음 | `bannerClickRate`가 `null`인 날 | 배너 클릭률 차트 선이 끊기고 표에 "노출 없음" |
 | 설치 경로 | `newUsersBySource`의 `source`가 `null`인 항목 | 누적 막대 계열 이름 "설치 경로 정보 없음", 색 `--muted-foreground`, 맨 뒤 |
