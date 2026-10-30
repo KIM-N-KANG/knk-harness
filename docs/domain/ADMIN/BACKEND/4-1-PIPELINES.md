@@ -488,7 +488,7 @@ flowchart LR
 | 광고 구분 | 전체는 공통 조건만<br>광고 유입은 공통 조건에 사용자 속성 `gp:initial_utm_campaign`이 캠페인 값인 이벤트 필터를 더함<br>광고 외 유입은 조회하지 않고 전체에서 광고 유입을 뺌<br>광고 소재는 광고 유입만 |
 | 캠페인 목록 | 설정 파일 고정값<br>`campaign` 쿼리가 없으면 종료일이 없는 마지막 항목, 상세 진입 퍼널의 `storyId`가 없으면 적용한 캠페인과 값이 같은 항목의 대상 스토리 |
 | 추이 조회 | 웹 DAU는 `_active` 고유 사용자, 전체 1회<br>신규 방문자는 `_new` 고유 사용자, 전체와 광고 2회<br>소스별은 `_new`에 캠페인이 아니면서 `gp:initial_utm_source`가 `ig`, `th`와 `threads`, `dc`, 그 밖인 이벤트 필터 4회<br>기기 유형별은 `_new`에 사용자 속성 `device_type`이 `Apple iPhone` 또는 `Apple iPad`, `Android`, `is not` 앞의 세 값인 이벤트 필터 3회이고 광고 조건은 넣지 않음<br>신규 가입자는 가입 커스텀 이벤트에 공통 조건으로 전체와 광고 2회<br>Android 신규 가입자는 같은 커스텀 이벤트에 `country` 조건과 `platform`이 `Android`인 조건으로 1회이고 광고 조건은 넣지 않음<br>횟수는 스토리라인 생성 요청, 간편 제작 요청, 채팅 메시지 전송 이벤트의 합계(totals) 3회 |
-| 퍼널 조회 | 순서 모드, 전환 창 86,400초<br>간편 제작 퍼널과 첫 방문 활성화 퍼널은 신규 사용자 기준(`n=new`), 상세 진입 퍼널은 활성 사용자 기준(`n=active`)<br>세 퍼널은 별도 엔드포인트라 따로 갱신<br>간편 제작 퍼널은 `client_storyList_viewed` → `client_storyCreate_viewed` → `client_storyCreate_storyGeneration_requested` → `client_storyCreate_storylineOption_selected` → `client_storyCreate_storyCompletion_requested` → `client_chat_messageInput_submitted`의 6단계를 전체와 광고 2회<br>첫 방문 활성화 퍼널은 `_active` → `client_chat_messageInput_submitted` → 이벤트 속성 `turn_number`가 5 이상인 `client_chat_messageInput_submitted` → 가입 커스텀 이벤트의 4단계를 전체와 광고 2회<br>신규 사용자 기준은 범위 안에 Amplitude에 처음 기록된 사용자만 셈<br>상세 진입 퍼널은 전체 1회이며 1단계는 이벤트 속성 `story_id`가 대상 스토리이고 사용자 속성 `gp:utm_campaign`이 캠페인 값, 2단계는 `story_id`가 대상 스토리, 3~7단계는 채팅 메시지 전송의 이벤트 속성 `turn_number`가 문자열 `1`~`5` |
+| 퍼널 조회 | 순서 모드, 전환 창 86,400초<br>첫 방문 활성화 퍼널은 신규 사용자 기준(`n=new`), 간편 제작 퍼널과 상세 진입 퍼널은 활성 사용자 기준(`n=active`)<br>세 퍼널은 별도 엔드포인트라 따로 갱신<br>간편 제작 퍼널은 `client_storyCreate_viewed` → 이벤트 속성 `from_category`가 `GENRE`이고 `direction`이 `forward`인 `client_storyCreate_tagCategory_selected`(장르 선택 완료) → `client_storyCreate_storyGeneration_requested` → `client_storyCreate_storylineOption_selected` → `client_storyCreate_storyCompletion_requested` → `client_chat_messageInput_submitted`의 6단계를 전체와 광고 2회<br>첫 방문 활성화 퍼널은 `_active` → `client_chat_messageInput_submitted` → 이벤트 속성 `turn_number`가 5 이상인 `client_chat_messageInput_submitted` → 가입 커스텀 이벤트의 4단계를 전체와 광고 2회<br>신규 사용자 기준은 범위 안에 Amplitude에 처음 기록된 사용자만 셈<br>상세 진입 퍼널은 전체 1회이며 1단계는 이벤트 속성 `story_id`가 대상 스토리이고 사용자 속성 `gp:utm_campaign`이 캠페인 값, 2단계는 `story_id`가 대상 스토리, 3~7단계는 채팅 메시지 전송의 이벤트 속성 `turn_number`가 문자열 `1`~`5` |
 | 누적 도달 조회 | `client_chat_messageInput_submitted` 고유 사용자와 `turn_number`가 5 이상인 같은 이벤트의 고유 사용자를 전체와 광고로 4회<br>범위 전체를 한 번 조회하고 기간 전체 고유 사용자인 `seriesCollapsed`를 씀 |
 | 광고 소재 조회 | 가입 커스텀 이벤트 고유 사용자와 `turn_number`가 5 이상인 채팅 메시지 전송 고유 사용자를 광고 조건으로 2회<br>조회마다 묶음 속성 `g`에 `gp:initial_utm_content` 하나, 묶음 값 상한 `limit=1000` |
 | 앱 유입 조회 | 앱 배너 노출 `client_appBanner_shown`과 버튼 클릭 `client_appBanner_actionButton_clicked` 고유 사용자를 `country` 조건, `platform` `Web`, 사용자 속성 `device_type` `Android`로 2회<br>배너 경유 앱 신규 사용자는 `_new` 고유 사용자를 `country` 조건, `platform` `Android`, 사용자 속성 `gp:initial_utm_medium` `app_banner`로 1회<br>설치 경로별 앱 신규 사용자는 `_new` 고유 사용자를 `country` 조건과 `platform` `Android`로 묶음 속성 `g`에 `gp:initial_utm_source` 하나를 두고 1회, `limit=1000`<br>캠페인 값을 받지 않음 |
@@ -524,6 +524,7 @@ Amplitude 퍼널과 턴 도달률 플랫폼 조회는 공통 규칙을 따르며
 |---|---|
 | 퍼널 조회 | 순서 모드, 활성 사용자 기준이고 `web-first-visit`, `first-visit-activation`, `android-activation`만 신규 사용자 기준(`n=new`)<br>전환 창은 `web-to-android`만 2,592,000초(30일)이고 나머지는 86,400초<br>단계마다 이벤트 필터에 국내 조건과 플랫폼 조건<br>`login-signup`, `android-activation`, `web-to-android`는 행마다 정한 플랫폼 조건<br>퍼널마다 별도 엔드포인트 호출이라 따로 갱신 |
 | `web-first-visit` | 캠페인 간편 제작 퍼널과 같은 6단계와 신규 사용자 기준, 플랫폼 Web, 1회 |
+| `creation-entry-chat` | 캠페인 간편 제작 퍼널과 같은 6단계, 활성 사용자 기준, 요청 플랫폼, 1회 |
 | `android-first-visit` | `client_login_viewed` → `client_chat_messageInput_submitted`, 플랫폼 Android, 1회 |
 | `first-visit-activation` | `_active` → `client_chat_messageInput_submitted` → 이벤트 속성 `turn_number`가 5 이상인 `client_chat_messageInput_submitted`, 신규 사용자 기준, 1회 |
 | `login-signup` | `client_login_viewed` → 가입 커스텀 이벤트, 1회<br>1단계만 요청 플랫폼 조건이고 2단계는 국내 조건만<br>앱 신규 사용자의 가입 서버 이벤트는 `platform`이 빌 수 있기 때문 |
@@ -531,7 +532,7 @@ Amplitude 퍼널과 턴 도달률 플랫폼 조회는 공통 규칙을 따르며
 | `web-to-android` | `platform` `Web`인 `_active` → `platform` `Android`인 `_active`, 전환 창 30일, 1회<br>두 단계 모두 국내 조건<br>웹과 앱의 이벤트가 같은 Amplitude 사용자로 병합된 사람만 셈 |
 | `story-creation` | `client_storyCreate_storyGeneration_requested` → `client_storyCreate_storylineOption_selected` → `client_storyCreate_storyCompletion_requested` → `client_storyCreate_completed`, 1회 |
 | `story-detail-chat` | 캠페인 상세 진입 퍼널과 같은 7단계에서 캠페인 조건을 빼고 `storyId`가 있을 때만 1단계와 2단계에 `story_id` 필터, 1회 |
-| `guest-limit-login` | `client_guestLimitDialog_shown` → `client_guestLimitDialog_loginButton_clicked` → 로그인 성공<br>마지막 단계는 구글과 카카오 로그인 성공 이벤트로 퍼널을 2회 조회해 1단계와 2단계는 첫 조회 값, 3단계는 두 조회의 합<br>같은 사용자가 두 경로로 로그인하면 두 번 셈<br>웹은 1단계와 2단계 이벤트를 보내지 않아 웹 퍼널은 첫 단계가 0 |
+| `guest-limit-login` | `client_guestLimitDialog_shown` → `client_guestLimitDialog_loginButton_clicked` → 로그인 커스텀 이벤트, 1회<br>로그인 커스텀 이벤트는 구글과 카카오 로그인 성공을 묶어 같은 사용자가 두 경로로 로그인해도 한 번 셈<br>웹은 1단계와 2단계 이벤트를 보내지 않아 웹 퍼널은 첫 단계가 0 |
 | 턴 도달률 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `user_id` 유무로 게스트와 회원으로 나누고 `current_turn`이 기준 턴 1, 2, 3, 4, 5, 6, 7, 10, 15, 20, 30, 50 이상인 수를 각각 셈<br>팀 계정 제외 목록 적용 |
 | 턴 도달률 플랫폼 | 이벤트 `server_chat_aiMessage_processed_succeeded`에 이벤트 속성 `is_regenerated`가 `false`이고 `turn_number`가 기준 턴(문자열 `"1"`~`"50"`)인 필터를 건 합계(`m=totals`)<br>기준 턴 12개와 웹, 앱 조건으로 24회<br>`segment`가 `guest`면 사용자 속성 `user_id` `is` `(none)`, `member`면 `is not` `(none)` 필터를 더하고 `all`이면 넣지 않음<br>전체는 웹과 앱의 합<br>일별 지표로 저장하고 응답은 준비된 날짜의 합<br>성공 이벤트는 턴 저장 뒤 한 번 보내고 재시도는 같은 `insert_id`라 중복되지 않음<br>Amplitude 값을 받지 못하거나 시간 한도를 넘겨도 DB 값은 응답하며 처리는 신규 가입자 플랫폼과 같음 |
 | 게스트에서 회원으로 | 소유 회원의 `users.migrated_at`이 있고 채팅 `created_at`이 그보다 이른 채팅 중 `current_turn`이 5 이상인 수와 6 이상인 수<br>채팅별 이관 시각이 없어 회원의 이관 시각으로 판정 |
@@ -550,7 +551,7 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 오류율 | 날짜마다 스트림 오류 합계를 전송 합계로 나눔 |
 | 간편 제작 실패율 | `story_creation_requests`에서 `stage`가 `STORY_COMPLETION`이고 `created_at`이 범위 안인 행을 KST 날짜로 묶어 `status`가 `COMPLETED`인 수와 `FAILED`인 수를 셈<br>`PENDING`은 진행 중이라 뺌<br>실패 뒤 같은 `request_id`로 다시 시도하면 같은 행이 바뀌므로 지금 상태로 셈<br>`user_id`가 팀 계정 제외 목록인 행은 빼고 게스트 행은 포함<br>`platform`과 `segment`와 무관하고 Amplitude 조회와 비용 예산을 쓰지 않음 |
 | 채팅 옵션 비중 | 범위 안에 생성된 삭제되지 않은 `story_chats`를 `created_at`의 KST 날짜로 묶고 `persona_name_snapshot`이 있는 수와 `model_code`별 수를 셈<br>모델별 턴 수는 범위 안에 생성된 AI 응답 메시지를 메시지 `created_at`의 KST 날짜와 메시지의 `model_code`(그 턴의 청구 모델)로 묶어 셈<br>메시지 `model_code`가 `NULL`이면 `UNRECORDED`로 묶음<br>채팅의 `model_code`는 쓰지 않음<br>재생성 판본은 세지 않고 채팅의 삭제 여부와 생성일은 보지 않음<br>팀 계정 제외 목록 적용 |
-| 채팅 옵션 플랫폼 | 이벤트 `client_storyDetail_chatStartButton_clicked`에 이벤트 속성 `persona_type`이 `default`, `persona`인 필터를 하나씩 건 합계를 웹, 앱 조건으로 4회<br>`chatStarts`는 두 값의 합, `personaChatStarts`는 `persona` 값<br>모델 턴 수는 턴 도달률 플랫폼과 같은 성공 이벤트에 `is_regenerated` `false`와 `model_code`가 그 모델 코드인 필터를 건 합계를 모델 코드마다 웹, 앱으로 조회<br>모델 코드는 요청 시점 `chat_models`의 모든 `code`이고 코드마다 저장 키가 따로라 모델이 늘어도 기존 값은 다시 받지 않음<br>`segment` 필터와 전체 계산은 턴 도달률 플랫폼과 같음<br>일별 지표로 저장<br>Amplitude 값을 받지 못하거나 시간 한도를 넘겨도 DB 값은 응답하며 처리는 신규 가입자 플랫폼과 같음 |
+| 채팅 옵션 플랫폼 | 채팅 시작 사용자는 이벤트 `client_storyDetail_chatStartButton_clicked`의 고유 사용자를 필터 없이 1회, 이벤트 속성 `persona_type`이 `default`, `persona`, `(none)`인 필터를 하나씩 건 고유 사용자 3회를 전체, 웹, 앱 조건으로 12회<br>`chatStarters`는 필터 없는 값, `chatStartersByPersonaType`은 세 필터 값이고 `(none)`은 키 `none`<br>고유 사용자라 전체는 전체 조건 조회 값<br>모델 턴 수는 턴 도달률 플랫폼과 같은 성공 이벤트에 `is_regenerated` `false`와 `model_code`가 그 모델 코드인 필터를 건 합계를 모델 코드마다 웹, 앱으로 조회하고 전체는 두 값의 합<br>모델 코드는 요청 시점 `chat_models`의 모든 `code`이고 코드마다 저장 키가 따로라 모델이 늘어도 기존 값은 다시 받지 않음<br>`segment` 필터는 턴 도달률 플랫폼과 같음<br>일별 지표로 저장<br>Amplitude 값을 받지 못하거나 시간 한도를 넘겨도 DB 값은 응답하며 처리는 신규 가입자 플랫폼과 같음 |
 | AI 비용 | 상태가 성공인 `ai_call_logs`를 `created_at`의 KST 날짜, `feature`, `model`로 묶어 호출 수, `input_token_count`와 `output_token_count`의 합, 토큰 수가 없는 호출 수를 셈<br>`model`이 `NULL`인 기록은 한 묶음<br>금액은 Langfuse에서 받은 날짜별 비용을 같은 기능과 모델 조합에 붙임 ([4-1-23 AI 비용의 Langfuse 조회](#4-1-23-ai-비용의-langfuse-조회))<br>`chat_image`는 성공 호출 수에 실시간 이미지 장당 원가를 곱함<br>턴당 원가와 스토리당 원가의 분모는 AI 호출 기록의 성공 수<br>팀 계정 제외 목록은 적용하지 않음 |
 
 <br>
@@ -567,8 +568,8 @@ Amplitude 조회는 공통 규칙을 따르며 비용과 기간 상한도 그 �
 | 사용자 속성 조건 | 국가, 플랫폼, 캠페인, 소스 같은 사용자 속성 조건은 세그먼트 `s`가 아니라 이벤트 필터로 넣음<br>`e`의 `filters`에 `subprop_type`이 `user`인 조건이며 퍼널은 단계마다 같은 조건을 넣음<br>`gp:` 접두 속성 이름은 그대로 씀<br>세그먼트는 기본 하나뿐이라 조건 수가 1 |
 | 국내 조건 | 사용자 속성 `country`가 `South Korea` 또는 `(none)`인 이벤트 필터<br>캠페인 분석과 푸시 열람은 각 절의 조건을 따름 |
 | 조회 조건 | 웹: 국내 조건과 `platform` `Web`<br>앱: 국내 조건과 `platform` `Android`<br>전체: 국내 조건과 `platform` `is` `["Web","Android"]`<br>플랫폼 없음: 국내 조건과 `platform` `(none)` |
-| 플랫폼 값 | 고유 사용자, 평균, 세션, 리텐션의 전체는 전체 조건 조회 하나의 값이라 웹과 앱을 함께 쓴 사용자를 한 번 셈<br>이벤트 합계(`m=totals`)의 전체는 이벤트마다 `platform` 값이 하나라 웹과 앱 조회 값의 합과 같음<br>웹과 앱 값을 한 응답에 함께 주는 턴 도달률과 채팅 옵션 플랫폼은 전체 조건을 따로 조회하지 않고 두 값을 더함<br>요청한 플랫폼 하나의 값만 주는 기능 사용은 `all`이면 합계도 전체 조건 묶음 하나로 조회함<br>웹과 앱 두 묶음을 받아 더하면 합계 조회가 두 배라서임<br>플랫폼 없음은 어떤 전체에도 넣지 않음<br>합을 이루는 조회 가운데 하나라도 저장 값이 없는 날짜는 준비 중 날짜이고 나머지 조회만으로 합을 내지 않음<br>국내 조건 밖 국가의 사용자는 로그인 여부와 무관하게 세지 않음 |
-| 커스텀 이벤트 | 가입과 핵심 활동은 Amplitude 커스텀 이벤트를 `e`나 퍼널 단계의 `event_type`에 이름 그대로 넣음<br>가입 커스텀 이벤트는 `ce:신규 가입 (구글·카카오)`, 핵심 활동 커스텀 이벤트는 `ce:핵심 활동`이고 구성은 제품 제약([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))<br>구성에 든 이벤트 속성 조건은 커스텀 이벤트 정의에 있어 조회에 따로 걸지 않음 |
+| 플랫폼 값 | 고유 사용자, 평균, 세션, 리텐션의 전체는 전체 조건 조회 하나의 값이라 웹과 앱을 함께 쓴 사용자를 한 번 셈<br>이벤트 합계(`m=totals`)의 전체는 이벤트마다 `platform` 값이 하나라 웹과 앱 조회 값의 합과 같음<br>웹과 앱 값을 한 응답에 함께 주는 턴 도달률과 채팅 옵션 플랫폼의 모델 턴 수는 전체 조건을 따로 조회하지 않고 두 값을 더함<br>요청한 플랫폼 하나의 값만 주는 기능 사용은 `all`이면 합계도 전체 조건 묶음 하나로 조회함<br>웹과 앱 두 묶음을 받아 더하면 합계 조회가 두 배라서임<br>플랫폼 없음은 어떤 전체에도 넣지 않음<br>합을 이루는 조회 가운데 하나라도 저장 값이 없는 날짜는 준비 중 날짜이고 나머지 조회만으로 합을 내지 않음<br>국내 조건 밖 국가의 사용자는 로그인 여부와 무관하게 세지 않음 |
+| 커스텀 이벤트 | 가입, 로그인, 핵심 활동은 Amplitude 커스텀 이벤트를 `e`나 퍼널 단계의 `event_type`에 이름 그대로 넣음<br>가입 커스텀 이벤트는 `ce:신규 가입 (구글·카카오)`, 로그인 커스텀 이벤트는 `ce:로그인 성공 (구글·카카오)`, 핵심 활동 커스텀 이벤트는 `ce:핵심 활동`이고 구성은 제품 제약([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))<br>구성에 든 이벤트 속성 조건은 커스텀 이벤트 정의에 있어 조회에 따로 걸지 않음 |
 | 크기 비교 조건 | 턴 번호 5 이상은 `{"subprop_type":"event","subprop_key":"turn_number","subprop_op":"greater or equal","subprop_value":["5"]}` |
 | 여러 값 조건 | 사용자 속성과 이벤트 속성 모두 여러 값 중 하나에 맞는 조건은 `subprop_op` `is`에 값 배열을 넣어 OR로 씀<br>예: `{"subprop_type":"event","subprop_key":"utm_medium","subprop_op":"is","subprop_value":["community","social"]}`<br>`in` 연산자는 운영에서 HTTP 400(code 229)으로 거절되어 쓰지 않음 |
 | 세그먼트 조건 | 이벤트를 받지 않는 세션 조회와 코호트 조건에만 `s`를 씀 |
@@ -723,7 +724,7 @@ Langfuse, 보관 기간 안 확정일`"]
 
 **6. 엔드포인트별 비용**
 
-조회마다 조건 수 × 유형 비용을 하루 비용으로 적었다. 일별 지표의 평소 갱신 비용은 오늘과 어제 이틀치이며 오늘만 만료된 10분 갱신은 하루치다. 첫 조회는 비어 있는 날짜 전부를 받아야 하므로 5분마다 예산 안의 날짜만 받고 나머지는 준비 중 날짜로 응답한 뒤 이어 받는다. 한 번 확정한 날짜는 다시 비용이 들지 않는다. 범위 지표는 `to`가 오늘이나 어제인 범위를 10분마다 범위 전체 비용으로 다시 받고 `to`가 확정일인 범위는 한 번만 받는다. 새벽 배치와 백필이 기본 지표 키를 미리 채우므로 평소 화면 요청은 대부분 오늘 값만 받는다. 새벽 배치의 하루 비용은 기본 지표 키의 하루치 합 312(분석 지표 12, 사용자 활동 10, 세션 72, 세션 길이 분포 36, 앱 신규 활성 사용자 어제와 그저께 2 × 4, 기능 사용 전체와 웹과 앱 3 × 15, 진행 중 캠페인 하나의 추이 16과 광고 소재 50, 앱 유입 28, 신규 가입자 플랫폼 3, 턴 도달률 플랫폼 24, 모델 둘일 때 채팅 옵션 플랫폼 8)에 방문자의 확정 전 리텐션 코호트 최대 33 × 24 = 792를 더한 1,104라 5분당 300씩 네 번 안에 끝난다. 여러 엔드포인트를 같은 5분에 갱신하면 합이 500을 넘을 수 있고 예산이 부족한 엔드포인트는 저장 값과 준비 중 날짜로 응답한다. 관리자 페이지는 준비 중 날짜가 있는 카드를 쿨다운 뒤 다시 요청한다.
+조회마다 조건 수 × 유형 비용을 하루 비용으로 적었다. 일별 지표의 평소 갱신 비용은 오늘과 어제 이틀치이며 오늘만 만료된 10분 갱신은 하루치다. 첫 조회는 비어 있는 날짜 전부를 받아야 하므로 5분마다 예산 안의 날짜만 받고 나머지는 준비 중 날짜로 응답한 뒤 이어 받는다. 한 번 확정한 날짜는 다시 비용이 들지 않는다. 범위 지표는 `to`가 오늘이나 어제인 범위를 10분마다 범위 전체 비용으로 다시 받고 `to`가 확정일인 범위는 한 번만 받는다. 새벽 배치와 백필이 기본 지표 키를 미리 채우므로 평소 화면 요청은 대부분 오늘 값만 받는다. 새벽 배치의 하루 비용은 기본 지표 키의 하루치 합 320(분석 지표 12, 사용자 활동 10, 세션 72, 세션 길이 분포 36, 앱 신규 활성 사용자 어제와 그저께 2 × 4, 기능 사용 전체와 웹과 앱 3 × 15, 진행 중 캠페인 하나의 추이 16과 광고 소재 50, 앱 유입 28, 신규 가입자 플랫폼 3, 턴 도달률 플랫폼 24, 모델 둘일 때 채팅 옵션 플랫폼 16)에 방문자의 확정 전 리텐션 코호트 최대 33 × 24 = 792를 더한 1,112라 5분당 300씩 네 번 안에 끝난다. 여러 엔드포인트를 같은 5분에 갱신하면 합이 500을 넘을 수 있고 예산이 부족한 엔드포인트는 저장 값과 준비 중 날짜로 응답한다. 관리자 페이지는 준비 중 날짜가 있는 카드를 쿨다운 뒤 다시 요청한다.
 
 | 엔드포인트 | 종류 | 조회별 하루 비용 | 하루 비용 | 평소 갱신 비용 | 기본 기간과 첫 조회 비용 | 상한과 첫 조회 |
 |---|---|---|---|---|---|---|
@@ -743,6 +744,7 @@ Langfuse, 보관 기간 안 확정일`"]
 | 사용자 세션 길이 분포 | 일별 | 전체, 웹, 앱 3 × (3 × 4) = 36<br>`guest`와 `member`는 3 × (4 × 4) = 48<br>날짜마다 요청 하나라 요청 수는 날짜 수 × 3 | `all` 36<br>`guest`, `member` 48 | `all` 72<br>`guest`, `member` 96 | 14일<br>`all` 504<br>`guest`, `member` 672 | 366일<br>`all` 13,176, 5분마다 13일씩<br>`guest`, `member` 17,568, 10일씩 |
 | 앱 신규 활성 사용자 | 일별 | 2단계 퍼널 1 × 2 × 2 = 4<br>날짜마다 요청 하나 | 4 | 어제와 그저께가 확정 전이면 3 × 4 = 12 | 30일<br>30 × 4 = 120 | 366일<br>366 × 4 = 1,464<br>5분마다 125일씩 |
 | `web-first-visit` | 범위 | 6단계 퍼널 1 × 6 × 2 = 12 | 12 | 일수 × 12 | 7일<br>7 × 12 = 84 | 31일<br>31 × 12 = 372 |
+| `creation-entry-chat` | 범위 | 6단계 퍼널 1 × 6 × 2 = 12 | 12 | 일수 × 12 | 7일<br>7 × 12 = 84 | 31일<br>31 × 12 = 372 |
 | `android-first-visit` | 범위 | 2단계 퍼널 1 × 2 × 2 = 4 | 4 | 일수 × 4 | 7일<br>7 × 4 = 28 | 31일<br>31 × 4 = 124 |
 | `first-visit-activation` | 범위 | 3단계 퍼널 1 × 3 × 2 = 6 | 6 | 일수 × 6 | 7일<br>7 × 6 = 42 | 31일<br>31 × 6 = 186 |
 | `login-signup` | 범위 | 2단계 퍼널 1 × 2 × 2 = 4 | 4 | 일수 × 4 | 7일<br>7 × 4 = 28 | 31일<br>31 × 4 = 124 |
@@ -750,11 +752,11 @@ Langfuse, 보관 기간 안 확정일`"]
 | `web-to-android` | 범위 | 2단계 퍼널 1 × 2 × 2 = 4 | 4 | 일수 × 4 | 7일<br>7 × 4 = 28 | 31일<br>31 × 4 = 124 |
 | `story-creation` | 범위 | 4단계 퍼널 1 × 4 × 2 = 8 | 8 | 일수 × 8 | 7일<br>7 × 8 = 56 | 31일<br>31 × 8 = 248 |
 | `story-detail-chat` | 범위 | 7단계 퍼널 1 × 7 × 2 = 14 | 14 | 일수 × 14 | 7일<br>7 × 14 = 98 | 31일<br>31 × 14 = 434 |
-| `guest-limit-login` | 범위 | 3단계 퍼널 구글과 카카오 2 × (1 × 3 × 2) = 12 | 12 | 일수 × 12 | 7일<br>7 × 12 = 84 | 31일<br>31 × 12 = 372 |
+| `guest-limit-login` | 범위 | 3단계 퍼널 1 × 3 × 2 = 6 | 6 | 일수 × 6 | 7일<br>7 × 6 = 42 | 31일<br>31 × 6 = 186 |
 | 기능 사용과 안정성 | 일별 | 조건 묶음 하나에 전송 합계와 입력 방식 셋 4 × (1 × 1) = 4<br>스트림 오류 합계 1 × 1 = 1<br>오류와 이프 신호 사용자 수 6 × (1 × 1) = 6<br>활동량 합계 셋과 핵심 활동 사용자 수 4 × (1 × 1) = 4<br>`web`, `android`, `all` 모두 묶음 하나<br>`user_id` 필터는 이벤트 필터라 비용이 같음<br>간편 제작 실패율은 서버 DB라 비용 없음 | 15 | 2 × 15 = 30 | 30일<br>30 × 15 = 450 | 366일<br>366 × 15 = 5,490<br>5분마다 33일씩 |
 | 신규 가입자 플랫폼 | 일별 | 가입 커스텀 이벤트의 전체, 웹, 앱 3 × (1 × 1) = 3<br>가입 전환율의 분모 `_new` 전체, 웹, 앱 3 × (1 × 1) = 3은 사용자 활동과 같은 저장 값이라 사용자 활동이 받지 않은 날짜에만 듦 | 3에서 6 | 2 × 6 = 12 | 30일<br>30 × 6 = 180 | 366일<br>366 × 6 = 2,196<br>5분마다 83일씩 |
 | 턴 도달률 플랫폼 | 일별 | 성공 이벤트 기준 턴 12개의 웹, 앱 24 × (1 × 1) = 24<br>`segment`마다 따로 | 24 | 2 × 24 = 48 | 30일<br>30 × 24 = 720 | 366일<br>366 × 24 = 8,784<br>5분마다 20일씩 |
-| 채팅 옵션 플랫폼 | 일별 | 채팅 시작 클릭 `persona_type` 둘의 웹, 앱 4 × (1 × 1) = 4<br>성공 이벤트 모델 코드 n개의 웹, 앱 2n × (1 × 1) = 2n<br>`segment`마다 따로 | 4 + 2n<br>모델 둘이면 8 | 2 × 8 = 16 | 30일<br>30 × 8 = 240 | 366일<br>366 × 8 = 2,928<br>5분마다 62일씩 |
+| 채팅 옵션 플랫폼 | 일별 | 채팅 시작 사용자 필터 없음과 `persona_type` 셋의 전체, 웹, 앱 12 × (1 × 1) = 12<br>성공 이벤트 모델 코드 n개의 웹, 앱 2n × (1 × 1) = 2n<br>`segment`마다 따로 | 12 + 2n<br>모델 둘이면 16 | 2 × 16 = 32 | 30일<br>30 × 16 = 480 | 366일<br>366 × 16 = 5,856<br>5분마다 31일씩 |
 
 <br>
 

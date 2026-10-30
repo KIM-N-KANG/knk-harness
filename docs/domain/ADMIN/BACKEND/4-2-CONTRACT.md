@@ -1836,7 +1836,7 @@ Authorization: Bearer {adminToken}
 | `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
 | `steps` | `object[]` | 단계 순서<br>6개 |
 | `steps[].event` | `string` | 단계의 이벤트 이름 |
-| `steps[].users` | `object` | 범위 안에 처음 기록된 신규 사용자 가운데 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
+| `steps[].users` | `object` | 범위 안에 첫 단계를 한 사용자 가운데 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
 
 - 단계 사이 전환율은 관리자 페이지가 앞 단계로 나눠 만든다. 단계 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
@@ -1872,8 +1872,8 @@ Authorization: Bearer {adminToken}
   "to": "2026-10-28",
   "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
   "steps": [
-    { "event": "client_storyList_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
-    { "event": "client_storyCreate_viewed", "users": { "all": 188, "ads": 171, "nonAds": 17 } }
+    { "event": "client_storyCreate_viewed", "users": { "all": 410, "ads": 372, "nonAds": 38 } },
+    { "event": "client_storyCreate_tagCategory_selected", "users": { "all": 251, "ads": 228, "nonAds": 23 } }
   ]
 }
 ```
@@ -2184,7 +2184,7 @@ Authorization: Bearer {adminToken}
 
 가입 수와 누계, 가입 경로, 게스트 이관은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 회원 수에서는 재가입으로 소셜 연동을 새 계정에 넘긴 예전 계정 행을 뺀다. 플랫폼별 가입 수와 가입 전환율은 Amplitude 가입 커스텀 이벤트와 신규 방문자로 계산하며 팀 계정을 제외하지 않는다. 두 원본은 따로 세므로 같은 날의 DB 가입 수와 플랫폼 값이 다를 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
-플랫폼 묶음 구조는 `all`, `web`, `android`의 세 값이다. 이 절과 채팅 턴 도달률, 채팅 옵션 비중의 `web`과 `android`는 국내 조건 안의 웹 조건과 앱 조건 조회다. 이 절의 `all`은 전체 조건(웹이나 앱) 조회라 같은 날 웹과 앱에서 함께 가입 이벤트가 잡힌 사람도 한 번이고, 채팅 턴 도달률과 채팅 옵션 비중의 `all`은 이벤트 수라 `web`과 `android`의 합이다. 플랫폼 속성이 없는 이벤트와 국가 조건 밖의 사용자는 세지 않는다.
+플랫폼 묶음 구조는 `all`, `web`, `android`의 세 값이다. 이 절과 채팅 턴 도달률, 채팅 옵션 비중의 `web`과 `android`는 국내 조건 안의 웹 조건과 앱 조건 조회다. 이 절과 채팅 옵션 비중의 채팅 시작 사용자 수처럼 고유 사용자 수인 `all`은 전체 조건(웹이나 앱) 조회라 같은 날 웹과 앱에 함께 잡힌 사람도 한 번이다. 채팅 턴 도달률과 채팅 옵션 비중의 모델 턴 수처럼 이벤트 수인 `all`은 `web`과 `android`의 합이다. 플랫폼 속성이 없는 이벤트와 국가 조건 밖의 사용자는 세지 않는다.
 
 **1. 쿼리**
 
@@ -2292,8 +2292,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `funnel` | 경로 | 필수 | `web-first-visit`, `android-first-visit`, `first-visit-activation`, `login-signup`, `android-activation`, `web-to-android`, `story-creation`, `story-detail-chat`, `guest-limit-login` |
-| `platform` | `string` | 선택 | `web`, `android`<br>`first-visit-activation`, `login-signup`, `story-creation`, `story-detail-chat`, `guest-limit-login`에서만 받으며 기본 `web`<br>`web-first-visit`, `android-first-visit`, `android-activation`, `web-to-android`는 플랫폼이 정해져 있어 받지 않음 |
+| `funnel` | 경로 | 필수 | `web-first-visit`, `android-first-visit`, `first-visit-activation`, `login-signup`, `android-activation`, `web-to-android`, `story-creation`, `creation-entry-chat`, `story-detail-chat`, `guest-limit-login` |
+| `platform` | `string` | 선택 | `web`, `android`<br>`first-visit-activation`, `login-signup`, `story-creation`, `creation-entry-chat`, `story-detail-chat`, `guest-limit-login`에서만 받으며 기본 `web`<br>`web-first-visit`, `android-first-visit`, `android-activation`, `web-to-android`는 플랫폼이 정해져 있어 받지 않음 |
 | `storyId` | `string` | 선택 | `story-detail-chat`에서만<br>지정하면 1단계와 2단계를 그 스토리로 한정, 생략하면 모든 스토리 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
@@ -2312,13 +2312,12 @@ Authorization: Bearer {adminToken}
 | `platform` | `string / null` | 적용한 플랫폼<br>`android-activation`은 `android`, `web-to-android`는 단계마다 플랫폼이 달라 `null` |
 | `storyId` | `string / null` | 적용한 대상 스토리 |
 | `steps` | `object[]` | 단계 순서 |
-| `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 구글과 카카오 로그인 성공 두 이벤트의 합이라 `login_succeeded`<br>가입 커스텀 이벤트 단계는 `signup_succeeded`, 핵심 활동 커스텀 이벤트 단계는 `core_activity` |
+| `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 로그인 커스텀 이벤트 단계라 `login_succeeded`<br>가입 커스텀 이벤트 단계는 `signup_succeeded`, 핵심 활동 커스텀 이벤트 단계는 `core_activity` |
 | `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호<br>그 외 `null` |
 | `steps[].minTurnNumber` | `integer / null` | 턴 번호가 이 값 이상인 채팅 메시지 전송 단계의 하한<br>`first-visit-activation`의 3단계는 5, 그 외 `null` |
 | `steps[].platform` | `string / null` | 단계마다 플랫폼이 다른 `web-to-android`에서 그 단계의 플랫폼 `web`, `android`<br>그 외 `null` |
-| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>`guest-limit-login`의 마지막 단계만 예외로 두 로그인 경로 퍼널 결과의 합 |
+| `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수 |
 
-- `guest-limit-login`의 마지막 단계는 구글과 카카오 경로를 모두 거친 사용자를 두 번 세는 근사치라 앞 단계보다 클 수 있다. 관리자 페이지가 앞 단계로 나눈 전환율도 1을 넘을 수 있으며 서버는 값을 고치지 않는다.
 - `web-to-android`의 전환 창은 30일이라 `to`에서 30일이 지나기 전의 범위는 마지막 단계가 아직 다 차지 않는다. 서버는 그 범위를 확정하지 않고 하루 한 번 다시 받는다.
 
 <br>
@@ -2497,11 +2496,11 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-`chats`, `withPersona`, `byModel`, `turnsByModel`은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 채팅 시작 클릭 수와 플랫폼별 모델 턴 수는 Amplitude 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 웹과 앱 조회이고 `all`은 둘의 합이다. 채팅 수, 페르소나 채팅 수, 채팅 모델별 채팅 수는 채팅 생성과 그 모델을 알리는 이벤트가 없어 플랫폼으로 나누지 않는다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+`chats`, `withPersona`, `byModel`, `turnsByModel`은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 채팅 시작 사용자 수와 플랫폼별 모델 턴 수는 Amplitude 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 웹과 앱 조회다. `all`은 채팅 시작 사용자 수가 전체 조건 조회 값이고 모델 턴 수가 둘의 합이다. 채팅 수, 페르소나 채팅 수, 채팅 모델별 채팅 수는 채팅 생성과 그 모델을 알리는 이벤트가 없어 플랫폼으로 나누지 않는다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
-채팅 턴 도달률과 같다. `segment`는 채팅 시작 클릭 수와 플랫폼별 모델 턴 수만 거른다.
+채팅 턴 도달률과 같다. `segment`는 채팅 시작 사용자 수와 플랫폼별 모델 턴 수만 거른다.
 
 <br>
 
@@ -2518,11 +2517,11 @@ Authorization: Bearer {adminToken}
 | `daily[].withPersona` | `integer` | 페르소나 이름 스냅샷이 있는 채팅 수 |
 | `daily[].byModel` | `object` | 채팅 모델 코드별 채팅 수<br>키는 채팅의 현재 선택 모델 `chat_models.code`<br>모델을 바꾼 채팅은 바꾼 모델로 셈 |
 | `daily[].turnsByModel` | `object` | 청구 모델 코드별 턴 수<br>그날 생성된 AI 응답 메시지를 메시지에 기록한 청구 모델 코드로 묶은 수이며 재생성 판본은 세지 않음<br>게스트 턴은 채팅 모델과 무관하게 `LITE`<br>모델 기록 전의 메시지는 키 `UNRECORDED`<br>`daily[]`의 다른 값과 달리 채팅의 생성일과 삭제 여부를 보지 않아 모든 키의 합이 대시보드 차트의 그날 `turns`와 같음<br>턴이 없는 키는 없음 |
-| `daily[].chatStarts` | `object / null` | 그날 채팅 시작 버튼 클릭 수<br>주인공 종류가 `default` 또는 `persona`인 클릭만<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
-| `daily[].personaChatStarts` | `object / null` | 그중 주인공 종류가 `persona`인 클릭 수<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
+| `daily[].chatStarters` | `object / null` | 그날 채팅 시작 버튼을 누른 고유 사용자 수<br>주인공 종류와 무관<br>플랫폼 묶음 구조이고 `all`은 전체 조건 조회 값<br>`pendingDates`의 날짜는 `null` |
+| `daily[].chatStartersByPersonaType` | `object / null` | 주인공 종류별 그날 채팅 시작 버튼을 누른 고유 사용자 수<br>키는 `default`(기본 주인공), `persona`(페르소나), `none`(주인공 종류 정보 없음)이고 값은 플랫폼 묶음 구조<br>한 사용자가 두 종류로 시작하면 두 키에 모두 들어 키의 합이 `chatStarters`보다 클 수 있음<br>`pendingDates`의 날짜는 `null` |
 | `daily[].platformTurnsByModel` | `object / null` | 그날 저장한 AI 응답 턴 수를 청구 모델 코드와 플랫폼으로 나눈 값<br>키는 `chat_models.code`, 값은 플랫폼 묶음 구조<br>재생성은 세지 않음<br>`pendingDates`의 날짜는 `null` |
 
-- 페르소나 사용률은 관리자 페이지가 `personaChatStarts`를 `chatStarts`로 나눠 만든다. 클릭은 채팅 생성과 같지 않아 `withPersona`를 `chats`로 나눈 값과 다를 수 있다.
+- 페르소나 시작 사용자 비율은 관리자 페이지가 날짜마다 `chatStartersByPersonaType.persona`를 `chatStarters`로 나눠 만든다. 버튼을 누른 사용자 수라 `withPersona`를 `chats`로 나눈 값과 다를 수 있다.
 - `platformTurnsByModel`의 키에는 모델 기록 전 `UNRECORDED`가 없고 턴이 0인 모델도 키가 있다.
 
 <br>

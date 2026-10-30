@@ -271,7 +271,7 @@
 | 누계 | 이틀 가입 4, 2 | `cumulativeSignups.all` 4, 6 |
 | 합계 | 이틀 DAU 100, 200과 신규 방문자 전체 10, 광고 7 | `activeUsersAverage` 150, `adsShare` 0.7 |
 | 추이 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 간편 제작 퍼널 | `days` 7 | 대역에 퍼널 조회 2회, 순서 모드와 `cs` 86400, `n=new`, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` 조건<br>1단계 `client_storyList_viewed`, 2단계 `client_storyCreate_viewed` |
+| 간편 제작 퍼널 | `days` 7 | 대역에 퍼널 조회 2회, 순서 모드와 `cs` 86400, `n=active`, 6단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` 조건<br>1단계 `client_storyCreate_viewed`, 2단계 `client_storyCreate_tagCategory_selected`에 `from_category` `GENRE`와 `direction` `forward` 필터<br>`client_storyList_viewed` 단계 없음 |
 | 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 모든 단계의 사용자 수 0, 정상 응답과 값 저장 |
 | 퍼널 형식 오류 | `data` 없음, `data` `null`, 6단계 요청에 5단계 항목 | 503, `admin_analytics_fetch_failed`의 `reason` `parse_error`, 값 저장 안 함 |
 | 퍼널 세그먼트 차 | 1단계 전체 100, 광고 80 | `steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
@@ -367,7 +367,8 @@
 | 앱 신규 활성 사용자 | `days` 7 | 대역에 퍼널 조회 7회, 요청마다 `start`와 `end`가 같은 날짜, `n=new`, `cs` 86400, 1단계 `_active`에 `country`와 `platform` `Android`, 2단계 `ce:핵심 활동`에 `country`만, 예산 계수기 28 증가 |
 | 앱 신규 활성 값 | 이틀의 퍼널 단계 `[20, 6]`, `[0, 0]` | `daily`의 `newUsers` 20과 0, `activeUsers` 6과 0, `activationRate` 0.3과 `null`<br>`totals` `newUsers` 20, `activeUsers` 6, `activationRate` 0.3 |
 | 앱 신규 활성 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계와 2단계가 `client_storyList_viewed`, `client_storyCreate_viewed`이고 `first-visit-activation`과 `android-activation`을 뺀 다른 퍼널은 `n=active` |
+| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계 `client_storyCreate_viewed`, 2단계 `client_storyCreate_tagCategory_selected`에 `from_category` `GENRE`와 `direction` `forward` 필터이고 `first-visit-activation`과 `android-activation`을 뺀 다른 퍼널은 `n=active` |
+| 간편 제작 진입 채팅 퍼널 | `creation-entry-chat` `days` 7, `platform=android` | 대역에 퍼널 조회 1회, `n=active`, 캠페인 간편 제작 퍼널과 같은 6단계, 단계마다 `country`와 `platform` `Android`, `gp:initial_utm_campaign` 필터 없음, 응답 `platform` `android` |
 | 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |
 | 신규 사용자 활성화 퍼널 | `first-visit-activation` `days` 7, `platform=android` | 대역에 퍼널 조회 1회, `n=new`, 3단계 `_active`, `client_chat_messageInput_submitted`, `turn_number` `greater or equal` `["5"]`인 같은 이벤트, 단계마다 `country`와 `platform` `Android`<br>`steps[2].minTurnNumber` 5, 응답 `platform` `android` |
 | 로그인 화면 가입 퍼널 | `login-signup` `days` 7 | 대역에 퍼널 조회 1회, `n=active`, 2단계 `client_login_viewed`와 `ce:신규 가입 (구글·카카오)`<br>1단계만 `platform` `Web`, 2단계는 `country`만, `steps[1].event` `signup_succeeded` |
@@ -376,7 +377,7 @@
 | 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `country`와 `platform` `Android`, `user_id` 조건 없음<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
-| 게스트 한도 퍼널 | 구글 퍼널 2단계 6과 3단계 5, 카카오 3단계 2 | 대역에 퍼널 조회 2회, `steps[1].users` 6, `steps[2].users` 7로 앞 단계보다 커도 그대로, `event` `login_succeeded` |
+| 게스트 한도 퍼널 | `guest-limit-login` `days` 7, 퍼널 대역의 단계별 10, 6, 5 | 대역에 퍼널 조회 1회, 3단계가 `ce:로그인 성공 (구글·카카오)`, 구글과 카카오 로그인 성공 이벤트를 단계로 쓰는 조회 없음<br>`steps[2].event` `login_succeeded`, `steps[2].users` 5 |
 | 퍼널 기간 | 31일<br>32일, 모르는 퍼널 이름 | 200<br>400 |
 | 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `reached` 12개<br>`all` `chats` 4, 턴 1부터 5까지 비율 0.75, 6부터 10까지 0.5, 15와 20은 0.25, 30과 50은 0<br>`guest`와 `member`의 `chats` 각 2 |
 | 게스트에서 회원으로 | 이관 시각 전 생성 채팅 턴 5와 7, 이관 뒤 생성 채팅 턴 8 | `chatsReached5` 2, `chatsReached6` 1, `rate` 0.5 |
@@ -400,8 +401,8 @@
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | 모델별 턴 수 | 10-21 AI 응답: 메시지 `model_code` `AURORA` 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 채팅의 `LITE` 3개, 삭제된 채팅의 `LITE` 1개, 채팅 모델이 `AURORA`인 게스트 채팅의 `LITE` 1개, `model_code`가 `NULL`인 1개, 팀 계정 채팅의 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 5, "UNRECORDED": 1}`<br>합 8이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
 | 모델 변경과 재분류 | `LITE`로 턴 3개를 만든 뒤 채팅 모델을 `AURORA`로 바꿈 | `turnsByModel`은 그대로 `LITE` 3, `byModel`은 그 채팅을 `AURORA`로 셈 |
-| 채팅 옵션 플랫폼 | `days` 7, `chat_models`에 `LITE`와 `AURORA` | 대역에 세분화 8회<br>채팅 시작 클릭 4회는 `persona_type` `default`나 `persona` 필터와 웹, 앱 조건<br>성공 이벤트 4회는 `is_regenerated` `false`, `model_code` `LITE`나 `AURORA` 필터와 웹, 앱 조건 |
-| 페르소나 클릭 값 | 하루 웹 클릭 `default` 8, `persona` 2와 앱 `default` 5, `persona` 0 | `chatStarts` `all` 15, `web` 10, `android` 5<br>`personaChatStarts` `all` 2, `web` 2, `android` 0 |
+| 채팅 옵션 플랫폼 | `days` 7, `chat_models`에 `LITE`와 `AURORA` | 대역에 세분화 16회<br>채팅 시작 버튼 12회는 `m=uniques`, 전체, 웹, 앱 조건마다 필터 없음 1회와 `persona_type` `default`, `persona`, `(none)` 필터 3회<br>성공 이벤트 4회는 `m=totals`, `is_regenerated` `false`, `model_code` `LITE`나 `AURORA` 필터와 웹, 앱 조건 |
+| 채팅 시작 사용자 값 | 하루 채팅 시작 사용자 전체 13, 웹 9, 앱 5<br>`default` 전체 12, 웹 8, 앱 5, `persona` 전체 2, 웹 2, 앱 0, `(none)` 전체 1, 웹 0, 앱 1 | `chatStarters` `all` 13, `web` 9, `android` 5<br>`chatStartersByPersonaType`의 `default` `{"all": 12, "web": 8, "android": 5}`, `persona` `{"all": 2, "web": 2, "android": 0}`, `none` `{"all": 1, "web": 0, "android": 1}`<br>`all`을 웹과 앱의 합으로 바꾸지 않고 `chatStarts`, `personaChatStarts` 필드 없음 |
 | 플랫폼 모델 턴 | 하루 웹 `LITE` 4, `AURORA` 1과 앱 `LITE` 3, `AURORA` 0 | `platformTurnsByModel` `{"AURORA": {"all": 1, "web": 1, "android": 0}, "LITE": {"all": 7, "web": 4, "android": 3}}` |
 | 모델 추가 | 저장 값이 있는 범위에서 `chat_models`에 새 코드 추가 | 새 코드의 조회 2회만 보내고 기존 코드의 날짜는 다시 받지 않음 |
 | 채팅 옵션 준비 중 | 대역 500, 저장 값 없음 | 200, `chats`, `withPersona`, `byModel`, `turnsByModel`은 정상, 플랫폼 값 셋은 `null`, 모든 날짜가 `pendingDates` |

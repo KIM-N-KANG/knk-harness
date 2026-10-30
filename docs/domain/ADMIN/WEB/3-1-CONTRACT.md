@@ -66,7 +66,7 @@
 | 캠페인 추이, 첫 방문 활성화, 광고 소재, 간편 제작 퍼널, 상세 진입 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
 | 유입 소스, 앱 유입, 앱 신규 활성 사용자 | 기간만 |
-| 전환 퍼널 카드 | 탭에 있는 카드마다 경로의 `funnel`로 따로 동시에 요청<br>`platform`은 신규 사용자 활성화, 로그인 화면 가입, 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 고른 플랫폼이고 전체면 `web`<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
+| 전환 퍼널 카드 | 탭에 있는 카드마다 경로의 `funnel`로 따로 동시에 요청<br>`platform`은 신규 사용자 활성화, 로그인 화면 가입, 간편 제작, 간편 제작 진입 채팅, 상세 진입 채팅, 게스트 한도 로그인 요청에만 고른 플랫폼이고 전체면 `web`<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
 | 채팅 턴 도달률, 채팅 옵션 비중 | 기간과 고른 대상의 `segment`<br>`all`이어도 보냄 |
 | 기능 사용과 안정성 | 고른 `platform`과 `segment`<br>`all`이어도 보냄<br>그 탭에서 숨긴 구분은 `all` |
 | 사용자 세션과 세션 길이 분포 | 둘 다 기간과 고른 대상의 `segment`<br>`all`이어도 보냄<br>두 요청을 따로 동시에 보냄 |
@@ -102,7 +102,8 @@
 | `campaign`, `storyId`, `platform`, `segment`, `cohort` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 대상으로 표시<br>리텐션 응답에 `cohort`가 없으면 방문자로 표시 |
 | 신규 가입자 응답의 `signups.other` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 플랫폼 묶음의 `unknown` | 사용자 활동의 `activeUsers.unknown`만 활성 사용자 플랫폼 구성 차트에 씀<br>그 밖의 응답에 있어도 읽지 않음 |
-| 신규 가입자의 `newVisitorsByPlatform`, `signupRate`, 기능 사용과 안정성의 `activity`, 세션의 `sessionsPerUser`, 세션 길이 분포의 `daily` | 응답에 없으면 그 차트와 카드 자리에 "준비 중"을 두고 재요청하지 않음 |
+| 채팅 옵션 비중의 `chatStarts`, `personaChatStarts` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
+| 신규 가입자의 `newVisitorsByPlatform`, `signupRate`, 채팅 옵션 비중의 `chatStarters`, `chatStartersByPersonaType`, 기능 사용과 안정성의 `activity`, 세션의 `sessionsPerUser`, 세션 길이 분포의 `daily` | 응답에 없으면 그 차트와 카드 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 기능 사용과 안정성의 `users.storyCompleteError` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 기능 사용과 안정성의 `storyCompletion` | 응답에 없으면 간편 제작 실패율 차트 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 Amplitude 값 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
