@@ -1,6 +1,6 @@
 # AGENTS.md
 
-MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 검수 제출본의 접수, 조회, 재제출, 취소, 선점과 실행, AI 호출과 응답 검증, 결과 반영, 재시도와 보류, 용량 예산을 다룬다.
+MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 검수 제출본의 접수, 조회, 재제출, 취소, 선점과 실행, AI 호출과 응답 검증, 결과 반영, 재시도와 보류, 관리자의 보류 목록과 해제와 제출본 조회, 관리자의 회원 스토리 공개 중단, 용량 예산을 다룬다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -15,8 +15,8 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 | [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 |
 | [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 데이터 수명 |
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 접수, 조회, 재제출, 취소, 선점과 실행, 검수 입력과 이미지 복사, AI 호출, 결과 반영, 재시도와 보류, 보류 해제 |
-| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 다른 도메인과의 계약, 제출본 응답 구조 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 접수, 조회, 재제출, 취소, 선점과 실행, 검수 입력과 이미지 복사, AI 호출, 결과 반영, 재시도와 보류, 보류 목록과 해제, 관리자 제출본 조회, 공개 중단 |
+| [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 관리자 페이지, 다른 도메인과의 계약, 제출본 응답 구조 |
 | [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 소유권과 접근 판정, 계정 상태와 동의, 입력 검증, 이미지 보호, 재시도 범위, 식별자와 개인정보, 수용한 한계 |
 | [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 행 잠금, 회차와 1회 반영, 유니크 위반, 선점과 임대, 수용한 경쟁 |
 | [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 앱 코드, 오류 분류, 복구, 시간 한도 |
@@ -27,8 +27,9 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 미정으로 표시된 항목을 추측으로 채우지 않는다.
-- 등록과 수정 요청의 본문과 실패 조건은 STORY 세트가 정한다. 검수 기준과 응답 의미는 AI 서버가 정한다. 검수 완료 알림은 NOTIFICATION 세트가 정한다.
-- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-6 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-6-다른-도메인과의-경계))
+- 등록과 수정 요청의 본문과 실패 조건은 STORY 세트가 정한다. 검수 기준과 응답 의미는 AI 서버가 정한다. 검수 완료 알림과 공개 중단 알림은 NOTIFICATION 세트가 정한다. 공개 중단 표시 컬럼은 STORY 세트의 스토리 테이블에 있다.
+- 관리자 인증 수준과 토큰은 ADMIN 세트가 정한다.
+- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-11 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-11-다른-도메인과의-경계))
 
 <br>
 
@@ -41,7 +42,9 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 | 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [3-3-2 계층 책임](3-3-CONVENTIONS.md#3-3-2-계층-책임), 서버 저장소 `http/story/`의 수동 호출 파일과 통합 테스트 |
 | AI 요청 필드나 응답 처리 변경 | [4-1-8 AI 호출과 응답 검증](4-1-PIPELINES.md#4-1-8-ai-호출과-응답-검증) | [5-3-3 오류 분류](5-3-ERROR-HANDLING.md#5-3-3-오류-분류), [6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 재시도 간격, 임대, 슬롯 변경 | [5-3-5 재시도와 시간 한도](5-3-ERROR-HANDLING.md#5-3-5-재시도와-시간-한도) | [5-2-4 선점과 임대](5-2-CONCURRENCY.md#5-2-4-선점과-임대), [6-5 설정 변경](6-DEPLOYMENT.md#6-5-설정-변경) |
-| 보류 처리 | [4-1-11 보류 해제](4-1-PIPELINES.md#4-1-11-보류-해제) | [6-6 적용과 복구](6-DEPLOYMENT.md#6-6-적용과-복구) |
+| 보류 처리 | [4-1-11 보류 목록과 해제](4-1-PIPELINES.md#4-1-11-보류-목록과-해제) | [4-2-7 보류 해제](4-2-CONTRACT.md#4-2-7-보류-해제), [6-6 적용과 복구](6-DEPLOYMENT.md#6-6-적용과-복구), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
+| 공개 중단 변경 | [4-1-13 공개 중단](4-1-PIPELINES.md#4-1-13-공개-중단) | [4-2-10 공개 중단](4-2-CONTRACT.md#4-2-10-공개-중단), [4-1-9 결과 반영](4-1-PIPELINES.md#4-1-9-결과-반영), [STORY 4-2-17 스토리 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-17-스토리-수정), [NOTIFICATION 4-1-21 공개 중단 알림](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-21-공개-중단-알림), [ADMIN 3-2-4 감사 로그](../../ADMIN/BACKEND/3-2-DB-SCHEMA.md#3-2-4-감사-로그) |
+| 관리자 제출본 조회 변경 | [4-1-12 관리자 제출본 조회](4-1-PIPELINES.md#4-1-12-관리자-제출본-조회) | [4-2-8 관리자 제출본 목록](4-2-CONTRACT.md#4-2-8-관리자-제출본-목록), [4-2-9 관리자 제출본 상세](4-2-CONTRACT.md#4-2-9-관리자-제출본-상세), [5-1-7 식별자와 개인정보](5-1-SECURITY.md#5-1-7-식별자와-개인정보) |
 | 용량 예산 변경 | [4-1-2 접수](4-1-PIPELINES.md#4-1-2-접수) | [2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약) |
 | 오류 코드 추가 | [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드) | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
@@ -57,6 +60,7 @@ MODERATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서�
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | 제출본 API | [story/controller/StorySubmissionController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/StorySubmissionController.kt) | 4-2-2~4-2-5 |
+| 관리자 보류, 제출본, 공개 중단 API | [story/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/)<br>[story/submission/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/) | 4-1-11~4-1-13, 4-2-6~4-2-10 |
 | 접수 진입 | [story/controller/StoryController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/StoryController.kt), [story/controller/StoryEditController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/StoryEditController.kt) | 4-1-2 |
 | 제출 서비스, 폼 조립기, 용량 검사 | [story/submission/StorySubmissionService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/StorySubmissionService.kt), [story/submission/SubmissionFormAssembler.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/SubmissionFormAssembler.kt), [story/submission/SubmissionSizeCheck.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/SubmissionSizeCheck.kt) | 4-1-2~4-1-5 |
 | 폴러, 선점 저장소 | [story/submission/SubmissionPoller.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/SubmissionPoller.kt), [story/submission/SubmissionClaimStore.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/submission/SubmissionClaimStore.kt) | 4-1-6, 5-2-4 |

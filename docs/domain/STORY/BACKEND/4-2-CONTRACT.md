@@ -2,7 +2,7 @@
 
 이 문서는 STORY 도메인 백엔드와 클라이언트, 다른 도메인 사이의 계약을 정한다. 엔드포인트별 요청 필드, 성공과 실패 응답의 필드와 예시, 도메인 경계를 다룬다.
 
-AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 읽기와 소유 판정의 보안 관점은 보안에 있다. ([4-1-11 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-11-간편-제작-스토리라인-생성), [4-1-12 간편 제작 완성](4-1-PIPELINES.md#4-1-12-간편-제작-완성), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-2 소유권과 읽기 판정](5-1-SECURITY.md#5-1-2-소유권과-읽기-판정))
+AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 읽기와 소유 판정의 보안 관점은 보안에, 관리자 토큰과 권한 판정은 관리자 계약에 있다. ([4-1-11 간편 제작 스토리라인 생성](4-1-PIPELINES.md#4-1-11-간편-제작-스토리라인-생성), [4-1-12 간편 제작 완성](4-1-PIPELINES.md#4-1-12-간편-제작-완성), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [5-1-2 소유권과 읽기 판정](5-1-SECURITY.md#5-1-2-소유권과-읽기-판정), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 <br>
 
@@ -28,6 +28,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `불필요` | 검사하지 않음 | 검사하지 않음 |
 | `선택` | 익명으로 처리 | 회원으로 처리 |
 | `필수` | 거절 | 회원으로 처리 |
+| `관리자` | 거절 | 앱 접근 토큰은 거절<br>관리자 토큰은 역할과 계정 상태를 다시 확인해 통과 |
 
 <br>
 
@@ -35,7 +36,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 | 요청 헤더 | 값 형식 | 쓰임 | 필수 |
 |---|---|---|---|
-| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
+| `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그와 AI 호출 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
 | `X-Manyak-Device-Id` | 문자열 | 게스트의 스토리라인 생성과 완성 체험 한도 집계<br>생성 요청 기록의 멱등성과 복구 조회 소유권 판정<br>AI 서버에는 해시로 전달<br>서버 분석 이벤트의 `device_id` | 게스트 간편 제작은 필수 |
@@ -1559,7 +1560,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 |---|---|
 | 요청 | `PATCH /stories/{storyId}` |
 | 인증 | 필수 |
-| 성공 | 공개 범위 단독이면 200 수정 폼 |
+| 성공 | 공개 범위 단독이면 200 수정 폼<br>공개 중단된 스토리를 `PUBLIC`으로 바꾸는 요청은 제외 |
 | 성공 | 그 외는 202, 등록 응답과 같은 `submissionId`, `status` |
 
 등록 요청의 모든 필드는 선택적으로 보낼 수 있다. 보낸 필드만 변경한다. `null`은 미전송과 같다. 검수로 접수된 수정의 결과는 수정 폼 응답의 `submission` 또는 제출본 조회로 확인한다.
@@ -1568,7 +1569,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 
 | 필드명 | 규칙 |
 |---|---|
-| `visibility` | 이 필드만 보내면 즉시 반영하고 200 수정 폼 반환<br>다른 필드와 함께 보내면 검수 접수 |
+| `visibility` | 이 필드만 보내면 즉시 반영하고 200 수정 폼 반환<br>다른 필드와 함께 보내면 검수 접수<br>관리자가 공개 중단한 스토리에 `PUBLIC`을 보내면 이 필드만 보내도 검수 접수하고 승인되면 공개 |
 | `protagonistName` | 생략과 `null`은 유지<br>빈 문자열과 공백만 있는 문자열은 거절<br>토큰과 이름의 관계는 기존 값에 요청을 반영한 전체 결과로 검증 |
 | `genres` | 활성 제공 장르이거나 해당 스토리에 이미 반영된 장르만 허용<br>기존 장르는 저장 표기 유지<br>제거한 커스텀 장르는 다시 추가 불가 |
 | `startSettings` | 보내면 전체 교체, 1개 이상<br>`id`가 기존 항목과 일치하면 해당 행을 갱신<br>`id`가 없으면 추가하고 요청에서 빠진 기존 항목은 삭제 |
@@ -1605,7 +1606,7 @@ AI가 입력 내용을 이유로 생성을 거절한 경우다. 차감한 이프
 { "visibility": "PUBLIC" }
 ```
 
-200 응답은 수정 폼이다.
+공개 중단되지 않은 스토리의 200 응답은 수정 폼이다. 관리자가 공개 중단한 스토리는 같은 요청에도 202로 검수 접수한다.
 
 <br>
 
@@ -2235,7 +2236,257 @@ Content-Length: 204800
 
 <br>
 
-### 4-2-27 다른 도메인과의 경계
+### 4-2-27 오리지널 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/originals` |
+| 인증 | 관리자 |
+| 성공 | 200<br>관리자 목록 공통의 페이지 구조 |
+
+관리자 오리지널 API는 공식 계정이 소유한 스토리만 다룬다. 페이지, 정렬, 검색어 규칙은 관리자 목록 공통이다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `q` | `string` | 선택 | 제목 부분 일치<br>스토리 공개 식별자 정확 일치 |
+| `status` | `string` | 선택 | `DRAFT`, `PUBLISHED` |
+| `visibility` | `string` | 선택 | `PUBLIC`, `PRIVATE` |
+| `sort` | `string` | 선택 | `updatedAt`, `chatCount`, `totalTurns`<br>기본 `updatedAt` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items[].storyId` | `string` | 스토리 공개 식별자 |
+| `items[].title` | `string` | 토큰 원문 |
+| `items[].genres` | `string[]` | 장르 정식 이름 |
+| `items[].status` | `string` | `DRAFT`, `PUBLISHED` |
+| `items[].visibility` | `string` | `PUBLIC`, `PRIVATE` |
+| `items[].owner` | `object` | 공식 계정의 `memberId`, `nickname` |
+| `items[].chatCount` | `integer` | 삭제되지 않은 채팅 수 |
+| `items[].totalTurns` | `integer` | 삭제되지 않은 채팅의 현재 턴 합 |
+| `items[].thumbnailUrl` | `string / null` | 표지 |
+| `items[].updatedAt` | `string` | 마지막 수정 시각 |
+
+- 삭제된 스토리는 싣지 않는다. 공식 계정 설정이 비어 있으면 빈 페이지다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 검색어, enum, 공통 페이지 쿼리 오류 |
+
+<br>
+
+### 4-2-28 오리지널 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/originals/{storyId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 응답**
+
+오리지널 목록 항목에 수정 폼의 필드를 더한다. ([4-2-16 수정 폼](#4-2-16-수정-폼))
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `title`, `oneLineIntro`, `description`, `protagonistName`, `genres`, `storySettings`, `startSettings`, `mainEvents`, `characters`, `thumbnailUrl`, `thumbnailModerationStatus` | 수정 폼과 같음 | 현재 저장값<br>미승인 제출본은 없음 |
+
+- 수정 폼의 `submission`은 없다. 오리지널은 검수를 거치지 않는다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `storyId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리<br>공식 계정 소유가 아닌 스토리 |
+
+<br>
+
+### 4-2-29 오리지널 등록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/originals` |
+| 인증 | 관리자 |
+| 성공 | 201<br>오리지널 상세 |
+
+**1. 요청 본문**
+
+일반 제작 등록의 필드를 그대로 쓴다. ([4-2-15 일반 제작 등록](#4-2-15-일반-제작-등록)) 다른 점은 다음과 같다.
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `status` | `string` | 선택 | `DRAFT` 또는 `PUBLISHED`<br>기본 `DRAFT` |
+| `visibility` | `string` | 선택 | 기본 `PRIVATE`<br>`PUBLIC`은 `PUBLISHED`와 함께만 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+| `draftId` | | | 없음<br>보내면 400 |
+| `thumbnailObjectKey`, `characters[].images[].objectKey` | `string` | 선택 | 오리지널 presign으로 올린 객체 키 |
+
+- `DRAFT`는 `title`만 필수이고 나머지 필드는 선택이다. 시작 설정이 없으면 빈 배열로 저장한다.
+- `PUBLISHED`는 일반 제작 등록과 같은 검증을 모두 통과해야 한다.
+- 소유자는 공식 계정이다. 검수 접수 없이 바로 저장하고 감사 로그 `ORIGINAL_CREATED`를 남긴다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 일반 제작 등록과 같은 검증 실패<br>`DRAFT`에 `PUBLIC`<br>`draftId` 포함<br>`reason` 누락 |
+| 400 | `INVALID_GENRE` | 허용되지 않는 장르 |
+| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음 |
+| 409 | `CONFLICT` | 같은 인물 안의 이미지 이름 중복 |
+| 503 | `SERVICE_UNAVAILABLE` | 공식 계정 설정이 비어 있거나 그 회원이 없음 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request body**
+
+일반 제작 등록 예시의 필드에 다음을 더한다.
+
+```json
+{
+  "status": "PUBLISHED",
+  "visibility": "PUBLIC",
+  "reason": "11월 오리지널 1편 공개"
+}
+```
+
+**2) 201 Response body**
+
+오리지널 상세와 같다.
+
+</details>
+
+<br>
+
+### 4-2-30 오리지널 수정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `PATCH /admin/originals/{storyId}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>오리지널 상세 |
+
+**1. 요청 본문**
+
+스토리 수정의 필드와 규칙을 그대로 쓴다. ([4-2-17 스토리 수정](#4-2-17-스토리-수정)) 다른 점은 다음과 같다.
+
+| 필드명 | 규칙 |
+|---|---|
+| `status` | `DRAFT`에서 `PUBLISHED`로만 바꿀 수 있음<br>`PUBLISHED`로 바꿀 때 기존 값에 요청을 반영한 전체 결과가 등록 검증을 통과해야 함 |
+| `visibility` | 다른 필드와 함께 보내도 즉시 반영<br>`DRAFT`인 스토리에 `PUBLIC`은 거절 |
+| `reason` | 필수 |
+| 모든 변경 | 검수 접수 없이 바로 반영<br>발행 상태이고 공개면 공개 스냅샷 갱신 |
+
+- 시드로 등록한 기존 오리지널도 같은 경로로 수정한다.
+- 감사 로그 `ORIGINAL_UPDATED`를 남긴다. 변경 전후 값은 `status`, `visibility`, `title`, `genres`다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 스토리 수정과 같은 검증 실패<br>`PUBLISHED`에서 `DRAFT`로 변경<br>`DRAFT`에 `PUBLIC`<br>`reason` 누락 |
+| 400 | `INVALID_GENRE` | 허용되지 않는 장르 |
+| 400 | `UPLOAD_NOT_FOUND` | 객체 키에 아직 파일이 없음 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리<br>공식 계정 소유가 아닌 스토리 |
+| 409 | `CONFLICT` | 같은 인물 안의 이미지 이름 중복 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) 공개로 전환하는 Request body**
+
+```json
+{ "status": "PUBLISHED", "visibility": "PUBLIC", "reason": "검토 완료" }
+```
+
+**2) 비공개로 바꾸는 Request body**
+
+```json
+{ "visibility": "PRIVATE", "reason": "오탈자 수정 중" }
+```
+
+</details>
+
+<br>
+
+### 4-2-31 오리지널 표지 삭제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `DELETE /admin/originals/{storyId}/thumbnail` |
+| 인증 | 관리자 |
+| 성공 | 200<br>오리지널 상세 |
+
+**1. 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 표지가 이미 없어도 성공이다. 감사 로그 `ORIGINAL_THUMBNAIL_DELETED`를 남긴다. 인물 이미지 삭제는 수정의 `characters[].images` 전체 교체로 한다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reason` 누락<br>`storyId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리<br>공식 계정 소유가 아닌 스토리 |
+
+<br>
+
+### 4-2-32 오리지널 이미지 presign
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/originals/images/presign` |
+| 요청 | `POST /admin/originals/{storyId}/images/presign` |
+| 인증 | 관리자 |
+| 성공 | 201 |
+
+요청 본문과 응답은 이미지 presign과 같다. ([4-2-18 이미지 presign](#4-2-18-이미지-presign)) 다른 점은 다음과 같다.
+
+| 항목 | 규칙 |
+|---|---|
+| 객체 키 | 등록 전은 공식 계정의 임시 업로드 접두어<br>등록 뒤는 그 스토리의 접두어 |
+| 소유 판정 | 공식 계정 소유 스토리만<br>아니면 없는 것으로 응답 |
+| 감사 기록 | 없음<br>업로드 자체는 스토리를 바꾸지 않음 |
+
+<br>
+
+**실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 지원하지 않는 형식, 5,242,880 바이트 초과 |
+| 404 | `NOT_FOUND` | 없거나 삭제된 스토리<br>공식 계정 소유가 아닌 스토리 |
+| 503 | `SERVICE_UNAVAILABLE` | 이미지 저장소 미설정<br>공식 계정 설정이 비어 있음 |
+
+<br>
+
+### 4-2-33 다른 도메인과의 경계
 
 | 상대 | STORY가 주는 것 | STORY가 받는 것 |
 |---|---|---|
@@ -2245,9 +2496,11 @@ Content-Length: 204800
 | MODERATION | 제출본 접수, 승인 시 등록 저장과 수정 적용 진입점 | 판정 결과와 승인 시 호출 |
 | MODERATION | 이미지 객체 검증 | `PENDING` 제출본 존재 여부 |
 | MODERATION | 검수 입력의 토큰 원문과 `protagonist_name`, 인물 소개 |  |
+| MODERATION | 공개 중단 적용, 공개 중단 표시 조회, 승인 시 공개 중단 해제 | 관리자 공개 중단 요청 |
 | PAYMENT | 차감과 환불 요청(`ref_type` `STORY`), 게스트 카운터 예약과 복원 요청 | 잔액 부족과 한도 소진 예외 |
 | PAYMENT |  | 정책값 `story_creation_cost` |
-| NOTIFICATION | 완성 이벤트(회원, 요청 ID, 스토리 공개 ID, 제목) | 없음 |
+| NOTIFICATION | 완성 이벤트(회원, 요청 ID, 스토리 공개 ID, 제목), 캠페인 이동 대상 스토리의 공개 판정 | 없음 |
+| ADMIN | 공식 계정 식별, 스토리와 제작 세션 조회 | 관리자 요청자, 관리자 판정 필터, 변경 감사 기록 |
 | ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보와 이관된 스토리의 색인 요청 이벤트 |
 | ACCOUNT |  | 동의 게이트 허용 목록 |
 | 검색 | 색인 요청 이벤트(스토리 ID) | 검색 결과 카드 |

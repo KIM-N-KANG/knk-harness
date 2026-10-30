@@ -9,7 +9,7 @@
 - 공지와 알림 목록은 nextCursor를 그대로 다음 요청에 사용하고 끝 sentinel 교차로 다음 페이지를 읽는다. 실패 뒤 자동 재요청은 중단한다.
 - 공지 상세 성공 뒤 읽음을 기록하고 404는 미존재 화면으로 구분한다. 본문은 whitespace-pre-wrap으로 그린다.
 - 한 건과 모두 읽음 mutation은 onMutate에서 캐시된 모든 분류 페이지의 대상 readAt을 갱신하고 onSettled에서 unread-count를 무효화한다. 모두 읽음만 실패 스냅숏으로 복원한다.
-- 알림 링크는 푸시 링크 해석을 재사용해 서비스 origin의 상대 경로로 바꾸고 실패하면 noticeId, storyId 순서로 대체한다.
+- 알림 링크는 푸시 링크 해석을 재사용해 서비스 origin의 상대 경로로 바꾸고 실패하면 noticeId, storyId 순서로 대체한다. 공개 제한의 허용된 deepLink는 `/studio`로 이동하며 storyId가 있어도 스토리 상세로 바꾸지 않는다.
 
 <br>
 

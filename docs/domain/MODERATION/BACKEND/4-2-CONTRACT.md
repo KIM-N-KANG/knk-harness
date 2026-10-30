@@ -1,8 +1,8 @@
 # 4-2 계약
 
-이 문서는 MODERATION 도메인의 클라이언트 API와 다른 도메인과의 경계를 정한다.
+이 문서는 MODERATION 도메인의 클라이언트 API, 관리자 API와 다른 도메인과의 경계를 정한다.
 
-접수 요청의 본문과 실패 조건은 STORY 세트의 등록과 수정 계약에, 처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에 있다. ([STORY 4-2-15 일반 제작 등록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-15-일반-제작-등록), [STORY 4-2-17 스토리 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-17-스토리-수정), [4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드))
+접수 요청의 본문과 실패 조건은 STORY 세트의 등록과 수정 계약에, 처리 순서와 판정 규칙은 처리 흐름에, 앱 코드 전체 목록과 복구는 오류 처리에, 관리자 토큰과 권한 판정은 관리자 계약에 있다. ([STORY 4-2-15 일반 제작 등록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-15-일반-제작-등록), [STORY 4-2-17 스토리 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-17-스토리-수정), [4-1 처리 흐름](4-1-PIPELINES.md), [5-3-2 앱 코드](5-3-ERROR-HANDLING.md#5-3-2-앱-코드), [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 <br>
 
@@ -15,7 +15,8 @@
 | 경로 | `/api/v1`을 생략해 적음 |
 | JSON 필드 이름 | camelCase |
 | 시각 | ISO 8601 UTC 문자열 |
-| 식별자 | 제출본과 스토리는 UUID 공개 식별자<br>내부 PK와 회차, 임대, 재시도 상태는 노출하지 않음 |
+| 식별자 | 제출본, 스토리, 회원은 UUID 공개 식별자<br>내부 PK와 임대는 노출하지 않음<br>회차와 재시도 상태는 관리자 API에만 노출 |
+| 사유 | 관리자 변경 작업의 요청 본문에 `reason` 필수<br>공개 중단은 `reason` 대신 사유 분류 `reasonCode`가 필수이고 `ETC`면 입력 사유 `reasonDetail`도 필수이며 메모 `memo`는 선택 |
 | 위치 | 위반 항목과 이미지 오류의 `path`는 응답 폼 기준의 필드 경로<br>배열 인덱스는 0부터 |
 | 예시 값 | 모든 예시는 구조를 설명하기 위한 가상 값 |
 
@@ -23,9 +24,10 @@
 
 **2. 인증 수준**
 
-| 수준 | 토큰 없음 또는 무효 | 유효한 토큰 |
-|---|---|---|
-| `필수` | 거절 | 회원으로 처리 |
+| 수준 | 토큰 없음 또는 무효 | 유효한 앱 접근 토큰 | 관리자 토큰 |
+|---|---|---|---|
+| `필수` | 거절 | 회원으로 처리 | 거절 |
+| `관리자` | 거절 | 거절 | 관리자 역할과 계정 상태를 다시 확인해 통과 |
 
 <br>
 
@@ -33,7 +35,7 @@
 
 | 요청 헤더 | 값 형식 | 쓰임 | 필수 |
 |---|---|---|---|
-| `Authorization` | `Bearer {accessToken}` | 회원 식별 | 인증 수준에 따름 |
+| `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 생성하고 응답 헤더로 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
 
@@ -70,8 +72,8 @@
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 401 | `UNAUTHORIZED` | 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정 |
-| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403 |
+| 401 | `UNAUTHORIZED` | 토큰 누락, 만료, 위조, 주체 형식 오류, 사용자 없음<br>확인된 탈퇴 계정<br>관리자 경로의 관리자 표식 없음 |
+| 403 | `FORBIDDEN` | 계정 상태 규칙 표의 403<br>관리자 경로의 역할 없음, 정지, 탈퇴, 회원 없음 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
 | 500 | `INTERNAL_SERVER_ERROR` | 예상하지 못한 오류 |
 
@@ -109,6 +111,7 @@
 | `MODEL_CALL_FAILED` | AI 서버의 모델 호출 실패 |
 | `MODERATION_UNAVAILABLE` | 이미지 복사 실패, AI 서버 호출 실패, 시간 초과, 응답 형식 오류 |
 | `APPLY_FAILED` | 승인 뒤 현재 스토리 적용 단계의 검증 실패 |
+| `STORY_TAKEN_DOWN` | 관리자가 스토리를 공개 중단해 대기 중이던 수정 제출본을 끝냄<br>수정 요청으로 다시 접수 |
 
 - 반려는 저장된 `issues`가 하나 이상이고 `errorCode`가 `null`이다. 응답의 `issues`는 재대응으로 비어 있을 수 있다. 실패는 `errorCode`가 있고 `issues`와 `imageErrors`가 함께 있을 수 있다.
 - 대상이 사라진 항목은 `issues`와 `imageErrors`에서 뺀다.
@@ -459,24 +462,488 @@ Authorization: Bearer {accessToken}
 
 <br>
 
-### 4-2-6 다른 도메인과의 경계
+### 4-2-6 보류 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/moderation/holds` |
+| 인증 | 관리자 |
+| 성공 | 200<br>관리자 목록 공통의 페이지 구조 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `sort` | `string` | 선택 | `heldAt`, `createdAt`<br>기본 `heldAt` |
+| `order` | `string` | 선택 | 기본 `asc`<br>오래 보류된 제출본이 먼저 |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 보류 중인 제출본 |
+| `items[].submissionId` | `string` | 제출본 공개 식별자 |
+| `items[].kind` | `string` | `CREATE`<br>`UPDATE` |
+| `items[].storyId` | `string / null` | 수정 대상 스토리 공개 식별자<br>등록은 `null` |
+| `items[].ownerId` | `string` | 소유 회원 공개 식별자 |
+| `items[].holdReason` | `string` | 보류 원인 코드<br>`IMAGE_DOWNLOAD_FAILED`, `MODEL_CALL_FAILED`, `MODERATION_UNAVAILABLE` |
+| `items[].attempt` | `integer` | 회차 |
+| `items[].heldAt` | `string` | 보류 시각 |
+| `items[].createdAt` | `string` | 접수 시각 |
+
+- 입력 원문, 검수 폼, 이미지 URL은 싣지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 공통 페이지 쿼리 오류 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/moderation/holds
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b",
+      "kind": "CREATE",
+      "storyId": null,
+      "ownerId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+      "holdReason": "MODERATION_UNAVAILABLE",
+      "attempt": 3,
+      "heldAt": "2026-10-21T01:30:00Z",
+      "createdAt": "2026-10-21T01:20:00Z"
+    }
+  ],
+  "page": 1,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-7 보류 해제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/moderation/holds/{submissionId}/release` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `submissionId` | 경로 | 필수 | 제출본 공개 식별자 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `submissionId` | `string` | 제출본 공개 식별자 |
+| `status` | `string` | 항상 `PENDING` |
+| `attempt` | `integer` | 해제 시점의 회차<br>다음 선점에서 1 증가 |
+| `releasedAt` | `string` | 해제 시각 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reason` 누락 또는 `submissionId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 제출본 |
+| 409 | `CONFLICT` | 보류 중이 아님 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/moderation/holds/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b/release
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "reason": "AI 서버 복구 확인" }
+```
+
+**2) 200 Response body**
+
+```json
+{ "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b", "status": "PENDING", "attempt": 3, "releasedAt": "2026-10-21T02:00:00Z" }
+```
+
+**3) 409 Response body**
+
+```json
+{
+  "timestamp": "2026-10-21T02:00:00.000Z",
+  "status": 409,
+  "code": "CONFLICT",
+  "message": "보류 중인 제출본이 아닙니다.",
+  "path": "/api/v1/admin/moderation/holds/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b/release",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-8 관리자 제출본 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/moderation/submissions` |
+| 인증 | 관리자 |
+| 성공 | 200<br>관리자 목록 공통의 페이지 구조 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
+
+모든 상태의 제출본을 본다. 승인 전 등록 제출본은 스토리 행이 없어 이 목록에만 나타난다. 관리자는 반려를 뒤집거나 직접 승인하지 않는다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `status` | `string` | 선택 | `PENDING`, `HELD`, `APPROVED`, `REJECTED`, `FAILED`<br>`PENDING`은 보류가 아닌 대기, `HELD`는 보류 시각이 있는 대기<br>생략하면 전체 |
+| `from`, `to` | `string` | 선택 | 접수 시각의 KST 날짜<br>관리자 목록 공통 날짜 규칙 |
+| `memberId` | `string` | 선택 | 소유 회원 공개 식별자 |
+| `storyId` | `string` | 선택 | 스토리 공개 식별자<br>수정 대상이거나 승인으로 생긴 스토리 |
+| `q` | `string` | 선택 | 관리자 목록 공통 검색어 규칙<br>제출본 공개 식별자 정확 일치, 제목 부분 일치 |
+| `sort` | `string` | 선택 | `createdAt`, `decidedAt`, `heldAt`<br>기본 `createdAt` |
+| `order` | `string` | 선택 | 기본 `desc` |
+| 페이지 쿼리 | | 선택 | 공통 페이지 쿼리 |
+
+- `decidedAt`이나 `heldAt`으로 정렬하면 그 값이 없는 행은 방향과 무관하게 뒤에 둔다. 정렬 값이 같거나 함께 없는 행은 관리자 목록 공통 규칙대로 제출본 공개 식별자 오름차순이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 제출본 |
+| `items[].submissionId` | `string` | 제출본 공개 식별자 |
+| `items[].kind` | `string` | `CREATE`, `UPDATE` |
+| `items[].status` | `string` | `PENDING`, `HELD`, `APPROVED`, `REJECTED`, `FAILED`<br>보류 시각이 있는 대기는 `HELD` |
+| `items[].story` | `object` | 대상 스토리 |
+| `items[].story.storyId` | `string / null` | 수정 대상 또는 승인으로 생긴 스토리 공개 식별자<br>승인 전 등록은 `null` |
+| `items[].story.title` | `string` | 스토리가 있으면 현재 스토리 제목, 승인 전 등록은 제출한 폼의 제목 |
+| `items[].owner` | `object` | 소유 회원의 회원 요약 구조 ([ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)) |
+| `items[].issueCount` | `integer` | 저장된 위반 항목 수 |
+| `items[].issueRules` | `string[]` | 저장된 위반 항목의 기준 코드<br>중복 없이 처음 나온 순서 |
+| `items[].firstIssueReason` | `string / null` | 첫 위반 항목의 이유<br>위반 항목이 없으면 `null` |
+| `items[].holdReason` | `string / null` | 보류 원인 코드<br>보류가 아니면 `null` |
+| `items[].errorCode` | `string / null` | 실행 실패 코드<br>실패가 아니면 `null` |
+| `items[].attempt` | `integer` | 회차<br>접수 때 1이고 선점과 재제출마다 1씩 늘어나는 실행 구분 번호라 실행 횟수와 다름 |
+| `items[].createdAt` | `string` | 접수 시각 |
+| `items[].decidedAt` | `string / null` | 판정 시각 |
+| `items[].heldAt` | `string / null` | 보류 시각 |
+
+- 위반 요약은 저장된 위반 항목으로 만들며 재대응하지 않는다. 상세의 위반 항목은 재대응을 거쳐 대상이 사라진 항목이 빠질 수 있다.
+- 입력 원문 전체, 검수 폼, 이미지 URL, 객체 키는 싣지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 허용하지 않는 `status`, `sort`, `order`<br>공통 페이지, 날짜, 검색어 오류<br>`memberId`나 `storyId` 형식 오류 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/moderation/submissions?status=REJECTED&size=1
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b",
+      "kind": "CREATE",
+      "status": "REJECTED",
+      "story": { "storyId": null, "title": "{username}의 계약서" },
+      "owner": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
+      "issueCount": 1,
+      "issueRules": ["EXTREME_GORE"],
+      "firstIssueReason": "신체 훼손을 상세히 묘사합니다.",
+      "holdReason": null,
+      "errorCode": null,
+      "attempt": 2,
+      "createdAt": "2026-10-16T01:23:45.678Z",
+      "decidedAt": "2026-10-16T01:25:10.123Z",
+      "heldAt": null
+    }
+  ],
+  "page": 1,
+  "size": 1,
+  "totalElements": 12,
+  "totalPages": 12
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-9 관리자 제출본 상세
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/moderation/submissions/{submissionId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `submissionId` | `string` | 필수 | 제출본 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+관리자 제출본 목록 항목의 필드에 다음 필드를 더한다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `fields` | `object` | 복원한 폼의 검수 대상 필드 가운데 관리자에게 보이는 것 |
+| `fields.title` | `string` | 제목 |
+| `fields.oneLineIntro` | `string / null` | 한 줄 소개 |
+| `fields.description` | `string / null` | 소개 |
+| `fields.protagonistName` | `string / null` | 기본 주인공 이름 |
+| `fields.genres` | `string[]` | 장르 |
+| `fields.visibility` | `string` | 공개 범위 |
+| `fields.characterNames` | `string[]` | 인물 이름 |
+| `issues` | `object[]` | 위반 항목 전체<br>제출본 응답 구조의 `issues`와 같고 위치는 복원한 폼 기준 |
+| `imageResults` | `object[]` | 폼의 이미지마다 한 항목 |
+| `imageResults[].path` | `string` | 폼 기준 이미지 필드 경로 |
+| `imageResults[].label` | `string` | 표지는 `표지`, 인물 이미지는 그 이미지 이름 |
+| `imageResults[].moderationStatus` | `string` | 그 이미지의 검수 결과<br>폼에 담긴 상태 값을 쓰지 않고 아래 순서로 정함<br>재대응한 위반 항목 가운데 이 경로의 `IMAGE` 항목이 있으면 `REJECTED`<br>재대응한 이미지 오류 가운데 이 경로의 항목이 있으면 `ERROR`<br>제출본이 `APPROVED`나 `REJECTED`면 `APPROVED`<br>그 밖(`PENDING`, `HELD`, `FAILED`)은 `PENDING` |
+| `imageResults[].errorCode` | `string / null` | 그 이미지의 이미지 오류 코드<br>`ERROR`일 때만 값이 있음 |
+| `retryCount` | `integer` | 예약한 자동 재시도 횟수 |
+| `updatedAt` | `string` | 마지막 변경 시각 |
+
+- 폼 복원과 위치 재대응은 소유자의 제출본 상세와 같다. ([4-1-3 제출본 조회](4-1-PIPELINES.md#4-1-3-제출본-조회))
+- 설정 본문, 시작 설정, 주요 사건, 인물 설명, 이미지 URL, 객체 키는 싣지 않는다. 그 필드의 위반 항목은 위치와 이유로만 보인다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 404 | `NOT_FOUND` | 없는 제출본, 형식 오류 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/moderation/submissions/f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "submissionId": "f1e2d3c4-b5a6-4978-8a9b-0c1d2e3f4a5b",
+  "kind": "CREATE",
+  "status": "REJECTED",
+  "story": { "storyId": null, "title": "{username}의 계약서" },
+  "owner": { "memberId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301", "nickname": "차분한 등대", "status": "ACTIVE", "isAdmin": false, "createdAt": "2026-07-01T09:00:00Z" },
+  "issueCount": 1,
+  "issueRules": ["EXTREME_GORE"],
+  "firstIssueReason": "신체 훼손을 상세히 묘사합니다.",
+  "holdReason": null,
+  "errorCode": null,
+  "attempt": 2,
+  "createdAt": "2026-10-16T01:23:45.678Z",
+  "decidedAt": "2026-10-16T01:25:10.123Z",
+  "heldAt": null,
+  "fields": {
+    "title": "{username}의 계약서",
+    "oneLineIntro": "기억을 잃은 마법사 {username}이가 금지된 숲에서 과거를 추적한다",
+    "description": "계약 마법이 지배하는 왕국에서 잃어버린 기억과 사라진 가족의 비밀을 추적한다.",
+    "protagonistName": "서린",
+    "genres": ["판타지", "미스터리"],
+    "visibility": "PRIVATE",
+    "characterNames": ["도윤"]
+  },
+  "issues": [
+    { "path": "storySettings.worldSetting", "type": "TEXT", "rule": "EXTREME_GORE", "reason": "신체 훼손을 상세히 묘사합니다." }
+  ],
+  "imageResults": [
+    { "path": "thumbnailUrl", "label": "표지", "moderationStatus": "APPROVED", "errorCode": null },
+    { "path": "characters[0].images[0].imageUrl", "label": "도윤_기본", "moderationStatus": "APPROVED", "errorCode": null }
+  ],
+  "retryCount": 0,
+  "updatedAt": "2026-10-16T01:25:10.123Z"
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-10 공개 중단
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/moderation/stories/{storyId}/takedown` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+회원 스토리를 비공개로 바꾸고 공개 중단 표시를 남긴다. 소유자는 수정 요청이 검수를 통과해야 다시 공개할 수 있다. 관리자가 공개 중단을 해제하는 경로는 없다.
+
+**1. 경로와 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `storyId` | 경로 | 필수 | 스토리 공개 식별자 |
+| `reasonCode` | `string` | 필수 | 사유 분류<br>`SEXUAL_CONTENT`, `COPYRIGHT_INFRINGEMENT`, `HATE_SPEECH`, `ETC` |
+| `reasonDetail` | `string` | 조건부 | 소유자에게 보이는 입력 사유<br>`reasonCode`가 `ETC`면 필수<br>1~100자이고 공백만은 거절<br>그 밖의 분류에서 값을 보내면 거절<br>생략과 `null`은 같음 |
+| `memo` | `string` | 선택 | 감사 로그에만 남기는 내부 메모<br>보내면 1~500자이고 공백만은 거절<br>생략과 `null`은 메모 없음 |
+
+| `reasonCode` | 표시 이름 |
+|---|---|
+| `SEXUAL_CONTENT` | 선정성 |
+| `COPYRIGHT_INFRINGEMENT` | 저작권 침해 |
+| `HATE_SPEECH` | 혐오 표현 |
+| `ETC` | 기타 |
+
+- 소유자에게 보이는 사유는 사유 분류의 표시 이름이고 `ETC`는 표시 이름 대신 `reasonDetail`이다. 이 사유를 감사 로그의 사유와 소유자 알림 본문에 쓴다.
+- `reasonDetail`은 알림 본문의 "{사유} 사유로" 자리에 그대로 들어가므로 짧은 명사구로 적는다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `storyId` | `string` | 스토리 공개 식별자 |
+| `visibility` | `string` | 항상 `PRIVATE` |
+| `takedownReason` | `string` | 요청한 사유 분류 |
+| `takedownReasonDetail` | `string / null` | 입력 사유<br>`takedownReason`이 `ETC`가 아니면 `null` |
+| `takenDownAt` | `string` | 공개 중단 시각 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `reasonCode` 누락이나 허용 값 밖<br>`ETC`인데 `reasonDetail` 누락, 공백만, 100자 초과<br>`ETC`가 아닌데 `reasonDetail`에 값이 있음<br>`memo`가 공백만이거나 500자 초과<br>`storyId` 형식 오류 |
+| 404 | `NOT_FOUND` | 없는 스토리 |
+| 409 | `CONFLICT` | 이미 공개 중단된 스토리, 삭제된 스토리, 공식 계정 소유 스토리, 소유 회원이 없는 스토리 |
+
+<details>
+<summary><b>요청·응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+POST /api/v1/admin/moderation/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7/takedown
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{ "reasonCode": "COPYRIGHT_INFRINGEMENT", "memo": "원작 웹툰의 설정과 대사를 그대로 옮김. 신고 3건 확인" }
+```
+
+**2) 200 Response body**
+
+```json
+{ "storyId": "7c9e6679-7425-40de-944b-e07fc1f90ae7", "visibility": "PRIVATE", "takedownReason": "COPYRIGHT_INFRINGEMENT", "takedownReasonDetail": null, "takenDownAt": "2026-10-27T02:00:00Z" }
+```
+
+**3) 기타 사유 Request body**
+
+```json
+{ "reasonCode": "ETC", "reasonDetail": "실존 인물 비방" }
+```
+
+**4) 409 Response body**
+
+```json
+{
+  "timestamp": "2026-10-27T02:00:01.000Z",
+  "status": 409,
+  "code": "CONFLICT",
+  "message": "이미 공개 중단된 스토리입니다.",
+  "path": "/api/v1/admin/moderation/stories/7c9e6679-7425-40de-944b-e07fc1f90ae7/takedown",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-11 다른 도메인과의 경계
 
 | 도메인 | MODERATION이 제공하는 것 | MODERATION이 사용하는 것 |
 |---|---|---|
-| STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제 |
-| NOTIFICATION | 검수 완료 이벤트 | 없음 |
-| ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금 |
+| STORY | 등록과 수정의 접수, 대기 중 제출본 존재 확인, 수정 폼의 제출본 메타데이터 | 입력 검증과 이미지 객체 검증, 수정 폼 조회, 승인 시 등록 저장과 수정 적용, 공개 스냅샷 갱신, 초안 삭제<br>공개 중단 적용과 해제, 공개 중단 표시, 공식 계정 식별, 이름 토큰 치환 |
+| NOTIFICATION | 검수 완료 이벤트, 공개 중단 이벤트 | 없음 |
+| ACCOUNT | 회원의 제출본 전부 삭제 연산 | 계정 상태, 사용자 행 잠금, 회원 공개 식별자 |
+| ADMIN | 보류 중 제출본 수 | 관리자 요청자와 변경 감사 기록, 회원 요약 구조 |
 | AI 서버 | 검수 입력 | 판정 결과 |
-| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트 |
+| 모든 도메인 | 없음 | 인증 필터, 탈퇴 거부, 동의 게이트, 관리자 판정 필터 |
 
 다른 도메인이 호출하거나 받는 연산의 입력과 결과는 다음과 같다.
 
 | 연산 | 입력 | 결과 |
 |---|---|---|
 | 등록 접수 | 등록 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태 |
-| 수정 접수 | 스토리 공개 식별자, 수정 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태<br>공개 범위만 변경하면 즉시 반영한 수정 폼<br>대기 중 제출본이 있으면 공개 범위만 바꿔도 거절 예외 |
+| 수정 접수 | 스토리 공개 식별자, 수정 요청, 회원 내부 ID | 제출본 공개 식별자와 대기 상태<br>공개 범위만 변경하면 즉시 반영한 수정 폼<br>공개 중단된 스토리를 `PUBLIC`으로 바꾸면 공개 범위만이어도 제출본<br>대기 중 제출본이 있으면 공개 범위만 바꿔도 거절 예외 |
 | 대기 중 존재 확인 | 스토리 내부 ID | 대기 중 제출본이 있으면 거절 예외 |
 | 수정 폼 메타데이터 | 스토리 공개 식별자, 회원 내부 ID | 최신 미승인 제출본의 식별자, 상태, 위반 항목, 오류 코드, 이미지 오류 또는 `null` |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 상태, 회차, 제목 | NOTIFICATION의 발송 경로 |
+| 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 기타의 입력 사유, 공개 중단 시각 | NOTIFICATION의 알림 내역 기록과 발송 경로<br>공개 중단 트랜잭션에 참여 |
+| 공개 중단 적용 | 잠근 스토리, 사유 분류, 입력 사유, 공개 중단 시각 | STORY가 공개 스냅샷 갱신, 비공개 전환, 공개 중단 시각, 사유 분류, 입력 사유 기록<br>커밋 후 색인 이벤트 |
 | 회원 제출본 전부 삭제 | 회원 내부 ID | 없음 |
 | 스토리 제출본 전부 삭제 | 스토리 내부 ID | 없음 |
+| 보류 중 제출본 수 | 없음 | 대기 상태이고 보류 시각이 있는 제출본 수 |

@@ -20,7 +20,7 @@
 
 | 작업 대상 | 진입점과 범위 |
 |---|---|
-| 업무별 기능 | [도메인 목록](docs/domain/AGENTS.md). ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 요구사항, 설계, 계약과 검증 |
+| 업무별 기능 | [도메인 목록](docs/domain/AGENTS.md). ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION, ADMIN, NOTICE의 요구사항, 설계, 계약과 검증 |
 | 여러 업무에 공통인 화면과 조작 | [공통 UI](docs/ui/AGENTS.md). 앱 셸, 내비게이션, 테마, 공통 화면 상태와 앱 진입 |
 | 여러 도메인에 공통인 기술 규칙 | [플랫폼 기반](docs/platform/AGENTS.md). 클라이언트 전송, 플랫폼별 구조와 상태 수명, 백엔드와 AI의 공통 구현 |
 | 환경, 인프라, 배포와 복구 | [운영](docs/operations/AGENTS.md). Terraform 선언, CI/CD, 설정 주입과 배포 검수 |

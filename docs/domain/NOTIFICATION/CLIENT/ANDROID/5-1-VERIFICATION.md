@@ -28,7 +28,7 @@
 | ID | 유저 스토리 | 사전조건과 절차 | 기대 결과 | 수단 |
 |---|---|---|---|---|
 | NOTIFICATION-ANDROID-01 | NOTIFICATION-US-002 | 소식과 활동, 느린 조회 중 읽음과 모두 읽음, 실패 | 늦은 조회가 읽음을 되돌리지 않음, 모두 읽음 실패 전체 복원 | 목록 ViewModel 테스트 |
-| NOTIFICATION-ANDROID-02 | NOTIFICATION-US-002 | 목록 회전, 공지와 스토리 및 제작 진입, 뒤로가기 | 탭 및 위치 유지, 상세는 알림함 복귀, 제작은 기존 탭 새로고침 | 기기와 내비게이션 테스트 |
+| NOTIFICATION-ANDROID-02 | NOTIFICATION-US-002 | 목록 회전, 공지와 스토리 및 제작 진입, 공개 제한의 `deepLink` `/studio`와 `storyId` 동시 수신, 뒤로가기 | 탭 및 위치 유지, 상세는 알림함 복귀. 공개 제한은 서버 제목과 본문을 표시하고 기존 제작 탭으로 이동해 새로고침하며 스토리 상세로 대체하지 않음 | 기기와 내비게이션 테스트 |
 | NOTIFICATION-ANDROID-03 | NOTIFICATION-US-003 | 회원과 동의 전환, 같은 토큰과 새 세션, 늦은 PUT 및 403 | 직렬 등록과 직전 재검증, 세대가 일치한 종료만 반영 | 등록 및 세션 테스트 |
 | NOTIFICATION-ANDROID-04 | NOTIFICATION-US-003 | recipient 불일치, Pending과 프로필 대기 5초, 로그아웃 | 미확인 수신 폐기, 표시 직전 재확인, 트레이와 보류 정리 | 수신 테스트와 기기 |
 | NOTIFICATION-ANDROID-05 | NOTIFICATION-US-003 | 허용 및 금지 링크, deepLink 없는 이전 payload, 로그인 중 프로세스 종료 | 목적지 규칙, 수신자 재확인, 목적지 복원, 중복 상세 없음 | 링크 테스트와 기기 |

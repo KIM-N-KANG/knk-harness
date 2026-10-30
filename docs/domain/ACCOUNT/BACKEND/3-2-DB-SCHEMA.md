@@ -78,7 +78,7 @@ erDiagram
 | `nickname` | varchar(50) | NOT NULL | 탈퇴하면 `탈퇴한 사용자` |
 | `profile_image_url` | text | | 프리셋 원본 이미지 URL<br>대응 이미지가 없거나 탈퇴하면 `NULL` |
 | `profile_thumbnail_base64` | text | | 48×48 인라인 썸네일 |
-| `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `SUSPENDED` `DELETED` | |
+| `status` | varchar(20) | NOT NULL, 기본 `ACTIVE`, CHECK `ACTIVE` `SUSPENDED` `DELETED` | 정지와 해제는 관리자 API<br>삭제는 탈퇴<br>정지 사유는 관리자 도메인의 감사 로그에만 |
 | `deleted_at` | timestamptz | | 탈퇴 시각 |
 | `invite_code` | varchar(16) | UNIQUE | 처음 조회 때 발급하는 8자 초대 코드<br>탈퇴해도 유지 |
 | `inviter_user_id` | bigint | FK `users.id` SET NULL | 제출한 초대 코드의 소유자<br>값이 있으면 제출 자격 소진 |

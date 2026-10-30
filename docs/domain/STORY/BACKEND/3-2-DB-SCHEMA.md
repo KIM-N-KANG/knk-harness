@@ -241,6 +241,9 @@ erDiagram
 | `thumbnail_image_url` | text | | |
 | `thumbnail_moderation_status` | varchar(20) | NOT NULL, CHECK `APPROVED` `PENDING` `REJECTED`, 기본 `APPROVED` | |
 | `deleted_at` | timestamptz | | |
+| `taken_down_at` | timestamptz | CHECK 공개 중단 두 컬럼이 함께 NULL이거나 함께 NOT NULL이면서 `visibility`가 `PRIVATE` | 관리자의 공개 중단 시각<br>기록과 해제 규칙은 MODERATION |
+| `takedown_reason` | varchar(30) | CHECK `SEXUAL_CONTENT` `COPYRIGHT_INFRINGEMENT` `HATE_SPEECH` `ETC` | 공개 중단 사유 분류 |
+| `takedown_reason_detail` | varchar(100) | CHECK `takedown_reason`이 `ETC`일 때만 NOT NULL | 사유 분류가 기타일 때 관리자가 입력한 사유<br>소유자 알림에 보임 |
 
 인덱스는 `idx_stories_user_created (user_id, created_at DESC, id DESC) WHERE deleted_at IS NULL` 하나다.
 

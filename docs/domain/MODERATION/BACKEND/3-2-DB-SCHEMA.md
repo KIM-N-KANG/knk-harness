@@ -63,7 +63,7 @@ erDiagram
 | `retry_count` | integer | NOT NULL, 기본 0, CHECK 0~2 | 예약한 자동 재시도 횟수<br>재제출 시 0 |
 | `next_attempt_at` | timestamptz | | 다음 자동 재시도 가능 시각<br>선점 시 NULL |
 | `held_at` | timestamptz | CHECK 보류 두 컬럼이 함께 NULL이거나 함께 NOT NULL이면서 `PENDING`이고 `next_attempt_at`이 NULL | 보류 시각 |
-| `hold_reason` | text | | 보류 원인 코드<br>마지막 실행 실패의 오류 코드<br>사용자에게 노출하지 않음 |
+| `hold_reason` | text | | 보류 원인 코드<br>마지막 실행 실패의 오류 코드<br>회원 응답에는 노출하지 않고 관리자 보류 목록과 관리자 제출본 목록, 상세에만 |
 | `dispatched_at` | timestamptz | | NULL은 미선점<br>값은 마지막 선점의 임대 시작 시각 |
 | `created_at` | timestamptz | NOT NULL, 기본 `now()` | 접수 시각<br>목록 정렬 기준 |
 | `updated_at` | timestamptz | NOT NULL, 기본 `now()` | |
@@ -85,9 +85,10 @@ erDiagram
 
 | 테이블 | 컬럼 | MODERATION이 하는 일 |
 |---|---|---|
-| `users` | `status` | 접수와 결과 반영 전 계정 상태 확인 |
+| `users` | `status` | 접수와 결과 반영 전 계정 상태 확인<br>공개 중단 알림 전 소유 회원의 탈퇴 확인 |
 | `stories` | `public_id`, `user_id`, `deleted_at`, `visibility`, `status` | 소유 판정, 삭제 확인, 수정 폼 조립, 공개 범위 변경 허용 판정 |
 | `stories` | `thumbnail_image_url` | 수정 폼의 표지 URL |
+| `stories` | `taken_down_at`, `takedown_reason`, `takedown_reason_detail` | 공개 중단 기록과 승인 시 해제<br>공개 범위 단독 변경의 검수 여부 판정 |
 | `story_characters` | `public_id`, `name` | 수정 폼 조립과 인물 대응 |
 | `story_character_images` | `public_id`, `image_name`, `image_url` | 수정 폼 조립과 유지 이미지 대응 |
 

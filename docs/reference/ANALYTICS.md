@@ -1240,7 +1240,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 AI feature는 프론트엔드 이벤트명에 넣지 않는다. 상세 원인은 `feature`와 `error_code`로 구분한다.
 
-백엔드는 관측 식별자를 `X-Manyak-*` 헤더로 전달하고 AI는 유효한 값을 Langfuse, Sentry와 로그에 연결한다. 이 헤더는 AI 계약상 선택이며 누락을 요청 실패로 처리하지 않는다. API별 헤더 목록과 값 형식은 [STORY 요청 헤더](../domain/STORY/AI/5-CONTRACT.md#5-5-요청-헤더와-메타데이터)와 [CHAT 요청 헤더](../domain/CHAT/AI/5-CONTRACT.md#5-5-요청-헤더와-메타데이터)를 따른다. `feature`는 호출 기능으로, 프롬프트 버전은 AI가 사용하는 템플릿으로 결정하며 필수 요청 헤더로 요구하지 않는다.
+백엔드는 관측 식별자를 `X-Manyak-*` 헤더로 전달하고 AI는 유효한 값을 Langfuse, Sentry와 로그에 연결한다. 이 헤더는 AI 계약상 선택이며 누락을 요청 실패로 처리하지 않는다. API별 헤더 목록과 값 형식은 [STORY 요청 헤더](../domain/STORY/AI/5-CONTRACT.md#5-5-요청-헤더와-메타데이터)와 [CHAT 요청 헤더](../domain/CHAT/AI/5-CONTRACT.md#5-6-요청-헤더와-메타데이터)를 따른다. `feature`는 호출 기능으로, 프롬프트 버전은 AI가 사용하는 템플릿으로 결정하며 필수 요청 헤더로 요구하지 않는다.
 
 | 정보 | 생성과 기록 책임 |
 | --- | --- |
