@@ -367,7 +367,7 @@
 | 앱 신규 활성 사용자 | `days` 7 | 대역에 퍼널 조회 7회, 요청마다 `start`와 `end`가 같은 날짜, `n=new`, `cs` 86400, 1단계 `_active`에 `country`와 `platform` `Android`, 2단계 `ce:핵심 활동`에 `country`만, 예산 계수기 28 증가 |
 | 앱 신규 활성 값 | 이틀의 퍼널 단계 `[20, 6]`, `[0, 0]` | `daily`의 `newUsers` 20과 0, `activeUsers` 6과 0, `activationRate` 0.3과 `null`<br>`totals` `newUsers` 20, `activeUsers` 6, `activationRate` 0.3 |
 | 앱 신규 활성 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계와 2단계가 `client_storyList_viewed`, `client_storyCreate_viewed`이고 다른 퍼널은 `n=active` |
+| 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계와 2단계가 `client_storyList_viewed`, `client_storyCreate_viewed`이고 `first-visit-activation`과 `android-activation`을 뺀 다른 퍼널은 `n=active` |
 | 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |
 | 신규 사용자 활성화 퍼널 | `first-visit-activation` `days` 7, `platform=android` | 대역에 퍼널 조회 1회, `n=new`, 3단계 `_active`, `client_chat_messageInput_submitted`, `turn_number` `greater or equal` `["5"]`인 같은 이벤트, 단계마다 `country`와 `platform` `Android`<br>`steps[2].minTurnNumber` 5, 응답 `platform` `android` |
 | 로그인 화면 가입 퍼널 | `login-signup` `days` 7 | 대역에 퍼널 조회 1회, `n=active`, 2단계 `client_login_viewed`와 `ce:신규 가입 (구글·카카오)`<br>1단계만 `platform` `Web`, 2단계는 `country`만, `steps[1].event` `signup_succeeded` |
@@ -460,6 +460,7 @@
 | 예산 초과 시 부분 응답 | 빈 저장소에서 사용자 세션 60일 요청(하루 72) | 최근 6일만 조회해 200, 나머지 54일은 `pendingDates`, `admin_analytics_fetch_failed`의 `budget_exceeded`는 없음<br>예산이 남지 않은 상태의 다음 요청은 호출 없이 같은 응답과 `budget_exceeded`, 60초 쿨다운 |
 | 이어 받기 | 위 상태에서 5분 뒤 요청 | 다음 6일만 조회하고 `pendingDates`가 48일로 줄어듦 |
 | 범위 지표 | `to`가 D-3인 퍼널을 두 번 요청<br>`to`가 D인 퍼널을 10분 뒤 요청 | 두 번째는 대역 호출 없음<br>범위 전체를 다시 조회 |
+| 퍼널 전환 창 확정 | `to`가 D-2인 1일 창 퍼널의 저장 값이 D-1에 받은 값<br>`to`가 D-10인 `web-to-android`의 저장 값이 D-9에 받은 값, 같은 날 두 번째 요청<br>`to`가 D-32인 `web-to-android`의 저장 값이 D-1에 받은 값 | 한 번 다시 조회한 뒤 확정<br>D에 한 번만 다시 조회하고 두 번째 요청은 호출 없음, 확정하지 않음<br>다시 조회하지 않고 `finalized_at`을 채움 |
 | 리텐션 고정 | 코호트 날짜 D-40의 배열이 32칸이고 인덱스 0~31 모두 `incomplete` 아님<br>코호트 날짜 D-10의 배열에 `incomplete`가 있음 | D-40은 확정되어 다시 조회하지 않음<br>D-10은 하루 한 번만 다시 조회 |
 | D30 미완료 | 코호트 날짜 D-32의 32칸 배열에서 인덱스 0~30은 `incomplete` 아님, 인덱스 31만 `incomplete`<br>코호트 날짜 D-32의 31칸 배열이 모두 `incomplete` 아님 | 두 경우 모두 확정하지 않고 하루 한 번 다시 조회 |
 | 잘못 확정된 리텐션 행 | `finalized_at`이 있는 코호트 행의 배열에 인덱스 31이 없거나 인덱스 31이 `incomplete`<br>D-1에 받은 행과 D에 받은 행 | 두 행 모두 읽을 때 저장 행의 `finalized_at`을 비움<br>D-1에 받은 행은 D에 한 번 다시 조회해 새 값으로 저장하고 D에 받은 행은 D+1에 다시 조회<br>새 값의 인덱스 0~31이 모두 `incomplete` 아니면 다시 확정 |
