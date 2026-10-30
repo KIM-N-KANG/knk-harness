@@ -21,7 +21,7 @@ Fluent Bit`"]
     S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**Grafana Cloud**`"]
+    S -->|OTLP 지표| G["`**OTel Collector → AMP**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     S -->|감사 로그, Amplitude 조회 값| DB["`**PostgreSQL**`"]
@@ -123,7 +123,7 @@ ADMIN 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 HTT
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 내부 OTel Collector를 거쳐 AMP로 전송 |
 | 전송 주기 | 60초 간격 |
 
 <br>

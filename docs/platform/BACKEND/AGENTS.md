@@ -10,7 +10,7 @@
 
 | 공통 기반 | 위치 |
 |---|---|
-| 기술 환경과 요청 경계 | [1-ARCHITECTURE.md](1-ARCHITECTURE.md) |
+| 기술 환경, 요청 경계, 남용 방지, 보안 설정과 공통 오류 | [1-ARCHITECTURE.md](1-ARCHITECTURE.md) |
 | 메트릭 수집과 집계 | [2-OBSERVABILITY.md](2-OBSERVABILITY.md) |
 | 런타임 설정 | [3-CONFIGURATION.md](3-CONFIGURATION.md) |
 | 공통 API와 상태 확인 | [서비스 인터페이스](../../reference/SERVICE-INTERFACES.md) |

@@ -80,7 +80,7 @@ DB 커넥션 풀은 **둘 중 하나만 고른다.** `hikaricp.*`(Hikari 자체 
 
 URL 설정을 빈 문자열로 두면 이 경로를 타므로 endpoint는 유효한 값으로 주입한다. 수집을 끄려면 활성 토글을 `false`로 둔다. URL 미주입만으로 전송이 비활성화되지는 않는다.
 
-`OtlpConfig`는 `System.getenv`에서 표준 `OTEL_*` 변수를 직접 읽는다. Spring `Environment`와 프로파일을 거치지 않으므로 운영에서는 충돌을 피하려고 Spring 전용 변수명을 쓴다([§3-1](3-CONFIGURATION.md#3-1-런타임-설정)).
+`OtlpConfig`는 `System.getenv`에서 표준 `OTEL_*` 변수를 직접 읽는다. Spring `Environment`와 프로파일을 거치지 않으므로 운영에서는 충돌을 피하려고 Spring 전용 변수명을 쓴다([3-5 관측과 분석](3-CONFIGURATION.md#3-5-관측과-분석)).
 
 **측정 범위 주의**: `manyak.story.creation.duration`은 실제 생성 콜백만 감싼다. AI 호출 없이 저장된 결과를 돌려주는 **조회 경로 두 가지는 의도적으로 제외**한다: ① 멱등 재요청(`recordOrRun`의 COMPLETED replay: [간편 제작 계약](../../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-11-간편-제작-스토리라인-생성))은 콜백 자체가 실행되지 않아 자연히 빠지고, ② 회수 재실행 재구성은 콜백은 타지만 AI, 저장이 없어 `aiCallLogId`가 `null`인 것으로 판별해 제외한다. 포함하면 아주 짧은 시간이 섞여 p95가 실제 생성 비용보다 낙관적으로 왜곡된다.
 
@@ -96,7 +96,7 @@ URL 설정을 빈 문자열로 두면 이 경로를 타므로 endpoint는 유효
 
 4xx를 `failure`에서 떼는 이유는 두 갈래를 한 히스토그램에 섞으면 **거부 비중에 따라 실패 p95가 요동치기** 때문이다. 거부가 늘수록 밀리초 표본이 늘어 p95가 오히려 **낮아지므로**, AI가 실제로 느려지는데 지표는 개선된 것처럼 보이는 역전이 생긴다. 실패 건수 알림도 404 급증만으로 오발화한다. **알림과 p95는 `outcome="failure"`만 봐야 한다.** 태그 값이 2에서 3으로 늘어도 유한 enum이라 카디널리티는 안전하다(위 카디널리티 규칙).
 
-**알림**: [CHAT 알림](../../domain/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙이 AMP 수집 경로에서도 실행되고 Slack에 도달하는지는 별도 검증해야 한다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
+**알림**: [CHAT 알림](../../domain/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙은 2026-10-24부터 일시 정지 상태이고 Grafana는 쓰지 않는다. AMP 규칙과 Slack 전달은 KNK-1931에서 옮기며 적용 뒤 발화를 확인한다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
 
 **현재 구현하지 않은 범위.** AI는 전달받은 식별자를 Langfuse 관측에 연결한다. 선택지 상호작용 API의 저장은 구현돼 있지만, 사용자 반응을 생성 버전에 연결해 score로 발행하는 전체 경로(outbox와 score 전송 포함)는 구현되지 않았다. 계약은 [6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현)에 있다.
 

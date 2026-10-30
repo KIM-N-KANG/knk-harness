@@ -133,7 +133,7 @@
 |---|---|---|---|
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL과 인증 헤더는 Secrets Manager | Grafana Cloud로 전송 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 태스크 정의의 일반 환경 변수(내부 OTel Collector `/v1/metrics`), 인증 헤더 없음 | 내부 OTel Collector를 거쳐 AMP로 전송 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
 
 <br>

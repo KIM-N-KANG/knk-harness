@@ -26,7 +26,7 @@ Fluent Bit`"]
     N -->|OTLP 트레이스| DP
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**Grafana Cloud**`"]
+    S -->|OTLP 지표| G["`**OTel Collector → AMP**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
@@ -138,7 +138,7 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 Grafana Cloud로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 내부 OTel Collector를 거쳐 AMP로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
 | 전송 주기 | 60초 간격 |
 | 사전 등록 | 발송, 아웃박스, 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
 
