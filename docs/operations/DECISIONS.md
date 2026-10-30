@@ -949,3 +949,20 @@ DPL 기록은 DEP 결정을 전환 단계별로 묶은 당시 구현 방법이�
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 출처 | [Terraform PR #46](https://github.com/KIM-N-KANG/manyak-terraform/pull/46), [병합 커밋 `4c99219`](https://github.com/KIM-N-KANG/manyak-terraform/commit/4c99219701604e2b9ed691580a913bf17d5a65be). |
+
+<br>
+
+<a id="dep-047"></a>
+<a id="dep-047-운영-지표-amp-전환"></a>
+
+**DEP-047. 운영 지표 AMP 전환**
+
+| 항목 | 내용 |
+|---|---|
+| 병합 | 2026-10-24 00:18 KST(전환), 2026-10-24 03:08 KST(Grafana PDC 제거). |
+| 상태 | 채택. Grafana는 쓰지 않는다. 알림 규칙 이전은 KNK-1931에서 진행 중 |
+| 배경 | 서버 지표를 앱이 Grafana Cloud로 직접 보내던 구성을 OpenTelemetry Collector로 모아 트레이스(OpenSearch)와 지표(AMP)를 한 수집 경로로 다룬다(KNK-1797). |
+| 채택 | `otel_collector_enabled = true`로 server, ai, notification 태스크가 OTLP를 내부 Collector로 보낸다. 서버 `MANAGEMENT_OTLP_METRICS_EXPORT_URL`은 Collector `/v1/metrics`, 집계는 `cumulative`이고 Grafana 인증 헤더 시크릿 주입을 뺐다. Collector가 SigV4로 AMP `manyak-prod-metrics`에 원격 쓰기한다. 조회는 OpenSearch UI 작업 공간 `manyak-prod`의 Metrics다. 이어서 Grafana PDC 에이전트와 Grafana 지표 대체 경로를 지웠다. |
+| 대안 | 원문에 별도 항목으로 구분하지 않음 |
+| 영향 | 2026-10-24부터 Grafana Cloud에 서버 지표가 들어가지 않아 Grafana에 남은 알림 규칙 세 개(수집 끊김, AI 실패 급증, 환불 실패)가 데이터 없음으로 일시 정지됐다. 같은 날부터 운영 알림이 없는 공백이 생겼고 AMP 규칙과 Slack 전달 이전은 KNK-1931이다. Collector가 `service.name`을 `job` 라벨로 옮기므로 PromQL은 `service_name` 대신 `job`을 쓴다. |
+| 출처 | [Terraform PR #106](https://github.com/KIM-N-KANG/manyak-terraform/pull/106), [병합 커밋 `a44d6c3`](https://github.com/KIM-N-KANG/manyak-terraform/commit/a44d6c3b5b44ff0ea1fcf1823b0e8c3caf9dc9f2), [Terraform PR #110](https://github.com/KIM-N-KANG/manyak-terraform/pull/110), [병합 커밋 `ccdd7d7`](https://github.com/KIM-N-KANG/manyak-terraform/commit/ccdd7d76cfae4a158a4a07f0167ec23c3b62b372). Grafana 규칙 상태는 2026-10-30 Grafana Cloud 화면 확인. |
