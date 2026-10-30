@@ -294,22 +294,35 @@
 | 캠페인 없음 | 목록에 종료일 없는 항목이 없고 `campaign` 생략<br>101자 `campaign` | 400 |
 | 저장 키 | 같은 범위에 다른 `campaign` 두 번 | 대역 호출 두 묶음, 캠페인 값이 다른 매개변수 해시 |
 | 지난 기간 | 그저께까지의 범위를 한 번 조회한 뒤 10분 뒤, 25시간 뒤, 30일 뒤에 다시 호출 | 대역 재호출 없음 |
-| 푸시 열람 조회 | 측정 시작일이 범위 첫날 이전, `days` 7 | 대역에 세분화 조회 1회, 이벤트 필터 `utm_source` `is` `["push"]`, 이벤트 묶음 `utm_campaign` 하나, `limit` 1000, `s`와 `country`와 `platform` 조건 없음, 예산 계수기 175 증가 |
-| 푸시 열람 대응 | 묶음 값이 캠페인 공개 식별자, `attendance_reminder`, `KR_META_WEB_ACTIVATION_COLD_202610`, `(none)` | 앞의 둘만 그 캠페인과 출석 리마인드에 들고 나머지는 버림 |
-| 푸시 열람 날짜 합 | 캠페인 하나의 푸시 열람 10-23 30명, 10-24 5명, 도달 100명 | `openState` `MEASURED`, `pushOpens` 35, `pushOpenRate` 0.35 |
-| 열람률 1 초과 | 도달 2명, 날짜별 열람 합 3 | `pushOpenRate` 1.5 |
-| 딥링크 없는 발송 | 딥링크 포함 여부가 거짓인 프로모션 | `openState` `NO_LINK`, `pushOpens`와 `pushOpenRate` `null`, `deliveredMembers`는 값 |
-| 측정 시작 전 캠페인 | 측정 시작일 10-21, 마지막 회차 선점 10-19 | `openState` `BEFORE_MEASUREMENT`, `pushOpens` `null` |
-| 발송 기록 없음 | 딥링크 포함 여부가 `null`인 캠페인(회차 진행 중이거나 커밋 전 실패) | `openState` `PENDING`, `pushOpens`와 `pushOpenRate` `null`, `MEASURED`가 아님 |
-| 측정 시작일 미설정 | 설정값 비어 있음 | 대역 호출 없음, 200, `asOf`와 `measuredFrom`과 `activityFrom` `null`, `pendingDates` 빈 배열, 모든 `openState` `BEFORE_MEASUREMENT`, 활동 알림의 `deliveredMembers`는 범위 전체 |
-| 범위 전체가 측정 전 | 측정 시작일 10-21, 범위 10-10~10-16 | 대역 호출 없음, 200, `asOf` `null`, `pendingDates` 빈 배열, `activityFrom` `null` |
-| 활동 알림 집계 구간 | 범위 10-18~10-24, 측정 시작일 10-21, 예산 부족 없음 | 대역 조회 날짜는 10-21~10-24, `activityFrom` 10-21, 활동 알림의 `deliveredMembers`도 10-21~10-24, `pendingDates`에 10-18~10-20 없음 |
+| 푸시 열람 조회 | 웹 측정 시작일이 범위 첫날 이전, 앱 측정 시작일 비어 있음, `days` 7 | 대역에 세분화 조회 2회, 둘 다 `[Amplitude] Page Viewed`에 이벤트 필터 `utm_source` `is` `["push"]`와 `["inbox"]`, 이벤트 묶음 `utm_campaign` 하나, `limit` 1000, `s`와 `country`와 `platform` 조건 없음, 예산 계수기 350 증가<br>`client_notification_opened` 조회 없음, `androidMeasuredFrom` `null` |
+| 앱 열람 조회 | 빈 저장소, `from=2026-10-28&to=2026-10-30`(3일), 웹과 앱 측정 시작일이 10-28 이전 | 대역에 세분화 조회 4회, 웹 2회에 더해 `client_notification_opened`에 같은 두 필터와 같은 묶음, 플랫폼 조건 없음, 예산 계수기 300 증가 |
+| 푸시 열람 대응 | 웹과 앱 조회의 묶음 값이 캠페인 공개 식별자, `attendance_reminder`, `credit_expiry_reminder`, `KR_META_WEB_ACTIVATION_COLD_202610`, `(none)` | 앞의 셋만 그 캠페인과 출석 리마인드와 이프 만료 예정에 들고 나머지는 버림 |
+| 푸시 열람 날짜 합 | 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 웹 푸시 열람 10-23 30명과 10-24 5명, 앱 푸시 열람 10-24 10명, 도달 100명 | `openState` `MEASURED`, `webPushOpens` 35, `androidPushOpens` 10, `pushOpens` 45, `pushOpenRate` 0.45 |
+| 푸시와 알림함 분리 | 같은 캠페인의 웹 푸시 조회 30명, 웹 알림함 조회 4명, 앱 알림함 조회 2명 | `webPushOpens` 30, `webInboxOpens` 4, `androidInboxOpens` 2, `inboxOpens` 6<br>알림함 값이 `pushOpens`와 `pushOpenRate`에 섞이지 않음, 알림함 열람률 필드 없음 |
+| 열람률 1 초과 | 도달 2명, 웹 날짜별 열람 합 2와 앱 1 | `pushOpens` 3, `pushOpenRate` 1.5 |
+| 딥링크 없는 발송 | 딥링크 포함 여부가 거짓인 프로모션 | `openState` `NO_LINK`, 열람 수 6개 필드와 `pushOpenRate` 모두 `null`, `deliveredMembers`는 값 |
+| 측정 시작 전 캠페인 | 웹 측정 시작일 10-21, 앱 측정 시작일 비어 있음, 마지막 회차 선점 10-19 | `openState` `BEFORE_MEASUREMENT`, `pushOpens`와 `inboxOpens` `null` |
+| 앱 측정 전 캠페인 | 범위 10-25~11-01, 웹 측정 시작일 10-21, 앱 측정 시작일 10-31, 선점 10-25, 그 캠페인의 앱 조회 묶음 값 11-01에 3명 | `openState` `MEASURED`, `androidPushOpens`와 `androidInboxOpens` `null`, `pushOpens`는 `webPushOpens`와 같음 |
+| 발송 기록 없음 | 딥링크 포함 여부가 `null`인 캠페인(회차 진행 중이거나 커밋 전 실패) | `openState` `PENDING`, 열람 값과 `pushOpenRate` `null`, `MEASURED`가 아님 |
+| 측정 시작일 미설정 | 웹과 앱 설정값 모두 비어 있음 | 대역 호출 없음, 200, `asOf`, `measuredFrom`, `androidMeasuredFrom`, `activityFrom` `null`, `pendingDates` 빈 배열, 모든 `openState` `BEFORE_MEASUREMENT`, 활동 알림의 `deliveredMembers`는 범위 전체 |
+| 범위 전체가 측정 전 | 웹 측정 시작일 10-21, 앱 측정 시작일 10-31, 범위 10-10~10-16 | 대역 호출 없음, 200, `asOf` `null`, `pendingDates` 빈 배열, `activityFrom` `null` |
+| 활동 알림 집계 구간 | 범위 10-18~10-24, 웹 측정 시작일 10-21, 앱 측정 시작일 비어 있음, 예산 부족 없음 | 대역 조회 날짜는 10-21~10-24, `activityFrom` 10-21, 활동 알림의 `deliveredMembers`도 10-21~10-24, `pendingDates`에 10-18~10-20 없음 |
+| 활동 알림 앱 측정 | 범위 10-28~11-03, 웹 측정 시작일 10-21, 앱 측정 시작일 11-01<br>범위 11-01~11-07, 같은 설정 | 웹 조회 날짜 10-28~11-03, 앱 조회 날짜 11-01~11-03, `activityFrom` 10-28, 활동 알림의 `androidPushOpens`와 `androidInboxOpens` `null`, `pushOpens`는 웹 값<br>`activityFrom` 11-01, 활동 알림의 앱 값이 숫자, `pushOpens`는 웹과 앱의 합 |
+| 앱 조회의 준비 중 날짜 | 범위 10-28~11-03, 웹 측정 시작일 10-21, 앱 측정 시작일 11-01, 앱 조회만 11-03 값 없음 | `pendingDates`는 11-03만<br>10-28~10-31은 웹 값만으로 준비된 날짜 |
 | 활동 알림 도달 중복 | 같은 회원에게 10-23 스토리 완성 3건 도달 | 그날 도달 회원 1 |
-| 도달 없음 | 활동 알림 도달 0, 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
+| 이프 만료 예정 알림함 클릭 | 이프 만료 예정 알림의 알림함 항목을 웹과 앱에서 누른 기록(묶음 값 `credit_expiry_reminder`, `utm_source` `push`) | `CREDIT_EXPIRY_REMINDER`의 `webPushOpens`와 `androidPushOpens`에 들고 `inboxOpens` 0 |
+| 공개 중단 알림 제외 | 묶음 값 `story_taken_down` | 버림, `activityTypes`에 `STORY_TAKEN_DOWN` 없음 |
+| 도달 없음 | 활동 알림 도달 0, 웹 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
 | 캠페인 범위 | 선점 시각이 범위 전날인 캠페인, 선점 전에 취소한 캠페인 | 둘 다 `campaigns`에 없음 |
-| 활동 알림 항목 | 열람과 도달이 모두 없음 | `activityTypes` 3항목이 고정 순서, `openState` `MEASURED`, 값 0, `pushOpenRate` `null` |
+| 활동 알림 항목 | 열람과 도달이 모두 없음, 웹 측정 시작일만 설정 | `activityTypes` 4항목이 `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` 순서, `openState` `MEASURED`, 웹 값과 합계 0, 앱 값 `null`, `pushOpenRate` `null` |
 | 푸시 열람 부분 응답 | 예산이 3일치만 남음 | 최근 3일만 조회, 나머지 날짜는 `pendingDates`, 열람 수는 준비된 날짜의 합, `deliveredMembers`는 집계 구간 전체 |
 | 푸시 열람 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
+| 캠페인 열람 | 오늘 10-30, 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 10-23~10-29 값은 푸시 열람 조회로 저장돼 있음 | 대역에 오늘 10-30의 조회 4회만, `from` 10-23, `to` 10-30, 저장 값과 오늘 값의 날짜 합으로 `pushOpens`, `inboxOpens`, `pushOpenRate` |
+| 캠페인 열람 상한 | 선점 날짜가 오늘보다 400일 전 | `to`는 선점 날짜에서 365일 뒤, 그 뒤 날짜는 조회하지 않음 |
+| 캠페인 열람 측정 아님 | 딥링크 포함 여부가 거짓인 캠페인<br>선점 전인 예약 캠페인 | 대역 호출 없음, 200, `openState` `NO_LINK`, `asOf` `null`, `pendingDates` 빈 배열<br>대역 호출 없음, 200, `openState` `PENDING`, `startedAt`, `from`, `to` `null`, `deliveredMembers` 0 |
+| 캠페인 열람 앱 측정 전 | 웹 측정 시작일 10-21, 앱 측정 시작일 10-31, 선점 10-25 | 대역에 웹 조회만, `androidPushOpens`와 `androidInboxOpens` `null` |
+| 캠페인 열람 식별자 | 없는 캠페인 공개 식별자<br>UUID가 아닌 값 | 404 `NOT_FOUND`<br>400 `BAD_REQUEST` |
+| 캠페인 열람 실패 | 저장 값이 없는 날짜만 있는 범위에서 대역 500 | 503 `SERVICE_UNAVAILABLE`, 그 키에 60초 쿨다운 |
 | 비용 예산 | 빈 저장소에서 5분 안에 예산을 450 소비한 뒤 추이 7일 갱신(하루 16) | 남은 50으로 최근 3일만 조회해 200, 나머지 4일은 `pendingDates`<br>예산을 490 소비한 뒤에는 하루치도 예약하지 못해 대역 호출 없이 503, `reason` `budget_exceeded`, 그 키에 60초 쿨다운 |
 | 기본 예산 | 설정값 없음 | 태스크 예산 500 |
 | 상한 비용 | 간편 제작 퍼널 20일 갱신 | 예산 계수기 480 증가, 호출 성공 |
@@ -479,7 +492,9 @@
 | 저장 실패 | 저장 값이 없는 날짜를 받는 갱신에서 upsert 예외 | 10초 안에 끝난 갱신을 기다린 요청은 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청이 시작한 갱신에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |
 | 새벽 배치 시작 | 고정 시계 KST 02:55와 03:00에 배치 실행 | 02:55는 새벽 배치 조회 없음<br>03:00부터 기본 지표 키의 어제 날짜 조회 |
-| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션(평균 세션 길이와 사용자당 세션 수)과 세션 길이 분포, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인의 추이와 광고 소재, 앱 유입, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜, 앱 신규 활성 사용자의 어제와 그저께 날짜, 방문자의 확정 전 리텐션 코호트만 조회<br>퍼널, 누적 도달, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member`, 리텐션의 가입자와 채팅 시작자 조회 없음 |
+| 새벽 배치 대상 | 03:00 실행, 웹과 앱 측정 시작일이 어제 이전 | 분석 지표, 사용자 활동, `segment` `all`의 세션(평균 세션 길이와 사용자당 세션 수)과 세션 길이 분포, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인의 추이와 광고 소재, 앱 유입, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼, 푸시 열람 4개 조회의 어제 날짜, 앱 신규 활성 사용자의 어제와 그저께 날짜, 방문자의 확정 전 리텐션 코호트만 조회<br>퍼널, 누적 도달, 유입 소스, MAU, 종료일 있는 캠페인, `segment` `guest`와 `member`, 리텐션의 가입자와 채팅 시작자 조회 없음 |
+| 새벽 배치의 푸시 열람 | 03:00 실행, 앱 측정 시작일 비어 있음<br>03:00 실행, 앱 측정 시작일이 오늘 | 푸시 열람은 웹 조회 2개만 어제 날짜를 조회<br>같음 |
+| 푸시 열람 백필 | 웹 측정 시작일 10-24, 앱 측정 시작일 11-01, 오늘 11-05, 저장 값 없음 | 웹 조회는 11-03부터 거꾸로 10-24까지, 앱 조회는 11-03부터 11-01까지만 조회<br>서비스 시작일부터 측정 시작일 전까지는 조회 없음 |
 | 새벽 배치 리텐션 기간 | 03:00 실행, 확정 전 코호트 D-33과 D-34가 오늘 받은 값 없음 | 새벽 배치는 D-33까지 조회<br>D-34는 새벽 배치가 끝난 뒤 초기 백필이 조회 |
 | 새벽 배치 이어 받기 | 그날 새벽 작업 비용이 배치 몫 300을 넘음 | 첫 실행은 300 이하만 예약하고 `admin_analytics_backfill`의 `phase` `nightly`, `result` `partial`, `reason` `budget_share`<br>5분 뒤 실행이 남은 키를 받아 `done` |
 | 새벽 배치 완료 판단 | 그날 새벽 배치를 마친 뒤 실행 | 새벽 배치 조회 없이 초기 백필로 넘어감 |

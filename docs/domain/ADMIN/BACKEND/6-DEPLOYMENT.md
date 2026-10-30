@@ -83,7 +83,8 @@
 | `MANYAK_AMPLITUDE_SECRET_KEY` | 빈 값 | 개발과 운영 Secrets Manager `manyak/{env}/app` | Dashboard REST API 기본 인증<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨 |
 | `MANYAK_AMPLITUDE_TEAM_COHORT_ID` | 빈 값 | 개발과 운영 태스크 정의에 같은 값을 직접 기록 | 팀 계정 코호트 ID<br>분석 지표 세분화 조회의 세그먼트 `userdata_cohort` 제외 조건에 사용<br>비어 있으면 제외 없이 조회 |
 | `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | `https://amplitude.com` | 주입 없음 | US 데이터 센터 |
-| `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 빈 값 | 개발과 운영 태스크 정의에 직접 기록 | 푸시 열람 측정 시작일 KST `YYYY-MM-DD`<br>푸시 딥링크에 UTM을 붙인 서버를 운영에 배포한 날<br>비어 있으면 분석 도구를 조회하지 않고 모든 열람을 측정 시작 전으로 응답 |
+| `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 빈 값 | 개발과 운영 태스크 정의에 직접 기록 | 푸시 열람과 알림함 열람의 웹 측정 시작일 KST `YYYY-MM-DD`<br>푸시와 알림함 딥링크에 UTM을 붙인 서버를 운영에 배포한 날<br>비어 있으면 웹 조회를 보내지 않고 웹 열람 값을 측정 시작 전으로 응답 |
+| `MANYAK_ADMIN_PUSH_OPENS_APP_MEASURED_FROM` | 빈 값 | 개발과 운영 태스크 정의에 직접 기록 | 푸시 열람과 알림함 열람의 앱 측정 시작일 KST `YYYY-MM-DD`<br>알림 열기 이벤트 `client_notification_opened`를 보내는 앱 버전(v1.7.7)을 Play에 배포한 날<br>비어 있으면 앱 조회를 보내지 않고 앱 열람 값을 측정 시작 전으로 응답<br>두 측정 시작일이 모두 비면 분석 도구를 조회하지 않고 모든 열람을 측정 시작 전으로 응답 |
 | `MANYAK_PLAY_STATS_SA_KEY_BASE64` | 빈 값 | 운영 Secrets Manager `manyak/prod/app`만<br>개발은 주입 없음 | Play 보고서 읽기 전용 서비스 계정 키 JSON의 base64<br>태스크 정의에 새 시크릿 참조를 추가해야 주입됨<br>개발 서버는 설치 지표가 사용 불가 |
 
 <br>
@@ -148,7 +149,7 @@
 | 인프라 지표 권한과 설정 | 운영 서버 태스크 역할에 `cloudwatch:GetMetricData`와 세 서비스에 한정한 `ecs:DescribeServices`<br>운영 태스크 정의에 인프라 지표 환경 변수 | 수동 검토<br>`manyak-terraform`의 운영 apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 인프라 지표만 사용 불가 |
 | Langfuse 시크릿 | 운영 태스크 정의에 `manyak/prod/app`의 Langfuse 세 키 참조와 환경 이름 | 수동 검토<br>운영 Terraform apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 AI 비용만 사용 불가 |
 | 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
-| 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포<br>신규 가입자의 `signups.other` 제거는 관리자 페이지가 그 필드를 읽지 않고 새 플랫폼 필드를 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>기능 사용과 안정성의 `users.storyCompleteError` 제거도 관리자 페이지가 그 필드를 읽지 않고 `storyCompletion`을 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>AI 기능 `chat_compact`와 채팅 응답의 `summaryThroughTurn`은 서버를 먼저 배포하고 관리자 페이지 배포 전까지 `chat_compact`가 코드 이름 그대로 보임<br>플랫폼 묶음의 `unknown` 제거, 새 응답 필드, 새 엔드포인트, 새 전환 퍼널은 서버를 먼저 배포하고 관리자 페이지가 뒤에 배포<br>관리자 페이지는 `unknown`을 읽지 않아 순서가 바뀌어도 기존 화면은 깨지지 않고 새 영역만 사용 불가 | 수동 검토 |
+| 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포<br>신규 가입자의 `signups.other` 제거는 관리자 페이지가 그 필드를 읽지 않고 새 플랫폼 필드를 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>기능 사용과 안정성의 `users.storyCompleteError` 제거도 관리자 페이지가 그 필드를 읽지 않고 `storyCompletion`을 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>AI 기능 `chat_compact`와 채팅 응답의 `summaryThroughTurn`은 서버를 먼저 배포하고 관리자 페이지 배포 전까지 `chat_compact`가 코드 이름 그대로 보임<br>플랫폼 묶음의 `unknown` 제거, 새 응답 필드, 새 엔드포인트, 새 전환 퍼널은 서버를 먼저 배포하고 관리자 페이지가 뒤에 배포<br>푸시 열람의 `pushOpens`는 웹과 앱의 합계로 바뀌어 관리자 페이지 배포 전까지 웹 기준 안내와 함께 합계가 보임<br>관리자 페이지는 `unknown`을 읽지 않아 순서가 바뀌어도 기존 화면은 깨지지 않고 새 영역만 사용 불가 | 수동 검토 |
 | 분석 지표 정의 변경 | 조회 조건을 바꾸면 매개변수 해시가 바뀌어 지난 날짜를 처음부터 다시 받음<br>긴 범위는 여러 5분에 걸쳐 채워짐 | 수동 검토 |
 | 관리자 경로 추가 | 회귀 테스트가 새 경로를 자동 수집하는지 테스트 결과에서 확인 | CI 자동 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>재실행해도 같은 결과<br>Amplitude 조회 값 테이블은 서버 저장소의 다음 마이그레이션 번호 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
@@ -169,6 +170,7 @@
 | AI 모델 단가 | Langfuse 모델 설정에서 바꿈<br>배포 없음<br>새 단가는 바꾼 뒤 수집된 관측부터 적용되고 이미 수집된 관측은 다시 계산되지 않음 | 바꾼 뒤 새 관측의 비용이 새 단가인지 Langfuse 관측과 AI 비용 응답의 오늘 값으로 확인<br>과거 비용 보정은 별도 절차(Langfuse에서 관측 비용을 보정한 뒤 운영 DB의 그 날짜 `langfuse_ai_cost` 행을 지워 다시 받게 함) |
 | 실시간 이미지 장당 원가, 환율, 추적 이름 매핑 | 설정 파일 변경 후 재빌드와 배포 | AI 비용 응답의 `chatImageUnitCostKrw`, `usdKrwRate`, `unmapped` |
 | 초기 백필 시작일, 배치 몫 | 설정 파일 변경 후 재빌드와 배포 | `admin_analytics_backfill`의 `remaining_days`와 `cost` |
+| 푸시 열람 측정 시작일 | 운영 Terraform 변수 변경 후 apply와 새 태스크 시작<br>앱 측정 시작일은 알림 열기 이벤트를 보내는 앱 버전의 Play 배포일에 설정 | 푸시 열람 응답의 `measuredFrom`, `androidMeasuredFrom` |
 | 저장된 분석 값 다시 받기 | 운영 DB의 `admin_analytics_daily_values` 또는 `admin_analytics_range_values`에서 해당 `metric`과 날짜의 행 삭제<br>재배포 없음 | 다음 요청의 `admin_analytics_refreshed`에서 그 날짜를 받음 |
 | Amplitude 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 분석 지표 응답 성공 |
 | Play 서비스 계정 키 교체 | Secrets Manager 값 변경 후 새 태스크 시작 | 설치 지표 응답 성공 |
@@ -229,6 +231,7 @@
 | 커스텀 이벤트 | 기본 범위의 캠페인 추이 `signups`, 신규 가입자 `signupsByPlatform`, 앱 신규 활성 사용자, `guest-limit-login` 응답과 같은 날짜의 Amplitude 차트(`ce:신규 가입 (구글·카카오)`, `ce:핵심 활동`, `ce:로그인 성공 (구글·카카오)`, 같은 국가와 플랫폼 조건) | 확정일 값이 차트 값과 같음<br>대역이 커스텀 이벤트 이름을 거절하거나 모든 날짜가 0이면 Amplitude의 커스텀 이벤트 이름과 구성이 제품 제약과 같은지 확인 |
 | 새 퍼널 조건 | `first-visit-activation`, `android-activation`, `web-to-android`, 캠페인 첫 방문 활성화 퍼널 기본 범위 응답과 같은 조건의 Amplitude 퍼널 차트(신규 사용자 또는 활성 사용자, 같은 단계와 전환 창) | 단계별 사용자 수가 차트 값과 같음<br>`turn_number` `greater or equal` 필터를 거절하면 공통 실패 규칙대로 응답하고 필터 표현을 고친 뒤 다시 받아 대조 |
 | 캠페인 분석 | 캠페인 목록과 기본값의 추이 응답 | 성공 응답과 `campaign`이 목록의 진행 중 항목<br>`budget_exceeded`가 반복되면 호출 묶음 재검토 |
+| 앱 열람 | 앱 측정 시작일을 설정한 뒤 확정일이 포함된 푸시 열람 응답과 같은 날짜의 Amplitude 차트(`client_notification_opened`, 이벤트 속성 `utm_source` `push`와 `inbox`, `utm_campaign` 묶음, 고유 사용자) | 캠페인 하나와 출석 리마인드의 날짜별 앱 값이 차트 값과 같음<br>캠페인 열람 응답의 같은 캠페인 값이 집계 범위의 날짜 합과 같음 |
 | 사용자, 전환, 기능 지표 | 기본 범위의 사용자 활동, 전환 퍼널 하나, 기능 사용 응답과 DB 지표 응답 | 성공 응답 |
 | 분석 값 백그라운드 갱신 | 오늘 값이 만료된 뒤와 값이 없는 날짜가 있을 때의 분석 지표, 캠페인 추이, 사용자 활동 응답과 요청 로그의 `duration_ms` | 오늘 값만 만료된 요청의 응답 시간이 1초 안팎<br>값이 없는 날짜가 있는 요청도 응답 시간이 10초를 크게 넘지 않음<br>갱신 뒤 같은 요청의 `asOf`가 새로 받은 시각 |
 | 세션의 게스트와 회원 | 기본 범위의 세션 `segment=guest`, `segment=member` 응답과 같은 날짜의 Amplitude 평균 세션 길이 차트(국내 조건, 사용자 속성 `user_id` 없음과 있음 세그먼트) | 확정일의 `all`, `web`, `android`가 차트 값과 같음<br>대역이 세그먼트 조건을 거절하면 공통 실패 규칙대로 응답하고 조건 표현을 고친 뒤 다시 받아 대조 |
