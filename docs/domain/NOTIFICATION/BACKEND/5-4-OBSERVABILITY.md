@@ -79,7 +79,7 @@ Fluent Bit`"]
 | 발송 결과 보고 실패 | 알림 서비스와 로컬 모드 발송기<br>평문 WARN `push_delivery_report_failed` | 메시지 식별자, 상태 코드 또는 예외 클래스 |
 | 이프 만료 예정 회차 실패 | 회차 예외<br>`credit_expiry_reminder_failed` | `error` |
 | 이프 만료 예정 회차 선점 실패 | Redis 장애<br>`credit_expiry_reminder_claim_failed` | `error` |
-| 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`<br>실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
+| 캠페인 회차 | 캠페인별 종료<br>`promotion_push_sent`<br>실패는 `promotion_push_failed` | `campaignId`, `kind`, `targets`, `sent`<br>`kind`는 선점 때 다시 정한 값<br>공지 미게시 실패는 `reason` `NOTICE_NOT_PUBLISHED` 추가<br>공지 알림도 같은 이름<br>회차 밖 예외는 `error` |
 | 캠페인 전송 중 시간 초과 | 실패 자동 전환<br>평문 WARN `promotion_push_timed_out` | `campaignId`, `startedAt` |
 | 검수 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `moderation_push_failed`, 실행기 포화는 `moderation_push_rejected` | 제출본 식별자<br>발송 실패는 예외 클래스 포함 |
 | 공개 중단 알림 실패 | 로컬 모드 발송 실패<br>평문 WARN `story_takedown_push_failed`, 실행기 포화는 `story_takedown_push_rejected` | 스토리 공개 식별자<br>발송 실패는 예외 클래스 포함 |

@@ -28,7 +28,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
 - 미정으로 표시된 항목을 추측으로 채우지 않는다.
-- 관리자 인증 수준과 토큰은 ADMIN 세트가 정한다. 공지의 내용과 게시는 NOTICE 세트가 정한다.
+- 관리자 인증 수준과 토큰은 ADMIN 세트가 정한다. 공지의 내용, 게시, 캠페인에 연결할 수 있는지의 판정은 NOTICE 세트가 정한다.
 - 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-24 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-24-다른-도메인과의-경계))
 
 <br>
@@ -98,8 +98,8 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 | 항목 | 위치 |
 |---|---|
-| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) |
-| 문체와 파일명 | [제품 Spec 작성 가이드](../../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md) |
+| 문서별 작성 기준 | [백엔드 명세 작성 가이드](../../../reference/BACKEND-SPEC-WRITING-GUIDE.md) |
+| 문체와 파일명 | [제품 Spec 작성 가이드](../../../reference/PRODUCT-SPEC-WRITING-GUIDE.md) |
 | 하네스 전체 지침 | 하네스 루트의 `AGENTS.md` |
 | 코드 규칙 | `manyak-server`와 `manyak-notification`의 `CLAUDE.md` |
 | 문서 변경 후 검사 | `git diff --check` 실행<br>링크, 앵커, 참조한 절 번호 확인 |

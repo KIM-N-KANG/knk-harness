@@ -13,7 +13,7 @@
 | 종류 | 확인 범위 | 외부 호출 | 실행 |
 |---|---|---|---|
 | 서버 단위 | 토큰 서비스의 상한 초과 삭제와 소유 이동, 문구 템플릿 해석, FCM 설정 해석, 발송기 결과 분류 | 없음 | CI |
-| 서버 통합 | 토큰과 동의 API, 내부 API와 인증, 결과 보고 API, 관리자 API, 알림 통계, 완성, 검수, 공개 중단 알림의 두 경로, 출석, 이프 만료 예정, 캠페인 회차, 공지 발송 요청, 아웃박스와 릴레이, 알림 내역 기록과 API | FCM은 고정 응답 발송기로 대체<br>Redis는 테스트 JVM의 임베디드 서버 | CI<br>H2, 스키마 자동 생성, 마이그레이션 비활성 |
+| 서버 통합 | 토큰과 동의 API, 내부 API와 인증, 결과 보고 API, 관리자 API, 알림 통계, 완성, 검수, 공개 중단 알림의 두 경로, 출석, 이프 만료 예정, 캠페인 회차, 공지를 연결한 캠페인 예약, 아웃박스와 릴레이, 알림 내역 기록과 API | FCM은 고정 응답 발송기로 대체<br>Redis는 테스트 JVM의 임베디드 서버 | CI<br>H2, 스키마 자동 생성, 마이그레이션 비활성 |
 | 아웃박스 PostgreSQL | 실제 DDL의 선점과 잠금, Kafka 장애와 복구 | PostgreSQL과 Kafka는 Testcontainers | CI |
 | 알림 서비스 단위 | 메시지 검증, 소비 결과 판정, FCM 메시지 구성, 라이브러리 재시도 비활성 | 없음 | CI |
 | 알림 서비스 통합 | 메시지 큐 소비와 멱등, 동기 API와 내부 인증, 자격 클라이언트, 결과 보고 클라이언트 | Redis와 Kafka는 Testcontainers<br>서버 API와 FCM은 가짜 서버 | CI |
@@ -148,6 +148,11 @@
 | 딥링크 포함 누적 | 딥링크를 넣어 기록한 뒤 실패한 캠페인을 스토리 비공개 뒤 재실행<br>발송 요청 커밋 전에 실패한 캠페인 | 참 유지<br>NULL 유지 |
 | 광고성 공지 데이터 | 태그 `EVENT` 공지 알림 발송 | `type` `PROMOTION`, 광고 표기 제목, `noticeId`, `noticeTag` `EVENT`, `deepLink` 포함 |
 | 정보성 공지 데이터 | 태그 `UPDATE` 공지 알림 발송 | `type` `NOTICE`, 광고 표기 없음, `noticeTag` `UPDATE` |
+| 공지 미게시 실패 | 공지를 연결한 예약 캠페인, 선점 전에 공지 게시 해제 | `FAILED`, `failure_reason` `NOTICE_NOT_PUBLISHED`, 대상 수와 요청 수 0, 알림 내역과 발송 요청 없음, `promotion_push_failed`에 `reason` `NOTICE_NOT_PUBLISHED`, 공지는 `DRAFT` 그대로 |
+| 미게시 실패 뒤 재실행 | 공지를 다시 게시한 뒤 재실행<br>게시하지 않고 재실행 | `SCHEDULED`와 `failureReason` `null`, 다음 선점에서 발송하고 `SENT`<br>`SCHEDULED`와 `failureReason` `null`, 다음 선점에서 다시 `FAILED`와 같은 사유 |
+| 선점 때 태그 재결정 | 태그 `SERVICE` 공지로 예약한 뒤 태그를 `EVENT`로 바꾸고 선점<br>태그 `PROMOTION` 공지로 예약한 뒤 태그를 `UPDATE`로 바꾸고 선점 | 캠페인 `kind` `MARKETING`과 `notice_tag` `EVENT` 기록, 광고 동의 회원만 대상, 푸시 `type` `PROMOTION`과 광고 표기, 감사 로그 추가 없음<br>`kind` `SERVICE`와 `notice_tag` `UPDATE` 기록, 서비스 알림 켠 회원 대상, `type` `NOTICE`와 광고 표기 없음 |
+| 태그 그대로 | 예약 뒤 태그를 바꾸지 않은 공지 알림 선점 | `kind`와 `notice_tag` 예약 때 값 그대로 |
+| 선점 판정 뒤 게시 해제 | 게시 상태 판정 뒤 회차 기록 전에 같은 공지 게시 해제 | 그 회차는 발송하고 `SENT`, 게시 해제는 기다리지 않고 성공 |
 
 <br>
 
@@ -253,6 +258,10 @@
 | 예약 | 제목, 본문, 미래 시각, 사유 | 201, `MARKETING`, `SCHEDULED`, 감사 로그 `PUSH_CAMPAIGN_CREATED` |
 | 즉시 발송 | 예약 시각 생략 | 예약 시각이 현재<br>다음 폴링에서 선점 |
 | 예약 오류 | 과거 시각, 101자 제목, 301자 본문, 사유 누락, 비공개 `storyId` | 400 |
+| 종류 무시 | `noticeId` 없이 `kind` `SERVICE`를 보냄 | 201, `MARKETING` |
+| 공지 연결 오류 | UUID 아닌 `noticeId`, 없는 공지, 초안, 게시 해제된 공지, 공개 `storyId`와 게시된 `noticeId`를 함께 | 400, 캠페인 없음, 공지의 `notifiedAt` 그대로 |
+| 광고성 공지 연결 | 태그 `EVENT`와 `PROMOTION`인 게시된 공지 각각의 `noticeId`로 예약 | 201, `MARKETING`, `noticeId`, 캠페인의 `notice_tag`는 공지 태그 |
+| 선점 전 표시 | 태그 `SERVICE` 공지로 예약한 뒤 공지 태그를 `EVENT`로 수정하고 선점 전에 상세 조회 | 예약 응답, 감사 로그 `PUSH_CAMPAIGN_CREATED`, 선점 전 상세의 `kind`는 모두 `SERVICE` |
 | 스토리 이동 | 공개 스토리 `storyId`로 예약 뒤 발송 | 응답 `storyId`, 푸시 데이터 `storyId`와 `/stories/{storyId}` 딥링크<br>발송 전에 비공개로 바꾸면 딥링크 없음 |
 | 취소 | 예약 상태, 선점된 상태, 취소된 상태, 없는 식별자 | 200과 `CANCELED`와 감사 로그, 409, 409, 404 |
 | 재실행 | 실패 상태<br>예약 상태 | 200과 `SCHEDULED`와 결과 컬럼 유지와 감사 로그<br>409 |
@@ -268,13 +277,13 @@
 | 과거 시작 | `effectiveFrom`이 현재보다 앞섬 | 400 |
 | 기본 문구 복귀 | 유효한 행 1개와 예약된 행 1개 | 200, 유효한 행은 종료 시각이 현재, 예약된 행은 종료 시각이 시작 시각, 응답의 `effective.isDefault` true, 감사 로그 `PUSH_TEMPLATE_RESET` |
 | 복귀 대상 없음 | 오버라이드 없음 | 200 |
-| 공지 발송 요청 | 공지 식별자, 종류 `SERVICE`, 태그 `UPDATE`, 딥링크 | 캠페인 1건, `kind` `SERVICE`, 예약 시각 현재, 공지 참조, `notice_tag` `UPDATE` |
+| 정보성 공지 연결 | 태그 `SERVICE`, `UPDATE`, `MAINTENANCE`인 게시된 공지 각각의 `noticeId`, 예약 시각 생략 | 201, `kind` `SERVICE`, 예약 시각 현재, 응답 `noticeId`, 캠페인의 `notice_tag`는 공지 태그, 공지 `notifiedAt` 기록, 감사 로그 `PUSH_CAMPAIGN_CREATED`의 변경 후 값에 `noticeId` |
 | 공지 알림 취소 | 선점 전 공지 알림 캠페인 취소 | 200, `CANCELED`, 공지는 게시 상태 유지 |
 | 딥링크 UTM | 공지 알림 발송, 프로모션의 이동 대상 스토리 발송, 검수 완료 | 공지는 `utm_campaign`이 캠페인 공개 식별자와 `utm_content=notice`<br>프로모션은 캠페인 공개 식별자와 `utm_content=promotion`<br>검수 완료는 `utm_campaign=story_moderation_completed`<br>모두 `utm_source=push&utm_medium=push`이고 네 필드 순서 고정 |
 | 기존 쿼리 결합 | 출석 리마인드 | `/my/credits?tab=free&utm_source=push&...`처럼 `&`로 이어지고 `?`가 두 번 나오지 않음 |
 | UTM 인코딩 | 캠페인 값에 공백이나 `&`가 든 대역 값 | URL 인코딩된 값 |
 | 딥링크 없는 프로모션 | 공지와 스토리 없는 프로모션 | `deepLink`와 UTM 없음 |
-| 공지 중복 요청 | 같은 공지로 두 번 | 두 번째는 유니크 위반 예외 |
+| 같은 공지 여러 번 | 같은 공지로 즉시 예약과 미래 예약 | 둘 다 201, 캠페인 2건, 공지 `notifiedAt`은 첫 예약을 만든 시각 유지 |
 
 <br>
 
@@ -328,11 +337,12 @@
 | 로컬 모드 기록 실패 | 로컬 모드 출석과 캠페인 회차에서 내역 삽입 예외 | FCM 발송기 호출 없음 |
 | 정보성 공지 기록 | 서비스 종류 공지 알림 회차, 서비스 알림 끈 회원, 광고 미동의 회원, 토큰 없는 회원, 정지 회원, 탈퇴 회원 | 활성 회원 셋 모두 행 1개, `NOTICE`, `NEWS`, `noticeId`, `noticeTag`, 정지와 탈퇴는 없음 |
 | 광고 기록 | 야간에 도래한 광고 캠페인, 야간 미동의 광고 동의 회원, 광고 미동의 회원 | 광고 동의 회원만 행 1개, `PROMOTION`, `NEWS`, 광고 표기 없는 원문 제목 |
-| 광고성 공지 기록 | 태그 `PROMOTION` 공지 게시, 광고 동의 회원, 미동의 회원 | 동의 회원만 행 1개, `PROMOTION`, `noticeTag` `PROMOTION`, 광고 표기 없는 원문 제목 |
-| 광고 표기 중복 | 제목이 `(광고) 가을 이벤트`인 `EVENT` 공지 게시 | 푸시와 내역 제목은 `(광고) 가을 이벤트` 그대로 |
+| 광고성 공지 기록 | 태그 `PROMOTION` 공지를 연결한 캠페인 회차, 광고 동의 회원, 미동의 회원 | 동의 회원만 행 1개, `PROMOTION`, `noticeTag` `PROMOTION`, 광고 표기 없는 원문 제목 |
+| 광고 표기 중복 | 제목이 `(광고) 가을 이벤트`이고 `EVENT` 공지를 연결한 캠페인 회차 | 푸시와 내역 제목은 `(광고) 가을 이벤트` 그대로 |
 | 캠페인 재실행 | 실패한 캠페인 재실행 | 회원당 행 1개 |
-| 기록 없음 | 선점 전에 취소한 프로모션과 공지 알림 캠페인 | 행 없음<br>취소한 공지를 해제 뒤 재게시해도 행 없음 |
-| 공지 수정과 재게시 | 내역이 기록된 공지를 수정하고 게시 해제 뒤 재게시 | 캠페인 1건 유지, 회원당 행 1개 유지 |
+| 기록 없음 | 선점 전에 취소한 프로모션과 공지 알림 캠페인, 공지 미게시로 실패한 공지 알림 캠페인 | 행 없음<br>취소한 공지를 해제 뒤 재게시해도 행 없음 |
+| 공지 수정과 재게시 | 연결한 캠페인 1건으로 내역이 기록된 공지를 수정하고 게시 해제 뒤 재게시 | 캠페인 1건 유지, 회원당 행 1개 유지 |
+| 같은 공지의 두 캠페인 | 같은 공지를 연결한 캠페인 2건의 회차 | 회원당 행 2개, 캠페인마다 다른 메시지 식별자, 두 행 모두 같은 `noticeId` |
 | 딥링크 | 완성, 공지 알림, 이동 대상 없는 프로모션 | `/stories/{storyId}`와 `/notices/{noticeId}` 뒤에 `utm_source=inbox&utm_medium=inbox`와 푸시와 같은 `utm_campaign`, `utm_content`<br>프로모션은 `deepLink` `null` |
 | 분류 대응 | 일곱 종류 전부 | `NOTICE`와 `PROMOTION`은 `NEWS`, 나머지 다섯은 `ACTIVITY` |
 | 목록 페이지 | 25건, `limit` 생략, 이어서 `nextCursor`로 요청 | 20건 최신순과 다음 커서, 5건과 `nextCursor` `null` |

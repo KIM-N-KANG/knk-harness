@@ -60,7 +60,7 @@ Fluent Bit`"]
 | 단위 | 기록 시점과 이름 | 기록 내용 |
 |---|---|---|
 | 모든 API 요청 | 응답 종료<br>`api_request_completed`<br>5xx는 `api_request_failed` | `endpoint`, `http_method`, `status_code`, `duration_ms`<br>실패 시 예외 클래스 이름 또는 상태 이름을 `error_code`로 추가 |
-| 게시 | 게시 커밋 뒤<br>`notice_published` | `notice_id`, `notified`, `notification_kind`<br>재게시로 알림을 요청하지 않으면 `notification_kind` 없음 |
+| 게시 | 게시 커밋 뒤<br>`notice_published` | `notice_id` |
 
 <br>
 
@@ -70,7 +70,8 @@ Fluent Bit`"]
 |---|---|
 | 공개 조회 | 요청 로그의 `/api/v1/notices` 상태 분포 |
 | 관리자 작업 | 요청 로그의 `/api/v1/admin/notices` 상태 분포<br>감사 로그 조회 |
-| 게시와 알림 | 로그 `notice_published`의 `notified`<br>발송 결과는 알림 도메인의 캠페인 행과 지표 |
+| 게시 | 로그 `notice_published` |
+| 공지 알림 | 알림 도메인의 캠페인 행과 지표<br>캠페인 구조의 `noticeId`로 공지와 이어 봄 |
 
 <br>
 

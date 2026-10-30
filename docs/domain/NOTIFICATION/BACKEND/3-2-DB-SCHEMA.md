@@ -44,7 +44,7 @@ erDiagram
         bigint id PK
         varchar template_key
     }
-    notices |o--o| push_campaigns : "NOTICE, 공지 알림"
+    notices |o--o{ push_campaigns : "NOTICE, 공지 알림"
     push_campaigns {
         bigint id PK
         uuid public_id
@@ -130,15 +130,15 @@ erDiagram
 
 **`push_campaigns`**
 
-캠페인 1건의 예약과 결과가 한 행이다. 관리자 API가 예약 행을 추가하고 공지 게시가 공지 알림 행을 추가하며 스케줄러가 결과를 기록한다.
+캠페인 1건의 예약과 결과가 한 행이다. 관리자 API가 예약 행을 추가하고 스케줄러가 결과를 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
-| `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함 |
-| `notice_id` | bigint | FK `notices.id`, UNIQUE | 공지 알림이면 그 공지<br>프로모션은 NULL |
-| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 게시 시점의 공지 태그<br>프로모션은 NULL |
+| `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함<br>공지 알림은 공지 태그에서 정한 값이며 마지막 선점 때 다시 기록 |
+| `notice_id` | bigint | FK `notices.id` | 공지 알림이면 연결한 공지<br>한 공지에 여러 행<br>프로모션은 NULL |
+| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 연결할 때의 공지 태그이며 마지막 선점 때 다시 기록<br>프로모션은 NULL |
 | `story_id` | bigint | FK `stories.id` | 이동 대상 스토리<br>없으면 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
@@ -150,10 +150,13 @@ erDiagram
 | `started_at` | timestamptz | | 선점 시각<br>전송 중 시간 초과 판정의 기준 |
 | `deep_link_included` | boolean | | 기록한 발송 요청 가운데 딥링크를 넣은 요청이 있는지<br>회차가 발송 요청을 기록하는 트랜잭션에서 갱신<br>한 번 참이면 재실행해도 거짓으로 바꾸지 않음<br>발송 요청을 기록한 적 없으면 NULL |
 | `finished_at` | timestamptz | | 회차 종료 시각 |
+| `failure_reason` | varchar(40) | CHECK `NOTICE_NOT_PUBLISHED` | 마지막 회차가 발송 없이 실패한 사유<br>그 밖의 실패와 실패가 아닌 상태는 NULL<br>재실행하면 비움 |
 
 | 인덱스 | 컬럼 |
 |---|---|
 | `idx_push_campaigns_status_scheduled_at` | `status`, `scheduled_at` |
+
+- 공지 참조에는 인덱스를 두지 않는다. 공지로 캠페인을 찾는 조회가 없고 공지 삭제의 참조 확인은 캠페인 수가 적어 전체 읽기로 끝난다.
 
 <br>
 
@@ -191,6 +194,7 @@ erDiagram
 | `credit_lots` | `remaining` | 잔여가 있는 로트만 만료 예정 판정 |
 | `credit_lots` | `expires_at` | 만료 예정 판정과 발송 요청의 유효 기한 |
 | `notices` | `id`<br>`public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
+| `notices` | `status`<br>`tag` | 발송 선점 때 게시 상태 확인과 종류 재결정 |
 
 <br>
 
