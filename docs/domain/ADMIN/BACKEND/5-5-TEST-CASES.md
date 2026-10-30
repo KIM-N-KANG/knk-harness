@@ -295,7 +295,7 @@
 | 저장 키 | 같은 범위에 다른 `campaign` 두 번 | 대역 호출 두 묶음, 캠페인 값이 다른 매개변수 해시 |
 | 지난 기간 | 그저께까지의 범위를 한 번 조회한 뒤 10분 뒤, 25시간 뒤, 30일 뒤에 다시 호출 | 대역 재호출 없음 |
 | 푸시 열람 조회 | 웹 측정 시작일이 범위 첫날 이전, 앱 측정 시작일 비어 있음, `days` 7 | 대역에 세분화 조회 2회, 둘 다 `[Amplitude] Page Viewed`에 이벤트 필터 `utm_source` `is` `["push"]`와 `["inbox"]`, 이벤트 묶음 `utm_campaign` 하나, `limit` 1000, `s`와 `country`와 `platform` 조건 없음, 예산 계수기 350 증가<br>`client_notification_opened` 조회 없음, `androidMeasuredFrom` `null` |
-| 앱 열람 조회 | 웹과 앱 측정 시작일이 범위 첫날 이전, `days` 3 | 대역에 세분화 조회 4회, 웹 2회에 더해 `client_notification_opened`에 같은 두 필터와 같은 묶음, 플랫폼 조건 없음, 예산 계수기 300 증가 |
+| 앱 열람 조회 | 빈 저장소, `from=2026-10-28&to=2026-10-30`(3일), 웹과 앱 측정 시작일이 10-28 이전 | 대역에 세분화 조회 4회, 웹 2회에 더해 `client_notification_opened`에 같은 두 필터와 같은 묶음, 플랫폼 조건 없음, 예산 계수기 300 증가 |
 | 푸시 열람 대응 | 웹과 앱 조회의 묶음 값이 캠페인 공개 식별자, `attendance_reminder`, `credit_expiry_reminder`, `KR_META_WEB_ACTIVATION_COLD_202610`, `(none)` | 앞의 셋만 그 캠페인과 출석 리마인드와 이프 만료 예정에 들고 나머지는 버림 |
 | 푸시 열람 날짜 합 | 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 웹 푸시 열람 10-23 30명과 10-24 5명, 앱 푸시 열람 10-24 10명, 도달 100명 | `openState` `MEASURED`, `webPushOpens` 35, `androidPushOpens` 10, `pushOpens` 45, `pushOpenRate` 0.45 |
 | 푸시와 알림함 분리 | 같은 캠페인의 웹 푸시 조회 30명, 웹 알림함 조회 4명, 앱 알림함 조회 2명 | `webPushOpens` 30, `webInboxOpens` 4, `androidInboxOpens` 2, `inboxOpens` 6<br>알림함 값이 `pushOpens`와 `pushOpenRate`에 섞이지 않음, 알림함 열람률 필드 없음 |
