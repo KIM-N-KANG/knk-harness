@@ -1506,12 +1506,12 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `total` | `integer` | `web`과 `android`의 합 |
+| `total` | `integer` | 전체 조건(웹이나 앱)의 고유 사용자 수<br>`web`과 `android`의 합이 아님 |
 | `web` | `integer` | 웹 조건의 고유 사용자 수 |
-| `android` | `integer` | 활성 사용자는 앱·국내와 앱·해외 로그인의 조건별 고유 사용자 수의 합<br>신규 사용자는 앱·국내 조회 값 |
+| `android` | `integer` | 앱 조건의 고유 사용자 수 |
 
-- `total`과 `android`는 조건별 고유 사용자 수의 합이다. 같은 사람이 같은 날 웹과 앱에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 두 번 든다. 같은 날 국내와 해외에서 앱을 쓰면 `android`에 두 번 든다.
-- 조회 조건은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 플랫폼 속성이 없는 사용자는 게스트의 서버 전용 식별자라 같은 사람을 따로 세므로 넣지 않는다.
+- 같은 사람이 같은 날 웹과 앱에서 활동하면 `web`과 `android`에 한 번씩 들고 `total`에는 한 번 든다. 그래서 `web`과 `android`의 합이 `total`보다 클 수 있다.
+- 조회 조건은 처리 흐름에 있다. ([4-1-20 Amplitude 조회 공통](4-1-PIPELINES.md#4-1-20-amplitude-조회-공통)) 국가 조건 밖의 사용자와 플랫폼 속성이 없는 사용자(게스트의 서버 전용 식별자)는 어느 값에도 들지 않는다.
 - 값은 분석 도구가 집계한 것이며 코호트 ID가 설정돼 있으면 팀 계정 코호트에 속한 사용자를 제외한다. 집계가 몇 분 늦을 수 있다.
 
 <br>
@@ -1722,7 +1722,11 @@ Authorization: Bearer {adminToken}
 | `daily[].newVisitorsBySource.threads` | `integer` | 캠페인이 아니면서 소스가 쓰레드 |
 | `daily[].newVisitorsBySource.dcinside` | `integer` | 캠페인이 아니면서 소스가 디시인사이드 |
 | `daily[].newVisitorsBySource.other` | `integer` | 캠페인이 아니면서 소스 목록 밖 |
-| `daily[].signups` | `object` | Web 신규 가입자<br>세그먼트 묶음 구조 |
+| `daily[].newVisitorsByDevice` | `object` | 기기 유형별 신규 방문자<br>광고 구분 없음 |
+| `daily[].newVisitorsByDevice.ios` | `integer` | 사용자 속성 `device_type`이 `Apple iPhone` 또는 `Apple iPad` |
+| `daily[].newVisitorsByDevice.android` | `integer` | `device_type`이 `Android` |
+| `daily[].newVisitorsByDevice.other` | `integer` | `device_type`이 앞의 세 값이 아님<br>데스크톱과 값 없음 포함 |
+| `daily[].signups` | `object` | Web 신규 가입자<br>가입 커스텀 이벤트의 고유 사용자 수라 같은 날 구글과 카카오로 모두 가입한 사람도 한 번<br>세그먼트 묶음 구조 |
 | `daily[].cumulativeSignups` | `object` | 범위 첫날부터 그날까지 준비된 날짜의 `signups` 누계<br>세그먼트 묶음 구조 |
 | `daily[].androidSignups` | `integer` | Android 신규 가입자<br>광고 구분 없음 |
 | `daily[].storylineRequests` | `integer` | 스토리라인 생성 요청 횟수 |
@@ -1731,6 +1735,7 @@ Authorization: Bearer {adminToken}
 | `totals` | `object` | 준비된 날짜의 합계<br>`pendingDates`가 있으면 범위 일부의 값 |
 | `totals.activeUsersAverage` | `number` | `daily[].activeUsers` 평균 |
 | `totals.newVisitors` | `object` | 일별 합<br>세그먼트 묶음 구조 |
+| `totals.newVisitorsByDevice` | `object` | 일별 합<br>`daily[].newVisitorsByDevice`와 같은 구조 |
 | `totals.signups` | `object` | 일별 합<br>세그먼트 묶음 구조 |
 | `totals.androidSignups` | `integer` | 일별 합 |
 | `totals.adsShare` | `number / null` | `totals.newVisitors.ads`를 `totals.newVisitors.all`로 나눈 0~1<br>`all`이 0이면 `null` |
@@ -1776,6 +1781,7 @@ Authorization: Bearer {adminToken}
       "activeUsers": 162,
       "newVisitors": { "all": 162, "ads": 152, "nonAds": 10 },
       "newVisitorsBySource": { "ads": 152, "instagram": 4, "threads": 2, "dcinside": 1, "other": 3 },
+      "newVisitorsByDevice": { "ios": 70, "android": 85, "other": 7 },
       "signups": { "all": 21, "ads": 18, "nonAds": 3 },
       "cumulativeSignups": { "all": 21, "ads": 18, "nonAds": 3 },
       "androidSignups": 30,
@@ -1787,6 +1793,7 @@ Authorization: Bearer {adminToken}
   "totals": {
     "activeUsersAverage": 150.5,
     "newVisitors": { "all": 301, "ads": 280, "nonAds": 21 },
+    "newVisitorsByDevice": { "ios": 130, "android": 158, "other": 13 },
     "signups": { "all": 39, "ads": 33, "nonAds": 6 },
     "androidSignups": 52,
     "adsShare": 0.93,
@@ -1971,7 +1978,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 Android 외 조회 값에 `android`를 더한 값이다. `android`는 활성 사용자가 앱·국내와 앱·해외 로그인의 합이고 신규 방문자와 사용자당 전송 수는 앱·국내 값이다. 합은 조건별 고유 사용자 수의 합이라 같은 날 여러 조건으로 활동한 사용자는 조건마다 한 번씩 든다. Web과 플랫폼 없음에서 함께 활동한 사용자는 `all`에 한 번만 들어 나머지 셋의 합이 `all`보다 클 수 있다. Android와 다른 플랫폼에서 함께 활동한 사용자는 `all`에 두 번 든다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+사용자 메뉴의 Amplitude 지표다. 플랫폼 묶음 구조는 `all`(전체), `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. `all`은 전체 조건(웹이나 앱) 조회 값이라 같은 날 웹과 앱에서 함께 활동한 사용자도 한 번 들고 `unknown`은 들지 않는다. `web`과 `android`의 합은 `all`보다 클 수 있다. `unknown`은 활성 사용자의 플랫폼 구성을 보이는 값이다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
@@ -1989,7 +1996,7 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
-| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 Android 외, 앱·국내, 앱·해외 로그인 세분화 응답의 `seriesCollapsed` 값의 합이며 일별 값의 합이 아님<br>30일 안에 조건을 넘나든 사용자는 조건마다 한 번씩 듦<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
+| `monthlyActiveUsers` | `integer / null` | `to`를 끝으로 하는 30일의 고유 활성 사용자 수<br>그 30일을 한 번에 조회한 전체 조건 세분화 응답의 `seriesCollapsed` 값이며 일별 값의 합이 아님<br>30일 안에 웹과 앱을 함께 쓴 사용자도 한 번<br>전체만이며 플랫폼별 값은 없음<br>아직 받지 못했으면 `null` |
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeUsers` | `object` | DAU<br>플랫폼 묶음 구조 |
@@ -2036,10 +2043,10 @@ Authorization: Bearer {adminToken}
 | `pendingDates` | `string[]` | 아직 값을 받지 못해 `cohorts`에서 뺀 코호트 날짜<br>그 밖은 분석 지표와 같음 |
 | `cohort` | `string` | 적용한 `cohort` |
 | `platforms` | `object[]` | `all`, `web`, `android` 세 항목 |
-| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 플랫폼 조건 없는 국내 조건 코호트<br>`web`은 웹 조건, `android`는 앱·국내 조건 코호트이며 시작과 복귀가 같은 플랫폼일 때만 복귀로 셈 |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 전체 조건 코호트이며 시작과 복귀가 웹이나 앱이면 복귀로 셈<br>`web`은 웹 조건, `android`는 앱 조건 코호트이며 시작과 복귀가 같은 플랫폼일 때만 복귀로 셈 |
 | `platforms[].cohorts` | `object[]` | 시작일마다 한 항목<br>날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `platforms[].cohorts[].date` | `string` | 시작일 |
-| `platforms[].cohorts[].users` | `integer` | 그날 시작 인원<br>`signup`은 구글과 카카오 두 시작 집단의 합 |
+| `platforms[].cohorts[].users` | `integer` | 그날 시작 인원 |
 | `platforms[].cohorts[].d1`, `d2`, `d3`, `d4`, `d5`, `d6`, `d7`, `d30` | `number / null` | 그날로부터 정확히 1일, 2일, 3일, 4일, 5일, 6일, 7일, 30일 뒤에 활성인 비율 0~1<br>아직 그 날짜가 끝나지 않았거나 분석 도구 값이 없거나 집계 중이거나 분모가 0이면 `null` |
 | `platforms[].summary` | `object` | 범위 전체의 가중 평균 `d1`, `d2`, `d3`, `d4`, `d5`, `d6`, `d7`, `d30`<br>필드마다 값이 `null`이 아닌 코호트를 그 분모로 가중<br>그런 코호트가 없으면 `null` |
 
@@ -2082,9 +2089,10 @@ Authorization: Bearer {adminToken}
 | `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
 | `daily[].date` | `string` | KST 날짜 |
 | `segment` | `string` | 적용한 `segment` |
-| `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null`<br>`all`과 `android`는 국내 조건의 사용자만 |
+| `daily[].averageSessionSeconds` | `object` | 평균 세션 길이 초<br>`all`, `web`, `android`의 소수이고 `unknown`은 `null`<br>`all`은 전체 조건 조회 값이며 `web`과 `android`의 평균이 아님 |
+| `daily[].sessionsPerUser` | `object` | 그날 세션이 있는 사용자 1명당 세션 수<br>`averageSessionSeconds`와 같은 구조와 조건 |
 
-- 세션 정의는 분석 도구의 기본 세션이다. 사용자당 세션 수는 제공하지 않는다.
+- 세션 정의는 분석 도구의 기본 세션이다.
 
 <br>
 
@@ -2115,10 +2123,13 @@ Authorization: Bearer {adminToken}
 | `bins[].fromSeconds` | `integer` | 구간 시작 초, 포함 |
 | `bins[].toSeconds` | `integer` | 구간 끝 초, 제외<br>마지막 구간은 86400 |
 | `platforms` | `object[]` | `all`, `web`, `android` 세 항목<br>`pendingDates`를 뺀 날짜의 합 |
-| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 플랫폼 조건 없는 국내 조건 조회이며 `web`과 `android`의 합이 아님 |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 전체 조건 조회이며 `web`과 `android`의 합이 아님 |
 | `platforms[].sessions` | `integer[]` | `bins` 순서의 구간별 세션 수 |
 | `platforms[].totalSessions` | `integer` | `sessions`의 합 |
 | `platforms[].medianBin` | `integer / null` | 중앙값이 속한 구간의 `bins` 인덱스(0부터)<br>짧은 구간부터 더한 세션 수가 처음으로 `totalSessions`의 절반 이상이 되는 구간<br>`totalSessions`가 0이면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].sessions` | `object` | 그날 세션 수<br>`all`, `web`, `android`의 정수이고 그날 구간별 세션 수의 합 |
 
 - 분석 도구가 정확한 중앙값을 주지 않아 구간만 응답한다.
 
@@ -2136,7 +2147,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-예시에는 `platforms`의 첫 항목만 표시했다.
+예시에는 `platforms`의 첫 항목과 `daily`의 날짜 항목 1개만 표시했다.
 
 ```json
 {
@@ -2152,6 +2163,9 @@ Authorization: Bearer {adminToken}
   ],
   "platforms": [
     { "platform": "all", "sessions": [973, 211, 187, 164, 290, 247, 158, 52, 35], "totalSessions": 2317, "medianBin": 1 }
+  ],
+  "daily": [
+    { "date": "2026-10-22", "sessions": { "all": 342, "web": 301, "android": 45 } }
   ]
 }
 ```
@@ -2168,9 +2182,9 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-가입 수와 누계, 가입 경로, 게스트 이관은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 회원 수에서는 재가입으로 소셜 연동을 새 계정에 넘긴 예전 계정 행을 뺀다. 플랫폼별 가입 수는 Amplitude 가입 이벤트로 계산하며 팀 계정을 제외하지 않는다. 두 원본은 따로 세므로 같은 날의 DB 가입 수와 플랫폼 합이 다를 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+가입 수와 누계, 가입 경로, 게스트 이관은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 회원 수에서는 재가입으로 소셜 연동을 새 계정에 넘긴 예전 계정 행을 뺀다. 플랫폼별 가입 수와 가입 전환율은 Amplitude 가입 커스텀 이벤트와 신규 방문자로 계산하며 팀 계정을 제외하지 않는다. 두 원본은 따로 세므로 같은 날의 DB 가입 수와 플랫폼 값이 다를 수 있다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
-플랫폼 묶음 구조는 `all`, `web`, `android`, `unknown`(플랫폼 속성 없음)의 네 정수다. 이 절과 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 값은 국내 조건 안에서 `platform`의 `Web`, `Android`, `(none)`으로 나눈 세 조회이고 `all`은 세 값의 합이다. 해외의 앱 사용자는 세지 않는다.
+플랫폼 묶음 구조는 `all`, `web`, `android`의 세 값이다. 이 절과 채팅 턴 도달률, 채팅 옵션 비중의 `web`과 `android`는 국내 조건 안의 웹 조건과 앱 조건 조회다. 이 절의 `all`은 전체 조건(웹이나 앱) 조회라 같은 날 웹과 앱에서 함께 가입 이벤트가 잡힌 사람도 한 번이고, 채팅 턴 도달률과 채팅 옵션 비중의 `all`은 이벤트 수라 `web`과 `android`의 합이다. 플랫폼 속성이 없는 이벤트와 국가 조건 밖의 사용자는 세지 않는다.
 
 **1. 쿼리**
 
@@ -2199,9 +2213,12 @@ Authorization: Bearer {adminToken}
 | `daily[].signups.kakao` | `integer` | 첫 소셜 연동이 카카오 |
 | `daily[].cumulativeSignups` | `integer` | 서비스 시작부터 그날까지 생성된 회원 수<br>범위 첫날 전의 가입과 탈퇴 회원을 포함한 전체 누계이며 `signups`와 같이 예전 계정 행은 뺌<br>대시보드 요약의 `members.total`보다 예전 계정 행 수만큼 작음 |
 | `daily[].migratedFromGuest` | `integer` | 그날 생성된 회원 중 게스트 데이터를 이관한 회원 수<br>예전 계정 행은 뺌 |
-| `daily[].signupsByPlatform` | `object / null` | 그날 구글과 카카오 가입 이벤트의 고유 사용자 수 합<br>플랫폼 묶음 구조<br>`pendingDates`의 날짜는 `null` |
+| `daily[].signupsByPlatform` | `object / null` | 그날 가입 커스텀 이벤트의 고유 사용자 수<br>구글과 카카오로 모두 가입한 사람도 한 번<br>플랫폼 묶음 구조의 정수<br>`pendingDates`의 날짜는 `null` |
+| `daily[].newVisitorsByPlatform` | `object / null` | 가입 전환율의 분모인 그날 신규 방문자 수<br>사용자 활동의 `newVisitors`와 같은 값<br>플랫폼 묶음 구조의 정수<br>`pendingDates`의 날짜는 `null` |
+| `daily[].signupRate` | `object / null` | 가입 전환율<br>`signupsByPlatform`을 `newVisitorsByPlatform`으로 나눈 0 이상의 값<br>플랫폼 묶음 구조의 소수이고 분모가 0인 플랫폼은 `null`<br>그날 처음 기록된 사용자가 아닌 사람의 가입도 분자에 들어 1을 넘을 수 있음<br>`pendingDates`의 날짜는 `null` |
 
 - 플랫폼별 가입 수는 회원을 세는 지표라 게스트와 회원 구분이 없다.
+- `signupsByPlatform`, `newVisitorsByPlatform`, `signupRate`는 같은 날짜에 함께 값이 있거나 함께 `null`이다.
 
 <br>
 
@@ -2242,14 +2259,18 @@ Authorization: Bearer {adminToken}
       "signups": { "total": 24, "google": 15, "kakao": 9 },
       "cumulativeSignups": 1830,
       "migratedFromGuest": 11,
-      "signupsByPlatform": { "all": 25, "web": 7, "android": 15, "unknown": 3 }
+      "signupsByPlatform": { "all": 22, "web": 7, "android": 15 },
+      "newVisitorsByPlatform": { "all": 410, "web": 380, "android": 31 },
+      "signupRate": { "all": 0.0537, "web": 0.0184, "android": 0.4839 }
     },
     {
       "date": "2026-10-27",
       "signups": { "total": 9, "google": 6, "kakao": 3 },
       "cumulativeSignups": 1839,
       "migratedFromGuest": 4,
-      "signupsByPlatform": null
+      "signupsByPlatform": null,
+      "newVisitorsByPlatform": null,
+      "signupRate": null
     }
   ]
 }
@@ -2271,8 +2292,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `funnel` | 경로 | 필수 | `web-first-visit`, `android-first-visit`, `story-creation`, `story-detail-chat`, `guest-limit-login` |
-| `platform` | `string` | 선택 | `web`, `android`<br>`story-creation`, `story-detail-chat`, `guest-limit-login`에서만 받으며 기본 `web`<br>첫 접속 퍼널 둘은 이름에 플랫폼이 있어 받지 않음 |
+| `funnel` | 경로 | 필수 | `web-first-visit`, `android-first-visit`, `first-visit-activation`, `login-signup`, `android-activation`, `web-to-android`, `story-creation`, `story-detail-chat`, `guest-limit-login` |
+| `platform` | `string` | 선택 | `web`, `android`<br>`first-visit-activation`, `login-signup`, `story-creation`, `story-detail-chat`, `guest-limit-login`에서만 받으며 기본 `web`<br>`web-first-visit`, `android-first-visit`, `android-activation`, `web-to-android`는 플랫폼이 정해져 있어 받지 않음 |
 | `storyId` | `string` | 선택 | `story-detail-chat`에서만<br>지정하면 1단계와 2단계를 그 스토리로 한정, 생략하면 모든 스토리 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
@@ -2288,14 +2309,17 @@ Authorization: Bearer {adminToken}
 | `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
 | `from`, `to` | | 분석 지표와 같음 |
 | `funnel` | `string` | 요청한 퍼널 |
-| `platform` | `string` | 적용한 플랫폼 |
+| `platform` | `string / null` | 적용한 플랫폼<br>`android-activation`은 `android`, `web-to-android`는 단계마다 플랫폼이 달라 `null` |
 | `storyId` | `string / null` | 적용한 대상 스토리 |
 | `steps` | `object[]` | 단계 순서 |
-| `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 구글과 카카오 로그인 성공 두 이벤트의 합이라 `login_succeeded` |
+| `steps[].event` | `string` | 단계의 이벤트 이름<br>`guest-limit-login`의 마지막 단계는 구글과 카카오 로그인 성공 두 이벤트의 합이라 `login_succeeded`<br>가입 커스텀 이벤트 단계는 `signup_succeeded`, 핵심 활동 커스텀 이벤트 단계는 `core_activity` |
 | `steps[].turnNumber` | `integer / null` | 채팅 메시지 전송 단계의 턴 번호<br>그 외 `null` |
+| `steps[].minTurnNumber` | `integer / null` | 턴 번호가 이 값 이상인 채팅 메시지 전송 단계의 하한<br>`first-visit-activation`의 3단계는 5, 그 외 `null` |
+| `steps[].platform` | `string / null` | 단계마다 플랫폼이 다른 `web-to-android`에서 그 단계의 플랫폼 `web`, `android`<br>그 외 `null` |
 | `steps[].users` | `integer` | 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>`guest-limit-login`의 마지막 단계만 예외로 두 로그인 경로 퍼널 결과의 합 |
 
 - `guest-limit-login`의 마지막 단계는 구글과 카카오 경로를 모두 거친 사용자를 두 번 세는 근사치라 앞 단계보다 클 수 있다. 관리자 페이지가 앞 단계로 나눈 전환율도 1을 넘을 수 있으며 서버는 값을 고치지 않는다.
+- `web-to-android`의 전환 창은 30일이라 `to`가 오늘에 가까운 범위는 마지막 단계가 아직 다 차지 않는다.
 
 <br>
 
@@ -2316,7 +2340,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-`segments`와 `guestToMember`는 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. `platforms`는 Amplitude의 AI 응답 성공 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 세 조회다. `platforms`는 채팅 생성일이 아니라 턴을 저장한 날짜로 세고 분모가 1턴 응답 수라 `segments`와 비율의 뜻이 다르다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+`segments`와 `guestToMember`는 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. `platforms`는 Amplitude의 AI 응답 성공 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 웹과 앱 조회다. `platforms`는 채팅 생성일이 아니라 턴을 저장한 날짜로 세고 분모가 1턴 응답 수라 `segments`와 비율의 뜻이 다르다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
@@ -2347,8 +2371,8 @@ Authorization: Bearer {adminToken}
 | `guestToMember.chatsReached5` | `integer` | 소유 회원의 게스트 이관 시각보다 먼저 생성됐고 현재 턴이 5 이상인 채팅 수 |
 | `guestToMember.chatsReached6` | `integer` | 그중 현재 턴이 6 이상인 채팅 수 |
 | `guestToMember.rate` | `number` | `chatsReached6`을 `chatsReached5`로 나눈 0~1<br>0이면 0 |
-| `platforms` | `object[] / null` | `all`, `web`, `android`, `unknown` 네 항목<br>`pendingDates`를 뺀 날짜의 합<br>준비된 날짜가 없으면 `null` |
-| `platforms[].platform` | `string` | `all`, `web`, `android`, `unknown`<br>`all`은 나머지 셋의 합 |
+| `platforms` | `object[] / null` | `all`, `web`, `android` 세 항목<br>`pendingDates`를 뺀 날짜의 합<br>준비된 날짜가 없으면 `null` |
+| `platforms[].platform` | `string` | `all`, `web`, `android`<br>`all`은 `web`과 `android`의 합 |
 | `platforms[].chats` | `integer` | 1턴 응답을 저장한 채팅 수<br>턴 번호 1인 성공 이벤트 수 |
 | `platforms[].reached` | `object[]` | `segments[].reached`와 같은 기준 턴 12개, 오름차순 |
 | `platforms[].reached[].turn` | `integer` | 기준 턴 |
@@ -2413,8 +2437,8 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
-| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱·국내와 앱·해외 로그인의 합, `all`은 Android 외와 `android`의 합<br>건수는 조건별 건수의 합이고 사용자 수는 조건별 고유 사용자 수의 합 |
-| `segment` | `string` | 선택 | `all`, `guest`, `member`<br>기본 `all`<br>`guest`는 회원 식별자가 없는 이벤트, `member`는 있는 이벤트<br>앱·해외 로그인은 회원만이라 `guest`에서 0 |
+| `platform` | `string` | 선택 | `all`, `web`, `android`<br>기본 `all`<br>`web`은 웹 조건, `android`는 앱 조건, `all`은 전체 조건(웹이나 앱)<br>`all`의 사용자 수는 웹과 앱을 함께 쓴 사람을 한 번 셈 |
+| `segment` | `string` | 선택 | `all`, `guest`, `member`<br>기본 `all`<br>`guest`는 회원 식별자가 없는 이벤트, `member`는 있는 이벤트 |
 | `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
@@ -2441,6 +2465,13 @@ Authorization: Bearer {adminToken}
 | `daily[].users.creditChargeViewed` | `integer` | 충전 화면 조회 |
 | `daily[].users.attendanceClicked` | `integer` | 충전 화면의 출석 버튼 클릭 |
 | `daily[].users.inviteSucceeded` | `integer` | 초대 코드 입력 성공 |
+| `daily[].activity` | `object` | 활동량 |
+| `daily[].activity.aiResponses` | `integer` | 저장한 AI 응답 수<br>AI 응답 성공 이벤트 가운데 재생성이 아닌 것의 합계 |
+| `daily[].activity.simpleCompletions` | `integer` | 간편 제작 완료 이벤트 수 |
+| `daily[].activity.generalSubmissions` | `integer` | 일반 제작 제출 이벤트 수<br>검수 승인이 아니라 제출 접수 |
+| `daily[].activity.coreActiveUsers` | `integer` | 핵심 활동 고유 사용자 수 |
+| `daily[].activity.messagesPerCoreUser` | `number / null` | 채팅 메시지 전송 합계를 `coreActiveUsers`로 나눈 값<br>`coreActiveUsers`가 0이면 `null` |
+| `daily[].activity.simpleCompletionsPerCoreUser` | `number / null` | `simpleCompletions`를 `coreActiveUsers`로 나눈 값<br>`coreActiveUsers`가 0이면 `null` |
 | `storyCompletion` | `object[]` | 서버 DB의 간편 제작 완성 요청<br>날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
 | `storyCompletion[].date` | `string` | KST 날짜 |
 | `storyCompletion[].requests` | `integer` | 그날 받아 완료나 실패로 끝난 요청 수 |
@@ -2466,7 +2497,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-`chats`, `withPersona`, `byModel`, `turnsByModel`은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 채팅 시작 클릭 수와 플랫폼별 모델 턴 수는 Amplitude 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 세 조회다. 채팅 수, 페르소나 채팅 수, 채팅 모델별 채팅 수는 채팅 생성과 그 모델을 알리는 이벤트가 없어 플랫폼으로 나누지 않는다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+`chats`, `withPersona`, `byModel`, `turnsByModel`은 서버 DB로 계산하고 팀 계정 제외 목록을 적용한다. 채팅 시작 클릭 수와 플랫폼별 모델 턴 수는 Amplitude 이벤트로 계산하며 팀 계정을 제외하지 않는다. 플랫폼 묶음은 신규 가입자와 같은 국내 조건 안의 웹과 앱 조회이고 `all`은 둘의 합이다. 채팅 수, 페르소나 채팅 수, 채팅 모델별 채팅 수는 채팅 생성과 그 모델을 알리는 이벤트가 없어 플랫폼으로 나누지 않는다. 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
 
 **1. 쿼리**
 
@@ -2935,7 +2966,341 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-37 다른 도메인과의 경계
+### 4-2-37 캠페인 첫 방문 활성화 퍼널
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/funnels/activation` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 7일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `steps` | `object[]` | 단계 순서<br>4개 |
+| `steps[].event` | `string` | 단계의 이벤트 이름<br>`_active`, `client_chat_messageInput_submitted`, `client_chat_messageInput_submitted`, `signup_succeeded`<br>`signup_succeeded`는 가입 커스텀 이벤트 단계 |
+| `steps[].minTurnNumber` | `integer / null` | 턴 번호가 이 값 이상인 채팅 메시지 전송 단계의 하한<br>3단계는 5, 그 외 `null` |
+| `steps[].users` | `object` | 범위 안에 처음 기록된 신규 웹 사용자 가운데 전환 창 1일 안에 이 단계까지 순서대로 도달한 고유 사용자 수<br>세그먼트 묶음 구조 |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과 |
+| 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/funnels/activation?from=2026-10-22&to=2026-10-28
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-10-29T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-28",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "steps": [
+    { "event": "_active", "minTurnNumber": null, "users": { "all": 1520, "ads": 1390, "nonAds": 130 } },
+    { "event": "client_chat_messageInput_submitted", "minTurnNumber": null, "users": { "all": 402, "ads": 371, "nonAds": 31 } },
+    { "event": "client_chat_messageInput_submitted", "minTurnNumber": 5, "users": { "all": 133, "ads": 120, "nonAds": 13 } },
+    { "event": "signup_succeeded", "minTurnNumber": null, "users": { "all": 21, "ads": 18, "nonAds": 3 } }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-38 캠페인 누적 도달
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/reach` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+범위 전체에서 채팅 메시지를 보낸 웹 사용자 수다. 첫 방문 활성화 퍼널과 달리 첫 방문 1일 조건이 없어 퍼널의 같은 단계보다 크다.
+
+**1. 쿼리**
+
+캠페인 첫 방문 활성화 퍼널과 같다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string` | 범위 값을 분석 도구에서 받은 시각 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `chatUsers` | `object` | 범위 안에 채팅 메시지 전송이 한 번 이상인 고유 사용자 수<br>세그먼트 묶음 구조 |
+| `deepChatUsers` | `object` | 범위 안에 턴 번호 5 이상의 채팅 메시지 전송이 한 번 이상인 고유 사용자 수<br>세그먼트 묶음 구조 |
+
+<br>
+
+**3. 실패 응답**
+
+캠페인 첫 방문 활성화 퍼널과 같다.
+
+<br>
+
+### 4-2-39 캠페인 광고 소재
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/creatives` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+광고 유입 웹 사용자를 사용자 속성 `gp:initial_utm_content`(첫 유입 광고 소재)로 나눈다. 광고 외 유입은 소재가 없어 응답에 없다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 관리자 페이지는 캠페인 목록의 시작일과 종료일로 범위를 미리 채운다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `pendingDates` | | 분석 지표와 같음 |
+| `from`, `to`, `campaign` | | 캠페인 추이와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].signups` | `object[]` | 그날 가입 커스텀 이벤트의 소재별 고유 사용자 수<br>`users` 내림차순 |
+| `daily[].signups[].content` | `string / null` | 소재 값<br>없으면 `null` |
+| `daily[].signups[].users` | `integer` | 고유 사용자 수 |
+| `daily[].deepChatUsers` | `object[]` | 그날 턴 번호 5 이상의 채팅 메시지 전송이 있는 소재별 고유 사용자 수<br>`daily[].signups`와 같은 구조 |
+| `totals` | `object` | 준비된 날짜의 합계 |
+| `totals.signups` | `object[]` | 소재별 일별 가입 수의 합<br>`daily[].signups`와 같은 구조, `users` 내림차순 |
+
+- 5턴 이상 채팅 사용자는 날짜마다 고유 사용자라 기간 합을 주지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같음 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/creatives?from=2026-10-22&to=2026-10-28
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-28T05:10:00Z",
+  "from": "2026-10-22",
+  "to": "2026-10-28",
+  "campaign": "KR_META_WEB_ACTIVATION_COLD_202610",
+  "pendingDates": [],
+  "daily": [
+    {
+      "date": "2026-10-22",
+      "signups": [{ "content": "ORIGINAL_0HOSUN_VIDEO", "users": 9 }, { "content": "COMMUNITY_POST_IMAGE", "users": 6 }, { "content": null, "users": 1 }],
+      "deepChatUsers": [{ "content": "ORIGINAL_0HOSUN_VIDEO", "users": 31 }, { "content": "COMMUNITY_POST_IMAGE", "users": 12 }]
+    }
+  ],
+  "totals": {
+    "signups": [{ "content": "ORIGINAL_0HOSUN_VIDEO", "users": 41 }, { "content": "COMMUNITY_POST_IMAGE", "users": 27 }, { "content": null, "users": 3 }]
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-40 앱 유입
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/app-transfer` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+웹의 앱 배너와 앱의 첫 실행 설치 경로를 본다. 앱 배너는 Android 기기로 웹을 연 사용자만 센다. 앱은 첫 실행 때 Play 설치 귀속의 UTM을 사용자 속성 `gp:initial_utm_*`로 한 번 남긴다. Play 밖에서 설치했거나 이 값을 아직 남기지 않은 사용자는 설치 경로가 없다. 캠페인 값은 받지 않는다.
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].bannerShown` | `integer` | 앱 배너가 보인 Android 기기 웹 고유 사용자 수 |
+| `daily[].bannerClicked` | `integer` | 앱 배너 버튼을 누른 Android 기기 웹 고유 사용자 수 |
+| `daily[].bannerClickRate` | `number / null` | `bannerClicked`를 `bannerShown`으로 나눈 0 이상의 값<br>`bannerShown`이 0이면 `null` |
+| `daily[].bannerNewUsers` | `integer` | 설치 매체가 앱 배너(`app_banner`)인 앱 신규 사용자 수 |
+| `daily[].newUsersBySource` | `object[]` | 설치 소스(`gp:initial_utm_source`)별 앱 신규 사용자 수<br>`users` 내림차순 |
+| `daily[].newUsersBySource[].source` | `string / null` | 설치 소스 값<br>없으면 `null` |
+| `daily[].newUsersBySource[].users` | `integer` | 앱 신규 사용자 수 |
+| `totals` | `object` | 준비된 날짜의 합계 |
+| `totals.bannerNewUsers` | `integer` | 일별 합 |
+| `totals.newUsersBySource` | `object[]` | 소스별 일별 합<br>`daily[].newUsersBySource`와 같은 구조, `users` 내림차순 |
+
+- 배너 노출과 클릭 사용자는 날짜마다 고유 사용자라 기간 합을 주지 않는다.
+- 배너를 누른 웹 사용자와 앱 신규 사용자는 기기 식별자가 달라 같은 사람으로 이어지지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/app-transfer?from=2026-10-28&to=2026-10-29
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-10-29T05:10:00Z",
+  "from": "2026-10-28",
+  "to": "2026-10-29",
+  "pendingDates": [],
+  "daily": [
+    {
+      "date": "2026-10-28",
+      "bannerShown": 140,
+      "bannerClicked": 21,
+      "bannerClickRate": 0.15,
+      "bannerNewUsers": 4,
+      "newUsersBySource": [{ "source": "google-play", "users": 12 }, { "source": "manyak_web", "users": 5 }, { "source": null, "users": 3 }]
+    }
+  ],
+  "totals": {
+    "bannerNewUsers": 7,
+    "newUsersBySource": [{ "source": "google-play", "users": 25 }, { "source": "manyak_web", "users": 9 }, { "source": null, "users": 6 }]
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-41 앱 신규 활성 사용자
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/app-activation` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+그날 Amplitude에 처음 기록된 앱 사용자 가운데 1일 안에 핵심 활동을 한 사용자를 센다. 핵심 활동과 신규 사용자의 정의는 제품 제약에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 366일 이하 |
+| `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 오늘과 어제 날짜는 전환 창 1일이 끝나지 않아 값이 아직 늘 수 있다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to`, `pendingDates` | | 분석 지표와 같음 |
+| `daily` | `object[]` | 날짜 오름차순<br>`pendingDates`의 날짜는 없음 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].newUsers` | `integer` | 그날 처음 기록되고 그날 앱 활성 이벤트가 있는 사용자 수 |
+| `daily[].activeUsers` | `integer` | 그중 첫 이벤트 뒤 1일 안에 핵심 활동을 한 사용자 수 |
+| `daily[].activationRate` | `number / null` | `activeUsers`를 `newUsers`로 나눈 0~1<br>`newUsers`가 0이면 `null` |
+| `totals` | `object` | 준비된 날짜의 합계 |
+| `totals.newUsers`, `totals.activeUsers` | `integer` | 일별 합 |
+| `totals.activationRate` | `number / null` | `totals.activeUsers`를 `totals.newUsers`로 나눈 값<br>`totals.newUsers`가 0이면 `null` |
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 분석 지표와 같은 기간 오류, 366일 초과, 허용하지 않는 `days` |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같음 |
+
+<br>
+
+### 4-2-42 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|

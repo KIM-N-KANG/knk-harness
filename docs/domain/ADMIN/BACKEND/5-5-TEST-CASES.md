@@ -215,20 +215,20 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 | 빈 저장소에서 `days` 7 | 대역에 세분화 조회 5회(`_active` 웹, 앱·국내, 앱·해외 로그인과 `_new` 웹, 앱·국내), `m=uniques`, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`<br>`daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목의 `activeUsers`와 같음 |
-| 조건 | 위 요청 | 웹 조회의 이벤트 필터에 `platform` `Web`과 `subprop_type` `user`의 `country` `South Korea`, `(none)` 조건<br>앱·국내 조회는 같은 `country` 조건과 `platform` `Android`<br>앱·해외 로그인 조회는 `country` `is not` `South Korea`, `(none)`, `platform` `Android`, `user_id` `is not` `(none)`<br>합계 조회와 `platform` `(none)` 조회 없음 |
-| 플랫폼 값 | 그날 `_active` 웹 200, 앱·국내 18, 앱·해외 로그인 2<br>`_new` 웹 30, 앱·국내 4 | `activeUsers`의 `total` 220, `web` 200, `android` 20<br>`newUsers`의 `total` 34, `android` 4 |
-| 해외 앱 사용자 | 국가가 `United States`인 Android 사용자 둘(로그인 1명, 비로그인 1명)과 Web 사용자 1명이 그날 활동 | 로그인한 Android 사용자만 `android`와 `total`에 들고 비로그인 Android 사용자와 Web 사용자는 어디에도 들지 않음<br>로그인한 해외 Android 사용자도 `newUsers`에는 들지 않음 |
+| 조회 | 빈 저장소에서 `days` 7 | 대역에 세분화 조회 6회(`_active`와 `_new` 각각 전체, 웹, 앱), `m=uniques`, `i=1`, `start`와 `end`가 7일 범위의 `YYYYMMDD`<br>`daily` 7개, `pendingDates` 빈 배열, `todayActiveUsers`가 마지막 항목의 `activeUsers`와 같음 |
+| 조건 | 위 요청 | 웹 조회의 이벤트 필터에 `platform` `Web`과 `subprop_type` `user`의 `country` `South Korea`, `(none)` 조건<br>앱 조회는 같은 `country` 조건과 `platform` `Android`<br>전체 조회는 같은 `country` 조건과 `platform` `is` `["Web","Android"]` 필터 하나<br>`country` `is not` 조건, `user_id` 조건, `platform` `(none)` 조회 없음 |
+| 플랫폼 값 | 그날 `_active` 전체 210, 웹 200, 앱 18<br>`_new` 전체 33, 웹 30, 앱 4 | `activeUsers`의 `total` 210, `web` 200, `android` 18<br>`newUsers`의 `total` 33, `android` 4<br>`total`을 `web`과 `android`의 합으로 바꾸지 않음 |
+| 해외 사용자 | 국가가 `United States`인 Android 사용자 둘(로그인 1명, 비로그인 1명)과 Web 사용자 1명이 그날 활동 | 셋 모두 `web`, `android`, `total` 어디에도 들지 않음 |
 | 과거 범위 | `from`과 `to`가 지난달 | `daily`는 그 범위, `todayActiveUsers`는 오늘 날짜 `_active` 세 조회 값으로 만든 값 |
 | 코호트 제외 | 코호트 ID 설정 있음<br>빈 값 | 모든 세분화 요청의 `s`에 `userdata_cohort`와 `is not`과 코호트 ID<br>`s` 없음 |
-| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 5회뿐<br>갱신을 기다리지 않고 만료된 오늘 값으로 응답한 뒤 백그라운드 갱신이 오늘 날짜만 다시 조회 |
+| 오늘 값 갱신 | 10분 안에 같은 범위 두 번 호출<br>고정 시계를 10분 뒤로 옮긴 뒤 호출 | 대역 호출은 처음 6회뿐<br>갱신을 기다리지 않고 만료된 오늘 값으로 응답한 뒤 백그라운드 갱신이 오늘 날짜만 다시 조회 |
 | 자정 경계 | 오늘을 포함한 범위를 KST 23:55에 조회한 뒤 다음 날 00:01에 같은 `from`, `to`로 조회<br>00:01 조회 때 대역이 500 | 00:01 조회는 어제가 된 날짜와 새 오늘 날짜를 조회<br>대역 500이면 `todayActiveUsers` `null`, 전날 값을 오늘 값으로 주지 않음 |
-| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 30일 범위 갱신<br>같은 설정의 빈 저장소에서 90일 범위 갱신 | 예산 계수기 300 증가, `pendingDates` 빈 배열<br>최근 50일만 받아 500 증가, 나머지는 `pendingDates` |
+| 비용 예산 | 코호트 ID를 설정하고 빈 저장소에서 오늘로 끝나는 30일 범위 갱신<br>같은 설정의 빈 저장소에서 90일 범위 갱신 | 예산 계수기 360 증가, `pendingDates` 빈 배열<br>최근 41일만 받아 492 증가, 나머지는 `pendingDates` |
 | 실패 | 대역이 500, 429, 5초 무응답<br>저장 값 없음 | 503, `admin_analytics_fetch_failed`의 `reason` 각각 `http_error`, `rate_limited`, `timeout` |
 | 실패와 저장 값 | 오늘 값이 만료된 상태에서 대역 500 | 갱신을 기다리지 않고 200, 만료된 오늘 값을 그대로 쓰고 `asOf`는 그 값을 받은 시각<br>백그라운드 갱신이 실패해 `admin_analytics_fetch_failed`와 그 키에 60초 쿨다운 |
 | 쿨다운 | 실패 뒤 30초 안에 재요청<br>61초 뒤 재요청 | 대역 호출 없이 저장 값 또는 503<br>대역 재호출 |
-| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 백그라운드 갱신은 1건이고 대역 조회는 오늘 날짜의 세분화 5회<br>3건 모두 기다리지 않고 만료된 저장 값으로 응답 |
-| 부분 실패 | 빈 저장소에서 `_active` 세 조회 성공, `_new` 웹 조회 실패 | `_active` 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 `_new` 두 조회만 보냄 |
+| 단일 갱신 | 오늘 값이 만료된 뒤 대역이 3초 지연하는 동안 같은 범위 동시 요청 3건 | 백그라운드 갱신은 1건이고 대역 조회는 오늘 날짜의 세분화 6회<br>3건 모두 기다리지 않고 만료된 저장 값으로 응답 |
+| 부분 실패 | 빈 저장소에서 `_active` 세 조회와 `_new` 전체 조회 성공, `_new` 웹 조회 실패 | 성공한 네 조회 값은 저장되지만 준비된 날짜가 없어 503<br>쿨다운 뒤 요청은 `_new` 웹과 앱 두 조회만 보냄 |
 | 자격 증명 없음 | 키 빈 값, 저장 값 없음 | 대역 호출 없이 503, `reason` `no_credentials` |
 | 기간 오류 | `days` 10, 367일 범위, `to` 내일, `days`와 `from` 동시 | 400 |
 | 격리 | 대역 500 상태에서 요약과 차트 호출 | 200 |
@@ -261,12 +261,13 @@
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
 | 캠페인 목록 | 조회 | 설정 파일의 4항목이 시작일 오름차순, 4차만 `endDate` `null` |
-| 추이 조회 | `days` 7, 캠페인 생략 | 대역에 세분화 조회 16회가 순서대로, 모든 요청에 `s`가 없고 모든 이벤트 필터에 `subprop_type` `user`의 `country` 조건, Android 가입자 조회 2회만 `platform` `Android`이고 나머지 14회는 `platform` `Web`, 캠페인은 종료일 없는 마지막 항목의 값 |
+| 추이 조회 | `days` 7, 캠페인 생략 | 대역에 세분화 조회 16회가 순서대로, 모든 요청에 `s`가 없고 모든 이벤트 필터에 `subprop_type` `user`의 `country` 조건, Android 가입자 조회 1회만 `platform` `Android`이고 나머지 15회는 `platform` `Web`, 캠페인은 종료일 없는 마지막 항목의 값<br>가입 조회 3회의 `event_type`이 `ce:신규 가입 (구글·카카오)`이고 `is_new_user` 필터와 로그인 성공 이벤트 조회 없음 |
 | 목록 밖 캠페인 | `campaign=TEST_2026` | 200, 그 값으로 조회 |
 | 세그먼트 차 | 전체 `_new` 10, 광고 7 | `newVisitors` `all` 10, `ads` 7, `nonAds` 3 |
 | 소스별 | 광고 7, `ig` 2, `th` 1, `dc` 0, 그 밖 1 | `newVisitorsBySource` 각 값과 `ads`는 `newVisitors.ads`와 같음 |
-| 가입자 합산 | Web 조건 구글 전체 3과 광고 2, 카카오 전체 1과 광고 1<br>Android 조건 구글 5, 카카오 2 | `signups` `all` 4, `ads` 3, `nonAds` 1<br>`androidSignups` 7, `signups`에 Android 값이 섞이지 않음 |
-| Android 가입자 조회 | `days` 7 | Android 가입 조회 2회에 `is_new_user` `true`, `country`, `platform` `Android` 필터만 있고 `gp:initial_utm_campaign` 필터 없음<br>`totals.androidSignups`는 일별 합 |
+| 가입자 | Web 조건 가입 커스텀 이벤트 전체 4와 광고 3<br>Android 조건 7 | `signups` `all` 4, `ads` 3, `nonAds` 1<br>`androidSignups` 7, `signups`에 Android 값이 섞이지 않음 |
+| Android 가입자 조회 | `days` 7 | Android 가입 조회 1회가 가입 커스텀 이벤트에 `country`와 `platform` `Android` 필터만 있고 `gp:initial_utm_campaign` 필터 없음<br>`totals.androidSignups`는 일별 합 |
+| 기기 유형 | `days` 7<br>그날 `ios` 조회 70, `android` 85, `other` 7 | 기기 유형 조회 3회가 `_new`에 `country`, `platform` `Web`, `device_type` `is` `["Apple iPhone","Apple iPad"]`, `is` `["Android"]`, `is not` `["Apple iPhone","Apple iPad","Android"]` 필터이고 `gp:initial_utm_campaign` 필터 없음<br>`newVisitorsByDevice` `ios` 70, `android` 85, `other` 7, `totals.newVisitorsByDevice`는 일별 합 |
 | 누계 | 이틀 가입 4, 2 | `cumulativeSignups.all` 4, 6 |
 | 합계 | 이틀 DAU 100, 200과 신규 방문자 전체 10, 광고 7 | `activeUsersAverage` 150, `adsShare` 0.7 |
 | 추이 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
@@ -279,6 +280,17 @@
 | 퍼널 기간 | 간편 제작 20일과 상세 진입 31일<br>간편 제작 21일이나 `days` 30, 상세 진입 32일 | 200<br>400 |
 | 유입 소스 | `days` 7 | 대역에 세분화 조회 2회, 첫 조회는 `g`에 `gp:initial_utm_source`만 두고 `g2` 없음, 둘째 조회는 이벤트 묶음 `utm_content` 하나, 예산 계수기 350 증가, `sources`는 `newVisitors` 내림차순<br>둘째 조회의 이벤트 필터가 `utm_medium`, `subprop_op` `is`, 값 `["community","social"]`이고 `in`을 쓰지 않음 |
 | 유입 소스 기간 | 10일<br>11일, `days` 30 | 200<br>400 |
+| 첫 방문 활성화 퍼널 | `days` 7 | 대역에 퍼널 조회 2회(전체와 광고), 순서 모드와 `cs` 86400, `n=new`, 4단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` 조건<br>1단계 `_active`, 2단계 `client_chat_messageInput_submitted`, 3단계 같은 이벤트에 `turn_number` `greater or equal` `["5"]`, 4단계 `ce:신규 가입 (구글·카카오)`, 광고 조회만 단계마다 `gp:initial_utm_campaign`<br>예산 계수기 112 증가 |
+| 첫 방문 활성화 응답 | 퍼널 대역의 전체 단계별 100, 30, 10, 2와 광고 80, 25, 8, 2 | `steps[].event`가 `_active`, `client_chat_messageInput_submitted`, `client_chat_messageInput_submitted`, `signup_succeeded`<br>`steps[2].minTurnNumber` 5, 나머지 `null`<br>`steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
+| 첫 방문 활성화 기간 | 31일<br>32일, `days` 90 | 200, 예산 계수기 496 증가<br>400 |
+| 누적 도달 | `days` 7<br>세분화 `seriesCollapsed` 전송 전체 300과 광고 250, 5턴 이상 전체 90과 광고 70<br>일별 `series` 합 900 | 대역에 세분화 조회 4회, `start`와 `end`가 7일 범위 양 끝, 5턴 이상 조회에 `turn_number` `greater or equal` `["5"]`, 광고 조회에 `gp:initial_utm_campaign`<br>`chatUsers` `all` 300, `ads` 250, `nonAds` 50, `deepChatUsers` `all` 90, `ads` 70, `nonAds` 20<br>일별 합을 쓰지 않음 |
+| 누적 도달 기간 | 31일<br>32일 | 200<br>400 |
+| 광고 소재 조회 | `days` 7 | 대역에 세분화 조회 2회, 둘 다 `g`에 `gp:initial_utm_content`만 두고 `limit` 1000, 이벤트 필터에 `country`, `platform` `Web`, `gp:initial_utm_campaign`<br>첫 조회는 `ce:신규 가입 (구글·카카오)`, 둘째는 `turn_number` 5 이상 채팅 메시지 전송<br>예산 계수기 350 증가 |
+| 광고 소재 값 | 이틀의 가입 묶음 `ORIGINAL_0HOSUN_VIDEO` 9와 4, `(none)` 1과 0 | `daily[].signups`에 `content` `null` 항목, `totals.signups`가 `ORIGINAL_0HOSUN_VIDEO` 13, `null` 1 순서<br>`deepChatUsers`의 기간 합 필드 없음 |
+| 앱 유입 조회 | `days` 7 | 대역에 세분화 조회 4회<br>배너 노출과 클릭 2회는 `country`, `platform` `Web`, `device_type` `Android` 필터<br>배너 경유 신규는 `_new`에 `country`, `platform` `Android`, `gp:initial_utm_medium` `app_banner` 필터<br>설치 경로는 `_new`에 `country`, `platform` `Android` 필터와 `g` `gp:initial_utm_source`, `limit` 1000<br>캠페인 필터 없음, 예산 계수기 196 증가 |
+| 배너 클릭률 | 그날 노출 140, 클릭 21<br>다른 날 노출 0, 클릭 0 | `bannerClickRate` 0.15<br>`null` |
+| 설치 경로 합 | 이틀의 설치 경로 묶음 `google-play` 12와 13, `(none)` 3과 3 | `totals.newUsersBySource`가 `google-play` 25, `null` 6 순서 |
+| 앱 유입 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 캠페인 없음 | 목록에 종료일 없는 항목이 없고 `campaign` 생략<br>101자 `campaign` | 400 |
 | 저장 키 | 같은 범위에 다른 `campaign` 두 번 | 대역 호출 두 묶음, 캠페인 값이 다른 매개변수 해시 |
 | 지난 기간 | 그저께까지의 범위를 한 번 조회한 뒤 10분 뒤, 25시간 뒤, 30일 뒤에 다시 호출 | 대역 재호출 없음 |
@@ -313,45 +325,54 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 14회(`_active` 5, `_new` 4, 평균 2, MAU 3), 사용자 수 조회 없음<br>MAU는 `_active` 3회이고 `start` 09-22, `end` 10-21, Android 외와 앱·국내와 앱·해외 로그인 조건<br>앱·해외 로그인 조건은 `_active`와 MAU에만 있음<br>세분화에는 `g`와 `s`가 없음 |
-| MAU 값 | MAU 세분화 응답의 `seriesCollapsed` Android 외 1100, 앱·국내 90, 앱·해외 로그인 10, 일별 `series` 합 3000 | `monthlyActiveUsers` 1200 |
-| MAU 기간 중 조건 변경 | 30일 가운데 앞 10일은 국내 웹, 뒤 20일은 해외 로그인 앱으로 활동한 사용자 하나 | Android 외 1, 앱·해외 로그인 1이라 `monthlyActiveUsers`에 2로 듦 |
-| MAU 비용과 키 | 같은 `to`로 두 번 요청 | 처음에만 MAU 조회 비용 90 예약<br>범위 지표 키는 MAU 조회 정의와 09-22, 10-21 |
+| 사용자 활동 | `days` 7, `to` 10-21 | 대역에 세분화 11회(`_active` 4, `_new` 4, 평균 2, MAU 1), 사용자 수 조회 없음<br>`_active`와 `_new`는 전체, 웹, 앱, 플랫폼 없음 조건이고 평균은 웹과 앱<br>MAU는 `_active` 1회이고 `start` 09-22, `end` 10-21, 전체 조건<br>`country` `is not` 조건과 `user_id` 조건 없음<br>세분화에는 `g`와 `s`가 없음 |
+| MAU 값 | MAU 세분화 응답의 `seriesCollapsed` 1180, 일별 `series` 합 3000 | `monthlyActiveUsers` 1180 |
+| MAU 비용과 키 | 같은 `to`로 두 번 요청 | 처음에만 MAU 조회 비용 30 예약<br>범위 지표 키는 MAU 조회 정의와 09-22, 10-21 |
 | 세션 날짜 형식 | 세션 응답 `xValues`가 `2026-10-22T00:00:00` | 그 값이 2026-10-22 항목에 들어감 |
 | 리텐션 코호트 키 | 리텐션 응답의 코호트 키 `Oct 23, 2026` | 코호트 날짜 2026-10-23으로 저장하고 응답 |
-| 플랫폼별 값 | `_active` Android 외 11, 웹 10, 앱·국내 2, 앱·해외 로그인 1, 플랫폼 없음 2<br>`_new` Android 외 5, 앱·국내 1 | `activeUsers`의 `all` 14, `web` 10, `android` 3, `unknown` 2<br>`newVisitors`의 `all` 6, `android` 1<br>셋의 합 15와 `all`이 달라도 그대로 |
+| 플랫폼별 값 | `_active` 전체 11, 웹 10, 앱 2, 플랫폼 없음 2<br>`_new` 전체 5, 웹 4, 앱 1, 플랫폼 없음 1 | `activeUsers`의 `all` 11, `web` 10, `android` 2, `unknown` 2<br>`newVisitors`의 `all` 5, `android` 1, `unknown` 1<br>`all`을 나머지 값의 합으로 바꾸지 않음 |
 | 사용자당 전송 수 | 평균 응답 Web 4.5 | `messagesPerUser.web` 4.5, `all`과 `unknown`은 `null` |
 | 활동 기간 | 366일<br>367일 | 200<br>400 |
-| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`만, Web은 `country`와 `platform` `Web`, Android는 `country`와 `platform` `Android`, `user_id` 조건 없음, 예산 계수기 168 증가 |
+| 리텐션 | `days` 7 | 대역에 리텐션 조회 3회, 시작 `_new`와 복귀 `_active`, `rm` 없음, 코호트 7개, `s` 없이 시작과 복귀 이벤트의 필터에 전체는 `country`와 `platform` `is` `["Web","Android"]`, Web은 `country`와 `platform` `Web`, Android는 `country`와 `platform` `Android`, `user_id` 조건 없음, 예산 계수기 168 증가 |
 | 플랫폼 전환 복귀 | 10-20에 웹에서 처음 방문하고 10-21에 앱으로만 활동한 국내 사용자 | 10-20 코호트의 `all` `d1`에 복귀로 듦<br>`web` `d1`에는 복귀로 들지 않고 `android` 코호트에는 없음 |
 | 리텐션 인덱스 | 신규 방문일이 오늘에서 20일 전인 코호트 배열<br>인덱스 0이 `count`와 `outof` 20, 인덱스 1(Day 0)이 `count` 19와 `outof` 20<br>인덱스 2부터 6까지가 `outof` 20에 `count` 5, 4, 3, 2, 1, 인덱스 7이 `outof` 0, 인덱스 8이 `incomplete`<br>길이가 11이라 인덱스 31 없음 | `users` 20<br>`d1` 0.25, `d2` 0.2, `d3` 0.15, `d4` 0.1, `d5` 0.05, `d6` `null`, `d7` `null`, `d30` `null` |
 | D1 인덱스 회귀 | 신규 방문일이 오늘에서 10일 전인 코호트 배열<br>인덱스 0이 `count`와 `outof` 200, 인덱스 1(Day 0)이 `count` 199와 `outof` 200, 인덱스 2가 `count` 30과 `outof` 200<br>세 칸 모두 `incomplete` 아님 | `d1`은 인덱스 2를 읽은 0.15<br>인덱스 1의 0.995는 어느 필드에도 없음 |
 | 리텐션 요약 | 고정 시계 KST 10-26, 범위 10-21~10-23<br>인덱스 4(Day 3)가 10-21 코호트는 `count` 1과 `outof` 10, 10-22 코호트는 `count` 9와 `outof` 30, 10-23 코호트는 `count` 5와 `outof` 5 | `summary.d3` 0.25<br>10-23 코호트의 `d3`은 10-26이 끝나지 않아 `null`이고 요약에 들지 않음 |
 | 리텐션 기간 | 366일<br>`to`가 오늘, 367일, `days` 30 | 200<br>400 |
-| 리텐션 가입자 | `days` 7, `cohort=signup` | 대역에 리텐션 조회 6회, 시작 이벤트는 플랫폼마다 구글과 카카오 로그인 성공에 `is_new_user` `true` 필터, 복귀 `_active`, 예산 계수기 336 증가, 응답 `cohort` `signup` |
-| 가입자 배열 합 | 오늘에서 20일 전 코호트의 같은 플랫폼 두 배열<br>구글은 인덱스 0의 `count`와 `outof` 3, 인덱스 2의 `count` 1과 `outof` 3<br>카카오는 인덱스 0의 `count`와 `outof` 2, 인덱스 2의 `count` 1과 `outof` 2, 인덱스 3만 `incomplete` | `users` 5, `d1` 0.4<br>`d2` `null` |
+| 리텐션 가입자 | `days` 7, `cohort=signup` | 대역에 리텐션 조회 3회, 시작 이벤트는 플랫폼마다 `ce:신규 가입 (구글·카카오)`이고 `is_new_user` 필터 없음, 복귀 `_active`, 예산 계수기 168 증가, 응답 `cohort` `signup` |
 | 리텐션 채팅 시작자 | `days` 7, `cohort=first-chat` | 대역에 리텐션 조회 3회, 시작 이벤트 `server_chat_aiMessage_processed_succeeded`에 `turn_number` `"1"`과 `is_regenerated` `false` 필터, 복귀 `_active`, 예산 계수기 168 증가 |
 | 시작 집단 저장 키 | 방문자 코호트가 저장된 범위에 `cohort` 생략, `cohort=visitor`<br>같은 범위에 `cohort=first-chat`<br>`cohort=member` | 두 요청 모두 대역 호출 없음, 응답 `cohort` `visitor`<br>다른 저장 키라 새로 조회<br>400 |
-| 세션 길이 분포 | `days` 7, `segment` 생략 | 대역에 세션 길이 조회 21회(날짜마다 전체, Web, Android), 요청마다 `start`와 `end`가 같은 날짜, 구간 매개변수 없음, `s`는 평균 세션 길이와 같은 조건, 예산 계수기 224 증가, 평균 세션 길이 조회 없음 |
+| 세션 길이 분포 | `days` 7, `segment` 생략 | 대역에 세션 길이 조회 21회(날짜마다 전체, Web, Android), 요청마다 `start`와 `end`가 같은 날짜, 구간 매개변수 없음, `s`는 평균 세션 길이와 같은 조건, 예산 계수기 252 증가, 평균 세션 길이 조회 없음 |
 | 세션 길이 합과 중앙값 | 이틀의 `all` 구간별 세션 수 `[2,1,1,0,0,0,0,0,0]`, `[1,1,2,1,0,0,0,0,0]`<br>하루 `[5,5,0,0,0,0,0,0,0]`<br>하루 모두 0 | `sessions` `[3,2,3,1,0,0,0,0,0]`, `totalSessions` 9, `medianBin` 1<br>`medianBin` 0<br>`totalSessions` 0, `medianBin` `null` |
 | 세션 길이 구간 | 대역 `xValues`가 기본 구간 9개(`0s-3s`부터 `3600s-86400s`), `series` `[[105,35,39,14,34,31,16,4,2]]`<br>`1800s-3600s`와 `3600s-86400s`가 빠진 7개, `series` `[[8,8,4,4,7,4,1]]`<br>`xValues`와 `series`가 빈 배열<br>기본 구간에 없는 경계(`0s-5s`), 같은 구간 이름 두 번, `xValues` 9개에 `series[0]` 8개 | 저장 값 `[105,35,39,14,34,31,16,4,2]`, `bins`의 `fromSeconds`와 `toSeconds`가 0, 3, 10, 30, 60, 180, 600, 1800, 3600과 3, 10, 30, 60, 180, 600, 1800, 3600, 86400<br>저장 값 `[8,8,4,4,7,4,1,0,0]`<br>저장 값 9칸 모두 0, 준비된 날짜라 `pendingDates`에 없음<br>세 경우 모두 저장하지 않고 `admin_analytics_fetch_failed`의 `reason` `parse_error` |
 | 세션 길이와 평균 분리 | 대역이 세션 길이 조회에만 500 | 세션 길이 분포는 503, 평균 세션 길이 응답은 정상이고 그 키에 쿨다운 없음 |
-| 세션 길이 대상 | `days` 7, `segment=member` | 21회의 `s`에 `user_id` `is not` `(none)` 조건, 예산 계수기 308 증가, `segment` 생략 때와 다른 저장 키 |
-| 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회, 사용자당 세션 수 조회 없음, `s`는 전체가 `country`, Web과 Android가 `country`와 `platform`, `user_id` 조건 없음, `averageSessionSeconds`의 `all`, `web`, `android`, 예산 계수기 448 증가 |
+| 세션 길이 대상 | `days` 7, `segment=member` | 21회의 `s`에 `user_id` `is not` `(none)` 조건, 예산 계수기 336 증가, `segment` 생략 때와 다른 저장 키 |
+| 일별 세션 수 | 이틀의 `all` 구간별 세션 수 `[2,1,1,0,0,0,0,0,0]`, `[1,1,2,1,0,0,0,0,0]` | `daily`의 두 날짜 `sessions.all` 4, 5<br>`pendingDates`의 날짜는 `daily`에 없음 |
+| 세션 | `days` 14 | 대역에 평균 세션 길이 조회 3회와 사용자당 세션 수 조회 3회, `s`는 전체가 `country`와 `platform` `is` `["Web","Android"]`, Web과 Android가 `country`와 그 `platform`, `user_id` 조건 없음, `averageSessionSeconds`와 `sessionsPerUser`의 `all`, `web`, `android`<br>예산 한 번에 최근 6일만 받아 계수기 432 증가, 나머지 8일은 `pendingDates` |
+| 사용자당 세션 수 값 | 사용자당 세션 수 응답 Web 1.8, 평균 세션 길이 응답 Web 95.5 | `sessionsPerUser.web` 1.8, `averageSessionSeconds.web` 95.5, `unknown`은 둘 다 `null` |
+| 사용자당 세션 수 실패 | 대역이 사용자당 세션 수 조회에만 500, 저장 값 없음 | 503, `reason` `http_error`, 평균 세션 길이 값은 저장 |
 | 세션 기간 | 366일, 쿼리 생략 시 14일<br>367일, `days` 30 | 200<br>400 |
-| 세션 대상 | `days` 7, `segment=member`<br>`segment=guest`<br>`segment=visitor` | 세션 조회 3회의 `s`에 `{"prop":"user_id","op":"is not","values":["(none)"]}`가 더해지고 예산 계수기 308 증가, `segment` 생략 때와 다른 저장 키<br>같은 조건의 `op`가 `is`<br>400 |
+| 세션 대상 | `days` 7, `segment=member`<br>`segment=guest`<br>`segment=visitor` | 세션 조회 6회의 `s`에 `{"prop":"user_id","op":"is not","values":["(none)"]}`가 더해지고 예산 한 번에 최근 5일만 받아 계수기 480 증가, `segment` 생략 때와 다른 저장 키<br>같은 조건의 `op`가 `is`<br>400 |
 | 세션 실패 | 대역이 세션 조회에 500 | 503, `reason` `http_error` |
 | 신규 가입자 | 회원 3명(구글 2, 카카오 1), 그중 1명 `migrated_at` 있음, 팀 계정 1명 | `signups.total` 3, `google` 2, `kakao` 1, `migratedFromGuest` 1, 팀 계정 제외, `signups`에 `other` 필드 없음 |
 | 재가입 예전 계정 | 10-20 구글로 가입하고 `migrated_at`이 있는 회원 A가 탈퇴<br>10-22 같은 구글 계정으로 재가입해 회원 B 생성, A의 연동 행이 B로 옮겨짐 | 10-20 `signups.total` 0, `migratedFromGuest` 0<br>10-22 `signups.total` 1, `google` 1<br>재가입 전 같은 범위를 조회했을 때 10-20 `total` 1 |
 | 탈퇴만 한 회원 | 탈퇴해 연동 행이 모두 `deleted_at`을 가진 회원 | 가입일의 `signups`와 누계에 듦 |
 | 누적 가입자 | 범위 첫날 전에 가입한 회원 5명(그중 탈퇴 1, 재가입으로 연동을 넘긴 예전 계정 1), 범위 첫날 2명, 둘째 날 1명(탈퇴), 팀 계정 1명<br>끝 날짜가 오늘 | `cumulativeSignups` 6, 7<br>같은 데이터의 요약 `members.total` 8보다 1 작음 |
-| 신규 가입자 플랫폼 | `days` 7 | 대역에 세분화 6회, 구글과 카카오 이벤트마다 `is_new_user` `true`와 `country`, 웹은 `platform` `Web`, 앱·국내는 `Android`, 플랫폼 없음은 `(none)`, `user_id` 조건과 `s` 없음 |
-| 플랫폼 합 | 하루 구글 웹 3, 앱 5, 없음 1과 카카오 웹 1, 앱 2, 없음 0 | `signupsByPlatform` `all` 12, `web` 4, `android` 7, `unknown` 1 |
+| 신규 가입자 플랫폼 | `days` 7, 사용자 활동 저장 값 없음 | 대역에 세분화 6회<br>가입 3회는 `ce:신규 가입 (구글·카카오)`에 `country`, 전체는 `platform` `is` `["Web","Android"]`, 웹은 `Web`, 앱은 `Android`이고 `is_new_user` 필터와 `platform` `(none)` 조회 없음<br>나머지 3회는 사용자 활동의 `_new` 전체, 웹, 앱과 같은 지표 식별자와 매개변수 해시<br>`user_id` 조건과 `s` 없음 |
+| 가입 전환율 분모 공유 | 같은 범위의 사용자 활동을 먼저 조회한 뒤 신규 가입자 요청 | 대역에 가입 3회만 보내고 `_new`는 사용자 활동이 저장한 값을 씀 |
+| 플랫폼 값 | 하루 가입 전체 11, 웹 4, 앱 7<br>그날 `_new` 전체 200, 웹 180, 앱 0 | `signupsByPlatform` `all` 11, `web` 4, `android` 7, `unknown` 필드 없음<br>`newVisitorsByPlatform` `all` 200, `web` 180, `android` 0<br>`signupRate` `all` 0.055, `web` 0.0222, `android` `null` |
 | 플랫폼 준비 중 | 예산이 3일치만 남은 7일 요청 | 200, 7일 모두 DB 값, 최근 3일만 `signupsByPlatform` 값, 나머지 4일은 `signupsByPlatform` `null`이고 `pendingDates`에 있음 |
 | 플랫폼 시간 한도 | 빈 저장소, 대역이 신규 가입자 플랫폼 조회마다 2초씩 늦게 응답<br>같은 상태에서 채팅 턴 도달률과 채팅 옵션 비중 요청 | 5초 안에 200, DB 값 정상, 받은 조회 값만 저장, 받지 못한 날짜는 `signupsByPlatform` `null`과 `pendingDates`, `admin_analytics_fetch_failed`의 `reason` `timeout`, 그 키에 60초 쿨다운<br>두 엔드포인트도 5초 안에 200이고 플랫폼 값만 `null`과 `pendingDates` |
 | 플랫폼 사용 불가 | 대역 500, 저장 값 없음<br>자격 증명 빈 값 | 두 경우 모두 200, DB 값은 정상, 모든 날짜가 `pendingDates`, `platformAsOf` `null`<br>대역 500이면 `admin_analytics_fetch_failed` |
+| 앱 신규 활성 사용자 | `days` 7 | 대역에 퍼널 조회 7회, 요청마다 `start`와 `end`가 같은 날짜, `n=new`, `cs` 86400, 1단계 `_active`에 `country`와 `platform` `Android`, 2단계 `ce:핵심 활동`에 `country`만, 예산 계수기 28 증가 |
+| 앱 신규 활성 값 | 이틀의 퍼널 단계 `[20, 6]`, `[0, 0]` | `daily`의 `newUsers` 20과 0, `activeUsers` 6과 0, `activationRate` 0.3과 `null`<br>`totals` `newUsers` 20, `activeUsers` 6, `activationRate` 0.3 |
+| 앱 신규 활성 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
 | 전환 퍼널 | `web-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 6단계, `n=new`, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web`<br>1단계와 2단계가 `client_storyList_viewed`, `client_storyCreate_viewed`이고 다른 퍼널은 `n=active` |
 | 앱 첫 접속 퍼널 | `android-first-visit` `days` 7 | 대역에 퍼널 조회 1회, 2단계, 단계마다 이벤트 필터에 `country`와 `platform` `Android`, `user_id` 조건과 `s` 없음 |
+| 신규 사용자 활성화 퍼널 | `first-visit-activation` `days` 7, `platform=android` | 대역에 퍼널 조회 1회, `n=new`, 3단계 `_active`, `client_chat_messageInput_submitted`, `turn_number` `greater or equal` `["5"]`인 같은 이벤트, 단계마다 `country`와 `platform` `Android`<br>`steps[2].minTurnNumber` 5, 응답 `platform` `android` |
+| 로그인 화면 가입 퍼널 | `login-signup` `days` 7 | 대역에 퍼널 조회 1회, `n=active`, 2단계 `client_login_viewed`와 `ce:신규 가입 (구글·카카오)`<br>1단계만 `platform` `Web`, 2단계는 `country`만, `steps[1].event` `signup_succeeded` |
+| 앱 신규 활성화 퍼널 | `android-activation` `days` 7<br>`platform=web` 지정 | 대역에 퍼널 조회 1회, `n=new`, 3단계 `_active`, `ce:신규 가입 (구글·카카오)`, `ce:핵심 활동`, 1단계만 `platform` `Android`이고 2단계와 3단계는 `country`만<br>`steps[].event` `_active`, `signup_succeeded`, `core_activity`, 응답 `platform` `android`<br>400 |
+| 웹 이용 후 앱 이용 퍼널 | `web-to-android` `days` 7<br>`platform` 지정 | 대역에 퍼널 조회 1회, `n=active`, `cs` 2592000, 1단계 `_active`에 `platform` `Web`, 2단계 `_active`에 `platform` `Android`, 두 단계 모두 `country`<br>응답 `platform` `null`, `steps[].platform` `web`, `android`<br>400 |
 | 전환 퍼널 빈 결과 | 퍼널 대역이 HTTP 200과 `data: []` | 단계 사용자 수 모두 0, 정상 응답 |
 | 퍼널 플랫폼 | `story-creation` `platform=android`<br>`web-first-visit`에 `platform` 지정 | 단계마다 이벤트 필터 `country`와 `platform` `Android`, `user_id` 조건 없음<br>400 |
 | 상세 스토리 한정 | `story-detail-chat` `storyId` 지정<br>생략 | 1단계와 2단계에 `story_id` 필터<br>필터 없음 |
@@ -359,14 +380,15 @@
 | 퍼널 기간 | 31일<br>32일, 모르는 퍼널 이름 | 200<br>400 |
 | 턴 도달률 | 게스트 채팅 턴 0, 5와 회원 채팅 턴 10, 20 | `reached` 12개<br>`all` `chats` 4, 턴 1부터 5까지 비율 0.75, 6부터 10까지 0.5, 15와 20은 0.25, 30과 50은 0<br>`guest`와 `member`의 `chats` 각 2 |
 | 게스트에서 회원으로 | 이관 시각 전 생성 채팅 턴 5와 7, 이관 뒤 생성 채팅 턴 8 | `chatsReached5` 2, `chatsReached6` 1, `rate` 0.5 |
-| 턴 도달률 플랫폼 | `days` 7, `segment` 생략 | 대역에 세분화 36회, 모두 `server_chat_aiMessage_processed_succeeded`의 합계, 이벤트 필터에 `is_regenerated` `false`와 `turn_number` `"1"`~`"50"` 중 하나, `country`와 `platform` 조건, `user_id` 조건 없음<br>`segment` `all` |
-| 게스트와 회원 구분 | `segment=guest`<br>`segment=member`<br>`segment=visitor` | 36회 모두 `user_id` `is` `(none)` 필터<br>36회 모두 `user_id` `is not` `(none)` 필터, `segment` 생략 때와 다른 저장 키<br>400 |
-| 플랫폼 도달 값 | 웹의 턴 1 이벤트 이틀 합 10, 턴 5 합 4, 턴 50 합 0<br>앱·국내 턴 1 합 20, 턴 5 합 10<br>플랫폼 없음 모두 0 | `web` `chats` 10, 턴 5 `rate` 0.4<br>`all` `chats` 30, 턴 5 `chats` 14<br>`unknown` `chats` 0과 모든 `rate` 0 |
+| 턴 도달률 플랫폼 | `days` 7, `segment` 생략 | 대역에 세분화 24회, 모두 `server_chat_aiMessage_processed_succeeded`의 합계, 이벤트 필터에 `is_regenerated` `false`와 `turn_number` `"1"`~`"50"` 중 하나, `country`와 `platform` 조건, `user_id` 조건 없음<br>`segment` `all` |
+| 게스트와 회원 구분 | `segment=guest`<br>`segment=member`<br>`segment=visitor` | 24회 모두 `user_id` `is` `(none)` 필터<br>24회 모두 `user_id` `is not` `(none)` 필터, `segment` 생략 때와 다른 저장 키<br>400 |
+| 플랫폼 도달 값 | 웹의 턴 1 이벤트 이틀 합 10, 턴 5 합 4, 턴 50 합 0<br>앱 턴 1 합 20, 턴 5 합 10 | `web` `chats` 10, 턴 5 `rate` 0.4<br>`all` `chats` 30, 턴 5 `chats` 14<br>`platforms`는 `all`, `web`, `android` 세 항목이고 `unknown` 항목 없음<br>`platform` `(none)` 조회 없음 |
 | 플랫폼 도달 1 초과 | 범위 안 턴 1 이벤트 2, 턴 2 이벤트 3 | 턴 2 `rate` 1.5 |
 | 플랫폼과 DB 분리 | `segment=member`, DB에 게스트 채팅 1개와 회원 채팅 1개 | `segments` 세 항목은 `segment` 생략 때와 같음<br>대역 500이면 200, `platforms` `null`, `segments`와 `guestToMember`는 정상 |
-| 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 11회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 6개), `client_storyCreate_completeError_shown` 조회 없음, `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건 |
-| 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 앱·국내 11회와 앱·해외 로그인 11회, 응답 값은 두 묶음의 합<br>Android 외 11회와 앱 두 묶음 22회, 응답 값은 세 묶음의 합 |
-| 기능 사용 대상 | `days` 7, `platform=all`, `segment=guest`<br>`platform=all`, `segment=member` | Android 외와 앱·국내 22회만 보내고 모든 이벤트 필터에 `user_id` `is` `(none)`, 앱·해외 로그인 묶음은 조회 없이 0<br>Android 외와 앱·국내 22회에 `user_id` `is not` `(none)` 필터, 앱·해외 로그인 11회는 `segment` `all`과 같은 저장 키라 저장 값이 있으면 다시 받지 않음 |
+| 기능 사용 | `days` 7, `platform=web` | 대역에 세분화 15회(전송 합계, 입력 방식 필터 3개, 스트림 오류, 사용자 수 6개, 활동량 4개), `client_storyCreate_completeError_shown` 조회 없음, `g`와 `s` 없음, 모든 이벤트 필터에 `country`와 `platform` `Web` 조건<br>활동량은 `server_chat_aiMessage_processed_succeeded`에 `is_regenerated` `false` 합계, `client_storyCreate_completed`와 `client_generalCreate_completed` 합계, `ce:핵심 활동` 고유 사용자 |
+| 기능 사용 플랫폼 | `days` 7, `platform=android`<br>`platform=all` | 앱 조건 15회, 응답 값은 그 묶음 값<br>전체 조건(`platform` `is` `["Web","Android"]`) 15회, 응답 값은 그 묶음 값이고 웹과 앱 묶음 조회 없음 |
+| 기능 사용 대상 | `days` 7, `platform=all`, `segment=guest`<br>`platform=all`, `segment=member` | 전체 조건 15회의 모든 이벤트 필터에 `user_id` `is` `(none)`<br>같은 15회에 `user_id` `is not` `(none)` 필터, `segment` `all`과 다른 저장 키 |
+| 활동량 | 하루 전송 합계 120, AI 응답 110, 간편 제작 완료 6, 일반 제작 제출 2, 핵심 활동 사용자 40<br>다른 날 핵심 활동 사용자 0 | `activity`의 `aiResponses` 110, `simpleCompletions` 6, `generalSubmissions` 2, `coreActiveUsers` 40, `messagesPerCoreUser` 3, `simpleCompletionsPerCoreUser` 0.15<br>두 1인당 값 `null` |
 | 입력 방식과 오류율 | 전송 합계 100, `choice` 60, `plain` 25, `block` 10, 스트림 오류 5 | `messagesByInputMode`의 `choice` 60, `plain` 25, `block` 10, `unknown` 5, `streamErrorRate` 0.05 |
 | 오류율 1 초과 | 전송 합계 2, 스트림 오류 3 | `streamErrorRate` 1.5 |
 | 간편 제작 실패율 | 10-21에 받은 `STORY_COMPLETION` 요청 `COMPLETED` 3, 회원 `FAILED` 1, 게스트 `FAILED` 1, `PENDING` 1, 팀 계정 회원 `FAILED` 1과 `STORYLINE_GENERATION` `FAILED` 1 | 10-21 `storyCompletion`의 `requests` 5, `failed` 2, `failureRate` 0.4 |
@@ -378,10 +400,10 @@
 | 채팅 옵션 비중 | 채팅 4개 중 페르소나 1개, 모델 `AURORA` 1개와 `LITE` 3개 | `withPersona` 1, `byModel` `{"AURORA": 1, "LITE": 3}` |
 | 모델별 턴 수 | 10-21 AI 응답: 메시지 `model_code` `AURORA` 2개(그중 하나는 재생성 판본 2개), 10-20에 만든 채팅의 `LITE` 3개, 삭제된 채팅의 `LITE` 1개, 채팅 모델이 `AURORA`인 게스트 채팅의 `LITE` 1개, `model_code`가 `NULL`인 1개, 팀 계정 채팅의 1개 | 10-21의 `turnsByModel` `{"AURORA": 2, "LITE": 5, "UNRECORDED": 1}`<br>합 8이 같은 데이터의 대시보드 차트 10-21 `turns`와 같음 |
 | 모델 변경과 재분류 | `LITE`로 턴 3개를 만든 뒤 채팅 모델을 `AURORA`로 바꿈 | `turnsByModel`은 그대로 `LITE` 3, `byModel`은 그 채팅을 `AURORA`로 셈 |
-| 채팅 옵션 플랫폼 | `days` 7, `chat_models`에 `LITE`와 `AURORA` | 대역에 세분화 12회<br>채팅 시작 클릭 6회는 `persona_type` `default`나 `persona` 필터와 세 플랫폼 조건<br>성공 이벤트 6회는 `is_regenerated` `false`, `model_code` `LITE`나 `AURORA` 필터와 세 플랫폼 조건 |
-| 페르소나 클릭 값 | 하루 웹 클릭 `default` 8, `persona` 2와 앱·국내 `default` 5, `persona` 0 | `chatStarts` `all` 15, `web` 10, `android` 5<br>`personaChatStarts` `all` 2, `web` 2, `android` 0 |
-| 플랫폼 모델 턴 | 하루 웹 `LITE` 4, `AURORA` 1과 앱·국내 `LITE` 3, `AURORA` 0 | `platformTurnsByModel` `{"AURORA": {"all": 1, "web": 1, "android": 0, "unknown": 0}, "LITE": {"all": 7, "web": 4, "android": 3, "unknown": 0}}` |
-| 모델 추가 | 저장 값이 있는 범위에서 `chat_models`에 새 코드 추가 | 새 코드의 조회 3회만 보내고 기존 코드의 날짜는 다시 받지 않음 |
+| 채팅 옵션 플랫폼 | `days` 7, `chat_models`에 `LITE`와 `AURORA` | 대역에 세분화 8회<br>채팅 시작 클릭 4회는 `persona_type` `default`나 `persona` 필터와 웹, 앱 조건<br>성공 이벤트 4회는 `is_regenerated` `false`, `model_code` `LITE`나 `AURORA` 필터와 웹, 앱 조건 |
+| 페르소나 클릭 값 | 하루 웹 클릭 `default` 8, `persona` 2와 앱 `default` 5, `persona` 0 | `chatStarts` `all` 15, `web` 10, `android` 5<br>`personaChatStarts` `all` 2, `web` 2, `android` 0 |
+| 플랫폼 모델 턴 | 하루 웹 `LITE` 4, `AURORA` 1과 앱 `LITE` 3, `AURORA` 0 | `platformTurnsByModel` `{"AURORA": {"all": 1, "web": 1, "android": 0}, "LITE": {"all": 7, "web": 4, "android": 3}}` |
+| 모델 추가 | 저장 값이 있는 범위에서 `chat_models`에 새 코드 추가 | 새 코드의 조회 2회만 보내고 기존 코드의 날짜는 다시 받지 않음 |
 | 채팅 옵션 준비 중 | 대역 500, 저장 값 없음 | 200, `chats`, `withPersona`, `byModel`, `turnsByModel`은 정상, 플랫폼 값 셋은 `null`, 모든 날짜가 `pendingDates` |
 | AI 비용 | 환율 1,400, Langfuse 대역이 10-21 KST의 `채팅 턴` 모델 `gpt-x` 0.004 USD와 `채팅 선택지` 0.001 USD, AI 호출 기록에 같은 날 `chat_response` `gpt-x` 성공 2회와 `choice_generation` 1회 | `chat_response` 항목 `calls` 2, `costKrw` 5.6, `choice_generation` 항목 `costKrw` 1.4, `costPerTurnKrw` 3.5 |
 | KST 날짜 합산 | 대역의 1시간 단위 값이 UTC 10-21 14:00(KST 22-23시)와 UTC 10-21 15:00(KST 10-22 00시) | 앞의 값은 10-21, 뒤의 값은 10-22 항목 |
@@ -435,8 +457,8 @@
 | 어제 재갱신 | D-1 값이 D-1 당일에 받은 값인 상태로 D에 요청<br>같은 날 두 번째 요청 | D-1을 한 번 다시 조회<br>D-1은 다시 조회하지 않고 오늘만 10분마다 |
 | 오늘 10분 | 오늘 값을 받은 지 9분과 11분 | 재조회 없음과 오늘만 재조회 |
 | 확정 행 보호 | `finalized_at`이 있는 행에 같은 키로 upsert | 값과 `fetched_at`이 바뀌지 않음 |
-| 예산 초과 시 부분 응답 | 빈 저장소에서 사용자 세션 60일 요청(하루 32) | 최근 15일만 조회해 200, 나머지 45일은 `pendingDates`, `admin_analytics_fetch_failed`의 `budget_exceeded`는 없음<br>예산이 남지 않은 상태의 다음 요청은 호출 없이 같은 응답과 `budget_exceeded`, 60초 쿨다운 |
-| 이어 받기 | 위 상태에서 5분 뒤 요청 | 다음 15일만 조회하고 `pendingDates`가 30일로 줄어듦 |
+| 예산 초과 시 부분 응답 | 빈 저장소에서 사용자 세션 60일 요청(하루 72) | 최근 6일만 조회해 200, 나머지 54일은 `pendingDates`, `admin_analytics_fetch_failed`의 `budget_exceeded`는 없음<br>예산이 남지 않은 상태의 다음 요청은 호출 없이 같은 응답과 `budget_exceeded`, 60초 쿨다운 |
+| 이어 받기 | 위 상태에서 5분 뒤 요청 | 다음 6일만 조회하고 `pendingDates`가 48일로 줄어듦 |
 | 범위 지표 | `to`가 D-3인 퍼널을 두 번 요청<br>`to`가 D인 퍼널을 10분 뒤 요청 | 두 번째는 대역 호출 없음<br>범위 전체를 다시 조회 |
 | 리텐션 고정 | 코호트 날짜 D-40의 배열이 32칸이고 인덱스 0~31 모두 `incomplete` 아님<br>코호트 날짜 D-10의 배열에 `incomplete`가 있음 | D-40은 확정되어 다시 조회하지 않음<br>D-10은 하루 한 번만 다시 조회 |
 | D30 미완료 | 코호트 날짜 D-32의 32칸 배열에서 인덱스 0~30은 `incomplete` 아님, 인덱스 31만 `incomplete`<br>코호트 날짜 D-32의 31칸 배열이 모두 `incomplete` 아님 | 두 경우 모두 확정하지 않고 하루 한 번 다시 조회 |
@@ -444,9 +466,9 @@
 | 다른 태스크가 먼저 저장 | 예산 예약 뒤 호출 직전에 다른 서비스 인스턴스가 같은 키의 날짜를 저장 | 그 날짜는 조회하지 않음 |
 | 배포 후 유지 | 서비스 인스턴스를 새로 만들어 메모리 상태 없이 같은 지난 범위 요청 | 대역 호출 없이 저장 값으로 200, `admin_analytics_refreshed` 기록 없음 |
 | 정의 변경 | 코호트 ID 설정을 바꾼 뒤 같은 범위 요청 | 매개변수 해시가 달라 새 키로 다시 조회, 옛 행은 남음 |
-| 같은 사용자의 국내와 해외 | 한 앱 사용자가 같은 날 국가 한국 이벤트와 국가 미국 로그인 이벤트를 남김, 웹 활동 없음 | 앱·국내 1, 앱·해외 로그인 1이라 `android` 2, `total` 2 |
-| 합을 이루는 조회 하나 실패 | 빈 저장소에서 앱·해외 로그인 `_active` 조회만 대역 500, 나머지 조회 성공 | 나머지 값은 저장, 준비된 날짜가 없어 503<br>`android`와 `total`을 앱·국내 값만으로 내지 않음<br>쿨다운 뒤 실패한 조회부터 다시 보냄 |
-| 국가 조건 변경 뒤 | 결정 29 전 조건으로 저장된 분석 지표 행이 있는 범위 요청 | 웹과 앱·국내 행은 해시가 같아 그대로 쓰고 앱·해외 로그인 조회만 새 키로 받음 |
+| 합을 이루는 조회 하나 실패 | 빈 저장소에서 턴 도달률 플랫폼의 앱 조회만 대역 500, 웹 조회 성공 | 웹 값은 저장, `platforms` `null`, 모든 날짜가 `pendingDates`<br>`all`을 웹 값만으로 내지 않음<br>쿨다운 뒤 실패한 조회부터 다시 보냄 |
+| 전체 조건 변경 뒤 | 결정 46 전 조건으로 저장된 분석 지표 행이 있는 범위 요청 | 웹과 앱 행은 해시가 같아 그대로 쓰고 전체 조건 조회만 새 키로 받음<br>앱·해외 로그인 행은 남지만 쓰지 않음 |
+| 앱 신규 활성 확정 | 날짜 D-2의 값이 D-1 당일에 받은 값<br>D-2의 값이 D에 받은 값 | D-2를 한 번 다시 조회한 뒤 확정<br>다시 조회하지 않고 `finalized_at`을 채움 |
 | 만료 값 즉시 응답 | 캠페인 추이 7일 가운데 D-6~D-1은 유효한 값이 저장돼 있고 D 값은 받은 지 11분<br>대역이 조회마다 3초 늦게 응답 | 대역 응답을 기다리지 않고 200, `pendingDates` 빈 배열, `asOf`는 만료된 오늘 값을 받은 시각<br>백그라운드 갱신이 오늘 날짜만 16회 조회해 저장<br>갱신이 끝난 뒤 같은 요청의 `asOf`는 새로 받은 시각 |
 | 값 없음 대기 | 캠페인 추이 7일 가운데 D-6~D-1은 유효한 값이 저장돼 있고 D는 값이 없음<br>대역이 조회마다 0.2초 늦게 응답 | 갱신 16회가 끝날 때까지 기다린 뒤 200, `pendingDates` 빈 배열, D 값이 응답에 있음 |
 | 값 없음 대기 초과 | 같은 상태에서 대역이 조회마다 1초 늦게 응답 | 요청을 받은 지 10초에 200, `daily`는 D-6~D-1, `pendingDates`는 D<br>갱신은 응답 뒤에도 16회를 모두 보내 D 값을 저장하고 `admin_analytics_refreshed`는 갱신이 끝날 때 한 번<br>갱신이 끝난 뒤 같은 요청은 대역 호출 없이 `pendingDates` 빈 배열 |
@@ -455,7 +477,7 @@
 | 저장 실패 | 저장 값이 없는 날짜를 받는 갱신에서 upsert 예외 | 10초 안에 끝난 갱신을 기다린 요청은 받은 값으로 200, `admin_analytics_store_failed`, 다음 요청이 시작한 갱신에서 그 날짜를 다시 조회 |
 | 응답 범위 | 저장 행 | 회원 식별자 없음, 값은 집계 수치뿐 |
 | 새벽 배치 시작 | 고정 시계 KST 02:55와 03:00에 배치 실행 | 02:55는 새벽 배치 조회 없음<br>03:00부터 기본 지표 키의 어제 날짜 조회 |
-| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션과 세션 길이 분포, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인 추이, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜와 방문자의 확정 전 리텐션 코호트만 조회<br>퍼널, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member`, 리텐션의 가입자와 채팅 시작자 조회 없음 |
+| 새벽 배치 대상 | 03:00 실행 | 분석 지표, 사용자 활동, `segment` `all`의 세션(평균 세션 길이와 사용자당 세션 수)과 세션 길이 분포, `segment` `all`의 기능 사용 `all`, `web`, `android`, 종료일 없는 캠페인의 추이와 광고 소재, 앱 유입, 신규 가입자 플랫폼, `segment` `all`의 턴 도달률과 채팅 옵션 플랫폼의 어제 날짜, 앱 신규 활성 사용자의 어제와 그저께 날짜, 방문자의 확정 전 리텐션 코호트만 조회<br>퍼널, 누적 도달, 유입 소스, MAU, 푸시 열람, 종료일 있는 캠페인, `segment` `guest`와 `member`, 리텐션의 가입자와 채팅 시작자 조회 없음 |
 | 새벽 배치 리텐션 기간 | 03:00 실행, 확정 전 코호트 D-33과 D-34가 오늘 받은 값 없음 | 새벽 배치는 D-33까지 조회<br>D-34는 새벽 배치가 끝난 뒤 초기 백필이 조회 |
 | 새벽 배치 이어 받기 | 그날 새벽 작업 비용이 배치 몫 300을 넘음 | 첫 실행은 300 이하만 예약하고 `admin_analytics_backfill`의 `phase` `nightly`, `result` `partial`, `reason` `budget_share`<br>5분 뒤 실행이 남은 키를 받아 `done` |
 | 새벽 배치 완료 판단 | 그날 새벽 배치를 마친 뒤 실행 | 새벽 배치 조회 없이 초기 백필로 넘어감 |

@@ -94,12 +94,12 @@
 | 앱 설치 사용 불가 | 앱 설치 요청이 사용 불가 | 앱 설치 카드 자리에 "설치 지표 사용 불가", 다른 카드와 일별 추이 정상 |
 | 설치 기간 | 기간을 바꿈 | 앱 설치 요청을 다시 보내지 않고 받은 `daily`로 작은 줄만 새 기간의 합계로 바꿈<br>큰 숫자는 그대로 |
 | 카드 도움말 | 오늘 활성 사용자 카드와 앱 설치 카드 | 출처와 지연 안내는 카드 제목 옆 "?" 툴팁에만 있고 카드 본문에 없음 |
-| 오늘 활성 사용자 도움말 | 카드의 "?" | "국가가 한국이거나 국가 정보가 없는 사용자를 집계하고 앱은 그 밖 국가에서 로그인한 사용자도 더합니다."와 "같은 날 웹과 앱, 또는 국내와 해외에서 앱을 쓴 사람은 두 번 셉니다."가 있고 "국가와 무관" 문구 없음 |
+| 오늘 활성 사용자 도움말 | 카드의 "?" | "국가가 한국이거나 국가 정보가 없는 웹과 앱 사용자를 집계합니다."와 "합계는 같은 날 웹과 앱을 함께 쓴 사람을 한 번 셉니다."가 있고 "그 밖 국가", "두 번 셉니다", "국가와 무관" 문구 없음 |
 | 예전 경로 이동 | 이동 표의 행마다 예전 경로와 예전 `tab`으로 들어옴 | 그 행의 새 경로와 새 `tab`으로 URL이 바뀌고 기록이 늘지 않아 뒤로 가기가 이동 전 화면으로 가지 않음 |
 | 예전 경로의 쿼리 | `/analytics/acquisition?tab=creation&campaign=TEST_2026&adSegment=ads&range=last14d`<br>`/analytics/users?tab=sessions&platform=android&segment=member` | `/analytics/stories?tab=creation&campaign=TEST_2026&adSegment=ads&range=last14d`<br>`/analytics/growth?tab=activity&platform=android&segment=member` |
 | 예전 기본 탭 | `/analytics/conversion`<br>`/analytics/quality`<br>`/analytics/infra` | `/analytics/growth?tab=signups`<br>`/analytics/ops?tab=ai-quality`<br>`/analytics/ops?tab=services` |
 | 예전 분석 경로 | `/dashboard/analytics?days=30` | `/analytics/chats?tab=engagement&range=last30d` |
-| 예전 링크의 모르는 탭 | `/analytics/acquisition?tab=unknown`<br>`/analytics/conversion?funnel=story-creation` | `/analytics/growth?tab=trend`<br>`/analytics/growth?tab=signups&funnel=story-creation`이고 가입 탭의 퍼널 카드 셋이 오류 없이 보임 |
+| 예전 링크의 모르는 탭 | `/analytics/acquisition?tab=unknown`<br>`/analytics/conversion?funnel=story-creation` | `/analytics/growth?tab=trend`<br>`/analytics/growth?tab=signups&funnel=story-creation`이고 가입 탭의 퍼널 카드 여섯이 오류 없이 보임 |
 | 지표 화면에서 관리 목록 | 성장, 스토리, 채팅, 결제 화면 제목 옆 링크 | "회원 목록", "스토리 목록", "채팅 목록", "결제 목록"이 각각 `/members`, `/stories`, `/chats`, `/payments`를 쿼리 없이 엶<br>개요와 운영에는 링크 없음 |
 | 관리 목록에서 지표 화면 | 회원, 스토리, 채팅, 결제 목록 제목 옆 링크 | "성장 지표", "스토리 지표", "채팅 지표", "결제 지표"가 각각 `/analytics/growth`, `/analytics/stories`, `/analytics/chats`, `/analytics/payments`를 쿼리 없이 엶<br>회원 상세와 스토리 상세에는 링크 없음 |
 | 상호 링크가 넘기지 않는 쿼리 | `/analytics/chats?tab=chat-options&platform=web&range=last7d`에서 "채팅 목록" | `/chats`로 열리고 쿼리 없음 |
@@ -110,7 +110,7 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 기본 탭과 하위 구분 | URL 비어 있음<br>유입 탭을 누름<br>`tab=unknown` | 탭 막대에 유입, 앱 설치, 활동, 가입, 리텐션, 활동 탭이 선택되고 하위 구분 막대 없음<br>URL에 `tab=trend`, 하위 구분 막대에 캠페인 추이, 유입 소스, 푸시 열람, 캠페인 추이가 선택됨<br>활동 탭 |
+| 기본 탭과 하위 구분 | URL 비어 있음<br>유입 탭을 누름<br>`tab=unknown` | 탭 막대에 유입, 앱 설치, 활동, 가입, 리텐션, 활동 탭이 선택되고 하위 구분 막대 없음<br>URL에 `tab=trend`, 하위 구분 막대에 캠페인 추이, 첫 방문 활성화, 광고 소재, 유입 소스, 앱 유입, 푸시 열람, 캠페인 추이가 선택됨<br>활동 탭 |
 | 기본 캠페인 | 캠페인 목록 4항목 중 4차만 종료일 없음, URL 비어 있음 | 4차 적용, 기간은 4차 시작일부터 오늘 |
 | 캠페인 변경 | 4차에서 3차로 변경 | `campaign`이 3차 값, 기간 쿼리와 대상 스토리 쿼리 삭제, 기간은 3차의 시작일부터 종료일 |
 | 진행 중 캠페인 없음 | 모든 항목에 종료일, URL 비어 있음 | "진행 중인 광고 캠페인이 없습니다. 광고 캠페인을 선택해 주세요.", 요청 없음 |
@@ -118,13 +118,24 @@
 | 추이 요약 | `totals.adsShare` 0.7 | 광고 유입 비중 70.0% |
 | 광고 유입 비중 없음 | `totals.adsShare`가 `null` | "신규 방문자 없음" |
 | 추이 준비 중 | `pendingDates` 있음 | "준비된 날짜만 합산한 값입니다." |
-| 유입과 앱 설치의 공통 선택 | 유입 탭의 세 하위 구분과 앱 설치 탭 | 플랫폼과 대상 선택 없음 |
+| 기기 유형별 신규 방문자 | 캠페인 추이 `daily[].newVisitorsByDevice` `{ios: 70, android: 85, other: 7}` | 기기 유형별 웹 신규 방문자 차트에 iPhone과 iPad, Android 기기, 그 밖 세 계열이 이 순서, 광고 구분과 무관 |
+| 유입과 앱 설치의 공통 선택 | 유입 탭의 여섯 하위 구분과 앱 설치 탭 | 플랫폼과 대상 선택 없음 |
 | 웹과 앱 신규 가입자 | 캠페인 추이 `totals.signups.all` 39, `totals.androidSignups` 52 | 웹 신규 가입자 카드 39명, 앱 신규 가입자 카드 52명, 웹 신규 가입자 차트에 앱 값이 섞이지 않음<br>Amplitude 출처 툴팁에 "앱 신규 가입자는 광고 구분 없이 따로 세고, 나머지 지표는 웹 사용자만 셉니다." |
 | 유입 소스 조건 | 유입 소스 탭 | 광고 캠페인 선택 숨김, 요청에 `campaign` 없음 |
 | 유입 소스 기본 | 진행 중 캠페인 없음, URL에 `tab=sources`만 | 캠페인 선택 요구 없이 최근 7일로 요청 |
 | 유입 소스 상한 | 3차 기간(35일)에서 유입 소스 탭 | 기간 확인 필요 상자, 최근 10일로 맞추기 |
 | 소스 값 없음 | `sources[].source`가 `null` | "소스 정보 없음" |
 | 상위 20개 | 소스 30개 | 차트 20개, 수치 표 30개 |
+| 첫 방문 활성화 | URL에 `tab=activation`, 4차 진행 중 | 캠페인 목록을 받은 뒤 `campaign`과 4차 기간으로 퍼널 요청과 누적 도달 요청을 따로 동시에 보냄<br>조건 선택 줄에 광고 캠페인과 광고 구분 |
+| 첫 방문 활성화 광고 구분 | 광고 유입 선택 | 퍼널 막대와 누적 도달 카드가 `ads` 값, 요청을 다시 보내지 않음, URL에 `adSegment=ads` |
+| 첫 방문 활성화 단계 | 퍼널 응답 `steps`의 `event`가 `_active`, `client_chat_messageInput_submitted`, 같은 이벤트와 `minTurnNumber` 5, `signup_succeeded` | 단계 이름 "첫 활동", "채팅 메시지 전송", "5턴 이상 채팅 메시지 전송", "신규 가입" |
+| 첫 방문 활성화 상한 | 3차 기간(35일)에서 첫 방문 활성화 | 퍼널과 누적 도달 두 영역 모두 기간 확인 필요 상자, 요청 없음 |
+| 광고 소재 | URL에 `tab=creatives`, `totals.signups`가 `ORIGINAL_0HOSUN_VIDEO` 41, `COMMUNITY_POST_IMAGE` 27, `null` 3 | 광고 구분 선택 없음, 두 차트의 계열이 이 순서이고 `null` 계열 이름 "소재 정보 없음"<br>두 차트에서 같은 소재가 같은 색<br>소재별 가입 합계 표 3행 |
+| 앱 유입 | URL에 `tab=app` | 광고 캠페인 선택 없음, 캠페인 목록을 기다리지 않고 최근 30일로 앱 유입 요청과 `web-to-android` 퍼널 요청을 따로 보냄<br>퍼널 요청에 `platform` 없음 |
+| 배너 클릭률 없음 | `bannerClickRate`가 `null`인 날 | 배너 클릭률 차트 선이 끊기고 표에 "노출 없음" |
+| 설치 경로 | `newUsersBySource`의 `source`가 `null`인 항목 | 누적 막대 계열 이름 "설치 경로 정보 없음", 색 `--muted-foreground`, 맨 뒤 |
+| 웹 이용 후 앱 이용 카드 | 퍼널 응답 `platform` `null`, `steps[].platform` `web`, `android` | 카드 머리에 플랫폼 배지 없음, 단계 이름 "웹 활동", "앱 활동" |
+| 앱 유입 사용자 수 | 앱 배너 사용자 차트 | 배너 노출과 클릭 사용자의 기간 합 카드 없음, 배너 경유 앱 신규 사용자 기간 합 카드만 있음 |
 | 푸시 열람 기본 | 진행 중 캠페인 없음, URL에 `tab=push`만 | 광고 캠페인 선택 숨김, 캠페인 목록을 기다리지 않고 최근 7일로 요청, 출처 표시 "Amplitude" |
 | 푸시 열람 값 | 공지 알림 캠페인 `deliveredMembers` 412, `openState` `MEASURED`, `pushOpens` 58, `pushOpenRate` 0.1408 | "공지" 배지, 정보성, 도달 회원 412명, 푸시 열람 58명, 열람률 14.1% |
 | 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`인 캠페인 | 푸시 열람과 열람률 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음" |
@@ -141,7 +152,11 @@
 | 설치 활성 기기 없음 | `daily[].activeDevices`가 `null`인 날 | 차트 선이 끊기고 표에 "보고서 값 없음", 0이나 준비 중으로 표시하지 않음 |
 | MAU | `monthlyActiveUsers` 1200, 일별 DAU 합 3000 | MAU 1,200명 |
 | MAU 준비 중 | `monthlyActiveUsers`가 `null` | "준비 중", 60초 뒤 다시 요청 |
-| 플랫폼 합 | 전체 13, Web 10, Android 3, 플랫폼 없음 2<br>플랫폼 전체, 웹, 앱을 차례로 고름 | DAU가 13, 10, 3으로 응답 값 그대로, 전체를 15로 바꾸지 않음, 플랫폼 없음 값은 보이지 않음 |
+| 활성 사용자 플랫폼 구성 | 하루 `activeUsers` `{all: 12, web: 10, android: 3, unknown: 2}`<br>플랫폼 웹을 고름 | 웹 10, 앱 3, 플랫폼 없음 2를 쌓은 막대, 툴팁에 세 값과 66.7%, 20.0%, 13.3%<br>플랫폼을 바꿔도 세 값을 모두 그리고 제목 옆 "플랫폼 전체 기준" |
+| 활동량 | 활동 탭, 플랫폼 앱, 대상 회원 | 기능 사용과 안정성 요청에 `platform=android&segment=member`<br>요약 카드 넷과 활동량, 핵심 활동 사용자, 핵심 활동 사용자 1인당 활동 차트 |
+| 활동량 값 | 하루 `messagesByInputMode` 합 120, `activity` `{aiResponses: 110, simpleCompletions: 6, generalSubmissions: 2, coreActiveUsers: 40, messagesPerCoreUser: 3, simpleCompletionsPerCoreUser: 0.15}`<br>다른 날 두 1인당 값 `null` | 활동량 차트의 채팅 메시지 전송 120, 1인당 차트 3과 0.15<br>`null`인 날 1인당 선이 끊김<br>핵심 활동 사용자의 기간 합 카드 없음 |
+| 활동량 필드 없음 | `activity`가 없는 응답 | 활동량 영역 자리 "준비 중", 재요청 없음, 같은 응답을 쓰는 다른 탭은 정상 |
+| 플랫폼 값 | `activeUsers` 전체 12, Web 10, Android 3, 플랫폼 없음 2<br>플랫폼 전체, 웹, 앱을 차례로 고름 | DAU가 12, 10, 3으로 응답 값 그대로, 전체를 13이나 15로 바꾸지 않음<br>플랫폼 없음 값은 DAU 차트에 보이지 않고 활성 사용자 플랫폼 구성 차트에만 보임 |
 | 사용자당 전송 수 | Web 4.5, 전체 `null` | 플랫폼 웹이면 4.5의 선 하나<br>플랫폼 전체면 차트 자리에 "전체 값이 없습니다. 플랫폼을 웹이나 앱으로 골라 주세요." |
 | 리텐션 기본 기간 | URL 비어 있음 | 어제를 끝으로 하는 최근 7일 |
 | 리텐션 끝 날짜 | 기간 `last7d`로 리텐션 탭 | 기간 확인 필요 상자, 어제까지로 맞추기 |
@@ -156,6 +171,8 @@
 | 세션 두 요청 | 활동 탭 진입<br>대상에서 회원<br>플랫폼 웹에서 앱으로 | 평균 세션 길이와 세션 길이 분포 요청 둘<br>두 요청 모두 `segment=member`로 다시 보냄<br>두 요청 모두 다시 보내지 않음 |
 | 세션 길이 격리 | 세션 길이 분포 요청만 503 | 분포 차트와 두 요약 카드 자리에 "Amplitude 지표를 불러올 수 없음", 평균 세션 길이 차트는 정상 |
 | 세션 없음 | `medianBin` `null`, `totalSessions` 0 | 분포 차트 자리와 중앙값 구간 카드에 "세션 없음", 세션 수 카드 0개 |
+| 사용자당 세션 수 | 세션 응답 `sessionsPerUser.web` 1.8, 플랫폼 웹 | 사용자당 세션 수 차트에 웹 선 하나, 요약 카드 없음 |
+| 일별 세션 수 | 세션 길이 분포 응답 `daily[].sessions` `{all: 342, web: 301, android: 45}`, 플랫폼 전체 | 일별 세션 수 차트에 342, 다시 계산하지 않음 |
 | 세션 길이 경로 없음 | 서버 OpenAPI에 세션 길이 분포 경로가 없다고 표시한 상태 | 분포 영역만 "기능 준비 중", 평균 세션 길이 차트는 정상 |
 | 시작 집단 | 리텐션 탭, URL 비어 있음<br>시작 집단에서 가입자<br>플랫폼을 웹에서 앱으로 | 조건 선택 줄의 "시작 집단"이 방문자, 요청에 `cohort=visitor`<br>요청에 `cohort=signup`, URL에 `cohort=signup`, 코호트 표 열이 시작일과 시작 인원<br>다시 요청하지 않음 |
 | 시작 집단 캐시 | 가입자에서 방문자로 되돌림 | 신선 기간 안이면 다시 요청하지 않음 |
@@ -163,21 +180,25 @@
 | 시작 집단 없는 응답 | URL에 `cohort=signup`, 응답에 `cohort` 없음 | 선택 상자가 방문자 |
 | 신규 가입자 이동 | 10-21 점 | 그날 가입한 회원 목록 |
 | 가입 경로 | `signups`에 `total`, `google`, `kakao`만 있는 응답<br>`other`가 함께 있는 응답 | 가입 경로 카드와 신규 가입자 차트에 구글과 카카오만, "그 외" 계열과 값 없음<br>`other`를 읽지 않아 같은 화면 |
-| 가입 이벤트 기준 신규 가입자 | 이틀의 `signupsByPlatform`이 `{all: 12, web: 4, android: 7, unknown: 1}`, `{all: 5, web: 2, android: 3, unknown: 0}`<br>플랫폼 웹, 앱, 전체를 차례로 고름 | 가입 이벤트 기준 신규 가입자 카드 6명, 10명, 17명<br>차트는 선택한 플랫폼 선 하나와 제목 옆 출처 표시 "Amplitude" |
+| 가입 이벤트 기준 신규 가입자 | 이틀의 `signupsByPlatform`이 `{all: 10, web: 4, android: 7}`, `{all: 5, web: 2, android: 3}`<br>플랫폼 웹, 앱, 전체를 차례로 고름 | 가입 이벤트 기준 신규 가입자 카드 6명, 10명, 15명<br>차트는 선택한 플랫폼 선 하나와 제목 옆 출처 표시 "Amplitude" |
 | 가입 이벤트 기준 준비 중 | 7일 중 마지막 날이 `pendingDates`이고 그날 `signupsByPlatform` `null` | 신규 가입자, 누적 가입자, 게스트 이관 차트는 7일 모두 그림<br>가입 이벤트 기준 차트만 마지막 날에서 선이 끊기고 표에 "준비 중", 60초 뒤 같은 요청 |
 | 플랫폼 필드 없는 서버 | `signupsByPlatform`, `pendingDates`, `platformAsOf`가 없는 응답 | 가입 이벤트 기준 카드와 차트 자리 "준비 중", 재요청 없음, 나머지 카드와 차트는 정상 |
 | 누적 가입자 | 기간 최근 7일, 첫날 `cumulativeSignups` 1293, 마지막 날 1300 | 누적 가입자 차트가 1,293에서 시작하고 0에서 시작하지 않음, 마지막 값 1,300명 |
-| 사용자 출처 안내 | 출처 표시 "Amplitude"에 초점 | 앱 활성 사용자의 해외 로그인 포함, 신규 방문자와 리텐션과 사용자당 전송 수와 평균 세션 길이의 국내 한정, "리텐션과 평균 세션 길이의 전체는 국내 조건으로 별도 조회한 값입니다." 문장이 있음 |
+| 가입 전환율 | 이틀의 `signupRate` `{all: 0.0537, web: 0.0184, android: 0.4839}`, `{all: null, web: null, android: null}`이고 둘째 날은 `pendingDates`가 아님<br>플랫폼 앱 | 첫날 48.4%, 둘째 날 선이 끊기고 표에 "신규 방문자 없음" |
+| 가입 전환율 준비 중 | 마지막 날이 `pendingDates` | 가입 전환율 차트의 그날은 "준비 중", 신규 가입자 차트는 그날도 그림 |
+| 앱 신규 활성 사용자 | 가입 탭, 플랫폼 웹, `totals` `{newUsers: 20, activeUsers: 6, activationRate: 0.3}` | 영역 제목 옆 배지 "앱"과 전체 기준 표시 없음, 요약 카드 20명, 6명, 30.0%<br>플랫폼을 바꿔도 다시 요청하지 않음 |
+| 사용자 출처 안내 | 출처 표시 "Amplitude"에 초점 | "전체는 같은 기간에 웹과 앱을 함께 쓴 사람을 한 번 세어 웹과 앱 값의 합보다 작을 수 있습니다."와 플랫폼 정보 없는 사용자가 플랫폼 구성에만 보인다는 문장이 있고 "그 밖 국가"와 "두 번 셉니다" 문구 없음 |
 | MAU 전체 기준 | `monthlyActiveUsers` 1200, 플랫폼 웹 | MAU 1,200명과 제목 옆 "플랫폼 전체 기준"<br>마지막 날 DAU와 누적 신규 방문자에는 표시 없음 |
 | 성장 대상 | 리텐션 탭과 가입 탭<br>활동 탭 | 대상 선택 없음, 플랫폼 선택 있음<br>플랫폼과 대상 선택 모두 있음 |
 | 활동 기본 기간 | 활동 탭, 기간 쿼리 없음 | 사용자 활동, 평균 세션 길이, 세션 길이 분포를 모두 최근 30일로 요청 |
 | 활동 대상 전체 기준 | 활동 탭에서 플랫폼 웹, 대상 회원 | 세션 영역은 `segment=member`로 다시 요청해 회원 값<br>사용자 활동 영역의 카드와 차트 제목 옆 "대상 전체 기준", MAU 카드는 "플랫폼과 대상 전체 기준"<br>사용자 활동 요청은 다시 보내지 않음 |
-| 가입 탭 | URL에 `tab=signups`만 | 신규 가입자 영역 다음 전환 퍼널 영역에 웹 첫 접속, 앱 첫 접속, 게스트 한도 로그인 카드가 이 순서<br>기간 최근 7일, 신규 가입자 요청 하나와 퍼널 요청 셋을 동시에 보내고 첫 접속 두 요청에는 `platform` 없음, 게스트 한도 로그인은 `platform=web` |
-| 가입 퍼널 배지 | 가입 탭 | 웹 첫 접속 카드 "웹", 앱 첫 접속 카드 "앱", 게스트 한도 로그인 카드는 적용한 플랫폼(전체면 "웹") |
-| 가입 퍼널 플랫폼 | 가입 탭에서 플랫폼 앱 | 게스트 한도 로그인만 `platform=android`로 다시 요청, 첫 접속 두 카드와 신규 가입자는 다시 요청하지 않음 |
-| 카드 부분 실패 | 가입 탭에서 게스트 한도 로그인 요청만 503 | 게스트 한도 로그인 카드에만 "Amplitude 지표를 불러올 수 없음"과 다시 시도, 나머지 두 카드와 신규 가입자 영역은 값을 보임<br>다시 시도는 게스트 한도 로그인 요청 하나만 보냄 |
+| 가입 탭 | URL에 `tab=signups`만 | 신규 가입자, 앱 신규 활성 사용자, 전환 퍼널 영역이 이 순서이고 전환 퍼널 영역에 웹 첫 접속, 앱 첫 접속, 신규 사용자 활성화, 로그인 화면 가입, 앱 신규 활성화, 게스트 한도 로그인 카드가 이 순서<br>기간 최근 7일, 신규 가입자 요청, 앱 신규 활성 사용자 요청, 퍼널 요청 여섯을 동시에 보냄<br>웹 첫 접속, 앱 첫 접속, 앱 신규 활성화 요청에는 `platform` 없음, 신규 사용자 활성화와 로그인 화면 가입과 게스트 한도 로그인은 `platform=web` |
+| 가입 퍼널 배지 | 가입 탭 | 웹 첫 접속 카드 "웹", 앱 첫 접속과 앱 신규 활성화 카드 "앱", 신규 사용자 활성화와 로그인 화면 가입과 게스트 한도 로그인 카드는 적용한 플랫폼(전체면 "웹") |
+| 가입 퍼널 플랫폼 | 가입 탭에서 플랫폼 앱 | 신규 사용자 활성화, 로그인 화면 가입, 게스트 한도 로그인만 `platform=android`로 다시 요청<br>첫 접속 두 카드, 앱 신규 활성화 카드, 신규 가입자, 앱 신규 활성 사용자는 다시 요청하지 않음 |
+| 카드 부분 실패 | 가입 탭에서 게스트 한도 로그인 요청만 503 | 게스트 한도 로그인 카드에만 "Amplitude 지표를 불러올 수 없음"과 다시 시도, 나머지 다섯 카드와 신규 가입자 영역은 값을 보임<br>다시 시도는 게스트 한도 로그인 요청 하나만 보냄 |
 | 근사치 | 게스트 한도 로그인 2단계 6, 3단계 7 | 3단계 전환율 116.7%, 마지막 단계 이름 옆 "?" 툴팁에 근사치 안내, 단계 아래 본문에는 없음 |
 | 단계 이름 | `client_storyList_viewed`, `client_storyCreate_viewed` | "홈 진입", "간편 제작 진입" |
+| 새 단계 이름 | `signup_succeeded`, `core_activity`, `minTurnNumber` 5인 채팅 메시지 전송 | "신규 가입", "핵심 활동", "5턴 이상 채팅 메시지 전송" |
 | 웹 첫 접속 정의 | 웹 첫 접속 카드 제목 옆 "?" | 대상 줄에 처음 기록된 웹 사용자, 계산 줄에 2026-10-23 전 날짜는 비교할 수 없다는 문장 |
 | 모르는 이벤트 | 표에 없는 이벤트 | 이벤트 이름 그대로 |
 | 퍼널 첫 단계 | 웹 첫 접속 응답의 1단계 100, 2단계 40 | 1단계 막대 옆에 "100명"만 있고 전환율 없음, 2단계 40.0%<br>"계산할 수 없음" 없음 |
@@ -249,8 +270,8 @@
 | 모델 합집합과 기록 전 | `byModel`에 `AURORA`만, `turnsByModel`에 `LITE`와 `UNRECORDED` | 비중 표 행이 오로라, 라이트, 기록 전 셋<br>없는 쪽 값은 0 |
 | 모르는 모델 | 모델 코드 `NOVA` | `NOVA` 그대로 |
 | 채팅 옵션 대상 | 대상에서 게스트 | 요청에 `segment=guest`, 채팅 수와 모델 비중 표 값은 바뀌지 않고 제목 옆 "대상 전체 기준" |
-| 페르소나 시작 클릭 비중 | 기간 합 `chatStarts` `{all: 15, web: 10, android: 5, unknown: 0}`, `personaChatStarts` `{all: 2, web: 2, android: 0, unknown: 0}`<br>플랫폼 전체, 웹, 앱을 차례로 고름 | 13.3%, 20.0%, 0.0% |
-| 응답 저장 기준 모델별 턴 수 | 기간 합 `platformTurnsByModel`의 `LITE` `{all: 7, web: 4, android: 3, unknown: 0}`, `AURORA` `{all: 1, web: 1, android: 0, unknown: 0}`<br>플랫폼 웹 | 표 행 오로라 1턴, 라이트 4턴 순서, 제목 옆 출처 표시 "Amplitude" |
+| 페르소나 시작 클릭 비중 | 기간 합 `chatStarts` `{all: 15, web: 10, android: 5}`, `personaChatStarts` `{all: 2, web: 2, android: 0}`<br>플랫폼 전체, 웹, 앱을 차례로 고름 | 13.3%, 20.0%, 0.0% |
+| 응답 저장 기준 모델별 턴 수 | 기간 합 `platformTurnsByModel`의 `LITE` `{all: 7, web: 4, android: 3}`, `AURORA` `{all: 1, web: 1, android: 0}`<br>플랫폼 웹 | 표 행 오로라 1턴, 라이트 4턴 순서, 제목 옆 출처 표시 "Amplitude" |
 | 채팅 없음 | 채팅 수 합 0 | 비중 자리 "채팅 없음" |
 | 클릭 없음 | 기간 합 `chatStarts`의 `android` 0, 플랫폼 앱 | 페르소나 시작 클릭 비중 카드 "집계 대상 클릭 없음" |
 | 채팅 옵션 전체 기준 | 플랫폼 앱, 대상 전체<br>대상 회원으로 | 요약 카드, 모델별 비중 표, 채팅 수, 모델별 채팅 수, 모델별 턴 수 차트 제목 옆 "플랫폼 전체 기준", 페르소나 시작 클릭 비중 카드와 응답 저장 기준 모델별 턴 수 표에는 없음, 다시 요청하지 않음<br>같은 자리가 "플랫폼과 대상 전체 기준", `segment=member`로 다시 요청 |
@@ -323,7 +344,7 @@
 | 간편 제작 오류 계열 | `users.storyCompleteError`가 있는 응답 | 오류 표시 사용자 차트 계열이 채팅 불러오기 오류와 스토리 목록 불러오기 오류 둘 |
 | 전송 없음 | `streamErrorRate`가 `null` | "전송 없음" |
 | 사용자 수 요약 | 오류 표시 사용자 차트 | 기간 합 요약 카드 없음 |
-| 기능 출처 안내 | 출처 표시 "Amplitude"에 초점 | 앱의 해외 로그인 포함과 "여러 조건으로 활동한 사람은 사용자 수에 두 번 들 수 있습니다." 문장이 있고 "국가와 무관" 문구 없음 |
+| 기능 출처 안내 | 출처 표시 "Amplitude"에 초점 | "전체의 사용자 수는 웹과 앱을 함께 쓴 사람을 한 번 셉니다." 문장이 있고 "그 밖 국가", "두 번 들 수 있습니다", "국가와 무관" 문구 없음 |
 | AI 비용 공통 선택 | AI 비용 탭 | 플랫폼과 대상 선택 없음 |
 | AI 비용 | `totals.costKrw` 7, `costPerTurnKrw` 3.5, `usdKrwRate` 1400 | 총 AI 비용 7원, 턴당 원가 3.5원, 출처 표시 "Langfuse" |
 | 실시간 이미지 비용 | `chatImageUnitCostKrw` 48, `chat_image` 항목 `calls` 3과 `costKrw` 144, `totals.costKrw` 151, `costPerTurnKrw` 3.5 | 총 AI 비용 151원, 턴당 원가 3.5원<br>비용 차트에 실시간 이미지 생성 계열 144원<br>비용 표의 실시간 이미지 생성 행 토큰 칸 "해당 없음"<br>출처 툴팁에 "1달러 1400원", "장당 48원" |

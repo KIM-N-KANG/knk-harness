@@ -18,15 +18,20 @@
 | 개요 앱 설치 카드, 성장 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-19 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-19-설치-지표) |
 | 성장과 스토리의 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-20 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-목록) |
 | 성장 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-21 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-추이) |
+| 성장 첫 방문 활성화의 퍼널 | `GET /api/campaigns/funnels/activation` | [4-2-37 캠페인 첫 방문 활성화 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-37-캠페인-첫-방문-활성화-퍼널) |
+| 성장 첫 방문 활성화의 누적 도달 | `GET /api/campaigns/reach` | [4-2-38 캠페인 누적 도달](../BACKEND/4-2-CONTRACT.md#4-2-38-캠페인-누적-도달) |
+| 성장 광고 소재 | `GET /api/campaigns/creatives` | [4-2-39 캠페인 광고 소재](../BACKEND/4-2-CONTRACT.md#4-2-39-캠페인-광고-소재) |
+| 성장 앱 유입의 앱 배너와 설치 경로 | `GET /api/campaigns/app-transfer` | [4-2-40 앱 유입](../BACKEND/4-2-CONTRACT.md#4-2-40-앱-유입) |
 | 스토리 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-22 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-간편-제작-퍼널) |
 | 스토리 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-23 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-상세-진입-퍼널) |
 | 성장 유입 소스 | `GET /api/campaigns/sources` | [4-2-24 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-24-캠페인-유입-소스) |
 | 성장 푸시 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
 | 성장 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
 | 성장 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |
-| 성장 세션의 평균 세션 길이 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
-| 성장 세션의 세션 길이 분포 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
+| 성장 세션의 평균 세션 길이와 사용자당 세션 수 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
+| 성장 세션의 세션 길이 분포와 일별 세션 수 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
 | 성장 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
+| 성장 앱 신규 활성 사용자 | `GET /api/users/app-activation` | [4-2-41 앱 신규 활성 사용자](../BACKEND/4-2-CONTRACT.md#4-2-41-앱-신규-활성-사용자) |
 | 전환 퍼널 카드 | `GET /api/conversion/funnels/{funnel}` | [4-2-29 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-29-전환-퍼널) |
 | 채팅 참여의 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
 | 기능 사용과 안정성 값 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
@@ -58,10 +63,10 @@
 | 기간을 받는 모든 요청 | `from`, `to`<br>화면이 정한 범위를 KST 날짜로 보냄<br>`days`는 보내지 않음 |
 | 개요 오늘 활성 사용자 카드 | `from`과 `to` 모두 KST 오늘<br>페이지의 기간을 보내지 않음 |
 | 설치 지표 | 쿼리 없음 |
-| 캠페인 추이, 간편 제작 퍼널, 상세 진입 퍼널 | `campaign`<br>선택하거나 입력한 값 |
+| 캠페인 추이, 첫 방문 활성화, 광고 소재, 간편 제작 퍼널, 상세 진입 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
-| 유입 소스 | 기간만 |
-| 전환 퍼널 카드 | 탭에 있는 카드마다 경로의 `funnel`로 따로 동시에 요청<br>`platform`은 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 고른 플랫폼이고 전체면 `web`<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
+| 유입 소스, 앱 유입, 앱 신규 활성 사용자 | 기간만 |
+| 전환 퍼널 카드 | 탭에 있는 카드마다 경로의 `funnel`로 따로 동시에 요청<br>`platform`은 신규 사용자 활성화, 로그인 화면 가입, 간편 제작, 상세 진입 채팅, 게스트 한도 로그인 요청에만 고른 플랫폼이고 전체면 `web`<br>`storyId`는 상세 진입 채팅 요청에서 카드의 입력 값이 있을 때만 |
 | 채팅 턴 도달률, 채팅 옵션 비중 | 기간과 고른 대상의 `segment`<br>`all`이어도 보냄 |
 | 기능 사용과 안정성 | 고른 `platform`과 `segment`<br>`all`이어도 보냄<br>그 탭에서 숨긴 구분은 `all` |
 | 사용자 세션과 세션 길이 분포 | 둘 다 기간과 고른 대상의 `segment`<br>`all`이어도 보냄<br>두 요청을 따로 동시에 보냄 |
@@ -75,7 +80,7 @@
 | 스토리 공개 중단 | 본문 `reasonCode`, `reasonDetail`, `memo`<br>`reasonDetail`은 `ETC`일 때만 앞뒤 공백을 지운 1~100자로 싣고 그 밖의 분류에서는 뺌<br>`memo`는 앞뒤 공백을 지운 1~500자일 때만 싣고 비면 뺌 |
 | 스토리 목록, 채팅 목록, 범위 목록의 삭제 필터 | 포함은 `deleted=include`<br>삭제된 스토리만과 삭제된 채팅만은 `deleted=only`<br>제외는 `deleted`를 보내지 않음<br>범위 목록은 `memberId`나 `storyId`와 함께 보냄 |
 
-- 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
+- 첫 방문 활성화와 간편 제작 퍼널의 광고 구분은 서버로 보내지 않는다. 응답의 세 값 가운데 화면에서 고른다.
 - 위 표에 `platform`이나 `segment`를 적지 않은 요청에는 그 쿼리를 싣지 않는다. 사용자 활동, 리텐션, 세션, 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼은 응답의 플랫폼 값에서, 채팅 턴 도달률의 서버 DB 대상은 `segments`에서 화면이 고른다. ([2-1-2 분석 화면 공통 요소](2-1-INFORMATION-ARCHITECTURE.md#2-1-2-분석-화면-공통-요소))
 - 기간 오류가 있거나 필요한 조건이 비어 있으면 요청을 보내지 않는다.
 
@@ -96,6 +101,8 @@
 | 계약이 `null`이라고 정한 비율과 비용 | 정보 구조에 정한 문구로 표시 |
 | `campaign`, `storyId`, `platform`, `segment`, `cohort` | 서버가 적용한 값을 화면의 조건 표시에 씀<br>`segment`는 대상으로 표시<br>리텐션 응답에 `cohort`가 없으면 방문자로 표시 |
 | 신규 가입자 응답의 `signups.other` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
+| 플랫폼 묶음의 `unknown` | 사용자 활동의 `activeUsers.unknown`만 활성 사용자 플랫폼 구성 차트에 씀<br>그 밖의 응답에 있어도 읽지 않음 |
+| 신규 가입자의 `newVisitorsByPlatform`, `signupRate`, 기능 사용과 안정성의 `activity`, 세션의 `sessionsPerUser`, 세션 길이 분포의 `daily` | 응답에 없으면 그 차트와 카드 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 기능 사용과 안정성의 `users.storyCompleteError` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 기능 사용과 안정성의 `storyCompletion` | 응답에 없으면 간편 제작 실패율 차트 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 Amplitude 값 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
