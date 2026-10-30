@@ -57,7 +57,7 @@ ADMIN 도메인 웹 명세를 읽고 수정할 때 필요한 문서와 코드 �
 | 기간 선택기 | `features/dashboard/` | 2-1-2, 2-5 |
 | 개요, 분포 카드 | `features/dashboard/` | 2-1-3, 2-1-10 |
 | 성장, 스토리, 채팅, 결제, 운영 화면 | `features/analytics/` | 2-1-4~2-1-8, 2-1-10 |
-| 이프 내역 | `features/credits/` | 2-1-9 |
+| 이프 내역, 프로모션 | `features/credits/` | 2-1-9 |
 | 검수 제출 목록과 상세 | `features/moderation/` | 2-1-11 |
 | 공지 태그, 게시, 알림 보내기 | `features/notices/` | 2-1-13, 5-1-11 |
 | 캠페인 작성의 이동 대상 | `features/notifications/` | 2-1-20, 5-1-17 |
