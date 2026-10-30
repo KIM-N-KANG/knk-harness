@@ -148,6 +148,11 @@
 | 딥링크 포함 누적 | 딥링크를 넣어 기록한 뒤 실패한 캠페인을 스토리 비공개 뒤 재실행<br>발송 요청 커밋 전에 실패한 캠페인 | 참 유지<br>NULL 유지 |
 | 광고성 공지 데이터 | 태그 `EVENT` 공지 알림 발송 | `type` `PROMOTION`, 광고 표기 제목, `noticeId`, `noticeTag` `EVENT`, `deepLink` 포함 |
 | 정보성 공지 데이터 | 태그 `UPDATE` 공지 알림 발송 | `type` `NOTICE`, 광고 표기 없음, `noticeTag` `UPDATE` |
+| 공지 미게시 실패 | 공지를 연결한 예약 캠페인, 선점 전에 공지 게시 해제 | `FAILED`, `failure_reason` `NOTICE_NOT_PUBLISHED`, 대상 수와 요청 수 0, 알림 내역과 발송 요청 없음, `promotion_push_failed`에 `reason` `NOTICE_NOT_PUBLISHED`, 공지는 `DRAFT` 그대로 |
+| 미게시 실패 뒤 재실행 | 공지를 다시 게시한 뒤 재실행<br>게시하지 않고 재실행 | `SCHEDULED`와 `failureReason` `null`, 다음 선점에서 발송하고 `SENT`<br>`SCHEDULED`와 `failureReason` `null`, 다음 선점에서 다시 `FAILED`와 같은 사유 |
+| 선점 때 태그 재결정 | 태그 `SERVICE` 공지로 예약한 뒤 태그를 `EVENT`로 바꾸고 선점<br>태그 `PROMOTION` 공지로 예약한 뒤 태그를 `UPDATE`로 바꾸고 선점 | 캠페인 `kind` `MARKETING`과 `notice_tag` `EVENT` 기록, 광고 동의 회원만 대상, 푸시 `type` `PROMOTION`과 광고 표기, 감사 로그 추가 없음<br>`kind` `SERVICE`와 `notice_tag` `UPDATE` 기록, 서비스 알림 켠 회원 대상, `type` `NOTICE`와 광고 표기 없음 |
+| 태그 그대로 | 예약 뒤 태그를 바꾸지 않은 공지 알림 선점 | `kind`와 `notice_tag` 예약 때 값 그대로 |
+| 선점 판정 뒤 게시 해제 | 게시 상태 판정 뒤 회차 기록 전에 같은 공지 게시 해제 | 그 회차는 발송하고 `SENT`, 게시 해제는 기다리지 않고 성공 |
 
 <br>
 
@@ -256,7 +261,7 @@
 | 종류 무시 | `noticeId` 없이 `kind` `SERVICE`를 보냄 | 201, `MARKETING` |
 | 공지 연결 오류 | UUID 아닌 `noticeId`, 없는 공지, 초안, 게시 해제된 공지, 공개 `storyId`와 게시된 `noticeId`를 함께 | 400, 캠페인 없음, 공지의 `notifiedAt` 그대로 |
 | 광고성 공지 연결 | 태그 `EVENT`와 `PROMOTION`인 게시된 공지 각각의 `noticeId`로 예약 | 201, `MARKETING`, `noticeId`, 캠페인의 `notice_tag`는 공지 태그 |
-| 연결 뒤 태그 기록 | 태그 `SERVICE` 공지로 예약한 뒤 공지 태그를 `EVENT`로 수정하고 발송 | 캠페인 `kind` `SERVICE`와 `notice_tag` `SERVICE` 유지, 푸시 데이터 `type` `NOTICE` |
+| 선점 전 표시 | 태그 `SERVICE` 공지로 예약한 뒤 공지 태그를 `EVENT`로 수정하고 선점 전에 상세 조회 | 예약 응답, 감사 로그 `PUSH_CAMPAIGN_CREATED`, 선점 전 상세의 `kind`는 모두 `SERVICE` |
 | 스토리 이동 | 공개 스토리 `storyId`로 예약 뒤 발송 | 응답 `storyId`, 푸시 데이터 `storyId`와 `/stories/{storyId}` 딥링크<br>발송 전에 비공개로 바꾸면 딥링크 없음 |
 | 취소 | 예약 상태, 선점된 상태, 취소된 상태, 없는 식별자 | 200과 `CANCELED`와 감사 로그, 409, 409, 404 |
 | 재실행 | 실패 상태<br>예약 상태 | 200과 `SCHEDULED`와 결과 컬럼 유지와 감사 로그<br>409 |
@@ -334,7 +339,7 @@
 | 광고성 공지 기록 | 태그 `PROMOTION` 공지를 연결한 캠페인 회차, 광고 동의 회원, 미동의 회원 | 동의 회원만 행 1개, `PROMOTION`, `noticeTag` `PROMOTION`, 광고 표기 없는 원문 제목 |
 | 광고 표기 중복 | 제목이 `(광고) 가을 이벤트`이고 `EVENT` 공지를 연결한 캠페인 회차 | 푸시와 내역 제목은 `(광고) 가을 이벤트` 그대로 |
 | 캠페인 재실행 | 실패한 캠페인 재실행 | 회원당 행 1개 |
-| 기록 없음 | 선점 전에 취소한 프로모션과 공지 알림 캠페인 | 행 없음<br>취소한 공지를 해제 뒤 재게시해도 행 없음 |
+| 기록 없음 | 선점 전에 취소한 프로모션과 공지 알림 캠페인, 공지 미게시로 실패한 공지 알림 캠페인 | 행 없음<br>취소한 공지를 해제 뒤 재게시해도 행 없음 |
 | 공지 수정과 재게시 | 연결한 캠페인 1건으로 내역이 기록된 공지를 수정하고 게시 해제 뒤 재게시 | 캠페인 1건 유지, 회원당 행 1개 유지 |
 | 같은 공지의 두 캠페인 | 같은 공지를 연결한 캠페인 2건의 회차 | 회원당 행 2개, 캠페인마다 다른 메시지 식별자, 두 행 모두 같은 `noticeId` |
 | 딥링크 | 완성, 공지 알림, 이동 대상 없는 프로모션 | `/stories/{storyId}`와 `/notices/{noticeId}` 뒤에 `utm_source=inbox&utm_medium=inbox`와 푸시와 같은 `utm_campaign`, `utm_content`<br>프로모션은 `deepLink` `null` |

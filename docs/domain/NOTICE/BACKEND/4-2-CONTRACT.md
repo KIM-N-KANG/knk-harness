@@ -412,7 +412,7 @@ Content-Type: application/json
 
 - `title`, `body`, `tag` 중 하나는 있어야 한다. `null`은 생략과 같다.
 - 예전 본문의 `notificationTitle`과 `notificationBody`는 받지 않으며 보내도 무시한다. 두 필드만 보내면 세 필드가 모두 없는 요청이다.
-- 이미 만든 캠페인은 공지를 수정해도 바뀌지 않는다.
+- 이미 발송한 캠페인은 공지를 수정해도 바뀌지 않는다. 발송 선점 전인 캠페인의 알림 성격은 선점 때 공지의 현재 태그로 다시 정해진다.
 
 <br>
 

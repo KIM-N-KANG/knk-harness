@@ -90,11 +90,12 @@
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `campaignId` | `string` | 캠페인 공개 식별자 |
-| `kind` | `string` | 알림 성격<br>`SERVICE`는 정보성, `MARKETING`은 광고성<br>공지 알림은 연결한 공지의 태그가 정함 |
+| `kind` | `string` | 알림 성격<br>`SERVICE`는 정보성, `MARKETING`은 광고성<br>공지 알림은 연결한 공지의 태그가 정하고 발송 선점 때 공지의 현재 태그로 다시 정함 |
 | `title` | `string` | 광고 표기 없는 제목 |
 | `body` | `string` | |
 | `scheduledAt` | `string` | 예약 시각 |
 | `status` | `string` | `SCHEDULED`, `SENDING`, `SENT`, `CANCELED`, `FAILED` |
+| `failureReason` | `string / null` | 마지막 회차가 발송 없이 실패한 사유<br>`NOTICE_NOT_PUBLISHED`는 발송 선점 때 연결한 공지가 게시 상태가 아니었음<br>그 밖의 실패와 실패가 아닌 상태는 `null`<br>재실행하면 `null` |
 | `noticeId` | `string / null` | 공지 알림이면 연결한 공지의 공개 식별자 |
 | `storyId` | `string / null` | 이동 대상 스토리의 공개 식별자<br>프로모션이 스토리로 이어질 때만 |
 | `targetCount` | `integer / null` | 마지막 회차의 대상 수<br>회차 전은 `null` |
@@ -1032,6 +1033,7 @@ Authorization: Bearer {adminToken}
       "body": "이번 주말 충전하면 이프를 두 배로 드려요.",
       "scheduledAt": "2026-10-24T01:00:00Z",
       "status": "SCHEDULED",
+      "failureReason": null,
       "noticeId": null,
       "storyId": null,
       "targetCount": null,
@@ -1078,6 +1080,7 @@ Authorization: Bearer {adminToken}
 - 알림 성격은 요청으로 받지 않는다. `kind`를 보내도 무시한다. `noticeId`가 있으면 공지 태그가 정하고 `SERVICE`, `UPDATE`, `MAINTENANCE`는 `SERVICE`, `EVENT`, `PROMOTION`은 `MARKETING`이다. `noticeId`가 없으면 `MARKETING`이다. ([NOTICE 4-1-8 알림 연결](../../NOTICE/BACKEND/4-1-PIPELINES.md#4-1-8-알림-연결))
 - `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다. `noticeId`가 있으면 `/notices/{noticeId}`이고 시나리오는 `SERVICE`면 `NOTICE`, `MARKETING`이면 `PROMOTION`이다. ([4-2-10 푸시 데이터](#4-2-10-푸시-데이터))
 - 같은 `noticeId`로 여러 번 예약할 수 있고 요청마다 새 캠페인이다.
+- 예약한 공지 알림은 발송 선점 때 공지를 다시 읽는다. 공지의 현재 태그로 `kind`를 다시 정하므로 응답의 `kind`와 실제 발송의 `kind`가 다를 수 있다. 공지가 게시 상태가 아니면 보내지 않고 `FAILED`와 `failureReason` `NOTICE_NOT_PUBLISHED`가 된다.
 - 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. 공지를 연결하면 위 규칙으로 정한 알림 성격으로 조회한다. ([4-2-17 대상 수 미리보기](#4-2-17-대상-수-미리보기))
 
 <br>
@@ -1140,6 +1143,7 @@ Content-Type: application/json
   "body": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "scheduledAt": "2026-10-24T09:00:00Z",
   "status": "SCHEDULED",
+  "failureReason": null,
   "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
   "storyId": null,
   "targetCount": null,
@@ -1213,6 +1217,7 @@ Content-Type: application/json
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 예약 상태로 돌아가 다음 폴링에서 다시 실행된다. 원격 모드에서는 이미 기록된 회원의 요청이 중복 기록되지 않는다. 로컬 모드에는 회원별 기록이 없어 이미 받은 회원에게 다시 갈 수 있다.
+- 응답의 `failureReason`은 `null`이다. `NOTICE_NOT_PUBLISHED`로 실패한 캠페인은 공지를 다시 게시한 뒤 재실행해야 발송되고 다음 선점에서도 게시 상태가 아니면 같은 사유로 다시 실패한다.
 
 <br>
 
