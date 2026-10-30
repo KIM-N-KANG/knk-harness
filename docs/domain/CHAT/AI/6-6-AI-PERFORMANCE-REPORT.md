@@ -14,7 +14,7 @@
 
 | 항목 | 환경 |
 | --- | --- |
-| 모델·추론 강도 | 12종, 지원 조합 38개 |
+| 모델, 추론 강도 | 12종, 지원 조합 38개 |
 | 고정 프롬프트 | `chat-general-v2` |
 | 입력 데이터 | `test-exclude-s21-s49-s57-20261020`, 59개 샘플 |
 | 생성 방식 | 기존 대화의 마지막 AI 답변 1개, 스트리밍 호출 |
@@ -29,26 +29,26 @@
 
 | 데이터 | 출처 |
 | --- | --- |
-| 원본 실행 설정·코드 버전 | `evaluation/chat/runs/grid-v2-r1/run.json` |
-| 현재 집계 설정·응답 교체 목록 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/run.json` |
-| 평가 입력 | `evaluation/chat/datasets/test-exclude-s21-s49-s57-20261020/*.json` — 원본 `test`에서 S21, S49, S57 제외 |
+| 원본 실행 설정, 코드 버전 | `evaluation/chat/runs/grid-v2-r1/run.json` |
+| 현재 집계 설정, 응답 교체 목록 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/run.json` |
+| 평가 입력 | `evaluation/chat/datasets/test-exclude-s21-s49-s57-20261020/*.json`, 원본 `test`에서 S21, S49, S57 제외 |
 | 분량 지시 | `prompt/chat/general/CHAT-TEMPLATE-v2.md` 6절 |
-| 생성 결과·시간·토큰·비용 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/<config>/*.gen.json` |
-| Astra 3회 채점 결과 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/<config>/*.judge-astra.json` — 기존 6,714회와 재생성 응답 4건의 신규 12회 |
-| 채택한 1차 재생성 3건·코드 버전 | `evaluation/chat/runs/grid-v2-r1-remaining-refusals-retry-20261020-143836/`의 `run.json`과 `<config>/<sample>.gen.json` — Terra low의 S38, Luna none의 S33, Haiku none의 S11 |
-| 채택한 2차 재생성 1건·코드 버전 | `evaluation/chat/runs/grid-v2-r1-terra-medium-s33-retry2-20261020-144056/`의 `run.json`과 `general-v2__gpt-5.6-terra__medium/S33.gen.json` — Terra medium의 S33 |
-| 복구한 첫 토큰 시간 | `evaluation/chat/runs/grid-v2-r1/ttft-recovery/qwen-matched.json`·`openrouter-matched.json` |
-| GLM·DeepSeek TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-glm-deepseek-20261018/results.json` |
+| 생성 결과, 시간, 토큰, 비용 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/<config>/*.gen.json` |
+| Astra 3회 채점 결과 | `evaluation/chat/runs/grid-v2-r1-filtered59-r1-20261020/<config>/*.judge-astra.json`, 기존 6,714회와 재생성 응답 4건의 신규 12회 |
+| 채택한 1차 재생성 3건, 코드 버전 | `evaluation/chat/runs/grid-v2-r1-remaining-refusals-retry-20261020-143836/`의 `run.json`과 `<config>/<sample>.gen.json`, Terra low의 S38, Luna none의 S33, Haiku none의 S11 |
+| 채택한 2차 재생성 1건, 코드 버전 | `evaluation/chat/runs/grid-v2-r1-terra-medium-s33-retry2-20261020-144056/`의 `run.json`과 `general-v2__gpt-5.6-terra__medium/S33.gen.json`, Terra medium의 S33 |
+| 복구한 첫 토큰 시간 | `evaluation/chat/runs/grid-v2-r1/ttft-recovery/qwen-matched.json`, `openrouter-matched.json` |
+| GLM, DeepSeek TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-glm-deepseek-20261018/results.json` |
 | GLM TTFT 재측정 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-glm-repeat-20261018/results.json` |
-| Kimi 길이별 TTFT 선정 | high: 전체 62개 입력의 최소·중앙·최대(S24·S07·S62), low: 복구된 18개 입력의 최소·중앙·최대(S57·S58·S62). 평균은 선택한 3건의 산술평균이며 공급자 첫 토큰 기준 |
+| Kimi 길이별 TTFT 선정 | high: 전체 62개 입력의 최소, 중앙, 최대(S24, S07, S62), low: 복구된 18개 입력의 최소, 중앙, 최대(S57, S58, S62). 평균은 선택한 3건의 산술평균이며 공급자 첫 토큰 기준 |
 | Gemini TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-gemini-20261018/results.json` |
 | GPT Luna TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-luna-20261018/results.json` |
-| Haiku·Sonnet TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-haiku-sonnet-20261018/results.json` |
-| Sol low TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-sol-low-openrouter-20261018/results.json` — OpenRouter → OpenAI 경로, 길이별 1건의 첫 본문 도착 시간 |
-| Sol medium TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-sol-medium-openrouter-retry-20261018/results.json` — 짧음·중간은 OpenRouter → OpenAI, 긴 입력은 아래 OpenAI 직접 API 실측값 사용 |
+| Haiku, Sonnet TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-haiku-sonnet-20261018/results.json` |
+| Sol low TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-sol-low-openrouter-20261018/results.json`, OpenRouter → OpenAI 경로, 길이별 1건의 첫 본문 도착 시간 |
+| Sol medium TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-sol-medium-openrouter-retry-20261018/results.json`, 짧음, 중간은 OpenRouter → OpenAI, 긴 입력은 아래 OpenAI 직접 API 실측값 사용 |
 | Opus TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-opus-20261018/results.json` |
-| Terra none TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-terra-none-openrouter-20261018/results.json` — 짧음·중간은 OpenRouter → OpenAI, 긴 입력은 아래 OpenAI 직접 API 실측값 사용 |
-| GPT 잔여 TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-gpt-direct-remaining-20261019/results.json` — OpenAI 직접 API, 14건 |
+| Terra none TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-terra-none-openrouter-20261018/results.json`, 짧음, 중간은 OpenRouter → OpenAI, 긴 입력은 아래 OpenAI 직접 API 실측값 사용 |
+| GPT 잔여 TTFT 실측 | `evaluation/chat/runs/grid-v2-r1-ttft/grid-v2-r1-ttft-gpt-direct-remaining-20261019/results.json`, OpenAI 직접 API, 14건 |
 | 집계 기준 시점 | 2026-10-20 KST |
 
 </details>
@@ -64,10 +64,10 @@
 
 - Qwen 413건과 Kimi 59건은 OpenRouter 경로로 생성되었다.
 - 환율은 1$ = 1,345원으로 계산했다.
-- Haiku는 입력 10만 토큰 초과 요청 8건에 입력·출력 단가 5배를 적용했다.
+- Haiku는 입력 10만 토큰 초과 요청 8건에 입력, 출력 단가 5배를 적용했다.
 - DeepSeek 비용은 동일 토큰 사용량에 피크시간과 비피크시간 단가를 각각 적용했다.
 - TTFT 측정에는 벤치마크에서 제외한 S57 샘플이 포함되어 있다.
-- short·mid·long은 조합별 입력 토큰 수가 최소·중앙·최대인 각 1건이다. 모델별 토큰 수가 달라 범위로 표기했다.
+- short, mid, long은 조합별 입력 토큰 수가 최소, 중앙, 최대인 각 1건이다. 모델별 토큰 수가 달라 범위로 표기했다.
   - short: 4,343~8,436토큰
   - mid: 9,046~22,139토큰
   - long: 149,875~276,231토큰
@@ -151,7 +151,7 @@
 
 <br>
 
-**첫 토큰 시간과 점수 비교: mean·short·mid·long**
+**첫 토큰 시간과 점수 비교: mean, short, mid, long**
 
 ![그림 3. TTFT와 Astra 평균 점수 산점도](IMAGE/grid-v2-r1/05-ttft-score.png)
 

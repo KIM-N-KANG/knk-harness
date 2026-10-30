@@ -2,7 +2,7 @@
 
 이 문서는 관리자 웹의 차트 규칙, 계열 순서와 색과 선 모양, 숫자와 날짜 표기, 공용 요소의 사용 규칙을 정한다.
 
-색, 글꼴, 간격, 모서리 토큰과 분포 카드의 모양은 관리자 저장소의 디자인 문서에, 화면별 차트 목록은 정보 구조에 있다. ([manyak-admin DESIGN.md](../../../../../manyak-admin/docs/DESIGN.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
+색, 글꼴, 간격, 모서리 토큰과 분포 카드의 모양은 관리자 저장소의 디자인 문서에, 화면별 차트 목록은 정보 구조에 있다. ([manyak-admin DESIGN.md](https://github.com/KIM-N-KANG/manyak-admin/blob/dev/docs/DESIGN.md), [2-1 정보 구조](2-1-INFORMATION-ARCHITECTURE.md))
 
 <br>
 

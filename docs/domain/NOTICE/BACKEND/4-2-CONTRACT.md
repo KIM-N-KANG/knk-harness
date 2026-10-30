@@ -141,7 +141,7 @@
 | 400 | `BAD_REQUEST` | 형식 오류인 `cursor`, `limit` 타입 오류, 모르는 `tag` |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -203,7 +203,7 @@ GET /api/v1/notices?limit=2
 | 404 | `NOT_FOUND` | 없는 공지, 초안, 형식 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -271,7 +271,7 @@ GET /api/v1/notices/2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d
 | 400 | `BAD_REQUEST` | 지원하지 않는 `status`<br>검색어와 공통 페이지 쿼리 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -357,7 +357,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 필드 누락, 공백만, 길이 초과, 모르는 태그 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -475,7 +475,7 @@ Content-Type: application/json
 | 409 | `CONFLICT` | 이미 게시된 공지<br>`notifiedAt`이 `null`이고 알림 문구가 `null`인 공지 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 

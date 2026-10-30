@@ -151,7 +151,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 404 | `NOT_FOUND` | 스토리가 없거나 삭제됐거나 읽을 수 없음<br>시작 설정이 없거나 이 스토리에 속하지 않음<br>페르소나가 없거나 삭제됐거나 타인의 것<br>식별자 형식 오류 |
 
 <details>
-<summary><b>채팅 생성 요청·응답 예시</b></summary>
+<summary><b>채팅 생성 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -242,7 +242,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 400 | `BAD_REQUEST` | 빈 배열, 101개 이상 |
 
 <details>
-<summary><b>일괄 조회 요청·응답 예시</b></summary>
+<summary><b>일괄 조회 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -486,7 +486,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | 409 | `CHAT_TURN_STALE` | 제공한 `lastTurnId`가 서버의 마지막 턴과 불일치 |
 
 <details>
-<summary><b>이어쓰기 요청·응답 예시</b></summary>
+<summary><b>이어쓰기 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -588,7 +588,7 @@ data: {"code":"AI_STREAM_FAILED","message":"AI 응답 생성 중 오류가 발�
 스트림을 연 뒤 저장 시점에 마지막 턴이 바뀌었으면 `CHAT_TURN_STALE`의 `error` 이벤트로 끝나고 환불한다.
 
 <details>
-<summary><b>재생성 요청·응답 예시</b></summary>
+<summary><b>재생성 요청, 응답 예시</b></summary>
 
 <br>
 
@@ -1029,7 +1029,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 | 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨, 형식 오류 |
 
 <details>
-<summary><b>채팅 설정 변경 요청·응답 예시</b></summary>
+<summary><b>채팅 설정 변경 요청, 응답 예시</b></summary>
 
 <br>
 
