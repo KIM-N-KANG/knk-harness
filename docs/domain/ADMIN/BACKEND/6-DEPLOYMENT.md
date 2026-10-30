@@ -148,7 +148,7 @@
 | 인프라 지표 권한과 설정 | 운영 서버 태스크 역할에 `cloudwatch:GetMetricData`와 세 서비스에 한정한 `ecs:DescribeServices`<br>운영 태스크 정의에 인프라 지표 환경 변수 | 수동 검토<br>`manyak-terraform`의 운영 apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 인프라 지표만 사용 불가 |
 | Langfuse 시크릿 | 운영 태스크 정의에 `manyak/prod/app`의 Langfuse 세 키 참조와 환경 이름 | 수동 검토<br>운영 Terraform apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 AI 비용만 사용 불가 |
 | 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
-| 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포<br>신규 가입자의 `signups.other` 제거는 관리자 페이지가 그 필드를 읽지 않고 새 플랫폼 필드를 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>기능 사용과 안정성의 `users.storyCompleteError` 제거도 관리자 페이지가 그 필드를 읽지 않고 `storyCompletion`을 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>AI 기능 `chat_compact`와 채팅 응답의 `summaryThroughTurn`은 서버를 먼저 배포하고 관리자 페이지 배포 전까지 `chat_compact`가 코드 이름 그대로 보임 | 수동 검토 |
+| 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포<br>신규 가입자의 `signups.other` 제거는 관리자 페이지가 그 필드를 읽지 않고 새 플랫폼 필드를 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>기능 사용과 안정성의 `users.storyCompleteError` 제거도 관리자 페이지가 그 필드를 읽지 않고 `storyCompletion`을 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>AI 기능 `chat_compact`와 채팅 응답의 `summaryThroughTurn`은 서버를 먼저 배포하고 관리자 페이지 배포 전까지 `chat_compact`가 코드 이름 그대로 보임<br>플랫폼 묶음의 `unknown` 제거, 새 응답 필드, 새 엔드포인트, 새 전환 퍼널은 서버를 먼저 배포하고 관리자 페이지가 뒤에 배포<br>관리자 페이지는 `unknown`을 읽지 않아 순서가 바뀌어도 기존 화면은 깨지지 않고 새 영역만 사용 불가 | 수동 검토 |
 | 분석 지표 정의 변경 | 조회 조건을 바꾸면 매개변수 해시가 바뀌어 지난 날짜를 처음부터 다시 받음<br>긴 범위는 여러 5분에 걸쳐 채워짐 | 수동 검토 |
 | 관리자 경로 추가 | 회귀 테스트가 새 경로를 자동 수집하는지 테스트 결과에서 확인 | CI 자동 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>재실행해도 같은 결과<br>Amplitude 조회 값 테이블은 서버 저장소의 다음 마이그레이션 번호 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
@@ -225,18 +225,20 @@
 | 대시보드 | 대시보드 요약과 차트 응답 | 모든 지표가 채워지고 분포 차트가 9개 |
 | 목록 | 스토리, 채팅, 회원, 결제 목록 첫 페이지 | 성공 응답과 `totalElements` |
 | 분석 지표 | 기본 범위의 분석 지표 응답 | 성공 응답과 `daily` 30개, `pendingDates` 빈 배열<br>사용 불가면 `admin_analytics_fetch_failed`의 `reason`<br>배포 전에 받은 지난 날짜는 다시 받지 않음(`admin_analytics_refreshed`의 `fetched_days`가 오늘과 어제 이하) |
-| 앱·해외 로그인 조건 | 배포 뒤 첫 분석 지표 갱신의 앱·해외 로그인 `_active` 응답과 같은 날짜의 Amplitude 차트 값(국가 한국 밖, 플랫폼 Android, 사용자 속성 `user_id` 있음) | 두 값이 같음<br>대역이 필터를 거절하면 그 조회를 빼지 않고 공통 실패 규칙(저장 값, 준비 중 날짜, 503)대로 응답<br>값이 다르거나 거절되면 필터 표현을 고친 뒤 같은 날짜를 다시 받아 대조 |
+| 전체 조건 | 배포 뒤 첫 분석 지표 갱신의 `_active` 전체 응답과 같은 날짜의 Amplitude 차트 값(국내 조건, 플랫폼 `Web` 또는 `Android` 세그먼트, 통합 대시보드 DAU의 전체) | 두 값이 같음<br>`total`이 `web`과 `android`의 합 이하<br>대역이 값 배열 필터를 거절하면 공통 실패 규칙(저장 값, 준비 중 날짜, 503)대로 응답하고 필터 표현을 고친 뒤 같은 날짜를 다시 받아 대조 |
+| 커스텀 이벤트 | 기본 범위의 캠페인 추이 `signups`, 신규 가입자 `signupsByPlatform`, 앱 신규 활성 사용자, `guest-limit-login` 응답과 같은 날짜의 Amplitude 차트(`ce:신규 가입 (구글·카카오)`, `ce:핵심 활동`, `ce:로그인 성공 (구글·카카오)`, 같은 국가와 플랫폼 조건) | 확정일 값이 차트 값과 같음<br>대역이 커스텀 이벤트 이름을 거절하거나 모든 날짜가 0이면 Amplitude의 커스텀 이벤트 이름과 구성이 제품 제약과 같은지 확인 |
+| 새 퍼널 조건 | `first-visit-activation`, `android-activation`, `web-to-android`, 캠페인 첫 방문 활성화 퍼널 기본 범위 응답과 같은 조건의 Amplitude 퍼널 차트(신규 사용자 또는 활성 사용자, 같은 단계와 전환 창) | 단계별 사용자 수가 차트 값과 같음<br>`turn_number` `greater or equal` 필터를 거절하면 공통 실패 규칙대로 응답하고 필터 표현을 고친 뒤 다시 받아 대조 |
 | 캠페인 분석 | 캠페인 목록과 기본값의 추이 응답 | 성공 응답과 `campaign`이 목록의 진행 중 항목<br>`budget_exceeded`가 반복되면 호출 묶음 재검토 |
 | 사용자, 전환, 기능 지표 | 기본 범위의 사용자 활동, 전환 퍼널 하나, 기능 사용 응답과 DB 지표 응답 | 성공 응답 |
 | 분석 값 백그라운드 갱신 | 오늘 값이 만료된 뒤와 값이 없는 날짜가 있을 때의 분석 지표, 캠페인 추이, 사용자 활동 응답과 요청 로그의 `duration_ms` | 오늘 값만 만료된 요청의 응답 시간이 1초 안팎<br>값이 없는 날짜가 있는 요청도 응답 시간이 10초를 크게 넘지 않음<br>갱신 뒤 같은 요청의 `asOf`가 새로 받은 시각 |
 | 세션의 게스트와 회원 | 기본 범위의 세션 `segment=guest`, `segment=member` 응답과 같은 날짜의 Amplitude 평균 세션 길이 차트(국내 조건, 사용자 속성 `user_id` 없음과 있음 세그먼트) | 확정일의 `all`, `web`, `android`가 차트 값과 같음<br>대역이 세그먼트 조건을 거절하면 공통 실패 규칙대로 응답하고 조건 표현을 고친 뒤 다시 받아 대조 |
-| DB 지표의 플랫폼 값 | 신규 가입자, 턴 도달률, 채팅 옵션 기본 범위 응답과 같은 날짜의 Amplitude 차트(가입 이벤트 `is_new_user` 참, AI 응답 성공 이벤트 재생성 아님과 턴 번호 1, 국내 조건, `platform`별) | 확정일의 `signupsByPlatform`과 `platforms`의 턴 1 `chats`가 차트 값과 같음<br>배포 다음 날 `pendingDates`가 빈 배열<br>앱 요청의 서버 이벤트에 `platform`을 싣는 서버 배포 뒤 날짜는 앱 가입의 `unknown`이 줄고 `android`가 늚 |
-| 사용자 리텐션 | 기본 범위의 리텐션 `all` 응답과 같은 조건의 Amplitude 리텐션 차트(New User에서 Any Active, N-Day, 국내 조건)<br>운영 DB의 `users_retention` 확정 행 | 코호트마다 `users`가 차트의 코호트 인원, `d1`이 차트의 Day 1과 같음<br>배포 다음 날 `admin_analytics_backfill`이 `phase` `backfill`, `result` `done`이 된 뒤 서비스 시작일 이후 확정 행이 모두 인덱스 0~31을 갖고 어느 것도 `incomplete` 아님 |
-| 리텐션 시작 집단 | 기본 범위의 `cohort=signup`, `cohort=first-chat` `all` 응답과 같은 조건의 Amplitude 리텐션 차트(가입 이벤트 `is_new_user` 참 또는 AI 응답 성공 이벤트 턴 번호 1과 재생성 아님에서 Any Active, N-Day, 국내 조건) | 코호트마다 `users`와 `d1`이 차트 값과 같음<br>가입자는 구글과 카카오 두 차트의 합과 같음 |
+| DB 지표의 플랫폼 값 | 신규 가입자, 턴 도달률, 채팅 옵션 기본 범위 응답과 같은 날짜의 Amplitude 차트(`ce:신규 가입 (구글·카카오)`, AI 응답 성공 이벤트 재생성 아님과 턴 번호 1, 국내 조건, `platform`별) | 확정일의 `signupsByPlatform`과 `platforms`의 턴 1 `chats`가 차트 값과 같음<br>배포 다음 날 `pendingDates`가 빈 배열<br>응답에 `unknown`이 없음 |
+| 사용자 리텐션 | 기본 범위의 리텐션 `all` 응답과 같은 조건의 Amplitude 리텐션 차트(New User에서 Any Active, N-Day, 국내 조건, 시작과 복귀 이벤트에 플랫폼 `Web` 또는 `Android`)<br>운영 DB의 `users_retention` 확정 행 | 코호트마다 `users`가 차트의 코호트 인원, `d1`이 차트의 Day 1과 같음<br>배포 다음 날 `admin_analytics_backfill`이 `phase` `backfill`, `result` `done`이 된 뒤 서비스 시작일 이후 확정 행이 모두 인덱스 0~31을 갖고 어느 것도 `incomplete` 아님 |
+| 리텐션 시작 집단 | 기본 범위의 `cohort=signup`, `cohort=first-chat` `all` 응답과 같은 조건의 Amplitude 리텐션 차트(`ce:신규 가입 (구글·카카오)` 또는 AI 응답 성공 이벤트 턴 번호 1과 재생성 아님에서 Any Active, N-Day, 국내 조건) | 코호트마다 `users`와 `d1`이 차트 값과 같음 |
 | 세션 길이 분포 | 기본 범위의 세션 길이 분포 `segment=all`, `segment=member` 응답과 같은 날짜의 Amplitude 세션 길이 차트(국내 조건, 회원은 `user_id` 있음 세그먼트) | 확정일 하루의 구간별 세션 수가 차트 값과 같음<br>대역이 세그먼트 조건을 거절하면 공통 실패 규칙대로 응답하고 조건 표현을 고친 뒤 다시 받아 대조 |
-| 신규 사용자 퍼널 | `web-first-visit`과 캠페인 간편 제작 퍼널 기본 범위 응답과 같은 조건의 Amplitude 퍼널 차트(New Users, 같은 6단계) | 단계별 사용자 수가 차트 값과 같음 |
+| 간편 제작 6단계 퍼널 | `web-first-visit`, `creation-entry-chat`, 캠페인 간편 제작 퍼널 기본 범위 응답과 같은 조건의 Amplitude 퍼널 차트(같은 6단계, `web-first-visit`은 New Users, 나머지는 Active Users) | 단계별 사용자 수가 차트 값과 같음<br>캠페인 간편 제작 퍼널 4차의 값이 4차 Web 대시보드 간편 제작 핵심 퍼널과 같은 날짜 범위에서 날짜 단위 시작 차이만큼만 다름 |
 | 간편 제작 실패율 | 기본 범위의 기능 사용 응답과 운영 DB의 같은 날짜 `story_creation_requests` 집계 | 날짜마다 `requests`와 `failed`가 같음 |
-| 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐 |
+| 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐<br>`backfill`이 `done`이 된 뒤 활동 탭과 유입 탭의 기본 범위 요청이 `admin_analytics_refreshed`에서 오늘 날짜만 받음 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
 | 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 `ecs.services` 3개의 `runningTasks` 1 이상, 모든 묶음이 `null` 아님<br>사용 불가면 `admin_infra_metrics_fetch_failed`의 `reason` |
 | AI 비용 | 기본 범위의 AI 비용 응답 | 성공 응답, `unmapped` 빈 배열, 비용이 있는 날짜의 `costKrw`가 `null`이 아님<br>사용 불가면 `admin_ai_cost_fetch_failed`의 `reason` |
