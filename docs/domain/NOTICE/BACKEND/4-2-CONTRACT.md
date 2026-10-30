@@ -83,13 +83,11 @@
 |---|---|---|
 | `noticeId` | `string` | 공지 공개 식별자 |
 | `title` | `string` | |
-| `tag` | `string` | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`([4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시)) |
+| `tag` | `string` | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`([4-1-8 알림 연결](4-1-PIPELINES.md#4-1-8-알림-연결)) |
 | `body` | `string` | 목록에서는 생략 |
-| `notificationTitle` | `string / null` | 알림 제목<br>목록에서는 생략<br>알림 문구가 생기기 전에 만든 공지는 `null` |
-| `notificationBody` | `string / null` | 알림 본문<br>목록에서는 생략<br>`notificationTitle`과 함께 `null` |
 | `status` | `string` | `DRAFT`<br>`PUBLISHED` |
 | `publishedAt` | `string / null` | 마지막 게시 시각<br>게시한 적 없으면 `null` |
-| `notifiedAt` | `string / null` | 알림 요청 시각<br>요청한 적 없으면 `null` |
+| `notifiedAt` | `string / null` | 알림을 처음 요청한 시각<br>이 공지를 연결한 첫 캠페인을 만든 시각<br>요청한 적 없으면 `null` |
 | `createdBy` | `object` | 작성 관리자 |
 | `createdBy.memberId` | `string` | 회원 공개 식별자 |
 | `createdBy.nickname` | `string` | |
@@ -341,12 +339,10 @@ Authorization: Bearer {adminToken}
 | `title` | `string` | 필수 | 1~100자 |
 | `body` | `string` | 필수 | 1~5,000자 |
 | `tag` | `string` | 필수 | `SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION` |
-| `notificationTitle` | `string` | 필수 | 알림 제목, 1~100자<br>광고 표기 없이 |
-| `notificationBody` | `string` | 필수 | 알림 본문, 1~300자 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
 - 생성된 공지는 초안이다.
-- 푸시와 알림 내역의 제목과 본문은 알림 문구를 그대로 쓴다. 광고성 태그면 알림 도메인이 푸시 제목 앞에 광고 표기를 붙이고 알림 내역에는 원문을 저장한다.
+- 예전 본문의 `notificationTitle`과 `notificationBody`는 받지 않으며 보내도 값과 무관하게 무시한다. 공지 알림의 제목과 본문은 캠페인 예약에서 쓴다. ([NOTIFICATION 4-2-14 캠페인 예약](../../NOTIFICATION/BACKEND/4-2-CONTRACT.md#4-2-14-캠페인-예약))
 
 <br>
 
@@ -372,9 +368,6 @@ Content-Type: application/json
   "title": "10월 25일 새벽 점검 안내",
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
-  "tag": "SERVICE",
-  "notificationTitle": "새로운 점검 안내가 도착했어요",
-  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "reason": "정기 점검 공지"
 }
 ```
@@ -387,8 +380,6 @@ Content-Type: application/json
   "title": "10월 25일 새벽 점검 안내",
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
-  "notificationTitle": "새로운 점검 안내가 도착했어요",
-  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "status": "DRAFT",
   "publishedAt": null,
   "notifiedAt": null,
@@ -417,14 +408,11 @@ Content-Type: application/json
 | `title` | `string` | 선택 | 1~100자<br>생략하면 유지 |
 | `body` | `string` | 선택 | 1~5,000자<br>생략하면 유지 |
 | `tag` | `string` | 선택 | 다섯 태그 중 하나<br>생략하면 유지 |
-| `notificationTitle` | `string` | 선택 | 1~100자<br>생략하면 유지 |
-| `notificationBody` | `string` | 선택 | 1~300자<br>생략하면 유지 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- `title`, `body`, `tag`, `notificationTitle`, `notificationBody` 중 하나는 있어야 한다. `null`은 생략과 같다.
-- 알림 문구는 `notifiedAt`이 `null`인 공지에서만 바꾼다. 이미 요청한 알림은 공지를 수정해도 바뀌지 않는다.
-- 알림 문구 검사는 `null`을 생략으로 처리한 뒤 남은 `notificationTitle`, `notificationBody` 값에 적용한다. 길이와 공백의 형식 검사가 먼저이고 그다음 공지 상태를 본다.
-- 남은 값이 있고 공지의 `notifiedAt`이 있으면 409다. `notifiedAt`이 `null`이고 기존 알림 문구도 `null`인데 둘 중 하나만 남았으면 400이다.
+- `title`, `body`, `tag` 중 하나는 있어야 한다. `null`은 생략과 같다.
+- 예전 본문의 `notificationTitle`과 `notificationBody`는 받지 않으며 보내도 무시한다. 두 필드만 보내면 세 필드가 모두 없는 요청이다.
+- 이미 만든 캠페인은 공지를 수정해도 바뀌지 않는다.
 
 <br>
 
@@ -432,9 +420,8 @@ Content-Type: application/json
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 다섯 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, `notifiedAt`과 기존 알림 문구가 모두 `null`인 공지에 알림 제목이나 본문 하나만 보냄, `reason` 누락 또는 `noticeId` 형식 오류 |
+| 400 | `BAD_REQUEST` | 세 필드 모두 없음, 공백만, 길이 초과, 모르는 태그, `reason` 누락 또는 `noticeId` 형식 오류 |
 | 404 | `NOT_FOUND` | 없는 공지 |
-| 409 | `CONFLICT` | `null`을 생략으로 처리한 뒤 `notificationTitle`이나 `notificationBody` 값이 남았고 `notifiedAt`이 있는 공지 |
 
 <br>
 
@@ -444,7 +431,7 @@ Content-Type: application/json
 |---|---|
 | 요청 | `POST /admin/notices/{noticeId}/publish` |
 | 인증 | 관리자 |
-| 성공 | 200 |
+| 성공 | 200<br>관리자 공지 구조 |
 
 **1. 본문**
 
@@ -452,27 +439,18 @@ Content-Type: application/json
 |---|---|---|---|
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 게시하면 항상 알림을 요청하고 알림 유형은 공지 태그에서 정한다. 예전 본문의 `notify`와 `notificationKind`는 받지 않으며 보내도 값과 무관하게 무시한다.
+- 게시는 알림을 요청하지 않는다. 공지 알림은 캠페인 예약에 이 공지를 연결해 보낸다. ([NOTIFICATION 4-2-14 캠페인 예약](../../NOTIFICATION/BACKEND/4-2-CONTRACT.md#4-2-14-캠페인-예약))
+- 예전 본문의 `notify`와 `notificationKind`는 받지 않으며 보내도 값과 무관하게 무시한다.
 
 <br>
 
-**2. 응답**
-
-관리자 공지 구조에 다음 필드를 더한다.
-
-| 필드명 | 타입 | 의미 |
-|---|---|---|
-| `notified` | `boolean` | 이번 게시로 알림을 요청했는지<br>이미 요청한 적 있는 공지의 재게시면 `false` |
-
-<br>
-
-**3. 실패 응답**
+**2. 실패 응답**
 
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | `reason` 누락 |
 | 404 | `NOT_FOUND` | 없는 공지 |
-| 409 | `CONFLICT` | 이미 게시된 공지<br>`notifiedAt`이 `null`이고 알림 문구가 `null`인 공지 |
+| 409 | `CONFLICT` | 이미 게시된 공지 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -497,15 +475,12 @@ Content-Type: application/json
   "title": "10월 25일 새벽 점검 안내",
   "tag": "SERVICE",
   "body": "10월 25일 02:00부터 04:00까지 서버 점검이 있습니다.\n점검 중에는 채팅과 제작을 이용할 수 없습니다.",
-  "notificationTitle": "새로운 점검 안내가 도착했어요",
-  "notificationBody": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
   "status": "PUBLISHED",
   "publishedAt": "2026-10-21T02:00:00Z",
-  "notifiedAt": "2026-10-21T02:00:00Z",
+  "notifiedAt": null,
   "createdBy": { "memberId": "9a8b7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d", "nickname": "고요한 서고" },
   "createdAt": "2026-10-21T01:00:00Z",
-  "updatedAt": "2026-10-21T02:00:00Z",
-  "notified": true
+  "updatedAt": "2026-10-21T02:00:00Z"
 }
 ```
 
@@ -582,14 +557,14 @@ Content-Type: application/json
 
 | 도메인 | NOTICE가 제공하는 것 | NOTICE가 사용하는 것 |
 |---|---|---|
-| NOTIFICATION | 없음 | 공지 발송 요청 연산 |
+| NOTIFICATION | 알림 연결 연산 | 없음 |
 | ADMIN | 없음 | 관리자 요청자와 변경 감사 기록 |
 | ACCOUNT | 없음 | 작성 관리자의 닉네임과 공개 식별자 |
 | 모든 도메인 | 없음 | 상관관계 필터와 관리자 판정 필터 |
 
-다른 도메인의 연산을 호출할 때의 입력과 결과는 다음과 같다.
+NOTICE가 제공하는 연산과 다른 도메인의 연산을 호출할 때의 입력과 결과는 다음과 같다.
 
 | 연산 | 입력 | 결과 |
 |---|---|---|
-| 공지 발송 요청 | 공지 공개 식별자, 알림 제목, 알림 본문, 유형, 태그, 딥링크 | 캠페인 1건<br>호출자의 트랜잭션에 참여 |
+| 알림 연결 | 공지 공개 식별자 | 게시된 공지면 공지 내부 참조와 태그<br>처음 연결이면 알림 요청 시각 기록<br>초안, 게시 해제된 공지, 없는 공지는 연결 불가<br>공지 행을 잠그고 호출자의 트랜잭션에 참여하며 트랜잭션 없이 호출하면 거부 |
 | 변경 감사 기록 | 관리자, 작업 이름, 대상 종류 `NOTICE`, 공지 공개 식별자, 사유, 변경 전후 값 | 감사 로그 행 |

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 공지의 작성, 수정, 게시와 게시 해제, 초안 삭제, 공개 조회, 게시 시 알림 요청을 다룬다.
+NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 공지의 작성, 수정, 게시와 게시 해제, 초안 삭제, 공개 조회, 알림 캠페인의 공지 연결을 다룬다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -15,10 +15,10 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | [3-1-SOFTWARE-ARCHITECTURE.md](3-1-SOFTWARE-ARCHITECTURE.md) | 개요, 배경과 목표, 품질 속성, 배포 단위, 모듈 구조, 의존 방향, 도메인 모델 |
 | [3-2-DB-SCHEMA.md](3-2-DB-SCHEMA.md) | 테이블, 컬럼, 제약, 인덱스, 데이터 수명 |
 | [3-3-CONVENTIONS.md](3-3-CONVENTIONS.md) | 이름, 계층 책임, 검증, 이벤트, 테스트 규칙 |
-| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 공개 조회, 작성과 수정, 게시, 게시 해제, 삭제, 관리자 조회 |
+| [4-1-PIPELINES.md](4-1-PIPELINES.md) | 공통 처리, 공개 조회, 작성과 수정, 게시, 게시 해제, 삭제, 관리자 조회, 알림 연결 |
 | [4-2-CONTRACT.md](4-2-CONTRACT.md) | 클라이언트, 관리자 페이지, 다른 도메인과의 계약 |
 | [5-1-SECURITY.md](5-1-SECURITY.md) | 인증 수준, 접근 판정, 계정 상태, 입력 검증, 식별자와 개인정보, 수용한 한계 |
-| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 공지 행 잠금, 알림 1회성, 유니크 위반, 수용한 경쟁 |
+| [5-2-CONCURRENCY.md](5-2-CONCURRENCY.md) | 공지 행 잠금, 알림 요청 시각의 1회 기록, 유니크 위반, 수용한 경쟁 |
 | [5-3-ERROR-HANDLING.md](5-3-ERROR-HANDLING.md) | 응답 규칙, 오류 분류, 복구 |
 | [5-4-OBSERVABILITY.md](5-4-OBSERVABILITY.md) | 관측 스택, 식별자, 로그, 지표, 트레이스, 알림 |
 | [5-5-TEST-CASES.md](5-5-TEST-CASES.md) | 테스트 범위와 케이스 |
@@ -27,7 +27,7 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 - 처음 읽을 때는 1부터 4-2까지 순서대로 읽어 배경, 요구사항, 설계, 계약을 확인한다. 5는 품질과 검증, 6은 배포를 다룬다.
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추기 위해 앞 단계의 결정을 임의로 바꾸지 않는다.
-- 관리자 인증 수준과 토큰은 ADMIN 세트가 정하고 공지 알림의 대상 판정과 발송은 NOTIFICATION 세트가 정한다.
+- 관리자 인증 수준과 토큰은 ADMIN 세트가 정하고 공지 알림의 캠페인 예약, 대상 판정, 발송은 NOTIFICATION 세트가 정한다.
 - 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-11 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-11-다른-도메인과의-경계))
 
 <br>
@@ -39,7 +39,8 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 요청과 응답 필드 변경 | [4-2 계약](4-2-CONTRACT.md) | [4-1 처리 흐름](4-1-PIPELINES.md)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 테이블과 컬럼 변경 | [3-2 DB 스키마](3-2-DB-SCHEMA.md) | [3-3-5 테스트와 검증 도구](3-3-CONVENTIONS.md#3-3-5-테스트와-검증-도구)<br>[6-4 배포 조건](6-DEPLOYMENT.md#6-4-배포-조건) |
 | 새 엔드포인트 | [4-2-1 공통 규칙과 헤더](4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) | [ADMIN 4-2-1 공통 규칙과 헤더](../../ADMIN/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)<br>서버 저장소 `http/notice/`의 수동 호출 파일과 통합 테스트 |
-| 상태 전이와 알림 규칙 변경 | [4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시) | [5-2-2 멱등과 1회 처리](5-2-CONCURRENCY.md#5-2-2-멱등과-1회-처리)<br>[NOTIFICATION 4-1-9 캠페인](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-9-캠페인) |
+| 상태 전이 변경 | [4-1-4 게시](4-1-PIPELINES.md#4-1-4-게시) | [5-2-1 공지 행 잠금](5-2-CONCURRENCY.md#5-2-1-공지-행-잠금) |
+| 태그와 알림 연결 규칙 변경 | [4-1-8 알림 연결](4-1-PIPELINES.md#4-1-8-알림-연결) | [5-2-2 멱등과 1회 처리](5-2-CONCURRENCY.md#5-2-2-멱등과-1회-처리)<br>[NOTIFICATION 4-1-16 캠페인 관리](../../NOTIFICATION/BACKEND/4-1-PIPELINES.md#4-1-16-캠페인-관리) |
 | 동시 요청 문제 | [5-2 동시성](5-2-CONCURRENCY.md) | [4-1 처리 흐름](4-1-PIPELINES.md) |
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-8 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-8-수집-조건과-실패-처리) |
 | 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 명세 절 |
@@ -48,14 +49,14 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 
 ### 3. 명세와 코드의 대응
 
-코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 공지 패키지는 이 명세로 새로 만든다. 캠페인 생성은 NOTIFICATION 세트, 감사 기록은 ADMIN 세트에 속한다.
+코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 공지 패키지는 이 명세로 새로 만든다. 캠페인 예약은 NOTIFICATION 세트, 감사 기록은 ADMIN 세트에 속한다.
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | 공개 API와 관리자 API 계층 | `notice/controller/` | 4-2-2~4-2-10 |
-| 공지 서비스와 게시 | `notice/service/` | 4-1-2~4-1-7 |
+| 공지 서비스, 게시, 알림 연결 | `notice/service/` | 4-1-2~4-1-8 |
 | 모델과 저장 계층 | `notice/entity/`<br>`notice/repository/` | 3-2 DB 스키마 |
-| 캠페인 생성 연산 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-4 |
+| 알림 연결을 호출하는 캠페인 예약 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-8 |
 | 오류 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/)<br>[dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |

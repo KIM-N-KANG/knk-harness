@@ -4,7 +4,7 @@
 
 다른 도메인의 테이블에서는 NOTICE 도메인이 참조하는 컬럼만 설명한다.
 
-입력값의 검증 규칙은 보안에 있으며 잠금과 알림 1회성은 동시성에 있다. ([5-1-4 입력 검증](5-1-SECURITY.md#5-1-4-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
+입력값의 검증 규칙은 보안에 있으며 잠금과 알림 연결은 동시성에 있다. ([5-1-4 입력 검증](5-1-SECURITY.md#5-1-4-입력-검증), [5-2 동시성](5-2-CONCURRENCY.md))
 
 <br>
 
@@ -14,7 +14,7 @@
 |---|---|
 | 식별자 | 내부 PK는 `bigint` 자동 증가<br>외부 노출용 `public_id uuid`를 따로 둠 |
 | 시각 | `timestamp with time zone`<br>`created_at`의 기본값은 `now()`이며 아래 표에서는 표시하지 않음 |
-| 삭제 | 알림을 요청한 적 없는 초안만 물리 삭제 |
+| 삭제 | 알림 캠페인에 연결한 적 없는 초안만 물리 삭제 |
 | FK | 작성자는 연쇄 삭제 없음<br>회원 행은 탈퇴해도 남으므로 실제 연쇄 삭제는 일어나지 않음 |
 
 <br>
@@ -26,7 +26,7 @@
 ```mermaid
 erDiagram
     users ||--o{ notices : "ACCOUNT, 작성 관리자"
-    notices |o--o| push_campaigns : "NOTIFICATION, 공지 알림"
+    notices |o--o{ push_campaigns : "NOTIFICATION, 공지 알림"
     notices {
         bigint id PK
         uuid public_id
@@ -52,11 +52,11 @@ erDiagram
 | `title` | varchar(100) | NOT NULL | |
 | `body` | text | NOT NULL, CHECK 길이 1~5000 | 줄바꿈이 있는 평문 |
 | `tag` | varchar(16) | NOT NULL, CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 태그<br>컬럼 추가 마이그레이션이 기존 행을 `SERVICE`로 채우며 기본값은 두지 않음 |
-| `notification_title` | varchar(100) | CHECK 알림 본문과 함께 NULL이거나 함께 값 | 알림 제목<br>광고 표기 없이 저장<br>이 열을 더하기 전에 만든 공지는 NULL |
-| `notification_body` | varchar(300) | | 알림 본문<br>이 열을 더하기 전에 만든 공지는 NULL |
+| `notification_title` | varchar(100) | CHECK 알림 본문과 함께 NULL이거나 함께 값 | 사용하지 않음 |
+| `notification_body` | varchar(300) | | 사용하지 않음 |
 | `status` | varchar(10) | NOT NULL, 기본 `DRAFT`, CHECK `DRAFT` `PUBLISHED` | |
 | `published_at` | timestamptz | CHECK `PUBLISHED`이면 NOT NULL | 마지막 게시 시각<br>게시 해제해도 남고 다시 게시하면 갱신 |
-| `notified_at` | timestamptz | | 알림을 요청한 시각<br>NULL이면 요청한 적 없음 |
+| `notified_at` | timestamptz | | 알림을 처음 요청한 시각<br>이 공지를 연결한 첫 캠페인을 만든 시각<br>NULL이면 요청한 적 없음 |
 | `created_by_user_id` | bigint | NOT NULL, FK `users.id` | 작성 관리자 |
 | `updated_at` | timestamptz | NOT NULL | |
 
@@ -74,7 +74,7 @@ erDiagram
 | 테이블 | 컬럼 | NOTICE가 하는 일 |
 |---|---|---|
 | `users` | `id`, `public_id`, `nickname` | 작성 관리자 기록과 관리자 목록의 작성자 표시 |
-| `push_campaigns` | `notice_id` | 알림 도메인이 공지 알림 캠페인에 기록<br>NOTICE는 읽지 않음 |
+| `push_campaigns` | `notice_id` | 알림 도메인이 공지 알림 캠페인에 기록<br>공지 하나에 여러 캠페인<br>NOTICE는 읽지 않음 |
 
 <br>
 
@@ -82,5 +82,5 @@ erDiagram
 
 | 데이터 | 삭제 |
 |---|---|
-| 알림을 요청한 적 없는 초안 | 관리자가 삭제 |
+| 알림 캠페인에 연결한 적 없는 초안 | 관리자가 삭제 |
 | 그 밖의 공지 | 없음 |

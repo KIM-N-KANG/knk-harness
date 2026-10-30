@@ -44,7 +44,7 @@ erDiagram
         bigint id PK
         varchar template_key
     }
-    notices |o--o| push_campaigns : "NOTICE, 공지 알림"
+    notices |o--o{ push_campaigns : "NOTICE, 공지 알림"
     push_campaigns {
         bigint id PK
         uuid public_id
@@ -130,15 +130,15 @@ erDiagram
 
 **`push_campaigns`**
 
-캠페인 1건의 예약과 결과가 한 행이다. 관리자 API가 예약 행을 추가하고 공지 게시가 공지 알림 행을 추가하며 스케줄러가 결과를 기록한다.
+캠페인 1건의 예약과 결과가 한 행이다. 관리자 API가 예약 행을 추가하고 스케줄러가 결과를 기록한다.
 
 | 컬럼 | 타입 | 제약 | 의미 |
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `public_id` | uuid | NOT NULL, UNIQUE | 푸시 데이터의 캠페인 식별자 |
-| `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함 |
-| `notice_id` | bigint | FK `notices.id`, UNIQUE | 공지 알림이면 그 공지<br>프로모션은 NULL |
-| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 게시 시점의 공지 태그<br>프로모션은 NULL |
+| `kind` | varchar(16) | NOT NULL, 기본 `MARKETING`, CHECK `SERVICE` `MARKETING` | 대상 조건과 시나리오를 정함<br>공지 알림은 공지 태그에서 정한 값 |
+| `notice_id` | bigint | FK `notices.id` | 공지 알림이면 연결한 공지<br>한 공지에 여러 행<br>프로모션은 NULL |
+| `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 연결할 때의 공지 태그<br>프로모션은 NULL |
 | `story_id` | bigint | FK `stories.id` | 이동 대상 스토리<br>없으면 NULL |
 | `title` | varchar(100) | NOT NULL | 광고 표기 없는 제목 |
 | `body` | varchar(300) | NOT NULL | 수신거부 안내 없는 본문 |
@@ -154,6 +154,8 @@ erDiagram
 | 인덱스 | 컬럼 |
 |---|---|
 | `idx_push_campaigns_status_scheduled_at` | `status`, `scheduled_at` |
+
+- 공지 참조에는 인덱스를 두지 않는다. 공지로 캠페인을 찾는 조회가 없고 공지 삭제의 참조 확인은 캠페인 수가 적어 전체 읽기로 끝난다.
 
 <br>
 

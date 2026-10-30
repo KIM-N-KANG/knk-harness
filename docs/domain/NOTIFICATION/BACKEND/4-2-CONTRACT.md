@@ -90,12 +90,12 @@
 | 필드명 | 타입 | 의미 |
 |---|---|---|
 | `campaignId` | `string` | 캠페인 공개 식별자 |
-| `kind` | `string` | 알림 성격<br>`SERVICE`는 정보성, `MARKETING`은 광고성 |
+| `kind` | `string` | 알림 성격<br>`SERVICE`는 정보성, `MARKETING`은 광고성<br>공지 알림은 연결한 공지의 태그가 정함 |
 | `title` | `string` | 광고 표기 없는 제목 |
 | `body` | `string` | |
 | `scheduledAt` | `string` | 예약 시각 |
 | `status` | `string` | `SCHEDULED`, `SENDING`, `SENT`, `CANCELED`, `FAILED` |
-| `noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
+| `noticeId` | `string / null` | 공지 알림이면 연결한 공지의 공개 식별자 |
 | `storyId` | `string / null` | 이동 대상 스토리의 공개 식별자<br>프로모션이 스토리로 이어질 때만 |
 | `targetCount` | `integer / null` | 마지막 회차의 대상 수<br>회차 전은 `null` |
 | `sentCount` | `integer / null` | 마지막 회차의 결과<br>원격 모드는 기록한 발송 요청 수, 로컬 모드는 발송기 호출 수<br>실제 도달 수가 아님 |
@@ -680,8 +680,8 @@ Content-Type: application/json
 | `NOTICE` | `campaignId` | `string` | 캠페인 공개 식별자 |
 | `NOTICE` | `noticeId` | `string` | 공지 공개 식별자 |
 | `NOTICE` | `noticeTag` | `string` | 공지 태그<br>`SERVICE`, `UPDATE`, `MAINTENANCE` |
-| `NOTICE` | `title` | `string` | 공지의 알림 제목<br>광고 표기 없음 |
-| `NOTICE` | `body` | `string` | 공지의 알림 본문 |
+| `NOTICE` | `title` | `string` | 캠페인 제목<br>광고 표기 없음 |
+| `NOTICE` | `body` | `string` | 캠페인 본문 |
 | `NOTICE` | `deepLink` | `string` | `/notices/{noticeId}` |
 | `ATTENDANCE_REMINDER` | `date` | `string` | KST 날짜 |
 | `ATTENDANCE_REMINDER` | `title` | `string` | 광고 표기가 붙은 템플릿 제목 |
@@ -1071,11 +1071,14 @@ Authorization: Bearer {adminToken}
 | `body` | `string` | 필수 | 1~300자 |
 | `scheduledAt` | `string` | 선택 | 예약 시각<br>생략하면 현재 시각으로 즉시 발송 |
 | `storyId` | `string` | 선택 | 알림을 누르면 열 스토리의 공개 식별자<br>발행 상태이고 공개이며 삭제되지 않은 스토리만 |
+| `noticeId` | `string` | 선택 | 알림을 누르면 열 공지의 공개 식별자<br>게시 상태인 공지만 |
 | `reason` | `string` | 필수 | 사유<br>1~500자 |
 
-- 알림 성격은 항상 `MARKETING`이다. 공지 알림 캠페인은 공지 게시가 만든다.
-- `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다.
-- 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. ([4-2-17 대상 수 미리보기](#4-2-17-대상-수-미리보기))
+- `storyId`와 `noticeId`는 함께 보낼 수 없다.
+- 알림 성격은 요청으로 받지 않는다. `kind`를 보내도 무시한다. `noticeId`가 있으면 공지 태그가 정하고 `SERVICE`, `UPDATE`, `MAINTENANCE`는 `SERVICE`, `EVENT`, `PROMOTION`은 `MARKETING`이다. `noticeId`가 없으면 `MARKETING`이다. ([NOTICE 4-1-8 알림 연결](../../NOTICE/BACKEND/4-1-PIPELINES.md#4-1-8-알림-연결))
+- `storyId`가 있으면 푸시 데이터의 딥링크는 `/stories/{storyId}`다. `noticeId`가 있으면 `/notices/{noticeId}`이고 시나리오는 `SERVICE`면 `NOTICE`, `MARKETING`이면 `PROMOTION`이다. ([4-2-10 푸시 데이터](#4-2-10-푸시-데이터))
+- 같은 `noticeId`로 여러 번 예약할 수 있고 요청마다 새 캠페인이다.
+- 확정 전에 대상 수 미리보기로 대상 규모를 확인한다. 공지를 연결하면 위 규칙으로 정한 알림 성격으로 조회한다. ([4-2-17 대상 수 미리보기](#4-2-17-대상-수-미리보기))
 
 <br>
 
@@ -1083,7 +1086,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시각, 시각 형식 오류<br>`storyId`가 UUID 형식이 아니거나 공개 스토리가 아님 |
+| 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시각, 시각 형식 오류<br>`storyId`가 UUID 형식이 아니거나 공개 스토리가 아님<br>`noticeId`가 UUID 형식이 아니거나 게시된 공지가 아님<br>`storyId`와 `noticeId`를 함께 보냄 |
 
 <details>
 <summary><b>요청·응답 예시</b></summary>
@@ -1109,7 +1112,48 @@ Content-Type: application/json
 
 캠페인 목록의 항목과 같다.
 
-**3) 400 Response body**
+**3) 공지 연결 Request**
+
+```http
+POST /api/v1/admin/push/campaigns
+Authorization: Bearer {adminToken}
+Content-Type: application/json
+
+{
+  "title": "새로운 점검 안내가 도착했어요",
+  "body": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
+  "scheduledAt": "2026-10-24T09:00:00Z",
+  "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
+  "reason": "점검 사전 안내"
+}
+```
+
+**4) 공지 연결 201 Response body**
+
+태그가 `MAINTENANCE`인 공지라 `kind`가 `SERVICE`다.
+
+```json
+{
+  "campaignId": "7a2e3d4c-5b6f-4a70-8c8d-9e0f1a2b3c4d",
+  "kind": "SERVICE",
+  "title": "새로운 점검 안내가 도착했어요",
+  "body": "10월 25일 02:00부터 04:00까지 채팅과 제작을 잠시 쉬어요.",
+  "scheduledAt": "2026-10-24T09:00:00Z",
+  "status": "SCHEDULED",
+  "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
+  "storyId": null,
+  "targetCount": null,
+  "sentCount": null,
+  "deliveredMembers": 0,
+  "deliveredDevices": 0,
+  "failedDevices": 0,
+  "startedAt": null,
+  "finishedAt": null,
+  "createdAt": "2026-10-21T03:00:00Z"
+}
+```
+
+**5) 400 Response body**
 
 ```json
 {
@@ -1624,7 +1668,7 @@ Authorization: Bearer {accessToken}
 |---|---|---|
 | STORY | 완성 이벤트의 발송 경로 | 완성 요청 행의 완료 기록 트랜잭션, 완성 이벤트, 캠페인 이동 대상 스토리의 공개 판정 |
 | MODERATION | 검수 완료 이벤트의 발송 경로와 결과별 문구<br>공개 중단 이벤트의 알림 내역 기록, 발송 경로와 문구 | 제출본 종료 기록 트랜잭션, 검수 완료 이벤트<br>공개 중단 트랜잭션, 공개 중단 이벤트 |
-| NOTICE | 공지 발송 요청 연산 | 공지 공개 식별자 |
+| NOTICE | 없음 | 알림 연결 연산, 공지 공개 식별자 |
 | ACCOUNT | 회원의 토큰 전부 삭제 연산<br>회원의 알림 내역 전부 삭제 연산 | 계정 상태, 공개 식별자, 보상 신원, 사용자 행 잠금 |
 | PAYMENT | 없음 | 출석 보상 멱등 키의 존재, 만료 창 안에 잔여 있는 로트를 가진 회원 조회 |
 | ADMIN | 캠페인과 문구 템플릿 관리<br>기간의 캠페인 도달 요약 연산<br>종류별 날짜별 도달 회원 수 연산 | 관리자 권한 판정과 요청자, 변경 감사 기록 |
@@ -1637,7 +1681,6 @@ Authorization: Bearer {accessToken}
 | 완성 이벤트 발행 | 회원 내부 ID, 완성 요청 ID, 스토리 공개 식별자, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 검수 완료 이벤트 발행 | 회원 내부 ID, 제출본 식별자, 스토리 공개 식별자, 결과, 회차, 제목 | 원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송 |
 | 공개 중단 이벤트 발행 | 회원 내부 ID, 스토리 공개 식별자, 이름 토큰을 치환한 제목, 사유 분류, 기타의 입력 사유, 공개 중단 시각 | 알림 내역 행<br>원격 모드는 아웃박스 행, 로컬 모드는 커밋 후 발송<br>호출자의 트랜잭션에 참여 |
-| 공지 발송 요청 | 공지 공개 식별자, 알림 제목 100자 이내, 알림 본문 300자 이내, 종류, 공지 태그, 딥링크 | 예약 시각이 현재인 캠페인 1건<br>호출자의 트랜잭션에 참여하고 같은 공지의 두 번째 요청은 유니크 위반 |
 | 회원 토큰 전부 삭제 | 회원 내부 ID | 삭제 행 수 |
 | 기간의 캠페인 도달 요약 | KST 날짜 범위 | 마지막 회차의 선점 시각이 범위 안인 캠페인마다 공개 식별자, 종류, 제목, 공지 공개 식별자, 선점 시각, 딥링크 포함 여부(`null` 가능), 도달 회원 수<br>도달 회원 수는 캠페인 구조의 `deliveredMembers`와 같은 집계 |
 | 종류별 날짜별 도달 회원 수 | KST 날짜 범위, 시나리오 목록 | 시나리오와 KST 날짜마다 도달 기기가 하나 이상인 발송 결과의 회원을 중복 없이 센 수<br>날짜는 처리가 끝난 시각 기준이며 회원 참조가 없는 행은 세지 않음 |

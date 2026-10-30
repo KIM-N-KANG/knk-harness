@@ -29,7 +29,7 @@
 | [NOTIFICATION](docs/domain/NOTIFICATION/AGENTS.md) | 푸시 토큰·발송·알림 서비스 | BACKEND · WEB · ANDROID |
 | [MODERATION](docs/domain/MODERATION/AGENTS.md) | 게시물 검수·15세 모드·입력 검수 | AI · BACKEND · WEB · ANDROID |
 | [ADMIN](docs/domain/ADMIN/AGENTS.md) | 관리자 인증·권한·감사 로그·대시보드·회원 조회 | BACKEND · WEB |
-| [NOTICE](docs/domain/NOTICE/AGENTS.md) | 공지사항 작성·게시·공개 조회·게시 알림 | BACKEND · WEB · ANDROID |
+| [NOTICE](docs/domain/NOTICE/AGENTS.md) | 공지사항 작성·게시·공개 조회·알림 캠페인 연결 | BACKEND · WEB · ANDROID |
 
 - 각 도메인의 `AGENTS.md`가 세트 목록을 안내합니다. 작성된 세트는 그 표에서 세트 `AGENTS.md`로 링크됩니다. 세트 안의 문서 역할과 읽는 순서는 세트 폴더의 `AGENTS.md`를 따릅니다.
 - 문체와 파일명 규칙은 [제품 Spec 작성 가이드](docs/REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), 세트별 파일 구성은 [AI](docs/REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](docs/REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](docs/REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드를 따릅니다.
