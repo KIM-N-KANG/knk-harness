@@ -9,7 +9,7 @@
 | 단위 | 입력 준비, 이미지 처리, 프롬프트 조립, 응답 검사와 대체 호출 | 모델과 HTTP 응답 대체 |
 | API | 요청 검증, HTTP 상태와 응답 필드 | 이미지 준비와 모델 호출 대체 |
 | 관측 | 기록 정제, 요청별 격리, 관측 장애 | 관측 전송 대체 |
-| 실제 모델 통합 | 승인·반려 이미지 데이터셋의 판정 | 다운로드만 로컬 파일로 대체, 실제 프롬프트와 모델 호출 |
+| 실제 모델 통합 | 승인, 반려 이미지 데이터셋의 판정 | 다운로드만 로컬 파일로 대체, 실제 프롬프트와 모델 호출 |
 
 <br>
 
@@ -70,7 +70,7 @@
 
 | ID | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| INT-01 | 승인·반려 이미지 데이터셋 | 미탐 0건 |
+| INT-01 | 승인, 반려 이미지 데이터셋 | 미탐 0건 |
 
 <br>
 
@@ -80,7 +80,7 @@
 |---|---:|---|
 | 승인 | 112장 | `evaluation/moderation/datasets/images/approve/` |
 | 반려 | 93장 | `evaluation/moderation/datasets/images/reject/` |
-| 합계 | 205장 | — |
+| 합계 | 205장 | 없음 |
 
 ```bash
 RUN_MODERATION_DATASET=1 ./scripts/test.sh --live tests/integration/test_moderation_dataset_live.py

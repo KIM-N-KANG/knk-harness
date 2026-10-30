@@ -141,7 +141,7 @@
 | 404 | `NOT_FOUND` | 부재, 타인 소유, 형식 오류 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -250,7 +250,7 @@ Authorization: Bearer {accessToken}
 | 400 | `BAD_REQUEST` | `limit`이 정수가 아님 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -326,7 +326,7 @@ Authorization: Bearer {accessToken}
 | 503 | `SERVICE_UNAVAILABLE` | 이미지가 있는 요청에서 이미지 저장소 미설정 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 
@@ -430,7 +430,7 @@ Content-Type: application/json
 | 409 | `CONFLICT` | 승인본 |
 
 <details>
-<summary><b>요청·응답 예시</b></summary>
+<summary><b>요청, 응답 예시</b></summary>
 
 <br>
 

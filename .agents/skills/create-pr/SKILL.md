@@ -3,16 +3,16 @@ name: create-pr
 description: 현재 브랜치의 변경으로 팀 규칙에 맞는 Draft PR을 만들거나 기존 PR에 변경을 반영해 달라는 요청에 사용합니다. 중복 PR을 방지하고 요청된 변경을 push하며, 새 PR 생성 후 Jira 상태를 갱신합니다. PR 조회나 본문 초안만 요청하면 원격 상태를 변경하지 않습니다.
 ---
 
-# Draft PR 생성·갱신
+# Draft PR 생성과 갱신
 
 ## 범위와 제목
 
 - 제목은 `[KNK-{Jira이슈번호}] {태그}: {PR 제목}` 형식이며 본문과 함께 한국어로 작성합니다.
 - Jira 키는 사용자 명시 → 현재 작업에 대해 대화에서 확정된 키 → 현재 브랜치 순서로 찾습니다. 사용자가 명시적으로 키를 교체했다면 새 키를 따릅니다. 키가 없거나 충돌이 해소되지 않았거나 작업과 무관한 키로 확인되면 필요한 키만 질문합니다. 임의의 키를 만들지 않습니다.
 - 태그는 사용자 지정이 우선이며 그 외에는 최종 변경 내용에 따라 `Feat`, `Fix`, `Docs`, `Design`, `CICD`, `Refactor`, `Chore`에서 선택합니다. 브랜치 태그는 참고입니다. `Release`는 릴리스 PR에만 사용합니다.
-- 기본 base는 `dev`입니다. 사용자 지정 base와 릴리스 전용 스킬의 base·head 규칙이 우선합니다. 기존 PR은 별도 변경 요청이 없으면 기존 base와 Ready/Draft 상태를 유지합니다.
-- `main`·`dev`에서 새 작업 PR을 만들거나 보호 브랜치로 push하지 않습니다. 해당 브랜치 작업이 명시적으로 승인된 경우에는 그 범위를 따릅니다. `release/*`는 릴리스 전용 스킬로 처리하고 이미 승인된 절차를 다시 확인하지 않습니다.
-- PR 생성 요청은 필요한 브랜치 push와 Draft PR 생성을 포함합니다. 머지·배포는 포함하지 않습니다. 이미 승인된 커밋은 해당 스킬로 진행하되, PR에 미커밋 변경이 필요하고 포함 범위가 불분명할 때만 질문합니다.
+- 기본 base는 `dev`입니다. 사용자 지정 base와 릴리스 전용 스킬의 base, head 규칙이 우선합니다. 기존 PR은 별도 변경 요청이 없으면 기존 base와 Ready/Draft 상태를 유지합니다.
+- `main`, `dev`에서 새 작업 PR을 만들거나 보호 브랜치로 push하지 않습니다. 해당 브랜치 작업이 명시적으로 승인된 경우에는 그 범위를 따릅니다. `release/*`는 릴리스 전용 스킬로 처리하고 이미 승인된 절차를 다시 확인하지 않습니다.
+- PR 생성 요청은 필요한 브랜치 push와 Draft PR 생성을 포함합니다. 머지, 배포는 포함하지 않습니다. 이미 승인된 커밋은 해당 스킬로 진행하되, PR에 미커밋 변경이 필요하고 포함 범위가 불분명할 때만 질문합니다.
 
 ## 템플릿과 본문
 
@@ -20,37 +20,37 @@ description: 현재 브랜치의 변경으로 팀 규칙에 맞는 Draft PR을 �
 
 | 템플릿 | 사용하는 상황 |
 | --- | --- |
-| `harness-pull-request-template.md` | 하네스·공통 도구·개발 지침 |
+| `harness-pull-request-template.md` | 하네스, 공통 도구, 개발 지침 |
 | `frontend-pull-request-template.md` | 웹 프론트엔드 |
 | `mobile-pull-request-template.md` | 모바일 앱 |
-| `backend-server-pull-request-template.md` | API·DB·서버 |
-| `ai-server-pull-request-template.md` | AI·프롬프트·평가 |
+| `backend-server-pull-request-template.md` | API, DB, 서버 |
+| `ai-server-pull-request-template.md` | AI, 프롬프트, 평가 |
 
 - Infra처럼 전용 템플릿이 없으면 변경과 가장 가까운 템플릿을 선택합니다. 특정 서비스와 무관한 공통 인프라는 하네스 템플릿을 기본으로 사용합니다. 템플릿 선택만을 이유로 질문하지 않습니다.
-- 선택한 템플릿을 읽고 핵심 구조를 유지하되, 무관한 섹션은 제거하고 검증·영향·배포 주의사항 등 필요한 섹션은 보완합니다. 템플릿을 찾을 수 없어도 확정된 diff·검증 결과 정리는 계속하고, 게시 전에 필요한 위치나 필수 형식만 질문합니다.
-- `../technical-writing/SKILL.md`를 참고해 목적·결과·검증을 간결하게 작성합니다. 최종 diff가 제목과 본문의 기준이며 파일명 나열이나 대화 이력으로 채우지 않습니다.
-- 실행하지 않은 검사는 완료로 표시하지 않습니다. 이미 통과한 검증은 어떤 변경에 대한 결과인지 확인해 재사용하고, 프로젝트의 필수 검증이 빠졌다면 수행합니다. 실행 불가·실패가 있으면 프로젝트의 PR 정책에 따라 처리하고 정확하게 기록합니다.
-- UI 변경은 결과 화면과 이번 변경이 만든 로딩·빈 상태·오류 분기를 캡처합니다. 신규 화면은 결과만, 기존 화면 변경은 Before/After를 사용합니다. 캡처 불가이면 이유를 남깁니다. UI 변경이 없으면 화면 섹션은 템플릿에 따라 제거하거나 해당 없음으로 적습니다.
+- 선택한 템플릿을 읽고 핵심 구조를 유지하되, 무관한 섹션은 제거하고 검증, 영향, 배포 주의사항 등 필요한 섹션은 보완합니다. 템플릿을 찾을 수 없어도 확정된 diff, 검증 결과 정리는 계속하고, 게시 전에 필요한 위치나 필수 형식만 질문합니다.
+- `../technical-writing/SKILL.md`를 참고해 목적, 결과, 검증을 간결하게 작성합니다. 최종 diff가 제목과 본문의 기준이며 파일명 나열이나 대화 이력으로 채우지 않습니다.
+- 실행하지 않은 검사는 완료로 표시하지 않습니다. 이미 통과한 검증은 어떤 변경에 대한 결과인지 확인해 재사용하고, 프로젝트의 필수 검증이 빠졌다면 수행합니다. 실행 불가, 실패가 있으면 프로젝트의 PR 정책에 따라 처리하고 정확하게 기록합니다.
+- UI 변경은 결과 화면과 이번 변경이 만든 로딩, 빈 상태, 오류 분기를 캡처합니다. 신규 화면은 결과만, 기존 화면 변경은 Before/After를 사용합니다. 캡처 불가이면 이유를 남깁니다. UI 변경이 없으면 화면 섹션은 템플릿에 따라 제거하거나 해당 없음으로 적습니다.
 
 ## 작업 흐름
 
-1. **대상 저장소·현재 브랜치·원격**을 확인합니다: `git rev-parse --show-toplevel`, `git status --short --branch`, `git remote -v`, `gh auth status`, `gh repo view`. 조회나 초안만 요청한 경우에는 조사·본문 작성까지만 수행합니다.
-2. 현재 head의 열린 PR을 조회합니다. `gh pr list --state open --head <head> --json number,url,title,body,isDraft,baseRefName,headRefName` 결과에서 대상 저장소와 head·base가 일치하는 PR을 선택합니다. 조회 실패를 PR 부재로 취급하지 않습니다. 대상이 여럿이면 요청의 base 등으로 좁히고 해결되지 않은 경우만 질문합니다.
+1. **대상 저장소, 현재 브랜치, 원격**을 확인합니다: `git rev-parse --show-toplevel`, `git status --short --branch`, `git remote -v`, `gh auth status`, `gh repo view`. 조회나 초안만 요청한 경우에는 조사, 본문 작성까지만 수행합니다.
+2. 현재 head의 열린 PR을 조회합니다. `gh pr list --state open --head <head> --json number,url,title,body,isDraft,baseRefName,headRefName` 결과에서 대상 저장소와 head, base가 일치하는 PR을 선택합니다. 조회 실패를 PR 부재로 취급하지 않습니다. 대상이 여럿이면 요청의 base 등으로 좁히고 해결되지 않은 경우만 질문합니다.
    - 조회 요청이면 URL과 상태를 보고합니다.
    - 생성 요청인데 이미 열린 PR이 있으면 중복 생성하지 않습니다. 현재 변경 반영이 포함된 요청이면 기존 PR을 재사용합니다.
-   - 기존 PR의 제목·본문·사용자 추가 내용은 읽고, 요청에 필요한 부분만 갱신합니다. 단순 push 요청으로 본문을 전면 재작성하지 않습니다.
+   - 기존 PR의 제목, 본문, 사용자 추가 내용은 읽고, 요청에 필요한 부분만 갱신합니다. 단순 push 요청으로 본문을 전면 재작성하지 않습니다.
 3. Jira 키, base, head와 변경 범위를 확정합니다. 미커밋 변경이 요청 범위 밖이면 그대로 둡니다. 포함이 필요한 변경은 이미 받은 승인에 따라 `../create-commit/SKILL.md`로 커밋하며, 포함 범위가 불분명하면 해당 부분만 확인합니다.
-4. **결정한 base**를 fetch하고 동일한 기준으로 검토합니다. 아래의 `<base>`·`<remote>` 등은 앞에서 확인한 값으로 치환하며, fork나 다른 원격을 사용하는 요청은 실제 PR의 base 저장소를 기준으로 합니다.
+4. **결정한 base**를 fetch하고 동일한 기준으로 검토합니다. 아래의 `<base>`, `<remote>` 등은 앞에서 확인한 값으로 치환하며, fork나 다른 원격을 사용하는 요청은 실제 PR의 base 저장소를 기준으로 합니다.
    - `git fetch <remote> refs/heads/<base>:refs/remotes/<remote>/<base>`
    - `git log --oneline <remote>/<base>..HEAD`
-   - `git diff <remote>/<base>...HEAD`로 실제 변경을 읽습니다. 통계·파일 목록만으로 본문을 작성하지 않습니다.
+   - `git diff <remote>/<base>...HEAD`로 실제 변경을 읽습니다. 통계, 파일 목록만으로 본문을 작성하지 않습니다.
    - base 대비 커밋이나 실제 diff가 없으면 새 PR을 만들지 않습니다. 범위가 요청과 다르면 불필요한 커밋을 올리기 전에 확인합니다.
-5. 템플릿을 선택하고 검증 결과·본문·필요한 캡처를 준비합니다. 본문은 임시 파일에 실제 줄바꿈을 사용해 저장합니다.
-6. 대상 원격과 head를 확인해 **요청된 커밋을 push**합니다. 본문·제목만 수정하는 요청에서는 커밋·push를 생략합니다. upstream이 올바른 원격·head를 가리키는지 확인하며, 필요하면 `git push -u <head-remote> HEAD:refs/heads/<head>`처럼 목적지를 명시합니다. 요청 없이 force push하지 않습니다.
-7. 새 PR이면 `gh pr create --draft --base <base> --head <head> --title <title> --body-file <body-file>`로 생성합니다. 기존 PR이면 push 후 요청된 제목·본문 변경만 `gh pr edit <PR 번호> --title <title> --body-file <body-file>`로 반영합니다. push·생성 응답이 불확실하면 원격 head와 열린 PR을 재조회한 뒤 재시도해 중복을 방지합니다.
+5. 템플릿을 선택하고 검증 결과, 본문, 필요한 캡처를 준비합니다. 본문은 임시 파일에 실제 줄바꿈을 사용해 저장합니다.
+6. 대상 원격과 head를 확인해 **요청된 커밋을 push**합니다. 본문, 제목만 수정하는 요청에서는 커밋, push를 생략합니다. upstream이 올바른 원격, head를 가리키는지 확인하며, 필요하면 `git push -u <head-remote> HEAD:refs/heads/<head>`처럼 목적지를 명시합니다. 요청 없이 force push하지 않습니다.
+7. 새 PR이면 `gh pr create --draft --base <base> --head <head> --title <title> --body-file <body-file>`로 생성합니다. 기존 PR이면 push 후 요청된 제목, 본문 변경만 `gh pr edit <PR 번호> --title <title> --body-file <body-file>`로 반영합니다. push, 생성 응답이 불확실하면 원격 head와 열린 PR을 재조회한 뒤 재시도해 중복을 방지합니다.
 8. **PR URL을 확보한 뒤** 준비한 캡처를 첨부하고 본문을 갱신합니다. 아래 첨부 절차를 따릅니다. 아직 첨부하지 않은 상태를 완료로 보고하지 않습니다.
 9. 새 Draft PR 생성이 성공한 경우에만 확정된 Jira 키의 이슈를 조회합니다. 현재 상태가 `진행 중`이면 전환 목록에서 **목표 상태가 `PR 리뷰 및 검증`인 전환 ID**로 실행하고 결과를 재조회합니다. 이미 해당 상태이거나 다른 상태이면 그대로 둡니다. 기존 PR 재사용이나 Jira 변경 제외 요청에서는 전환하지 않습니다.
-10. Jira·첨부·본문 갱신 실패 시 완료된 단계와 남은 작업을 보고합니다. 생성한 PR을 닫거나 성공한 push를 되돌리지 않습니다. PR을 재조회해 URL·base/head·제목·본문·첨부·원격 커밋을 확인하고 `git status --short`로 로컬 상태를 확인합니다.
+10. Jira, 첨부, 본문 갱신 실패 시 완료된 단계와 남은 작업을 보고합니다. 생성한 PR을 닫거나 성공한 push를 되돌리지 않습니다. PR을 재조회해 URL, base/head, 제목, 본문, 첨부, 원격 커밋을 확인하고 `git status --short`로 로컬 상태를 확인합니다.
 
 ## 이미지 첨부
 
@@ -61,4 +61,4 @@ description: 현재 브랜치의 변경으로 팀 규칙에 맞는 Draft PR을 �
 
 ## 완료 보고
 
-PR URL·제목·base/head와 신규 생성 또는 재사용 여부, Jira 키·템플릿, 검증·첨부·Jira 전환 결과, 남은 로컬 변경과 미완료 작업을 간결하게 보고합니다. 확인하지 않은 화면·API 동작·테스트 결과를 사실처럼 쓰지 않습니다.
+PR URL, 제목, base/head와 신규 생성 또는 재사용 여부, Jira 키, 템플릿, 검증, 첨부, Jira 전환 결과, 남은 로컬 변경과 미완료 작업을 간결하게 보고합니다. 확인하지 않은 화면, API 동작, 테스트 결과를 사실처럼 쓰지 않습니다.

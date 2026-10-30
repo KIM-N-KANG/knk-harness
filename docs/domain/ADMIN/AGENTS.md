@@ -2,7 +2,7 @@
 
 관리자 인증과 권한, 감사 로그, 운영 대시보드 지표, 회원 조회를 다룬다. 다른 도메인 데이터를 바꾸는 운영 기능은 그 데이터를 관리하는 도메인이 정하고 ADMIN은 관리자 자체의 것만 정한다.
 
-세트별 명세는 하위 폴더에 두고 각 세트의 문서 역할과 읽는 순서는 그 폴더의 `AGENTS.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../REFERENCE/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../REFERENCE/AI-SPEC-WRITING-GUIDE.md) · [백엔드](../../REFERENCE/BACKEND-SPEC-WRITING-GUIDE.md) · [클라이언트](../../REFERENCE/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
+세트별 명세는 하위 폴더에 두고 각 세트의 문서 역할은 그 폴더의 `AGENTS.md`가 안내한다. 파일 구성은 세트 종류별 작성 가이드를 따르며 해당 없는 문서는 만들지 않는다. ([제품 Spec 작성 가이드](../../reference/PRODUCT-SPEC-WRITING-GUIDE.md), [AI](../../reference/AI-SPEC-WRITING-GUIDE.md), [백엔드](../../reference/BACKEND-SPEC-WRITING-GUIDE.md), [클라이언트](../../reference/CLIENT-SPEC-WRITING-GUIDE.md) 명세 작성 가이드)
 
 <br>
 
