@@ -137,8 +137,9 @@
 | 웹 이용 후 앱 이용 카드 | 퍼널 응답 `platform` `null`, `steps[].platform` `web`, `android` | 카드 머리에 플랫폼 배지 없음, 단계 이름 "웹 활동", "앱 활동" |
 | 앱 유입 사용자 수 | 앱 배너 사용자 차트 | 배너 노출과 클릭 사용자의 기간 합 카드 없음, 배너 경유 앱 신규 사용자 기간 합 카드만 있음 |
 | 푸시 열람 기본 | 진행 중 캠페인 없음, URL에 `tab=push`만 | 광고 캠페인 선택 숨김, 캠페인 목록을 기다리지 않고 최근 7일로 요청, 출처 표시 "Amplitude" |
-| 푸시 열람 값 | 공지 알림 캠페인 `deliveredMembers` 412, `openState` `MEASURED`, `pushOpens` 58, `pushOpenRate` 0.1408 | "공지" 배지, 정보성, 도달 회원 412명, 푸시 열람 58명, 열람률 14.1% |
-| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`인 캠페인 | 푸시 열람과 열람률 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음" |
+| 푸시 열람 값 | 공지 알림 캠페인 `deliveredMembers` 412, `openState` `MEASURED`, `pushOpens` 79, `webPushOpens` 58, `androidPushOpens` 21, `pushOpenRate` 0.1917, `inboxOpens` 8, `webInboxOpens` 3, `androidInboxOpens` 5 | "공지" 배지, 정보성, 도달 회원 412명, 푸시 열람 79명과 그 아래 "웹 58명, 앱 21명", 열람률 19.2%, 알림함 열람 8명과 그 아래 "웹 3명, 앱 5명" |
+| 앱 측정 전 | `openState` `MEASURED`, `pushOpens` 27, `webPushOpens` 27, `androidPushOpens` `null`, `inboxOpens` 6, `webInboxOpens` 6, `androidInboxOpens` `null`인 활동 알림 | 푸시 열람 27명과 "웹 27명, 앱 측정 시작 전", 알림함 열람 6명과 "웹 6명, 앱 측정 시작 전" |
+| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`인 캠페인 | 푸시 열람, 열람률, 알림함 열람 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음"<br>플랫폼 열람 문구 없음 |
 | 측정 구간 없음 | `asOf` `null`, `pendingDates` 빈 배열 | 집계 기준 시각 표시 없음, 부분 집계 안내 없음, 다시 요청하지 않음 |
 | 열람률 없음 | `openState` `MEASURED`, `pushOpenRate` `null` | "계산할 수 없음" |
 | 열람률 1 초과 | `pushOpenRate` 1.5 | 150.0% |
@@ -509,3 +510,21 @@
 | 본문 없음 | 채팅 상세 | 대화 요약 본문이 없고 "이 화면에서는 대화 내용을 제공하지 않습니다."가 그대로 |
 | 목록 | 채팅 목록 | 요약 끝 턴 열 없음 |
 | 고정 데이터 | 고정 데이터 모드의 채팅 상세 | 고정 데이터의 채팅마다 `summaryThroughTurn`이 있어 항목이 보임 |
+
+<br>
+
+### 5-1-16 캠페인 상세의 열람
+
+| 확인 항목 | 입력과 상황 | 기대 결과 |
+|---|---|---|
+| 요청 | 캠페인 상세 진입 | 상세 요청과 `GET /api/campaigns/push-opens/{campaignId}` 요청을 따로 보냄, 열람 요청에 쿼리 없음 |
+| 위치와 값 | `from` 2026-10-23, `to` 2026-10-30, `openState` `MEASURED`, `pushOpens` 84, `webPushOpens` 61, `androidPushOpens` 23, `pushOpenRate` 0.2039, `inboxOpens` 11, `webInboxOpens` 4, `androidInboxOpens` 7 | 발송 단계 카드 아래, 처리 사유 카드 위에 영역 제목 "열람"과 출처 "Amplitude", 집계 기간 "2026-10-23 ~ 2026-10-30"<br>카드 순서 푸시 열람, 열람률, 알림함 열람<br>푸시 열람 84명과 "웹 61명, 앱 23명", 열람률 20.4%, 알림함 열람 11명과 "웹 4명, 앱 7명" |
+| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING` | 세 카드 값 자리에 "측정 불가", "측정 시작 전", "발송 기록 없음" |
+| 선점 전 | `openState` `PENDING`, `from`과 `to` `null` | 세 카드에 "발송 기록 없음", 집계 기간 없음 |
+| 앱 측정 전 | `androidPushOpens`, `androidInboxOpens` `null` | "웹 61명, 앱 측정 시작 전" |
+| 준비 중 | `pendingDates` 있음 | 카드 줄 위에 "열람 수는 준비된 날짜만 합산했습니다. 열람률은 일부 날짜의 열람 수를 전체 도달 회원 수로 나눈 값입니다.", 60초 뒤 같은 요청 |
+| 떠남 | 준비 중인 상태에서 캠페인 목록으로 이동 | 재요청 멈춤 |
+| 열람 실패 | 열람 요청이 503 | 열람 영역에만 상태 상자, 상세의 다른 항목과 취소나 재실행 동작은 그대로 |
+| 상세 실패 | 상세 요청이 실패하고 열람 요청은 성공 | 상세 화면의 실패 상태만 보이고 열람 영역 없음 |
+| 도움말 | 카드 제목 옆 "?" | 지표 정의 표의 푸시 열람, 열람률, 알림함 열람 정의 |
+| 고정 데이터 | 고정 데이터 모드의 캠페인 상세 | 고정 데이터의 캠페인마다 열람 응답이 있어 영역이 보임 |

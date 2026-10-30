@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 | --- | --- |
-| 버전 | v0.38 |
+| 버전 | v0.39 |
 | 작성일 | 2026-06-30 |
-| 수정일 | 2026-10-28 |
+| 수정일 | 2026-10-30 |
 | 대상 | 마냑 MVP |
 | 작성 목적 | MVP 출시 후 사용자가 스토리를 만들고 채팅을 이어가는 흐름을 측정하기 위한 이벤트, 지표, 관측, 검수 기준을 정의합니다. |
 
@@ -306,6 +306,7 @@ P0 이벤트는 출시 전에 반드시 수집합니다. P1 이벤트는 P0가 �
 | P1 `Phase 3 · 구현` | client | `client_storyOnboarding_loadError_shown`                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_shown`                                 |
 | P1 `Phase 3 · 구현` | client | `client_appBanner_actionButton_clicked`                  |
+| P1 `Phase 3 · 계획` | client | `client_notification_opened`                             |
 | P1 `Phase 1 · 구현` | client | `client_invite_viewed`                                   |
 | P1 `Phase 1 · 구현` | client | `client_invite_copyButton_clicked`                       |
 | P1 `Phase 1 · 구현` | client | `client_invite_kakaoShareButton_clicked`                 |
@@ -777,6 +778,18 @@ Android [신규 가입 온보딩](3-3-android-spec.md#신규-가입-온보딩) �
 - 버튼 클릭(`chatStartButton_clicked`)과 실제 시작(`completed`의 `action=chat`)을 나눠 채팅 생성 실패와 이탈을 봅니다. 온보딩 위에서 연 상세의 채팅은 상세의 `client_storyDetail_chatStartButton_clicked`가 클릭을, `completed`(`source=storyDetail`)가 실제 시작을 맡습니다.
 - `completed`의 `chat_id`로 채팅 활성화 퍼널([§6-5-3-2](#6-5-3-2-채팅-활성화-퍼널))의 첫 메시지와 첫 AI 응답을 잇습니다. `action=create`는 간편 제작 진입 시점에 보내며, 이후는 스토리 제작 퍼널([§6-5-3-1](#6-5-3-1-스토리-제작-퍼널))이 이어 봅니다.
 - 스와이프마다 보내는 이벤트는 두지 않습니다. 스쳐 간 카드까지 세면 둘러본 정도가 부풀려지므로 1초 머문 카드의 노출과 `browsed_count`로 탐색을 봅니다.
+
+#### 6-4-2-21. 알림 열기 `Phase 3 · 계획`(KNK-1927)
+
+Android 앱이 푸시나 알림함의 알림을 눌렀을 때 보내는 이벤트입니다. `screen_name`은 `notification`입니다. 앱은 v1.7.7부터 보냅니다. 웹은 이 이벤트를 보내지 않습니다. 웹에서 알림 링크(`deepLink`)를 열면 Amplitude Browser SDK가 `[Amplitude] Page Viewed`에 그 주소의 UTM을 이벤트 속성으로 붙이므로 웹은 그 이벤트로 셉니다.
+
+| 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
+| --- | --- | --- | --- |
+| `client_notification_opened` | P1 | 푸시를 누른 순간, 또는 알림함에서 항목을 누른 순간. 로그인하지 않았거나 다른 계정의 알림이라 홈으로 이동해도 보냄. `deepLink`가 없거나 UTM이 없으면 보내지 않음 | `utm_source` (string, 필수: `push` / `inbox`), `utm_medium` (string, 필수), `utm_campaign` (string, 필수), `utm_content` (string, 필수), `notification_type` (string, 필수) |
+
+- UTM 네 값은 `deepLink` 쿼리의 값을 디코딩해 그대로 보냅니다. 값 규칙은 [NOTIFICATION 4-2-10 푸시 데이터](../domain/NOTIFICATION/BACKEND/4-2-CONTRACT.md#4-2-10-푸시-데이터)의 딥링크 UTM 쿼리입니다.
+- `notification_type`은 서버가 보낸 `type` 원문(대문자)이며 `utm_content`와 같은 정보입니다.
+- 관리자 푸시 열람과 알림함 열람은 웹은 `[Amplitude] Page Viewed`, 앱은 `client_notification_opened`로 셉니다. v1.7.7보다 낮은 버전의 앱은 이 이벤트를 보내지 않으므로 앱 열람은 v1.7.7의 Play 배포일을 앱 측정 시작일로 두고 그날부터 셉니다([ADMIN 2-4 제품 제약](../domain/ADMIN/BACKEND/2-REQUIREMENTS.md#2-4-제품-제약)).
 
 ### 6-4-3. impression 수집 기준
 

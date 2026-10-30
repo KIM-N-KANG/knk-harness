@@ -2842,7 +2842,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-관리자 캠페인과 활동 알림마다 웹에서 푸시를 눌러 연 열람 수를 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성과 측정 상태 판정은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
+관리자 캠페인과 활동 알림마다 푸시와 알림함에서 알림을 눌러 연 열람 수를 웹, 앱, 합계로 도달 회원 수와 함께 돌려준다. 열람 정의는 제품 제약에, 조회 구성과 측정 상태 판정은 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-24 푸시 열람](4-1-PIPELINES.md#4-1-24-푸시-열람))
 
 **1. 쿼리**
 
@@ -2852,7 +2852,7 @@ Authorization: Bearer {adminToken}
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
-- 측정 시작일이 비었거나 범위 전체가 측정 시작일보다 앞서면 분석 도구를 조회하지 않고 200으로 응답한다. 이때 `asOf`는 `null`, `pendingDates`는 빈 배열이다.
+- 웹과 앱 측정 시작일이 모두 비었거나 범위 전체가 설정된 측정 시작일보다 앞서면 분석 도구를 조회하지 않고 200으로 응답한다. 이때 `asOf`는 `null`, `pendingDates`는 빈 배열이다.
 
 <br>
 
@@ -2863,27 +2863,36 @@ Authorization: Bearer {adminToken}
 | `asOf` | `string / null` | 분석 지표와 같음<br>측정 구간이 없어 조회하지 않았으면 `null` |
 | `pendingDates` | `string[]` | 분석 지표와 같음<br>측정 시작 전 날짜는 넣지 않고 측정 구간이 없으면 빈 배열<br>있으면 열람 수는 준비된 날짜만 더한 값이고 열람률은 그 열람 수를 전체 도달 회원 수로 나눈 값 |
 | `from`, `to` | `string` | 캠페인 추이와 같음 |
-| `measuredFrom` | `string / null` | 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
-| `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순 |
+| `measuredFrom` | `string / null` | 웹 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
+| `androidMeasuredFrom` | `string / null` | 앱 측정 시작일 KST 날짜<br>설정되지 않았으면 `null` |
+| `campaigns` | `object[]` | 마지막 회차의 선점 시각이 범위 안인 관리자 캠페인<br>선점 시각 내림차순<br>항목마다 아래 필드와 열람 값 구조 |
 | `campaigns[].campaignId` | `string` | 캠페인 공개 식별자 |
 | `campaigns[].kind` | `string` | `SERVICE`, `MARKETING` |
 | `campaigns[].title` | `string` | 광고 표기 없는 제목 |
 | `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
 | `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
-| `campaigns[].openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정 시작 전<br>`NO_LINK` 딥링크를 넣은 발송 요청이 없어 측정 불가<br>`PENDING` 발송 요청 기록이 아직 없음 |
-| `campaigns[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `MEASURED`가 아니면 `null` |
-| `campaigns[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
-| `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 측정 시작일 중 늦은 날<br>집계 구간이 없으면 `null` |
-| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목 |
+| `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 가장 이른 측정 시작일 가운데 늦은 날<br>집계 구간이 없으면 `null` |
+| `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER` 순서의 3항목<br>항목마다 아래 필드와 열람 값 구조 |
 | `activityTypes[].type` | `string` | 시나리오 식별자 |
 | `activityTypes[].deliveredMembers` | `integer` | 종류와 날짜마다 중복 없이 센 도달 회원 수의 합<br>`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체 |
-| `activityTypes[].openState` | `string` | `MEASURED`, `BEFORE_MEASUREMENT` |
-| `activityTypes[].pushOpens` | `integer / null` | 푸시 열람 수<br>`openState`가 `BEFORE_MEASUREMENT`면 `null` |
-| `activityTypes[].pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
 
-- 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 서버는 값을 자르지 않는다.
-- Android 앱에서 연 알림은 열람 수에 들어가지 않고 도달 회원 수에는 들어간다.
+열람 값 구조는 캠페인 항목, 활동 알림 항목, 캠페인 열람 응답이 함께 쓴다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `openState` | `string` | `MEASURED` 측정함<br>`BEFORE_MEASUREMENT` 측정한 플랫폼이 없음<br>`NO_LINK` 딥링크를 넣은 발송 요청이 없어 측정 불가<br>`PENDING` 발송 요청 기록이 아직 없음<br>활동 알림은 `MEASURED`, `BEFORE_MEASUREMENT`만 |
+| `pushOpens` | `integer / null` | 푸시 열람 수 합계<br>`webPushOpens`와 `androidPushOpens` 가운데 `null`이 아닌 값의 합<br>`openState`가 `MEASURED`가 아니면 `null` |
+| `webPushOpens` | `integer / null` | 웹 푸시 열람 수<br>웹을 측정하지 않았거나 `openState`가 `MEASURED`가 아니면 `null` |
+| `androidPushOpens` | `integer / null` | 앱 푸시 열람 수<br>앱을 측정하지 않았거나 `openState`가 `MEASURED`가 아니면 `null` |
+| `pushOpenRate` | `number / null` | `pushOpens`를 `deliveredMembers`로 나눈 값<br>`pushOpens`가 `null`이거나 `deliveredMembers`가 0이면 `null` |
+| `inboxOpens` | `integer / null` | 알림함 열람 수 합계<br>`webInboxOpens`와 `androidInboxOpens` 가운데 `null`이 아닌 값의 합<br>`openState`가 `MEASURED`가 아니면 `null` |
+| `webInboxOpens` | `integer / null` | 웹 알림함 열람 수<br>`null` 조건은 `webPushOpens`와 같음 |
+| `androidInboxOpens` | `integer / null` | 앱 알림함 열람 수<br>`null` 조건은 `androidPushOpens`와 같음 |
+
+- 플랫폼은 측정 시작일이 설정돼 있고 대상의 시작이 그 날 이후일 때 측정한다. 대상의 시작은 캠페인이면 `startedAt`의 KST 날짜, 활동 알림이면 `activityFrom`이다.
+- 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 같은 날 웹과 앱에서 모두 연 회원은 합계에 두 번 든다. 서버는 값을 자르지 않는다.
+- 알림함 열람에는 열람률이 없다.
 
 <br>
 
@@ -2908,7 +2917,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-측정 시작일이 2026-10-21인 경우다.
+웹 측정 시작일이 2026-10-21, 앱 측정 시작일이 2026-10-23인 경우다. 활동 알림은 집계 구간 첫날이 앱 측정 시작일보다 앞서 앱 값이 `null`이다.
 
 ```json
 {
@@ -2917,6 +2926,7 @@ Authorization: Bearer {adminToken}
   "from": "2026-10-18",
   "to": "2026-10-24",
   "measuredFrom": "2026-10-21",
+  "androidMeasuredFrom": "2026-10-23",
   "campaigns": [
     {
       "campaignId": "4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37",
@@ -2926,8 +2936,13 @@ Authorization: Bearer {adminToken}
       "startedAt": "2026-10-23T02:00:31Z",
       "deliveredMembers": 412,
       "openState": "MEASURED",
-      "pushOpens": 58,
-      "pushOpenRate": 0.1408
+      "pushOpens": 79,
+      "webPushOpens": 58,
+      "androidPushOpens": 21,
+      "pushOpenRate": 0.1917,
+      "inboxOpens": 8,
+      "webInboxOpens": 3,
+      "androidInboxOpens": 5
     },
     {
       "campaignId": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
@@ -2938,7 +2953,12 @@ Authorization: Bearer {adminToken}
       "deliveredMembers": 230,
       "openState": "NO_LINK",
       "pushOpens": null,
-      "pushOpenRate": null
+      "webPushOpens": null,
+      "androidPushOpens": null,
+      "pushOpenRate": null,
+      "inboxOpens": null,
+      "webInboxOpens": null,
+      "androidInboxOpens": null
     },
     {
       "campaignId": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b",
@@ -2949,14 +2969,19 @@ Authorization: Bearer {adminToken}
       "deliveredMembers": 198,
       "openState": "BEFORE_MEASUREMENT",
       "pushOpens": null,
-      "pushOpenRate": null
+      "webPushOpens": null,
+      "androidPushOpens": null,
+      "pushOpenRate": null,
+      "inboxOpens": null,
+      "webInboxOpens": null,
+      "androidInboxOpens": null
     }
   ],
   "activityFrom": "2026-10-21",
   "activityTypes": [
-    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "pushOpenRate": 0.4426 },
-    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "pushOpenRate": 0.3636 },
-    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "pushOpenRate": 0.0862 }
+    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "webPushOpens": 27, "androidPushOpens": null, "pushOpenRate": 0.4426, "inboxOpens": 6, "webInboxOpens": 6, "androidInboxOpens": null },
+    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "webPushOpens": 4, "androidPushOpens": null, "pushOpenRate": 0.3636, "inboxOpens": 1, "webInboxOpens": 1, "androidInboxOpens": null },
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "webPushOpens": 104, "androidPushOpens": null, "pushOpenRate": 0.0862, "inboxOpens": 12, "webInboxOpens": 12, "androidInboxOpens": null }
   ]
 }
 ```
@@ -3299,13 +3324,102 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-42 다른 도메인과의 경계
+### 4-2-42 캠페인 열람
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/campaigns/push-opens/{campaignId}` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+관리자 캠페인 하나의 열람을 마지막 회차의 선점 날짜부터 오늘까지 센다. 알림의 캠페인 상세 화면이 캠페인 상세와 따로 부른다. 집계 범위와 조회는 처리 흐름에 있다. ([4-1-25 캠페인 열람](4-1-PIPELINES.md#4-1-25-캠페인-열람))
+
+**1. 경로**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `campaignId` | 경로 | 필수 | 캠페인 공개 식별자 |
+
+<br>
+
+**2. 응답**
+
+아래 필드와 푸시 열람의 열람 값 구조를 함께 응답한다. 열람 값은 푸시 열람의 캠페인 항목과 같은 규칙이고 범위만 집계 범위다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf` | `string / null` | 분석 지표와 같음<br>분석 도구를 조회하지 않았으면 `null` |
+| `pendingDates` | `string[]` | 푸시 열람과 같음<br>분석 도구를 조회하지 않았으면 빈 배열 |
+| `campaignId` | `string` | 캠페인 공개 식별자 |
+| `startedAt` | `string / null` | 마지막 회차의 선점 시각<br>선점 전이면 `null` |
+| `from` | `string / null` | 집계 범위의 첫날<br>`startedAt`의 KST 날짜<br>선점 전이면 `null` |
+| `to` | `string / null` | 집계 범위의 마지막 날<br>오늘과 `from`에서 365일 뒤 가운데 이른 날<br>선점 전이면 `null` |
+| `measuredFrom` | `string / null` | 푸시 열람과 같음 |
+| `androidMeasuredFrom` | `string / null` | 푸시 열람과 같음 |
+| `deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수<br>캠페인 상세의 `deliveredMembers`와 같은 집계 |
+
+- 선점 전 캠페인은 `openState`가 `PENDING`이고 열람 값은 모두 `null`이다.
+- `openState`가 `MEASURED`가 아니면 분석 도구를 조회하지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `campaignId`가 UUID 형식이 아님 |
+| 404 | `NOT_FOUND` | 없는 캠페인 |
+| 503 | `SERVICE_UNAVAILABLE` | 분석 지표와 같은 조건 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/campaigns/push-opens/4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+오늘이 2026-10-30이고 웹 측정 시작일이 2026-10-21, 앱 측정 시작일이 2026-10-23인 경우다.
+
+```json
+{
+  "asOf": "2026-10-30T05:10:00Z",
+  "pendingDates": [],
+  "campaignId": "4b7f0c2a-9d1e-4f3a-8c5b-6e2d1a0f9b37",
+  "startedAt": "2026-10-23T02:00:31Z",
+  "from": "2026-10-23",
+  "to": "2026-10-30",
+  "measuredFrom": "2026-10-21",
+  "androidMeasuredFrom": "2026-10-23",
+  "deliveredMembers": 412,
+  "openState": "MEASURED",
+  "pushOpens": 84,
+  "webPushOpens": 61,
+  "androidPushOpens": 23,
+  "pushOpenRate": 0.2039,
+  "inboxOpens": 11,
+  "webInboxOpens": 4,
+  "androidInboxOpens": 7
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-43 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
 | ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
 | PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
-| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 종류별 날짜별 도달 회원 수 |
+| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 캠페인 하나의 도달 요약, 종류별 날짜별 도달 회원 수 |
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별 |
