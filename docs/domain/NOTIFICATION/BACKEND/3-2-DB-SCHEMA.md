@@ -240,7 +240,7 @@ erDiagram
 | `public_id` | uuid | NOT NULL, UNIQUE | 알림함 API의 식별자<br>읽음 처리 경로값과 목록 커서 |
 | `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 받는 회원 |
 | `message_key` | varchar(255) | NOT NULL | 메시지 식별자와 같은 값<br>발송 모드와 무관하게 같은 값 |
-| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`와 `STORY_TAKEN_DOWN`은 각각 V114와 V115 마이그레이션에서 CHECK에 추가 |
+| `type` | varchar(40) | NOT NULL, CHECK `STORY_COMPLETED` `STORY_MODERATION_COMPLETED` `STORY_TAKEN_DOWN` `NOTICE` `ATTENDANCE_REMINDER` `CREDIT_EXPIRY_REMINDER` `PROMOTION` | 시나리오 식별자<br>`CREDIT_EXPIRY_REMINDER`는 CHECK 확장 마이그레이션이 필요 |
 | `category` | varchar(16) | NOT NULL, CHECK `NEWS` `ACTIVITY` | 알림 분류<br>기록 시 종류에서 정함<br>`CREDIT_EXPIRY_REMINDER`는 `ACTIVITY` |
 | `title` | varchar(120) | NOT NULL | 표시 제목<br>광고 알림도 광고 표기 없는 원문 |
 | `body` | varchar(300) | NOT NULL | 표시 본문<br>광고 알림도 수신거부 안내 없는 원문 |
@@ -248,7 +248,7 @@ erDiagram
 | `story_public_id` | uuid | | 관련 스토리 공개 식별자<br>FK 없음<br>이프 만료 예정 알림은 NULL |
 | `notice_public_id` | uuid | | 관련 공지 공개 식별자<br>FK 없음<br>이프 만료 예정 알림은 NULL |
 | `notice_tag` | varchar(16) | CHECK `SERVICE` `UPDATE` `MAINTENANCE` `EVENT` `PROMOTION` | 공지 알림이면 캠페인의 공지 태그<br>그 외 NULL |
-| `read_at` | timestamptz | | 최초 읽음 시각<br>`NULL`이면 안 읽음 |
+| `read_at` | timestamptz | | 읽음 시각<br>`NULL`이면 안 읽음 |
 
 | 제약과 인덱스 | 컬럼 | 쓰임 |
 |---|---|---|

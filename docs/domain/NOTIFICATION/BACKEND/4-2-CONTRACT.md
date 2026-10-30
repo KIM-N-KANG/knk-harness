@@ -136,7 +136,7 @@
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과, 플랫폼 누락이나 미지원 값 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -196,7 +196,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -254,7 +254,7 @@ Content-Type: application/json
 공통 실패만 있다.
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -303,7 +303,7 @@ Authorization: Bearer {accessToken}
 | 400 | `NIGHT_PUSH_REQUIRES_MARKETING` | 광고 동의 없이 야간만 켬 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -388,7 +388,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | `kind` 또는 `at` 누락, 형식 오류 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -459,7 +459,7 @@ X-Manyak-Internal-Secret: {sharedSecret}
 | 400 | `BAD_REQUEST` | 토큰 누락, 공백, 512자 초과 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -546,7 +546,7 @@ Content-Type: application/json
 | 502 | 없음 | 자격 조회 실패<br>본문은 공통 실패 형식이 아니라 응답과 같은 구조이며 `outcome`은 `FAILED`, `reason`은 `ELIGIBILITY_UNAVAILABLE` |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -840,7 +840,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 필수 필드 누락, 형식 오류, 목록에 없는 `type`, `outcome`과 `deliveredDevices`의 불일치, 없는 캠페인 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -937,7 +937,7 @@ Content-Type: application/json
 | 404 | `NOT_FOUND` | 허용 목록에 없는 `templateKey` |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1009,7 +1009,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | 지원하지 않는 `status`와 `kind`<br>검색어와 공통 페이지 쿼리 오류 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1086,7 +1086,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 필드 누락, 길이 초과, 과거 시각, 시각 형식 오류<br>`storyId`가 UUID 형식이 아니거나 공개 스토리가 아님 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1219,7 +1219,7 @@ Content-Type: application/json
 | 400 | `BAD_REQUEST` | `kind` 누락이나 지원하지 않는 값 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1310,7 +1310,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 날짜 형식 오류, `from`이 `to`보다 늦음, 366일 초과, 지원하지 않는 `type`과 `kind` |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1389,7 +1389,7 @@ Authorization: Bearer {adminToken}
 | `noticeId` | `string / null` | 관련 공지 공개 식별자 |
 | `noticeTag` | `string / null` | 공지 알림이면 공지 태그<br>`SERVICE`, `UPDATE`, `MAINTENANCE`, `EVENT`, `PROMOTION`<br>그 외 `null` |
 | `createdAt` | `string` | 기록 시각 |
-| `readAt` | `string / null` | 최초 읽음 시각<br>`null`이면 안 읽음 |
+| `readAt` | `string / null` | 읽은 시각<br>`null`이면 안 읽음 |
 
 - 종류와 분류의 대응은 처리 흐름이 정한다. ([4-1-19 알림 내역 기록](4-1-PIPELINES.md#4-1-19-알림-내역-기록))
 - 보관 기간이 없어 커서로 가장 오래된 내역까지 내려 볼 수 있다.
@@ -1403,7 +1403,7 @@ Authorization: Bearer {adminToken}
 | 400 | `BAD_REQUEST` | 모르는 `category`, `limit`이 숫자가 아님<br>UUID가 아닌 커서, 없거나 다른 회원의 알림 식별자인 커서 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1494,7 +1494,7 @@ Authorization: Bearer {accessToken}
 공통 실패만 있다.
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1541,7 +1541,7 @@ Authorization: Bearer {accessToken}
 | 404 | `NOT_FOUND` | 없거나 다른 회원의 알림<br>두 경우를 구분하지 않음 |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
@@ -1588,7 +1588,7 @@ Authorization: Bearer {accessToken}
 | `category` | `string` | 선택 | `NEWS` 또는 `ACTIVITY`<br>생략하면 전체 |
 
 - 요청 시점에 안 읽은 내역을 읽음으로 바꾼다. 이미 읽은 내역의 시각은 바꾸지 않는다.
-- 안 읽은 내역이 없어도 204다. 재요청은 이미 읽은 내역의 시각을 유지하며, 그 사이 새로 기록된 안 읽은 내역도 요청 범위에 포함한다.
+- 안 읽은 내역이 없어도 204다. 반복해도 결과가 같다.
 
 <br>
 
@@ -1599,7 +1599,7 @@ Authorization: Bearer {accessToken}
 | 400 | `BAD_REQUEST` | 모르는 `category` |
 
 <details>
-<summary><b>요청, 응답 예시</b></summary>
+<summary><b>요청·응답 예시</b></summary>
 
 <br>
 
