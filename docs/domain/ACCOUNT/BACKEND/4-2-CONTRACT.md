@@ -1289,7 +1289,7 @@ Content-Type: application/json
 | `[].author.id` | `null` | 항상 `null` |
 | `[].author.nickname` | `string` | |
 | `[].author.profileImageUrl` | `string / null` | |
-| `[].turnCount` | `integer` | 이 스토리로 진행한 채팅 중 삭제되지 않은 채팅의 완료 턴 수 합계 |
+| `[].turnCount` | `integer` | 누적 턴 수<br>이 스토리로 만든 모든 채팅의 완료 턴 수와 재생성 횟수 합<br>삭제된 채팅도 포함 |
 | `[].likeCount` | `integer` | 좋아요 수 |
 | `[].status` | `string` | `DRAFT`, `PUBLISHED` |
 | `[].visibility` | `string` | `PUBLIC`, `PRIVATE` |
