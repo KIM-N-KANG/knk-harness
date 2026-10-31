@@ -52,6 +52,7 @@ flowchart LR
 | OpenAI | `gpt-6-luna` | O | O | O | O |
 | OpenAI | `gpt-6.1-sol` | X | O | O | O |
 | OpenAI | `gpt-5.6-terra` | O | O | O | O |
+| OpenAI | `gpt-6.1-terra` | O | O | O | O |
 | Google | `gemini-3.8-flash` | X | O | O | O |
 
 <br>
