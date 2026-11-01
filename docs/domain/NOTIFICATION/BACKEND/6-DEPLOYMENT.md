@@ -115,10 +115,10 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL과 인증 헤더는 Secrets Manager | 서버만 주입<br>알림 서비스는 기본값 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL은 내부 OpenTelemetry Collector 주소 | 운영은 두 단위 모두 주입<br>집계는 `cumulative` |
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | 두 단위 모두 |
 | `MANYAK_TRACING_SAMPLING` | `1.0` | 주입 없음 | |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수<br>두 단위 모두 |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 내부 OpenTelemetry Collector 주소 주입 | 추적을 켜면 필수<br>두 단위 모두 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | 서버만 |
 
 <br>
@@ -155,7 +155,7 @@
 | 출석 발송 시각 | 환경 변수 변경 후 새 태스크 시작 | 야간 구간으로 옮기면 야간 동의자에게만 발송 |
 | 이프 만료 예정 발송 시각 | 환경 변수 변경 후 새 태스크 시작 | 옮긴 시간만큼 만료 창이 겹치거나 비어 그 구간의 로트가 두 번 들거나 빠짐<br>겹침의 중복은 쿨다운이 막음 |
 | 소비자 시간 설정 | Terraform 변경 후 apply | 메시지 큐 설정과 함께 바꿈 |
-| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 지표는 서버만 해당 |
+| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 두 단위 모두 해당 |
 
 <br>
 

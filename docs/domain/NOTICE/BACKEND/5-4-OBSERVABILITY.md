@@ -18,10 +18,12 @@ Fluent Bit`"]
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
 안전망`"]
-    S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
+    S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
+    C --> DP["`**Data Prepper**`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**OTel Collector → AMP**`"]
+    S -->|OTLP 지표| C
+    C -->|SigV4 remote write| G["`**AMP**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
@@ -29,6 +31,8 @@ Fluent Bit`"]
     class S comp
     class F,OS,CW,DP,OD,G,SE,SL ext
 ```
+
+운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 관리자의 작성, 수정, 게시 이력은 관리자 도메인의 감사 로그가 원본이다.
 
