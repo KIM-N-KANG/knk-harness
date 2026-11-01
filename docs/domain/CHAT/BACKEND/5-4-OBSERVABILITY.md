@@ -174,6 +174,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 |---|---|---|
 | `manyak.chat.turn.result` | Counter<br>`outcome`(`success`, `failure`, `rejected`)<br>`model_code`(청구 모델 코드, 스트림을 열기 전 거부는 `none`) | 이어쓰기와 재생성의 결과 분포<br>기존 `cancelled`는 과거 조회용 |
 | `manyak.chat.turn.refund` | Counter<br>`outcome`(`success`, `failure`) | 환불과 복원 결과<br>기동 시 두 시계열을 0으로 등록 |
+| `manyak.chat.compact.result` | Counter<br>`outcome`(`saved`, `discarded`, `failed`, `disabled`) | 대화 요약 결과와 요약을 끈 채 요약 경계에 도달한 횟수<br>기동 시 `disabled` 시계열을 0으로 등록 |
 | `manyak.ai.call.duration` | Timer<br>`feature`, `outcome`(`success`, `failure`) | AI 호출 지연과 실패율<br>본문은 스트림 전체 시간을 측정 |
 | `chat.turn.queue` | 관측 스팬<br>기존 `outcome=cancelled`는 과거 조회용으로 유지<br>생성 마감 초과는 `failure`로 집계 | 백그라운드 작업 제출부터 시작까지의 대기 시간 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 요청률, 오류율, 응답 시간 |
@@ -184,6 +185,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | `failure` | 저장에 도달하지 못하고 끝난 호출<br>AI 실패, 생성 마감 초과, 저장 오류, 시작 상태 불일치, 실행기 거부, Redis 오류로 생성 중 키 획득 실패<br>키 획득 실패는 과금이 없어도 채팅 생성 전체를 막는 장애이므로 `failure` 알림 대상 |
 | `rejected` | 스트림을 열기 전의 4xx 거부<br>잔액 부족, 한도 소진, 디바이스 헤더 누락, 생성 중, 마지막 턴 불일치, 엔딩 도달 재생성<br>알림은 `failure`만 사용 |
 | 환불 `failure` | 선차감을 되돌리지 못한 호출<br>관측 지표가 아니라 정산 정확성 신호 |
+| 요약 `saved`, `discarded`, `failed` | `chat_compact_saved`, `chat_compact_discarded`, `chat_compact_failed` 로그와 같은 시점에 1 증가 |
+| 요약 `disabled` | 대화 요약을 끈 환경에서 이어쓰기 커밋의 완료 턴 수가 요약 간격의 배수일 때 1 증가<br>요약은 요청하지 않음<br>재생성은 세지 않음 |
 
 <br>
 
@@ -217,6 +220,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 |---|---|
 | 환불 실패 | `manyak.chat.turn.refund`의 `failure`가 10분 안에 1건이라도 늘면 알림 대상<br>첫 실패부터 감지하도록 시계열을 기동 시 0으로 등록 <br>이미지 환불과 이미지 체험 복원 실패는 지표에 없어 알림 대상이 아님 |
 | AI 실패 급증 | `manyak.ai.call.duration`의 `failure`가 10분 안에 5건을 넘으면 알림 대상<br>턴 본문, 선택지, 대화 요약 호출이 모두 포함됨 |
+| 대화 요약 꺼짐 | `manyak.chat.compact.result`의 `disabled`가 1시간 안에 1건이라도 늘면 알림 대상<br>요약을 켜야 할 환경에서 설정 누락을 감지<br>되돌리기 절차처럼 의도해서 끈 동안에도 알림이 옴 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | CHAT에서 수집하는 오류 | 500 예상하지 못한 예외, 502 선택지 실패, 백그라운드 작업에서 보낸 스트림 실패<br>AI 구조화 오류, 4xx 거부, 이미지 누락, 대화 요약 실패, `STARTED` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
 

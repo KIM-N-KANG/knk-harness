@@ -237,5 +237,5 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 차감액이 기대와 다름 | 원장 `CHAT_TURN` 행의 `amount`, 턴 저장 로그의 `model_code`와 `turn_cost`, `chat_models` | 체험 턴은 0, 청구 모델의 행 가격과 비교<br>모델 변경 전에 시작한 턴은 이전 모델 가격 |
 | 턴이 큐에서 밀리거나 거부됨 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`, 스팬 `chat.turn.queue` | 백그라운드 작업 스레드 수와 큐 크기 조정, AI 지연 확인 |
 | 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 태스크 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
-| 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
+| 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>지표 `manyak.chat.compact.result`의 `disabled`가 늘고 있으면 설정이 꺼진 상태<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
 | 환불 실패 알림 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`, Redis와 DB 상태 | 회원 차감은 원장에서 사후 환불<br>체험 복원 실패는 카운터 수동 보정 |
