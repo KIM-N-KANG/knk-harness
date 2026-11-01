@@ -22,11 +22,11 @@ Fluent Bit`"]
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
 안전망`"]
-    S -->|OTLP 트레이스| DP["`**Data Prepper**`"]
-    N -->|OTLP 트레이스| DP
+    U -->|OTLP 트레이스, 지표| C["OpenTelemetry Collector"]
+    C --> DP["`**Data Prepper**`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
-    S -->|OTLP 지표| G["`**OTel Collector → AMP**`"]
+    C -->|SigV4 remote write| G["`**AMP**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
@@ -36,6 +36,8 @@ Fluent Bit`"]
     class F,OS,CW,DP,OD,G,SE,SL,Q,SNS ext
     style U fill:#FAFAFA,stroke:#AAAAAA
 ```
+
+운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -138,7 +140,7 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 내부 OTel Collector를 거쳐 AMP로 전송<br>알림 서비스는 어느 환경에도 켜지 않음 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 내부 OTel Collector를 거쳐 AMP로 전송<br>알림 서비스는 운영만 켬 |
 | 전송 주기 | 60초 간격 |
 | 사전 등록 | 발송, 아웃박스, 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
 
