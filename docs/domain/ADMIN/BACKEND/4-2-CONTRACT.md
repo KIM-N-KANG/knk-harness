@@ -3496,7 +3496,7 @@ Authorization: Bearer {adminToken}
 | `daysToFirstPayment[].members` | `integer` | 회원 수 |
 
 - 완료된 주문은 완료 시각이 범위 안인 주문이고 뒤에 환불됐어도 센다. 대시보드 차트의 결제 건수와 같은 정의다.
-- 첫 완료 주문은 같은 회원의 완료 시각이 더 이른 주문이 없는 주문이다. 범위 밖의 이전 주문도 본다.
+- 첫 완료 주문은 같은 회원의 완료 시각이 더 이른 주문이 없는 주문이다. 완료 시각이 같으면 먼저 만든 주문이 첫 주문이다. 범위 밖의 이전 주문도 본다.
 - 모든 값은 팀 계정 제외 목록을 적용한다.
 
 <br>
@@ -3528,10 +3528,10 @@ Authorization: Bearer {adminToken}
   "payingMembers": 23,
   "conversionRate": 0.0558,
   "orders": 31,
-  "amountKrw": 214600,
-  "arppu": 9330.4,
-  "firstTime": { "orders": 18, "amountKrw": 96400 },
-  "repeat": { "orders": 13, "amountKrw": 118200 },
+  "amountKrw": 190000,
+  "arppu": 8260.9,
+  "firstTime": { "orders": 18, "amountKrw": 86000 },
+  "repeat": { "orders": 13, "amountKrw": 104000 },
   "products": [
     { "productId": "if_10000", "orders": 12, "amountKrw": 112800, "creditAmount": 120000 },
     { "productId": "if_5000", "orders": 14, "amountKrw": 67200, "creditAmount": 70000 },
@@ -3800,7 +3800,7 @@ Authorization: Bearer {adminToken}
 | `daily[].date` | `string` | KST 날짜 |
 | `daily[].activeMembers` | `integer` | 그날 채팅 메시지를 보낸 회원 수 |
 | `daily[].turns` | `integer` | 그날 턴 수<br>대시보드 차트의 턴과 같은 정의 |
-| `daily[].turnsPerActiveMember` | `number / null` | `turns`를 `activeMembers`로 나눈 값<br>0이면 `null` |
+| `daily[].turnsPerActiveMember` | `number / null` | `turns`를 `activeMembers`로 나눈 값<br>`activeMembers`가 0이면 `null` |
 | `daily[].continuedMembers` | `integer` | 전날 채팅 메시지를 보낸 회원 가운데 그날 전날과 같은 채팅에 채팅 메시지를 보낸 회원 수 |
 | `daily[].continuationRate` | `number / null` | `continuedMembers`를 전날 `activeMembers`로 나눈 값<br>전날 값이 0이면 `null`<br>범위 첫날도 범위 전날의 값으로 계산 |
 | `daily[].regenerations` | `integer` | 그날 성공한 재생성 수 |
@@ -3938,7 +3938,7 @@ Authorization: Bearer {adminToken}
   "rejectionRules": [
     { "rule": "EXPLICIT_SEXUAL_CONTENT", "type": "TEXT", "submissions": 4 },
     { "rule": "EXPLICIT_SEXUAL_CONTENT", "type": "IMAGE", "submissions": 2 },
-    { "rule": "HATE_SPEECH", "type": "TEXT", "submissions": 1 }
+    { "rule": "HATE_VIOLENCE_INCITEMENT", "type": "TEXT", "submissions": 1 }
   ]
 }
 ```

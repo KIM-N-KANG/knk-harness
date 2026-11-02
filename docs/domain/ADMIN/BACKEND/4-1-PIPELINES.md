@@ -979,7 +979,7 @@ flowchart LR
 | 항목 | 규칙 |
 |---|---|
 | 활성 회원 | `story_messages`에서 `role`이 사용자이고 `created_at`이 범위 안인 행을 `story_chats`로 이어 `user_id`가 있는 채팅의 소유 회원을 중복 없이 셈<br>날짜별 값은 메시지 `created_at`의 KST 날짜로 묶음<br>채팅 삭제 여부는 보지 않음 |
-| 결제 | `credit_orders`에서 `completed_at`이 범위 안인 주문을 셈<br>첫 결제는 같은 `user_id`에 `completed_at`이 더 이르거나 같고 `id`가 더 작은 주문이 없는 주문<br>환불은 그 주문의 `status`가 `REFUNDED`<br>상품은 `product_id`, 금액은 `price_krw`, 지급 이프는 `credit_amount`<br>첫 결제까지 걸린 일수는 `users.created_at`과 첫 주문 `completed_at`의 KST 날짜 차이 |
+| 결제 | `credit_orders`에서 `completed_at`이 범위 안인 주문을 셈<br>첫 결제는 같은 `user_id`에 `completed_at`이 더 이른 주문도, `completed_at`이 같고 `id`가 더 작은 주문도 없는 주문<br>환불은 그 주문의 `status`가 `REFUNDED`<br>상품은 `product_id`, 금액은 `price_krw`, 지급 이프는 `credit_amount`<br>첫 결제까지 걸린 일수는 `users.created_at`과 첫 주문 `completed_at`의 KST 날짜 차이 |
 | 이프 적립과 소모 | 대시보드 차트의 이프 적립과 소모 쿼리를 `reason`으로 묶어 셈 |
 | 로트 잔여 | `credit_lots`에서 `remaining`이 0보다 크고 `expires_at`이 없거나 요청 시각보다 뒤인 행<br>회원은 `users.status`가 `DELETED`가 아닌 회원<br>구성은 `transaction_id`가 가리키는 원장의 `reason`이 `PURCHASE`인 로트, 그 밖의 `reason`인 로트, `transaction_id`가 없는 로트로 나눔<br>30일 안 만료는 `expires_at`이 요청 시각부터 30일 안인 행<br>회원별 합으로 잔액 분포 구간을 나누고 로트가 없는 회원은 0 구간 |
 | 공개 스토리 | `stories`에서 `status`가 `PUBLISHED`, `visibility`가 `PUBLIC`, `deleted_at`이 없고 `user_id`가 있는 행<br>공식 계정은 STORY의 공식 계정 식별로 판정 |
