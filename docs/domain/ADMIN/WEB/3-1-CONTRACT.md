@@ -13,26 +13,26 @@
 | 화면과 탭 | BFF 경로 | 서버 계약 |
 |---|---|---|
 | 개요 요약 카드 | `GET /api/dashboard/summary` | [4-2-3 대시보드 요약](../BACKEND/4-2-CONTRACT.md#4-2-3-대시보드-요약) |
-| 개요 일별 추이, 결제 일별 추이, 분포 카드 | `GET /api/dashboard/charts` | [4-2-4 대시보드 차트](../BACKEND/4-2-CONTRACT.md#4-2-4-대시보드-차트) |
+| 개요 요약 카드의 기간 합계와 증감, 개요 일별 추이, 수익 일별 추이, 분포 카드 | `GET /api/dashboard/charts` | [4-2-4 대시보드 차트](../BACKEND/4-2-CONTRACT.md#4-2-4-대시보드-차트) |
 | 개요 오늘 활성 사용자 카드 | `GET /api/dashboard/analytics` | [4-2-18 분석 지표](../BACKEND/4-2-CONTRACT.md#4-2-18-분석-지표) |
-| 개요 앱 설치 카드, 성장 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-19 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-19-설치-지표) |
-| 성장과 스토리의 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-20 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-목록) |
-| 성장 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-21 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-추이) |
-| 성장 첫 방문 활성화의 퍼널 | `GET /api/campaigns/funnels/activation` | [4-2-37 캠페인 첫 방문 활성화 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-37-캠페인-첫-방문-활성화-퍼널) |
-| 성장 첫 방문 활성화의 누적 도달 | `GET /api/campaigns/reach` | [4-2-38 캠페인 누적 도달](../BACKEND/4-2-CONTRACT.md#4-2-38-캠페인-누적-도달) |
-| 성장 광고 소재 | `GET /api/campaigns/creatives` | [4-2-39 캠페인 광고 소재](../BACKEND/4-2-CONTRACT.md#4-2-39-캠페인-광고-소재) |
-| 성장 앱 유입의 앱 배너와 설치 경로 | `GET /api/campaigns/app-transfer` | [4-2-40 앱 유입](../BACKEND/4-2-CONTRACT.md#4-2-40-앱-유입) |
-| 스토리 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-22 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-간편-제작-퍼널) |
-| 스토리 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-23 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-상세-진입-퍼널) |
-| 성장 유입 소스 | `GET /api/campaigns/sources` | [4-2-24 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-24-캠페인-유입-소스) |
-| 성장 알림 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
+| 개요 앱 설치 카드, 유입 앱 설치 | `GET /api/dashboard/play-installs` | [4-2-19 설치 지표](../BACKEND/4-2-CONTRACT.md#4-2-19-설치-지표) |
+| 유입의 광고 캠페인 선택 | `GET /api/campaigns` | [4-2-20 캠페인 목록](../BACKEND/4-2-CONTRACT.md#4-2-20-캠페인-목록) |
+| 유입 캠페인 추이 | `GET /api/campaigns/analytics` | [4-2-21 캠페인 추이](../BACKEND/4-2-CONTRACT.md#4-2-21-캠페인-추이) |
+| 유입 첫 방문 활성화의 퍼널 | `GET /api/campaigns/funnels/activation` | [4-2-37 캠페인 첫 방문 활성화 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-37-캠페인-첫-방문-활성화-퍼널) |
+| 유입 첫 방문 활성화의 누적 도달 | `GET /api/campaigns/reach` | [4-2-38 캠페인 누적 도달](../BACKEND/4-2-CONTRACT.md#4-2-38-캠페인-누적-도달) |
+| 유입 광고 소재 | `GET /api/campaigns/creatives` | [4-2-39 캠페인 광고 소재](../BACKEND/4-2-CONTRACT.md#4-2-39-캠페인-광고-소재) |
+| 유입 앱 유입의 앱 배너와 설치 경로 | `GET /api/campaigns/app-transfer` | [4-2-40 앱 유입](../BACKEND/4-2-CONTRACT.md#4-2-40-앱-유입) |
+| 유입 간편 제작 퍼널 | `GET /api/campaigns/funnels/creation` | [4-2-22 캠페인 간편 제작 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-22-캠페인-간편-제작-퍼널) |
+| 유입 상세 진입 퍼널 | `GET /api/campaigns/funnels/story-detail` | [4-2-23 캠페인 상세 진입 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-23-캠페인-상세-진입-퍼널) |
+| 유입 유입 소스 | `GET /api/campaigns/sources` | [4-2-24 캠페인 유입 소스](../BACKEND/4-2-CONTRACT.md#4-2-24-캠페인-유입-소스) |
+| 유입 알림 열람 | `GET /api/campaigns/push-opens` | [4-2-36 푸시 열람](../BACKEND/4-2-CONTRACT.md#4-2-36-푸시-열람) |
 | 캠페인 상세의 열람 | `GET /api/campaigns/push-opens/{campaignId}` | [4-2-42 캠페인 열람](../BACKEND/4-2-CONTRACT.md#4-2-42-캠페인-열람) |
-| 성장 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
-| 성장 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |
-| 성장 세션의 평균 세션 길이와 사용자당 세션 수 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
-| 성장 세션의 세션 길이 분포와 일별 세션 수 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
-| 성장 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
-| 성장 앱 신규 활성 사용자 | `GET /api/users/app-activation` | [4-2-41 앱 신규 활성 사용자](../BACKEND/4-2-CONTRACT.md#4-2-41-앱-신규-활성-사용자) |
+| 사용자 활동 탭의 사용자 활동 | `GET /api/users/activity` | [4-2-25 사용자 활동](../BACKEND/4-2-CONTRACT.md#4-2-25-사용자-활동) |
+| 사용자 리텐션 | `GET /api/users/retention` | [4-2-26 사용자 리텐션](../BACKEND/4-2-CONTRACT.md#4-2-26-사용자-리텐션) |
+| 사용자 세션의 평균 세션 길이와 사용자당 세션 수 | `GET /api/users/sessions` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션) |
+| 사용자 세션의 세션 길이 분포와 일별 세션 수 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
+| 사용자 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
+| 사용자 앱 신규 활성 사용자 | `GET /api/users/app-activation` | [4-2-41 앱 신규 활성 사용자](../BACKEND/4-2-CONTRACT.md#4-2-41-앱-신규-활성-사용자) |
 | 전환 퍼널 카드 | `GET /api/conversion/funnels/{funnel}` | [4-2-29 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-29-전환-퍼널) |
 | 채팅 참여의 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
 | 기능 사용과 안정성 값 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
@@ -65,7 +65,7 @@
 | 화면과 탭 | 쿼리 |
 |---|---|
 | 기간을 받는 모든 요청 | `from`, `to`<br>화면이 정한 범위를 KST 날짜로 보냄<br>`days`는 보내지 않음 |
-| 개요 오늘 활성 사용자 카드 | `from`과 `to` 모두 KST 오늘<br>페이지의 기간을 보내지 않음 |
+| 개요 오늘 활성 사용자 카드 | `from`은 KST 어제, `to`는 KST 오늘<br>페이지의 기간을 보내지 않음 |
 | 설치 지표 | 쿼리 없음 |
 | 캠페인 추이, 첫 방문 활성화, 광고 소재, 간편 제작 퍼널, 상세 진입 퍼널 | `campaign`<br>선택하거나 입력한 값 |
 | 상세 진입 퍼널 | `storyId`<br>입력한 값이 있을 때만<br>없으면 서버가 캠페인 목록의 대상 스토리를 씀 |
@@ -98,6 +98,9 @@
 | `pendingDates` | 준비 중 알림과 차트 끊김<br>비어 있지 않으면 60초 뒤 같은 요청을 다시 보냄<br>신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중에서는 Amplitude 값에만 적용하고 서버 DB 값은 모든 날짜를 그림 |
 | `platformAsOf` | Amplitude 값 카드, 차트, 표의 출처 툴팁 끝에 "{시각} KST 집계 기준"<br>`null`이면 시각을 표시하지 않음 |
 | `todayActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
+| 분석 지표의 어제 `daily` 항목 | 개요 오늘 활성 사용자 카드의 증감 이전 값<br>어제가 `pendingDates`에 있으면 증감 자리에 "준비 중" |
+| 대시보드 차트의 `totals`, `previous` | 개요 서버 DB 카드의 큰 숫자와 증감<br>일별 값을 더해 만들지 않음<br>응답에 없으면 카드의 큰 숫자와 증감 자리에 "준비 중"을 두고 재요청하지 않음 |
+| 푸시 열람과 캠페인 열람의 `chattedMembers`, `chattedBeforeMembers`, `chatRate` | 알림 열람 표의 채팅 전환과 전환율 열, 캠페인 상세 열람 영역의 두 카드<br>응답에 없으면 그 열과 카드를 두지 않음 |
 | `monthlyActiveUsers`가 `null` | "준비 중"으로 표시하고 60초 뒤 다시 요청 |
 | Amplitude 지표와 서버 DB 지표의 `asOf` | 영역 제목 아래에 KST 시각으로 "{시각} KST 집계 기준" |
 | AI 비용의 `asOf` | Langfuse 출처 툴팁의 "{받은 시각} KST" |
@@ -112,7 +115,7 @@
 | 기능 사용과 안정성의 `users.storyCompleteError` | 읽지 않음<br>응답에 있어도 표시하지 않음 |
 | 기능 사용과 안정성의 `storyCompletion` | 응답에 없으면 간편 제작 실패율 차트 자리에 "준비 중"을 두고 재요청하지 않음 |
 | 신규 가입자, 채팅 턴 도달률, 채팅 옵션 비중의 플랫폼 필드 | 응답에 필드가 없으면 Amplitude 값 카드, 차트, 표 자리에 "준비 중"을 두고 재요청하지 않음<br>서버 DB 값은 그대로 그림 |
-| 채팅의 `summaryThroughTurn` | 채팅 상세의 요약 끝 턴 ([2-1-18 채팅 상세의 요약 끝 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-18-채팅-상세의-요약-끝-턴))<br>응답에 없으면 항목을 두지 않음 |
-| 회원의 `turnCount`, `periodTurnCount` | 정보 구조의 누적 턴 표시 ([2-1-12 회원 목록과 상세의 누적 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-12-회원-목록과-상세의-누적-턴))<br>`periodTurnCount`가 `null`이면 기간 표시 없음 |
-| 스토리의 `takenDownAt`, `takedownReason`, `takedownReasonDetail` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김<br>`ETC`면 사유에 `takedownReasonDetail`을 함께 보임 ([2-1-16 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-스토리-공개-중단)) |
-| 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-15 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-15-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |
+| 채팅의 `summaryThroughTurn` | 채팅 상세의 요약 끝 턴 ([2-1-19 채팅 상세의 요약 끝 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-19-채팅-상세의-요약-끝-턴))<br>응답에 없으면 항목을 두지 않음 |
+| 회원의 `turnCount`, `periodTurnCount` | 정보 구조의 누적 턴 표시 ([2-1-13 회원 목록과 상세의 누적 턴](2-1-INFORMATION-ARCHITECTURE.md#2-1-13-회원-목록과-상세의-누적-턴))<br>`periodTurnCount`가 `null`이면 기간 표시 없음 |
+| 스토리의 `takenDownAt`, `takedownReason`, `takedownReasonDetail` | `takenDownAt`이 `null`이 아니면 정보 구조의 공개 중단 표시와 버튼 숨김<br>`ETC`면 사유에 `takedownReasonDetail`을 함께 보임 ([2-1-17 스토리 공개 중단](2-1-INFORMATION-ARCHITECTURE.md#2-1-17-스토리-공개-중단)) |
+| 스토리와 채팅의 `deletedAt` | `null`이 아니면 정보 구조의 삭제 표시 ([2-1-16 삭제된 스토리와 채팅](2-1-INFORMATION-ARCHITECTURE.md#2-1-16-삭제된-스토리와-채팅))<br>스토리 설정 응답의 `deletedAt`은 쓰지 않고 상세 응답의 값으로 표시 |
