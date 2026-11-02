@@ -40,7 +40,7 @@
 | `Authorization` | `Bearer {accessToken}` 또는 `Bearer {adminToken}` | 회원 또는 관리자 식별 | 인증 수준에 따름 |
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
-| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별<br>서버 분석 이벤트의 `device_id` | 게스트 동의는 필수 |
+| `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별<br>게스트 스토리 이관의 기기 증명<br>서버 분석 이벤트의 `device_id` | 게스트 동의는 필수<br>이관은 게스트 때와 같은 값을 보내야 스토리를 이관할 수 있음 |
 | `X-Manyak-App-Version` | 문자열 | Android 앱이 모든 요청에 싣는 앱 버전<br>서버 분석 이벤트의 `platform`과 `app_version`([5-4-9 분석 이벤트](5-4-OBSERVABILITY.md#5-4-9-분석-이벤트)) | 선택 |
 | `X-Manyak-Consent-Token` | 문자열 | 동의 완료 전용 대기 코드 | 동의 완료는 필수 |
 | `X-Manyak-Link-Code` | 문자열 | 계정 연동 | 연동은 필수 |
@@ -682,7 +682,7 @@ Content-Type: application/json
 |---|---|
 | `MIGRATED` | 이번 요청으로 소유권이 설정됨 |
 | `ALREADY_OWNED` | 이미 요청자 소유 |
-| `CONFLICT` | 다른 회원 소유 |
+| `CONFLICT` | 다른 회원 소유<br>소유자 없는 스토리이지만 이 기기에서 만든 것으로 확인되지 않음 |
 | `NOT_FOUND` | 없거나 삭제됨 |
 
 <br>
@@ -860,7 +860,7 @@ Content-Type: application/json
 | `createdAt` | `string` | |
 | `updatedAt` | `string` | |
 
-페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 최신인 순으로 정렬한다. 실패는 공통 실패뿐이다.
+페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 오래된 순으로 정렬한다. 실패는 공통 실패뿐이다.
 
 <details>
 <summary><b>요청, 응답 예시</b></summary>
@@ -1644,7 +1644,7 @@ Content-Type: application/json
 
 | 도메인 | ACCOUNT가 제공하는 것 | ACCOUNT가 사용하는 것 |
 |---|---|---|
-| STORY | 요청자 식별, 계정 상태 검사, 소유자 프로필, 이관 시 소유권 설정, 이관과 닉네임 변경 시 재색인 요청 이벤트, 탈퇴 시 초안과 제출본 삭제 호출 | 내 스토리 목록 조회 메서드와 카드 구조, 스토리와 간편 제작 진행의 조건부 소유권 설정 |
+| STORY | 요청자 식별, 계정 상태 검사, 소유자 프로필, 이관 시 소유권 설정, 이관과 닉네임 변경 시 재색인 요청 이벤트, 탈퇴 시 초안과 제출본 삭제 호출 | 내 스토리 목록 조회 메서드와 카드 구조, 스토리와 간편 제작 진행의 조건부 소유권 설정, 스토리 완성 요청의 기기 해시, 목록 노출 판정 |
 | CHAT | 요청자 식별, 계정 상태 검사, 페르소나 스냅샷, 이관 시 소유권 설정과 도달 집계 보정 | 내 채팅 목록 조회 메서드와 카드 구조, 채팅의 조건부 소유권 설정 |
 | PAYMENT | 보상 신원, 가입과 초대 보상의 멱등 키와 월 상한 조건 | 보상 적립, 체험 사용량 스냅샷, 잔액과 당일 출석 조회, 초대자 월 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` |
 | NOTIFICATION | 탈퇴 시 푸시 토큰과 알림 내역 삭제 호출 | 없음 |
