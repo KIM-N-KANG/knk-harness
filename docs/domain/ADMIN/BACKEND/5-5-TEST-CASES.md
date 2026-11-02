@@ -96,6 +96,9 @@
 | 차트 기간 | `days` 7, 생략, 90, 10 | `daily` 7개, 30개, 90개, 400 |
 | 차트 날짜 범위 | `from=2026-01-01&to=2026-01-31`<br>`from`과 `to` 366일<br>367일, `from` > `to`, `to` 내일, `from`만, `days`와 함께 | `daily` 31개와 응답 `from`, `to` 그대로, 막대 링크의 날짜도 같음<br>366개<br>전부 400 |
 | 빈 날짜 | 범위 중 활동 없는 날 | 그 날짜 항목이 모든 값 0으로 존재 |
+| 기간 합계 | `from=2026-10-15&to=2026-10-21`, 범위 안 가입 9와 11, 범위 밖 10-14 가입 3 | `totals.joined` 20, `totals`에 8개 필드만 있고 `attendance` 없음 |
+| 직전 기간 | `from=2026-10-15&to=2026-10-21`, 10-08~10-14 가입 5, 10-07 가입 2, 10-08 팀 계정 가입 1 | `previous.from` 10-08, `previous.to` 10-14, `previous.totals.joined` 5 |
+| 직전 기간 상한 | `from`과 `to` 366일, 범위 첫날이 서비스 시작 뒤 366일 | 200, `previous.from`이 범위 첫날에서 366일 앞, 직전 기간 날짜에 데이터가 없으면 `previous.totals` 전부 0 |
 | 일별 출석 | 한 회원이 같은 날 출석 보상 1건, 다른 회원 1건 | `attendance` 2 |
 | 턴 수 분포 | 현재 턴 0, 1, 4, 5, 6, 7, 50인 채팅 | `turns` 차트의 `0`, `1`, `4`, `5`, `6`, `7~9`, `50+`가 각 1이고 나머지 구간 0<br>항목 13개 |
 | 장르별 평균 턴 수 | 장르 `판타지, 미스터리` 스토리의 채팅 2개(턴 2, 4) | `판타지`와 `미스터리` 막대 모두 `value` 3, `chats` 2, `totalTurns` 6 |
@@ -312,12 +315,16 @@
 | 활동 알림 도달 중복 | 같은 회원에게 10-23 스토리 완성 3건 도달 | 그날 도달 회원 1 |
 | 이프 만료 예정 알림함 클릭 | 이프 만료 예정 알림의 알림함 항목을 웹과 앱에서 누른 기록(묶음 값 `credit_expiry_reminder`, `utm_source` `push`) | `CREDIT_EXPIRY_REMINDER`의 `webPushOpens`와 `androidPushOpens`에 들고 `inboxOpens` 0 |
 | 공개 중단 알림 제외 | 묶음 값 `story_taken_down` | 버림, `activityTypes`에 `STORY_TAKEN_DOWN` 없음 |
-| 도달 없음 | 활동 알림 도달 0, 웹 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
+| 도달 없음 | 활동 알림 도달 0, 웹 열람 2 | `pushOpens` 2, `pushOpenRate` `null`, `chattedMembers`와 `chattedBeforeMembers`와 `chatRate` `null` |
+| 채팅 전환 | 캠페인 도달 회원 4명, 처리 끝 시각 10-23 02:00<br>회원 A는 10-23 10:00에 사용자 메시지, 회원 B는 10-24 03:00에 사용자 메시지(25시간 뒤), 회원 C는 10-22 20:00과 10-23 05:00에 사용자 메시지, 회원 D는 AI 응답만 있고 사용자 메시지 없음 | `chattedMembers` 2(A, C), `chattedBeforeMembers` 1(C), `chatRate` 0.5 |
+| 채팅 전환과 측정 상태 | 딥링크 없는 프로모션(`NO_LINK`), 도달 회원 10명 가운데 3명이 24시간 안에 채팅 | 열람 값은 `null`이지만 `chattedMembers` 3, `chatRate` 0.3 |
+| 활동 알림 채팅 전환 | 같은 회원에게 10-23과 10-24에 출석 리마인드 도달, 10-23 도달 뒤에만 채팅 | `ATTENDANCE_REMINDER`의 `deliveredMembers` 2, `chattedMembers` 1 |
+| 채팅 전환 소유자 | 도달 회원 1명이 소유한 채팅의 사용자 메시지 1개, 다른 회원 채팅의 사용자 메시지 1개, 게스트 채팅의 사용자 메시지 1개가 모두 24시간 안 | `chattedMembers` 1 |
 | 캠페인 범위 | 선점 시각이 범위 전날인 캠페인, 선점 전에 취소한 캠페인 | 둘 다 `campaigns`에 없음 |
 | 활동 알림 항목 | 열람과 도달이 모두 없음, 웹 측정 시작일만 설정 | `activityTypes` 4항목이 `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` 순서, `openState` `MEASURED`, 웹 값과 합계 0, 앱 값 `null`, `pushOpenRate` `null` |
 | 푸시 열람 부분 응답 | 예산이 3일치만 남음 | 최근 3일만 조회, 나머지 날짜는 `pendingDates`, 열람 수는 준비된 날짜의 합, `deliveredMembers`는 집계 구간 전체 |
 | 푸시 열람 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 캠페인 열람 | 오늘 10-30, 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 10-23~10-29 값은 푸시 열람 조회로 저장돼 있음 | 대역에 오늘 10-30의 조회 4회만, `from` 10-23, `to` 10-30, 저장 값과 오늘 값의 날짜 합으로 `pushOpens`, `inboxOpens`, `pushOpenRate` |
+| 캠페인 열람 | 오늘 10-30, 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 10-23~10-29 값은 푸시 열람 조회로 저장돼 있음 | 대역에 오늘 10-30의 조회 4회만, `from` 10-23, `to` 10-30, 저장 값과 오늘 값의 날짜 합으로 `pushOpens`, `inboxOpens`, `pushOpenRate`, 도달 회원 전체의 `chattedMembers`, `chattedBeforeMembers`, `chatRate` |
 | 캠페인 열람 상한 | 선점 날짜가 오늘보다 400일 전 | `to`는 선점 날짜에서 365일 뒤, 그 뒤 날짜는 조회하지 않음 |
 | 캠페인 열람 측정 아님 | 딥링크 포함 여부가 거짓인 캠페인<br>선점 전인 예약 캠페인 | 대역 호출 없음, 200, `openState` `NO_LINK`, `asOf` `null`, `pendingDates` 빈 배열<br>대역 호출 없음, 200, `openState` `PENDING`, `startedAt`, `from`, `to` `null`, `deliveredMembers` 0 |
 | 캠페인 열람 앱 측정 전 | 웹 측정 시작일 10-21, 앱 측정 시작일 10-31, 선점 10-25 | 대역에 웹 조회만, `androidPushOpens`와 `androidInboxOpens` `null` |
@@ -545,3 +552,40 @@
 | 테이블 개수 | `limit=2`<br>`limit=0`, `101`, `abc` | 2개, `tableCount`는 전체 수<br>전부 400 |
 | 테이블 캐시 | 5분 안에 같은 `limit` 두 번 | 카탈로그 조회는 처음 한 번 |
 | 실제 쿼리 | 로컬 PostgreSQL에 붙인 HTTP 요청 파일로 호출 | `pg_catalog`과 `information_schema` 테이블이 없고 각 행의 `tableBytes`와 `indexBytes` 합이 `totalBytes` 이하 |
+
+<br>
+
+### 5-5-14 수익, 콘텐츠, 몰입, 검수 지표
+
+| 확인 항목 | 입력과 상황 | 기대 결과 |
+|---|---|---|
+| 결제 전환율 | 범위 안에 사용자 메시지를 보낸 회원 10명, 그중 2명과 메시지 없는 회원 1명이 완료 주문 | `activeMembers` 10, `payingMembers` 3, `conversionRate` 0.3 |
+| 첫 결제와 재결제 | 회원 A가 범위 전 완료 주문 1건과 범위 안 완료 주문 1건, 회원 B가 범위 안 완료 주문 2건(완료 시각 같음, id 다름) | `firstTime.orders` 1(B의 id가 작은 주문), `repeat.orders` 2 |
+| 환불된 첫 결제 | 회원 C의 범위 전 주문이 `REFUNDED`(완료 시각 있음), 범위 안 완료 주문 1건 | 범위 안 주문은 `repeat` |
+| 상품별 매출 | `if_5000` 2건(4800원, 5000이프), `if_2000` 1건 | `products` 순서 `if_5000`(9600, 10000), `if_2000`(2000, 2000) |
+| 환불률 | 범위 안 완료 주문 4건 중 지금 `REFUNDED` 1건 | `refundedOrders` 1, `refundRate` 0.25 |
+| 첫 결제까지 걸린 일수 | 가입 10-01 00:30 KST 회원이 10-01 23:00 첫 결제, 가입 09-01 회원이 10-05 첫 결제 | `0` 1, `31+` 1, 나머지 구간 0, 5항목 |
+| 결제 0 | 범위 안 주문 없음, 활성 회원 0 | `conversionRate`, `arppu`, `refundRate` 모두 `null`, `products` 빈 배열 |
+| 소모 비율 | 적립 1000, 소모 650, 만료 -30, 환불 +20 | `granted` 1000, `spent` 650, `sinkRate` 0.65 |
+| 사유별 합 | 출석 250과 구매 5000 적립, 채팅 턴 -20과 이미지 -30 소모 | `grantedByReason`의 `ATTENDANCE_REWARD` 250, `PURCHASE` 5000, 나머지 0, 5항목 순서 고정<br>`spentByReason`의 `CHAT_TURN` 20, `CHAT_IMAGE` 30, `STORY_CREATION` 0 |
+| 유효 잔액 | 회원 A에 구매 로트 잔여 300(만료 5년 뒤), 보상 로트 잔여 50(만료 20일 뒤), 승계 로트 잔여 100, 만료 시각이 지났으나 정리되지 않은 로트 잔여 40<br>회원 B는 로트 없음<br>탈퇴 회원 C에 로트 잔여 500 | `balances.members` 2, `total` 450, `purchased` 300, `rewarded` 50, `legacy` 100, `expiringIn30Days` 50<br>`buckets`의 `0` 1(B), `100~499` 1(A) |
+| 잔액 구간 경계 | 유효 잔액 99, 100, 499, 500, 1999, 2000인 회원 | `1~99` 1, `100~499` 2, `500~1999` 2, `2000+` 1 |
+| 공개 스토리 | `PUBLISHED`와 `PUBLIC` 3편(그중 공식 계정 1편), `PUBLISHED`와 `PRIVATE` 1편, `DRAFT`와 `PUBLIC` 1편, 삭제된 공개 1편, 소유 회원 없는 공개 1편 | `publicStories` 3, `officialStories` 1 |
+| 다른 회원의 채팅 | 공개 스토리 X에 소유자 본인 채팅 1, 다른 회원 채팅 2(회원 D 1, 회원 E 1), 게스트 채팅 1, 삭제된 다른 회원 채팅 1 | X의 `chats` 2, `players` 2, `playedStories` 1 |
+| 순위와 집중도 | 다른 회원의 채팅이 12편에 각 10건, 1편에 100건 | `topConcentration`은 상위 10편 합 190을 220으로 나눈 0.8636, `limit=3`이면 `ranking` 3항목이고 첫 항목 `chats` 100 |
+| 순위 동률 | 채팅 수가 같은 두 스토리의 턴 합 50과 80 | 턴 합 80이 앞 |
+| 창작자 | 활성 회원 10명 중 범위 안 스토리 생성 3명(1명은 삭제된 스토리만), 직전 기간 창작자 4명 중 2명이 범위 안에도 생성 | `creators.members` 3, `rate` 0.3, `previousMembers` 4, `retained` 2, `retentionRate` 0.5 |
+| 공식 계정 제외 범위 | 공식 계정이 범위 안에 스토리 2편 생성, 그 스토리에 다른 회원 채팅 5건 | `creators.members`에 공식 계정 없음, `ranking`에 그 스토리 있고 `official` `true` |
+| 일별 활성과 턴 | 10-26에 회원 A가 메시지 2개와 AI 응답 2개, 회원 B가 메시지 1개와 AI 응답 1개, 게스트 채팅 메시지 1개와 AI 응답 1개 | 10-26 `activeMembers` 2, `turns` 4(게스트 턴 포함), `turnsPerActiveMember` 2.0 |
+| 이어 가기 | 10-25에 회원 A가 채팅 1에, 회원 B가 채팅 2에 메시지<br>10-26에 A가 채팅 1에, B가 채팅 3에 메시지 | 10-26 `continuedMembers` 1, `continuationRate` 0.5 |
+| 범위 첫날 이어 가기 | 범위 첫날 10-26, 전날 10-25에 활성 회원 2명 | 10-26의 `continuationRate` 분모 2 |
+| 재생성 | 10-26에 판본 보관 3건, 그중 팀 계정 채팅 1건, 턴 40 | 10-26 `regenerations` 2, `regenerationRate` 0.05 |
+| 고착도 | 10-26 활성 회원 20, 09-27부터 10-26까지 활성 회원 100 | 10-26 `stickiness` 0.2 |
+| 기간 고유 활성 | 10-26과 10-27에 같은 회원 A, 10-27에 회원 B | `activeMembers` 2 |
+| 검수 판정 | 범위 안 판정 승인 6, 거절 2, 실패 1, 범위 밖 판정 거절 1 | `decided` 8, `approved` 6, `rejected` 2, `rejectionRate` 0.25, `failed` 1 |
+| 보류와 대기 | `PENDING`이고 `held_at` 있는 행 1, 없는 행 3 | `held` 1, `pending` 3 |
+| 거절 사유 | 거절 제출본 1의 `issues`에 `EXPLICIT_SEXUAL_CONTENT` 글 2개와 이미지 1개, 제출본 2에 글 1개 | `rejectionRules`의 (`EXPLICIT_SEXUAL_CONTENT`, `TEXT`) 2, (`EXPLICIT_SEXUAL_CONTENT`, `IMAGE`) 1 |
+| 재제출 | 10-26 거절된 제출본을 10-28 재제출해 대기 | 10-26 `rejected` 0, `decided`에 들지 않음 |
+| 검수 팀 계정 | 팀 계정 소유 스토리의 제출본 승인 1 | `approved`에 포함 |
+| 기간 | `days` 90<br>367일, `limit` 0, `limit` 51 | 200<br>전부 400 |
+| 팀 계정 제외 | 제외 목록 회원의 주문, 원장, 로트, 채팅 메시지, 스토리 | 결제, 이프, 콘텐츠, 몰입 지표에서 모두 제외 |
