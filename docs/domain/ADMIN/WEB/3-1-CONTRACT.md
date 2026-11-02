@@ -37,7 +37,12 @@
 | 채팅 참여의 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
 | 기능 사용과 안정성 값 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
 | 채팅 옵션과 입력의 채팅 옵션 비중 | `GET /api/quality/chat-options` | [4-2-32 채팅 옵션 비중](../BACKEND/4-2-CONTRACT.md#4-2-32-채팅-옵션-비중) |
-| 운영 AI 비용 | `GET /api/quality/ai-cost` | [4-2-33 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-33-ai-비용) |
+| 운영 AI 비용, 수익 마진의 AI 비용 | `GET /api/quality/ai-cost` | [4-2-33 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-33-ai-비용) |
+| 수익 결제 지표 | `GET /api/payments/metrics` | [4-2-43 결제 지표](../BACKEND/4-2-CONTRACT.md#4-2-43-결제-지표) |
+| 수익 이프 경제 | `GET /api/credits/metrics` | [4-2-44 이프 경제 지표](../BACKEND/4-2-CONTRACT.md#4-2-44-이프-경제-지표) |
+| 콘텐츠 소비와 창작자 | `GET /api/stories/consumption` | [4-2-45 콘텐츠 소비 지표](../BACKEND/4-2-CONTRACT.md#4-2-45-콘텐츠-소비-지표) |
+| 채팅 몰입 | `GET /api/chats/engagement` | [4-2-46 채팅 몰입 지표](../BACKEND/4-2-CONTRACT.md#4-2-46-채팅-몰입-지표) |
+| 콘텐츠 검수 판정과 거절 사유 | `GET /api/moderation/metrics` | [4-2-47 검수 지표](../BACKEND/4-2-CONTRACT.md#4-2-47-검수-지표) |
 | 운영 서비스와 요청, 저장소 | `GET /api/infra/metrics` | [4-2-34 인프라 지표](../BACKEND/4-2-CONTRACT.md#4-2-34-인프라-지표) |
 | 운영 DB 테이블 | `GET /api/infra/db-tables` | [4-2-35 DB 테이블 크기](../BACKEND/4-2-CONTRACT.md#4-2-35-db-테이블-크기) |
 | 이프 내역 | `GET /api/credits/transactions` | [4-2-14 이프 내역](../BACKEND/4-2-CONTRACT.md#4-2-14-이프-내역) |
@@ -78,6 +83,8 @@
 | 리텐션 | 기간과 `cohort`<br>`cohort`는 고른 시작 집단이고 `visitor`여도 보냄 |
 | 인프라 지표 | 기간만 |
 | DB 테이블 크기 | `limit=20` |
+| 콘텐츠 소비 | 기간과 `limit=20` |
+| 결제 지표, 이프 경제, 채팅 몰입, 검수 지표 | 기간만 |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
 | 검수 제출 목록 | `status`, `from`, `to`, `q`, `memberId`, `storyId`, `page`, `size`, `sort`, `order`<br>값이 있는 것만<br>기본 `page=1`, `size=20`, `sort=createdAt`, `order=desc` |
 | 회원 목록 정렬 | `sort`, `order`<br>누적 턴 머리글은 `sort=turnCount` |
