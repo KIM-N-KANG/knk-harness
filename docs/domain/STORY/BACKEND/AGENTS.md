@@ -1,6 +1,6 @@
 # AGENTS.md
 
-STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 스토리 조회, 제공 장르, 간편 제작, 일반 제작 등록과 수정, 이미지, 좋아요와 신고, 삭제, 검색, 관리자 오리지널 등록과 수정을 다룬다.
+STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코드 위치를 안내한다. 스토리 조회, 탐색 목록, 홈 목록, 제공 장르, 간편 제작, 일반 제작 등록과 수정, 이미지, 좋아요와 신고, 삭제, 검색, 관리자 오리지널 등록과 수정, 관리자 홈 섹션을 다룬다.
 
 명세 본문과 설정값은 이 문서에 복사하지 않는다.
 
@@ -27,7 +27,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 - 앞 단계의 결정이 뒤 단계의 기준이다. 구현에 맞추려고 앞 단계를 임의로 바꾸지 않는다.
 - 미정이라고 적힌 항목을 추측으로 채우지 않는다.
-- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-33 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-33-다른-도메인과의-경계))
+- 다른 도메인과의 경계는 계약 문서의 마지막 절에 있다. ([4-2-39 다른 도메인과의 경계](4-2-CONTRACT.md#4-2-39-다른-도메인과의-경계))
 
 <br>
 
@@ -47,6 +47,8 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 로그나 지표 추가 | [5-4 관측](5-4-OBSERVABILITY.md) | [5-4-10 수집 조건과 실패 처리](5-4-OBSERVABILITY.md#5-4-10-수집-조건과-실패-처리) |
 | 초안 저장이나 제작 탭 카드 변경 | [4-2-23 초안 목록](4-2-CONTRACT.md#4-2-23-초안-목록) | [4-1-25 초안 저장](4-1-PIPELINES.md#4-1-25-초안-저장), [3-2-10 생성 요청과 초안](3-2-DB-SCHEMA.md#3-2-10-생성-요청과-초안) |
 | 관리자 오리지널 API 변경 | [4-2-29 오리지널 등록](4-2-CONTRACT.md#4-2-29-오리지널-등록) | [4-1-29 관리자 오리지널](4-1-PIPELINES.md#4-1-29-관리자-오리지널), [ADMIN 3-2-4 감사 로그](../../ADMIN/BACKEND/3-2-DB-SCHEMA.md#3-2-4-감사-로그)의 작업 이름 |
+| 탐색 목록이나 홈 목록 변경 | [4-2-33 탐색 목록](4-2-CONTRACT.md#4-2-33-탐색-목록), [4-2-34 홈 목록](4-2-CONTRACT.md#4-2-34-홈-목록) | [4-1-30 탐색 목록](4-1-PIPELINES.md#4-1-30-탐색-목록), [4-1-31 홈 목록](4-1-PIPELINES.md#4-1-31-홈-목록), [5-2-5 집계와 커서](5-2-CONCURRENCY.md#5-2-5-집계와-커서) |
+| 관리자 홈 섹션 API 변경 | [4-2-36 홈 섹션 등록](4-2-CONTRACT.md#4-2-36-홈-섹션-등록) | [4-1-32 관리자 홈 섹션](4-1-PIPELINES.md#4-1-32-관리자-홈-섹션), [3-2-12 홈 섹션](3-2-DB-SCHEMA.md#3-2-12-홈-섹션), [ADMIN 3-2-4 감사 로그](../../ADMIN/BACKEND/3-2-DB-SCHEMA.md#3-2-4-감사-로그)의 작업 이름 |
 | 이미 내린 결정인지 확인 | [DECISIONS.md](DECISIONS.md) | 해당 결정에서 연결한 명세 절 |
 
 <br>
@@ -63,6 +65,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 생성 요청 기록 | [StoryCreationRequestRecorder.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryCreationRequestRecorder.kt) | 5-2-1 멱등과 회수 |
 | 일반 제작과 수정 | [StoryEditService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryEditService.kt), [GeneralStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GeneralStoryCreationService.kt) | 4-1-15~4-1-17 등록과 수정 |
 | 관리자 오리지널 | `story/admin/`<br>등록 저장과 수정 적용은 위 두 서비스 재사용 | 4-1-29, 4-2-27~4-2-32 |
+| 홈 섹션 | `story/home/` | 4-1-31, 4-1-32, 4-2-34~4-2-38, 3-2-12 |
 | 제공 장르 | [GenreCatalogService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreCatalogService.kt), [GenreInputValidator.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/GenreInputValidator.kt) | 4-2-4 제공 장르, 5-1-4 입력 검증 |
 | 이름 토큰 | [UsernameTokenRenderer.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/UsernameTokenRenderer.kt), [StoryTextRendering.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryTextRendering.kt), [ProtagonistNameValidation.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/ProtagonistNameValidation.kt) | 4-1-1 공통 처리, 4-1-7 상세 |
 | 이미지 | [StoryImageService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageService.kt), [StoryImageAccess.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryImageAccess.kt), [image/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/image/) | 4-1-18~4-1-20 이미지, 5-1-5 업로드 검증 |

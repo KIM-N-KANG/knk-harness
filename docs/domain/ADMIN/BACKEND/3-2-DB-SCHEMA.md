@@ -85,7 +85,7 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `category` | varchar(10) | NOT NULL, CHECK `CHANGE` `ACCESS` | 변경 작업 또는 개인정보 조회 |
 | `action` | varchar(50) | NOT NULL | 작업 이름<br>목록은 아래 |
 | `target_type` | varchar(30) | NOT NULL | 대상 종류<br>목록은 아래 |
-| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본, 스토리는 공개 식별자<br>정책값은 정책 키<br>채팅 모델은 모델 코드<br>검색은 검색어 |
+| `target_id` | varchar(255) | NOT NULL | 대상의 외부 식별자<br>회원, 공지, 캠페인, 제출본, 스토리, 홈 섹션은 공개 식별자<br>정책값은 정책 키<br>채팅 모델은 모델 코드<br>검색은 검색어 |
 | `reason` | varchar(500) | | 사유<br>변경 작업은 NOT NULL, 조회는 NULL |
 | `before_state` | jsonb | | 변경 전 값<br>조회와 생성은 NULL<br>필드는 아래 기록 허용 목록만 |
 | `after_state` | jsonb | | 변경 후 값<br>조회와 삭제는 NULL<br>필드는 아래 기록 허용 목록만 |
@@ -122,6 +122,9 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `ORIGINAL_CREATED` | `CHANGE` | `STORY` | STORY |
 | `ORIGINAL_UPDATED` | `CHANGE` | `STORY` | STORY |
 | `ORIGINAL_THUMBNAIL_DELETED` | `CHANGE` | `STORY` | STORY |
+| `HOME_SECTION_CREATED` | `CHANGE` | `HOME_SECTION` | STORY |
+| `HOME_SECTION_UPDATED` | `CHANGE` | `HOME_SECTION` | STORY |
+| `HOME_SECTION_DELETED` | `CHANGE` | `HOME_SECTION` | STORY |
 | `CHAT_MODEL_PROMOTION_UPSERTED` | `CHANGE` | `CHAT_MODEL` | CHAT |
 | `CHAT_MODEL_PROMOTION_DELETED` | `CHANGE` | `CHAT_MODEL` | CHAT |
 
@@ -147,6 +150,9 @@ Amplitude 조회 값 두 테이블은 다른 테이블과 관계가 없다.
 | `ORIGINAL_CREATED` | 없음 | `status`, `visibility`, `title`, `genres` |
 | `ORIGINAL_UPDATED` | `status`, `visibility`, `title`, `genres` | `status`, `visibility`, `title`, `genres` |
 | `ORIGINAL_THUMBNAIL_DELETED` | `thumbnailUrl` | 없음 |
+| `HOME_SECTION_CREATED` | 없음 | `name`, `source`, `storyIds`, `genres`, `originalOnly`, `sort`, `itemLimit`, `isActive`, `sortOrder` |
+| `HOME_SECTION_UPDATED` | `name`, `source`, `storyIds`, `genres`, `originalOnly`, `sort`, `itemLimit`, `isActive`, `sortOrder` | `name`, `source`, `storyIds`, `genres`, `originalOnly`, `sort`, `itemLimit`, `isActive`, `sortOrder` |
+| `HOME_SECTION_DELETED` | `name`, `source`, `storyIds`, `genres`, `originalOnly`, `sort`, `itemLimit`, `isActive`, `sortOrder` | 없음 |
 | `CHAT_MODEL_PROMOTION_UPSERTED` | `turnCost`, `startsAt`, `endsAt`<br>프로모션이 없었으면 없음 | `turnCost`, `startsAt`, `endsAt` |
 | `CHAT_MODEL_PROMOTION_DELETED` | `turnCost`, `startsAt`, `endsAt` | 없음 |
 
