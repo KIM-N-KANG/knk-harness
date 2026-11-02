@@ -228,7 +228,7 @@
 
 | ID | P | 사전조건 | 절차 | 기대 결과 | 자동화 | 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
-| STORY-TUTORIAL-01 | P0 | 이 기기에서 안내를 끝내지 않음 | 간편 제작 진입 | 키워드 단계 위로 딤과 하단 카드가 열리고 이름 "마냑", 1단계 문구, "건너뛰기", "시작하기"가 보임. 카드 좌상단 둥근 프로필에서 마스코트가 말하듯 움직이고 버튼에 초점 링이 보이지 않음 | ✅ e2e `stories/story-create-tutorial` | STORY-US-020, 웹 첫 진입 안내 |
+| STORY-TUTORIAL-01 | P0 | 이 기기에서 안내를 끝내지 않음 | 간편 제작 진입 | 키워드 단계 위로 딤과 가운데 카드가 열리고 이름 "마냑", 1단계 문구, "건너뛰기", "시작하기"가 보임. 카드 좌상단 둥근 프로필에서 마스코트가 말하듯 움직이고 버튼에 초점 링이 보이지 않음 | ✅ e2e `stories/story-create-tutorial` | STORY-US-020, 웹 첫 진입 안내 |
 | STORY-TUTORIAL-02 | P0 | STORY-TUTORIAL-01 | "시작하기" 탭 | 대화창이 닫히지 않고 2단계 문구(1인칭 설명 포함)와 "확인" 하나로 바뀜. "확인"을 누르면 닫히고 키워드를 고를 수 있음 | ✅ e2e `stories/story-create-tutorial` | 같음 |
 | STORY-TUTORIAL-03 | P0 | 2단계를 마침 | 장르 둘 이상과 주인공을 골라 스토리라인 생성 | 생성이 끝나 선택 화면이 보이면 3단계가 열리고 문구에 고른 장르가 순서대로 쉼표로 이어짐. 마지막 장르의 받침에 맞춰 "으로" 또는 "로"가 붙음 | ✅ e2e `stories/story-create-tutorial`, unit `create-tutorial` | 같음 |
 | STORY-TUTORIAL-04 | P0 | 3단계를 마침 | 스토리라인 "선택하기" | 추가 정보 단계에서 4단계가 열림 | ✅ e2e `stories/story-create-tutorial` | 같음 |
