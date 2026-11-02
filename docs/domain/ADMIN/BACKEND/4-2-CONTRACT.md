@@ -3449,17 +3449,515 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-43 다른 도메인과의 경계
+### 4-2-43 결제 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/payments/metrics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+범위 안에 완료된 주문으로 결제 전환율, 결제 회원 1인당 금액, 첫 결제와 재결제, 상품별 매출, 환불, 가입부터 첫 결제까지 걸린 일수를 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-26 수익, 콘텐츠, 몰입, 검수 지표](4-1-PIPELINES.md#4-1-26-수익-콘텐츠-몰입-검수-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `activeMembers` | `integer` | 범위 안에 채팅 메시지를 보낸 회원 수 |
+| `payingMembers` | `integer` | 범위 안에 완료된 주문이 있는 회원 수 |
+| `conversionRate` | `number / null` | `payingMembers`를 `activeMembers`로 나눈 0 이상의 값<br>`activeMembers`가 0이면 `null` |
+| `orders` | `integer` | 범위 안에 완료된 주문 수 |
+| `amountKrw` | `integer` | 그 주문의 가격 합 |
+| `arppu` | `number / null` | `amountKrw`를 `payingMembers`로 나눈 값<br>`payingMembers`가 0이면 `null` |
+| `firstTime` | `object` | 회원의 첫 완료 주문인 주문 |
+| `firstTime.orders` | `integer` | 주문 수 |
+| `firstTime.amountKrw` | `integer` | 가격 합 |
+| `repeat` | `object` | 첫 완료 주문이 아닌 주문<br>`firstTime`과 같은 필드 |
+| `products` | `object[]` | 상품마다 한 항목<br>`amountKrw` 내림차순, 같으면 `productId` 오름차순<br>범위 안 주문이 없는 상품은 없음 |
+| `products[].productId` | `string` | 주문에 기록된 상품 식별자 |
+| `products[].orders` | `integer` | 주문 수 |
+| `products[].amountKrw` | `integer` | 가격 합 |
+| `products[].creditAmount` | `integer` | 주문에 기록된 지급 이프 합 |
+| `refundedOrders` | `integer` | 범위 안에 완료된 주문 가운데 지금 환불 상태인 주문 수 |
+| `refundRate` | `number / null` | `refundedOrders`를 `orders`로 나눈 값<br>`orders`가 0이면 `null` |
+| `daysToFirstPayment` | `object[]` | 범위 안에 첫 완료 주문을 한 회원을 가입일부터 첫 완료일까지 KST 날짜 차이로 나눈 5구간<br>`0`, `1~3`, `4~7`, `8~30`, `31+` 순서로 항상 5항목 |
+| `daysToFirstPayment[].bucket` | `string` | 구간 이름 |
+| `daysToFirstPayment[].members` | `integer` | 회원 수 |
+
+- 완료된 주문은 완료 시각이 범위 안인 주문이고 뒤에 환불됐어도 센다. 대시보드 차트의 결제 건수와 같은 정의다.
+- 첫 완료 주문은 같은 회원의 완료 시각이 더 이른 주문이 없는 주문이다. 완료 시각이 같으면 먼저 만든 주문이 첫 주문이다. 범위 밖의 이전 주문도 본다.
+- 모든 값은 팀 계정 제외 목록을 적용한다.
+
+<br>
+
+**3. 실패 응답**
+
+대시보드 차트와 같다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/payments/metrics?from=2026-10-01&to=2026-10-31
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-11-02T02:10:00Z",
+  "from": "2026-10-01",
+  "to": "2026-10-31",
+  "activeMembers": 412,
+  "payingMembers": 23,
+  "conversionRate": 0.0558,
+  "orders": 31,
+  "amountKrw": 190000,
+  "arppu": 8260.9,
+  "firstTime": { "orders": 18, "amountKrw": 86000 },
+  "repeat": { "orders": 13, "amountKrw": 104000 },
+  "products": [
+    { "productId": "if_10000", "orders": 12, "amountKrw": 112800, "creditAmount": 120000 },
+    { "productId": "if_5000", "orders": 14, "amountKrw": 67200, "creditAmount": 70000 },
+    { "productId": "if_2000", "orders": 5, "amountKrw": 10000, "creditAmount": 10000 }
+  ],
+  "refundedOrders": 1,
+  "refundRate": 0.0323,
+  "daysToFirstPayment": [
+    { "bucket": "0", "members": 6 },
+    { "bucket": "1~3", "members": 4 },
+    { "bucket": "4~7", "members": 3 },
+    { "bucket": "8~30", "members": 3 },
+    { "bucket": "31+", "members": 2 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-44 이프 경제 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/credits/metrics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+범위 안의 이프 적립과 소모를 사유별로 나눠 소모 비율을 보이고 현재 시점의 회원 유효 잔액 분포와 잔액 구성을 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-26 수익, 콘텐츠, 몰입, 검수 지표](4-1-PIPELINES.md#4-1-26-수익-콘텐츠-몰입-검수-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다. 잔액 분포와 잔액 구성은 기간과 무관한 현재 값이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `granted` | `integer` | 범위 안 적립 합<br>대시보드 차트의 이프 적립과 같은 정의 |
+| `spent` | `integer` | 범위 안 소모 합<br>대시보드 차트의 이프 소모와 같은 정의 |
+| `sinkRate` | `number / null` | `spent`를 `granted`로 나눈 0 이상의 값<br>`granted`가 0이면 `null` |
+| `grantedByReason` | `object[]` | `SIGNUP_REWARD`, `INVITE_REWARD`, `ATTENDANCE_REWARD`, `PURCHASE`, `ADMIN_GRANT` 순서로 항상 5항목 |
+| `grantedByReason[].reason` | `string` | 원장 사유 |
+| `grantedByReason[].amount` | `integer` | 범위 안 합 |
+| `spentByReason` | `object[]` | `STORY_CREATION`, `CHAT_TURN`, `CHAT_IMAGE` 순서로 항상 3항목<br>필드는 `grantedByReason`과 같고 값은 절댓값 |
+| `balances` | `object` | 탈퇴하지 않은 회원의 현재 유효 잔액 |
+| `balances.members` | `integer` | 대상 회원 수 |
+| `balances.total` | `integer` | 유효 잔액 합 |
+| `balances.buckets` | `object[]` | 유효 잔액을 `0`, `1~99`, `100~499`, `500~1999`, `2000+`로 나눈 회원 수<br>이 순서로 항상 5항목 |
+| `balances.buckets[].bucket` | `string` | 구간 이름 |
+| `balances.buckets[].members` | `integer` | 회원 수 |
+| `balances.purchased` | `integer` | 구매로 생긴 로트의 잔여 합 |
+| `balances.rewarded` | `integer` | 보상과 환불과 관리자 지급으로 생긴 로트의 잔여 합 |
+| `balances.legacy` | `integer` | 원장 연결이 없는 승계 로트의 잔여 합 |
+| `balances.expiringIn30Days` | `integer` | 지금부터 30일 안에 만료되는 로트의 잔여 합 |
+
+- 유효 잔액은 요청 시각에 잔여가 있고 만료되지 않은 로트의 잔여 합이다. 만료 시각이 지났으나 아직 정리되지 않은 로트는 넣지 않는다.
+- `balances.total`은 `purchased`, `rewarded`, `legacy`의 합이다.
+- 모든 값은 팀 계정 제외 목록을 적용한다.
+
+<br>
+
+**3. 실패 응답**
+
+대시보드 차트와 같다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/credits/metrics?days=30
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-11-02T02:10:00Z",
+  "from": "2026-10-04",
+  "to": "2026-11-02",
+  "granted": 412500,
+  "spent": 268400,
+  "sinkRate": 0.6507,
+  "grantedByReason": [
+    { "reason": "SIGNUP_REWARD", "amount": 71000 },
+    { "reason": "INVITE_REWARD", "amount": 12000 },
+    { "reason": "ATTENDANCE_REWARD", "amount": 98500 },
+    { "reason": "PURCHASE", "amount": 215000 },
+    { "reason": "ADMIN_GRANT", "amount": 16000 }
+  ],
+  "spentByReason": [
+    { "reason": "STORY_CREATION", "amount": 41750 },
+    { "reason": "CHAT_TURN", "amount": 213480 },
+    { "reason": "CHAT_IMAGE", "amount": 13170 }
+  ],
+  "balances": {
+    "members": 1240,
+    "total": 1388200,
+    "buckets": [
+      { "bucket": "0", "members": 318 },
+      { "bucket": "1~99", "members": 402 },
+      { "bucket": "100~499", "members": 361 },
+      { "bucket": "500~1999", "members": 128 },
+      { "bucket": "2000+", "members": 31 }
+    ],
+    "purchased": 612000,
+    "rewarded": 540200,
+    "legacy": 236000,
+    "expiringIn30Days": 182300
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-45 콘텐츠 소비 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/stories/consumption` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+공개 스토리 가운데 다른 회원이 플레이한 비율, 상위 스토리 집중도, 플레이 순위, 창작자 비율과 창작자 유지를 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-26 수익, 콘텐츠, 몰입, 검수 지표](4-1-PIPELINES.md#4-1-26-수익-콘텐츠-몰입-검수-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+| `limit` | `integer` | 선택 | 순위 항목 수, 1~50<br>기본 20 |
+
+- 날짜 쿼리가 모두 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `publicStories` | `integer` | 지금 공개 목록 조건을 만족하는 스토리 수 |
+| `officialStories` | `integer` | 그 가운데 공식 계정 소유 스토리 수 |
+| `playedStories` | `integer` | 공개 스토리 가운데 범위 안에 다른 회원의 채팅이 하나 이상 생성된 스토리 수 |
+| `playedRate` | `number / null` | `playedStories`를 `publicStories`로 나눈 값<br>`publicStories`가 0이면 `null` |
+| `otherMemberChats` | `integer` | 범위 안에 생성된 다른 회원의 채팅 수<br>공개 여부와 무관 |
+| `topConcentration` | `number / null` | 다른 회원의 채팅 수 상위 10편의 채팅 수 합을 `otherMemberChats`로 나눈 값<br>`otherMemberChats`가 0이면 `null` |
+| `ranking` | `object[]` | 다른 회원의 채팅 수 내림차순, 같으면 턴 합 내림차순, 같으면 스토리 공개 식별자 순<br>`limit`개 이하 |
+| `ranking[].storyId` | `string` | 스토리 공개 식별자 |
+| `ranking[].title` | `string` | 제목 |
+| `ranking[].official` | `boolean` | 공식 계정 소유 여부 |
+| `ranking[].deleted` | `boolean` | 삭제 여부 |
+| `ranking[].chats` | `integer` | 범위 안에 생성된 다른 회원의 채팅 수 |
+| `ranking[].players` | `integer` | 그 채팅의 서로 다른 회원 수 |
+| `ranking[].turns` | `integer` | 그 채팅의 현재 턴 합 |
+| `creators` | `object` | 창작자 |
+| `creators.activeMembers` | `integer` | 범위 안에 채팅 메시지를 보낸 회원 수 |
+| `creators.members` | `integer` | 범위 안에 스토리를 만든 회원 수 |
+| `creators.rate` | `number / null` | `members`를 `activeMembers`로 나눈 0 이상의 값<br>`activeMembers`가 0이면 `null` |
+| `creators.previousMembers` | `integer` | 직전 기간에 스토리를 만든 회원 수<br>직전 기간은 대시보드 차트와 같음 |
+| `creators.retained` | `integer` | 직전 기간 창작자 가운데 범위 안에도 스토리를 만든 회원 수 |
+| `creators.retentionRate` | `number / null` | `retained`를 `previousMembers`로 나눈 값<br>`previousMembers`가 0이면 `null` |
+
+- 다른 회원의 채팅은 소유 회원이 있고 그 회원이 스토리 소유자와 다른 채팅이다. 게스트 채팅은 소유 관계를 판정할 수 없어 세지 않는다. 삭제된 채팅은 세지 않는다.
+- 공개 목록 조건은 STORY의 공개 목록과 같다. 스토리 수와 순위는 지금 상태로 센다.
+- 창작자의 스토리 수는 삭제 여부와 무관하고 공식 계정은 팀 계정 제외 목록으로 빠진다.
+- 모든 값은 팀 계정 제외 목록을 적용한다. 공식 계정 소유 스토리는 `publicStories`, `officialStories`, `ranking`에 들어가고 채팅 소유자 기준 제외만 받는다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 대시보드 차트와 같은 기간 오류, `limit`이 1~50 밖 |
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/stories/consumption?days=30&limit=3
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+```json
+{
+  "asOf": "2026-11-02T02:10:00Z",
+  "from": "2026-10-04",
+  "to": "2026-11-02",
+  "publicStories": 486,
+  "officialStories": 8,
+  "playedStories": 97,
+  "playedRate": 0.1996,
+  "otherMemberChats": 1532,
+  "topConcentration": 0.6214,
+  "ranking": [
+    { "storyId": "6f0c2d1e-3b4a-4c5d-8e9f-0a1b2c3d4e5f", "title": "던전의 밤", "official": true, "deleted": false, "chats": 412, "players": 301, "turns": 4120 },
+    { "storyId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "title": "편의점 야간 알바", "official": false, "deleted": false, "chats": 188, "players": 142, "turns": 1510 },
+    { "storyId": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b", "title": "졸업식 전날", "official": true, "deleted": false, "chats": 131, "players": 97, "turns": 902 }
+  ],
+  "creators": {
+    "activeMembers": 412,
+    "members": 58,
+    "rate": 0.1408,
+    "previousMembers": 51,
+    "retained": 19,
+    "retentionRate": 0.3725
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-46 채팅 몰입 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/chats/engagement` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+회원의 날짜별 채팅 활동과 활성 회원 1인당 턴, 전날 채팅을 다음 날 이어 간 비율, 재생성 비율, 서버 기준 고착도를 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-26 수익, 콘텐츠, 몰입, 검수 지표](4-1-PIPELINES.md#4-1-26-수익-콘텐츠-몰입-검수-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `activeMembers` | `integer` | 범위 안에 채팅 메시지를 보낸 회원 수 |
+| `monthlyActiveMembers` | `integer` | `to`로 끝나는 30일 안에 채팅 메시지를 보낸 회원 수 |
+| `turnsPerActiveMember` | `number / null` | 범위 안 턴 수를 `activeMembers`로 나눈 값<br>`activeMembers`가 0이면 `null` |
+| `daily` | `object[]` | 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].activeMembers` | `integer` | 그날 채팅 메시지를 보낸 회원 수 |
+| `daily[].turns` | `integer` | 그날 턴 수<br>대시보드 차트의 턴과 같은 정의 |
+| `daily[].turnsPerActiveMember` | `number / null` | `turns`를 `activeMembers`로 나눈 값<br>`activeMembers`가 0이면 `null` |
+| `daily[].continuedMembers` | `integer` | 전날 채팅 메시지를 보낸 회원 가운데 그날 전날과 같은 채팅에 채팅 메시지를 보낸 회원 수 |
+| `daily[].continuationRate` | `number / null` | `continuedMembers`를 전날 `activeMembers`로 나눈 값<br>전날 값이 0이면 `null`<br>범위 첫날도 범위 전날의 값으로 계산 |
+| `daily[].regenerations` | `integer` | 그날 성공한 재생성 수 |
+| `daily[].regenerationRate` | `number / null` | `regenerations`를 `turns`로 나눈 값<br>`turns`가 0이면 `null` |
+| `daily[].stickiness` | `number / null` | `activeMembers`를 그날로 끝나는 30일 안에 채팅 메시지를 보낸 회원 수로 나눈 값<br>분모가 0이면 `null` |
+
+- 채팅 메시지는 회원이 보낸 사용자 메시지다. 게스트 채팅의 메시지는 소유 회원이 없어 세지 않는다. 삭제된 채팅의 메시지도 센다.
+- 모든 값은 팀 계정 제외 목록을 적용한다.
+
+<br>
+
+**3. 실패 응답**
+
+대시보드 차트와 같다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/chats/engagement?from=2026-10-26&to=2026-11-01
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
+
+```json
+{
+  "asOf": "2026-11-02T02:10:00Z",
+  "from": "2026-10-26",
+  "to": "2026-11-01",
+  "activeMembers": 188,
+  "monthlyActiveMembers": 412,
+  "turnsPerActiveMember": 26.4,
+  "daily": [
+    { "date": "2026-10-26", "activeMembers": 61, "turns": 702, "turnsPerActiveMember": 11.5, "continuedMembers": 24, "continuationRate": 0.4138, "regenerations": 31, "regenerationRate": 0.0442, "stickiness": 0.1481 },
+    { "date": "2026-10-27", "activeMembers": 58, "turns": 640, "turnsPerActiveMember": 11.0, "continuedMembers": 27, "continuationRate": 0.4426, "regenerations": 22, "regenerationRate": 0.0344, "stickiness": 0.1408 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-47 검수 지표
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/moderation/metrics` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+검수 제출본의 날짜별 판정 수와 거절률, 거절 사유별 제출본 수, 현재 보류와 대기 수를 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-26 수익, 콘텐츠, 몰입, 검수 지표](4-1-PIPELINES.md#4-1-26-수익-콘텐츠-몰입-검수-지표))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `decided` | `integer` | 범위 안에 판정된 제출본 수<br>승인과 거절의 합 |
+| `approved` | `integer` | 승인 수 |
+| `rejected` | `integer` | 거절 수 |
+| `rejectionRate` | `number / null` | `rejected`를 `decided`로 나눈 값<br>`decided`가 0이면 `null` |
+| `failed` | `integer` | 범위 안에 실행 실패로 끝난 제출본 수 |
+| `held` | `integer` | 지금 보류 중인 제출본 수 |
+| `pending` | `integer` | 지금 대기 중이며 보류가 아닌 제출본 수 |
+| `daily` | `object[]` | 판정 시각의 KST 날짜 오름차순<br>범위의 모든 날짜가 한 항목씩 |
+| `daily[].date` | `string` | KST 날짜 |
+| `daily[].submitted` | `integer` | 그날 처음 제출된 제출본 수 |
+| `daily[].approved` | `integer` | 그날 승인된 수 |
+| `daily[].rejected` | `integer` | 그날 거절된 수 |
+| `daily[].failed` | `integer` | 그날 실행 실패로 끝난 수 |
+| `rejectionRules` | `object[]` | 범위 안에 거절된 제출본의 위반 항목을 규칙과 종류로 묶은 수<br>제출본 수 내림차순, 같으면 규칙 이름 순<br>한 제출본에 같은 규칙과 종류의 위반이 여럿이어도 한 번 셈 |
+| `rejectionRules[].rule` | `string` | 위반 규칙 코드 |
+| `rejectionRules[].type` | `string` | 위반 종류<br>`TEXT`, `IMAGE` |
+| `rejectionRules[].submissions` | `integer` | 제출본 수 |
+
+- 제출본은 재제출하면 같은 행이 다시 대기로 바뀌어 이전 판정이 남지 않는다. 값은 지금 남아 있는 판정으로 센다.
+- 팀 계정 제외 목록을 적용하지 않는다.
+
+<br>
+
+**3. 실패 응답**
+
+대시보드 차트와 같다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/moderation/metrics?days=7
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+예시에는 `daily`의 날짜 항목 2개만 표시했다.
+
+```json
+{
+  "asOf": "2026-11-02T02:10:00Z",
+  "from": "2026-10-27",
+  "to": "2026-11-02",
+  "decided": 46,
+  "approved": 39,
+  "rejected": 7,
+  "rejectionRate": 0.1522,
+  "failed": 2,
+  "held": 1,
+  "pending": 3,
+  "daily": [
+    { "date": "2026-10-27", "submitted": 8, "approved": 6, "rejected": 1, "failed": 0 },
+    { "date": "2026-10-28", "submitted": 5, "approved": 5, "rejected": 2, "failed": 1 }
+  ],
+  "rejectionRules": [
+    { "rule": "EXPLICIT_SEXUAL_CONTENT", "type": "TEXT", "submissions": 4 },
+    { "rule": "EXPLICIT_SEXUAL_CONTENT", "type": "IMAGE", "submissions": 2 },
+    { "rule": "HATE_VIOLENCE_INCITEMENT", "type": "TEXT", "submissions": 1 }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-48 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
 | ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
-| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
+| PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계, 로트 잔여 집계, 주문의 상품과 완료와 환불 집계 |
 | NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 캠페인 하나의 도달 요약, 종류별 날짜별 도달 회원 수, 도달 회원 도달 시각 |
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
-| MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
-| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별 |
-| CHAT | 관리자 요청자 식별과 감사 기록 연산 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회 |
+| MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부, 제출본의 판정과 위반 항목 집계 |
+| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별, 공개 목록 조건 |
+| CHAT | 관리자 요청자 식별과 감사 기록 연산 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회, 회원별 사용자 메시지 날짜, 재생성 이력 수 |
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
