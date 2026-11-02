@@ -47,7 +47,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 | 요청 | 허용 |
 |---|---|
-| 공개 목록, 검색 | 발행 상태이며 공개된 회원 소유 스토리만 실림 |
+| 공개 목록, 탐색 목록, 홈 목록, 검색 | 발행 상태이며 공개된 스토리만 실림<br>소유자 유무와 무관 |
 | 상세, 일괄 조회, 좋아요, 신고 | 발행 상태이며 공개된 스토리는 누구나<br>소유자 없는 스토리는 식별자를 아는 누구나<br>회원 소유 비공개 스토리는 소유자만<br>위반은 404, 일괄 조회는 제외 |
 | 삭제, 수정 폼 | 소유 스토리는 소유자만<br>소유자 없는 스토리는 익명 요청만 |
 | 수정, presign, 표지와 인물 이미지 삭제 | 회원 소유자만 |
@@ -154,7 +154,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 
 **3. 카드 필드**
 
-검색, 일괄 조회, 내 스토리 목록의 카드도 같은 구조다.
+검색, 일괄 조회, 내 스토리 목록, 탐색 목록, 홈 목록의 카드도 같은 구조다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -165,7 +165,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `oneLineIntro` | `string` | 기본 주인공 이름으로 치환한 한 줄 소개<br>없으면 빈 문자열 |
 | `genres` | `string[]` | 저장한 장르 표기 목록 |
 | `author` | `object / null` | `id`, `nickname`, `profileImageUrl`<br>`id`는 항상 `null`<br>게스트 스토리는 `author`가 `null` |
-| `turnCount` | `integer` | 누적 턴 수<br>이 스토리로 만든 모든 채팅의 완료 턴 수와 재생성 횟수 합<br>삭제된 채팅도 포함 |
+| `turnCount` | `integer` | 누적 턴 수<br>이 스토리로 만든 모든 채팅의 완료 턴 수, 입력 수정으로 숨긴 턴 수, 재생성 횟수의 합에서 포크로 복사한 턴 수를 뺀 값<br>삭제된 채팅도 포함 |
 | `likeCount` | `integer` | 좋아요 수 |
 | `status` | `string` | `DRAFT` 또는 `PUBLISHED`<br>현재 만들어지는 스토리는 모두 `PUBLISHED` |
 | `visibility` | `string` | `PUBLIC` 또는 `PRIVATE` |
@@ -1002,7 +1002,7 @@ Authorization: Bearer <accessToken>
 | `storylineId` | `integer` | 필수 | 선택한 스토리라인 ID |
 | `additionalInfos` | `string[]` | 선택 | 추가 정보 최대 13개, 항목당 100자<br>선택한 추천 정보와 직접 입력한 정보를 합쳐 보냄<br>기본값 `[]` |
 | `artStyle` | `string` | 선택 | 활성 화풍 코드, 기본값 `ANIME`<br>빈 문자열은 기본값으로 보지 않고 거절<br>`NONE`이면 인물 이미지와 표지를 만들지 않음<br>차감액은 같음 |
-| `visibility` | `string` | 선택 | `PUBLIC` 또는 `PRIVATE`, 기본값 `PRIVATE`<br>게스트도 `PUBLIC`을 지정할 수 있음<br>게스트 스토리는 이관으로 회원 소유가 된 뒤 공개 목록과 검색에 실림 |
+| `visibility` | `string` | 선택 | `PUBLIC` 또는 `PRIVATE`, 기본값 `PUBLIC`<br>게스트도 지정할 수 있음 |
 | `isRegenerated` | `boolean` | 선택 | AI 호출 헤더로 그대로 전달 |
 | `draftId` | `string` | 선택 | 접수 시 삭제할 내 초안<br>회원 요청만 처리하고 없거나 타인의 초안이면 무시 |
 
@@ -2486,11 +2486,392 @@ Content-Length: 204800
 
 <br>
 
-### 4-2-33 다른 도메인과의 경계
+### 4-2-33 탐색 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /stories/explore` |
+| 인증 | 선택 |
+| 성공 | 200 |
+
+**1. 쿼리**
+
+| 쿼리 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `limit` | `integer` | 선택 | 기본값 20, 1~50으로 보정 |
+| `cursor` | `string` | 선택 | 이전 응답의 `nextCursor`<br>없으면 새 순서로 처음부터<br>형식이 잘못되면 거절 |
+
+<br>
+
+**2. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 카드 목록<br>구조는 공개 목록의 카드와 같음 ([4-2-2 공개 목록](#4-2-2-공개-목록)) |
+| `nextCursor` | `string / null` | 같은 순서의 다음 페이지 커서<br>마지막 페이지는 `null` |
+
+- 회원 요청은 요청자가 소유한 스토리를 제외한다. 표지가 없는 스토리는 누구에게나 제외한다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `limit`이 숫자가 아님<br>잘못된 커서 |
+
+<details>
+<summary><b>탐색 목록 요청, 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```text
+GET /stories/explore?limit=2
+```
+
+<br>
+
+**2) 200 Response body**
+
+```json
+{
+  "items": [
+    {
+      "id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+      "isOriginal": false,
+      "thumbnailUrlSm": "https://cdn.example.com/thumbnails/generated/3f2504e0-4f89-41d3-9a0c-0305e82c3301/썸네일_기본.webp",
+      "title": "사라지는 내일의 기록",
+      "oneLineIntro": "마법 도서관에서 지워진 미래를 추적하는 신입 기록관 서린의 이야기",
+      "genres": [
+        "판타지",
+        "미스터리"
+      ],
+      "author": {
+        "id": null,
+        "nickname": "은빛여우",
+        "profileImageUrl": null
+      },
+      "turnCount": 128,
+      "likeCount": 32,
+      "status": "PUBLISHED",
+      "visibility": "PUBLIC",
+      "createdAt": "2026-06-10T12:00:00Z"
+    },
+    {
+      "id": "7d8a1c2e-5b3f-4e6a-9c1d-2f4b6a8e0c13",
+      "isOriginal": false,
+      "thumbnailUrlSm": "https://cdn.example.com/thumbnails/generated/7d8a1c2e-5b3f-4e6a-9c1d-2f4b6a8e0c13/썸네일_기본.webp",
+      "title": "밤의 우체국",
+      "oneLineIntro": "보내지 못한 편지를 배달하는 야간 우체부 하온의 이야기",
+      "genres": [
+        "판타지"
+      ],
+      "author": null,
+      "turnCount": 7,
+      "likeCount": 0,
+      "status": "PUBLISHED",
+      "visibility": "PUBLIC",
+      "createdAt": "2026-10-30T02:10:00Z"
+    }
+  ],
+  "nextCursor": "eDo4NDc2MzIxOTkwMjQ1NTEzMTIwOjNiMWY5ZTU0YjdjMjhhMDE2ZjQ5ZDI3ZTAxYzU2YWQ4OjdkOGExYzJlLTViM2YtNGU2YS05YzFkLTJmNGI2YThlMGMxMw"
+}
+```
+
+<br>
+
+**3) 다음 페이지 요청**
+
+```text
+GET /stories/explore?limit=2&cursor=eDo4NDc2MzIxOTkwMjQ1NTEzMTIwOjNiMWY5ZTU0YjdjMjhhMDE2ZjQ5ZDI3ZTAxYzU2YWQ4OjdkOGExYzJlLTViM2YtNGU2YS05YzFkLTJmNGI2YThlMGMxMw
+```
+
+</details>
+
+<br>
+
+### 4-2-34 홈 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /stories/home` |
+| 인증 | 불필요 |
+| 성공 | 200 |
+
+요청 쿼리는 없다.
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `sections` | `object[]` | 노출 순서대로 정렬한 섹션 목록 |
+| `sections[].id` | `string / null` | 섹션 공개 식별자<br>기본 섹션은 `null` |
+| `sections[].name` | `string` | 섹션 이름<br>기본 섹션은 `인기 스토리`, `오리지널 스토리` |
+| `sections[].items` | `object[]` | 카드 목록<br>구조는 공개 목록의 카드와 같음 ([4-2-2 공개 목록](#4-2-2-공개-목록))<br>섹션당 최대 20개 |
+
+- 활성 섹션이 하나도 없으면 기본 섹션 두 개를 이 순서로 응답한다.
+
+<details>
+<summary><b>홈 목록 응답 예시</b></summary>
+
+<br>
+
+**1) 200 Response body**
+
+```json
+{
+  "sections": [
+    {
+      "id": "b2c7e1a4-0d3f-4a5b-8c6e-9f1a2b3c4d5e",
+      "name": "지금 인기 있는 스토리",
+      "items": [
+        {
+          "id": "9c5b94b1-35ad-49bb-b118-8e8fc24abf80",
+          "isOriginal": true,
+          "thumbnailUrlSm": "https://cdn.example.com/thumbnails/thumb_0012_sm.png",
+          "title": "잿빛 왕관",
+          "oneLineIntro": "무너진 왕국에서 견습 기사 아린이 옥좌의 진실을 좇는다",
+          "genres": [
+            "다크 판타지",
+            "정치극"
+          ],
+          "author": {
+            "id": null,
+            "nickname": "manyak",
+            "profileImageUrl": "https://cdn.example.com/profiles/manyak.png"
+          },
+          "turnCount": 96,
+          "likeCount": 41,
+          "status": "PUBLISHED",
+          "visibility": "PUBLIC",
+          "createdAt": "2026-05-28T09:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "e5f6a7b8-1c2d-4e3f-9a0b-1c2d3e4f5a6b",
+      "name": "로맨스 판타지 신작",
+      "items": []
+    }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-35 홈 섹션 목록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/home-sections` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+요청 쿼리는 없다. 비활성 섹션을 포함한 전체를 노출 순서대로 응답한다.
+
+**1. 응답**
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `items` | `object[]` | 섹션 목록 |
+
+<br>
+
+**2. 섹션 필드**
+
+등록, 수정 응답과 목록 항목이 같은 구조다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `id` | `string` | 섹션 공개 식별자 |
+| `name` | `string` | 섹션 이름 |
+| `source` | `string` | `MANUAL` 또는 `FILTER` |
+| `stories` | `object[]` | 수동 지정 스토리를 순서대로<br>`FILTER`는 빈 배열 |
+| `stories[].storyId` | `string` | 스토리 공개 식별자 |
+| `stories[].title` | `string` | 토큰 원문 |
+| `stories[].isListed` | `boolean` | 현재 목록 노출 조건 만족 여부 |
+| `genres` | `string[]` | 필터 장르 정식 이름<br>`MANUAL`과 조건 없는 `FILTER`는 빈 배열 |
+| `originalOnly` | `boolean` | 필터에서 공식 계정 소유만<br>`MANUAL`은 `false` |
+| `sort` | `string / null` | `popular`, `latest`, `likes`, `chats`<br>`MANUAL`은 `null` |
+| `itemLimit` | `integer` | 섹션에 싣는 스토리 수 상한 |
+| `isActive` | `boolean` | |
+| `sortOrder` | `integer` | 홈의 노출 순서 |
+| `createdAt` | `string` | |
+| `updatedAt` | `string` | |
+
+<br>
+
+### 4-2-36 홈 섹션 등록
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /admin/home-sections` |
+| 인증 | 관리자 |
+| 성공 | 201<br>섹션 |
+
+**1. 요청 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `name` | `string` | 필수 | 앞뒤 공백 제거 후 1~30자 |
+| `source` | `string` | 필수 | `MANUAL` 또는 `FILTER` |
+| `storyIds` | `string[]` | `MANUAL`이면 필수 | 스토리 공개 식별자 1~20개<br>중복 없음<br>요청 순서가 섹션 안의 순서<br>`FILTER`에 보내면 거절 |
+| `genres` | `string[]` | 선택 | `FILTER`의 장르 조건 1~10개<br>활성 제공 장르의 정식 이름<br>생략과 빈 배열은 조건 없음<br>`MANUAL`에 보내면 거절 |
+| `originalOnly` | `boolean` | 선택 | `FILTER`의 오리지널 조건, 기본값 `false`<br>`MANUAL`에 보내면 거절 |
+| `sort` | `string` | `FILTER`이면 필수 | `popular`, `latest`, `likes`, `chats`<br>`MANUAL`에 보내면 거절 |
+| `itemLimit` | `integer` | 선택 | 1~20, 기본값 20 |
+| `isActive` | `boolean` | 선택 | 기본값 `true` |
+| `sortOrder` | `integer` | 선택 | 1 이상<br>생략하면 현재 최대 순서 + 1, 섹션이 없으면 1 |
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 감사 로그 `HOME_SECTION_CREATED`를 남긴다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 필드 검증 실패<br>출처와 맞지 않는 필드<br>존재하지 않거나 삭제된 스토리<br>형식이 틀린 스토리 식별자 |
+| 400 | `INVALID_GENRE` | 허용되지 않는 장르<br>`details`에 무효 원소의 `genres[i]` |
+
+<details>
+<summary><b>홈 섹션 등록 요청, 응답 예시</b></summary>
+
+<br>
+
+**1) Request body**
+
+```json
+{
+  "name": "로맨스 판타지 신작",
+  "source": "FILTER",
+  "genres": [
+    "로맨스 판타지"
+  ],
+  "sort": "latest",
+  "itemLimit": 12,
+  "reason": "11월 홈 개편 섹션 추가"
+}
+```
+
+<br>
+
+**2) 201 Response body**
+
+```json
+{
+  "id": "e5f6a7b8-1c2d-4e3f-9a0b-1c2d3e4f5a6b",
+  "name": "로맨스 판타지 신작",
+  "source": "FILTER",
+  "stories": [],
+  "genres": [
+    "로맨스 판타지"
+  ],
+  "originalOnly": false,
+  "sort": "latest",
+  "itemLimit": 12,
+  "isActive": true,
+  "sortOrder": 3,
+  "createdAt": "2026-11-03T02:00:00Z",
+  "updatedAt": "2026-11-03T02:00:00Z"
+}
+```
+
+<br>
+
+**3) 400 Response body**
+
+`MANUAL` 출처에 `genres`를 보낸 경우다.
+
+```json
+{
+  "timestamp": "2026-11-03T02:00:00Z",
+  "status": 400,
+  "code": "BAD_REQUEST",
+  "message": "출처와 맞지 않는 필드입니다.",
+  "path": "/api/v1/admin/home-sections",
+  "details": [
+    {
+      "field": "genres",
+      "message": "MANUAL 출처에는 보낼 수 없습니다."
+    }
+  ]
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-37 홈 섹션 수정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `PATCH /admin/home-sections/{sectionId}` |
+| 인증 | 관리자 |
+| 성공 | 200<br>섹션 |
+
+**1. 요청 본문**
+
+등록의 필드를 그대로 쓰고 `reason`만 필수다. 보낸 필드만 바꾼다.
+
+| 필드명 | 규칙 |
+|---|---|
+| `source` | 바꾸면 새 출처의 필수 필드를 함께 보냄<br>이전 출처의 하위 데이터는 지움 |
+| `storyIds` | 보내면 전체 교체 |
+| `genres` | 보내면 전체 교체<br>빈 배열은 조건 제거 |
+
+- 감사 로그 `HOME_SECTION_UPDATED`를 남긴다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 등록과 같음<br>바꾼 출처의 필수 필드 누락 |
+| 400 | `INVALID_GENRE` | 허용되지 않는 장르 |
+| 404 | `NOT_FOUND` | 없는 섹션 |
+
+<br>
+
+### 4-2-38 홈 섹션 삭제
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `DELETE /admin/home-sections/{sectionId}` |
+| 인증 | 관리자 |
+| 성공 | 204, 본문 없음 |
+
+**1. 요청 본문**
+
+| 필드명 | 타입 | 필수 | 의미 |
+|---|---|---|---|
+| `reason` | `string` | 필수 | 사유<br>1~500자 |
+
+- 감사 로그 `HOME_SECTION_DELETED`를 남긴다.
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | 사유 누락 |
+| 404 | `NOT_FOUND` | 없는 섹션 |
+
+<br>
+
+### 4-2-39 다른 도메인과의 경계
 
 | 상대 | STORY가 주는 것 | STORY가 받는 것 |
 |---|---|---|
-| CHAT | 읽기 판정과 현재 표시 판정 | 삭제된 채팅을 포함한 모든 채팅의 `current_turn`과 `regenerated_count` 합계 |
+| CHAT | 읽기 판정과 현재 표시 판정 | 삭제된 채팅을 포함한 모든 채팅의 `current_turn`, `hidden_turn_count`, `regenerated_count` 합에서 `forked_from_turn`을 뺀 값 |
 | CHAT | 공개 스냅샷과 턴 생성에 필요한 데이터 캡처, 기본 주인공 이름, 토큰 치환 | 엔딩 도달 집계 행 |
 | CHAT | 시작 설정, 엔딩, 주요 사건 조회 |  |
 | MODERATION | 제출본 접수, 승인 시 등록 저장과 수정 적용 진입점 | 판정 결과와 승인 시 호출 |
@@ -2500,7 +2881,7 @@ Content-Length: 204800
 | PAYMENT | 차감과 환불 요청(`ref_type` `STORY`), 게스트 카운터 예약과 복원 요청 | 잔액 부족과 한도 소진 예외 |
 | PAYMENT |  | 정책값 `story_creation_cost` |
 | NOTIFICATION | 완성 이벤트(회원, 요청 ID, 스토리 공개 ID, 제목), 캠페인 이동 대상 스토리의 공개 판정 | 없음 |
-| ADMIN | 공식 계정 식별, 스토리와 제작 세션 조회 | 관리자 요청자, 관리자 판정 필터, 변경 감사 기록 |
+| ADMIN | 공식 계정 식별, 스토리와 제작 세션 조회, 홈 섹션 관리 API | 관리자 요청자, 관리자 판정 필터, 변경 감사 기록 |
 | ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 닉네임 변경 시 재색인 대상 스토리, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 게스트 이관 시 `user_id`로 소유권 확보와 이관된 스토리의 색인 요청 이벤트 |
 | ACCOUNT |  | 동의 게이트 허용 목록 |
 | 검색 | 색인 요청 이벤트(스토리 ID) | 검색 결과 카드 |

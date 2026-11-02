@@ -240,7 +240,7 @@ erDiagram
 | `users` | `reward_identity_user_id` | 출석 보상의 멱등 키에 사용<br>NULL이면 `id` |
 | `users` | `member_trial_seeded_at` | 체험 스냅샷 완료 시각<br>계정 도메인이 기록하고 PAYMENT는 스냅샷 완료 여부를 반환 |
 | `users` | status | 충전과 출석 보상 전 계정 상태 검사 |
-| `story_chats` | `current_turn`, `regenerated_count`, `story_id` | 참조 종류 `CHAT`인 채팅 턴 차감의 대사 완료 수 판정, 이용내역 제목 해석 |
+| `story_chats` | `current_turn`, `hidden_turn_count`, `regenerated_count`, `story_id` | 참조 종류 `CHAT`인 채팅 턴 차감의 대사 완료 수 판정, 이용내역 제목 해석 |
 | `story_messages`, `story_message_versions` | `credit_transaction_id` | 채팅 턴 차감 행이 저장된 턴에 연결됐는지 판정 |
 | `chat_models` | `code`, `turn_cost` | 정책값 응답의 `chatTurnCost`에 라이트(`LITE`)의 가격을 실음 |
 | `story_creation_sessions` | `status`, `story_id` | 대사의 완료 수 판정, 이용내역 제목 해석 |

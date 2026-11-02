@@ -801,7 +801,7 @@ Authorization: Bearer {adminToken}
 | `items[].member` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트는 `null` |
 | `items[].startedAs` | `string` | 현재 소유자 유형이며 시작 당시 유형이 아님<br>소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅은 `MEMBER` |
 | `items[].turnCount` | `integer` | 현재 턴 수 |
-| `items[].summaryThroughTurn` | `integer` | 요약 끝 턴<br>0이면 요약 없음<br>재생성으로 요약이 비워진 채팅도 0이라 요약을 만든 적 없는 채팅과 구별하지 않음 ([CHAT 3-2-3 채팅](../../CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-3-채팅)) |
+| `items[].summaryThroughTurn` | `integer` | 현재 요약의 끝 턴<br>0이면 유효한 요약 없음<br>재생성이나 입력 수정으로 요약이 모두 무효가 된 채팅도 0이라 요약을 만든 적 없는 채팅과 구별하지 않음 ([CHAT 3-2-4 메시지와 선택지](../../CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-4-메시지와-선택지)) |
 | `items[].startedAt` | `string` | 생성 시각 |
 | `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
 | `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |
@@ -3956,7 +3956,7 @@ Authorization: Bearer {adminToken}
 | NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 캠페인 하나의 도달 요약, 종류별 날짜별 도달 회원 수, 도달 회원 도달 시각 |
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부, 제출본의 판정과 위반 항목 집계 |
-| STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별, 공개 목록 조건 |
+| STORY | 관리자 요청자 식별과 감사 기록 연산<br>홈 섹션 관리 API의 인증 수준과 토큰 규칙 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별, 공개 목록 조건 |
 | CHAT | 관리자 요청자 식별과 감사 기록 연산 | 채팅 시작 수, 턴 수, 채팅 조회, 턴 도달률, 페르소나와 모델 비중, AI 호출 기록 조회, 회원별 사용자 메시지 날짜, 재생성 이력 수 |
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
