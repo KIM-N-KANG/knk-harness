@@ -66,6 +66,7 @@
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
 | 이관 판정 | 소유자 없음, 요청자 소유, 타인 소유, 없음, 삭제됨, 같은 요청 중복, 형식 오류 | `MIGRATED`, `ALREADY_OWNED`, `CONFLICT`, `NOT_FOUND`, `NOT_FOUND`, 둘째는 `ALREADY_OWNED`, 400 |
+| 이관 기기 증명 | 게스트 완성 스토리를 같은 기기 헤더로 이관, 다른 기기 헤더로 이관, 헤더 없이 이관<br>완성 요청 기록이 없는 비공개 게스트 스토리, 같은 조건의 공개 게스트 스토리<br>다른 기기 헤더로 같은 요청에 채팅 함께 이관<br>진행이 둘 연결된 스토리에서 첫 진행은 기록 없고 둘째 진행에 기기 A 기록, 두 진행이 서로 다른 기기 기록 | `MIGRATED`, `CONFLICT`, `CONFLICT`<br>`MIGRATED`, `CONFLICT`<br>채팅은 `MIGRATED`, 실패한 스토리는 소유자 없음 유지<br>기기 A만 `MIGRATED`, 어느 기기든 `CONFLICT` |
 | 이관 잠금 | 성공 뒤 재호출, 전부 `CONFLICT`인 호출 뒤 재호출, 5회 시도 뒤 | `migrationClosed` true, 열림 유지, `migrationClosed` true |
 | 동시 이관 | 같은 계정의 동시 요청 2건, 다른 두 계정이 같은 항목 | 1회 제한 유지, 한쪽만 `MIGRATED` |
 | 이관 부수효과 | `PUBLIC`과 `PRIVATE` 스토리 이관, `ALREADY_OWNED`와 `CONFLICT`가 섞인 스토리 이관, 재색인 이벤트 처리 실패, 도달 엔딩 있는 채팅 이관, 이미 집계된 엔딩 | 진행 소유자 설정과 공개 범위와 무관한 스토리별 재색인 이벤트, `MIGRATED` 스토리에만 이벤트, 이관 응답과 커밋 유지, 집계 1건, 중복 없음 |
