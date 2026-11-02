@@ -37,7 +37,7 @@
 | 채팅 참여의 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
 | 기능 사용과 안정성 값 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
 | 채팅 옵션과 입력의 채팅 옵션 비중 | `GET /api/quality/chat-options` | [4-2-32 채팅 옵션 비중](../BACKEND/4-2-CONTRACT.md#4-2-32-채팅-옵션-비중) |
-| 운영 AI 비용, 수익 마진의 AI 비용 | `GET /api/quality/ai-cost` | [4-2-33 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-33-ai-비용) |
+| 운영 AI 비용, 수익 마진의 AI 비용, 개요 AI 비용 카드 | `GET /api/quality/ai-cost` | [4-2-33 AI 비용](../BACKEND/4-2-CONTRACT.md#4-2-33-ai-비용) |
 | 수익 결제 지표 | `GET /api/payments/metrics` | [4-2-43 결제 지표](../BACKEND/4-2-CONTRACT.md#4-2-43-결제-지표) |
 | 수익 이프 경제 | `GET /api/credits/metrics` | [4-2-44 이프 경제 지표](../BACKEND/4-2-CONTRACT.md#4-2-44-이프-경제-지표) |
 | 콘텐츠 소비와 창작자 | `GET /api/stories/consumption` | [4-2-45 콘텐츠 소비 지표](../BACKEND/4-2-CONTRACT.md#4-2-45-콘텐츠-소비-지표) |
