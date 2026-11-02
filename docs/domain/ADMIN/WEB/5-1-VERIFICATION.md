@@ -80,7 +80,8 @@
 | 워드마크 | 사이드바 | 접근성 이름 "마냑 관리자" |
 | 외부 도구 | 사이드바의 외부 도구 열기 | Amplitude, OpenSearch 로그, Sentry, Langfuse, Google Play Console, 그로블 순서<br>Google Play Console은 `https://play.google.com/console/developers/7346202752431827582/app-list`를 새 탭에서 엶 |
 | 요약 카드 | 요약, 차트, 분석 지표, 설치 지표 응답 | 카드 6개가 오늘 활성 사용자, 가입자, 채팅 시작, 턴, 결제 금액 (환불 포함), 앱 설치(Android) 순서<br>서버 DB 카드 4개는 기간 합계 큰 숫자, 증감, 오늘과 누적 줄<br>스토리, 이프 적립, 이프 소모, 결제 건수 카드와 Amplitude 사용자 지표 구역, 설치 차트 없음 |
-| 카드 격자 | 너비 1280px | 3열 2행 |
+| 카드 격자 | 너비 1536px<br>너비 1280px | 6열 1행<br>3열 2행 |
+| 카드 크기 | 너비 1536px, 큰 숫자 자릿수와 작은 줄 길이가 서로 다른 여섯 카드 | 여섯 카드의 너비와 높이가 같고 제목, 큰 숫자, 증감, 작은 줄의 세로 위치가 같음<br>작은 줄이 넘치는 카드는 한 줄 말줄임표 |
 | 가입자 카드 | 기간 최근 30일, `totals.joined` 71, `previous.totals.joined` 58, `members.total` 1300, `active` 1240, `withdrawn` 60, `joinedToday` 12 | 큰 숫자 71명, 증감 "▲ 22.4%"와 비교 안내 "이전 30일 대비", 작은 줄 "오늘 12명, 누적 1,300명"<br>"?" 툴팁에 지표 정의 아래 "탈퇴한 회원을 포함한 가입자 수입니다. 현재 회원 1,240명, 누적 탈퇴 60명이며 팀 계정은 제외합니다."<br>누르면 `excludeDeleted` 없는 회원 목록 |
 | 증감 감소 | `totals.revenue` 9600, `previous.totals.revenue` 19200 | "▼ 50.0%" |
 | 증감 이전 값 0 | `totals.chats` 12, `previous.totals.chats` 0 | 증감률 대신 "비교할 이전 값 없음" |
