@@ -17,7 +17,7 @@
 | `to` | 개요, 지표 화면 | 직접 선택한 끝 날짜 |
 | `days` | 개요, 예전 분석 경로 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
 | `tab` | 지표 화면 | 탭 값<br>하위 구분이 있는 탭은 하위 구분 값 |
-| `metric` | 개요 | 일별 추이의 지표 `joined`, `chats`, `turns`, `stories`, `granted`, `spent`, `payments`, `revenue`<br>없거나 알 수 없는 값이면 `joined` |
+| `metric` | 개요 | 일별 추이에서 고른 지표 키<br>기간을 바꿔도 유지 |
 | `campaign` | 유입 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
 | `adSegment` | 유입 | 첫 방문 활성화와 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds`<br>두 하위 구분이 같은 값을 함께 씀 |
 | `platform` | 지표 화면 | 플랫폼 `all`, `web`, `android`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |

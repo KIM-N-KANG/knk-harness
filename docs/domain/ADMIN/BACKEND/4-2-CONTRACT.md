@@ -2914,7 +2914,7 @@ Authorization: Bearer {adminToken}
 | `chattedBeforeMembers` | `integer / null` | 도달 회원 가운데 도달 전 24시간 안에 채팅 메시지를 보낸 회원 수<br>도달 회원 수가 0이면 `null` |
 | `chatRate` | `number / null` | `chattedMembers`를 `deliveredMembers`로 나눈 값<br>도달 회원 수가 0이면 `null` |
 
-- 활동 알림의 채팅 전환 값은 `deliveredMembers`와 같은 기간과 같은 방식(종류와 날짜마다 센 수의 합)으로 센다.
+- 활동 알림의 채팅 전환 값은 `deliveredMembers`와 같은 집계 구간(`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체)에서 같은 방식(종류와 날짜마다 센 수의 합)으로 센다. 측정 시작 전이어도 범위 전체의 도달 회원으로 값을 센다.
 - 캠페인 열람 응답의 채팅 전환 값은 집계 범위와 무관하게 마지막 회차의 도달 회원 전체로 센다.
 
 <br>

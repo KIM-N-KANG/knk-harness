@@ -39,10 +39,10 @@
 | 출처 표시 | Amplitude 영역과 서버 DB 영역<br>분포 카드 영역과 일별 추이 영역 | 영역 제목 옆에 각각 "Amplitude"와 "서버 DB"<br>출처 표시 없음 |
 | 기호 | 모든 화면 문구 | em dash와 가운뎃점 나열 없음 |
 | 계열 색 고정 | 같은 기능의 값 순위가 다른 두 기간 | 기능마다 색이 그대로이고 값 순위로 바뀌지 않음 |
-| 스켈레톤 표시 | 요약 응답을 1초 늦게 줌 | 200ms 뒤 요약 카드 10개 자리의 스켈레톤, 응답 뒤 값으로 바뀌고 배치 이동 없음 |
+| 스켈레톤 표시 | 요약과 차트 응답을 1초 늦게 줌 | 200ms 뒤 요약 카드 6개 자리의 스켈레톤, 응답 뒤 값으로 바뀌고 배치 이동 없음 |
 | 스켈레톤 생략 | 응답을 100ms에 줌 | 스켈레톤 없이 값만 그림 |
 | 스켈레톤 최소 시간 | 응답을 250ms에 줌 | 스켈레톤이 300ms까지 유지된 뒤 값 |
-| 인라인 스켈레톤 | 요약 응답은 오고 차트 응답이 늦음 | 카드의 누적과 오늘은 보이고 기간 합계 줄 자리에 같은 높이의 스켈레톤 |
+| 인라인 스켈레톤 | 요약 응답은 오고 차트 응답이 늦음 | 서버 DB 카드의 작은 줄(오늘과 누적)은 보이고 큰 숫자와 증감 자리에 같은 높이의 스켈레톤 |
 | 표 스켈레톤 | 이프 내역과 검수 제출 목록을 늦게 줌 | 머리 행과 본문 행 10개 스켈레톤 |
 | 스켈레톤 접근성 | 스켈레톤 표시 중 | 영역에 `aria-busy="true"`, 상태 알림에 "데이터를 불러오는 중입니다…", 블록은 접근성 트리에 없음 |
 | 움직임 줄이기 | 움직임 줄이기 설정 | 스켈레톤이 깜빡이지 않음 |
@@ -150,7 +150,7 @@
 | 채팅 전환 도달 없음 | `deliveredMembers` 0, `chattedMembers`와 `chattedBeforeMembers`와 `chatRate` `null` | 채팅 전환과 전환율 칸에 "도달 없음" |
 | 채팅 전환 도움말 | 채팅 전환 열 머리 옆 "?" | 지표 정의 표의 채팅 전환 정의이고 계산 줄에 도달 전 24시간 비교값 문장이 있음 |
 | 앱 측정 전 | `openState` `MEASURED`, `pushOpens` 27, `webPushOpens` 27, `androidPushOpens` `null`, `inboxOpens` 6, `webInboxOpens` 6, `androidInboxOpens` `null`인 활동 알림 | 푸시 열람 27명과 "웹 27명, 앱 측정 시작 전", 알림함 열람 6명과 "웹 6명, 앱 측정 시작 전" |
-| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`인 캠페인, `chattedMembers` 41 | 푸시 열람, 열람률, 알림함 열람 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음"<br>플랫폼 열람 문구 없음<br>채팅 전환 칸은 41명 |
+| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`인 캠페인은 `chattedMembers` 41, `PENDING`인 캠페인은 `chattedMembers` `null` | 푸시 열람, 열람률, 알림함 열람 칸에 "측정 불가", "측정 시작 전", "발송 기록 없음"<br>플랫폼 열람 문구 없음<br>채팅 전환 칸은 앞의 둘이 41명, `PENDING`은 "도달 없음" |
 | 측정 구간 없음 | `asOf` `null`, `pendingDates` 빈 배열 | 집계 기준 시각 표시 없음, 부분 집계 안내 없음, 다시 요청하지 않음 |
 | 열람률 없음 | `openState` `MEASURED`, `pushOpenRate` `null` | "계산할 수 없음" |
 | 열람률 1 초과 | `pushOpenRate` 1.5 | 150.0% |
@@ -532,7 +532,7 @@
 |---|---|---|
 | 요청 | 캠페인 상세 진입 | 상세 요청과 `GET /api/campaigns/push-opens/{campaignId}` 요청을 따로 보냄, 열람 요청에 쿼리 없음 |
 | 위치와 값 | `from` 2026-10-23, `to` 2026-10-30, `openState` `MEASURED`, `pushOpens` 84, `webPushOpens` 61, `androidPushOpens` 23, `pushOpenRate` 0.2039, `inboxOpens` 11, `webInboxOpens` 4, `androidInboxOpens` 7, `chattedMembers` 97, `chattedBeforeMembers` 64, `chatRate` 0.2354 | 발송 단계 카드 아래, 처리 사유 카드 위에 영역 제목 "열람"과 출처 "Amplitude와 서버 DB", 집계 기간 "2026-10-23 ~ 2026-10-30"<br>카드 순서 채팅 전환, 전환율, 푸시 열람, 열람률, 알림함 열람<br>채팅 전환 97명과 "도달 전 24시간 64명", 전환율 23.5%, 푸시 열람 84명과 "웹 61명, 앱 23명", 열람률 20.4%, 알림함 열람 11명과 "웹 4명, 앱 7명" |
-| 측정 상태 | `openState` `NO_LINK`, `BEFORE_MEASUREMENT`, `PENDING`, `chattedMembers` 41 | 열람 카드 셋의 값 자리에 "측정 불가", "측정 시작 전", "발송 기록 없음"<br>채팅 전환 카드는 41명 |
+| 측정 상태 | `openState` `NO_LINK`와 `BEFORE_MEASUREMENT`는 `chattedMembers` 41, `PENDING`은 `null` | 열람 카드 셋의 값 자리에 "측정 불가", "측정 시작 전", "발송 기록 없음"<br>채팅 전환 카드는 앞의 둘이 41명, `PENDING`은 "도달 없음" |
 | 선점 전 | `openState` `PENDING`, `from`과 `to` `null`, `chattedMembers` `null` | 열람 카드 셋에 "발송 기록 없음", 채팅 전환과 전환율 카드에 "도달 없음", 집계 기간 없음 |
 | 앱 측정 전 | `androidPushOpens`, `androidInboxOpens` `null` | "웹 61명, 앱 측정 시작 전" |
 | 준비 중 | `pendingDates` 있음 | 카드 줄 위에 "열람 수는 준비된 날짜만 합산했습니다. 열람률은 일부 날짜의 열람 수를 전체 도달 회원 수로 나눈 값입니다.", 60초 뒤 같은 요청 |
