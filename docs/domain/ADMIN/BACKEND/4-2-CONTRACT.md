@@ -2882,7 +2882,7 @@ Authorization: Bearer {adminToken}
 | `campaigns[].title` | `string` | 광고 표기 없는 제목 |
 | `campaigns[].noticeId` | `string / null` | 공지 알림이면 공지 공개 식별자 |
 | `campaigns[].startedAt` | `string` | 마지막 회차의 선점 시각 |
-| `campaigns[].deliveredMembers` | `integer` | 도달 기기가 하나 이상인 회원 수 |
+| `campaigns[].deliveredMembers` | `integer` | 마지막 회차에서 도달 기기가 하나 이상인 회원을 중복 없이 센 수<br>`chattedMembers`와 같은 모집단 |
 | `activityFrom` | `string / null` | 활동 알림 집계 구간의 첫날<br>`from`과 가장 이른 측정 시작일 가운데 늦은 날<br>집계 구간이 없으면 `null` |
 | `activityTypes` | `object[]` | `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` 순서의 4항목<br>항목마다 아래 필드와 열람 값 구조 |
 | `activityTypes[].type` | `string` | 시나리오 식별자 |
