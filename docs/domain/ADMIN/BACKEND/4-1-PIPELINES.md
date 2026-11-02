@@ -953,3 +953,42 @@ NOTIFICATION
 | 조회 | 측정함이면 측정한 플랫폼의 조회만 보냄<br>측정함이 아니면 분석 도구를 조회하지 않고 받은 시각은 `null`, 준비 중 날짜는 빈 배열 |
 
 - 회차를 다시 실행한 캠페인은 마지막 회차의 선점 날짜부터 센다. 앞 회차의 푸시를 그 전 날짜에 연 열람은 들지 않는다.
+
+<br>
+
+### 4-1-26 수익, 콘텐츠, 몰입, 검수 지표
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
+flowchart LR
+    A["`**현재 시각 고정**
+기간 쿼리로 KST 날짜 범위 확정`"] --> B["`**기간 집계**
+주문, 원장, 채팅, 제출본`"]
+    B --> C["`**현재 상태 집계**
+로트 잔여, 공개 스토리, 보류와 대기`"]
+    C --> D["`**응답 조립**
+빈 날짜 0 채움, 비율의 분모 0은 null`"]
+    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    class A,D comp
+    class B,C task
+```
+
+지표 정의는 제품 제약에 있다. 날짜 범위와 직전 기간은 대시보드 차트와 같고 분석 도구를 쓰지 않으며 캐시하지 않는다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-7 대시보드 차트](#4-1-7-대시보드-차트))
+
+| 항목 | 규칙 |
+|---|---|
+| 활성 회원 | `story_messages`에서 `role`이 사용자이고 `created_at`이 범위 안인 행을 `story_chats`로 이어 `user_id`가 있는 채팅의 소유 회원을 중복 없이 셈<br>날짜별 값은 메시지 `created_at`의 KST 날짜로 묶음<br>채팅 삭제 여부는 보지 않음 |
+| 결제 | `credit_orders`에서 `completed_at`이 범위 안인 주문을 셈<br>첫 결제는 같은 `user_id`에 `completed_at`이 더 이르거나 같고 `id`가 더 작은 주문이 없는 주문<br>환불은 그 주문의 `status`가 `REFUNDED`<br>상품은 `product_id`, 금액은 `price_krw`, 지급 이프는 `credit_amount`<br>첫 결제까지 걸린 일수는 `users.created_at`과 첫 주문 `completed_at`의 KST 날짜 차이 |
+| 이프 적립과 소모 | 대시보드 차트의 이프 적립과 소모 쿼리를 `reason`으로 묶어 셈 |
+| 로트 잔여 | `credit_lots`에서 `remaining`이 0보다 크고 `expires_at`이 없거나 요청 시각보다 뒤인 행<br>회원은 `users.status`가 `DELETED`가 아닌 회원<br>구성은 `transaction_id`가 가리키는 원장의 `reason`이 `PURCHASE`인 로트, 그 밖의 `reason`인 로트, `transaction_id`가 없는 로트로 나눔<br>30일 안 만료는 `expires_at`이 요청 시각부터 30일 안인 행<br>회원별 합으로 잔액 분포 구간을 나누고 로트가 없는 회원은 0 구간 |
+| 공개 스토리 | `stories`에서 `status`가 `PUBLISHED`, `visibility`가 `PUBLIC`, `deleted_at`이 없고 `user_id`가 있는 행<br>공식 계정은 STORY의 공식 계정 식별로 판정 |
+| 다른 회원의 채팅 | `story_chats`에서 `created_at`이 범위 안이고 `deleted_at`이 없으며 `user_id`가 있고 스토리의 `user_id`와 다른 행<br>스토리마다 채팅 수, `user_id`의 중복 없는 수, `current_turn` 합을 셈<br>순위는 채팅 수 내림차순, 턴 합 내림차순, 스토리 `public_id` 순으로 `limit`개 |
+| 창작자 | `stories`에서 `created_at`이 범위 안인 행의 `user_id`를 중복 없이 셈<br>직전 기간도 같은 쿼리<br>유지는 두 집합의 교집합 수 |
+| 이어 가기 | 날짜마다 전날 사용자 메시지를 보낸 (회원, 채팅) 쌍 가운데 그날 같은 쌍으로 사용자 메시지가 있는 회원을 중복 없이 셈<br>범위 첫날의 전날 값도 같은 쿼리로 구함 |
+| 재생성 | `story_message_versions`에서 `created_at`이 범위 안인 행을 KST 날짜로 묶어 셈<br>메시지와 채팅을 이어 소유 회원으로 팀 계정 제외 |
+| 고착도 | 날짜마다 그날로 끝나는 30일 범위의 활성 회원 수를 분모로 둠<br>30일 범위는 범위 첫날보다 앞선 날짜도 읽음 |
+| 검수 판정 | `story_submissions`에서 `decided_at`이 범위 안인 행을 `status`가 `APPROVED`, `REJECTED`, `FAILED`인 수로 나눠 `decided_at`의 KST 날짜로 묶음<br>처음 제출은 `created_at`의 KST 날짜로 묶은 행 수<br>보류는 `status`가 `PENDING`이고 `held_at`이 있는 행, 대기는 `status`가 `PENDING`이고 `held_at`이 없는 행 |
+| 거절 사유 | 거절된 제출본의 `issues` JSON 배열에서 항목의 `rule`과 `type`을 읽어 제출본마다 중복 없이 센 뒤 규칙과 종류로 합산 |
+| 팀 계정 제외 | 검수 지표를 뺀 모든 지표에 요약과 같은 제외 목록 적용<br>결제와 원장과 로트는 `user_id`, 채팅과 메시지는 채팅의 `user_id`, 스토리와 창작자는 스토리의 `user_id`<br>공식 계정 소유 스토리는 공개 스토리 수와 순위에 포함 |
+| 캐시 | 없음<br>기간 상한 366일이 집계 범위를 제한 |
