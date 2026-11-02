@@ -336,7 +336,7 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 
 ### 4-2-1 간편 제작 첫 진입 안내
 
-간편 제작과 제작 탭에서 단계마다 여는 하단 대화창이다. ([웹 간편 제작 첫 진입 안내](../domain/STORY/CLIENT/WEB/3-3-LAYOUT.md#3-3-4-제작-안내와-대기)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 센다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있다.
+간편 제작과 제작 탭에서 단계마다 여는 대화창이다. 웹과 Android가 같은 이름과 프로퍼티로 보낸다. ([간편 제작 첫 진입 안내](../domain/STORY/CLIENT/3-2-INTERACTION-FLOWS.md#3-2-6-제작-안내)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 센다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -422,8 +422,8 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | 이벤트                                       | 우선순위 | 발생 시점                            | 고유 프로퍼티             |
 | -------------------------------------------- | -------- | ------------------------------------ | ------------------------- |
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
-| `client_storyDetail_persona_selected` | P1 | 페르소나 Select에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭. KNK-1976부터 상세 CTA가 연 시작 시트의 "채팅 시작하기" 클릭(그 전에는 상세 CTA 클릭) | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
+| `client_storyDetail_persona_selected` | P1 | 페르소나 Select 또는 시작 시트에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
 | `client_storyDetail_personaCreateButton_clicked` | P1 | 페르소나 Select의 "페르소나 생성하기" 클릭(게스트, 10개 상한으로 이동하지 않아도 발생) | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 | `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
@@ -711,12 +711,11 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 앱의 출석 이벤트는 `client_account_attendanceButton_clicked` 대신 `client_creditCharge_attendanceButton_clicked`를 사용한다. 현재 웹 전용 그룹은 아래 표를 따른다. 종료된 `client_guestLimitDialog_*` 3개, `client_inappBrowser_loginHandoffCreated`와 §4-2-12의 폐기 이벤트 4개는 제외한다. 화면별 대응은 [3-3 관측](../platform/CLIENT/ANDROID/3-EXECUTION.md#3-3-관측)이, 이벤트별 적용 표시는 노션 `페이지별 로깅 데이터 정리`가 소유한다.
 
-**앱 비적용(웹 전용) 8개**, 앱에 해당 화면, 상태가 없다.
+**앱 비적용(웹 전용) 5개**, 앱에 해당 화면, 상태가 없다.
 
 | 그룹                | 이벤트                                                                                                                                                            | 사유                          |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 인앱 브라우저 (1)   | `client_inappBrowser_detected`                                                                                                                                     | 네이티브 앱에 개념 없음       |
-| 간편 제작 첫 진입 안내 (3) | `client_storyCreate_tutorial*` 3개 | 웹 전용 안내 |
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked`, `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 공유 열람 (2) | `client_chatShare_*` 2개 | 공유 링크 열람은 웹 화면에서 수행 |
 
