@@ -165,7 +165,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `oneLineIntro` | `string` | 기본 주인공 이름으로 치환한 한 줄 소개<br>없으면 빈 문자열 |
 | `genres` | `string[]` | 저장한 장르 표기 목록 |
 | `author` | `object / null` | `id`, `nickname`, `profileImageUrl`<br>`id`는 항상 `null`<br>게스트 스토리는 `author`가 `null` |
-| `turnCount` | `integer` | 누적 턴 수<br>이 스토리로 만든 모든 채팅의 완료 턴 수와 재생성 횟수 합<br>삭제된 채팅도 포함 |
+| `turnCount` | `integer` | 누적 턴 수<br>이 스토리로 만든 모든 채팅의 완료 턴 수, 입력 수정으로 숨긴 턴 수, 재생성 횟수의 합에서 포크로 복사한 턴 수를 뺀 값<br>삭제된 채팅도 포함 |
 | `likeCount` | `integer` | 좋아요 수 |
 | `status` | `string` | `DRAFT` 또는 `PUBLISHED`<br>현재 만들어지는 스토리는 모두 `PUBLISHED` |
 | `visibility` | `string` | `PUBLIC` 또는 `PRIVATE` |
@@ -2871,7 +2871,7 @@ GET /stories/explore?limit=2&cursor=eDo4NDc2MzIxOTkwMjQ1NTEzMTIwOjNiMWY5ZTU0Yjdj
 
 | 상대 | STORY가 주는 것 | STORY가 받는 것 |
 |---|---|---|
-| CHAT | 읽기 판정과 현재 표시 판정 | 삭제된 채팅을 포함한 모든 채팅의 `current_turn`과 `regenerated_count` 합계 |
+| CHAT | 읽기 판정과 현재 표시 판정 | 삭제된 채팅을 포함한 모든 채팅의 `current_turn`, `hidden_turn_count`, `regenerated_count` 합에서 `forked_from_turn`을 뺀 값 |
 | CHAT | 공개 스냅샷과 턴 생성에 필요한 데이터 캡처, 기본 주인공 이름, 토큰 치환 | 엔딩 도달 집계 행 |
 | CHAT | 시작 설정, 엔딩, 주요 사건 조회 |  |
 | MODERATION | 제출본 접수, 승인 시 등록 저장과 수정 적용 진입점 | 판정 결과와 승인 시 호출 |

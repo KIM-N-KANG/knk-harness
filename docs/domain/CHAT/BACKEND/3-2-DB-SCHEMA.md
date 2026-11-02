@@ -36,6 +36,8 @@ erDiagram
     story_chats ||--o{ story_messages : "메시지"
     story_messages ||--o{ story_choices : "선택지"
     story_messages ||--o{ story_message_versions : "버전 이력"
+    story_chats ||--o{ story_chat_summaries : "요약 이력"
+    story_chats |o--o{ story_chats : "포크 출처"
     story_chats ||--o{ story_chat_main_events : "거쳐온 사건"
     story_main_events ||--o{ story_chat_main_events : "STORY"
     story_main_events |o--o{ story_chats : "STORY, 목표 사건"
@@ -52,6 +54,13 @@ erDiagram
         bigint target_main_event_id FK
         bigint reached_ending_id FK
         varchar model_code FK
+        bigint forked_from_chat_id FK
+    }
+    story_chat_summaries {
+        bigint id PK
+        bigint chat_id FK
+        integer through_turn
+        timestamptz invalidated_at
     }
     chat_models {
         varchar code PK
@@ -60,6 +69,7 @@ erDiagram
         bigint id PK
         bigint chat_id FK
         integer message_order
+        timestamptz hidden_at
         bigint reached_ending_id FK
         bigint credit_transaction_id FK
     }
@@ -127,10 +137,12 @@ erDiagram
 | `creation_id` | uuid | | 간편 제작 스토리의 스토리라인 생성 요청 ID<br>일반 제작 스토리는 `NULL` |
 | `story_prologue_snapshot` | text | | 시작 시점의 프롤로그<br>읽을 수 없는 스토리에서 시작 설정 참조가 끊겼을 때 표시 |
 | `title` | varchar(100) | | 사용하지 않음 |
-| `summary` | text | | 대화 요약<br>`summary_through_turn`이 0이면 값과 무관하게 요약 없음 |
-| `summary_through_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 요약 끝 턴<br>0은 요약 없음 |
-| `current_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 완료된 턴 수 |
+| `current_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 숨기지 않은 완료 턴 수 |
 | `regenerated_count` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 재생성 완료 횟수 |
+| `hidden_turn_count` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 입력 수정으로 숨긴 완료 턴 수의 누적 |
+| `revision` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 개정 횟수 |
+| `forked_from_chat_id` | bigint | FK `story_chats.id` | 포크 원본 채팅<br>포크가 아니면 `NULL` |
+| `forked_from_turn` | integer | NOT NULL, 기본 0, CHECK `>= 0` | 포크 때 복사한 턴 수<br>포크가 아니면 0 |
 | `target_main_event_id` | bigint | FK `story_main_events.id` SET NULL | 목표 사건 |
 | `target_progress_turns` | integer | NOT NULL, 기본 0 | 목표 사건 진행 턴 수 |
 | `occurred_main_event_names_snapshot` | jsonb | | 거쳐온 사건 이름 배열 |
@@ -193,7 +205,8 @@ erDiagram
 | `chat_id` | bigint | NOT NULL, FK `story_chats.id` | |
 | `role` | varchar(16) | NOT NULL, CHECK `USER` `ASSISTANT` `SYSTEM` | |
 | `content` | text | NOT NULL | AI 응답은 재생성으로 교체됨 |
-| `message_order` | integer | NOT NULL, CHECK `> 0`, UNIQUE `(chat_id, message_order)` | |
+| `message_order` | integer | NOT NULL, CHECK `> 0` | 숨기지 않은 행끼리 `(chat_id, message_order)` 유일 |
+| `hidden_at` | timestamptz | | 입력 수정으로 숨긴 시각<br>`NULL`이면 화면과 AI 요청에 쓰는 행 |
 | `reached_ending_id` | bigint | FK `story_endings.id` SET NULL | 도달 턴의 AI 응답에만 기록 |
 | `reached_ending_name_snapshot` | varchar(100) | | 도달 턴 표식<br>FK가 비워져도 남음 |
 | `credit_transaction_id` | bigint | FK `credit_transactions.id` | 활성본을 생성한 턴의 `CHAT_TURN` 차감 행<br>체험 턴, 게스트 턴, 사용자 입력 행은 `NULL`<br>선차감 대사가 저장 여부를 판정하는 연결 |
@@ -201,6 +214,7 @@ erDiagram
 
 | 인덱스 | 컬럼 |
 |---|---|
+| `uq_story_messages_order_visible` | `(chat_id, message_order)` UNIQUE WHERE `hidden_at IS NULL` |
 | `uq_story_messages_credit_transaction` | `credit_transaction_id` UNIQUE WHERE `credit_transaction_id IS NOT NULL` |
 
 <br>
@@ -240,6 +254,26 @@ erDiagram
 |---|---|
 | `idx_story_message_versions_message_id` | `message_id` |
 | `uq_story_message_versions_credit_transaction` | `credit_transaction_id` UNIQUE WHERE `credit_transaction_id IS NOT NULL` |
+
+<br>
+
+**`story_chat_summaries`**
+
+대화 요약 한 건이 한 행이다. 행을 고치지 않고 무효화 시각만 기록한다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `chat_id` | bigint | NOT NULL, FK `story_chats.id` | |
+| `through_turn` | integer | NOT NULL, CHECK `>= 1` | 요약 끝 턴 |
+| `summary` | text | NOT NULL | 대화 요약 |
+| `invalidated_at` | timestamptz | | 담은 턴이 재생성이나 입력 수정으로 바뀐 시각<br>`NULL`이면 유효 |
+| `created_at` | timestamptz | NOT NULL | |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `uq_story_chat_summaries_valid` | `(chat_id, through_turn)` UNIQUE WHERE `invalidated_at IS NULL` |
+| `idx_story_chat_summaries_chat` | `chat_id`, `through_turn DESC` |
 
 <br>
 
@@ -325,7 +359,8 @@ erDiagram
 | 채팅과 하위 데이터 | `deleted_at` 기록<br>물리 삭제 없음 |
 | 메시지 버전 이력 | 삭제 없음 |
 | 선택지 | 재생성 시 활성 선택지만 교체<br>이전 값은 버전 이력에 남음 |
-| 대화 요약 | 새 요약이 덮어씀<br>재생성이 요약 범위의 턴을 바꾸면 비움 |
+| 대화 요약 | 삭제 없음<br>재생성이나 입력 수정이 요약 범위의 턴을 바꾸면 무효화 시각만 기록 |
+| 숨긴 턴 | 삭제 없음<br>숨김 시각만 기록 |
 | 실시간 이미지 객체 | 삭제 없음 |
 | 공유 | 삭제 없음<br>원본 채팅의 `deleted_at`으로 열람 차단 |
 | 모델 | 노출 중단만 수행<br>물리 삭제 없음 |

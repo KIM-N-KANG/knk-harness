@@ -162,7 +162,7 @@
 | 첫 메시지 필터 | `hasFirstMessage=true`<br>`false` | 900초 이내 메시지 있는 채팅<br>초과와 없는 채팅 |
 | 턴 날짜 | `turnDate`에 AI 응답이 있는 채팅과 그 전날만 있는 채팅 | 전자만 |
 | 이프 소모 | 채팅 턴 -20 두 건과 이미지 -5 한 건을 참조하는 채팅 | `creditsSpent` 45 |
-| 요약 끝 턴 | `summary_through_turn` 20이고 `summary`가 있는 채팅<br>요약을 만든 적 없는 채팅<br>재생성으로 `summary`가 `NULL`이고 `summary_through_turn`이 0이 된 채팅 | 목록 항목과 상세의 `summaryThroughTurn` 20<br>0<br>0 |
+| 요약 끝 턴 | 유효한 요약 행의 끝 턴이 10과 20인 채팅<br>요약을 만든 적 없는 채팅<br>요약이 모두 무효화된 채팅 | 목록 항목과 상세의 `summaryThroughTurn` 20<br>0<br>0 |
 | 원문 없음 | 채팅 목록과 상세 응답<br>`summary`가 있는 채팅 포함 | 메시지, 대화 요약 본문(`summary`), 추천 입력, 페르소나 필드 없음 |
 | 채팅 검색 | 스토리 제목 일부, 회원 닉네임 일부, 채팅 공개 식별자 | 각각 일치 |
 | 채팅 삭제 필터 | 삭제된 채팅 1, 삭제되지 않은 채팅 2, 삭제된 스토리의 삭제되지 않은 채팅 1<br>`deleted` 없음, `include`, `only` | 3건(삭제된 스토리의 채팅 포함), 4건, 1건 |
