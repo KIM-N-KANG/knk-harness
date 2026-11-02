@@ -422,8 +422,8 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | 이벤트                                       | 우선순위 | 발생 시점                            | 고유 프로퍼티             |
 | -------------------------------------------- | -------- | ------------------------------------ | ------------------------- |
 | `client_storyDetail_viewed`                  | P0       | 스토리 상세 화면 진입                | `story_id` (string, 필수) |
-| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭                  | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
-| `client_storyDetail_persona_selected` | P1 | 페르소나 Select에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
+| `client_storyDetail_chatStartButton_clicked` | P0       | 채팅 시작 버튼 클릭. KNK-1976부터 상세 CTA가 연 시작 시트의 "채팅 시작하기" 클릭(그 전에는 상세 CTA 클릭) | `story_id` (string, 필수), `persona_type` (string, 웹 필수) |
+| `client_storyDetail_persona_selected` | P1 | 페르소나 Select 또는 시작 시트에서 지금과 다른 주인공 선택 | `story_id` (string, 필수), `persona_type` (string, 필수) |
 | `client_storyDetail_personaCreateButton_clicked` | P1 | 페르소나 Select의 "페르소나 생성하기" 클릭(게스트, 10개 상한으로 이동하지 않아도 발생) | `story_id` (string, 필수) |
 | `client_storyDetail_thumbnail_clicked`       | P2       | 스토리 썸네일 클릭(썸네일 뷰어 열기) | `story_id` (string, 필수) |
 | `client_storyDetail_characterImage_clicked`  | P2       | 주변 인물 이미지 클릭(이미지 뷰어 열기) | `story_id` (string, 필수) |
