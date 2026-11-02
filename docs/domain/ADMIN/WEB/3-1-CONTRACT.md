@@ -54,14 +54,18 @@
 | 검수 보류 해제 | `POST /api/moderation/holds/{submissionId}/release` | [MODERATION 4-2-7 보류 해제](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-7-보류-해제) |
 | 스토리 공개 중단 | `POST /api/moderation/stories/{storyId}/takedown` | [MODERATION 4-2-10 공개 중단](../../MODERATION/BACKEND/4-2-CONTRACT.md#4-2-10-공개-중단) |
 | 스토리 상세의 스토리 설정 | `GET /api/stories/{storyId}/settings` | [4-2-7 스토리 설정](../BACKEND/4-2-CONTRACT.md#4-2-7-스토리-설정) |
-| 스토리 목록과 범위 목록 | `GET /api/stories` | [4-2-5 스토리 목록](../BACKEND/4-2-CONTRACT.md#4-2-5-스토리-목록) |
+| 스토리 목록과 범위 목록, 홈 섹션의 스토리 검색 | `GET /api/stories` | [4-2-5 스토리 목록](../BACKEND/4-2-CONTRACT.md#4-2-5-스토리-목록) |
+| 홈 섹션 목록 | `GET /api/home-sections` | [STORY 4-2-35 홈 섹션 목록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-35-홈-섹션-목록) |
+| 홈 섹션 등록 | `POST /api/home-sections` | [STORY 4-2-36 홈 섹션 등록](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-36-홈-섹션-등록) |
+| 홈 섹션 수정, 활성 전환, 순서 이동 | `PATCH /api/home-sections/{sectionId}` | [STORY 4-2-37 홈 섹션 수정](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-37-홈-섹션-수정) |
+| 홈 섹션 삭제 | `DELETE /api/home-sections/{sectionId}` | [STORY 4-2-38 홈 섹션 삭제](../../STORY/BACKEND/4-2-CONTRACT.md#4-2-38-홈-섹션-삭제) |
 | 스토리 상세 | `GET /api/stories/{storyId}` | [4-2-6 스토리 상세](../BACKEND/4-2-CONTRACT.md#4-2-6-스토리-상세) |
 | 회원 목록의 누적 턴 | `GET /api/members` | [4-2-10 회원 목록](../BACKEND/4-2-CONTRACT.md#4-2-10-회원-목록) |
 | 회원 상세의 누적 턴 | `GET /api/members/{memberId}` | [4-2-11 회원 상세](../BACKEND/4-2-CONTRACT.md#4-2-11-회원-상세) |
 | 채팅 목록과 범위 목록 | `GET /api/chats` | [4-2-8 채팅 목록](../BACKEND/4-2-CONTRACT.md#4-2-8-채팅-목록) |
 | 채팅 상세 | `GET /api/chats/{chatId}` | [4-2-9 채팅 상세](../BACKEND/4-2-CONTRACT.md#4-2-9-채팅-상세) |
 
-- 검수 제출의 세 경로, 스토리 공개 중단 경로, 스토리 설정 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
+- 검수 제출의 세 경로, 스토리 공개 중단 경로, 스토리 설정 경로, 홈 섹션의 네 경로는 서버 OpenAPI의 관리자 문서에 있어야 BFF가 생성 스키마로 검증하고 전달한다. 관리자 저장소의 생성 코드는 서버 OpenAPI를 다시 받아 만든다.
 
 <br>
 
