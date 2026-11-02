@@ -860,7 +860,7 @@ Content-Type: application/json
 | `createdAt` | `string` | |
 | `updatedAt` | `string` | |
 
-페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 최신인 순으로 정렬한다. 실패는 공통 실패뿐이다.
+페르소나가 없으면 빈 배열을 반환한다. 생성 시각이 오래된 순으로 정렬한다. 실패는 공통 실패뿐이다.
 
 <details>
 <summary><b>요청, 응답 예시</b></summary>
