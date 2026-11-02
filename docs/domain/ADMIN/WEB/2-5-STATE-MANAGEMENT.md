@@ -17,12 +17,13 @@
 | `to` | 개요, 지표 화면 | 직접 선택한 끝 날짜 |
 | `days` | 개요, 예전 분석 경로 | 예전 링크의 `7`, `30`, `90`<br>열면 같은 길이의 `range`로 바꿔 URL을 교체 |
 | `tab` | 지표 화면 | 탭 값<br>하위 구분이 있는 탭은 하위 구분 값 |
-| `campaign` | 성장, 스토리 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
-| `adSegment` | 성장, 스토리 | 첫 방문 활성화와 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds`<br>두 화면이 같은 값을 함께 씀 |
+| `metric` | 개요 | 일별 추이에서 고른 지표 키<br>기간을 바꿔도 유지 |
+| `campaign` | 유입 | UTM 캠페인 값<br>캠페인 목록에 있으면 그 항목, 없으면 직접 입력 |
+| `adSegment` | 유입 | 첫 방문 활성화와 간편 제작 퍼널의 광고 구분 `all`, `ads`, `nonAds`<br>두 하위 구분이 같은 값을 함께 씀 |
 | `platform` | 지표 화면 | 플랫폼 `all`, `web`, `android`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
 | `segment` | 지표 화면 | 대상 `all`, `guest`, `member`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
-| `storyId` | 스토리, 채팅 | 대상 스토리 공개 식별자<br>채팅에서는 상세 진입 채팅 카드의 입력 값 |
-| `cohort` | 성장 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
+| `storyId` | 유입, 채팅 | 대상 스토리 공개 식별자<br>채팅에서는 상세 진입 채팅 카드의 입력 값 |
+| `cohort` | 사용자 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
 | `direction` | 이프 내역 | `granted`, `spent` |
 | `date` | 이프 내역 | 기록일 |
 | `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출, 회원 목록 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt`<br>회원 목록의 `sort`는 `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`이고 없으면 `createdAt` |

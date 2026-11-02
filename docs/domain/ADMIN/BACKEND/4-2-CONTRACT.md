@@ -346,6 +346,11 @@ Authorization: Bearer {adminToken}
 | `daily[].payments` | `integer` | 결제 건수 |
 | `daily[].revenue` | `integer` | 결제 금액 |
 | `daily[].attendance` | `integer` | 출석 회원 수 |
+| `totals` | `object` | 범위의 기간 합계<br>`joined`, `chats`, `turns`, `stories`, `granted`, `spent`, `payments`, `revenue`의 8개 정수 필드<br>`attendance`는 없음 |
+| `previous` | `object` | 직전 기간 |
+| `previous.from` | `string` | 직전 기간 첫날의 KST 날짜<br>`from`에서 범위 길이만큼 앞선 날 |
+| `previous.to` | `string` | 직전 기간 마지막 날의 KST 날짜<br>`from`의 전날 |
+| `previous.totals` | `object` | 직전 기간의 합계<br>`totals`와 같은 8개 필드 |
 | `distributions` | `object[]` | 분포 차트<br>아래 표의 순서로 항상 9개 |
 | `distributions[].chartId` | `string` | 차트 식별자 |
 | `distributions[].category` | `string` | 분석 화면의 구역<br>`users`, `engagement`, `content`, `ai-quality` |
@@ -419,6 +424,12 @@ Authorization: Bearer {adminToken}
     { "date": "2026-10-15", "joined": 9, "chats": 58, "turns": 640, "stories": 7, "granted": 5250, "spent": 12800, "payments": 1, "revenue": 4800, "attendance": 21 },
     { "date": "2026-10-16", "joined": 11, "chats": 61, "turns": 702, "stories": 5, "granted": 6000, "spent": 14040, "payments": 0, "revenue": 0, "attendance": 24 }
   ],
+  "totals": { "joined": 71, "chats": 418, "turns": 4790, "stories": 39, "granted": 41250, "spent": 96300, "payments": 4, "revenue": 19200 },
+  "previous": {
+    "from": "2026-10-08",
+    "to": "2026-10-14",
+    "totals": { "joined": 58, "chats": 377, "turns": 4120, "stories": 44, "granted": 38500, "spent": 88700, "payments": 2, "revenue": 9600 }
+  },
   "distributions": [
     {
       "chartId": "turns",
@@ -2877,7 +2888,7 @@ Authorization: Bearer {adminToken}
 | `activityTypes[].type` | `string` | 시나리오 식별자 |
 | `activityTypes[].deliveredMembers` | `integer` | 종류와 날짜마다 중복 없이 센 도달 회원 수의 합<br>`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체 |
 
-열람 값 구조는 캠페인 항목, 활동 알림 항목, 캠페인 열람 응답이 함께 쓴다.
+열람 값 구조와 채팅 전환 값 구조는 캠페인 항목, 활동 알림 항목, 캠페인 열람 응답이 함께 쓴다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -2894,6 +2905,17 @@ Authorization: Bearer {adminToken}
 - 열람 수는 날짜별 고유 사용자 수의 합이라 열람률이 1을 넘을 수 있다. 같은 날 웹과 앱에서 모두 연 회원은 합계에 두 번 든다. 서버는 값을 자르지 않는다.
 - 알림함 열람에는 열람률이 없다.
 - `CREDIT_EXPIRY_REMINDER`는 알림함 사본의 딥링크도 푸시 UTM이라 알림함에서 누른 열람이 푸시 열람에 들고 알림함 열람은 0이다.
+
+채팅 전환 값은 서버 DB만으로 세고 `openState`와 무관하다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `chattedMembers` | `integer / null` | 도달 회원 가운데 도달 뒤 24시간 안에 채팅 메시지를 보낸 회원 수<br>도달 회원 수가 0이면 `null` |
+| `chattedBeforeMembers` | `integer / null` | 도달 회원 가운데 도달 전 24시간 안에 채팅 메시지를 보낸 회원 수<br>도달 회원 수가 0이면 `null` |
+| `chatRate` | `number / null` | `chattedMembers`를 `deliveredMembers`로 나눈 값<br>도달 회원 수가 0이면 `null` |
+
+- 활동 알림의 채팅 전환 값은 `deliveredMembers`와 같은 집계 구간(`activityFrom`이 있으면 `activityFrom`부터 `to`까지, 없으면 범위 전체)에서 같은 방식(종류와 날짜마다 센 수의 합)으로 센다. 측정 시작 전이어도 범위 전체의 도달 회원으로 값을 센다.
+- 캠페인 열람 응답의 채팅 전환 값은 집계 범위와 무관하게 마지막 회차의 도달 회원 전체로 센다.
 
 <br>
 
@@ -2936,6 +2958,9 @@ Authorization: Bearer {adminToken}
       "noticeId": "2d5a9c1e-7b3f-4e8a-9c0d-1f2e3a4b5c6d",
       "startedAt": "2026-10-23T02:00:31Z",
       "deliveredMembers": 412,
+      "chattedMembers": 97,
+      "chattedBeforeMembers": 64,
+      "chatRate": 0.2354,
       "openState": "MEASURED",
       "pushOpens": 79,
       "webPushOpens": 58,
@@ -2952,6 +2977,9 @@ Authorization: Bearer {adminToken}
       "noticeId": null,
       "startedAt": "2026-10-22T10:00:12Z",
       "deliveredMembers": 230,
+      "chattedMembers": 41,
+      "chattedBeforeMembers": 38,
+      "chatRate": 0.1783,
       "openState": "NO_LINK",
       "pushOpens": null,
       "webPushOpens": null,
@@ -2968,6 +2996,9 @@ Authorization: Bearer {adminToken}
       "noticeId": null,
       "startedAt": "2026-10-19T03:00:05Z",
       "deliveredMembers": 198,
+      "chattedMembers": 52,
+      "chattedBeforeMembers": 47,
+      "chatRate": 0.2626,
       "openState": "BEFORE_MEASUREMENT",
       "pushOpens": null,
       "webPushOpens": null,
@@ -2980,10 +3011,10 @@ Authorization: Bearer {adminToken}
   ],
   "activityFrom": "2026-10-21",
   "activityTypes": [
-    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "openState": "MEASURED", "pushOpens": 27, "webPushOpens": 27, "androidPushOpens": null, "pushOpenRate": 0.4426, "inboxOpens": 6, "webInboxOpens": 6, "androidInboxOpens": null },
-    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "openState": "MEASURED", "pushOpens": 4, "webPushOpens": 4, "androidPushOpens": null, "pushOpenRate": 0.3636, "inboxOpens": 1, "webInboxOpens": 1, "androidInboxOpens": null },
-    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "openState": "MEASURED", "pushOpens": 104, "webPushOpens": 104, "androidPushOpens": null, "pushOpenRate": 0.0862, "inboxOpens": 12, "webInboxOpens": 12, "androidInboxOpens": null },
-    { "type": "CREDIT_EXPIRY_REMINDER", "deliveredMembers": 40, "openState": "MEASURED", "pushOpens": 9, "webPushOpens": 9, "androidPushOpens": null, "pushOpenRate": 0.225, "inboxOpens": 0, "webInboxOpens": 0, "androidInboxOpens": null }
+    { "type": "STORY_COMPLETED", "deliveredMembers": 61, "chattedMembers": 44, "chattedBeforeMembers": 61, "chatRate": 0.7213, "openState": "MEASURED", "pushOpens": 27, "webPushOpens": 27, "androidPushOpens": null, "pushOpenRate": 0.4426, "inboxOpens": 6, "webInboxOpens": 6, "androidInboxOpens": null },
+    { "type": "STORY_MODERATION_COMPLETED", "deliveredMembers": 11, "chattedMembers": 5, "chattedBeforeMembers": 3, "chatRate": 0.4545, "openState": "MEASURED", "pushOpens": 4, "webPushOpens": 4, "androidPushOpens": null, "pushOpenRate": 0.3636, "inboxOpens": 1, "webInboxOpens": 1, "androidInboxOpens": null },
+    { "type": "ATTENDANCE_REMINDER", "deliveredMembers": 1206, "chattedMembers": 231, "chattedBeforeMembers": 188, "chatRate": 0.1915, "openState": "MEASURED", "pushOpens": 104, "webPushOpens": 104, "androidPushOpens": null, "pushOpenRate": 0.0862, "inboxOpens": 12, "webInboxOpens": 12, "androidInboxOpens": null },
+    { "type": "CREDIT_EXPIRY_REMINDER", "deliveredMembers": 40, "chattedMembers": 14, "chattedBeforeMembers": 6, "chatRate": 0.35, "openState": "MEASURED", "pushOpens": 9, "webPushOpens": 9, "androidPushOpens": null, "pushOpenRate": 0.225, "inboxOpens": 0, "webInboxOpens": 0, "androidInboxOpens": null }
   ]
 }
 ```
@@ -3346,7 +3377,7 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-아래 필드와 푸시 열람의 열람 값 구조를 함께 응답한다. 열람 값은 푸시 열람의 캠페인 항목과 같은 규칙이고 범위만 집계 범위다.
+아래 필드와 푸시 열람의 열람 값 구조, 채팅 전환 값 구조를 함께 응답한다. 열람 값은 푸시 열람의 캠페인 항목과 같은 규칙이고 범위만 집계 범위다. 채팅 전환 값은 마지막 회차의 도달 회원 전체로 센다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -3400,6 +3431,9 @@ Authorization: Bearer {adminToken}
   "measuredFrom": "2026-10-21",
   "androidMeasuredFrom": "2026-10-23",
   "deliveredMembers": 412,
+  "chattedMembers": 97,
+  "chattedBeforeMembers": 64,
+  "chatRate": 0.2354,
   "openState": "MEASURED",
   "pushOpens": 84,
   "webPushOpens": 61,
@@ -3421,7 +3455,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | ACCOUNT | 관리자 요청자 식별과 감사 기록 연산 | 신원 검증기, 회원 조회와 검색, 활성 소셜 연동 이메일 일치 조회, 계정 상태, 회원 수 집계 |
 | PAYMENT | 관리자 요청자 식별과 감사 기록 연산 | 잔액, 주문 조회, 원장 조회, 적립과 소모 집계 |
-| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 캠페인 하나의 도달 요약, 종류별 날짜별 도달 회원 수 |
+| NOTIFICATION | 관리자 요청자 식별과 감사 기록 연산 | 기간의 캠페인 도달 요약, 캠페인 하나의 도달 요약, 종류별 날짜별 도달 회원 수, 도달 회원 도달 시각 |
 | NOTICE | 관리자 요청자 식별과 감사 기록 연산 | 없음 |
 | MODERATION | 관리자 요청자 식별과 감사 기록 연산 | 스토리별 보류 제출본 존재 여부 |
 | STORY | 관리자 요청자 식별과 감사 기록 연산 | 스토리 수, 스토리와 제작 세션 조회, 간편 제작 완성 요청의 상태 집계, 수정 폼의 현재 저장값 조립, 공식 계정 식별 |

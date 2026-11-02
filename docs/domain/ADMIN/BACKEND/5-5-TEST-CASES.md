@@ -96,6 +96,9 @@
 | 차트 기간 | `days` 7, 생략, 90, 10 | `daily` 7개, 30개, 90개, 400 |
 | 차트 날짜 범위 | `from=2026-01-01&to=2026-01-31`<br>`from`과 `to` 366일<br>367일, `from` > `to`, `to` 내일, `from`만, `days`와 함께 | `daily` 31개와 응답 `from`, `to` 그대로, 막대 링크의 날짜도 같음<br>366개<br>전부 400 |
 | 빈 날짜 | 범위 중 활동 없는 날 | 그 날짜 항목이 모든 값 0으로 존재 |
+| 기간 합계 | `from=2026-10-15&to=2026-10-21`, 범위 안 가입 9와 11, 범위 밖 10-14 가입 3 | `totals.joined` 20, `totals`에 8개 필드만 있고 `attendance` 없음 |
+| 직전 기간 | `from=2026-10-15&to=2026-10-21`, 10-08~10-14 가입 5, 10-07 가입 2, 10-08 팀 계정 가입 1 | `previous.from` 10-08, `previous.to` 10-14, `previous.totals.joined` 5 |
+| 직전 기간 상한 | `from`과 `to` 366일, 범위 첫날이 서비스 시작 뒤 366일 | 200, `previous.from`이 범위 첫날에서 366일 앞, 직전 기간 날짜에 데이터가 없으면 `previous.totals` 전부 0 |
 | 일별 출석 | 한 회원이 같은 날 출석 보상 1건, 다른 회원 1건 | `attendance` 2 |
 | 턴 수 분포 | 현재 턴 0, 1, 4, 5, 6, 7, 50인 채팅 | `turns` 차트의 `0`, `1`, `4`, `5`, `6`, `7~9`, `50+`가 각 1이고 나머지 구간 0<br>항목 13개 |
 | 장르별 평균 턴 수 | 장르 `판타지, 미스터리` 스토리의 채팅 2개(턴 2, 4) | `판타지`와 `미스터리` 막대 모두 `value` 3, `chats` 2, `totalTurns` 6 |
@@ -312,12 +315,16 @@
 | 활동 알림 도달 중복 | 같은 회원에게 10-23 스토리 완성 3건 도달 | 그날 도달 회원 1 |
 | 이프 만료 예정 알림함 클릭 | 이프 만료 예정 알림의 알림함 항목을 웹과 앱에서 누른 기록(묶음 값 `credit_expiry_reminder`, `utm_source` `push`) | `CREDIT_EXPIRY_REMINDER`의 `webPushOpens`와 `androidPushOpens`에 들고 `inboxOpens` 0 |
 | 공개 중단 알림 제외 | 묶음 값 `story_taken_down` | 버림, `activityTypes`에 `STORY_TAKEN_DOWN` 없음 |
-| 도달 없음 | 활동 알림 도달 0, 웹 열람 2 | `pushOpens` 2, `pushOpenRate` `null` |
+| 도달 없음 | 활동 알림 도달 0, 웹 열람 2 | `pushOpens` 2, `pushOpenRate` `null`, `chattedMembers`와 `chattedBeforeMembers`와 `chatRate` `null` |
+| 채팅 전환 | 캠페인 도달 회원 4명, 처리 끝 시각 10-23 02:00<br>회원 A는 10-23 10:00에 사용자 메시지, 회원 B는 10-24 03:00에 사용자 메시지(25시간 뒤), 회원 C는 10-22 20:00과 10-23 05:00에 사용자 메시지, 회원 D는 AI 응답만 있고 사용자 메시지 없음 | `chattedMembers` 2(A, C), `chattedBeforeMembers` 1(C), `chatRate` 0.5 |
+| 채팅 전환과 측정 상태 | 딥링크 없는 프로모션(`NO_LINK`), 도달 회원 10명 가운데 3명이 24시간 안에 채팅 | 열람 값은 `null`이지만 `chattedMembers` 3, `chatRate` 0.3 |
+| 활동 알림 채팅 전환 | 같은 회원에게 10-23과 10-24에 출석 리마인드 도달, 10-23 도달 뒤에만 채팅 | `ATTENDANCE_REMINDER`의 `deliveredMembers` 2, `chattedMembers` 1 |
+| 채팅 전환 소유자 | 도달 회원 1명이 소유한 채팅의 사용자 메시지 1개, 다른 회원 채팅의 사용자 메시지 1개, 게스트 채팅의 사용자 메시지 1개가 모두 24시간 안 | `chattedMembers` 1 |
 | 캠페인 범위 | 선점 시각이 범위 전날인 캠페인, 선점 전에 취소한 캠페인 | 둘 다 `campaigns`에 없음 |
 | 활동 알림 항목 | 열람과 도달이 모두 없음, 웹 측정 시작일만 설정 | `activityTypes` 4항목이 `STORY_COMPLETED`, `STORY_MODERATION_COMPLETED`, `ATTENDANCE_REMINDER`, `CREDIT_EXPIRY_REMINDER` 순서, `openState` `MEASURED`, 웹 값과 합계 0, 앱 값 `null`, `pushOpenRate` `null` |
 | 푸시 열람 부분 응답 | 예산이 3일치만 남음 | 최근 3일만 조회, 나머지 날짜는 `pendingDates`, 열람 수는 준비된 날짜의 합, `deliveredMembers`는 집계 구간 전체 |
 | 푸시 열람 기간 | 366일<br>367일, `days` 90 | 200<br>400 |
-| 캠페인 열람 | 오늘 10-30, 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 10-23~10-29 값은 푸시 열람 조회로 저장돼 있음 | 대역에 오늘 10-30의 조회 4회만, `from` 10-23, `to` 10-30, 저장 값과 오늘 값의 날짜 합으로 `pushOpens`, `inboxOpens`, `pushOpenRate` |
+| 캠페인 열람 | 오늘 10-30, 웹과 앱 측정 시작일 10-21, 캠페인 선점 10-23, 10-23~10-29 값은 푸시 열람 조회로 저장돼 있음 | 대역에 오늘 10-30의 조회 4회만, `from` 10-23, `to` 10-30, 저장 값과 오늘 값의 날짜 합으로 `pushOpens`, `inboxOpens`, `pushOpenRate`, 도달 회원 전체의 `chattedMembers`, `chattedBeforeMembers`, `chatRate` |
 | 캠페인 열람 상한 | 선점 날짜가 오늘보다 400일 전 | `to`는 선점 날짜에서 365일 뒤, 그 뒤 날짜는 조회하지 않음 |
 | 캠페인 열람 측정 아님 | 딥링크 포함 여부가 거짓인 캠페인<br>선점 전인 예약 캠페인 | 대역 호출 없음, 200, `openState` `NO_LINK`, `asOf` `null`, `pendingDates` 빈 배열<br>대역 호출 없음, 200, `openState` `PENDING`, `startedAt`, `from`, `to` `null`, `deliveredMembers` 0 |
 | 캠페인 열람 앱 측정 전 | 웹 측정 시작일 10-21, 앱 측정 시작일 10-31, 선점 10-25 | 대역에 웹 조회만, `androidPushOpens`와 `androidInboxOpens` `null` |
