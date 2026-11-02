@@ -297,7 +297,7 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `model` | `string` | 유효 모델 코드<br>보관한 모델이 노출 중이면 그 코드, 아니면 기본 모델 코드<br>게스트 채팅도 보관한 값을 반환하며 턴은 라이트(`LITE`)로 처리 |
 | `longResponse` | `boolean` | 채팅에 보관한 출력 분량<br>`false`는 짧은 응답, `true`는 긴 응답<br>게스트 채팅의 턴에도 그대로 적용 |
 | `prologue` | `string` | 플레이 이름으로 치환 |
-| `turns` | `object[]` | 완료된 턴을 순서대로 제공 |
+| `turns` | `object[]` | 숨기지 않은 완료 턴을 순서대로 제공 |
 | `turns[].id` | `integer` | 턴 ID |
 | `turns[].userInput` | `string` | |
 | `turns[].aiOutput` | `string` | 활성본 전문<br>이미지 마커 포함 |
@@ -305,10 +305,10 @@ AI 서버로 보내는 값과 받은 값의 처리는 처리 흐름에, 앱 코�
 | `turns[].reachedEnding` | `string / null` | 이 턴이 도달 턴이면 엔딩 이름 |
 | `turns[].createdAt` | `string` | |
 | `generatingTurn` | `object / null` | 생성 중 키가 있을 때만 객체<br>키 부재, Redis 읽기 오류, 저장된 값 해석 실패 시 `null`<br>오류 처리는 [5-3 오류 처리](5-3-ERROR-HANDLING.md#5-3-3-오류-분류) 참조 |
-| `generatingTurn.type` | `string` | `CONTINUE`(이어쓰기) 또는 `REGENERATE`(재생성) |
-| `generatingTurn.userInput` | `string` | 생성 중인 사용자 입력 |
+| `generatingTurn.type` | `string` | `CONTINUE`(이어쓰기), `REGENERATE`(재생성), `EDIT`(입력 수정) |
+| `generatingTurn.userInput` | `string` | 생성 중인 사용자 입력<br>입력 수정은 고친 입력 |
 | `generatingTurn.startedAt` | `string` | 요청 접수 시각<br>ISO 8601 UTC 문자열 |
-| `generatingTurn.targetTurnId` | `integer / null` | 재생성 대상의 `turns[].id`<br>이어쓰기는 `null`로 항상 포함 |
+| `generatingTurn.targetTurnId` | `integer / null` | 재생성과 입력 수정 대상의 `turns[].id`<br>이어쓰기는 `null`로 항상 포함 |
 | `generatingTurn.generationId` | `string` | 생성 ID<br>UUID 문자열 |
 | `suggestedInputs` | `string[]` | 턴이 없을 때만 추천 입력<br>턴이 있으면 빈 배열 |
 
@@ -858,7 +858,7 @@ data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1203,"aiOutput":
 
 | 도메인 | CHAT이 제공하는 것 | CHAT이 사용하는 것 |
 |---|---|---|
-| STORY | 삭제된 채팅을 포함한 누적 턴 수(완료 턴과 재생성 횟수 합)<br>회원 엔딩 도달 집계 행 | 읽기 판정과 현재 표시 판정, 공개본 데이터, 시작 설정과 추천 입력, 엔딩, 주요 사건, 인물 이미지, 표지 URL, 기본 주인공 이름, 토큰 치환, 간편 제작 생성 요청 ID |
+| STORY | 삭제된 채팅을 포함한 누적 턴 수(완료 턴, 숨긴 턴, 재생성 횟수 합에서 포크로 복사한 턴을 뺀 값)<br>회원 엔딩 도달 집계 행 | 읽기 판정과 현재 표시 판정, 공개본 데이터, 시작 설정과 추천 입력, 엔딩, 주요 사건, 인물 이미지, 표지 URL, 기본 주인공 이름, 토큰 치환, 간편 제작 생성 요청 ID |
 | ACCOUNT | 회원의 내 채팅 목록 조회 메서드와 카드 구조<br>게스트 이관 시 채팅 소유권 이전과 도달 집계 보정 | 계정 상태, 페르소나 스냅샷 |
 | PAYMENT | 턴과 이미지의 차감, 환불, 체험 예약과 복원 요청<br>정책값 응답에 싣는 라이트(`LITE`)의 턴 가격 | 지갑 일괄 차감, 환불, 체험 카운터 `chat_turn`과 `chat_image`, 정책값 `chat_image_cost` |
 | AI 서버 | 턴 요청(회원 공개 식별자, 청구 모델, 출력 분량, 대화 요약 포함), 선택지 요청, 대화 요약 요청 | 본문 스트림, 판정, 인물 이미지 이벤트, 선택지, 갱신된 대화 요약 |
@@ -1249,3 +1249,151 @@ Content-Type: application/json
 |---|---|---|
 | 400 | `BAD_REQUEST` | `reason` 누락, 길이 위반 |
 | 404 | `NOT_FOUND` | 없는 모델 코드<br>프로모션 없음 |
+
+<br>
+
+### 4-2-19 입력 수정
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /chats/{chatId}/turns/edit/stream` |
+| 인증 | 선택 |
+| 성공 | 200, SSE |
+
+완료된 턴 하나의 사용자 입력을 고쳐 그 턴부터 다시 생성한다. 그 턴부터 마지막 턴까지는 숨기고 응답과 AI 요청에서 빠진다. 과금, 체험, 모델, 이벤트는 이어쓰기와 같다. 숨긴 턴은 환불하지 않는다. 엔딩에 도달한 채팅도 고칠 수 있고 숨긴 턴에 도달 턴이 들면 엔딩이 풀린다. `completed`의 `turnId`는 새로 저장한 턴의 ID다. 클라이언트는 `completed`를 받으면 고친 턴부터의 턴을 지우고 새 턴을 붙인다.
+
+**1. 요청 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `turnId` | `integer` | 필수 | 입력을 고칠 턴의 `turns[].id`, 1 이상 |
+| `userInput` | `string` | 필수 | 고친 입력<br>공백만 있으면 안 되고 3,000자 이하 |
+| `userSource` | `string` | 선택 | `choice`, `edited_choice`, `typed`<br>AI에 그대로 전달하고 생략하면 전달하지 않음 |
+| `realtimeImage` | `boolean` | 선택 | 기본값 `true` |
+
+<br>
+
+**2. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `turnId` 누락이나 0 이하, `userInput` 공백이나 3,001자 이상, `userSource` 허용값 밖<br>게스트의 `X-Manyak-Device-Id` 누락 |
+| 402 | `INSUFFICIENT_CREDIT` | 회원의 이프 부족 |
+| 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트의 턴 체험 소진 |
+| 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님 |
+| 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨<br>턴이 없거나 숨긴 턴 |
+| 409 | `CHAT_TURN_IN_PROGRESS` | 같은 채팅의 이어쓰기, 재생성, 입력 수정이 생성 중 |
+| 503 | `SERVICE_UNAVAILABLE` | Redis 오류로 생성 중 키를 획득하지 못함<br>과금 없음 |
+
+스트림을 연 뒤 저장 시점에 마지막 턴이나 개정 횟수가 바뀌었으면 `CHAT_TURN_STALE`의 `error` 이벤트로 끝나고 환불한다.
+
+<details>
+<summary><b>입력 수정 요청, 응답 예시</b></summary>
+
+<br>
+
+턴 1201, 1203, 1205가 있는 채팅에서 1203의 입력을 고친다.
+
+**1) Request body**
+
+```json
+{ "turnId": 1203, "userInput": "주변 학생들의 반응을 살핀다.", "userSource": "choice", "realtimeImage": false }
+```
+
+<br>
+
+**2) 200 Response stream**
+
+```text
+event: started
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","generationId":"8c1f2d3e-4a5b-4c6d-9e7f-0a1b2c3d4e5f"}
+
+event: token
+data: {"text":"*뒤편의 학생들이 "}
+
+event: completed
+data: {"chatId":"7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d","turnId":1207,"aiOutput":"*뒤편의 학생들이 수군거린다.*\n\n교관: 집중하게.","choices":[],"reachedEnding":null}
+```
+
+`completed` 뒤의 상세는 턴 1201, 1207만 싣는다.
+
+<br>
+
+**3) 404 Response body**
+
+```json
+{
+  "timestamp": "2026-11-03T02:00:00Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "턴을 찾을 수 없습니다.",
+  "path": "/api/v1/chats/7a1d3c5e-9b2f-4e6a-8c0d-1f2e3a4b5c6d/turns/edit/stream",
+  "details": []
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-20 포크
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `POST /chats/{chatId}/fork` |
+| 인증 | 필수 |
+| 성공 | 201 |
+
+지정한 턴의 AI 응답까지를 복사한 새 채팅을 만든다. 원래 채팅은 바뀌지 않는다. 복사는 무료다.
+
+**1. 요청 본문**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `turnId` | `integer` | 필수 | 복사할 마지막 턴의 `turns[].id`, 1 이상 |
+
+<br>
+
+**2. 응답**
+
+채팅 생성 응답과 같은 구조다. ([4-2-2 채팅 생성](#4-2-2-채팅-생성)) `id`는 새 채팅이고 `suggestedInputs`는 빈 배열이다. 복사한 턴은 상세로 조회한다.
+
+<br>
+
+**3. 실패 응답**
+
+| 상태 | `code` | 조건 |
+|---|---|---|
+| 400 | `BAD_REQUEST` | `turnId` 누락이나 0 이하 |
+| 403 | `FORBIDDEN` | 정지 계정<br>소유자가 아님<br>소유자 없는 채팅 |
+| 404 | `NOT_FOUND` | 채팅이 없거나 삭제됨, 형식 오류<br>턴이 없거나 숨긴 턴 |
+
+<details>
+<summary><b>포크 요청, 응답 예시</b></summary>
+
+<br>
+
+**1) Request body**
+
+```json
+{ "turnId": 1203 }
+```
+
+<br>
+
+**2) 201 Response body**
+
+```json
+{
+  "id": "c4d5e6f7-8a9b-4c0d-9e1f-2a3b4c5d6e7f",
+  "storyId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  "persona": { "name": "민우" },
+  "model": "AURORA",
+  "longResponse": false,
+  "prologue": "마법 세계에서 민우는 호아킨 아카데미의 1학년으로 입학했다.",
+  "suggestedInputs": [],
+  "createdAt": "2026-11-03T02:00:00Z"
+}
+```
+
+</details>

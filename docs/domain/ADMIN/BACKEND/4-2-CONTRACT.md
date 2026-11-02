@@ -790,7 +790,7 @@ Authorization: Bearer {adminToken}
 | `items[].member` | `object / null` | 소유 회원의 회원 요약 구조<br>게스트는 `null` |
 | `items[].startedAs` | `string` | 현재 소유자 유형이며 시작 당시 유형이 아님<br>소유 회원이 없으면 `GUEST`, 있으면 `MEMBER`<br>게스트에서 이관된 채팅은 `MEMBER` |
 | `items[].turnCount` | `integer` | 현재 턴 수 |
-| `items[].summaryThroughTurn` | `integer` | 요약 끝 턴<br>0이면 요약 없음<br>재생성으로 요약이 비워진 채팅도 0이라 요약을 만든 적 없는 채팅과 구별하지 않음 ([CHAT 3-2-3 채팅](../../CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-3-채팅)) |
+| `items[].summaryThroughTurn` | `integer` | 현재 요약의 끝 턴<br>0이면 유효한 요약 없음<br>재생성이나 입력 수정으로 요약이 모두 무효가 된 채팅도 0이라 요약을 만든 적 없는 채팅과 구별하지 않음 ([CHAT 3-2-4 메시지와 선택지](../../CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-4-메시지와-선택지)) |
 | `items[].startedAt` | `string` | 생성 시각 |
 | `items[].lastActiveAt` | `string` | 마지막 갱신 시각 |
 | `items[].creditsSpent` | `integer` | 이 채팅을 참조하는 원장 소모 행 합계의 절댓값<br>턴과 이미지 |

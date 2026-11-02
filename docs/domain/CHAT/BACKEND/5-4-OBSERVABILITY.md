@@ -129,9 +129,9 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 환불 실패 | 턴 환불 실패 `chat_turn_refund_failed`<br>이미지 환불 실패 `chat_image_refund_failed` | 턴은 `chat_pk`, `idempotency_key`, `error`<br>이미지는 `chat_pk`, `error` |
 | 선택 기록 생략 | `sourceTurnId`를 보냈는데 기록하지 못할 때 WARN<br>평문 로그 | `reason`(`LAST_TURN_MISMATCH`, `CHOICE_NOT_FOUND`, `STALE_CHOICE`), 채팅 PK, 턴 ID, 순번 |
 | 대화 요약 저장 | 저장 확정 직후<br>`chat_compact_saved` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`summary_length`(요약 글자 수) |
-| 대화 요약 폐기 | 저장 조건을 통과하지 못함<br>`chat_compact_discarded` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`reason`(`CHAT_DELETED`, `REGENERATED`, `SUPERSEDED`) |
+| 대화 요약 폐기 | 저장 조건을 통과하지 못함<br>`chat_compact_discarded` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>`reason`(`CHAT_DELETED`, `REGENERATED`는 재생성이나 입력 수정으로 개정 횟수가 바뀜, `SUPERSEDED`) |
 | 대화 요약 실패 | 요약 시작 실패, 호출 기록 실패, AI 호출 실패, 요약 저장 실패<br>`chat_compact_failed` | `chat_id`, `story_id`, `summary_through_turn`, `ai_call_log_id`<br>호출 기록이 없으면 `ai_call_log_id`는 `null`<br>`reason`(`START_FAILED`, `CALL_LOG_FAILED`, `AI_FAILED`, `SAVE_FAILED`)<br>`error`는 예외 클래스 이름 |
-| 대화 요약 무효화 | 재생성 저장이 저장된 요약을 비움<br>`chat_compact_invalidated` | `chat_id`, `story_id`, `turn_number`<br>`summary_through_turn`은 비운 요약의 끝 턴 |
+| 대화 요약 무효화 | 재생성이나 입력 수정 저장이 요약을 무효화함<br>`chat_compact_invalidated` | `chat_id`, `story_id`, `turn_number`<br>`summary_through_turn`은 무효화한 요약 가운데 가장 큰 끝 턴 |
 | 피드백 | 저장 후<br>`feedback_submitted` | `content_length`, `has_email` |
 | 피드백 전달 실패 | WARN과 Sentry 메시지 | 예외 클래스 이름만 |
 

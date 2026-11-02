@@ -27,9 +27,9 @@
 | 402 | `INSUFFICIENT_CREDIT` | 회원의 이프 부족, 이어쓰기와 재생성 |
 | 402 | `GUEST_TRIAL_LIMIT_EXCEEDED` | 게스트 턴 체험 소진, 이어쓰기와 재생성 |
 | 403 | `CONSENT_REQUIRED` | 동의 게이트가 켜진 환경에서 미동의 회원의 허용 목록 밖 요청 |
-| 409 | `CHAT_TURN_IN_PROGRESS` | 같은 채팅의 생성 중 키가 이미 존재 |
+| 409 | `CHAT_TURN_IN_PROGRESS` | 같은 채팅의 생성 중 키가 이미 존재<br>이어쓰기, 재생성, 입력 수정 |
 | 503 | `SERVICE_UNAVAILABLE` | Redis 오류로 생성 중 키 획득 실패<br>재연결의 수신 연결 상한 초과<br>재연결의 스트림 존재 확인이나 생성 중 키 확인의 Redis 오류 |
-| 409, SSE | `CHAT_TURN_STALE` | 이어쓰기의 마지막 턴 불일치와 재생성 대상 불일치<br>선택지의 마지막 턴 변경이나 본문 재생성<br>턴 저장 시 시작 상태 불일치 |
+| 409, SSE | `CHAT_TURN_STALE` | 이어쓰기의 마지막 턴 불일치와 재생성 대상 불일치<br>선택지의 마지막 턴 변경이나 본문 재생성<br>이어쓰기, 재생성, 입력 수정의 턴 저장 시 시작 상태 불일치 |
 | 409 | `CHAT_ENDED` | 엔딩에 도달한 채팅의 재생성 |
 | SSE | `AI_STREAM_FAILED` | AI 이벤트 밖의 스트림 실패<br>연결 실패, 이벤트 간 시간 초과, 완료 이벤트 없는 종료, 저장 실패, 생성 마감 초과 |
 | SSE | AI 서버의 코드 | AI가 `error` 이벤트로 보낸 코드를 그대로 중계 |
