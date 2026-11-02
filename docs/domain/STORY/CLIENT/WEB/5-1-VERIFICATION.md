@@ -20,7 +20,7 @@
 | STORY-RECOVER-01, STORY-RECOVER-03, STORY-DRAFT-02 | 복원은 제작 카드의 이어서 만들기로 진입한다. 직접 URL과 새로고침은 새 세션 |
 | STORY-TUTORIAL-08 | 초대 시트는 홈에서 열리므로 제작 안내와 보통 겹치지 않는다. 실제 열린 모달이 있으면 안내를 미룬다 |
 
-폐기된 STORY-GATE-05와 통합된 STORY-DRAFT-08은 재사용하지 않는다. STORY-DRAFT-08의 검증은 STORY-FINAL-04로 이어진다. 신고 입력과 전송은 [MODERATION 검증](../../../MODERATION/CLIENT/WEB/5-1-VERIFICATION.md#5-1-1-신고-폼)을 따른다.
+폐기된 STORY-GATE-05, STORY-DETAIL-56과 통합된 STORY-DRAFT-08은 재사용하지 않는다. STORY-DRAFT-08의 검증은 STORY-FINAL-04로 이어진다. 신고 입력과 전송은 [MODERATION 검증](../../../MODERATION/CLIENT/WEB/5-1-VERIFICATION.md#5-1-1-신고-폼)을 따른다.
 
 ### 5-1-2 STORY-LIST
 
@@ -112,11 +112,11 @@
 | STORY-DETAIL-25 | P2  | `author`가 없는 스토리 | 본문 맨 아래 메타 블록 확인 | 제작자 행 없이 생성일 행만 남고 블록 여백은 그대로 유지 | 수동 | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지), KNK-1079 |
 | STORY-DETAIL-26 | P1 | 현재 공개 상태의 오리지널 상세를 서버가 조회할 수 있음 | JavaScript를 끄고 상세 HTML과 메타데이터 확인 | HTML에 공개 본문과 단일 h1이 포함되고 제목, description, canonical, Open Graph 및 Twitter가 해당 작품을 가리킴. 숨겨진 설정과 개인화 데이터는 HTML과 RSC 페이로드에 없음 | ✅ e2e `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행), 이미지 폴백은 단위 테스트 | [웹 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
 | STORY-DETAIL-27 | P1 | 사용자 스토리, 오리지널 판정 실패, 상세 404 또는 503, 공개 목록 캐시와 다른 현재 비공개 상태 | 첫 HTML의 robots 확인 후 클라이언트 조회 성공 | `noindex, nofollow`이고 서버에서 비공개 본문을 노출하지 않음. 인증된 클라이언트 조회로 정상 본문을 복구할 수 있음. robots.txt는 상세 수집을 허용 | ✅ e2e `seo/crawler-indexing`(미도달), `seo/original-story-ssr` (`E2E_SEO=1` 별도 실행) | [웹 검색 노출](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
-| STORY-DETAIL-52 | P0 | 동의를 마친 회원, 내 페르소나 1개 이상 | 채팅 시작 상황의 페르소나 정보 버튼 탭 → Select 펼치기 → 페르소나 선택 → "새 채팅 시작하기" | 상황 이름 위에 "페르소나" 소제목과 정보 버튼이 있고 안내 팝오버가 열림. 기본값은 "기본". 목록은 "기본", 내 페르소나, 더하기 아이콘의 "페르소나 생성하기" 순서. 고른 페르소나가 Select에 표시되고 `POST /chats`에 그 `personaId`가 실림 | ✅ e2e `stories/story-persona` | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-52 | P0 | 동의를 마친 회원, 내 페르소나 1개 이상 | 채팅 시작 상황의 페르소나 정보 버튼 탭 → Select 펼치기 → 페르소나 선택 → "새 채팅 시작하기" | 상황 이름 위에 "페르소나" 소제목과 정보 버튼이 있고 안내 팝오버가 열림. 기본값은 기본 항목. 목록은 기본 항목, 내 페르소나, 더하기 아이콘의 "페르소나 생성하기" 순서. 고른 페르소나가 Select에 표시되고 `POST /chats`에 그 `personaId`가 실림 | ✅ e2e `stories/story-persona` | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 시작 기본 항목과 페르소나 선택, KNK-1469, KNK-1976 |
 | STORY-DETAIL-53 | P0 | 동의를 마친 회원 | 페르소나를 바꾸지 않고 "새 채팅 시작하기" | `POST /chats`의 `personaId`가 없거나 null(기본 주인공) | ✅ e2e `stories/story-persona` | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 페르소나 선택, KNK-1469 |
 | STORY-DETAIL-54 | P1 | 게스트 | 페르소나 Select 펼치기 → "페르소나 생성하기" | 페르소나 목록 API를 부르지 않고 기본 주인공만 표시. 상세에 머문 채 로그인 필요 시트가 열리고, 닫으면 선택은 기본 주인공 그대로 | ✅ e2e `stories/story-persona` | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 페르소나 선택, KNK-1469 |
 | STORY-DETAIL-55 | P1 | 회원, 내 페르소나 10개 | "페르소나 생성하기" | 생성 화면으로 가지 않고 "페르소나는 10개까지 만들 수 있어요" 토스트 | ✅ e2e `stories/story-persona` | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 페르소나 선택, KNK-1469 |
-| STORY-DETAIL-56 | P1 | 회원, 내 페르소나 있음, 시작 상황 이름이 10자를 넘는 설정 포함 | 상세 진입 → 페르소나와 시작 상황 바꾸기 | "새 채팅 시작하기" 아래 11px 옅은 색 줄이 "기본 페르소나 · {상황 이름}"에서 고른 값에 맞춰 "{이름} 페르소나 · {상황 이름}"으로 바뀜. 페르소나 이름은 5자, 상황 이름은 10자 뒤에 말줄임표, 버튼 높이는 하트 버튼과 같음 | ✅ e2e `stories/story-persona`(문구), 높이와 색은 수동 | [3-3 화면 배치](../3-3-LAYOUT.md) [3-3-2 상세와 이미지](../3-3-LAYOUT.md#3-3-2-상세와-이미지) 페르소나 선택, KNK-1469 |
+| STORY-DETAIL-56 | 없음 | (폐기, KNK-1976) 새 채팅 CTA 아래의 페르소나와 시작 상황 요약 줄을 없앰. 선택 값은 STORY-DETAIL-52의 Select 표시로 검증 | 없음 | 없음 | 없음 | 없음 |
 
 ### 좋아요
 
