@@ -221,6 +221,34 @@ erDiagram
 
 <br>
 
+**4. 홈 섹션**
+
+```mermaid
+erDiagram
+    home_sections ||--o{ home_section_genres : "필터 장르"
+    home_sections ||--o{ home_section_stories : "수동 지정"
+    stories ||--o{ home_section_stories : ""
+    home_sections {
+        bigint id PK
+        uuid public_id UK
+        varchar source
+        varchar sort_by
+        integer sort_order
+        boolean is_active
+    }
+    home_section_genres {
+        bigint section_id FK
+        varchar genre
+    }
+    home_section_stories {
+        bigint section_id FK
+        bigint story_id FK
+        integer sort_order
+    }
+```
+
+<br>
+
 ### 3-2-3 스토리
 
 **`stories`**
@@ -610,7 +638,56 @@ FK를 두지 않는다. 간편 제작 진행과 스토리는 `request_id` 값으
 
 <br>
 
-### 3-2-12 데이터 수명
+### 3-2-12 홈 섹션
+
+**`home_sections`**
+
+홈 화면의 섹션 하나가 한 행이다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `id` | bigint | PK | |
+| `public_id` | uuid | NOT NULL, UNIQUE, 기본 `gen_random_uuid()` | |
+| `name` | varchar(30) | NOT NULL | 화면에 보이는 섹션 이름 |
+| `source` | varchar(10) | NOT NULL, CHECK `MANUAL` `FILTER` | 스토리 출처 |
+| `sort_by` | varchar(10) | CHECK `POPULAR` `LATEST` `LIKES` `CHATS`<br>CHECK `source`가 `FILTER`면 NOT NULL, `MANUAL`이면 NULL | 필터 출처의 정렬 |
+| `original_only` | boolean | NOT NULL, 기본 false | 필터 출처에서 공식 계정 소유만 |
+| `item_limit` | integer | NOT NULL, CHECK 1~20, 기본 20 | 섹션에 싣는 스토리 수 상한 |
+| `is_active` | boolean | NOT NULL, 기본 true | |
+| `sort_order` | integer | NOT NULL, CHECK `>= 1` | 홈의 노출 순서 |
+| `created_at` | timestamptz | NOT NULL | |
+| `updated_at` | timestamptz | NOT NULL | |
+
+| 인덱스 | 컬럼 |
+|---|---|
+| `idx_home_sections_active_order` | `is_active`, `sort_order`, `id` |
+
+<br>
+
+**`home_section_genres`**
+
+필터 출처 섹션의 장르 조건이다. 하나라도 겹치는 스토리를 고른다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `section_id` | bigint | PK, FK `home_sections.id` CASCADE | |
+| `genre` | varchar(30) | PK | 제공 장르의 정식 이름 |
+
+<br>
+
+**`home_section_stories`**
+
+수동 지정 섹션의 스토리와 순서다.
+
+| 컬럼 | 타입 | 제약 | 의미 |
+|---|---|---|---|
+| `section_id` | bigint | PK, FK `home_sections.id` CASCADE | |
+| `story_id` | bigint | PK, FK `stories.id` CASCADE | |
+| `sort_order` | integer | NOT NULL, UNIQUE `(section_id, sort_order)`, CHECK `>= 1` | 섹션 안의 순서 |
+
+<br>
+
+### 3-2-13 데이터 수명
 
 | 데이터 | 삭제 |
 |---|---|
@@ -621,3 +698,4 @@ FK를 두지 않는다. 간편 제작 진행과 스토리는 `request_id` 값으
 | 초안 | 등록이나 완성 접수, 삭제 API, 회원 탈퇴 시 물리 삭제 |
 | 제공 장르, 별칭, 프리셋, 화풍 | 비활성화만 수행 |
 | 검색 문서 | 스토리 삭제 시 `visible=false`로 재색인 |
+| 홈 섹션과 하위 데이터 | 관리자 삭제 API로 물리 삭제<br>스토리 삭제는 수동 지정 행만 CASCADE |
