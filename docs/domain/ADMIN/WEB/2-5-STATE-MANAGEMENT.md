@@ -24,6 +24,7 @@
 | `segment` | 지표 화면 | 대상 `all`, `guest`, `member`<br>모든 지표 화면과 탭이 같은 값을 함께 씀 |
 | `storyId` | 유입, 채팅 | 대상 스토리 공개 식별자<br>채팅에서는 상세 진입 채팅 카드의 입력 값 |
 | `cohort` | 사용자 | 리텐션 시작 집단 `visitor`, `signup`, `first-chat`<br>없거나 알 수 없는 값이면 `visitor` |
+| `hoursMetric` | 사용자 | 시간대 탭의 지표 `messages`, `signups`, `stories`, `payments`<br>없거나 알 수 없는 값이면 `messages` |
 | `direction` | 이프 내역 | `granted`, `spent` |
 | `date` | 이프 내역 | 기록일 |
 | `page`, `size`, `sort`, `order` | 이프 내역, 검수 제출, 회원 목록 | 목록 공통 페이지와 정렬<br>검수 제출의 `sort`는 `createdAt`, `decidedAt`, `heldAt`<br>회원 목록의 `sort`는 `createdAt`, `lastActiveAt`, `creditsSpent`, `paidKrw`, `chatCount`, `turnCount`이고 없으면 `createdAt` |

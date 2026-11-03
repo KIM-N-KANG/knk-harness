@@ -992,3 +992,37 @@ flowchart LR
 | 거절 사유 | 거절된 제출본의 `issues` JSON 배열에서 항목의 `rule`과 `type`을 읽어 제출본마다 중복 없이 센 뒤 규칙과 종류로 합산 |
 | 팀 계정 제외 | 검수 지표를 뺀 모든 지표에 요약과 같은 제외 목록 적용<br>결제와 원장과 로트는 `user_id`, 채팅과 메시지는 채팅의 `user_id`, 스토리와 창작자는 스토리의 `user_id`<br>공식 계정 소유 스토리는 공개 스토리 수와 순위에 포함 |
 | 캐시 | 없음<br>기간 상한 366일이 집계 범위를 제한 |
+
+<br>
+
+### 4-1-27 요일과 시간대 활동
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
+flowchart LR
+    A["`**현재 시각 고정**
+기간 쿼리로 KST 날짜 범위 확정`"] --> B["`**지표별 집계**
+가입, 메시지, 스토리, 결제를
+KST 요일과 시로 묶음`"]
+    B --> C["`**날짜 수**
+범위의 요일별 날짜 수`"]
+    C --> D["`**응답 조립**
+빈 칸 0 채움, 평균 계산`"]
+    classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
+    classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
+    class A,D comp
+    class B,C task
+```
+
+지표 정의는 제품 제약에 있다. 날짜 범위는 대시보드 차트와 같고 분석 도구를 쓰지 않으며 캐시하지 않는다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-7 대시보드 차트](#4-1-7-대시보드-차트))
+
+| 항목 | 규칙 |
+|---|---|
+| 요일과 시 | 기준 시각에 KST 오프셋 9시간을 더한 시각의 ISO 요일과 시<br>KST에는 일광 절약 시간이 없어 오프셋이 고정 |
+| 회원 가입 | `users`에서 `created_at`이 범위 안인 행<br>신규 가입자와 같이 `social_accounts`에 그 회원의 행이 하나도 없는 회원은 뺌 |
+| 채팅 메시지 | `story_messages`에서 `role`이 사용자이고 `created_at`이 범위 안인 행을 `story_chats`로 이어 셈<br>`hidden_at`과 채팅의 `deleted_at`은 보지 않음<br>`forked_from_turn`이 0보다 큰 채팅은 그 메시지보다 `id`가 작은 AI 응답이 `forked_from_turn`개 이상인 사용자 메시지만 셈 |
+| 스토리 생성 | `stories`에서 `created_at`이 범위 안인 행 |
+| 결제 | `credit_orders`에서 `completed_at`이 범위 안인 행 |
+| 날짜 수 | 범위의 KST 날짜를 ISO 요일로 나눠 셈<br>범위가 7일보다 짧으면 날짜 수가 0인 요일이 있고 그 요일의 칸 평균과 요일 평균은 `null` |
+| 팀 계정 제외 | 요약과 같은 제외 목록<br>회원 가입은 회원의 `id`, 채팅 메시지는 채팅의 `user_id`, 스토리는 스토리의 `user_id`, 결제는 주문의 `user_id`<br>`user_id`가 없는 게스트 채팅과 스토리는 포함 |
+| 캐시 | 없음<br>기간 상한 366일이 집계 범위를 제한 |

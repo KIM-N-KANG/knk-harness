@@ -33,6 +33,7 @@
 | 사용자 세션의 세션 길이 분포와 일별 세션 수 | `GET /api/users/session-lengths` | [4-2-27 사용자 세션](../BACKEND/4-2-CONTRACT.md#4-2-27-사용자-세션)의 세션 길이 분포 |
 | 사용자 신규 가입자 | `GET /api/users/signups` | [4-2-28 신규 가입자](../BACKEND/4-2-CONTRACT.md#4-2-28-신규-가입자) |
 | 사용자 앱 신규 활성 사용자 | `GET /api/users/app-activation` | [4-2-41 앱 신규 활성 사용자](../BACKEND/4-2-CONTRACT.md#4-2-41-앱-신규-활성-사용자) |
+| 사용자 요일과 시간대 활동 | `GET /api/users/activity-hours` | [4-2-48 요일과 시간대 활동](../BACKEND/4-2-CONTRACT.md#4-2-48-요일과-시간대-활동) |
 | 전환 퍼널 카드 | `GET /api/conversion/funnels/{funnel}` | [4-2-29 전환 퍼널](../BACKEND/4-2-CONTRACT.md#4-2-29-전환-퍼널) |
 | 채팅 참여의 채팅 턴 도달률 | `GET /api/conversion/turn-reach` | [4-2-30 채팅 턴 도달률](../BACKEND/4-2-CONTRACT.md#4-2-30-채팅-턴-도달률) |
 | 기능 사용과 안정성 값 | `GET /api/quality/client` | [4-2-31 기능 사용과 안정성](../BACKEND/4-2-CONTRACT.md#4-2-31-기능-사용과-안정성) |
@@ -88,7 +89,7 @@
 | 인프라 지표 | 기간만 |
 | DB 테이블 크기 | `limit=20` |
 | 콘텐츠 소비 | 기간과 `limit=20` |
-| 결제 지표, 이프 경제, 채팅 몰입, 검수 지표 | 기간만 |
+| 결제 지표, 이프 경제, 채팅 몰입, 검수 지표, 요일과 시간대 활동 | 기간만<br>요일과 시간대 활동의 지표 선택은 서버로 보내지 않음 |
 | 이프 내역 | `direction`, `date`, `page`, `size`, `sort`, `order`<br>기본 `page=1`, `size=20`, `order=desc` |
 | 검수 제출 목록 | `status`, `from`, `to`, `q`, `memberId`, `storyId`, `page`, `size`, `sort`, `order`<br>값이 있는 것만<br>기본 `page=1`, `size=20`, `sort=createdAt`, `order=desc` |
 | 회원 목록 정렬 | `sort`, `order`<br>누적 턴 머리글은 `sort=turnCount` |
