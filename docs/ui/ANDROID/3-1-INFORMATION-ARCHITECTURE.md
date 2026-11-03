@@ -6,7 +6,7 @@
 
 ### 3-1-1 셸과 진입
 
-로그인과 필수 동의를 마친 회원은 홈, 채팅, 제작, 마이 순서의 네 탭을 이용한다. 상세와 하위 화면은 진입한 탭 위에 쌓는다. 메인 셸과 회원 진입 조건은 [ACCOUNT 화면](../../domain/ACCOUNT/CLIENT/ANDROID/3-1-INFORMATION-ARCHITECTURE.md)과 연결한다.
+로그인과 필수 동의를 마친 회원은 홈, 채팅, 제작, 탐색, 마이 순서의 다섯 탭을 이용한다. 탐색은 다른 탭에서 들어올 때만 새 순서로 맨 위부터 보인다([STORY Android 요구](../../domain/STORY/CLIENT/ANDROID/2-2-REQUIREMENTS.md#2-2-1-목록과-상세)). 상세와 하위 화면은 진입한 탭 위에 쌓는다. 메인 셸과 회원 진입 조건은 [ACCOUNT 화면](../../domain/ACCOUNT/CLIENT/ANDROID/3-1-INFORMATION-ARCHITECTURE.md)과 연결한다.
 
 마이의 화면 섹션에서 테마를 바꾸고 기타 섹션에서 서비스 안내를 연다. 서비스 안내와 정책 문서는 앱 안 문서 열람 화면을 사용한다.
 
