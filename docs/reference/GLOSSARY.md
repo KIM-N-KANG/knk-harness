@@ -40,7 +40,9 @@
 | 공식 용어 | 영문 식별자 | 정의 | 지양 표기 |
 | --- | --- | --- | --- |
 | 스토리 | `story`, `story_id` | 사용자가 제작, 플레이하는 세계관, 설정 콘텐츠 단위. 외부 노출 식별자는 UUID `story_id` | "이야기"(API 문서, 식별자, 오류 메시지), "세계관"(스토리 전체를 가리킬 때) |
-| 오리지널 스토리 | original story | 마냑 공식 계정이 소유한 공개(`PUBLISHED`, `PUBLIC`) 스토리. 제작 없이도 플레이할 거리를 주려고 홈(`/`)에 노출한다. 홈은 공개 스토리 목록의 "오리지널" 필터로 오리지널만 모아 보고, 내가 만든 스토리는 제작 탭(`/studio`)이 담당한다(KNK-988 화면 분리, KNK-994 URL 변경, KNK-1421 필터, [3-1 화면 구성](../domain/STORY/CLIENT/3-1-INFORMATION-ARCHITECTURE.md)). 조회는 `GET /stories?filter=original`이며 인증이 필요 없다(`GET /stories/originals`는 폐기 예정) | "공식 스토리", "추천 스토리"(추천 로직이 없음), "마냑 스토리" |
+| 오리지널 스토리 | original story | 마냑 공식 계정이 소유한 공개(`PUBLISHED`, `PUBLIC`) 스토리. 제작 없이도 플레이할 거리를 주려고 홈(`/`)에 노출한다. 관리자가 켠 홈 섹션이 없으면 홈의 기본 섹션 "오리지널 스토리"에 모이고, 내가 만든 스토리는 제작 탭(`/studio`)이 담당한다(KNK-988 화면 분리, KNK-994 URL 변경, KNK-2003 홈 섹션, [3-1 화면 구성](../domain/STORY/CLIENT/3-1-INFORMATION-ARCHITECTURE.md)). 오리지널 목록 조회는 `GET /stories?filter=original`이며 인증이 필요 없다(`GET /stories/originals`는 폐기 예정) | "공식 스토리", "추천 스토리"(추천 로직이 없음), "마냑 스토리" |
+| 홈 섹션 | home section | 홈에 세로로 쌓는 가로 스토리 목록 하나. 이름, 노출 순서와 담을 스토리는 관리자 페이지에서 정하고 섹션당 카드는 최대 20개다. 켠 섹션이 없으면 서버가 "인기 스토리", "오리지널 스토리" 기본 섹션을 준다(`GET /stories/home`, KNK-1982) | 없음 |
+| 탐색 | explore | 공개 스토리 전체를 서버가 섞은 순서로 끝까지 넘겨 보는 메인 탭(`/explore`, `GET /stories/explore`). 순서는 탭 진입과 당겨서 새로고침에서만 새로 섞는다(KNK-1981, KNK-2003) | 없음 |
 | 스토리라인 | `storyline`, `storyline_id` | 간편 제작에서 AI가 생성하는 이야기 전개 방향 후보(3개 중 택1). 스토리가 되기 전 단계의 산출물 | `example`(레거시 표기), 스토리라인 본문을 담는 `story` 필드 |
 | 스토리 설정 | `story_settings` | 통글 4필드 묶음: `world_setting`(세계관), `character_setting`(등장인물), `user_role_setting`(주인공), `rule_setting`(규칙) | `prompt_settings`(컴파일 내부 세분 스키마 전용, §6) |
 | 통글 | (한국어 고유 조어) | 섹션 헤더로 구분한 단일 마크다운 필드. 스토리 설정의 저장, 전달 단위 | 없음 |

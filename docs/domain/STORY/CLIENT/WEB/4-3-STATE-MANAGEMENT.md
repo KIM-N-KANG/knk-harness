@@ -8,7 +8,7 @@
 
 | 위치 | 값과 수명 |
 |---|---|
-| URL | 홈 filter와 sort. 기본값은 생략하고 새로고침 및 뒤로가기에 유지 |
+| Query 캐시 | 탐색 무한 목록. 저절로 다시 읽지 않고 문서 수명 동안 보존한다. 다른 탭에서 하단 탭으로 들어올 때 지우고 탐색 스크롤 기억을 맨 위로 되돌린다 |
 | IndexedDB | Dexie `manyak-creation`의 pendingCreations, storyCompletions, metadata |
 | 편집 테이블 | KEYWORD_DRAFT, STORY_DRAFT, STORYLINE_GENERATION. GENERAL_DRAFT는 서버 이관 전 레거시만 남음 |
 | 완성 테이블 | requestId별 STORY_COMPLETION |
