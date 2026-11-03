@@ -8,6 +8,10 @@
 |---|---|
 | 입력, 진행 응답과 잠금 | 채팅방 ViewModel. 구성 변경 유지 |
 | 설정 시트와 투어 스텝 | ViewModel. 구성 변경 때 같은 스텝 유지, 도달 이벤트 중복 없음 |
+| 입력 수정 편집 | ViewModel의 대상 턴 ID와 고치던 입력. 구성 변경 유지, 기기 저장과 SavedStateHandle 없음. 대상 턴이 목록에 없으면 편집기를 그리지 않음 |
+| 턴 확인 창 | ViewModel. 재생성, 입력 수정과 포크 중 하나. 입력 수정은 앞뒤 공백을 뺀 입력과 사라질 턴 수를 함께 보관 |
+| 진행 중 숨김 | ViewModel의 대신하는 턴 ID와 입력 수정 여부. 확정, 실패와 정리에서 해제 |
+| 포크 요청 | ViewModel 잠금. 원래 방이 스택에 남아 성공해도 이동 효과 뒤 해제 |
 | 모델 시트와 헤더 숨김 | 화면 rememberSaveable |
 | 뷰어 URL | 화면 ViewModel. 라우트와 저장 상태에 넣지 않음. 상세에서 이미지가 사라지면 닫기 |
 | 이미지, 추천과 입력 모드 | 기기 DataStore의 `chat_realtime_image_enabled`, `chat_choices_enabled`, `chat_input_mode`. UserScopedStore 비참여 |
