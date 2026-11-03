@@ -1018,7 +1018,7 @@ KST 요일과 시로 묶음`"]
 
 | 항목 | 규칙 |
 |---|---|
-| 요일과 시 | 기준 시각에 KST 오프셋 9시간을 더한 시각의 ISO 요일과 시<br>KST에는 일광 절약 시간이 없어 오프셋이 고정 |
+| 요일과 시 | 기준 시각의 epoch 초에 KST 오프셋 9시간(32,400초)을 더해 KST 날짜와 시를 구하고 날짜의 ISO 요일을 씀<br>DB 세션 시간대에 따라 바뀌는 시간대 변환과 날짜 변환을 쓰지 않음<br>KST에는 일광 절약 시간이 없어 오프셋이 고정 |
 | 회원 가입 | `users`에서 `created_at`이 범위 안인 행<br>신규 가입자와 같이 `social_accounts`에 그 회원의 행이 하나도 없는 회원은 뺌 |
 | 채팅 메시지 | `story_messages`에서 `role`이 사용자이고 `created_at`이 범위 안인 행을 `story_chats`로 이어 셈<br>`hidden_at`과 채팅의 `deleted_at`은 보지 않음<br>`forked_from_turn`이 0보다 큰 채팅은 그 메시지보다 `id`가 작은 AI 응답이 `forked_from_turn`개 이상인 사용자 메시지만 셈 |
 | 스토리 생성 | `stories`에서 `created_at`이 범위 안인 행 |

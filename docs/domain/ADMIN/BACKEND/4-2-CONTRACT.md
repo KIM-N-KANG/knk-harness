@@ -4001,7 +4001,6 @@ Authorization: Bearer {adminToken}
 | `hours[].count` | `integer` | 그 시 7칸의 합 |
 | `hours[].average` | `number` | `count`를 `totalDays`로 나눈 하루 평균 |
 
-- 평균은 소수 셋째 자리에서 반올림해 둘째 자리까지 준다.
 - 모든 값은 팀 계정 제외 목록을 적용한다.
 
 <br>
@@ -4038,18 +4037,18 @@ Authorization: Bearer {adminToken}
   ],
   "metrics": {
     "signups": {
-      "total": 712,
-      "dailyAverage": 25.43,
+      "total": 714,
+      "dailyAverage": 25.5,
       "cells": [
         { "weekday": 1, "hour": 0, "count": 6, "average": 1.5 },
         { "weekday": 1, "hour": 21, "count": 13, "average": 3.25 }
       ],
       "weekdays": [{ "weekday": 1, "count": 98, "average": 24.5 }],
-      "hours": [{ "hour": 21, "count": 61, "average": 2.18 }]
+      "hours": [{ "hour": 21, "count": 63, "average": 2.25 }]
     },
     "messages": {
-      "total": 48210,
-      "dailyAverage": 1721.79,
+      "total": 48216,
+      "dailyAverage": 1722.0,
       "cells": [
         { "weekday": 1, "hour": 0, "count": 512, "average": 128.0 },
         { "weekday": 1, "hour": 21, "count": 1180, "average": 295.0 }
@@ -4058,24 +4057,24 @@ Authorization: Bearer {adminToken}
       "hours": [{ "hour": 21, "count": 8204, "average": 293.0 }]
     },
     "stories": {
-      "total": 1406,
-      "dailyAverage": 50.21,
+      "total": 1400,
+      "dailyAverage": 50.0,
       "cells": [
         { "weekday": 1, "hour": 0, "count": 9, "average": 2.25 },
         { "weekday": 1, "hour": 21, "count": 27, "average": 6.75 }
       ],
       "weekdays": [{ "weekday": 1, "count": 190, "average": 47.5 }],
-      "hours": [{ "hour": 21, "count": 181, "average": 6.46 }]
+      "hours": [{ "hour": 21, "count": 182, "average": 6.5 }]
     },
     "payments": {
-      "total": 38,
-      "dailyAverage": 1.36,
+      "total": 42,
+      "dailyAverage": 1.5,
       "cells": [
         { "weekday": 1, "hour": 0, "count": 0, "average": 0.0 },
         { "weekday": 1, "hour": 21, "count": 2, "average": 0.5 }
       ],
       "weekdays": [{ "weekday": 1, "count": 5, "average": 1.25 }],
-      "hours": [{ "hour": 21, "count": 6, "average": 0.21 }]
+      "hours": [{ "hour": 21, "count": 7, "average": 0.25 }]
     }
   }
 }
