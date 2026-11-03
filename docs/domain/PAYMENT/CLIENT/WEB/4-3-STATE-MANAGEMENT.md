@@ -8,7 +8,7 @@
 |---|---|---|
 | 정책값 | Query 캐시. 공용 staleTime 적용 | 미수신과 실패는 미확정, 고정 수치 대체 없음 |
 | 체험 | 세션 상태를 포함한 Query 키 | 로그인 상태 변경과 소모 완료 후 무효화 |
-| 내역 페이지 | 내역 탭 Query, `gcTime: 0` | 탭 이탈 시 폐기, 재진입 첫 페이지 조회 |
+| 내역 페이지 | 내역 목록 Query, `gcTime: 0` | 내역 탭이나 채팅 메뉴의 내역을 떠나면 폐기, 다시 열면 첫 페이지 조회. 채팅 메뉴의 새로고침은 뒷 페이지를 버리고 첫 페이지만 다시 조회 |
 | 선택 탭 | 화면 상태 | 진입 `tab`은 한 번만 소비 |
 | `manyak:pending-credit-order` | localStorage의 `{orderId, savedAt}`. 24시간 TTL | 완료, 환불, 404, 카드 닫기와 계정 종료 시 제거 |
 | `manyak:payment-history-length` | sessionStorage의 정수 | 복귀 문서에서 읽은 뒤 제거 |

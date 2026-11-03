@@ -32,11 +32,13 @@
 | 충전 화면 | [src/features/my/credits](../../../../../../manyak-web/src/features/my/credits) |
 | 정책 | [src/hooks/use-credit-policy.ts](../../../../../../manyak-web/src/hooks/use-credit-policy.ts) |
 | 체험 | [src/hooks/use-trials.ts](../../../../../../manyak-web/src/hooks/use-trials.ts) |
+| 내역 목록 | [src/features/my/_shared/components/credit-history-list.tsx](../../../../../../manyak-web/src/features/my/_shared/components/credit-history-list.tsx) |
 | 부족 시트 | [src/features/my/_shared/components/credit-shortage-sheet.tsx](../../../../../../manyak-web/src/features/my/_shared/components/credit-shortage-sheet.tsx) |
 | 결제 복귀 | [src/app/(my)/my/credits/return/route.ts](../../../../../../manyak-web/src/app/%28my%29/my/credits/return/route.ts) |
 | 출석 | [src/features/my/_shared/hooks/use-claim-attendance.ts](../../../../../../manyak-web/src/features/my/_shared/hooks/use-claim-attendance.ts) |
 | 검증 | [e2e/my/credits.spec.ts](../../../../../../manyak-web/e2e/my/credits.spec.ts) |
-| 주문과 날짜 단위 테스트 | [tests/features/my/credits/utils](../../../../../../manyak-web/tests/features/my/credits/utils) |
+| 주문 단위 테스트 | [tests/features/my/credits/utils](../../../../../../manyak-web/tests/features/my/credits/utils) |
+| 내역 표시와 날짜 단위 테스트 | [tests/features/my/_shared/utils](../../../../../../manyak-web/tests/features/my/_shared/utils) |
 
 <br>
 
