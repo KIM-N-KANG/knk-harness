@@ -30,9 +30,10 @@
 |---|---|
 | 충전 화면과 저장소 | [my/src/main/java/app/manyak/my/credit](../../../../../../manyak-android/my/src/main/java/app/manyak/my/credit) |
 | 정책과 체험 계약 | [common/src/main/java/app/manyak/common/domain/credit](../../../../../../manyak-android/common/src/main/java/app/manyak/common/domain/credit) |
-| 부족 절차 | [common/src/main/java/app/manyak/common/presentation/credit/CreditShortageController.kt](../../../../../../manyak-android/common/src/main/java/app/manyak/common/presentation/credit/CreditShortageController.kt) |
+| 부족과 내역 절차 | [common/src/main/java/app/manyak/common/presentation/credit](../../../../../../manyak-android/common/src/main/java/app/manyak/common/presentation/credit) |
 | 공용 UI | [designsystem/src/main/java/app/manyak/designsystem/credit](../../../../../../manyak-android/designsystem/src/main/java/app/manyak/designsystem/credit) |
 | 충전 검증 | [my/src/test/java/app/manyak/my/credit](../../../../../../manyak-android/my/src/test/java/app/manyak/my/credit) |
+| 채팅 메뉴 내역 검증 | [chat/src/test/java/app/manyak/chat/room/presentation/ChatRoomMenuTest.kt](../../../../../../manyak-android/chat/src/test/java/app/manyak/chat/room/presentation/ChatRoomMenuTest.kt) |
 | 제작 부족 검증 | [create/src/test/java/app/manyak/create/additionalinfo/presentation/CreateAdditionalInfoCreditShortageTest.kt](../../../../../../manyak-android/create/src/test/java/app/manyak/create/additionalinfo/presentation/CreateAdditionalInfoCreditShortageTest.kt) |
 
 <br>

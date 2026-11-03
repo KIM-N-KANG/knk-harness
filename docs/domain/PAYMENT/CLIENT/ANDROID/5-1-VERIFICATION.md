@@ -14,6 +14,7 @@
 | PAYMENT-ANDROID-06 | PAYMENT-US-006 | 내역 첫 조회, 다음 페이지 실패, 새로고침 실패 | 첫 조회 오류와 부분 오류 구분, 기존 항목 유지, 커서 그대로 전달 | 충전 ViewModel 테스트 |
 | PAYMENT-ANDROID-07 | PAYMENT-US-006 | KST 날짜 경계, 만료 기록, 알 수 없는 사유 | 발생일과 만료일 구분, 일반 변동으로 행 표시 | 날짜와 표시 단위 테스트 |
 | PAYMENT-ANDROID-08 | PAYMENT-US-006, PAYMENT-US-007 | HTTPS 충전 딥링크의 history, purchase, 다른 값과 UTM, 회전 | history만 내역, 나머지 무료 충전. 선택 유지, 구매 탭과 Play 결제 없음 | 내비게이션 단위 테스트와 기기 |
+| PAYMENT-ANDROID-09 | PAYMENT-US-001, PAYMENT-US-006 | 회원 채팅 메뉴의 내역 첫 조회, 다음 페이지 성공과 실패, 여러 페이지 뒤 새로고침, 조회 중 닫기와 다시 열기 | 충전 내역 탭과 같은 행과 상태, 다시 열면 첫 페이지, 새로고침은 응답까지 목록 유지 후 커서 없는 첫 페이지 하나로 교체, 닫은 뒤 늦은 응답 미반영 | 채팅 메뉴 테스트와 기기 |
 
 <br>
 
