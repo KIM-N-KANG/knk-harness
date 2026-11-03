@@ -254,6 +254,8 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | P1                  | client | `client_chat_retryButton_clicked`                        |
 | P1                  | client | `client_chat_streamError_shown`                          |
 | P1 `계획` | client | `client_chat_regenerateButton_clicked`                   |
+| P1 `구현` | client | `client_chat_editButton_clicked`                         |
+| P1 `구현` | client | `client_chat_forkButton_clicked`                         |
 | P1 `계획` | client | `client_chat_chatImage_impressed`                        |
 | P1 `계획` | client | `client_chat_endingBadge_impressed`                      |
 | P1 `폐기`           | client | `client_chatShareDialog_shown`                           |
@@ -461,6 +463,8 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | `server_chat_aiMessage_processed_succeeded`             | P0       | AI 응답 생성 성공                                 | `chat_id` (string, 필수), `turn_number` (number, 필수), `is_regenerated` (boolean, 필수 `계획`), `ending_id` (string, 과거 계획: KNK-1626 이후 현행 판정에 사용하지 않음) |
 | `server_chat_aiMessage_processed_failed`                | P0       | AI 응답 생성 실패                                 | `chat_id` (string, 필수), `turn_number` (number, 필수), `error_type` (string, 필수), `is_regenerated` (boolean, 필수 `계획`)                                                      |
 | `client_chat_regenerateButton_clicked` `계획` | P1       | 마지막 AI 응답 다시 생성 버튼 클릭                | `chat_id` (string, 필수), `turn_number` (number, 필수)                                                                                                                                      |
+| `client_chat_editButton_clicked` `구현` | P1       | 사용자 입력의 입력 수정 버튼 클릭(편집기 열기)    | `chat_id` (string, 필수), `turn_number` (number, 필수: 고칠 턴의 번호) |
+| `client_chat_forkButton_clicked` `구현` | P1       | AI 응답의 포크 버튼 클릭                          | `chat_id` (string, 필수), `turn_number` (number, 필수: 복사할 마지막 턴의 번호) |
 | `client_chat_chatImage_impressed` `계획`      | P1       | 채팅 이미지 유효 노출(§4-3 기준)                | `chat_id` (string, 필수), `turn_number` (number, 필수), `image_key` (string, 필수)                                                                                                          |
 | `client_chat_endingBadge_impressed` `과거 계획, 현행 비적용`    | P1       | 엔딩 도달 배지 유효 노출(§4-3 기준)             | `chat_id` (string, 필수), `turn_number` (number, 필수), `ending_id` (string, 필수: 도달한 엔딩 식별자)                                                                                      |
 | `client_chat_choiceOption_selected`                     | P1       | 선택지 선택                                       | `chat_id` (string, 필수), `turn_number` (number, 필수), `position` (number, 선택)                                                                                                           |
@@ -491,7 +495,9 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 
 AI 응답 성공, 실패는 백엔드가 `server_chat_aiMessage_processed_succeeded` 또는 `server_chat_aiMessage_processed_failed`로 발행한다. 프론트엔드는 `chat_id`와 `turn_number`로 메시지와 응답을 연결한다.
 
-`계획`, AI 응답 재생성([채팅 재생성 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-7-재생성))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분한다(일반 턴 `false`, 재생성 `true`, 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당한다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 본다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답, SSE `completed`의 `imageKey` 필드([채팅 재생성 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-7-재생성))에서 채우며, 이미지 자산 키(팀 프리셋, 업로드 키)라 원문 수집 원칙(§7)에 저촉되지 않는다.
+`계획`, AI 응답 재생성([채팅 재생성 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-7-재생성))은 별도 서버 이벤트를 만들지 않고 `server_chat_aiMessage_processed_*`에 `is_regenerated` 프로퍼티를 추가해 구분한다(일반 턴 `false`, 재생성 `true`, 같은 AI 처리라 이벤트를 나누면 AI 응답 성공률 집계가 이원화되기 때문). 재생성은 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고, 요청 트리거는 `client_chat_regenerateButton_clicked`가 담당한다. 따라서 `messageInput_submitted`를 분모로 쓰는 지표(§5-4)의 분자에는 `is_regenerated = false` 필터가 필요하고, 재생성 사용률은 별도 지표로 본다.
+
+입력 수정([채팅 입력 수정 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-19-입력-수정))도 메시지 전송이 아니므로 `client_chat_messageInput_submitted`를 발생시키지 않고 편집기를 여는 버튼 클릭을 `client_chat_editButton_clicked`로 기록한다. 포크([채팅 포크 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-20-포크))는 버튼 클릭을 `client_chat_forkButton_clicked`로 기록하며 확인, 성공과 취소는 별도 이벤트로 나누지 않는다. 두 이벤트의 `turn_number`는 대상 턴의 번호다. 2026-11-04부터 재생성도 확인 창을 거치므로 `client_chat_regenerateButton_clicked`는 재생성 요청 수가 아니라 확인 전 버튼 클릭 수다. `client_chat_chatImage_impressed`의 `image_key`는 턴 응답, SSE `completed`의 `imageKey` 필드([채팅 재생성 계약](../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-7-재생성))에서 채우며, 이미지 자산 키(팀 프리셋, 업로드 키)라 원문 수집 원칙(§7)에 저촉되지 않는다.
 
 엔딩 도달 계측은 사건과 엔딩 판정을 전제로 작성한 과거 계획이다. KNK-1626 이후 현행 채팅은 엔딩을 판정하지 않으므로 `ending_id`, `client_chat_endingBadge_impressed`와 `ending_reached`를 현재 수집 항목이나 도달률 계산 기준으로 사용하지 않는다. 식별자 이름은 과거 자료 해석을 위해 남긴다. ([CHAT 요구사항](../domain/CHAT/AI/3-TASK-DEFINITION.md))
 

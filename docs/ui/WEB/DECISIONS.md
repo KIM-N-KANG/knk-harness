@@ -87,3 +87,41 @@
 | 영향 | 인스타그램에서 앱이 없으면 0.7초 뒤 플레이스토어가 열린다. 앱이 설치된 느린 기기에서 0.7초 안에 앱이 뜨지 않으면 플레이스토어가 함께 열릴 수 있다. Chrome과 카카오톡은 기존처럼 플레이스토어를 바로 열고 두 번 열지 않는다. |
 | 근거 | [앱 안내 배너](3-3-LAYOUT.md#3-3-1-셸과-공용-요소), [앱 안내 배너 구조](4-4-EXECUTION.md#4-4-1-이동과-레이어-정리), [KNK-1716](https://kimandkang.atlassian.net/browse/KNK-1716) |
 | 보완 범위 | [W-033](#w-033)의 "패키지를 명시한 intent는 설치 여부에 따라 앱 또는 플레이스토어로 간다"를 보완한다. intent 링크로 앱을 여는 방식은 유지한다. |
+
+<br>
+
+<a id="w-044"></a>
+<a id="w-044-전역-줄-배치-pretty와-balance를-빼고-keep-all만-유지"></a>
+
+**W-044. 전역 줄 배치 pretty와 balance를 빼고 keep-all만 유지**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-04 |
+| 상태 | Accepted |
+| 배경 | KNK-1655(2026-10-16)에서 body에 keep-all과 break-word, p와 li에 `text-wrap-style: pretty`, h1에서 h3에 `balance`를 전역으로 두었다. 이후 다이얼로그 설명처럼 짧은 여러 줄 문장이 첫 줄에 자리가 남아도 일찍 끊겨 오른쪽이 비어 보였다. 같은 포크 확인 창을 세 조합으로 비교했다. |
+| 채택 | 전역 pretty와 balance를 빼고 keep-all과 break-word만 유지한다. 전역 pretty를 되돌리려고 채팅 본문, 스토리 카드, 필드 설명에 둔 `text-wrap-style: auto`도 뺀다. |
+| 대안 | 현재 유지는 짧은 문장의 이른 줄바꿈이 남는다. keep-all까지 빼면 "시 / 작해요"처럼 어절 중간에서 끊긴다. |
+| 이유 | 2026-11-04 사용자가 keep-all만 남기는 조합을 골랐다. 이른 줄바꿈은 pretty와 balance에서 생기고, 어절 단위 줄바꿈은 KNK-1655 전에도 여러 화면에서 `break-keep`으로 쓰던 동작이다. |
+| 영향 | 화면 전반의 줄바꿈 위치가 바뀌어 비주얼 기준 이미지를 다시 만든다. 개별 컴포넌트가 직접 지정한 `text-balance`(공유 화면 제목, Drawer 설명 등)는 그대로다. |
+| 근거 | [공통 UI 실행](4-4-EXECUTION.md#4-4-2-레이아웃과-입력), [KNK-2005](https://kimandkang.atlassian.net/browse/KNK-2005) |
+| 대체 관계 | KNK-1655에서 정한 p와 li의 pretty, 제목의 balance 전역 적용을 대체한다. keep-all과 break-word, 긴 flex 텍스트의 예외는 그대로이다. |
+
+<br>
+
+<a id="w-045"></a>
+<a id="w-045-웹-줄바꿈-단위를-android-앱에-맞춰-기본은-글자-단위로-두고-세-곳만-어절-단위"></a>
+
+**W-045. 웹 줄바꿈 단위를 Android 앱에 맞춰 기본은 글자 단위로 두고 세 곳만 어절 단위**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-04 |
+| 상태 | Accepted |
+| 배경 | W-044 뒤에도 웹은 body 전체가 어절 단위였다. Android 앱은 Compose 기본값(`LineBreak.Simple`)이라 한글을 글자 단위로 끊고, 내 스토리 카드의 제목과 한 줄 소개, 일반 제작 방식 선택의 설명, 스토리 상세 주변 인물 소개에만 구절 단위(`WordBreak.Phrase`)를 쓴다. |
+| 채택 | body의 keep-all을 빼고 break-word만 둔다. 앱이 구절 단위를 쓰는 세 곳에만 `break-keep`을 둔다. 전역 keep-all을 끄던 홈 스토리 카드의 `word-break: normal`과, 앱에 대응 지정이 없는 공지 상세 제목과 알림함 카드의 `break-keep`은 뺀다. |
+| 대안 | W-044의 전역 keep-all 유지 |
+| 이유 | 2026-11-04 사용자가 웹도 앱과 같은 방식으로 맞추자고 정했다. |
+| 영향 | 세 곳 밖의 한글은 줄 끝에서 글자 단위로 끊긴다. 앱은 두 곳에서 `LineBreak.Paragraph`의 고품질 배치를 함께 쓰지만 웹은 줄 배치를 맞추지 않고 어절 단위만 맞춘다. 앱의 구절 단위는 Android 13 이상에서만 동작한다. |
+| 근거 | [공통 UI 실행](4-4-EXECUTION.md#4-4-2-레이아웃과-입력), [KNK-2005](https://kimandkang.atlassian.net/browse/KNK-2005) |
+| 대체 관계 | [W-044](#w-044)의 "keep-all과 break-word만 유지"에서 body 전역 keep-all을 대체한다. pretty와 balance를 두지 않는 결정은 그대로이다. |
