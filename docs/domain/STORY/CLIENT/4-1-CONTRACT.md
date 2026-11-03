@@ -10,7 +10,8 @@ API 경로는 `/api/v1` 기준이다. 인증, 응답 전체 필드와 서버 제
 
 | 용도 | 제공자 계약 | 클라이언트 사용 |
 |---|---|---|
-| 탐색 | [공개 목록](../BACKEND/4-2-CONTRACT.md#4-2-2-공개-목록) | `GET /stories`, filter와 sort, 커서. 기본 all과 popular. 서버 순서 유지 |
+| 홈 | [홈 목록](../BACKEND/4-2-CONTRACT.md#4-2-34-홈-목록) | `GET /stories/home`. 섹션과 카드는 응답 순서 유지, 카드가 없는 섹션 제외. 기본 섹션은 `id`가 null이라 이름과 순번으로 구분 |
+| 탐색 | [탐색 목록](../BACKEND/4-2-CONTRACT.md#4-2-33-탐색-목록) | `GET /stories/explore`. 새 순서는 `cursor` 없이, 다음 페이지는 받은 `nextCursor`. `nextCursor`가 null이면 끝 |
 | 장르와 태그 | [제공 장르](../BACKEND/4-2-CONTRACT.md#4-2-4-제공-장르), [간편 태그](../BACKEND/4-2-CONTRACT.md#4-2-9-간편-제작-태그-목록) | 전체와 대표 목록, 질의 결과 및 인물 특징 |
 | 상세와 소유 목록 | [상세](../BACKEND/4-2-CONTRACT.md#4-2-7-상세), [일괄 조회](../BACKEND/4-2-CONTRACT.md#4-2-6-일괄-조회) | 회원 내 스토리는 `GET /users/me/stories`, 게스트 소유 ID는 ACCOUNT에서 관리 |
 | 삭제와 좋아요 | [삭제](../BACKEND/4-2-CONTRACT.md#4-2-8-삭제), [좋아요](../BACKEND/4-2-CONTRACT.md#4-2-21-좋아요) | 서버 소유권과 좋아요 결과 사용 |
@@ -22,7 +23,7 @@ API 경로는 `/api/v1` 기준이다. 인증, 응답 전체 필드와 서버 제
 | 제출본 | [MODERATION 계약](../../MODERATION/BACKEND/4-2-CONTRACT.md) | `/stories/submissions`, 신규 CREATE와 UPDATE 구분, 상세와 재제출 및 취소 |
 | 채팅 시작 | [CHAT 계약](../../CHAT/CLIENT/4-1-CONTRACT.md) | storyId, startSettingId와 선택 personaId. 기본 주인공은 personaId 생략 또는 null |
 
-사용하지 않는 `GET /stories/originals`로 홈 목록을 대체하지 않는다. 별도 클라이언트 인기 점수를 계산하지 않는다.
+사용하지 않는 `GET /stories/originals`나 공개 목록 `GET /stories`로 홈과 탐색을 대신 조합하지 않는다. 별도 클라이언트 인기 점수를 계산하거나 탐색 순서를 직접 섞지 않는다. 카드의 `author`는 게스트 스토리에서 null이다.
 
 <br>
 
