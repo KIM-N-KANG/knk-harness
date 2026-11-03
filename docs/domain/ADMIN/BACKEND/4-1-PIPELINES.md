@@ -1001,13 +1001,18 @@ flowchart LR
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
     A["`**현재 시각 고정**
-기간 쿼리로 KST 날짜 범위 확정`"] --> B["`**지표별 집계**
-가입, 메시지, 스토리, 결제를
-KST 요일과 시로 묶음`"]
+기간 쿼리로
+KST 날짜 범위 확정`"] --> B["`**지표별 집계**
+가입, 메시지,
+스토리, 결제를
+KST 요일과 시로
+묶음`"]
     B --> C["`**날짜 수**
-범위의 요일별 날짜 수`"]
+범위의
+요일별 날짜 수`"]
     C --> D["`**응답 조립**
-빈 칸 0 채움, 평균 계산`"]
+빈 칸 0 채움,
+평균 계산`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
     class A,D comp

@@ -3957,7 +3957,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-회원 가입, 채팅 메시지, 스토리 생성, 결제를 KST 요일과 시의 칸으로 나눠 범위 안의 수와 평균을 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-27 요일과 시간대 활동](4-1-PIPELINES.md#4-1-27-요일과-시간대-활동))
+회원 가입, 채팅 메시지, 스토리 생성, 결제를 KST 요일과 시의 칸으로 나눠 범위 안의 수와 평균을 센다. 지표 정의는 제품 제약에 있고 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-27 요일과 시간대 활동](4-1-PIPELINES.md#4-1-27-요일과-시간대-활동))
 
 **1. 쿼리**
 
@@ -3971,7 +3971,7 @@ Authorization: Bearer {adminToken}
 
 **2. 응답**
 
-요일은 ISO 요일로 월요일이 `1`, 일요일이 `7`이다. 시는 KST `0`부터 `23`이다.
+요일은 ISO 요일로 월요일이 `1`이고 일요일이 `7`이다. 시는 KST `0`부터 `23`이다.
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
@@ -3988,7 +3988,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|
 | `total` | `integer` | 범위 안의 수 |
 | `dailyAverage` | `number` | `total`을 `totalDays`로 나눈 값 |
-| `cells` | `object[]` | 168항목<br>요일 오름차순, 같은 요일 안에서는 시 오름차순<br>수가 0인 칸도 있음 |
+| `cells` | `object[]` | 168항목<br>요일 오름차순<br>같은 요일 안에서는 시 오름차순<br>수가 0인 칸도 있음 |
 | `cells[].weekday`, `cells[].hour` | `integer` | 칸의 요일과 시 |
 | `cells[].count` | `integer` | 범위 안 그 요일 그 시의 수 |
 | `cells[].average` | `number / null` | `count`를 그 요일의 `weekdayDays[].days`로 나눈 값<br>그 요일의 날짜 수가 0이면 `null` |
@@ -4001,7 +4001,7 @@ Authorization: Bearer {adminToken}
 | `hours[].count` | `integer` | 그 시 7칸의 합 |
 | `hours[].average` | `number` | `count`를 `totalDays`로 나눈 하루 평균 |
 
-- 모든 값은 팀 계정 제외 목록을 적용한다.
+- 모든 값에 팀 계정 제외 목록을 적용한다.
 
 <br>
 
@@ -4023,7 +4023,7 @@ Authorization: Bearer {adminToken}
 
 **2) 200 Response body**
 
-28일 범위라 요일마다 날짜 수가 4다. 예시에는 `weekdayDays`의 요일 2개, 지표마다 `cells`의 칸 2개와 `weekdays`의 요일 1개와 `hours`의 시 1개만 표시했다.
+28일 범위라 요일마다 날짜 수가 4다. 예시에는 `weekdayDays`의 요일 2개만 표시했다. 지표마다 `cells`는 칸 2개, `weekdays`는 요일 1개, `hours`는 시 1개만 표시했다.
 
 ```json
 {
