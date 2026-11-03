@@ -280,18 +280,20 @@
 | 퍼널 세그먼트 차 | 1단계 전체 100, 광고 80 | `steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
 | 상세 진입 퍼널 | `days` 7, `storyId` 생략, 캠페인은 4차 | 대역에 퍼널 조회 1회, `storyId`는 목록 항목의 값, 1단계 필터에 `story_id`와 `gp:utm_campaign`, 3~7단계 `turn_number` `"1"`~`"5"` |
 | 대상 스토리 없음 | `campaign=TEST_2026`, `storyId` 생략 | 400 |
-| 퍼널 기간 | 간편 제작 20일과 상세 진입 31일<br>간편 제작 21일이나 `days` 30, 상세 진입 32일 | 200<br>400 |
-| 확정 범위 퍼널 기간 | `to`가 D-2인 간편 제작 41일과 상세 진입 35일<br>`to`가 D-2인 간편 제작 42일과 상세 진입 36일, `to`가 D-1인 상세 진입 32일 | 200<br>400 |
+| 퍼널 기간 | 오늘로 끝나는 간편 제작 20일과 상세 진입 31일<br>오늘로 끝나는 간편 제작 21일이나 `days` 30, 상세 진입 32일 | 200<br>400 |
+| 확정 범위 퍼널 기간 | 조회 값이 모두 저장된 `to`가 D-2인 간편 제작 41일과 상세 진입 35일<br>`to`가 D-2인 간편 제작 42일과 상세 진입 36일, `to`가 D-1인 상세 진입 32일 | 대역 호출 없이 200<br>400 |
 | 유입 소스 | `days` 7 | 대역에 세분화 조회 2회, 첫 조회는 `g`에 `gp:initial_utm_source`만 두고 `g2` 없음, 둘째 조회는 이벤트 묶음 `utm_content` 하나, 예산 계수기 350 증가, `sources`는 `newVisitors` 내림차순<br>둘째 조회의 이벤트 필터가 `utm_medium`, `subprop_op` `is`, 값 `["community","social"]`이고 `in`을 쓰지 않음 |
 | 유입 소스 기간 | 10일<br>11일, `days` 30 | 200<br>400 |
 | 첫 방문 활성화 퍼널 | `days` 7 | 대역에 퍼널 조회 2회(전체와 광고), 순서 모드와 `cs` 86400, `n=new`, 4단계, `s` 없음, 단계마다 이벤트 필터에 `country`와 `platform` `Web` 조건<br>1단계 `_active`, 2단계 `client_chat_messageInput_submitted`, 3단계 같은 이벤트에 `turn_number` `greater or equal` `["5"]`, 4단계 `ce:신규 가입 (구글·카카오)`, 광고 조회만 단계마다 `gp:initial_utm_campaign`<br>예산 계수기 112 증가 |
 | 첫 방문 활성화 응답 | 퍼널 대역의 전체 단계별 100, 30, 10, 2와 광고 80, 25, 8, 2 | `steps[].event`가 `_active`, `client_chat_messageInput_submitted`, `client_chat_messageInput_submitted`, `signup_succeeded`<br>`steps[2].minTurnNumber` 5, 나머지 `null`<br>`steps[0].users` `all` 100, `ads` 80, `nonAds` 20 |
 | 첫 방문 활성화 기간 | 31일<br>32일, `days` 90 | 200, 예산 계수기 496 증가<br>400 |
-| 확정 범위 나눠 받기 | 빈 저장소, `to`가 D-2인 35일(전체와 광고 조회 각 35 × 8 = 280)<br>같은 범위를 5분 안에 다시 요청<br>첫 요청에서 5분이 지난 뒤 다시 요청<br>그 뒤 다시 요청 | 퍼널 조회 1회만 보내 저장하고 예산 계수기 280 증가, 503<br>대역 호출 없이 503, `reason` `budget_exceeded`, 그 키에 60초 쿨다운<br>나머지 조회 1회를 보내 200, 두 값 모두 확정<br>대역 호출 없이 200 |
-| 확정 범위 상한 | `to`가 D-2인 62일<br>`to`가 D-2인 63일, `to`가 D-1인 32일 | 200<br>400 |
+| 확정 범위 나눠 받기 | 태스크 하나, 빈 저장소, 다른 Amplitude 소비 없음, 첫 방문 활성화 `to`가 D-2인 35일(전체와 광고 조회 각 35 × 8 = 280)<br>첫 갱신이 끝난 뒤 첫 조회 예약에서 300초 안에 다시 요청<br>첫 조회 예약에서 300초가 지나고 쿨다운이 끝난 뒤 다시 요청<br>그 뒤 다시 요청 | 퍼널 조회 1회만 보내 저장하고 예산 계수기 280 증가, 503<br>대역 호출 없이 503, `reason` `budget_exceeded`, 그 키에 60초 쿨다운<br>나머지 조회 1회를 보내 200, 두 값 모두 확정<br>대역 호출 없이 200 |
+| 다른 태스크 이어 받기 | 위 첫 요청 뒤 예산을 쓰지 않은 다른 태스크로 같은 범위 요청 | 저장된 전체 조회 값을 쓰고 광고 조회 1회만 보내 200 |
+| 호출 직전 재사용 | 나눠 받는 중 다른 태스크가 광고 조회 값을 저장한 뒤 이 태스크의 갱신이 그 조회를 보내기 직전 | 저장 값을 다시 읽어 그 조회를 보내지 않고 예약분을 되돌림 |
+| 확정 범위 상한 | 두 조회 값이 저장된 `to`가 D-2인 62일<br>`to`가 D-2인 63일, `to`가 D-1인 32일 | 대역 호출 없이 200<br>400 |
 | 진행 중 범위 한 번에 예약 | 5분 안에 예산 250을 쓴 뒤 오늘로 끝나는 31일(조회 각 248) | 한 조회는 남은 예산에 들지만 합 496이 넘어 대역 호출 없이 503, `reason` `budget_exceeded` |
 | 누적 도달 | `days` 7<br>세분화 `seriesCollapsed` 전송 전체 300과 광고 250, 5턴 이상 전체 90과 광고 70<br>일별 `series` 합 900 | 대역에 세분화 조회 4회, `start`와 `end`가 7일 범위 양 끝, 5턴 이상 조회에 `turn_number` `greater or equal` `["5"]`, 광고 조회에 `gp:initial_utm_campaign`<br>`chatUsers` `all` 300, `ads` 250, `nonAds` 50, `deepChatUsers` `all` 90, `ads` 70, `nonAds` 20<br>일별 합을 쓰지 않음 |
-| 누적 도달 기간 | 31일<br>32일<br>`to`가 D-2인 62일<br>`to`가 D-2인 63일 | 200<br>400<br>200<br>400 |
+| 누적 도달 기간 | 오늘로 끝나는 31일<br>오늘로 끝나는 32일<br>빈 저장소에서 `to`가 D-2인 62일(4 × 62 = 248)<br>`to`가 D-2인 63일 | 200<br>400<br>네 조회를 한 번에 받아 200<br>400 |
 | 광고 소재 조회 | `days` 7 | 대역에 세분화 조회 2회, 둘 다 `g`에 `gp:initial_utm_content`만 두고 `limit` 1000, 이벤트 필터에 `country`, `platform` `Web`, `gp:initial_utm_campaign`<br>첫 조회는 `ce:신규 가입 (구글·카카오)`, 둘째는 `turn_number` 5 이상 채팅 메시지 전송<br>예산 계수기 350 증가 |
 | 광고 소재 값 | 이틀의 가입 묶음 `ORIGINAL_0HOSUN_VIDEO` 9와 4, `(none)` 1과 0 | `daily[].signups`에 `content` `null` 항목, `totals.signups`가 `ORIGINAL_0HOSUN_VIDEO` 13, `null` 1 순서<br>`deepChatUsers`의 기간 합 필드 없음 |
 | 앱 유입 조회 | `days` 7 | 대역에 세분화 조회 4회<br>배너 노출과 클릭 2회는 `country`, `platform` `Web`, `device_type` `Android` 필터<br>배너 경유 신규는 `_new`에 `country`, `platform` `Android`, `gp:initial_utm_medium` `app_banner` 필터<br>설치 경로는 `_new`에 `country`, `platform` `Android` 필터와 `g` `gp:initial_utm_source`, `limit` 1000<br>캠페인 필터 없음, 예산 계수기 196 증가 |
