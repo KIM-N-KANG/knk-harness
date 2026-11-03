@@ -11,11 +11,13 @@
 | 삭제 | [4-2-5](../BACKEND/4-2-CONTRACT.md#4-2-5-삭제) | 204 완료 안내, 404 무음 성공. 다른 실패는 복구 |
 | 이어쓰기 | [4-2-6](../BACKEND/4-2-CONTRACT.md#4-2-6-이어쓰기) | `userInput`, 화면 마지막 턴의 `lastTurnId`, `realtimeImage`. 첫 턴도 `lastTurnId: null` 명시 |
 | 재생성 | [4-2-7](../BACKEND/4-2-CONTRACT.md#4-2-7-재생성) | 마지막 `turnId`, `realtimeImage`. 사용자 입력 재전송 없음 |
+| 입력 수정 | [4-2-19](../BACKEND/4-2-CONTRACT.md#4-2-19-입력-수정) | 대상 `turnId`, 앞뒤 공백을 뺀 고친 `userInput`, `userSource: typed`, `realtimeImage`. SSE는 이어쓰기와 같음 |
+| 포크 | [4-2-20](../BACKEND/4-2-CONTRACT.md#4-2-20-포크) | 복사할 마지막 `turnId`. 201 응답의 `id`로 새 채팅방 이동. 복사한 턴은 새 채팅 상세로 표시 |
 | 추천 | [4-2-8](../BACKEND/4-2-CONTRACT.md#4-2-8-선택지-생성) | 마지막 턴 대상. 200은 저장 완료 신호, 화면은 다시 받은 상세의 `choices` 사용 |
 | 공유 | [발급](../BACKEND/4-2-CONTRACT.md#4-2-9-공유-발급), [열람](../BACKEND/4-2-CONTRACT.md#4-2-10-공유-열람) | 발급 ID로 서비스 origin의 `/share/{shareId}` 생성. 열람은 스냅샷 |
 | 피드백 | [4-2-11](../BACKEND/4-2-CONTRACT.md#4-2-11-피드백-등록) | 앞뒤 공백을 뺀 `body`, 비어 있으면 null인 `email`, 고정 `platform` |
 | 이어받기 | [4-2-13](../BACKEND/4-2-CONTRACT.md#4-2-13-생성-스트림-재연결) | `generationId`의 이벤트를 처음부터 재수신. 생성과 과금 재시작 없음 |
-| 모델과 설정 | [목록](../BACKEND/4-2-CONTRACT.md#4-2-14-모델-목록), [변경](../BACKEND/4-2-CONTRACT.md#4-2-15-채팅-설정-변경) | `model` 또는 `longResponse` 중 바꾼 필드만 PATCH. 이어쓰기와 재생성 본문에 모델을 추가하지 않음 |
+| 모델과 설정 | [목록](../BACKEND/4-2-CONTRACT.md#4-2-14-모델-목록), [변경](../BACKEND/4-2-CONTRACT.md#4-2-15-채팅-설정-변경) | `model` 또는 `longResponse` 중 바꾼 필드만 PATCH. 이어쓰기, 재생성과 입력 수정 본문에 모델을 추가하지 않음 |
 
 `realtimeImage`는 기기 설정을 항상 명시한다. 서버 기본값 true에 의존하지 않는다. 피드백 `platform`은 웹 `WEB`, Android `ANDROID`이며 사용자에게 선택받지 않는다. 피드백 서버 상한 2000자는 UI의 500자 상한과 다르다.
 
@@ -47,9 +49,13 @@ POST 응답은 `Accept: text/event-stream`과 공용 `X-Manyak-*` 식별자를 �
 | 턴 있음 | 마지막 `turns[].choices` 사용. 선택지가 꺼져 있으면 숨김 |
 | `generatingTurn.type=CONTINUE` | `userInput` 사용자 버블과 진행 블록 |
 | `generatingTurn.type=REGENERATE` | `targetTurnId` 자리에 진행 블록 |
-| 402 | 회원 부족 시트, 웹 게스트 로그인 안내. 재생성은 기존 본문 유지 |
-| 409 `CHAT_TURN_IN_PROGRESS` | 입력 되돌리기, 상세 확인과 진행 중 생성 이어받기 |
+| `generatingTurn.type=EDIT` | `targetTurnId` 자리에 고친 `userInput`과 진행 블록. 그 뒤의 턴 숨김 |
+| 402 | 회원 부족 시트, 웹 게스트 로그인 안내. 재생성은 기존 본문, 입력 수정은 숨긴 턴과 고치던 입력 유지 |
+| 409 `CHAT_TURN_IN_PROGRESS` | 입력 되돌리기, 상세 확인과 진행 중 생성 이어받기. 입력 수정은 고치던 입력 유지 |
 | 409 `CHAT_TURN_STALE` | 입력 되돌리기, 최신 상세 표시 |
+| 입력 수정 404 | 대상 턴이 없거나 숨긴 턴. 상세 확인 후 실패 안내 |
+| 입력 수정 `error`의 `CHAT_TURN_STALE` | 저장 시점에 대화가 바뀜. 서버 환불, 상세 확인 후 실패 안내 |
+| 포크 401, 403, 404 | 현재 채팅 유지와 실패 안내 |
 | 409 `CHAT_ENDED` | 재생성 불가. 최신 상세 표시 |
 | 시작 전 503 `SERVICE_UNAVAILABLE` | 생성과 과금 없음. 실패 안내 |
 | 재연결 404, 503 또는 생성 ID 미확인 | 상세의 `generatingTurn.generationId`로 이어받기 시도 |
