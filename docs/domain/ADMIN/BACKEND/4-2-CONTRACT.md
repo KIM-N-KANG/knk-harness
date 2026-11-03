@@ -3949,7 +3949,142 @@ Authorization: Bearer {adminToken}
 
 <br>
 
-### 4-2-48 다른 도메인과의 경계
+### 4-2-48 요일과 시간대 활동
+
+| 항목 | 값 |
+|---|---|
+| 요청 | `GET /admin/users/activity-hours` |
+| 인증 | 관리자 |
+| 성공 | 200 |
+
+회원 가입, 채팅 메시지, 스토리 생성, 결제를 KST 요일과 시의 칸으로 나눠 범위 안의 수와 평균을 센다. 지표 정의는 제품 제약에, 집계는 처리 흐름에 있다. ([2-4 제품 제약](2-REQUIREMENTS.md#2-4-제품-제약), [4-1-27 요일과 시간대 활동](4-1-PIPELINES.md#4-1-27-요일과-시간대-활동))
+
+**1. 쿼리**
+
+| 필드명 | 타입 | 필수 | 의미와 기본값 |
+|---|---|---|---|
+| `from`, `to`, `days` | | 선택 | 대시보드 차트와 같음 |
+
+- 셋 다 없으면 오늘을 포함한 최근 30일이다.
+
+<br>
+
+**2. 응답**
+
+요일은 ISO 요일로 월요일이 `1`, 일요일이 `7`이다. 시는 KST `0`부터 `23`이다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `asOf`, `from`, `to` | | 대시보드 차트와 같음 |
+| `totalDays` | `integer` | 범위의 날짜 수 |
+| `weekdayDays` | `object[]` | 요일 오름차순 7항목 |
+| `weekdayDays[].weekday` | `integer` | 요일 |
+| `weekdayDays[].days` | `integer` | 범위 안에서 그 요일인 날짜 수<br>범위가 7일보다 짧으면 0인 요일이 있음 |
+| `metrics` | `object` | `signups`(회원 가입), `messages`(채팅 메시지), `stories`(스토리 생성), `payments`(결제) 네 키<br>값은 모두 아래 지표 구조 |
+
+지표 구조는 다음과 같다.
+
+| 필드명 | 타입 | 의미 |
+|---|---|---|
+| `total` | `integer` | 범위 안의 수 |
+| `dailyAverage` | `number` | `total`을 `totalDays`로 나눈 값 |
+| `cells` | `object[]` | 168항목<br>요일 오름차순, 같은 요일 안에서는 시 오름차순<br>수가 0인 칸도 있음 |
+| `cells[].weekday`, `cells[].hour` | `integer` | 칸의 요일과 시 |
+| `cells[].count` | `integer` | 범위 안 그 요일 그 시의 수 |
+| `cells[].average` | `number / null` | `count`를 그 요일의 `weekdayDays[].days`로 나눈 값<br>그 요일의 날짜 수가 0이면 `null` |
+| `weekdays` | `object[]` | 요일 오름차순 7항목 |
+| `weekdays[].weekday` | `integer` | 요일 |
+| `weekdays[].count` | `integer` | 그 요일 24칸의 합 |
+| `weekdays[].average` | `number / null` | `count`를 그 요일의 날짜 수로 나눈 그 요일 하루 평균<br>그 요일의 날짜 수가 0이면 `null` |
+| `hours` | `object[]` | 시 오름차순 24항목 |
+| `hours[].hour` | `integer` | 시 |
+| `hours[].count` | `integer` | 그 시 7칸의 합 |
+| `hours[].average` | `number` | `count`를 `totalDays`로 나눈 하루 평균 |
+
+- 모든 값은 팀 계정 제외 목록을 적용한다.
+
+<br>
+
+**3. 실패 응답**
+
+대시보드 차트와 같다.
+
+<details>
+<summary><b>요청과 응답 예시</b></summary>
+
+<br>
+
+**1) Request**
+
+```http
+GET /api/v1/admin/users/activity-hours?from=2026-10-05&to=2026-11-01
+Authorization: Bearer {adminToken}
+```
+
+**2) 200 Response body**
+
+28일 범위라 요일마다 날짜 수가 4다. 예시에는 `weekdayDays`의 요일 2개, 지표마다 `cells`의 칸 2개와 `weekdays`의 요일 1개와 `hours`의 시 1개만 표시했다.
+
+```json
+{
+  "asOf": "2026-11-03T11:10:00Z",
+  "from": "2026-10-05",
+  "to": "2026-11-01",
+  "totalDays": 28,
+  "weekdayDays": [
+    { "weekday": 1, "days": 4 },
+    { "weekday": 7, "days": 4 }
+  ],
+  "metrics": {
+    "signups": {
+      "total": 714,
+      "dailyAverage": 25.5,
+      "cells": [
+        { "weekday": 1, "hour": 0, "count": 6, "average": 1.5 },
+        { "weekday": 1, "hour": 21, "count": 13, "average": 3.25 }
+      ],
+      "weekdays": [{ "weekday": 1, "count": 98, "average": 24.5 }],
+      "hours": [{ "hour": 21, "count": 63, "average": 2.25 }]
+    },
+    "messages": {
+      "total": 48216,
+      "dailyAverage": 1722.0,
+      "cells": [
+        { "weekday": 1, "hour": 0, "count": 512, "average": 128.0 },
+        { "weekday": 1, "hour": 21, "count": 1180, "average": 295.0 }
+      ],
+      "weekdays": [{ "weekday": 1, "count": 6620, "average": 1655.0 }],
+      "hours": [{ "hour": 21, "count": 8204, "average": 293.0 }]
+    },
+    "stories": {
+      "total": 1400,
+      "dailyAverage": 50.0,
+      "cells": [
+        { "weekday": 1, "hour": 0, "count": 9, "average": 2.25 },
+        { "weekday": 1, "hour": 21, "count": 27, "average": 6.75 }
+      ],
+      "weekdays": [{ "weekday": 1, "count": 190, "average": 47.5 }],
+      "hours": [{ "hour": 21, "count": 182, "average": 6.5 }]
+    },
+    "payments": {
+      "total": 42,
+      "dailyAverage": 1.5,
+      "cells": [
+        { "weekday": 1, "hour": 0, "count": 0, "average": 0.0 },
+        { "weekday": 1, "hour": 21, "count": 2, "average": 0.5 }
+      ],
+      "weekdays": [{ "weekday": 1, "count": 5, "average": 1.25 }],
+      "hours": [{ "hour": 21, "count": 7, "average": 0.25 }]
+    }
+  }
+}
+```
+
+</details>
+
+<br>
+
+### 4-2-49 다른 도메인과의 경계
 
 | 도메인 | ADMIN이 제공하는 것 | ADMIN이 사용하는 것 |
 |---|---|---|
