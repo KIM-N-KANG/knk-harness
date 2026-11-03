@@ -33,7 +33,7 @@
 | 제작 안내 절차와 계약 | [common/src/main/java/app/manyak/common/presentation/story](../../../../../../manyak-android/common/src/main/java/app/manyak/common/presentation/story), [common/src/main/java/app/manyak/common/domain/story](../../../../../../manyak-android/common/src/main/java/app/manyak/common/domain/story) |
 | 제작 안내 대화창 | [designsystem/src/main/java/app/manyak/designsystem/component](../../../../../../manyak-android/designsystem/src/main/java/app/manyak/designsystem/component) |
 | 제작 검증 | [create/src/test/java/app/manyak/create](../../../../../../manyak-android/create/src/test/java/app/manyak/create) |
-| 홈 | [home/src/main/java/app/manyak/home](../../../../../../manyak-android/home/src/main/java/app/manyak/home) |
+| 홈과 탐색 | [home/src/main/java/app/manyak/home](../../../../../../manyak-android/home/src/main/java/app/manyak/home), [home/src/main/java/app/manyak/home/explore](../../../../../../manyak-android/home/src/main/java/app/manyak/home/explore) |
 | 디자인 토큰 | [DESIGN.md](../../../../../../manyak-android/DESIGN.md) |
 
 <br>
