@@ -200,30 +200,33 @@
 
 ### 2-1-3 개요
 
-서비스의 핵심 지표 여덟 개를 선택 기간 합계와 이전 기간 대비 증감으로 보고 지표 하나의 일별 추이를 본다. 기본 기간은 최근 30일이다.
+서비스의 핵심 지표 여덟 개를 선택 기간 합계, 이전 기간 대비 증감, 일별 흐름으로 보고 지표 하나의 일별 추이를 본다. 기본 기간은 최근 30일이다.
 
 **1. 요약 카드**
 
 카드는 8개이고 순서는 오늘 활성 사용자, 가입자, 앱 설치(Android), 결제 금액 (환불 포함), 스토리 생성, 채팅 시작, 턴, AI 비용이다. 카드를 누르면 아래 표의 화면으로 이동한다.
 
-| 카드 | 큰 숫자 | 증감의 이전 값 | 작은 줄 | 단위 | 이동 |
-|---|---|---|---|---|---|
-| 오늘 활성 사용자 | 분석 지표의 `todayActiveUsers.total` | 어제 `daily` 항목의 `activeUsers.total` | 웹과 앱의 오늘 값 | 명 | 사용자 화면의 활동 탭 |
-| 가입자 | 차트의 `totals.joined` | `previous.totals.joined` | 오늘 `members.joinedToday`, 누적 `members.total` | 명 | 탈퇴 회원을 포함한 회원 목록 |
-| 앱 설치(Android) | 설치 지표 `daily` 가운데 선택 기간 안 날짜의 `installs` 합 | 직전 기간 날짜의 `installs` 합 | 누적 `totalInstalls` | 대 | 유입 화면의 앱 탭 |
-| 결제 금액 (환불 포함) | `totals.revenue` | `previous.totals.revenue` | 오늘 `payments.amountKrwToday`, 누적 `payments.amountKrwTotal` | 원 | 결제 목록 |
-| 스토리 생성 | `totals.stories` | `previous.totals.stories` | 오늘 `stories.createdToday`, 누적 `stories.total` | 개 | 스토리 목록 |
-| 채팅 시작 | `totals.chats` | `previous.totals.chats` | 오늘 `chats.startedToday`, 누적 `chats.startedTotal` | 개 | 채팅 목록 |
-| 턴 | `totals.turns` | `previous.totals.turns` | 오늘 `chats.turnsToday`, 누적 `chats.turnsTotal` | 턴 | 턴 수 순 채팅 목록 |
-| AI 비용 | AI 비용의 `totals.costKrw` | 직전 기간으로 다시 요청한 AI 비용의 `totals.costKrw` | 턴당 원가 `totals.costPerTurnKrw` | 원 | 운영 화면의 AI 비용 탭 |
+| 카드 | 큰 숫자 | 증감의 이전 값 | 작은 줄 | 미니 그래프 | 단위 | 이동 |
+|---|---|---|---|---|---|---|
+| 오늘 활성 사용자 | 분석 지표의 `todayActiveUsers.total` | 어제 `daily` 항목의 `activeUsers.total` | 웹과 앱의 오늘 값 | 분석 지표 `daily`의 `activeUsers.total` | 명 | 사용자 화면의 활동 탭 |
+| 가입자 | 차트의 `totals.joined` | `previous.totals.joined` | 오늘 `members.joinedToday`, 누적 `members.total` | 차트 `daily`의 `joined` | 명 | 탈퇴 회원을 포함한 회원 목록 |
+| 앱 설치(Android) | 설치 지표 `daily` 가운데 선택 기간 안 날짜의 `installs` 합 | 직전 기간 날짜의 `installs` 합 | 누적 `totalInstalls` | 설치 지표 `daily`의 `installs` | 대 | 유입 화면의 앱 탭 |
+| 결제 금액 (환불 포함) | `totals.revenue` | `previous.totals.revenue` | 오늘 `payments.amountKrwToday`, 누적 `payments.amountKrwTotal` | 차트 `daily`의 `revenue` | 원 | 결제 목록 |
+| 스토리 생성 | `totals.stories` | `previous.totals.stories` | 오늘 `stories.createdToday`, 누적 `stories.total` | 차트 `daily`의 `stories` | 개 | 스토리 목록 |
+| 채팅 시작 | `totals.chats` | `previous.totals.chats` | 오늘 `chats.startedToday`, 누적 `chats.startedTotal` | 차트 `daily`의 `chats` | 개 | 채팅 목록 |
+| 턴 | `totals.turns` | `previous.totals.turns` | 오늘 `chats.turnsToday`, 누적 `chats.turnsTotal` | 차트 `daily`의 `turns` | 턴 | 턴 수 순 채팅 목록 |
+| AI 비용 | AI 비용의 `totals.costKrw` | 직전 기간으로 다시 요청한 AI 비용의 `totals.costKrw` | 턴당 원가 `totals.costPerTurnKrw` | 선택 기간 AI 비용 `daily`의 날짜별 비용 | 원 | 운영 화면의 AI 비용 탭 |
 
 | 항목 | 규칙 |
 |---|---|
-| 카드 틀 | 여덟 카드 모두 위에서부터 제목 줄(제목과 "?"), 큰 숫자, 증감, 비교 안내, 작은 줄 순서의 같은 배치<br>큰 숫자는 줄을 바꾸지 않고 작은 줄은 한 줄이며 넘치면 말줄임표로 줄이고 마우스를 올리면 전체를 보임<br>오늘 활성 사용자 카드의 작은 줄은 웹과 앱 값을 한 줄로 둠 |
+| 카드 틀 | 여덟 카드 모두 위에서부터 제목 줄(제목과 "?"), 큰 숫자, 증감, 비교 안내, 작은 줄 순서의 같은 배치<br>큰 숫자, 증감, 비교 안내의 오른쪽에 미니 그래프를 두고 작은 줄은 카드 폭 전체<br>큰 숫자는 줄을 바꾸지 않고 천 단위 쉼표와 작은 글자의 단위로 쓰며 AI 비용은 원 단위로 반올림<br>작은 줄은 한 줄이며 넘치면 말줄임표로 줄이고 마우스를 올리면 전체를 보임<br>오늘 활성 사용자 카드의 작은 줄은 웹과 앱 값을 한 줄로 둠 |
+| 미니 그래프 | 선택 기간의 일별 값을 잇는 선 하나이고 축, 눈금, 점, 툴팁이 없음<br>색은 일별 추이의 선과 같음<br>카드의 숫자와 같은 응답의 일별 값을 쓰고 그래프만을 위한 요청을 보내지 않음<br>준비 중 날짜와 값이 없는 날짜는 선을 끊음<br>값이 있는 날짜가 둘 미만이거나 응답이 없거나 실패하면 그래프 자리를 비우고 숫자는 그대로<br>화면 읽기 프로그램에는 숨김 |
 | 증감 | 큰 숫자 아래 줄에 방향 기호와 증감률<br>증감률은 큰 숫자에서 이전 값을 뺀 값을 이전 값으로 나눈 백분율이고 소수 첫째 자리까지<br>이전 값이 0이면 증감률 대신 이전 값 없음 문구<br>두 값이 같으면 변동 없음 문구<br>증감 아래 작은 글자로 비교 안내 |
 | 직전 기간 | 서버 DB 카드는 차트 응답의 `previous.from`부터 `previous.to`까지<br>AI 비용 카드는 차트 응답의 `previous.from`과 `previous.to`로 AI 비용을 한 번 더 요청<br>앱 설치 카드는 선택 기간과 길이가 같고 선택 기간 첫날의 전날에 끝나는 Play 날짜 범위<br>오늘 활성 사용자 카드는 어제 |
-| 기간 적용 | 서버 DB 카드 다섯 장, 앱 설치 카드, AI 비용 카드의 큰 숫자에 페이지의 기간을 적용<br>오늘 활성 사용자 카드는 기간과 무관하며 분석 지표를 `from`은 KST 어제, `to`는 KST 오늘로 요청 |
+| 기간 적용 | 서버 DB 카드 다섯 장, 앱 설치 카드, AI 비용 카드의 큰 숫자에 페이지의 기간을 적용<br>오늘 활성 사용자 카드의 큰 숫자와 증감은 기간과 무관함<br>여덟 카드의 미니 그래프는 페이지의 기간 |
+| 오늘 활성 사용자 요청 | 분석 지표를 한 번 요청하고 `from`은 선택 기간 시작일과 KST 어제 가운데 이른 날, `to`는 선택 기간 끝날과 KST 오늘 가운데 늦은 날<br>큰 숫자와 증감은 그 응답의 오늘과 어제 값, 미니 그래프는 그 응답에서 선택 기간 안 날짜<br>그 범위가 366일을 넘으면 `from`은 KST 어제, `to`는 KST 오늘로 요청하고 이 카드의 미니 그래프를 비움 |
 | 기간 합계 | 서버 DB 카드는 응답의 `totals`와 `previous.totals`를 쓰고 일별 값을 더해 만들지 않음 |
+| AI 비용 일별 비용 | 운영 화면 AI 비용 탭의 기능별 일별 비용과 같은 규칙으로 그날 `costKrw`가 `null`이 아닌 항목을 모두 더한 값<br>그날 항목이 모두 `null`이거나 `pendingDates`의 날짜이면 선을 끊음 |
 | AI 비용 집계 | 선택 기간 응답에 `pendingDates`가 있으면 큰 숫자와 증감 자리에 준비 중 문구를 두고 60초 뒤 그 요청만 다시 보냄<br>직전 기간 응답에 `pendingDates`가 있으면 증감 자리에만 준비 중 문구를 두고 같은 규칙으로 다시 요청<br>직전 기간 응답에 `expiredDates`가 있으면 증감률 대신 이전 값 없음 문구<br>선택 기간 응답이 실패하면 이 카드만 실패 상태와 다시 시도이고 다른 카드는 그대로<br>선택 기간 요청은 수익 화면 마진의 AI 비용 요청과 같은 응답을 함께 씀 |
 | 도움말 | 카드 제목 옆 "?" 툴팁에 지표 정의 표의 정의<br>가입자 카드는 정의 아래에 현재 회원 수(`members.active`)와 누적 탈퇴 수(`members.withdrawn`) 도움말<br>오늘 활성 사용자와 앱 설치 카드는 정의 아래에 출처와 지연 도움말 |
 | 앱 설치 날짜 | 날짜는 `YYYY-MM-DD` 문자열로 비교하고 Play 기준 태평양 시간 날짜를 KST 기간과 그대로 맞춰 생기는 시간대 차이는 수용<br>끝 날짜가 보고서의 마지막 날짜(`asOf`)보다 늦어도 `daily`에 있는 날짜만 더함<br>선택 기간에 더할 날짜가 없으면 큰 숫자 자리에 보고서 반영 전 문구 |
