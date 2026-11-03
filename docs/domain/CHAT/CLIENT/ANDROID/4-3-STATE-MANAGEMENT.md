@@ -13,6 +13,7 @@
 | 진행 중 숨김 | ViewModel의 대신하는 턴 ID와 입력 수정 여부. 확정, 실패와 정리에서 해제 |
 | 포크 요청 | ViewModel 잠금. 원래 방이 스택에 남아 성공해도 이동 효과 뒤 해제 |
 | 모델 시트와 헤더 숨김 | 화면 rememberSaveable |
+| 메뉴의 이프 내역 | 채팅방 ViewModel. 메뉴 화면이면 없음. 구성 변경 유지, 돌아가기와 시트 닫기에서 비움. 프로세스 재시작 뒤 메뉴부터 |
 | 뷰어 URL | 화면 ViewModel. 라우트와 저장 상태에 넣지 않음. 상세에서 이미지가 사라지면 닫기 |
 | 이미지, 추천과 입력 모드 | 기기 DataStore의 `chat_realtime_image_enabled`, `chat_choices_enabled`, `chat_input_mode`. UserScopedStore 비참여 |
 | 설정 읽기 | 진입 시 한 번 읽고 화면 상태가 기준. 저장 실패가 방금 선택을 되돌리지 않음 |

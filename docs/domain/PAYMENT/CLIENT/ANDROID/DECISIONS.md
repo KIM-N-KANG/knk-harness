@@ -51,3 +51,21 @@
 | 이유 | 화면 기능끼리 직접 참조하지 않는 규칙을 지키면서 출석 구현을 한 곳에 둔다. 절차를 두 ViewModel에 되풀이하면 겹친 요청 거르기와 닫기 잠금이 갈라질 수 있고, 별도 Gradle 모듈은 클래스 하나에 과하다. `common`은 `analytics`에 의존하지 않아 분석은 ViewModel에 남긴다. 저장 경로를 버튼 저장과 같게 두면 서버 초안과 기기 안 초안, 충돌과 실패 안내를 새로 만들지 않는다. 퍼널을 백스택에 남기면 돌아와 같은 퍼널을 다시 여는 동작이 생기는데, 웹과 같이 이어서 만들기는 제작 탭 카드로만 한다. |
 | 영향 | 이프 충전 화면의 출석과 시트의 출석이 같은 구현을 쓴다. 출석 결과 문구는 `my`와 `designsystem`에 같은 값으로 두 벌 있다. 간편 제작에서 충전으로 떠나면 퍼널의 편집 상태는 사라지고 저장한 초안만 남는다. 제작 탭으로 떠난 뒤 확정된 완성 실패는 [A-077](../../../STORY/CLIENT/ANDROID/DECISIONS.md#a-077)대로 한 문구로 알린다. |
 | 근거 | [공통 이프 부족 처리](../2-2-REQUIREMENTS.md#2-2-5-이프-부족과-입력-보존), [KNK-1845](https://kimandkang.atlassian.net/browse/KNK-1845), [KNK-1844](https://kimandkang.atlassian.net/browse/KNK-1844), [KNK-1845 계획](../../../../../../manyak-android/docs/plans/knk-1845-credit-shortage-sheet.md) |
+
+<br>
+
+<a id="a-092"></a>
+<a id="a-092-이프-내역의-조회-계약과-절차를-common에-행과-목록-표현을-designsystem에-두고-채팅-메뉴와-충전-화면이-함께-쓰기"></a>
+
+**A-092. 이프 내역의 조회 계약과 절차를 common에, 행과 목록 표현을 designsystem에 두고 채팅 메뉴와 충전 화면이 함께 쓰기**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-04 |
+| 상태 | Accepted |
+| 배경 | 공통 결정 [C-005](../../../CHAT/CLIENT/DECISIONS.md#c-005)가 채팅 메뉴 시트 안에서 이프 충전 내역 탭과 같은 행으로 내역을 보이게 했고, 머리글에 새로고침을 둔다. 내역 API, entity와 행 UI는 `my`에만 있었고 채팅방(`chat`)은 `my`를 참조할 수 없다. 웹은 내역 목록을 my 공용 위치로 옮겨 두 화면이 같은 컴포넌트를 쓴다(KNK-2022). |
+| 채택 | 내역 줄 entity와 `CreditTransactionReader` 조회 계약을 `common`으로 올리고 `my`의 `CreditRepository`가 상속해 같은 구현을 바인딩한다. 목록 상태(`CreditHistoryUiState`), 상태 전이와 첫 페이지, 다음 페이지, 다시 읽기 절차(`CreditHistoryController`)는 [A-081](#a-081)의 부족 절차처럼 `common`에 두고 각 ViewModel 상태에 올린다. 사유 라벨, 대상, 날짜와 금액 문구도 `common`이 붙인다. 행, 골격, 빈 상태, 오류와 다음 페이지 자리, 목록 끝 감지는 값과 콜백만 받는 `designsystem` 표현으로 옮긴다. 채팅 메뉴의 내역 상태는 채팅방 ViewModel이 들고, 떠날 때 진행 중인 조회를 취소한다. 내역 화면의 뒤로가기는 시트 내용의 `BackHandler`가 받는다. |
+| 대안 | 내역 전용 Gradle 모듈을 만드는 안은 entity 하나와 화면 둘을 위해 모듈 경계와 의존 검사를 늘려 채택하지 않았다. `app`이 `my`의 내역 화면을 채팅 메뉴에 끼워 넣는 안은 하위 UI 전용 ViewModel이 필요해 채택하지 않았다. 시트의 `shouldDismissOnBackPress`를 내역에서 끄는 안은 M3 1.4 시트 창이 만들 때의 값만 읽어 바꿔도 반영되지 않았다. |
+| 이유 | 화면 기능끼리 직접 참조하지 않는 규칙을 지키면서 내역 조회와 표현을 한 곳에 둔다. 상태 전이를 공용 순수 함수로 두면 두 ViewModel의 reduce가 같은 규칙을 쓴다. 채팅방은 생성과 재연결 입력을 막지 않아야 해서 조회를 화면 범위의 자식 작업으로 돌린다. |
+| 영향 | 충전 화면의 내역 조회도 같은 절차를 쓰며 첫 페이지와 다음 페이지가 화면 입력을 막지 않는다. 충전 화면의 당겨서 새로고침도 같은 다시 읽기 상태를 쓴다. 원장 사유와 내역 문구 리소스가 `my`에서 `common`과 `designsystem`으로 옮겨졌다. 잔액 카드는 바탕색을 받아 채팅 메뉴 시트에서 시트 위 보조 채움을 쓴다. |
+| 근거 | [공통 내역 진입](../2-2-REQUIREMENTS.md#2-2-4-보상과-내역), [CHAT Android 3-3](../../../CHAT/CLIENT/ANDROID/3-3-LAYOUT.md#3-3-1-배치와-접근성), [KNK-2023](https://kimandkang.atlassian.net/browse/KNK-2023) |

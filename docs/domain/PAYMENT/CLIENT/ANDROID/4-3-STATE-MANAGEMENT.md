@@ -9,7 +9,7 @@
 | 정책 | 앱 Singleton StateFlow, CompositionLocal 전달. 최초 실패는 자리표시, 기존 값이 있으면 유지 |
 | 체험 | 회원 귀속 메모리 StateFlow. 디스크 저장 없음. 계정 종료 정리에 참여하여 다음 회원과 격리 |
 | 잔액과 출석 여부 | 회원 프로필 구독. 충전 ViewModel이 화면 상태로 전달 |
-| 내역과 커서 | 충전 ViewModel 수명. 구성 변경 뒤 유지, 새 ViewModel은 다시 조회 |
+| 내역과 커서 | 충전 ViewModel 수명. 구성 변경 뒤 유지, 새 ViewModel은 다시 조회. 채팅 메뉴의 내역은 CHAT 상태 관리 |
 | 초기 탭 | 목적지의 내역 여부로 초기화 |
 | 사용자가 고른 탭 | `rememberSaveable` 화면 상태. 목적지에 다시 쓰지 않음 |
 | 부족 시트와 요청 잠금 | 각 채팅 또는 제작 ViewModel 상태. 구성 변경 유지, 해당 화면 종료와 프로세스 종료 뒤 복원하지 않음 |
