@@ -70,11 +70,9 @@ flowchart TD
     Edit["입력 수정 버튼"] --> Editor["그 턴 자리의 편집기"]
     Editor -->|취소| Original["원래 입력 표시"]
     Editor -->|보내기| Usable["동의와 사용 가능 여부 확인"]
-    Usable --> Later{"뒤에 이어진 턴"}
-    Later -->|있음| Confirm["사라질 턴 수 확인"]
+    Usable --> Confirm["수정 확인. 뒤 턴이 있으면 사라질 턴 수"]
     Confirm -->|그대로 두기| Editor
     Confirm -->|수정하기| Stream["그 턴 자리에 고친 입력과 진행 응답, 뒤 턴 숨김"]
-    Later -->|없음| Stream
     Stream --> Result{"수신 결과"}
     Result -->|완료| Commit["그 턴부터 새 턴 하나로 교체"]
     Result -->|실패| Restore["숨긴 턴과 편집기의 고치던 입력 복구"]
