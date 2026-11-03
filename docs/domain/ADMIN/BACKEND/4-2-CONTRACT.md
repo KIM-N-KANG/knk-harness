@@ -1832,10 +1832,11 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 20일 이하<br>`to`가 확정일이면 41일 이하 |
 | `days` | `integer` | 선택 | `7`만 허용<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
+- `to`가 확정일(오늘에서 2일 이전)인 범위는 조회마다 따로 받는다. 처음 요청할 때 비용 예산이 모자라면 나머지 조회를 받을 때까지 503이고 다 받은 값은 다시 받지 않는다.
 
 <br>
 
@@ -1857,7 +1858,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 20일 초과 |
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 기간 상한 초과 |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <details>
@@ -1907,7 +1908,7 @@ Authorization: Bearer {adminToken}
 |---|---|---|---|
 | `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
 | `storyId` | `string` | 선택 | 대상 스토리 공개 식별자<br>생략하면 적용한 캠페인과 값이 같은 캠페인 목록 항목의 `storyId`<br>그것도 없으면 400 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하<br>`to`가 확정일이면 35일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
@@ -1932,7 +1933,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과, `storyId`가 UUID 형식이 아님, 대상 스토리가 요청과 목록 모두에 없음 |
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 기간 상한 초과, `storyId`가 UUID 형식이 아님, 대상 스토리가 요청과 목록 모두에 없음 |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <br>
@@ -3036,10 +3037,11 @@ Authorization: Bearer {adminToken}
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `campaign` | `string` | 선택 | 캠페인 추이와 같음 |
-| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하 |
+| `from`, `to` | `string` | 선택 | 분석 지표와 같은 규칙<br>기간은 1일 이상 31일 이하<br>`to`가 확정일이면 62일 이하 |
 | `days` | `integer` | 선택 | `7`, `30` 중 하나<br>`from`, `to`와 함께 보내면 400 |
 
 - 셋 다 없으면 오늘을 포함한 최근 7일이다.
+- `to`가 확정일(오늘에서 2일 이전)인 범위는 조회마다 따로 받는다. 처음 요청할 때 비용 예산이 모자라면 나머지 조회를 받을 때까지 503이고 다 받은 값은 다시 받지 않는다.
 
 <br>
 
@@ -3060,7 +3062,7 @@ Authorization: Bearer {adminToken}
 
 | 상태 | `code` | 조건 |
 |---|---|---|
-| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 31일 초과 |
+| 400 | `BAD_REQUEST` | 캠페인 추이와 같은 오류, 기간 상한 초과 |
 | 503 | `SERVICE_UNAVAILABLE` | 캠페인 추이와 같음 |
 
 <details>
