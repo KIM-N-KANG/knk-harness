@@ -354,14 +354,14 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | --------------------------------------- | -------- | --------------------- | ---------------------------------------------------- |
 | `client_storyList_viewed`               | P0       | 홈 진입 | 없음                                                 |
 | `client_storyList_createButton_clicked` | P0       | 제작 탭의 제작 CTA 클릭(만들고 있는 스토리 5개 상한으로 이동하지 않아도 발생) | `source` (string, 필수: `fab` / `emptyState`. KNK-1355부터 웹도 앱처럼 빈 목록에 FAB만 두어 `fab`만 발화) |
-| `client_storyList_storyCard_clicked`    | P1       | 홈, 제작, 탐색 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created` / `explore`) |
-| `client_storyList_storyCard_impressed`  | P1       | 홈, 제작, 탐색 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created` / `explore`) |
+| `client_storyList_storyCard_clicked`    | P1       | 홈, 제작, 탐색, 검색 결과 스토리 카드 클릭 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created` / `explore` / `search`) |
+| `client_storyList_storyCard_impressed`  | P1       | 홈, 제작, 탐색, 검색 결과 스토리 카드 유효 노출 | `story_id` (string, 필수), `position` (number, 선택), `section` (`original` / `created` / `explore` / `search`) |
 | `client_storyList_loginButton_clicked` `구현` | P1 | 홈, 채팅, 제작, 탐색 헤더 로그인 버튼 클릭(게스트) | 없음 |
 | `client_storyList_submissionCard_clicked` | P1 | 제작 탭 검수 제출본 카드의 수정하기, 등록 취소, 삭제 선택 | `submission_id` (string, 필수), `status` (string, 필수: `pending` / `rejected` / `failed`), `action` (string, 필수: `edit` / `cancel` / `delete`) |
 
 `client_storyList_loginButton_clicked`는 게스트가 홈, 채팅, 제작, 탐색의 공통 헤더에서 로그인 화면으로 이동한 유입을 구분한다. 기존 이벤트명과 대시보드 호환성을 유지하기 위해 이름은 바꾸지 않으며, 마이 본문발 유입(`client_account_loginButton_clicked`)과 분리해 진입점별 전환을 비교한다.
 
-제작하기 CTA는 `/studio`의 FAB이다(KNK-988, URL은 KNK-994). 과거 빈 목록 상태 버튼과 구분하던 `source`(`fab`: FAB, `emptyState`: 빈 목록 버튼)는 프로퍼티 계약을 유지하되, 빈 목록 버튼을 없앤 KNK-1355 이후에는 `fab`만 발화한다. `client_storyList_viewed`는 전체 방문 퍼널의 시작점인 홈 진입을 계속 측정하고, 카드 이벤트는 `section`으로 홈(`original`), 제작 탭의 내 스토리(`created`)와 탐색 탭(`explore`)을 구분한다. 웹 홈 카드의 `position`은 섹션 안에서 0부터 센 순번이라 섹션끼리 겹친다. 탐색 카드의 `position`은 이어 붙인 전체 목록의 순번이며 순서는 진입마다 바뀐다.
+제작하기 CTA는 `/studio`의 FAB이다(KNK-988, URL은 KNK-994). 과거 빈 목록 상태 버튼과 구분하던 `source`(`fab`: FAB, `emptyState`: 빈 목록 버튼)는 프로퍼티 계약을 유지하되, 빈 목록 버튼을 없앤 KNK-1355 이후에는 `fab`만 발화한다. `client_storyList_viewed`는 전체 방문 퍼널의 시작점인 홈 진입을 계속 측정하고, 카드 이벤트는 `section`으로 홈(`original`), 제작 탭의 내 스토리(`created`), 탐색 탭(`explore`)과 스토리 검색 결과(`search`, 웹만 KNK-2030)를 구분한다. 검색어는 사용자가 입력한 원문이라 어떤 이벤트에도 싣지 않는다([§7](#7-개인정보와-원문-수집-원칙)). 웹 홈 카드의 `position`은 섹션 안에서 0부터 센 순번이라 섹션끼리 겹친다. 탐색 카드의 `position`은 이어 붙인 전체 목록의 순번이며 순서는 진입마다 바뀐다. 검색 결과 카드의 `position`도 이어 붙인 결과 목록의 순번이다.
 
 <br>
 

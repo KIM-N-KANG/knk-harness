@@ -9,6 +9,9 @@
 | 위치 | 값과 수명 |
 |---|---|
 | Query 캐시 | 탐색 무한 목록. 저절로 다시 읽지 않고 문서 수명 동안 보존한다. 다른 탭에서 하단 탭으로 들어올 때 지우고 탐색 스크롤 기억을 맨 위로 되돌린다 |
+| Query 캐시 | 검색어별 검색 결과 무한 목록. 공용 Query 정책의 수명을 따른다 |
+| 주소 | 제출한 검색어 `q`. 검색 결과의 기준이며 입력란은 진입 때 이 값으로 채운다 |
+| localStorage | `manyak:recent-searches`, 최신순 검색어 문자열 배열 최대 10개. 같은 탭과 다른 탭의 변경을 구독한다. 비면 키를 지우고, 형식이 다르면 빈 목록. 접근 실패는 저장을 건너뛴다 |
 | IndexedDB | Dexie `manyak-creation`의 pendingCreations, storyCompletions, metadata |
 | 편집 테이블 | KEYWORD_DRAFT, STORY_DRAFT, STORYLINE_GENERATION. GENERAL_DRAFT는 서버 이관 전 레거시만 남음 |
 | 완성 테이블 | requestId별 STORY_COMPLETION |
