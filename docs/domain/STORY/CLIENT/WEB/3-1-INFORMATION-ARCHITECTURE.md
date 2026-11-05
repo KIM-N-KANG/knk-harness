@@ -11,6 +11,7 @@
 | 홈 | `/` | 게스트와 회원 |
 | 제작 | `/studio` | 게스트와 회원 |
 | 탐색 | `/explore` | 게스트와 회원 |
+| 스토리 검색 | `/explore/search`, 검색 후 `/explore/search?q=...` | 게스트와 회원. 2자 미만인 `q`는 검색 전 화면 |
 | 방식 선택 | `/studio/story` | 게스트와 회원 |
 | 간편 제작 | `/studio/story/simple` | 회원 또는 게스트. 게스트 동의는 생성 직전 |
 | 일반 제작 | `/studio/story/general` | 동의를 마친 회원 |

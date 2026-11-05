@@ -12,6 +12,7 @@ API 경로는 `/api/v1` 기준이다. 인증, 응답 전체 필드와 서버 제
 |---|---|---|
 | 홈 | [홈 목록](../BACKEND/4-2-CONTRACT.md#4-2-34-홈-목록) | `GET /stories/home`. 섹션과 카드는 응답 순서 유지, 카드가 없는 섹션 제외. 기본 섹션은 `id`가 null이라 이름과 순번으로 구분 |
 | 탐색 | [탐색 목록](../BACKEND/4-2-CONTRACT.md#4-2-33-탐색-목록) | `GET /stories/explore`. 새 순서는 `cursor` 없이, 다음 페이지는 받은 `nextCursor`. `nextCursor`가 null이면 끝 |
+| 검색 | [검색](../BACKEND/4-2-CONTRACT.md#4-2-3-검색) | `GET /stories/search`. 앞뒤 공백을 뺀 2자 이상만 요청. 다음 페이지는 같은 `q`와 받은 `nextCursor`. 항목이 비어도 `nextCursor`가 있으면 다음 페이지가 남음. 400과 503은 조회 실패로 표시 |
 | 장르와 태그 | [제공 장르](../BACKEND/4-2-CONTRACT.md#4-2-4-제공-장르), [간편 태그](../BACKEND/4-2-CONTRACT.md#4-2-9-간편-제작-태그-목록) | 전체와 대표 목록, 질의 결과 및 인물 특징 |
 | 상세와 소유 목록 | [상세](../BACKEND/4-2-CONTRACT.md#4-2-7-상세), [일괄 조회](../BACKEND/4-2-CONTRACT.md#4-2-6-일괄-조회) | 회원 내 스토리는 `GET /users/me/stories`, 게스트 소유 ID는 ACCOUNT에서 관리 |
 | 삭제와 좋아요 | [삭제](../BACKEND/4-2-CONTRACT.md#4-2-8-삭제), [좋아요](../BACKEND/4-2-CONTRACT.md#4-2-21-좋아요) | 서버 소유권과 좋아요 결과 사용 |
