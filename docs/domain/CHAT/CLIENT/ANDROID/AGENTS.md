@@ -27,11 +27,11 @@
 
 | 구성 | 위치 |
 |---|---|
-| 채팅 | [chat/src/main/java/app/manyak/chat](../../../../../../manyak-android/chat/src/main/java/app/manyak/chat) |
-| 생성 추적 | [chat/src/main/java/app/manyak/chat/room/presentation/ChatGenerationFollow.kt](../../../../../../manyak-android/chat/src/main/java/app/manyak/chat/room/presentation/ChatGenerationFollow.kt) |
-| 피드백 | [my/src/main/java/app/manyak/my/feedback](../../../../../../manyak-android/my/src/main/java/app/manyak/my/feedback) |
-| 공용 파서와 표현 | [designsystem/src/main/java/app/manyak/designsystem](../../../../../../manyak-android/designsystem/src/main/java/app/manyak/designsystem) |
-| 검증 | [chat/src/test/java/app/manyak/chat](../../../../../../manyak-android/chat/src/test/java/app/manyak/chat) |
+| 채팅 | [feature/chat/src/main/java/app/manyak/chat](../../../../../../manyak-android/feature/chat/src/main/java/app/manyak/chat) |
+| 생성 추적 | [feature/chat/src/main/java/app/manyak/chat/room/presentation/ChatGenerationFollow.kt](../../../../../../manyak-android/feature/chat/src/main/java/app/manyak/chat/room/presentation/ChatGenerationFollow.kt) |
+| 피드백 | [feature/my/src/main/java/app/manyak/my/feedback](../../../../../../manyak-android/feature/my/src/main/java/app/manyak/my/feedback) |
+| 공용 파서와 표현 | [core/designsystem/src/main/java/app/manyak/designsystem](../../../../../../manyak-android/core/designsystem/src/main/java/app/manyak/designsystem) |
+| 검증 | [feature/chat/src/test/java/app/manyak/chat](../../../../../../manyak-android/feature/chat/src/test/java/app/manyak/chat) |
 | 디자인 토큰 | [DESIGN.md](../../../../../../manyak-android/DESIGN.md) |
 
 <br>

@@ -140,3 +140,22 @@
 | 이유 | Crashlytics 플러그인은 `variant.isMinifyEnabled`로 업로드 여부를 정하는데 `optimization` DSL로 켠 R8을 그 값이 반영하지 않아, 명시하지 않으면 매핑 없이 난독화된 스택만 쌓인다. 규칙을 넓게 잡으면 축소 효과가 줄고 어떤 규칙이 왜 필요한지 흐려지므로, 실제로 깨진 곳만 이유와 함께 둔다. 카카오 규칙이 없으면 카카오 토큰이 없는 상태에서 앱 시작 직후 `NoSuchFieldException`으로 크래시한다. |
 | 영향 | `bundleRelease`가 Crashlytics로 매핑을 올리고 AAB에도 매핑이 실려 Play 역난독에 쓰인다. 새 라이브러리나 이름, 리플렉션에 기대는 코드를 더하면 R8을 켠 빌드로 해당 흐름을 확인한다. 로컬 업로드 키로 서명한 release는 운영 로그인이 되지 않아, 로그인 뒤 흐름은 같은 규칙으로 R8을 켠 debug 빌드(dev 서버)로 검증한다. |
 | 근거 | [KNK-1408](https://kimandkang.atlassian.net/browse/KNK-1408), [Android 계획](../../../../../manyak-android/docs/plans/r8-minification.md) |
+
+<br>
+
+<a id="a-093"></a>
+<a id="a-093-기반-모듈은-core-화면-기능-모듈은-feature-아래에-둠"></a>
+
+**A-093. 기반 모듈은 core, 화면 기능 모듈은 feature 아래에 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-09 |
+| 상태 | Accepted |
+| 배경 | A-038 이후 17개 런타임 모듈이 모두 루트 폴더에 나란히 있어, 폴더만 보고는 기반 모듈과 화면 기능 모듈을 구분할 수 없었다. |
+| 채택 | 기반 모듈(common, designsystem, navigation, analytics, network, auth)과 공유 신고 report는 `core/`, 화면 기능 모듈은 `feature/` 아래에 둔다. Gradle 경로도 폴더를 따라 `:core:<모듈>`, `:feature:<모듈>`로 등록하고 app과 build-logic은 루트에 남긴다. 모듈 수, 소유권, 의존 규칙과 Kotlin 패키지(`app.manyak.<모듈>`)는 바꾸지 않는다. `checkModuleArchitecture`가 각 모듈이 정해진 그룹 경로에 등록됐는지도 검사한다. |
+| 대안 | 폴더만 옮기고 `projectDir`로 기존 Gradle 경로(`:home`)를 유지하는 방식. 수정 범위는 작지만 폴더 위치와 Gradle 경로, 모듈 단위 명령이 서로 다른 구조를 가리킨다. |
+| 이유 | 폴더, Gradle 경로, 타입 안전 프로젝트 접근자(`projects.feature.home`)가 같은 구조를 가리켜 하나만 보고도 위치를 알 수 있다. report는 chat, studio, story가 함께 쓰는 공유 업무라 `feature/`에 두면 기능 간 의존처럼 보인다. 패키지를 유지해 라우트 직렬화 이름, Hilt 생성 코드, R8 규칙에 영향이 없다. |
+| 영향 | 모듈 단위 명령이 `./gradlew :feature:chat:testDebugUnitTest`처럼 바뀐다. 이전 기능 계획의 `:chat:` 형태 명령은 당시 기준 기록이다. `:core`, `:feature`는 빌드 파일 없이 하위 모듈을 묶기만 하는 중간 프로젝트이며 경계 검사 대상이 아니다. 하네스와 Android 문서의 소스 링크를 새 폴더로 옮겼다. |
+| 대체 관계 | [A-038](#a-038)의 "기능을 최상위 모듈로" 중 폴더와 Gradle 경로의 배치만 대체한다. 기능 단위 모듈, 내부 패키지 계층, report의 신고 소유는 유지한다. |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../manyak-android/docs/plans/module-folder-grouping.md), [참고 구조](https://github.com/Nexters/Satto-Android/tree/develop) |
