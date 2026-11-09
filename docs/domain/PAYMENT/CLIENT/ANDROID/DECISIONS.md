@@ -69,3 +69,22 @@
 | 이유 | 화면 기능끼리 직접 참조하지 않는 규칙을 지키면서 내역 조회와 표현을 한 곳에 둔다. 상태 전이를 공용 순수 함수로 두면 두 ViewModel의 reduce가 같은 규칙을 쓴다. 채팅방은 생성과 재연결 입력을 막지 않아야 해서 조회를 화면 범위의 자식 작업으로 돌린다. |
 | 영향 | 충전 화면의 내역 조회도 같은 절차를 쓰며 첫 페이지와 다음 페이지가 화면 입력을 막지 않는다. 충전 화면의 당겨서 새로고침도 같은 다시 읽기 상태를 쓴다. 원장 사유와 내역 문구 리소스가 `my`에서 `common`과 `designsystem`으로 옮겨졌다. 잔액 카드는 바탕색을 받아 채팅 메뉴 시트에서 시트 위 보조 채움을 쓴다. |
 | 근거 | [공통 내역 진입](../2-2-REQUIREMENTS.md#2-2-4-보상과-내역), [CHAT Android 3-3](../../../CHAT/CLIENT/ANDROID/3-3-LAYOUT.md#3-3-1-배치와-접근성), [KNK-2023](https://kimandkang.atlassian.net/browse/KNK-2023) |
+
+<br>
+
+<a id="a-096"></a>
+<a id="a-096-이프-충전과-정책-체험-출석-내역-저장소를-my에서-credit-기능-모듈로-분리한다"></a>
+
+**A-096. 이프 충전과 정책, 체험, 출석, 내역 저장소를 my에서 credit 기능 모듈로 분리한다**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-09 |
+| 상태 | Accepted |
+| 배경 | 결제 도메인의 충전 화면과 저장소가 계정 도메인인 마이 모듈의 `my/credit` 패키지에 있었다. 자기 Hilt 모듈이 공용 포트 넷(`AttendanceClaimer`, `CreditTransactionReader`, `CreditPolicyRepository`, `TrialsRepository`)을 바인딩하고 소비자는 chat, create, app이라, 마이의 다른 하위 기능과 함께 바뀔 이유가 공용 헤더와 친구 초대 줄뿐이었다. |
+| 채택 | `:feature:credit`(`app.manyak.credit`)이 충전 화면, ViewModel, API, DTO, 저장소 구현과 바인딩을 소유한다. 마이 하위 화면과 함께 쓰던 상단 헤더는 `designsystem`의 `ManyakDetailHeader`로 올린다. 무료 충전 탭의 친구 초대 줄은 화면이 슬롯(`inviteEntry`)으로 받고 `app`이 `my`의 `InviteMenuItem`을 넘겨, 기능 간 직접 의존 없이 마이와 같은 줄과 목적지를 쓴다. |
+| 대안 | 친구 초대 줄을 credit에 복제하는 방식. 초대 보상 문구와 맥박 표시가 두 곳에서 갈라질 수 있어 택하지 않았다. |
+| 이유 | 결제 도메인 코드가 한 모듈에 모여 마이 변경과 독립적으로 빌드되고 검사된다. 공용 포트는 이미 common에 있어 소비자 코드는 바뀌지 않는다. |
+| 영향 | 라우트 `MyCreditChargeRoute`와 딥링크 `/my/credits`, 분석 이벤트는 이름까지 그대로라 백스택 복원과 알림 진입이 이어진다. 충전 화면 문구는 `credit_` 접두어로 credit이 소유한다. 마이의 프로필, 초대, 페르소나와 `profile` DataStore는 마이에 남는다. |
+| 대체 관계 | 없음. [A-081](#a-081), [A-092](#a-092)의 common과 designsystem 배치는 유지하고, 구현 소유 모듈만 my에서 credit으로 바뀐다. |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../../manyak-android/docs/plans/credit-module.md) |
