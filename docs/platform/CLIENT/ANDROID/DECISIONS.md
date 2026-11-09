@@ -159,3 +159,22 @@
 | 영향 | 모듈 단위 명령이 `./gradlew :feature:chat:testDebugUnitTest`처럼 바뀐다. 이전 기능 계획의 `:chat:` 형태 명령은 당시 기준 기록이다. `:core`, `:feature`는 빌드 파일 없이 하위 모듈을 묶기만 하는 중간 프로젝트이며 경계 검사 대상이 아니다. 하네스와 Android 문서의 소스 링크를 새 폴더로 옮겼다. |
 | 대체 관계 | [A-038](#a-038)의 "기능을 최상위 모듈로" 중 폴더와 Gradle 경로의 배치만 대체한다. 기능 단위 모듈, 내부 패키지 계층, report의 신고 소유는 유지한다. |
 | 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../manyak-android/docs/plans/module-folder-grouping.md), [참고 구조](https://github.com/Nexters/Satto-Android/tree/develop) |
+
+<br>
+
+<a id="a-094"></a>
+<a id="a-094-여러-모듈이-쓰는-테스트-도우미는-테스트-전용-core-testing에-둠"></a>
+
+**A-094. 여러 모듈이 쓰는 테스트 도우미는 테스트 전용 core/testing에 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-09 |
+| 상태 | Accepted |
+| 배경 | 11개 모듈의 테스트 39개가 `Dispatchers.setMain`, `resetMain` 설정을 각자 반복했고, core 계약을 구현한 Fake가 chat과 create에 같은 내용으로 따로 있었다. |
+| 채택 | 테스트 소스 세트에서만 의존하는 `:core:testing`을 두고 `MainDispatcherRule`과 둘 이상의 모듈이 같은 동작으로 쓰는 core 계약의 Fake를 모은다. `checkModuleArchitecture`는 테스트 설정의 의존을 따로 모아 testing을 테스트에서만 허용하고, 프로덕션 의존과 프로덕션 코드의 참조는 실패시킨다. testing은 common에만 의존한다. 한 모듈만 쓰거나 모듈마다 동작이 다른 Fake(프로필, 세션)는 각 모듈의 `src/test`에 남긴다. |
+| 대안 | Gradle test fixtures로 계약 모듈 옆에 Fake를 두는 방식. 계약이 common과 auth에 흩어져 모듈마다 설정이 필요하고, 메인 디스패처 규칙처럼 계약과 무관한 도우미를 둘 곳이 없다. |
+| 이유 | 디스패처 교체를 JUnit Rule 하나로 모으면 설정 누락과 되돌리기 누락이 사라진다. Fake를 강제로 하나로 합치면 테스트마다 다른 전제가 흐려지므로 같은 동작인 것만 모은다. 기능 간 테스트 의존은 여전히 막는다. |
+| 영향 | 디스패처를 쓰는 테스트는 `@get:Rule val mainDispatcherRule = MainDispatcherRule()`을 쓰고, 같은 디스패처로 `runTest`를 돌릴 때는 `MainDispatcherRule(dispatcher)`로 넘긴다. testing은 런타임 모듈 수에 포함하지 않는다. |
+| 대체 관계 | 없음. 한 모듈 안에서 여러 테스트가 쓰는 Fake를 그 모듈의 `src/test` 공유 패키지에 두고 기능 간 테스트 의존을 두지 않는 [모듈 재구성 계획](../../../../../manyak-android/docs/plans/module-reorganization.md#21-화면과-테스트)의 규칙은 유지한다. |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../manyak-android/docs/plans/core-testing-module.md), [Android 공식 모듈화 패턴의 테스트 모듈](https://developer.android.com/topic/modularization/patterns#test-modules) |

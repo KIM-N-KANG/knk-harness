@@ -28,8 +28,9 @@ Android는 BFF 없이 백엔드에 직접 요청한다. 공용 전송과 인증 
 | 관측 | 자체 값과 기본 타입을 받는 어댑터. 기능 모델 의존 없음 |
 | 기능 | 실제 필요한 entity, domain, data와 presentation 패키지만 둠. 화면 기능 간 직접 의존 없음 |
 | 빌드 로직 | 공통 빌드 설정. 앱 서명 설정을 소유하지 않음 |
+| 테스트 도우미 | 테스트 소스 세트 전용. 여러 모듈이 쓰는 메인 디스패처 규칙과 core 계약의 Fake. 프로덕션 의존 없음 |
 
-모듈 폴더와 Gradle 경로는 [A-093](DECISIONS.md#a-093)을 따른다. app과 build-logic은 루트, 기반 모듈(common, designsystem, navigation, analytics, network, auth)과 공유 신고 report는 `core/`(`:core:<모듈>`), 화면 기능은 `feature/`(`:feature:<모듈>`)에 둔다. Kotlin 패키지는 그룹과 무관하게 `app.manyak.<모듈>`이다.
+모듈 폴더와 Gradle 경로는 [A-093](DECISIONS.md#a-093)을 따른다. app과 build-logic은 루트, 기반 모듈(common, designsystem, navigation, analytics, network, auth)과 공유 신고 report는 `core/`(`:core:<모듈>`), 화면 기능은 `feature/`(`:feature:<모듈>`)에 둔다. 테스트 도우미 testing도 `core/`에 두며 기준은 [A-094](DECISIONS.md#a-094)이다. Kotlin 패키지는 그룹과 무관하게 `app.manyak.<모듈>`이다.
 
 기능 domain과 entity는 Android, Compose, Retrofit, Room 및 data 구현에 의존하지 않는다. presentation도 data와 network 구현을 직접 참조하지 않는다. entity의 domain 의존은 허용된 오류 값 예외로 제한한다. 단순 위임 UseCase, 빈 계층과 하위 UI 전용 ViewModel을 추가하지 않는다.
 
