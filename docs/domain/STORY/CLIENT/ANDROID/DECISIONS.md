@@ -861,3 +861,22 @@
 | 이유 | 기존 셸 위 전체 화면 패턴과 탐색 그리드를 그대로 쓰고, 기기 단위 기록이라는 공통 계약을 로그아웃에도 남는 기존 기기 파일로 지킨다. |
 | 영향 | 공통 2-2-1의 적용 범위 “Android 미구현”과 ANALYTICS의 `search`(웹만) 표기는 KNK-2030 하네스 변경이 병합된 뒤 Android 포함으로 고친다. 헤더 두 아이콘 버튼은 48dp 터치 영역이 붙어 웹의 4px 간격을 따로 두지 않는다. |
 | 근거 | [Android 요구](2-2-REQUIREMENTS.md#2-2-1-목록과-상세), [Android 상태](4-3-STATE-MANAGEMENT.md#4-3-1-화면과-저장-수명), [Android 화면 배치](3-3-LAYOUT.md#3-3-1-목록과-제작), [KNK-2032](https://kimandkang.atlassian.net/browse/KNK-2032) |
+
+<br>
+
+<a id="a-095"></a>
+<a id="a-095-신규-가입-온보딩을-home에서-onboarding-기능-모듈로-분리한다"></a>
+
+**A-095. 신규 가입 온보딩을 home에서 onboarding 기능 모듈로 분리한다**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-09 |
+| 상태 | Accepted |
+| 배경 | 온보딩은 홈 탭 안이 아니라 메인 백스택의 루트로 홈보다 먼저 열리는 화면인데(A-083), home의 스토리 목록 조회를 쓰려고 `home/onboarding` 패키지에 있었다. 자기 표시 저장소, 라우트, 문구와 테스트를 따로 가져 home과 함께 바뀔 이유가 목록 조회 하나뿐이었다. |
+| 채택 | `:feature:onboarding`이 온보딩 화면, ViewModel, `StoryOnboardingStore`와 가입 기록기 등록을 소유한다. 목록은 common의 `PopularOriginalStories`(채팅이 많은 오리지널의 첫 페이지) 포트로 받고 구현은 home이 기존 `publicStories(ORIGINAL, CHATS)`로 맡는다. 앱이 둘을 Hilt로 연결한다. |
+| 대안 | onboarding이 같은 공개 목록 API를 직접 부르는 방식. 공용 DTO가 common에 있어 코드는 적지만 같은 엔드포인트와 조회 조건이 두 곳에 생긴다. |
+| 이유 | 기능 간 직접 의존 없이 목록 조회는 home 한 곳에 남는다. 포트는 조회 조건을 숨기고 온보딩이 실제로 쓰는 결과만 공개해 ChatStarter와 같은 공용 포트 규칙을 따른다. |
+| 영향 | DataStore 파일 이름 `story-onboarding`과 키, 라우트 `StoryOnboardingRoute`, 분석 이벤트는 그대로라 저장된 온보딩 표시와 백스택 복원이 이어진다. 로딩 문구는 다른 기능처럼 onboarding이 자기 문구(`story_onboarding_loading`)로 가진다. |
+| 대체 관계 | [A-083](#a-083)의 "`home`의 `StoryOnboardingStore`" 중 소유 모듈만 onboarding으로 바꾼다. 루트 교체, 완료 판정, 회원 귀속 정리 결정은 유지한다. |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../../manyak-android/docs/plans/story-onboarding-module.md) |

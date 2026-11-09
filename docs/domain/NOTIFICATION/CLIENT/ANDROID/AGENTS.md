@@ -19,10 +19,10 @@
 
 ### 2 코드 대응
 
-- [notification/src/main/java/app/manyak/notification](../../../../../../manyak-android/notification/src/main/java/app/manyak/notification)
-- [notice/src/main/java/app/manyak/notice](../../../../../../manyak-android/notice/src/main/java/app/manyak/notice)
-- [notification/src/test](../../../../../../manyak-android/notification/src/test)
-- [notice/src/test](../../../../../../manyak-android/notice/src/test)
+- [feature/notification/src/main/java/app/manyak/notification](../../../../../../manyak-android/feature/notification/src/main/java/app/manyak/notification)
+- [feature/notice/src/main/java/app/manyak/notice](../../../../../../manyak-android/feature/notice/src/main/java/app/manyak/notice)
+- [feature/notification/src/test](../../../../../../manyak-android/feature/notification/src/test)
+- [feature/notice/src/test](../../../../../../manyak-android/feature/notice/src/test)
 
 첫 광고 동의 선택 항목의 대체 결정: [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044). 앱 열기 스킴: [A-071](../../../../ui/ANDROID/DECISIONS.md#a-071).
 

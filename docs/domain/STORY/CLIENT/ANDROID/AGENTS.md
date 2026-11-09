@@ -27,13 +27,14 @@
 
 | 구성 | 위치 |
 |---|---|
-| 상세 | [story/src/main/java/app/manyak/story](../../../../../../manyak-android/story/src/main/java/app/manyak/story) |
-| 제작 | [create/src/main/java/app/manyak/create](../../../../../../manyak-android/create/src/main/java/app/manyak/create) |
-| 제작 목록 | [studio/src/main/java/app/manyak/studio](../../../../../../manyak-android/studio/src/main/java/app/manyak/studio) |
-| 제작 안내 절차와 계약 | [common/src/main/java/app/manyak/common/presentation/story](../../../../../../manyak-android/common/src/main/java/app/manyak/common/presentation/story), [common/src/main/java/app/manyak/common/domain/story](../../../../../../manyak-android/common/src/main/java/app/manyak/common/domain/story) |
-| 제작 안내 대화창 | [designsystem/src/main/java/app/manyak/designsystem/component](../../../../../../manyak-android/designsystem/src/main/java/app/manyak/designsystem/component) |
-| 제작 검증 | [create/src/test/java/app/manyak/create](../../../../../../manyak-android/create/src/test/java/app/manyak/create) |
-| 홈과 탐색 | [home/src/main/java/app/manyak/home](../../../../../../manyak-android/home/src/main/java/app/manyak/home), [home/src/main/java/app/manyak/home/explore](../../../../../../manyak-android/home/src/main/java/app/manyak/home/explore) |
+| 상세 | [feature/story/src/main/java/app/manyak/story](../../../../../../manyak-android/feature/story/src/main/java/app/manyak/story) |
+| 제작 | [feature/create/src/main/java/app/manyak/create](../../../../../../manyak-android/feature/create/src/main/java/app/manyak/create) |
+| 제작 목록 | [feature/studio/src/main/java/app/manyak/studio](../../../../../../manyak-android/feature/studio/src/main/java/app/manyak/studio) |
+| 제작 안내 절차와 계약 | [core/common/src/main/java/app/manyak/common/presentation/story](../../../../../../manyak-android/core/common/src/main/java/app/manyak/common/presentation/story), [core/common/src/main/java/app/manyak/common/domain/story](../../../../../../manyak-android/core/common/src/main/java/app/manyak/common/domain/story) |
+| 제작 안내 대화창 | [core/designsystem/src/main/java/app/manyak/designsystem/component](../../../../../../manyak-android/core/designsystem/src/main/java/app/manyak/designsystem/component) |
+| 제작 검증 | [feature/create/src/test/java/app/manyak/create](../../../../../../manyak-android/feature/create/src/test/java/app/manyak/create) |
+| 신규 가입 온보딩 | [feature/onboarding/src/main/java/app/manyak/onboarding](../../../../../../manyak-android/feature/onboarding/src/main/java/app/manyak/onboarding) |
+| 홈과 탐색 | [feature/home/src/main/java/app/manyak/home](../../../../../../manyak-android/feature/home/src/main/java/app/manyak/home), [feature/home/src/main/java/app/manyak/home/explore](../../../../../../manyak-android/feature/home/src/main/java/app/manyak/home/explore) |
 | 디자인 토큰 | [DESIGN.md](../../../../../../manyak-android/DESIGN.md) |
 
 <br>

@@ -10,7 +10,7 @@
 | `legal` | 동의 조회와 기록, 루트 수명의 동의 상태 및 시트. `common`의 `MemberConsent` 구현 |
 | `my` | 프로필, 초대와 페르소나의 기준 저장소. 같은 DataStore에 인스턴스 중복 금지 |
 | `common`의 `PersonaAccess` | 상세가 목록과 생성 항목의 미리 선택을 관찰. 변경은 마이 저장소 |
-| `SignupOnboardingWriter` | `my`의 초대와 `home`의 스토리 온보딩이 각각 등록. 신규 토큰 발급 시 `auth`가 모두 호출 |
+| `SignupOnboardingWriter` | `my`의 초대와 `onboarding`의 스토리 온보딩이 각각 등록. 신규 토큰 발급 시 `auth`가 모두 호출 |
 | `app` | 루트 내비게이션, 세션 종료 조정자와 `UserScopedStore` 목록 조립 |
 | 네트워크와 분석 | 요청 시 식별자 포트 사용. 네트워크의 분석 SDK 직접 의존 금지 |
 
