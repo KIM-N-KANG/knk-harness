@@ -58,7 +58,7 @@ NOTIFICATION 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서
 
 ### 3. 명세와 코드의 대응
 
-서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 알림 서비스 코드 경로는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성, 검수, 공개 중단 이벤트의 발행 지점은 STORY와 MODERATION 세트에서 다룬다. 탈퇴 시 토큰과 알림 내역 삭제 호출은 ACCOUNT 세트에서 다룬다.
+서버 코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 알림 서비스 코드 경로는 `manyak-notification` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/notification/`이다. 완성, 검수, 공개 중단 이벤트의 발행 지점은 STORY와 MODERATION 세트에서 다룬다. 탈퇴 시 토큰과 알림 내역 삭제는 ACCOUNT가 발행한 탈퇴 이벤트를 `push/event/PushWithdrawalCleanupListener.kt`가 구독해 처리하고, 탈퇴 흐름은 ACCOUNT 세트에서 다룬다.
 
 **1. 서버**
 

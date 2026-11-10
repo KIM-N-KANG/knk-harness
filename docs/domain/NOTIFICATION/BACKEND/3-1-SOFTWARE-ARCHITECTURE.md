@@ -140,7 +140,7 @@ NOTIFICATION 패키지는 다른 도메인의 백엔드와 하나의 서버 이�
 | 알림 서비스 → 서버 | 내부 API만 HTTP로 호출하고 공유 시크릿으로 인증<br>자격 조회, 무효 토큰 삭제, 발송 결과 보고<br>서버 DB와 토큰 테이블에 직접 접근하지 않음 |
 | 서버 → 알림 서비스 | 메시지 큐로만 전달<br>동기 발송 API는 검증용이며 서비스 경로에서 호출하지 않음 |
 | STORY, MODERATION → NOTIFICATION | 도메인 이벤트로만 연결 |
-| ACCOUNT → NOTIFICATION | 탈퇴 시 토큰과 알림 내역 삭제 호출 |
+| NOTIFICATION → ACCOUNT | 회원 탈퇴 이벤트를 탈퇴 트랜잭션 안에서 구독해 토큰과 알림 내역을 삭제<br>제출본과 초안 삭제 다음 순서로 실행 |
 | NOTIFICATION → NOTICE | 캠페인 예약 트랜잭션에서 알림 연결 연산 호출<br>회차는 캠페인의 공지 참조로 공지의 공개 식별자, 게시 상태, 태그를 읽음<br>공지 테이블을 직접 쓰지 않음 |
 | NOTIFICATION → ADMIN | 관리자 요청자와 변경 감사 기록 |
 | ADMIN → NOTIFICATION | 푸시 열람 지표의 도달 집계 읽기 조회 |

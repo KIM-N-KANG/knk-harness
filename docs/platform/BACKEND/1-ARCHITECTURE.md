@@ -52,10 +52,10 @@ graph LR
 
 | 패키지 | 도메인 세트 |
 | --- | --- |
-| `auth`, `user`, `invite`, `migration` | ACCOUNT<br>`user/draft`는 STORY의 임시 저장 초안 |
+| `auth`, `user`, `invite`, `migration` | ACCOUNT |
 | `credit` | PAYMENT |
-| `chat`, `feedback` | CHAT |
-| `story`, `image`, `search` | STORY<br>`story/submission`은 MODERATION |
+| `chat`, `feedback` | CHAT<br>`chat/controller/MyChatController`는 ACCOUNT의 내 채팅 목록 |
+| `story`, `image`, `search` | STORY<br>`story/submission`은 MODERATION<br>`story/controller/MyStoryController`는 ACCOUNT의 내 스토리 목록 |
 | `push` | NOTIFICATION<br>발송 요청의 소비와 FCM 발송은 별도 저장소 `manyak-notification` |
 | `notice` | NOTICE |
 | `admin` | ADMIN |
