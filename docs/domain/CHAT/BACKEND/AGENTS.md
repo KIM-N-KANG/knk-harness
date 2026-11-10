@@ -61,8 +61,10 @@ CHAT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코�
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | API 계층 | [chat/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/controller/), [FeedbackController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/feedback/controller/FeedbackController.kt) | 4-2 계약, 5-1-1 인증 수준 |
-| 채팅 서비스 | [ChatService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatService.kt) | 4-1-2~4-1-10, 5-2-2 환불 단일 판정, 5-4-7 지표 |
-| 턴 저장 | [ChatTurnPersister.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatTurnPersister.kt), [EndingReachRecorder.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/EndingReachRecorder.kt) | 4-1-12 턴 저장과 판정 반영, 5-2-1 채팅 행 잠금 |
+| 채팅 서비스 | [ChatService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatService.kt) | 4-1-2 채팅 생성, 4-1-5~4-1-9, 5-2-2 환불 단일 판정, 5-4-7 지표 |
+| 조회 | [ChatQueryService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatQueryService.kt) | 4-1-3 일괄 조회, 4-1-4 상세, 4-1-10 공유 열람, 5-2-4 읽기 격리 |
+| AI 요청 구성 | [ChatTurnAssembler.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatTurnAssembler.kt) | 4-1-6~4-1-8의 AI 요청 구성, 5-2-4 읽기 격리 |
+| 턴 저장 | [ChatTurnPersister.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatTurnPersister.kt), [EndingReachRecorder.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/EndingReachRecorder.kt) | 4-1-12 턴 저장과 판정 반영, 5-2-1 채팅 행 잠금 |
 | 실시간 이미지 | [ChatRealtimeImageService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatRealtimeImageService.kt) | 4-1-13 실시간 이미지, 5-1-5 실시간 이미지 검증 |
 | 후보 이름 구분 | [ChatJudgmentNameMapping.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatJudgmentNameMapping.kt) | 4-1-14 후보 이름 구분 |
 | AI 호출 | [chat/client/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/client/) | 4-1-1 공통 처리, 4-1-6, 4-1-8 |
