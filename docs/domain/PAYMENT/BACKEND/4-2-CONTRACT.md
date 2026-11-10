@@ -947,7 +947,7 @@ Content-Type: application/json
 
 | 도메인 | PAYMENT가 제공하는 것 | PAYMENT가 사용하는 것 |
 |---|---|---|
-| ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 체험 스냅샷 완료 시각 기록, 회원 조회 |
+| ACCOUNT | 멱등 키 기반 적립과 월 상한 판정, 체험 스냅샷, 잔액과 당일 출석 여부, 기간별 보상 횟수, 정책값 `signup_reward`, `invite_reward`, `invite_monthly_cap` | 보상 신원, 계정 상태 검사, 회원 조회<br>ACCOUNT가 정의한 가입 보상, 체험 스냅샷, 세션 잔액과 출석 인터페이스 |
 | STORY | 체험 예약과 복원, 선차감, 환불, 정책값 `story_creation_cost`, 잔액 부족과 한도 소진 예외 | 간편 제작 진행의 상태와 스토리 참조, 스토리 제목과 읽기 판정 |
 | CHAT | 체험 예약과 복원, 항목 합산 선차감, 환불, 정책값 `chat_image_cost`, 잔액 부족과 한도 소진 예외 | 채팅의 턴 수, 재생성 수, 스토리 참조, 라이트(`LITE`)의 턴 가격 |
 | NOTIFICATION | 출석 보상 멱등 키 존재, 만료 창 안에 잔여 있는 로트를 가진 회원 조회 | 없음 |

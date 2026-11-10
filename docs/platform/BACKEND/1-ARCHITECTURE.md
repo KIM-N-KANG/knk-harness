@@ -52,7 +52,7 @@ graph LR
 
 | 패키지 | 도메인 세트 |
 | --- | --- |
-| `auth`, `user`, `invite`, `migration` | ACCOUNT |
+| `auth`, `invite`, `migration` | ACCOUNT |
 | `credit` | PAYMENT |
 | `chat`, `feedback` | CHAT<br>`chat/controller/MyChatController`는 ACCOUNT의 내 채팅 목록 |
 | `story`, `image`, `search` | STORY<br>`story/submission`은 MODERATION<br>`story/controller/MyStoryController`는 ACCOUNT의 내 스토리 목록 |
