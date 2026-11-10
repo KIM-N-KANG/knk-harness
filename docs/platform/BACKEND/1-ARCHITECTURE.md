@@ -59,7 +59,8 @@ graph LR
 | `push` | NOTIFICATION<br>발송 요청의 소비와 FCM 발송은 별도 저장소 `manyak-notification` |
 | `notice` | NOTICE |
 | `admin` | ADMIN |
-| `global` | 이 플랫폼 기반: 보안 설정, 공통 오류 응답, 상관관계 필터, 구조화 로그, `ai_call_logs`, 분석 이벤트 발행 |
+| `adminkit` | ADMIN<br>다른 도메인의 관리자 API가 함께 쓰는 감사 기록, 요청자, 관리자 역할 조회, 목록 조회 공통 도구<br>`global`만 참조 |
+| `global` | 이 플랫폼 기반: 보안 설정, 공통 오류 응답, 상관관계 필터, 구조화 로그, 인증과 감사 처리의 DB 원문 로그 차단 필터, `ai_call_logs`, 분석 이벤트 발행 |
 
 <br>
 

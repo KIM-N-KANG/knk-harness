@@ -57,18 +57,19 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
 | 관리자 API 계층 | `admin/controller/` | 4-2-2~4-2-48 |
-| 로그인, 토큰, 감사 기록, 대시보드, 목록과 상세, 수익과 콘텐츠와 몰입과 검수 지표, 요일과 시간대 활동 | `admin/service/`<br>`admin/repository/`의 조회 쿼리 | 4-1-2~4-1-13, 4-1-26, 4-1-27 |
+| 감사 기록, 요청자와 사유, 관리자 역할 조회, 목록 조회 공통 도구 | `adminkit/audit/`<br>`adminkit/security/`<br>`adminkit/dto/`<br>`adminkit/role/`<br>`adminkit/query/` | 4-1-3, 4-1-4, 4-1-5 |
+| 로그인, 토큰, 대시보드, 목록과 상세, 수익과 콘텐츠와 몰입과 검수 지표, 요일과 시간대 활동 | `admin/service/`<br>`admin/repository/`의 조회 쿼리 | 4-1-2~4-1-13, 4-1-26, 4-1-27 |
 | 분석 도구 클라이언트, 캠페인과 사용자와 전환과 기능 지표, 비용 예산, 값 저장 | `admin/analytics/` | 4-1-14, 4-1-16~4-1-20, 4-1-24, 4-1-25, 3-2-5 |
 | 설치 보고서 클라이언트, 해석기, 캐시 | `admin/playstats/` | 4-1-15 |
 | CloudWatch와 ECS 클라이언트, 인프라 지표 조립, DB 테이블 크기 조회 | `admin/infra/` | 4-1-21, 4-1-22 |
 | 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/`<br>[global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
 | 신원 검증기 | [auth/social/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/social/) | 4-1-2 |
 | 토큰 발급 기반 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/)<br>[auth/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/config/) | 4-2-1 관리자 토큰 |
-| 모델과 저장 계층 | `admin/entity/`<br>`admin/repository/` | 3-2 DB 스키마 |
+| 모델과 저장 계층 | `admin/entity/`<br>`admin/repository/`<br>`adminkit/audit/`(감사 로그)<br>`adminkit/role/`(관리자 역할) | 3-2 DB 스키마 |
 | 오류 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/)<br>[dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |
-| 테스트 | `src/test/kotlin/com/knk/manyak/admin/`<br>`http/admin/` | 5-5 테스트 케이스 |
+| 테스트 | `src/test/kotlin/com/knk/manyak/admin/`<br>`src/test/kotlin/com/knk/manyak/adminkit/`<br>`http/admin/` | 5-5 테스트 케이스 |
 | 배포 | [.github/workflows/](../../../../../manyak-server/.github/workflows/)<br>[Dockerfile](../../../../../manyak-server/Dockerfile) | 6 배포 |
 
 <br>
