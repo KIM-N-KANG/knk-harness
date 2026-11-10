@@ -56,7 +56,7 @@ CHAT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코�
 
 ### 3. 명세와 코드의 대응
 
-코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 내 채팅 목록 엔드포인트와 게스트 이관은 ACCOUNT 세트에 속한다. 두 기능은 CHAT 세트의 서비스를 호출한다.
+코드 경로는 `manyak-server` 저장소 루트 아래 `src/main/kotlin/com/knk/manyak/`이다. 내 채팅 목록 엔드포인트와 게스트 이관의 명세는 ACCOUNT 세트에 속한다. 두 기능은 CHAT 세트의 서비스를 호출한다. 내 채팅 목록의 컨트롤러는 chat 패키지에 있다.
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
@@ -72,7 +72,7 @@ CHAT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코�
 | 생성 중 상태와 이벤트 보관 | [ChatGenerationStore.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationStore.kt), [ChatGenerationDeadlines.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationDeadlines.kt), [ChatGenerationEvents.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationEvents.kt), [ChatGenerationReceivers.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/service/ChatGenerationReceivers.kt) | 4-1-15 생성 이벤트 수신과 재연결, 4-2-13 생성 스트림 재연결, 5-2-6 생성 중 키와 저장 시 재확인 |
 | 피드백 | [feedback/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/feedback/) | 4-1-11 피드백 등록, 4-2-11 피드백 등록 |
 | 모델 | [chat/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
-| 내 채팅 목록, 이관 | [UserContentController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/user/controller/UserContentController.kt), [GuestDataMigrationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/migration/service/GuestDataMigrationService.kt) | 4-2-12 다른 도메인과의 경계 |
+| 내 채팅 목록, 이관 | [MyChatController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/chat/controller/MyChatController.kt), [GuestDataMigrationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/migration/service/GuestDataMigrationService.kt) | 4-2-12 다른 도메인과의 경계 |
 | 오류와 보안 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/), [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/) | 5-3 오류 처리, 5-1 보안 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |

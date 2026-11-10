@@ -32,7 +32,7 @@ flowchart LR
 같은 서버`"] -->|접수 요청| S
     S -->|승인 시 저장과 적용, 공개 중단| O
     A["`**ACCOUNT**
-같은 서버`"] -->|탈퇴 시 삭제| S
+같은 서버`"] -->|탈퇴 이벤트| S
     S -->|완료 이벤트, 공개 중단 이벤트| N["`**NOTIFICATION**
 같은 서버`"]
     S -->|검수 요청| AI["`**AI 서버**`"]
@@ -113,7 +113,7 @@ MODERATION은 다른 도메인의 백엔드와 하나의 서버 이미지에 포
 | STORY → MODERATION | 등록과 수정 요청이 제출 서비스로 접수<br>이미지 삭제와 수정 전에 대기 중 제출본 존재 확인 |
 | MODERATION → STORY | 승인 시 등록 저장과 수정 적용 호출<br>폼 조립에 수정 폼 조회와 이미지 객체 검증 사용<br>공개 중단 적용과 승인 시 해제 호출 |
 | MODERATION → NOTIFICATION | 종료 트랜잭션에서 완료 이벤트 발행<br>공개 중단 트랜잭션에서 공개 중단 이벤트 발행 |
-| ACCOUNT → MODERATION | 탈퇴 시 회원 제출본 삭제 호출 |
+| MODERATION → ACCOUNT | 회원 탈퇴 이벤트를 탈퇴 트랜잭션 안에서 구독해 회원 제출본을 삭제 |
 | MODERATION → ACCOUNT | 회원 상태 조회와 사용자 행 잠금<br>보류 목록의 소유 회원 공개 식별자<br>관리자 제출본 목록의 회원 검색 |
 | MODERATION → ADMIN | 관리자 요청자와 변경 감사 기록<br>관리자 제출본 조회의 회원 요약 구조 조립 |
 | ADMIN → MODERATION | 보류 중 제출본 수 |
