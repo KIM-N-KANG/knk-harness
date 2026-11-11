@@ -405,7 +405,7 @@ erDiagram
 |---|---|---|---|
 | `id` | bigint | PK | |
 | `user_id` | bigint | NOT NULL, FK CASCADE, UNIQUE `(user_id, story_id)` | |
-| `story_id` | bigint | NOT NULL, FK CASCADE | |
+| `story_id` | bigint | NOT NULL, FK CASCADE, 인덱스 | 좋아요 수 집계는 이 인덱스만 읽는다 |
 
 <br>
 

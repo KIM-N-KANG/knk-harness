@@ -155,7 +155,7 @@ erDiagram
 
 | 인덱스 | 컬럼 |
 |---|---|
-| `idx_story_chats_story` | `story_id` |
+| `idx_story_chats_story_turns` | `story_id` INCLUDE `current_turn`, `hidden_turn_count`, `regenerated_count`, `forked_from_turn`<br>누적 턴 집계를 인덱스만으로 끝내는 커버링 인덱스 |
 | `idx_story_chats_user_updated` | `(user_id, updated_at DESC, id DESC)` WHERE `deleted_at IS NULL` |
 
 <br>
