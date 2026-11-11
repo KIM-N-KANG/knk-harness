@@ -64,7 +64,7 @@ PAYMENT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 주문, 그로블 | [credit/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/service/) | 4-1-12~4-1-14, 5-1-4 |
 | 배치 | [credit/scheduler/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/scheduler/) | 4-1-7, 4-1-15, 5-2-5 |
 | 설정과 상품 | [credit/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/config/), [application.yml](../../../../../manyak-server/src/main/resources/application.yml) | 2-4, 6-3 |
-| 모델 | [credit/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
+| 모델 | [credit/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/entity/)<br>enum과 다른 도메인이 쓰는 조회 결과 타입은 [credit/dto/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/dto/) (`CreditOrderStatus`, `CreditOrderProvider`, `CreditReason`, `CreditExpiryTarget`) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
 | 저장 계층 | [credit/repository/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/repository/) | 3-2 인덱스, 5-2-1 잠금 |
 | 잔액 부족 예외, 앱 코드 | [credit/InsufficientCreditException.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/credit/InsufficientCreditException.kt), [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3-2 |
 | 보안 필터, 계정 상태 | [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/), [global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1 공통 처리, 5-1-1, 5-1-3 |

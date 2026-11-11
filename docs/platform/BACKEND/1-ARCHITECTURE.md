@@ -48,7 +48,7 @@ graph LR
 
 ### 1-4 코드 모듈과 도메인
 
-서버 코드는 `src/main/kotlin/com/knk/manyak/` 아래 패키지로 나뉜다. 패키지와 도메인 세트는 일대일이 아니다. 패키지 사이의 참조는 계층을 따라 위에서 아래로만 향하며 계층과 이유는 [BE-061](../../reference/decisions/BACKEND.md#be-061)에 있다.
+서버 코드는 `src/main/kotlin/com/knk/manyak/` 아래 패키지로 나뉜다. 패키지와 도메인 세트는 일대일이 아니다. 패키지 사이의 참조는 계층을 따라 위에서 아래로만 향하며 계층과 이유는 [BE-061](../../reference/decisions/BACKEND.md#be-061)에 있다. 패키지 안에서 `entity`에는 JPA 엔티티(임베더블, 매핑 상위 클래스, 복합 키 포함)만 두고 enum과 값 타입은 그 패키지의 `dto`에 둔다. 서버의 `EntityPackageContentsTests`가 이를 강제한다. `repository`의 조회 결과 타입은 쿼리 옆에 두되 다른 패키지가 쓰는 것은 `dto`로 옮긴다.
 
 | 패키지 | 도메인 세트 |
 | --- | --- |
