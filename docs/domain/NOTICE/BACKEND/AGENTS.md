@@ -55,7 +55,7 @@ NOTICE 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 |---|---|---|
 | 공개 API와 관리자 API 계층 | `notice/controller/` | 4-2-2~4-2-10 |
 | 공지 서비스, 게시, 알림 연결 | `notice/service/` | 4-1-2~4-1-8 |
-| 모델과 저장 계층 | `notice/entity/`<br>`notice/repository/` | 3-2 DB 스키마 |
+| 모델과 저장 계층 | `notice/entity/`<br>`notice/repository/`<br>enum은 `notice/dto/` (`NoticeTag`, `NoticeStatus`) | 3-2 DB 스키마 |
 | 알림 연결을 호출하는 캠페인 예약 | [push/service/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/push/service/) | 4-1-8 |
 | 오류 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
