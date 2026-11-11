@@ -48,7 +48,7 @@ graph LR
 
 ### 1-4 코드 모듈과 도메인
 
-서버 코드는 `src/main/kotlin/com/knk/manyak/` 아래 패키지로 나뉜다. 패키지와 도메인 세트는 일대일이 아니다.
+서버 코드는 `src/main/kotlin/com/knk/manyak/` 아래 패키지로 나뉜다. 패키지와 도메인 세트는 일대일이 아니다. 패키지 사이의 참조는 계층을 따라 위에서 아래로만 향하며 계층과 이유는 [BE-061](../../reference/decisions/BACKEND.md#be-061)에 있다.
 
 | 패키지 | 도메인 세트 |
 | --- | --- |
