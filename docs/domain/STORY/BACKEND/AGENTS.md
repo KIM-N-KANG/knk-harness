@@ -59,7 +59,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 
 | 구성 요소 | 구현 위치 (`manyak-server` 기준) | 사용 범위 |
 |---|---|---|
-| API 계층 | [story/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/) | 4-2 계약, 5-1-1 인증 수준 |
+| API 계층 | [story/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/)<br>검색 API는 [search/controller/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/search/controller/) | 4-2 계약, 5-1-1 인증 수준 |
 | 조회와 소셜 | [StoryService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryService.kt) | 4-1-2~4-1-10 조회와 삭제, 4-1-21 좋아요, 4-1-22 신고 |
 | 간편 제작 | [SimpleStoryCreationService.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/SimpleStoryCreationService.kt) | 4-1-11~4-1-14 간편 제작, 5-3-4 오류별 처리, 5-4-7 지표 |
 | 생성 요청 기록 | [StoryCreationRequestRecorder.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/service/StoryCreationRequestRecorder.kt) | 5-2-1 멱등과 회수 |
@@ -74,7 +74,7 @@ STORY 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 초안 | [story/draft/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/draft/), [StoryDraftController.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/controller/StoryDraftController.kt)<br>탈퇴 시 삭제는 [StoryWithdrawalCleanupListener.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/event/StoryWithdrawalCleanupListener.kt) | 4-1-23~4-1-26 초안, 4-2-23~4-2-26 초안 |
 | 모델 | [story/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/entity/) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
 | AI 호출 | [StoryAiClient.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/client/StoryAiClient.kt) | 4-1-1 공통 처리, 4-1-11, 4-1-12 |
-| 검색 | [search/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/search/) | 4-1-3 검색, 4-1-27 색인, 4-2-3 검색 |
+| 검색 | [search/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/search/)<br>색인 요청 이벤트는 [StoryIndexRequestedEvent.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/event/StoryIndexRequestedEvent.kt)<br>닉네임 변경 재색인 요청은 [StoryNicknameReindexListener.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/story/event/StoryNicknameReindexListener.kt) | 4-1-3 검색, 4-1-27 색인, 4-2-3 검색 |
 | 오류와 보안 | [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/), [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/) | 5-3 오류 처리, 5-1 보안 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/), [TracingNoiseFilter.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/TracingNoiseFilter.kt) | 5-4 관측 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |

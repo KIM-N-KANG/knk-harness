@@ -67,7 +67,7 @@ Fluent Bit`"]
 | 회전 유예 적용 | 유예 재응답<br>`refresh_reuse_grace_applied` | `user_public_id` |
 | 재사용 탐지 | 유예 밖 재사용<br>평문 WARN | 회원 내부 ID, 세션 폐기 사실 |
 | 체험 스냅샷 실패 | Redis 장애<br>평문 WARN | 회원 내부 ID, 예외 |
-| 닉네임 변경 재색인 | 프로필 저장 뒤<br>평문 INFO `nickname_reindex_requested` | 회원 내부 ID, 스토리 수 |
+| 닉네임 변경 재색인 | 프로필 저장 뒤 STORY의 구독자가 남김<br>평문 INFO `nickname_reindex_requested` | 회원 내부 ID, 스토리 수 |
 | 닉네임 접미 발급 | 5회 충돌 뒤<br>평문 INFO | 시도 횟수 |
 | 프리셋 이미지 누락 | 기동 시<br>평문 WARN | 명사 |
 | 프리셋 적재 | 기동 시<br>평문 INFO | 적재 수와 명사 수 |
