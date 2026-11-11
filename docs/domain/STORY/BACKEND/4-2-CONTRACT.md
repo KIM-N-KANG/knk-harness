@@ -2884,4 +2884,4 @@ GET /stories/explore?limit=2&cursor=eDo4NDc2MzIxOTkwMjQ1NTEzMTIwOjNiMWY5ZTU0Yjdj
 | ADMIN | 공식 계정 식별, 스토리와 제작 세션 조회, 홈 섹션 관리 API | 관리자 요청자, 관리자 판정 필터, 변경 감사 기록 |
 | ACCOUNT | 회원의 내 스토리 목록 조회 메서드, 탈퇴 시 초안 삭제 메서드 | 소유자 프로필, 닉네임 변경 이벤트(회원 ID), 게스트 이관 시 `user_id`로 소유권 확보와 이관된 스토리의 색인 요청 이벤트 |
 | ACCOUNT |  | 동의 게이트 허용 목록 |
-| 검색 | 색인 요청 이벤트(스토리 ID) | 검색 결과 카드 |
+| 검색 | 색인 요청 이벤트(스토리 ID), 묶음 색인 요청 이벤트(스토리 ID 목록) | 검색 결과 카드 |
