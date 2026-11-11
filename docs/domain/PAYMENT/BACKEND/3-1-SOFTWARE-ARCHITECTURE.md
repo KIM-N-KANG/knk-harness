@@ -118,8 +118,7 @@ PAYMENT는 다른 도메인의 백엔드와 하나의 서버 이미지에 포함
 | PAYMENT → ACCOUNT | 보상 신원 조회, 계정 상태 검사, 관리자 지급 대상 회원 조회<br>ACCOUNT가 정의한 가입 보상, 체험 스냅샷, 세션 잔액과 출석 인터페이스 구현 |
 | PAYMENT → ADMIN | 관리자 요청자와 변경 감사 기록 |
 | ADMIN → PAYMENT | 잔액, 완료와 환불 주문 조회, 지급과 소진 집계 |
-| PAYMENT → STORY, CHAT | 이용내역의 제목 해석과 대사의 완료 수 판정에 채팅, 간편 제작 진행, 스토리 저장 계층 조회<br>정책값 응답의 턴 가격에 채팅의 모델 조회 |
-| ACCOUNT, STORY, CHAT → PAYMENT | 적립, 차감, 환불, 체험 예약과 복원, 월 보상 횟수, 정책값<br>ACCOUNT의 가입 보상, 체험 스냅샷, 잔액과 출석 조회는 ACCOUNT가 정의한 인터페이스 경유 |
+| ACCOUNT, STORY, CHAT → PAYMENT | 적립, 차감, 환불, 체험 예약과 복원, 월 보상 횟수, 정책값<br>ACCOUNT의 가입 보상, 체험 스냅샷, 잔액과 출석 조회는 ACCOUNT가 정의한 인터페이스 경유<br>STORY와 CHAT은 PAYMENT가 정의한 인터페이스를 구현: 대사의 채팅 턴 저장 연결과 간편 제작 완성 여부, 이용내역 제목 해석(채팅의 스토리, 진행과 스토리의 제목), 정책값 응답의 라이트 턴 가격<br>참조 종류 `CHAT`의 대사 완료 수만 PAYMENT 원장 쿼리가 채팅 테이블을 직접 조인 |
 | NOTIFICATION → PAYMENT | 출석 멱등 키 존재, 만료 창 안 로트를 가진 회원 조회 |
 
 <br>
