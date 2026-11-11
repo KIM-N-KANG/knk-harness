@@ -3,7 +3,7 @@
 | 문서 | 범위 |
 |---|---|
 | [DOCUMENTATION.md](DOCUMENTATION.md) | 문서 배치와 역할의 C 결정 |
-| [BACKEND.md](BACKEND.md) | BE-001부터 BE-060까지 기존 백엔드 결정 원문 |
+| [BACKEND.md](BACKEND.md) | BE-001부터 BE-061까지 기존 백엔드 결정 원문 |
 | [AI.md](AI.md) | 기존 D1부터 D13, A1부터 A22와 기능별 AI 결정 원문 |
 
 기존 기록의 ID, 날짜, 당시 상태와 본문을 보존한다. 현재 제품 계약은 도메인 세트, 현재 적용되는 결정의 설명과 후속 기록은 해당 세트의 DECISIONS에서 확인한다. 원문의 과거 경로와 구현 상태를 현재 기준으로 해석하지 않는다. 공통 배포 결정은 [운영 결정 기록](../../operations/DECISIONS.md)에 둔다.
