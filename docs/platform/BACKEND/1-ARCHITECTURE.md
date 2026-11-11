@@ -60,7 +60,7 @@ graph LR
 | `notice` | NOTICE |
 | `admin` | ADMIN |
 | `adminkit` | ADMIN<br>다른 도메인의 관리자 API가 함께 쓰는 감사 기록, 요청자, 관리자 역할 조회, 목록 조회 공통 도구<br>`global`만 참조 |
-| `global` | 이 플랫폼 기반: 보안 설정, 공통 오류 응답, 상관관계 필터, 구조화 로그, 인증과 감사 처리의 DB 원문 로그 차단 필터, `ai_call_logs`, 분석 이벤트 발행 |
+| `global` | 이 플랫폼 기반: 앱 보안 필터 체인, 공통 오류 응답, 상관관계 필터, 구조화 로그, 인증과 감사 처리의 DB 원문 로그 차단 필터, `ai_call_logs`, 분석 이벤트 발행<br>도메인 패키지를 참조하지 않음<br>계정 판정과 회원 식별자처럼 도메인 값이 필요하면 `global`이 인터페이스를 정의하고 `auth`가 구현 |
 
 <br>
 
@@ -84,7 +84,7 @@ graph LR
 
 | 항목 | 설정 |
 | --- | --- |
-| 필터 체인 | `/api/v1/admin/**`은 관리자 토큰 필터를 쓰는 별도 체인 ([ADMIN 5-1-1](../../domain/ADMIN/BACKEND/5-1-SECURITY.md#5-1-1-인증-수준과-토큰))<br>나머지 경로는 앱 토큰 체인 |
+| 필터 체인 | `/api/v1/admin/**`은 관리자 토큰 필터를 쓰는 별도 체인 ([ADMIN 5-1-1](../../domain/ADMIN/BACKEND/5-1-SECURITY.md#5-1-1-인증-수준과-토큰))<br>나머지 경로는 앱 토큰 체인<br>앱 체인도 `/api/v1/admin/**`를 모두 거부해 관리자 체인이 빠져도 관리자 경로가 열리지 않음 |
 | 세션 | 두 체인 모두 서버 세션을 만들지 않는 stateless 구성<br>인증은 요청마다 `Authorization` 헤더의 토큰으로 판정 |
 | CSRF | 두 체인 모두 비활성 |
 | CORS | 허용 origin은 `MANYAK_CORS_ALLOWED_ORIGINS`(콤마 구분)<br>메서드 `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, 요청 헤더 전체 허용<br>`X-Manyak-Request-Id`를 노출 헤더로 지정 |

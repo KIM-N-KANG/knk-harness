@@ -67,7 +67,7 @@ ACCOUNT 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 �
 | 동의 | [auth/consent/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/consent/) | 4-1-13, 4-2-17~4-2-20, 5-1-3 |
 | 초대 | [invite/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/invite/) | 4-1-15, 4-2-24, 4-2-25 |
 | 모델 | [auth/entity/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/entity/)<br>enum은 [auth/dto/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/dto/) (`UserStatus`, `SocialProvider`) | 3-2 DB 스키마, 3-1-7 도메인 모델 |
-| 보안 필터, 오류 | [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/), [global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt), [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/) | 4-1-1 공통 처리, 5-1, 5-3 |
+| 보안 필터, 오류 | [global/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/security/), [global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt), [global/error/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/error/)<br>탈퇴와 동의 게이트 판정, 정지 판정은 [auth/security/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/security/) | 4-1-1 공통 처리, 5-1, 5-3 |
 | 관측 | [global/observability/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/observability/) | 5-4 관측 |
 | 프리셋 자산 | [static/profile-presets/](../../../../../manyak-server/src/main/resources/static/profile-presets/) | 4-1-6, 4-2-12 |
 | 마이그레이션 | [db/migration/](../../../../../manyak-server/src/main/resources/db/migration/), [dbdoc/](../../../../../manyak-server/dbdoc/) | 3-2 DB 스키마 |

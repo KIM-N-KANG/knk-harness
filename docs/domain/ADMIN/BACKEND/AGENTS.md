@@ -62,7 +62,7 @@ ADMIN 도메인 백엔드 명세를 읽고 수정할 때 필요한 문서와 코
 | 분석 도구 클라이언트, 캠페인과 사용자와 전환과 기능 지표, 비용 예산, 값 저장 | `admin/analytics/` | 4-1-14, 4-1-16~4-1-20, 4-1-24, 4-1-25, 3-2-5 |
 | 설치 보고서 클라이언트, 해석기, 캐시 | `admin/playstats/` | 4-1-15 |
 | CloudWatch와 ECS 클라이언트, 인프라 지표 조립, DB 테이블 크기 조회 | `admin/infra/` | 4-1-21, 4-1-22 |
-| 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/`<br>[global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
+| 관리자 판정 필터와 앱 토큰 검증 보강 | `admin/security/` (관리자 체인 설정 `AdminSecurityConfig`와 판정 필터)<br>앱 체인의 관리자 경로 거부는 [global/config/SecurityConfig.kt](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/global/config/SecurityConfig.kt) | 4-1-1, 4-1-3, 5-1-1 |
 | 신원 검증기 | [auth/social/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/social/) | 4-1-2 |
 | 토큰 발급 기반 | [auth/jwt/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/jwt/)<br>[auth/config/](../../../../../manyak-server/src/main/kotlin/com/knk/manyak/auth/config/) | 4-2-1 관리자 토큰 |
 | 모델과 저장 계층 | `admin/entity/`<br>`admin/repository/`<br>`adminkit/audit/`(감사 로그)<br>`adminkit/role/`(관리자 역할) | 3-2 DB 스키마 |
