@@ -102,6 +102,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 완성 요청 | 요청 수신<br>`story_create_requested` | `creation_id`(진행 ID) |
 | 완성 성공 | 저장 성공<br>`story_created` | `story_id`(공개 ID), `ai_call_log_id`, `duration_ms`<br>회수 재구성은 `ai_call_log_id`가 null |
 | 완성 실패 | 예외 전파 직전<br>`story_create_failed` | `error_code`(HTTP 상태 이름 또는 예외 클래스 이름), `duration_ms` |
+| 환불 실패 | 스토리라인 생성과 완성의 이프 환불, 회원 체험 복원, 게스트 횟수 복원 실패<br>`story_creation_refund_failed` | `stage`(`storyline_generation`, `story_completion`)<br>`requester`(`guest`, `member_trial`, `member_credit`)<br>`creation_id`(진행 ID, 발급 전이면 null)<br>`idempotency_key`(회원 이프만)<br>`error`(예외 클래스 이름, 회원 체험 복원이 실패를 반환하면 `member_trial_restore_failed`) |
 | 인물 수 초과 | 저장 인물이 상한을 넘을 때<br>`character_limit_exceeded` | `story_public_id`, `received`, `kept` |
 | 생성 이미지 업로드 실패 | 디코딩 또는 업로드 실패<br>`character_image_upload_failed`, `thumbnail_image_upload_failed` | `story_public_id`, `error_type`(예외 클래스 이름)<br>AI가 `error`를 포함해 반환한 이미지는 로그 없이 제외 |
 | 이미지 단계 제한 시간 소진 | 남은 시간이 없어 건너뛸 때<br>`character_image_budget_exhausted`, `thumbnail_image_budget_exhausted` | `story_public_id`, `stage`(`upload`, `cleanup`) |
@@ -127,8 +128,8 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 
 | 기능 | 오류 조회 위치 |
 |---|---|
-| 스토리라인 생성 | `ai_call_logs` `feature=storyline_generation`<br>Sentry `endpoint=/api/v1/stories/simple/storylines` |
-| 완성 | `ai_call_logs` `feature=story_completion`, 로그 `story_create_failed`<br>Sentry `endpoint=/api/v1/stories/simple` |
+| 스토리라인 생성 | `ai_call_logs` `feature=storyline_generation`<br>Sentry `endpoint=/api/v1/stories/simple/storylines`<br>되돌리기 실패는 로그 `story_creation_refund_failed`, 지표 `manyak.story.creation.refund` |
+| 완성 | `ai_call_logs` `feature=story_completion`, 로그 `story_create_failed`<br>Sentry `endpoint=/api/v1/stories/simple`<br>되돌리기 실패는 로그 `story_creation_refund_failed`, 지표 `manyak.story.creation.refund` |
 | 일반 제작 | Sentry `endpoint=/api/v1/stories/general` |
 | 생성 이미지 | 로그 `*_upload_failed`, `*_budget_exhausted`, `*_cleanup_*`<br>스토리는 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음 |
 | 검색 색인 | WARN 평문 로그<br>요청 실패로 이어지지 않음 |
@@ -146,12 +147,14 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | `manyak.ai.call.duration` | Timer<br>`feature`, `outcome`(`success`, `failure`) | AI 호출 지연과 실패율 |
 | `manyak.story.creation.duration` | Timer<br>`outcome`(`success`, `failure`, `rejected`) | 완성 처리 시간<br>AI 호출과 저장을 포함하고 멱등 재요청과 회수 재구성은 제외 |
 | `manyak.storyline.creation.result` | Counter<br>`outcome`(`success`, `failure`, `rejected`) | 스토리라인 생성 결과 분포<br>게스트 한도 소진처럼 AI 호출 전에 거부된 요청도 기록 |
+| `manyak.story.creation.refund` | Counter<br>`outcome`(`success`, `failure`) | 스토리라인 생성과 완성의 환불과 횟수 복원 결과<br>되돌릴 대상(회원 이프 차감, 회원 체험 예약, 게스트 예약)이 있는 호출만 셈<br>기동 시 두 시계열을 0으로 등록 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 요청률, 오류율, 응답 시간 |
 
 | 기준 | 내용 |
 |---|---|
 | `rejected`와 `failure` | `rejected`는 컴파일 또는 AI 호출 전의 4xx 거부와 AI 내용 거절<br>`failure`는 호출에 진입한 뒤의 그 밖의 실패<br>판별 기준은 HTTP 상태가 아니라 AI 진입 여부이고 AI 내용 거절만 진입 뒤에도 `rejected`<br>알림과 p95는 `failure`만 사용 |
 | AI 내용 거절의 AI 호출 지표 | AI 서버가 계약대로 응답한 호출이라 `manyak.ai.call.duration`과 `ai_call_completed`의 `outcome`은 `success` |
+| 환불 `failure` | 되돌리지 못한 호출<br>성능 지표가 아니라 정산 정확성 신호이며 10분 안에 1건이라도 늘면 확인 대상<br>회원 이프만 원장 대사가 보정하고 회원 체험과 게스트 횟수는 보정되지 않음 |
 | 히스토그램 구간 | `manyak.story.creation.duration`과 `manyak.ai.call.duration`은 100ms에서 240초<br>상한이 컴파일 대기 180초보다 커야 대기 초과 직전 분포가 보임<br>`http.server.requests`는 10ms에서 10초라 AI 대기 경로의 p95는 10초 상한에 제한되어 실제 지연을 구분하기 어려움 |
 
 <br>
@@ -186,7 +189,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | 범위 | AI 서버, 백엔드(`java-spring-boot`), 웹 프로젝트 |
 | 오류 없음과 조회 실패 | 오류가 없다는 결과와 조회 실패를 구분해 전달 |
-| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, AI 내용 거절, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존은 Sentry에 없어 보고에 포함되지 않음 |
+| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, AI 내용 거절, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존, 409와 422 응답의 환불 실패는 Sentry에 없어 보고에 포함되지 않음 |
 
 <br>
 
