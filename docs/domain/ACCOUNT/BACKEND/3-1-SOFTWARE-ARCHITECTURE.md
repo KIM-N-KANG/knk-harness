@@ -114,7 +114,7 @@ ACCOUNT는 다른 도메인의 백엔드와 하나의 서버 이미지에 포함
 | API 계층 → 서비스 | API 계층은 서비스만 호출<br>저장 계층과 Redis를 직접 호출하지 않음 |
 | 소셜 인증 → 계정 등록, 로그인 후속 처리 | 소셜 인증은 트랜잭션을 열지 않고 순서만 관리<br>계정 등록은 독립 트랜잭션으로 처리 |
 | ACCOUNT → PAYMENT | 초대 보상과 그 정책값은 PAYMENT 서비스 호출<br>가입 보상, 체험 스냅샷, 잔액과 출석 조회는 ACCOUNT가 정의한 인터페이스로 호출하고 PAYMENT가 구현<br>가입 보상의 지급량과 사유는 PAYMENT가 정하고 멱등 키는 ACCOUNT가 넘김 |
-| ACCOUNT → STORY, CHAT | 이관의 소유권 설정과 재색인 이벤트는 해당 도메인의 서비스와 저장 계층 호출 |
+| ACCOUNT → STORY, CHAT | 이관은 STORY와 CHAT의 후보 조회와 클레임 명령, STORY의 엔딩 도달 백필을 호출하고 재색인 이벤트를 발행<br>항목 판정과 기기 증명은 ACCOUNT |
 | STORY, CHAT → ACCOUNT | 내 스토리 목록과 내 채팅 목록의 컨트롤러는 story, chat 패키지에 두고 요청자 확인만 ACCOUNT 규칙을 따름 |
 | STORY, MODERATION, NOTIFICATION → ACCOUNT | 탈퇴 이벤트를 탈퇴 트랜잭션 안에서 구독해 초안, 제출본, 푸시 토큰, 알림 내역을 삭제<br>ACCOUNT는 이 도메인들의 저장 계층을 호출하지 않음<br>구독자가 실패하면 탈퇴 전체를 되돌림<br>STORY는 닉네임 변경 이벤트를 프로필 트랜잭션 안에서 구독해 소유 스토리의 재색인을 요청 |
 | ACCOUNT → ADMIN | 관리자 요청자, 관리자 역할 보유 여부, 변경 감사 기록 |
