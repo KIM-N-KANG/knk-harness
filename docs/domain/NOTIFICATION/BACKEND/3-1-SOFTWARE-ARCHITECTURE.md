@@ -142,6 +142,8 @@ NOTIFICATION 패키지는 다른 도메인의 백엔드와 하나의 서버 이�
 | STORY, MODERATION → NOTIFICATION | 도메인 이벤트로만 연결 |
 | NOTIFICATION → ACCOUNT | 회원 탈퇴 이벤트를 탈퇴 트랜잭션 안에서 구독해 토큰과 알림 내역을 삭제<br>제출본과 초안 삭제 다음 순서로 실행 |
 | NOTIFICATION → NOTICE | 캠페인 예약 트랜잭션에서 알림 연결 연산 호출<br>회차는 캠페인의 공지 참조로 공지의 공개 식별자, 게시 상태, 태그를 읽음<br>공지 테이블을 직접 쓰지 않음 |
+| NOTIFICATION → STORY | 캠페인 이동 대상 스토리의 공개 목록 노출 여부와 공개 식별자를 STORY의 조회 서비스로 읽음 |
+| NOTIFICATION → PAYMENT | 이프 만료 예정 대상을 PAYMENT의 조회 서비스로 읽음 |
 | NOTIFICATION → ADMIN | 관리자 요청자와 변경 감사 기록<br>관리자 캠페인 목록의 조회 공통 도구 |
 | ADMIN → NOTIFICATION | 푸시 열람 지표의 도달 집계 읽기 조회 |
 | NOTIFICATION → ACCOUNT | 회원 상태와 공개 식별자 조회 |

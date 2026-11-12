@@ -699,3 +699,12 @@ FK를 두지 않는다. 간편 제작 진행과 스토리는 `request_id` 값으
 | 제공 장르, 별칭, 프리셋, 화풍 | 비활성화만 수행 |
 | 검색 문서 | 스토리 삭제 시 `visible=false`로 재색인 |
 | 홈 섹션과 하위 데이터 | 관리자 삭제 API로 물리 삭제<br>스토리 삭제는 수동 지정 행만 CASCADE |
+
+<br>
+
+### 3-2-14 참조하는 다른 도메인의 컬럼
+
+| 테이블 | 컬럼 | STORY가 하는 일 |
+|---|---|---|
+| `story_chats` | `story_id`, `current_turn`, `hidden_turn_count`, `regenerated_count`, `forked_from_turn` | 공개 목록과 홈의 누적 턴 정렬<br>삭제된 채팅도 포함 |
+| `story_chats` | `story_id`, `current_turn`, `deleted_at` | 관리자 오리지널의 채팅 수와 턴 수<br>삭제된 채팅은 제외 |

@@ -87,6 +87,7 @@ erDiagram
 |---|---|---|
 | `users` | `status` | 접수와 결과 반영 전 계정 상태 확인<br>공개 중단 알림 전 소유 회원의 탈퇴 확인 |
 | `users` | `public_id`, `nickname`, `status`, `created_at` | 관리자 제출본 목록의 회원 요약 |
+| `admin_accounts` | `user_id` | 관리자 제출본 목록의 회원 요약에서 관리자 여부 판정 |
 | `stories` | `public_id`, `user_id`, `deleted_at`, `visibility`, `status` | 소유 판정, 삭제 확인, 수정 폼 조립, 공개 범위 변경 허용 판정 |
 | `stories` | `thumbnail_image_url` | 수정 폼의 표지 URL |
 | `stories` | `taken_down_at`, `takedown_reason`, `takedown_reason_detail` | 공개 중단 기록과 승인 시 해제<br>공개 범위 단독 변경의 검수 여부 판정 |

@@ -195,6 +195,7 @@ erDiagram
 | `credit_lots` | `expires_at` | 만료 예정 판정과 발송 요청의 유효 기한 |
 | `notices` | `id`<br>`public_id` | 공지 알림 캠페인의 참조와 딥링크 경로값 |
 | `notices` | `status`<br>`tag` | 발송 선점 때 게시 상태 확인과 종류 재결정 |
+| `stories` | `public_id` | 관리자 캠페인 목록의 이동 대상 스토리 표시 |
 
 <br>
 
