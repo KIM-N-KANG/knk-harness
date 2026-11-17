@@ -262,7 +262,7 @@ erDiagram
 | `one_line_intro` | varchar(255) | | |
 | `description` | text | | |
 | `protagonist_name` | text | CHECK 1~30자 | 이름 도입 전 스토리는 NULL |
-| `genre` | varchar(255) | | 장르 정식 이름을 `", "`로 연결한 문자열 |
+| `genre` | varchar(700) | | 장르 정식 이름을 `", "`로 연결한 문자열<br>간편 제작이 받는 장르 20개가 모두 30자일 때의 638자를 담음 |
 | `status` | varchar(20) | NOT NULL, CHECK `DRAFT` `PUBLISHED`, 기본 `PUBLISHED` | |
 | `visibility` | varchar(20) | NOT NULL, CHECK `PUBLIC` `PRIVATE`, 기본 `PUBLIC` | |
 | `thumbnail_image_key` | varchar(64) | FK `image_presets.image_key` | 새 스토리에는 쓰지 않음 |
