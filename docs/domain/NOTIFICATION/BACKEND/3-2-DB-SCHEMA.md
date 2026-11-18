@@ -175,6 +175,9 @@ erDiagram
 | `attempts` | integer | NOT NULL, 기본 0 | 발행 실패 횟수<br>관찰용이며 포기 판정에 쓰지 않음 |
 | `next_attempt_at` | timestamptz | NOT NULL | 다음 선점 가능 시각<br>선점 중에는 임대 만료 시각 |
 | `published_at` | timestamptz | | |
+| `created_at` | timestamptz | NOT NULL | 포기 판정의 기준 시각 |
+| `trace_parent` | varchar(55) | | 기록 스팬의 추적 헤더 `traceparent`<br>스팬 밖에서 기록한 행은 NULL |
+| `trace_state` | varchar(512) | | 기록 스팬의 추적 헤더 `tracestate` |
 
 | 인덱스 | 컬럼 |
 |---|---|
