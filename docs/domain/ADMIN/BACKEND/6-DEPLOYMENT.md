@@ -111,7 +111,7 @@
 | `MANYAK_ADMIN_INFRA_ALB` | 빈 값 | 같음 | ALB의 ARN 접미사 `app/manyak-prod-alb/{ID}`<br>Terraform의 `arn_suffix`를 그대로 씀 |
 | `MANYAK_ADMIN_INFRA_RDS_INSTANCE` | 빈 값 | 같음 | RDS 인스턴스 식별자<br>운영 `manyak-prod-pg` |
 | `MANYAK_ADMIN_INFRA_REDIS_NODES` | 빈 값 | 같음 | 콤마 구분 캐시 클러스터 ID이며 이 순서로 응답<br>운영은 복제 그룹 `manyak-prod-redis-rg`의 구성원 `manyak-prod-redis-rg-001,manyak-prod-redis-rg-002` |
-| `MANYAK_ADMIN_INFRA_OPENSEARCH_DOMAIN` | 빈 값 | 같음 | OpenSearch 도메인 이름<br>운영 `manyak-logs`(dev state가 소유하는 공유 도메인) |
+| `MANYAK_ADMIN_INFRA_OPENSEARCH_DOMAIN` | 빈 값 | 같음 | 관리형 OpenSearch 도메인 이름<br>관리형 도메인을 쓰지 않으면 빈 값으로 두며 OpenSearch 묶음은 `null` |
 | `MANYAK_ADMIN_INFRA_AWS_ACCOUNT_ID` | 빈 값 | 같음 | OpenSearch 지표의 `ClientId` 차원<br>비면 OpenSearch 묶음만 `null` |
 
 - 개발 태스크 정의에는 주입하지 않는다. 개발 서버의 인프라 지표는 사용 불가다.

@@ -107,7 +107,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 생성 이미지 업로드 실패 | 디코딩 또는 업로드 실패<br>`character_image_upload_failed`, `thumbnail_image_upload_failed` | `story_public_id`, `error_type`(예외 클래스 이름)<br>AI가 `error`를 포함해 반환한 이미지는 로그 없이 제외 |
 | 이미지 단계 제한 시간 소진 | 남은 시간이 없어 건너뛸 때<br>`character_image_budget_exhausted`, `thumbnail_image_budget_exhausted` | `story_public_id`, `stage`(`upload`, `cleanup`) |
 | 보상 삭제 생략과 실패 | `generated_image_cleanup_skipped`<br>`character_image_cleanup_failed`, `thumbnail_image_cleanup_failed` | `story_public_id`, `reason`(`story_exists`, `lookup_failed`), `error_type`<br>`lookup_failed`는 고아 객체 가능 |
-| 검색 색인과 재색인 실패 | 커밋 후 리스너, 묶음 색인, 기동 시 재색인과 인덱스 초기화 | 예외 클래스 이름만 WARN<br>묶음 색인은 묶음 건수와 예외 클래스 이름, 항목 실패는 묶음 건수와 실패 건수<br>묶음에 들어가기 전에 중단되면 요청 전체 건수와 예외 클래스 이름<br>평문 로그 |
+| 검색 색인과 재색인 실패 | 커밋 후 리스너, 묶음 색인, 기동 시 재색인과 인덱스 초기화, 정기 재색인 | 예외 클래스 이름만 WARN<br>묶음 색인은 묶음 건수와 예외 클래스 이름, 항목 실패는 묶음 건수와 실패 건수<br>묶음에 들어가기 전에 중단되면 요청 전체 건수와 예외 클래스 이름<br>평문 로그 |
 
 <details>
 <summary><b>예시: 완성 성공 로그 1줄</b></summary>
@@ -133,6 +133,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 일반 제작 | Sentry `endpoint=/api/v1/stories/general` |
 | 생성 이미지 | 로그 `*_upload_failed`, `*_budget_exhausted`, `*_cleanup_*`<br>스토리는 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음 |
 | 검색 색인 | WARN 평문 로그<br>요청 실패로 이어지지 않음 |
+| 검색 질의 | 질의 실패는 예외 클래스 이름만 WARN 평문 로그<br>커서 없는 요청은 대체 검색으로 성공 응답하므로 Sentry에 남지 않음<br>대체 횟수는 지표 `manyak.story.search.fallback` |
 
 `ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이다. 100자로 잘라 기록한다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, 내용 거절을 뺀 AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. AI 호출 실패는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다. 내용 거절은 422로 바뀌어 전파되므로 Sentry에 남지 않는다.
 
@@ -148,6 +149,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | `manyak.story.creation.duration` | Timer<br>`outcome`(`success`, `failure`, `rejected`) | 완성 처리 시간<br>AI 호출과 저장을 포함하고 멱등 재요청과 회수 재구성은 제외 |
 | `manyak.storyline.creation.result` | Counter<br>`outcome`(`success`, `failure`, `rejected`) | 스토리라인 생성 결과 분포<br>게스트 한도 소진처럼 AI 호출 전에 거부된 요청도 기록 |
 | `manyak.story.creation.refund` | Counter<br>`outcome`(`success`, `failure`) | 스토리라인 생성과 완성의 환불과 횟수 복원 결과<br>되돌릴 대상(회원 이프 차감, 회원 체험 예약, 게스트 예약)이 있는 호출만 셈<br>기동 시 두 시계열을 0으로 등록 |
+| `manyak.story.search.fallback` | Counter | 검색 저장소 장애로 DB 대체 검색을 수행한 횟수<br>기동 시 0으로 등록 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 요청률, 오류율, 응답 시간 |
 
 | 기준 | 내용 |

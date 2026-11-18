@@ -22,7 +22,7 @@
 | `MANYAK_KAKAO_CLIENT_IDS` | 없음(local은 더미) | 카카오 로그인 사용 시 예 | 같은 카카오 앱의 REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록. 플랫폼 키가 빠지면 그 플랫폼 로그인만 401 |
 | `MANYAK_LEGAL_TERMS_VERSION`, `MANYAK_LEGAL_PRIVACY_VERSION`, `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `v1.4`, `v1.8`, `v1.0` | 아니오 | 현행 약관과 처리방침 버전. 동의 확인 기준 |
 | `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 없음 | 아니오 | 오리지널 스토리를 소유한 공식 계정 공개 ID. 비어 있으면 오리지널 필터가 빈 결과 |
-| `AWS_REGION` | `ap-northeast-2` | 아니오 | OpenSearch, SQS, 관리자 인프라 조회의 리전 |
+| `AWS_REGION` | `ap-northeast-2` | 아니오 | SQS, 관리자 인프라 조회의 리전 |
 
 <br>
 
@@ -46,7 +46,9 @@
 | `MANYAK_CHAT_COMPACT_ENABLED`, `MANYAK_CHAT_COMPACT_INTERVAL_TURNS`, `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | `false`, `10`, `300` | 대화 요약 켜기, 요약 주기(턴), AI 요약 대기 한도 ([CHAT 4-1](../../domain/CHAT/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_CHAT_SSE_CONCURRENCY`, `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | `64`, `100` | 채팅 SSE 작업 동시 실행 수와 대기열 크기 |
 | `MANYAK_AI_MODERATION_TIMEOUT`, `..._POOL_SIZE`, `..._RETRY_DELAYS`, `..._REQUEST_BUDGET_BYTES`, `..._RECLAIM_AFTER`, `..._POLL_INTERVAL`, `..._POLL_ENABLED` | `180s`, `4`, `1m,5m`, `41943040`, `300s`, `1000`, `true` | 스토리 검수 요청과 재시도, 회수 주기 ([MODERATION 4-1](../../domain/MODERATION/BACKEND/4-1-PIPELINES.md)) |
-| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 비어 있으면 검색 503이고 색인을 건너뛴다. 인증은 태스크 역할 SigV4 ([STORY 4-2-3](../../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 홈서버 OpenSearch의 터널 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
+| `MANYAK_OPENSEARCH_USERNAME`, `MANYAK_OPENSEARCH_PASSWORD` | 없음 | 환경별 검색 전용 계정. 한쪽만 있으면 기동 실패. 둘 다 비면 인증 없이 연결한다(로컬과 테스트) |
+| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | 터널 주소의 Cloudflare Access 서비스 토큰. 한쪽만 있으면 기동 실패. 둘 다 비면 헤더 없이 연결한다 |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 검색 인덱스 이름. 운영은 `stories-prod` |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | `true`면 기동 시 전체 재색인 1회. 복구용이며 끝나면 되돌린다 |
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 이미지 CDN base URL. `imageKey`로 서빙 URL을 만든다 ([CHAT 4-1-13](../../domain/CHAT/BACKEND/4-1-PIPELINES.md#4-1-13-실시간-이미지)) |

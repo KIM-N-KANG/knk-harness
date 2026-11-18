@@ -295,12 +295,14 @@ GET /stories?sort=popular&limit=2&cursor=czo0NDg6M2YyNTA0ZTAtNGY4OS00MWQzLTlhMGM
 
 공개 목록 응답과 같은 `items`, `nextCursor` 구조다.
 
+검색 저장소 장애 중에 `cursor` 없이 요청하면 DB에서 찾은 결과를 같은 구조로 반환한다. 이때 `nextCursor`는 `null`이고 형태소 분석과 관련도 정렬은 적용되지 않는다. ([4-1-3 검색](4-1-PIPELINES.md#4-1-3-검색))
+
 **3. 실패 응답**
 
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 검색어 길이 위반, 잘못된 커서 |
-| 503 | `SERVICE_UNAVAILABLE` | 검색 저장소 미설정 또는 장애 |
+| 503 | `SERVICE_UNAVAILABLE` | 검색 저장소 미설정<br>검색 저장소 장애 중 `cursor`가 있는 요청 |
 
 <details>
 <summary><b>실패 응답 예시</b></summary>
