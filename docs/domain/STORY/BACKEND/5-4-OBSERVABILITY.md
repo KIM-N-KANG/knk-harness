@@ -133,7 +133,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 일반 제작 | Sentry `endpoint=/api/v1/stories/general` |
 | 생성 이미지 | 로그 `*_upload_failed`, `*_budget_exhausted`, `*_cleanup_*`<br>스토리는 성공으로 끝나 Sentry와 `ai_call_logs`에 남지 않음 |
 | 검색 색인 | WARN 평문 로그<br>요청 실패로 이어지지 않음 |
-| 검색 질의 | 질의 실패는 예외 클래스 이름만 WARN 평문 로그<br>커서 없는 요청은 대체 검색으로 성공 응답하므로 Sentry에 남지 않음<br>대체 횟수는 지표 `manyak.story.search.fallback` |
+| 검색 질의 | 질의 실패는 예외 클래스 이름만 WARN 평문 로그<br>커서 없는 요청은 대체 검색으로 성공 응답하고 커서 있는 요청의 503은 예상된 응답이라 둘 다 Sentry에 남지 않음<br>대체 횟수는 지표 `manyak.story.search.fallback` |
 
 `ai_call_logs.error_code`는 호출 기록기가 잡은 예외의 클래스 단순 이름이다. 100자로 잘라 기록한다. 연결 실패와 읽기 시간 초과는 `ResourceAccessException`, 내용 거절을 뺀 AI 서버의 4xx와 5xx는 HTTP 클라이언트의 상태별 예외 이름, 빈 본문은 `IllegalStateException`이다. AI 호출 실패는 호출부에서 502로 바뀌어 전파되므로 Sentry와 `story_create_failed`의 `error_code`는 `BAD_GATEWAY`가 된다. 내용 거절은 422로 바뀌어 전파되므로 Sentry에 남지 않는다.
 
@@ -191,7 +191,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간의 운영 Sentry 오류 요약 |
 | 범위 | AI 서버, 백엔드(`java-spring-boot`), 웹 프로젝트 |
 | 오류 없음과 조회 실패 | 오류가 없다는 결과와 조회 실패를 구분해 전달 |
-| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, AI 내용 거절, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존, 409와 422 응답의 환불 실패는 Sentry에 없어 보고에 포함되지 않음 |
+| STORY에서 잡히는 것 | 502 AI 실패와 500 예상하지 못한 예외<br>4xx 거부, AI 내용 거절, 이미지 누락, 색인 실패, `STARTED`와 `PENDING` 잔존, 409와 422 응답의 환불 실패, 검색 저장소 장애는 Sentry에 없어 보고에 포함되지 않음 |
 
 <br>
 
@@ -204,7 +204,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 사용자 입력 원문, 프롬프트, AI 응답 본문 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>원문은 AI 서버의 Langfuse에서 관리 |
 | 생성 이미지 | base64와 URL을 로그에 싣지 않음<br>객체 키는 S3 보상 삭제에만 사용 |
 | 검색어 | 로그와 Sentry에 구조화 필드로 싣지 않음 |
-| Sentry 이벤트 | 5xx를 전부 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| Sentry 이벤트 | 5xx를 캡처. 검색 저장소 장애 중 커서 요청의 503은 제외<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 | JDBC 스팬 | placeholder SQL만 수집<br>바인딩 값 제외 |
 | 로그 `message` | 예외 메시지와 스택트레이스는 그대로 기록 |
 
