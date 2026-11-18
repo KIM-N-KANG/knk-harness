@@ -615,7 +615,7 @@ Content-Type: application/json
 | `CREDIT_EXPIRY_REMINDER` | `SERVICE` | `credit-expiry:{회원 공개 식별자}:{KST 날짜}` |
 | `PROMOTION` | `MARKETING` | `promotion:{캠페인 공개 식별자}:{회원 공개 식별자}` |
 
-- 추적 헤더 `traceparent`, `tracestate`는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다.
+- 추적 헤더 `traceparent`, `tracestate`는 본문이 아니라 메시지 큐의 메시지 속성에 싣는다. 값은 발송 요청을 기록한 스팬의 추적 헤더다. 스케줄러가 기록한 메시지는 릴레이 스팬의 추적 헤더를 싣는다.
 - 출석 리마인드, 이프 만료 예정 알림, 캠페인은 스케줄러가 회원마다 메시지를 기록한다. `requestId`와 `sessionId`는 `unknown`이다.
 
 <details>
