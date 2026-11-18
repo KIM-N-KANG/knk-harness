@@ -17,7 +17,7 @@
 | PostgreSQL | 기동 시 마이그레이션 적용 | 스토리, 제작 진행, 생성 요청, 초안, 카탈로그 테이블 |
 | AI 서버 | 운영은 독립 ECS 서비스, 개발은 같은 태스크의 컨테이너 | 스토리라인, 컴파일<br>스텁이면 불필요 |
 | S3 assets 버킷과 CloudFront | Terraform 관리 | 생성 및 업로드 이미지 경로의 쓰기와 HEAD<br>버킷 CORS(PUT, HEAD) |
-| OpenSearch | 로그 도메인 재사용, 인덱스 `stories-{env}` | 검색과 색인 |
+| OpenSearch | 홈서버의 OpenSearch(관측 데이터와 같은 클러스터)<br>Cloudflare 터널 주소로 연결, 인덱스 `stories-{env}` | 검색과 색인 |
 | Redis | 게스트 체험 카운터 | PAYMENT 도메인의 서비스로 접근 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
@@ -28,7 +28,7 @@
 | AI 서버 | 주소에 `http` 또는 `https` 스킴이나 호스트가 없으면 기동 실패<br>호출 실패와 대기 한도 초과는 AI 실패로 응답 |
 | PostgreSQL | 연결 불가는 기동 실패 |
 | S3 assets 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 생성 이미지 업로드 생략<br>인물 이미지와 표지 URL은 `null`로 저장<br>업로드 presign은 사용 불가로 응답<br>업로드 경로의 IAM 권한이나 CORS 설정이 없으면 저장소가 업로드를 거부 |
-| OpenSearch | 엔드포인트가 비면 검색은 사용 불가로 응답하고 색인은 생략<br>엔드포인트에 스킴이나 경로가 있으면 기동 실패<br>인덱스 없음은 빈 목록<br>질의 실패는 사용 불가로 응답하고 WARN<br>색인 실패는 WARN만 남기고 스토리 저장은 진행 |
+| OpenSearch | 엔드포인트가 비면 검색은 사용 불가로 응답하고 색인과 정기 재색인은 생략<br>엔드포인트에 스킴이나 경로가 있으면 기동 실패<br>계정 쌍이나 접근 토큰 쌍의 한쪽 값만 있으면 기동 실패<br>질의 실패, 응답 한도 초과, 인덱스 없음은 WARN을 남기고 DB 대체 검색으로 응답, 커서가 있는 요청은 사용 불가로 응답<br>색인 실패는 WARN만 남기고 스토리 저장은 진행 |
 | Redis | 지연 연결이라 기동은 진행<br>회원 체험 카운터 장애는 예약 실패로 보고 크레딧 경로로 폴백, WARN<br>운영 health는 Redis를 분리 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 | Slack 웹훅 | 미설정이면 신고 알림 생략 |
@@ -80,7 +80,9 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OPENSEARCH_ENDPOINT` | 빈 값 | 개발과 운영 태스크 환경 변수, 로그 도메인 엔드포인트 | 스킴과 경로 없는 호스트 |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 빈 값 | 개발과 운영 태스크 환경 변수, 홈서버 OpenSearch의 터널 주소 | 스킴과 경로 없는 호스트 |
+| `MANYAK_OPENSEARCH_USERNAME`<br>`MANYAK_OPENSEARCH_PASSWORD` | 빈 값 | 시크릿 | 환경별 검색 전용 계정<br>권한은 그 환경의 인덱스 `stories-{env}*`로 제한<br>둘 다 비면 인증 없이 연결(로컬과 테스트) |
+| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`<br>`MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 빈 값 | 시크릿 | 터널 주소를 지키는 Cloudflare Access 서비스 토큰<br>요청 헤더 `CF-Access-Client-Id`, `CF-Access-Client-Secret`으로 전송<br>둘 다 비면 헤더 없이 연결 |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 개발 `stories-dev`, 운영 `stories-prod` | |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | 개발과 운영 Terraform 변수 | |
 
@@ -184,7 +186,7 @@
 | 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
 | 완성 실패 | `manyak.story.creation.duration`의 `failure` 비율 | 배포 전과 같은 수준 |
 | AI 호출 | `ai_call_logs`의 `STARTED` 잔존 | 호출 중 중단 없음 |
-| 검색 | 색인 실패 WARN, 검색 응답 | WARN 없음, 검색 성공 |
+| 검색 | 색인 실패와 질의 실패 WARN, 검색 응답 | WARN 없음, 검색 성공 |
 | 장르와 표지 | `GET /stories/genres` 응답, 새 스토리의 표지 `null` | 계약과 일치 |
 | 이미지 업로드 | presign 응답과 업로드 PUT | 발급과 업로드 성공 |
 
@@ -196,6 +198,7 @@
 |---|---|---|
 | 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, OpenSearch 엔드포인트 형식, 공식 계정 UUID, 추적 주소 누락 중 해당 값 수정 후 apply |
 | health 정상, 생성이 AI 실패로 응답 | 요청 ID의 `ai_call_logs`, AI 서버 로그, AI 주소 | AI 서비스 상태와 내부 주소 확인<br>제한 시간 초과와 AI 오류 응답 구분 |
-| 검색이 사용 불가로 응답 | 시작 로그의 인덱스 초기화 WARN, OpenSearch 엔드포인트, 태스크 역할 권한 | 엔드포인트 미주입, 인덱스 초기화 실패, 질의 실패를 구분 |
+| 검색이 사용 불가로 응답 | OpenSearch 엔드포인트, 요청의 `cursor` 유무 | 엔드포인트 미주입과 저장소 장애 중 커서 요청을 구분 |
+| 검색 결과가 관련도 순이 아니거나 `manyak.story.search.fallback`이 증가 | 질의 실패 WARN, 시작 로그의 인덱스 초기화 WARN, 홈서버 OpenSearch와 터널 상태, 검색 계정과 접근 토큰 | 저장소와 터널 복구, 계정 권한과 토큰 확인<br>장애 중 빠진 문서는 정기 재색인이나 재색인 설정으로 채움 |
 | 이미지 업로드 실패 | 이미지 저장소 환경 변수 3종, 버킷 CORS, 태스크 역할의 업로드 경로 권한 | 미설정은 presign이 사용 불가로 응답<br>권한과 CORS 문제는 저장소가 업로드 거부<br>Terraform apply 순서 확인 |
 | 새 스토리의 표지가 `null` | 이미지 저장소 환경 변수, S3 업로드 경로 권한 | 업로드 생략 조건과 권한 문제를 구분 |

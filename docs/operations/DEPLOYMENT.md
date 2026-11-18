@@ -120,9 +120,9 @@ PostgreSQL이 업무 데이터의 기준이며 OpenSearch 인덱스는 파생 �
 
 ### 4-4 로그와 검색
 
-공유 OpenSearch 도메인 `manyak-logs`는 dev state가 관리한다. prod는 도메인 이름으로 조회하며 같은 리소스를 중복 소유하지 않는다. FireLens 로그는 `manyak-logs-dev-*`, `manyak-logs-prod-*`, 검색은 `stories-dev`, `stories-prod`로 분리한다. 한국어 분석용 `analysis-nori` 연결은 공유 도메인에서 한 번 관리하며 엔진 버전과 맞는 패키지를 사용한다.
+공유 OpenSearch 도메인 `manyak-logs`는 dev state가 관리한다. prod는 도메인 이름으로 조회하며 같은 리소스를 중복 소유하지 않는다. FireLens 로그는 `manyak-logs-dev-*`, `manyak-logs-prod-*`로 분리한다.
 
-태스크 IAM의 `es:ESHttp*`만으로 검색 접근이 완성되지 않는다. 서버의 `opensearch/setup-search.sh`가 관리하는 세분 접근 제어 역할과 backend role 매핑도 필요하다. `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP`은 초기 적재, 복구 때 일시적으로 켠 뒤 되돌린다. 서버의 재색인 대상과 검색 가시성은 백엔드 Spec을 따른다.
+스토리 검색 인덱스 `stories-dev`, `stories-prod`는 홈서버의 OpenSearch에 관측 데이터와 같은 클러스터로 둔다. 한국어 분석용 `analysis-nori` 플러그인은 홈서버 OpenSearch 이미지에 엔진 버전과 맞는 것으로 설치한다. 서버는 Cloudflare 터널 주소로 연결하고 Cloudflare Access 서비스 토큰과 환경별 검색 전용 계정으로 인증한다. 계정의 역할은 그 환경의 인덱스 `stories-{env}*`로 제한한다. 검색 인덱스는 파생 데이터라 백업하지 않고 재색인으로 복구한다. `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP`은 초기 적재, 복구 때 일시적으로 켠 뒤 되돌린다. 서버의 재색인 대상과 검색 가시성은 백엔드 Spec을 따른다.
 
 prod 알림은 서버와 같은 FireLens 구성으로 `manyak-logs-prod-*`에 로그를 보내고 CloudWatch 안전망을 유지한다. Fargate FireLens에는 영속 디스크 버퍼가 없으므로 OpenSearch 장애 때 로그 유실을 막는 별도 저장 경로가 필요하다. CloudWatch는 OpenSearch 403 진단에 필요한 로그 라우터 자체 로그도 저장한다. 알림 CloudWatch 보존 기간은 7일로 정한다. ([BE-051](../reference/decisions/BACKEND.md#be-051))
 
@@ -193,7 +193,7 @@ Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리한다. �
 | RDS 비밀번호 | 운영 server에 시작 시 주입. 회전 후 새 태스크로 갱신 |
 | LLM 공급자 키, Langfuse | AI 컨테이너. AI가 선택 모델의 공급자와 관측 설정을 검사 |
 | 이미지 bucket, region, base URL | server 생성 이미지 저장. 필요한 값과 IAM을 함께 공급 |
-| OpenSearch endpoint, index, 재색인 | server 검색, 색인. IAM과 검색 역할 매핑을 별도로 확인 |
+| OpenSearch endpoint, index, 재색인 | server 검색, 색인. 검색 계정과 Access 서비스 토큰 시크릿을 별도로 확인 |
 | OTLP | server, ai, notification에 Collector endpoint와 활성 토글을 공급. prod는 `enable_otlp_metrics=true`, `otel_collector_enabled=true`, `tracing_enabled=true`. AMP 인증은 Collector의 IAM과 SigV4가 담당 |
 | 신고, 피드백 webhook | server에 목적별 참조. 값이 없을 때 저장과 알림의 실패 경계는 백엔드 계약을 따름 |
 | FCM | dev와 prod의 server, notification에 `MANYAK_FCM_SERVICE_ACCOUNT_JSON` 참조. prod 서버 참조도 현재 선언에 남아 있음 |
