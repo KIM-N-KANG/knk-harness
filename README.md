@@ -45,7 +45,7 @@ git clone <manyak-infra-repository-url>
 
 ## 제품 스펙 문서
 
-[도메인 목록](docs/domain/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
+[도메인 목록](docs/spec/AGENTS.md)에서 ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION의 문서를 찾습니다. 각 도메인에는 BACKEND와 CLIENT 세트가 있으며, AI 기능이 있는 도메인에는 AI 세트도 있습니다.
 
 클라이언트는 `CLIENT/`에 공통 배경과 사용자 목표, 요구사항과 화면 계약을 둡니다. `WEB/`와 `ANDROID/`는 플랫폼 차이와 구현, 검증을 다룹니다. 공통 계약과 플랫폼 조건을 함께 적용하며 유저 스토리 ID를 공유합니다. 문서 역할과 배치는 [클라이언트 작성 가이드](docs/reference/CLIENT-SPEC-WRITING-GUIDE.md)를 따릅니다.
 

@@ -137,7 +137,7 @@
 
 | 구성 | 파일 번호 | 예시 |
 |---|---|---|
-| 여러 단계로 읽는 명세 세트 | 세트의 단계 번호 유지 | `domain/ACCOUNT/CLIENT/2-1-USER-STORY.md`, `ui/3-3-LAYOUT.md` |
+| 여러 단계로 읽는 명세 세트 | 세트의 단계 번호 유지 | `spec/ACCOUNT/CLIENT/2-1-USER-STORY.md`, `ui/3-3-LAYOUT.md` |
 | 여러 문서의 기술 기반 세트 | 해당 폴더에서 1부터 문서 순서로 번호 부여 | `platform/CLIENT/WEB/1-CONTRACT.md`, `platform/CLIENT/ANDROID/1-COMPONENT-ARCHITECTURE.md`, `platform/BACKEND/1-ARCHITECTURE.md` |
 | 안내와 결정 기록을 제외하면 본문이 하나인 독립 폴더 | 파일 접두사 생략 | `operations/DEPLOYMENT.md`, `platform/CLIENT/CONTRACT.md`, `platform/AI/ARCHITECTURE.md` |
 | 개별 조회용 참조 자료, 결정 원문과 템플릿 | 기존 이름 유지 | `reference/PRODUCT-SPEC-WRITING-GUIDE.md`, `reference/decisions/AI.md` |

@@ -19,7 +19,7 @@ AWS 구성은 2026-10-30에 확인한 [Terraform 선언](https://github.com/KIM-
 | manyak-web, manyak-android | 플랫폼별 빌드, 배포 | 각 플랫폼 레포 및 [웹 배포](../platform/CLIENT/WEB/6-DEPLOYMENT.md), [Android 배포](../platform/CLIENT/ANDROID/5-DEPLOYMENT.md) |
 | knk-harness | 현재 구조, 결정 이력 | 이 문서와 배포 결정 기록 |
 
-Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../domain/AGENTS.md#1-도메인과-세트))
+Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../spec/AGENTS.md#1-도메인과-세트))
 
 <br>
 
@@ -203,7 +203,7 @@ Terraform은 Secrets Manager 리소스와 태스크의 참조를 관리한다. �
 
 알림 시크릿은 저장 전에 값의 길이를 검사해 빈 값을 거부한다. dev 빈 값 저장 사고를 반복하지 않도록 저장 결과의 길이도 확인하며 값 자체는 로그나 문서에 출력하지 않는다. 빈 값 거부 외에 최소 길이 수치는 미정이다. prod는 `push_mode="remote"`를 선언하지만 서버의 FCM 참조도 유지한다. 롤백 창 종료 후 서버 참조를 제거하는 결정과 적용 순서는 BE-051 및 KNK-1367에서 확인한다. 선언만으로 시크릿 값 등록이나 운영 전환 검수가 끝났다고 판단하지 않는다. ([BE-051](../reference/decisions/BACKEND.md#be-051), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367))
 
-운영은 `STORY_COMPILE_MODEL`, `STORYLINES_MODEL`, `CHAT_MODEL`의 SSM Parameter 참조를 주입한다. 기존 Parameter 값은 `ignore_changes` 대상이므로 Terraform 기본값만 바꾸어서는 갱신되지 않는다. Parameter 변경 후 새 태스크가 읽게 해야 한다. 개발은 태스크 정의 환경변수이므로 apply가 필요하다. 실제 모델 선택은 [AI 배포의 모델 라우팅](../domain/CHAT/AI/7-4-DEPLOYMENT.md)을 따른다. 특히 채팅의 `model_tier` 라우팅과 단일 `CHAT_MODEL` 설정을 동일시하지 않는다. 운영 Parameter 실값은 이 문서 검토에서 조회하지 않았다. 모델 이름과 AI 등록부가 바뀌는 전환은 설정과 이미지를 같은 배포 단위로 맞춘다.
+운영은 `STORY_COMPILE_MODEL`, `STORYLINES_MODEL`, `CHAT_MODEL`의 SSM Parameter 참조를 주입한다. 기존 Parameter 값은 `ignore_changes` 대상이므로 Terraform 기본값만 바꾸어서는 갱신되지 않는다. Parameter 변경 후 새 태스크가 읽게 해야 한다. 개발은 태스크 정의 환경변수이므로 apply가 필요하다. 실제 모델 선택은 [AI 배포의 모델 라우팅](../spec/CHAT/AI/7-4-DEPLOYMENT.md)을 따른다. 특히 채팅의 `model_tier` 라우팅과 단일 `CHAT_MODEL` 설정을 동일시하지 않는다. 운영 Parameter 실값은 이 문서 검토에서 조회하지 않았다. 모델 이름과 AI 등록부가 바뀌는 전환은 설정과 이미지를 같은 배포 단위로 맞춘다.
 
 <br>
 

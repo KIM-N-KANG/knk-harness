@@ -12,12 +12,12 @@
 | --- | --- | --- | --- |
 | `MANYAK_DB_URL`, `MANYAK_DB_USERNAME`, `MANYAK_DB_PASSWORD` | 없음 | 예 | PostgreSQL 연결. 프로파일 yml에서 읽는다 |
 | `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` | `localhost`, `6379` | 예(운영) | Redis 연결. 포트는 `MANYAK_REDIS_PORT`로도 줄 수 있다 |
-| `MANYAK_AI_BASE_URL` | 없음 | 예 | AI 서버 base URL(scheme 포함). 기동 시 scheme과 host를 검증해 잘못된 값이면 부팅 실패. 연결 5초, 이벤트 간 60초 등 타임아웃은 `manyak.ai.*` 프로퍼티 ([CHAT 4-2-6 이어쓰기](../../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-6-이어쓰기)) |
+| `MANYAK_AI_BASE_URL` | 없음 | 예 | AI 서버 base URL(scheme 포함). 기동 시 scheme과 host를 검증해 잘못된 값이면 부팅 실패. 연결 5초, 이벤트 간 60초 등 타임아웃은 `manyak.ai.*` 프로퍼티 ([CHAT 4-2-6 이어쓰기](../../spec/CHAT/BACKEND/4-2-CONTRACT.md#4-2-6-이어쓰기)) |
 | `MANYAK_AI_CHAT_STUB`, `MANYAK_AI_STORY_STUB`, `MANYAK_AI_MODERATION_STUB` | 프로파일별 | 아니오 | AI 스텁 토글(`manyak.ai.{chat,story,moderation}.stub`). `true`면 실제 AI 호출 없이 고정 응답을 돌려주고 `ai_call_logs`의 `model`, `provider`가 `stub`이다. 프로파일 기본은 local `true`, dev와 prod `false`. 환경 변수가 프로파일 yml보다 우선한다 |
-| `MANYAK_INTERNAL_SHARED_SECRET` | 없음 | 예(원격 알림) | `/internal/**` 공유 시크릿. manyak-notification이 이 값으로 서버 내부 경로를 호출한다 ([NOTIFICATION 5-1-6](../../domain/NOTIFICATION/BACKEND/5-1-SECURITY.md#5-1-6-내부-경로-보호)) |
+| `MANYAK_INTERNAL_SHARED_SECRET` | 없음 | 예(원격 알림) | `/internal/**` 공유 시크릿. manyak-notification이 이 값으로 서버 내부 경로를 호출한다 ([NOTIFICATION 5-1-6](../../spec/NOTIFICATION/BACKEND/5-1-SECURITY.md#5-1-6-내부-경로-보호)) |
 | `MANYAK_CORS_ALLOWED_ORIGINS` | 없음 | 예 | CORS 허용 origin(콤마 구분) |
 | `MANYAK_AUTH_JWT_SECRET` | 없음 | 예 | access JWT HS256 키(32바이트 이상). 비어 있으면 기동 실패. issuer와 TTL은 `manyak.auth.jwt.*` yml 전용 |
-| `MANYAK_AUTH_CONSENT_GATE_ENABLED`, `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `false`, `PT10M` | 아니오 | 소셜 가입 전 동의 확인 단계와 동의 대기 코드 수명 ([ACCOUNT 4-1](../../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md)) |
+| `MANYAK_AUTH_CONSENT_GATE_ENABLED`, `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `false`, `PT10M` | 아니오 | 소셜 가입 전 동의 확인 단계와 동의 대기 코드 수명 ([ACCOUNT 4-1](../../spec/ACCOUNT/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_GOOGLE_CLIENT_IDS` | 없음(local은 더미) | 예 | Google OAuth client ID 목록(콤마 구분). 비어 있으면 모든 Google 로그인을 거부 |
 | `MANYAK_KAKAO_CLIENT_IDS` | 없음(local은 더미) | 카카오 로그인 사용 시 예 | 같은 카카오 앱의 REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록. 플랫폼 키가 빠지면 그 플랫폼 로그인만 401 |
 | `MANYAK_LEGAL_TERMS_VERSION`, `MANYAK_LEGAL_PRIVACY_VERSION`, `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `v1.4`, `v1.8`, `v1.0` | 아니오 | 현행 약관과 처리방침 버전. 동의 확인 기준 |
@@ -31,9 +31,9 @@
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
 | `MANYAK_CREDIT_SIGNUP_REWARD`, `MANYAK_CREDIT_INVITE_REWARD`, `MANYAK_CREDIT_INVITE_MONTHLY_CAP`, `MANYAK_CREDIT_ATTENDANCE_REWARD` | `1000`, `2000`, `10`, `250` | 가입, 초대, 출석 보상과 초대 월 상한 |
-| `MANYAK_CREDIT_STORY_CREATION_COST`, `MANYAK_CREDIT_CHAT_IMAGE_COST` | `250`, `0` | 간편 제작과 채팅 이미지 단가. 채팅 턴 단가는 모델별 가격이 정하며 별도 환경 변수가 없다 ([PAYMENT 4-1](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md)) |
+| `MANYAK_CREDIT_STORY_CREATION_COST`, `MANYAK_CREDIT_CHAT_IMAGE_COST` | `250`, `0` | 간편 제작과 채팅 이미지 단가. 채팅 턴 단가는 모델별 가격이 정하며 별도 환경 변수가 없다 ([PAYMENT 4-1](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_CREDIT_POLICY_REFRESH_ENABLED`, `MANYAK_CREDIT_POLICY_REFRESH_INTERVAL_MS` | `true`, `60000` | 정책 오버라이드 갱신 |
-| `MANYAK_CREDIT_RECONCILIATION_ENABLED`, `..._INTERVAL_MS`, `..._INITIAL_DELAY_MS`, `..._CHARGE_AGE_THRESHOLD` | `true`, `900000`, `60000`, `PT15M` | 선차감 대사 배치 ([PAYMENT 4-1-15](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-15-선차감-대사)) |
+| `MANYAK_CREDIT_RECONCILIATION_ENABLED`, `..._INTERVAL_MS`, `..._INITIAL_DELAY_MS`, `..._CHARGE_AGE_THRESHOLD` | `true`, `900000`, `60000`, `PT15M` | 선차감 대사 배치 ([PAYMENT 4-1-15](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-15-선차감-대사)) |
 | `MANYAK_GUEST_TRIAL_STORYLINE_LIMIT`, `..._STORY_CREATION_LIMIT`, `..._CHAT_TURN_LIMIT`, `..._CHAT_IMAGE_LIMIT` | `5`, `1`, `5`, `5` | 게스트 체험 한도 |
 | `MANYAK_GROBLE_WEBHOOK_SECRET` | 없음 | 그로블 웹훅 HMAC 검증. 비어 있으면 주문 생성과 웹훅이 503 |
 
@@ -43,15 +43,15 @@
 
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
-| `MANYAK_CHAT_COMPACT_ENABLED`, `MANYAK_CHAT_COMPACT_INTERVAL_TURNS`, `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | `false`, `10`, `300` | 대화 요약 켜기, 요약 주기(턴), AI 요약 대기 한도 ([CHAT 4-1](../../domain/CHAT/BACKEND/4-1-PIPELINES.md)) |
+| `MANYAK_CHAT_COMPACT_ENABLED`, `MANYAK_CHAT_COMPACT_INTERVAL_TURNS`, `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | `false`, `10`, `300` | 대화 요약 켜기, 요약 주기(턴), AI 요약 대기 한도 ([CHAT 4-1](../../spec/CHAT/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_CHAT_SSE_CONCURRENCY`, `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | `64`, `100` | 채팅 SSE 작업 동시 실행 수와 대기열 크기 |
-| `MANYAK_AI_MODERATION_TIMEOUT`, `..._POOL_SIZE`, `..._RETRY_DELAYS`, `..._REQUEST_BUDGET_BYTES`, `..._RECLAIM_AFTER`, `..._POLL_INTERVAL`, `..._POLL_ENABLED` | `180s`, `4`, `1m,5m`, `41943040`, `300s`, `1000`, `true` | 스토리 검수 요청과 재시도, 회수 주기 ([MODERATION 4-1](../../domain/MODERATION/BACKEND/4-1-PIPELINES.md)) |
-| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 홈서버 OpenSearch의 터널 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../domain/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
+| `MANYAK_AI_MODERATION_TIMEOUT`, `..._POOL_SIZE`, `..._RETRY_DELAYS`, `..._REQUEST_BUDGET_BYTES`, `..._RECLAIM_AFTER`, `..._POLL_INTERVAL`, `..._POLL_ENABLED` | `180s`, `4`, `1m,5m`, `41943040`, `300s`, `1000`, `true` | 스토리 검수 요청과 재시도, 회수 주기 ([MODERATION 4-1](../../spec/MODERATION/BACKEND/4-1-PIPELINES.md)) |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 홈서버 OpenSearch의 터널 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
 | `MANYAK_OPENSEARCH_USERNAME`, `MANYAK_OPENSEARCH_PASSWORD` | 없음 | 환경별 검색 전용 계정. 한쪽만 있으면 기동 실패. 둘 다 비면 인증 없이 연결한다(로컬과 테스트) |
 | `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | 터널 주소의 Cloudflare Access 서비스 토큰. 한쪽만 있으면 기동 실패. 둘 다 비면 헤더 없이 연결한다 |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 검색 인덱스 이름. 운영은 `stories-prod` |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | `true`면 기동 시 전체 재색인 1회. 복구용이며 끝나면 되돌린다 |
-| `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 이미지 CDN base URL. `imageKey`로 서빙 URL을 만든다 ([CHAT 4-1-13](../../domain/CHAT/BACKEND/4-1-PIPELINES.md#4-1-13-실시간-이미지)) |
+| `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 이미지 CDN base URL. `imageKey`로 서빙 URL을 만든다 ([CHAT 4-1-13](../../spec/CHAT/BACKEND/4-1-PIPELINES.md#4-1-13-실시간-이미지)) |
 | `MANYAK_CHARACTER_IMAGE_BUCKET`, `..._REGION`, `..._BASE_URL`, `..._ENDPOINT` | 없음 | 생성 이미지 S3 업로드와 URL. `ENDPOINT`는 로컬 MinIO 같은 S3 호환 저장소용 |
 | `MANYAK_ASSET_BASE_URL` | `https://api.manyak.app`(dev는 `https://dev-api.manyak.app`) | 프로필 프리셋 이미지 base URL |
 
@@ -61,7 +61,7 @@
 
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
-| `MANYAK_PUSH_MODE` | `local` | 발송 요청 전달 방식. `local`은 서버 안에서 처리, `remote`는 아웃박스를 거쳐 큐로 보내 manyak-notification이 소비 ([NOTIFICATION 3-1](../../domain/NOTIFICATION/BACKEND/3-1-SOFTWARE-ARCHITECTURE.md)) |
+| `MANYAK_PUSH_MODE` | `local` | 발송 요청 전달 방식. `local`은 서버 안에서 처리, `remote`는 아웃박스를 거쳐 큐로 보내 manyak-notification이 소비 ([NOTIFICATION 3-1](../../spec/NOTIFICATION/BACKEND/3-1-SOFTWARE-ARCHITECTURE.md)) |
 | `MANYAK_PUSH_QUEUE_URL` | 없음 | 원격 모드의 SQS 큐 URL. local 프로파일의 원격 모드는 Kafka(`SPRING_KAFKA_BOOTSTRAP_SERVERS`, 기본 `localhost:9092`) |
 | `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 없음 | Firebase 서비스 계정 JSON 원문. 비어 있으면 FCM 빈을 만들지 않고 발송하지 않는다. Secrets Manager에 키를 넣고 태스크 정의에 노출하는 terraform apply가 함께 필요 |
 | `MANYAK_PUSH_WEB_BASE_URL`, `MANYAK_PUSH_WEB_ICON_URL` | `https://manyak.app`, `https://manyak.app/icons/icon-192.png` | 딥링크 base URL과 웹 푸시 아이콘 |
@@ -70,7 +70,7 @@
 | `MANYAK_PUSH_PROMOTION_ENABLED`, `MANYAK_PUSH_PROMOTION_INTERVAL_MS`, `MANYAK_PUSH_CAMPAIGN_SENDING_TTL` | `true`, `60000`, `PT30M` | 관리자 캠페인 발송 회차 주기와 발송 중 상태 만료 |
 | `MANYAK_PUSH_TEMPLATE_REFRESH_ENABLED`, `MANYAK_PUSH_TEMPLATE_REFRESH_INTERVAL_MS` | `true`, `300000` | 알림 문구 오버라이드 갱신 |
 | `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL`, `MANYAK_SLACK_REPORT_WEBHOOK_URL`, `MANYAK_SLACK_MODERATION_WEBHOOK_URL` | 없음 | 피드백, 신고, 검수 보류 Slack 알림. 검수 보류는 비어 있으면 신고 웹훅을 쓴다. 비어 있으면 알림만 생략 |
-| `MANYAK_GOOGLE_FORM_FEEDBACK_ID`, `..._BODY_ENTRY`, `..._EMAIL_ENTRY`, `..._PLATFORM_ENTRY`, `..._APP_VERSION_ENTRY`, `MANYAK_GOOGLE_FORM_BASE_URL` | form ID는 prod만 기본값, entry ID와 base URL은 yml 기본값 | 피드백 구글 폼 적재. form ID가 비어 있으면 건너뛴다 ([CHAT 4-2-11](../../domain/CHAT/BACKEND/4-2-CONTRACT.md#4-2-11-피드백-등록)) |
+| `MANYAK_GOOGLE_FORM_FEEDBACK_ID`, `..._BODY_ENTRY`, `..._EMAIL_ENTRY`, `..._PLATFORM_ENTRY`, `..._APP_VERSION_ENTRY`, `MANYAK_GOOGLE_FORM_BASE_URL` | form ID는 prod만 기본값, entry ID와 base URL은 yml 기본값 | 피드백 구글 폼 적재. form ID가 비어 있으면 건너뛴다 ([CHAT 4-2-11](../../spec/CHAT/BACKEND/4-2-CONTRACT.md#4-2-11-피드백-등록)) |
 
 <br>
 
@@ -93,11 +93,11 @@
 
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
-| `MANYAK_AMPLITUDE_SECRET_KEY`, `MANYAK_AMPLITUDE_TEAM_COHORT_ID`, `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | 없음, 없음, `https://amplitude.com` | 관리자 지표의 Amplitude 조회 키, 팀 계정 코호트, 대시보드 링크 ([ADMIN 6](../../domain/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
+| `MANYAK_AMPLITUDE_SECRET_KEY`, `MANYAK_AMPLITUDE_TEAM_COHORT_ID`, `MANYAK_AMPLITUDE_DASHBOARD_BASE_URL` | 없음, 없음, `https://amplitude.com` | 관리자 지표의 Amplitude 조회 키, 팀 계정 코호트, 대시보드 링크 ([ADMIN 6](../../spec/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | yml 목록 | DB 지표에서 뺄 팀 계정 내부 ID |
 | `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 없음 | 푸시 열람 측정 시작일(KST `YYYY-MM-DD`) |
 | `MANYAK_ADMIN_LANGFUSE_HOST`, `..._PUBLIC_KEY`, `..._SECRET_KEY`, `..._ENVIRONMENT`, `..._RETENTION_DAYS` | 없음, `30`일 | AI 비용 지표의 Langfuse 조회 |
-| `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 ([ADMIN 6](../../domain/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
+| `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 ([ADMIN 6](../../spec/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
 | `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 홈서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
 | `MANYAK_PLAY_STATS_BUCKET`, `MANYAK_PLAY_STATS_PACKAGE_NAME`, `MANYAK_PLAY_STATS_SA_KEY_BASE64` | yml 버킷, `app.manyak`, 없음 | Google Play 설치 보고서(GCS) 조회. 키가 없으면 앱 설치 지표가 비어 있다 |
 

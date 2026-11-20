@@ -19,12 +19,12 @@
 
 | 도메인 | 현재 구조 |
 |---|---|
-| ACCOUNT | [저장 구조](../../domain/ACCOUNT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/ACCOUNT/BACKEND/AGENTS.md) |
-| PAYMENT | [저장 구조](../../domain/PAYMENT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/PAYMENT/BACKEND/AGENTS.md) |
-| CHAT | [저장 구조](../../domain/CHAT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/CHAT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/CHAT/BACKEND/AGENTS.md) |
-| STORY | [저장 구조](../../domain/STORY/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/STORY/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/STORY/BACKEND/AGENTS.md) |
-| MODERATION | [저장 구조](../../domain/MODERATION/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/MODERATION/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/MODERATION/BACKEND/AGENTS.md) |
-| NOTIFICATION | [저장 구조](../../domain/NOTIFICATION/BACKEND/3-2-DB-SCHEMA.md), [실행](../../domain/NOTIFICATION/BACKEND/4-1-PIPELINES.md), [세트 안내](../../domain/NOTIFICATION/BACKEND/AGENTS.md) |
+| ACCOUNT | [저장 구조](../../spec/ACCOUNT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/ACCOUNT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/ACCOUNT/BACKEND/AGENTS.md) |
+| PAYMENT | [저장 구조](../../spec/PAYMENT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/PAYMENT/BACKEND/AGENTS.md) |
+| CHAT | [저장 구조](../../spec/CHAT/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/CHAT/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/CHAT/BACKEND/AGENTS.md) |
+| STORY | [저장 구조](../../spec/STORY/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/STORY/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/STORY/BACKEND/AGENTS.md) |
+| MODERATION | [저장 구조](../../spec/MODERATION/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/MODERATION/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/MODERATION/BACKEND/AGENTS.md) |
+| NOTIFICATION | [저장 구조](../../spec/NOTIFICATION/BACKEND/3-2-DB-SCHEMA.md), [실행](../../spec/NOTIFICATION/BACKEND/4-1-PIPELINES.md), [세트 안내](../../spec/NOTIFICATION/BACKEND/AGENTS.md) |
 
 <br>
 

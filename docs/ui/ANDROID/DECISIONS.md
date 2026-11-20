@@ -67,7 +67,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 사용자가 화면 관계와 이동 방향을 이해하도록 하기 위해서이다. |
 | 영향 | 교차 페이드 결정의 전환 부분만 대체하고 닫기의 의미는 유지한다. |
-| 대체 관계 | [A-015](../../domain/STORY/CLIENT/ANDROID/DECISIONS.md#a-015)의 전환 방식만 부분 대체 |
+| 대체 관계 | [A-015](../../spec/STORY/CLIENT/ANDROID/DECISIONS.md#a-015)의 전환 방식만 부분 대체 |
 | 근거 | [이관 원문 A:351](https://github.com/KIM-N-KANG/knk-harness/blob/2d77abce078b75e168d8f924e3759e3bb624515a/docs/product-specs/3-3-android-app.md#L351-L361) |
 
 <br>
