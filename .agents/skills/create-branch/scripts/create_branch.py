@@ -12,7 +12,9 @@ import unicodedata
 from dataclasses import dataclass
 
 
-TAGS = ("feat", "fix", "docs", "design", "cicd", "refactor", "chore")
+TAGS = ("feat", "fix", "docs", "design", "cicd", "refactor", "chore", "hotfix")
+# --base가 없을 때 갈라질 원격 브랜치. hotfix는 운영 main에서 갈라진다(docs/operations/DEPLOYMENT.md 7-3).
+DEFAULT_BASE = {"hotfix": "main"}
 TICKET_RE = re.compile(r"^[A-Z][A-Z0-9]+-\d+$")
 
 
@@ -66,10 +68,14 @@ def branch_exists(branch: str) -> bool:
     return proc.returncode == 0
 
 
-def resolve_base(base: str | None) -> str:
+def default_base(tag: str) -> str:
+    return DEFAULT_BASE.get(tag, "dev")
+
+
+def resolve_base(base: str | None, default: str = "dev") -> str:
     if base is None:
-        run_git(["fetch", "origin", "refs/heads/dev:refs/remotes/origin/dev"])
-        return "refs/remotes/origin/dev"
+        run_git(["fetch", "origin", f"refs/heads/{default}:refs/remotes/origin/{default}"])
+        return f"refs/remotes/origin/{default}"
 
     run_git(["rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}"])
     return base
@@ -91,6 +97,7 @@ def create_branch(
     base: str | None,
     allow_dirty: bool,
     checkout_existing: bool,
+    default: str = "dev",
 ) -> Result:
     git_output(["rev-parse", "--show-toplevel"])
     dirty = is_dirty()
@@ -107,7 +114,7 @@ def create_branch(
             return Result(branch, created=False, checked_out=True, base_ref=None, dirty=dirty)
         raise ValueError(f"Branch already exists: {branch}")
 
-    base_ref = resolve_base(base)
+    base_ref = resolve_base(base, default)
     run_git(["checkout", "--no-track", "-b", branch, base_ref])
     return Result(branch, created=True, checked_out=True, base_ref=base_ref, dirty=dirty)
 
@@ -125,7 +132,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--base",
-        help="Use this existing Git ref without fetching. Default: fetch and use origin/dev.",
+        help="Use this existing Git ref without fetching. "
+        "Default: fetch and use origin/dev (origin/main for hotfix).",
     )
     parser.add_argument(
         "--max-slug-length",
@@ -178,6 +186,7 @@ def main() -> int:
                 base=args.base,
                 allow_dirty=args.allow_dirty,
                 checkout_existing=args.checkout_existing,
+                default=default_base(args.tag),
             )
         else:
             result = Result(

@@ -43,6 +43,7 @@ python3 ../knk-harness/.agents/skills/create-branch/scripts/create_branch.py --t
 ```
 
 - 새 브랜치 생성: 위 명령에 `--create`를 추가합니다. 기본 fetch는 `origin/dev`만 갱신하며 로컬 `dev`는 변경하지 않습니다. 새 브랜치가 기준 브랜치를 upstream으로 자동 추적하지 않도록 생성합니다.
+- 운영 긴급 수정: `--tag hotfix --create`로 실행합니다. `--base`가 없으면 `origin/main`만 fetch해 그 위에 만듭니다.
 - 기존 브랜치 전환: `--create --checkout-existing`을 추가합니다.
 - 명시적으로 선택한 로컬 기준: `--create --base dev`처럼 지정합니다. `--base`는 기존 ref를 그대로 사용하며 fetch하지 않습니다. 원격 ref를 명시했다면 필요한 fetch를 먼저 수행합니다.
 - 기존 변경을 가져가기로 확인된 경우에만 `--allow-dirty`를 추가합니다.
