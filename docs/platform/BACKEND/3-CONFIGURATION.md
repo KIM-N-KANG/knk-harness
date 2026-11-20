@@ -97,7 +97,8 @@
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | yml 목록 | DB 지표에서 뺄 팀 계정 내부 ID |
 | `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 없음 | 푸시 열람 측정 시작일(KST `YYYY-MM-DD`) |
 | `MANYAK_ADMIN_LANGFUSE_HOST`, `..._PUBLIC_KEY`, `..._SECRET_KEY`, `..._ENVIRONMENT`, `..._RETENTION_DAYS` | 없음, `30`일 | AI 비용 지표의 Langfuse 조회 |
-| `MANYAK_ADMIN_INFRA_ECS_CLUSTER`, `..._ECS_SERVICES`, `..._ALB`, `..._RDS_INSTANCE`, `..._REDIS_NODES`, `..._OPENSEARCH_DOMAIN`, `..._AWS_ACCOUNT_ID` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 |
+| `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 ([ADMIN 6](../../domain/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 홈서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
 | `MANYAK_PLAY_STATS_BUCKET`, `MANYAK_PLAY_STATS_PACKAGE_NAME`, `MANYAK_PLAY_STATS_SA_KEY_BASE64` | yml 버킷, `app.manyak`, 없음 | Google Play 설치 보고서(GCS) 조회. 키가 없으면 앱 설치 지표가 비어 있다 |
 
 <br>

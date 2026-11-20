@@ -781,13 +781,14 @@ flowchart LR
 있는가**`"}
     G -->|예| E
     G -->|아니오| X["`**사용 불가로 응답**`"]
-    F -->|아니오| C["`**CloudWatch GetMetricData
-ECS DescribeServices**
-태스크 역할, 5초`"]
-    C -->|성공| D["`**변환과 조립**
-단위 변환, 건수 0 채움, 캐시 갱신`"]
+    F -->|아니오| C["`**세 출처를 나란히 호출**
+CloudWatch, Prometheus, Redis
+합쳐 5초`"]
+    C -->|하나 이상 성공| D["`**변환과 조립**
+실패한 출처의 묶음은 비움
+캐시 갱신`"]
     D --> E
-    C -->|실패| H["`**쿨다운 60초 시작**`"]
+    C -->|모두 실패| H["`**쿨다운 60초 시작**`"]
     H --> G
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef task fill:#F5D9C9,stroke:#B97450,color:#452B1D
@@ -795,22 +796,93 @@ ECS DescribeServices**
     class C task
 ```
 
+**1. 출처와 묶음**
+
+| 출처 | 묶음 | 설정이 비면 |
+|---|---|---|
+| CloudWatch | `host`(앱 호스트), `rds` | 오토스케일링 그룹이 비면 `host`만, RDS 인스턴스가 비면 `rds`만 `null`<br>둘 다 비면 CloudWatch를 부르지 않음 |
+| 홈서버 Prometheus | `requests`, `hostSystem`, `opensearch` | 조회 주소가 비면 세 묶음 모두 `null`이고 부르지 않음 |
+| Redis | `redis` | 설정 없음<br>서버가 쓰는 Redis에 항상 물음 |
+
+- 설정값은 [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿)이 정한다.
+- 세 출처를 나란히 부르고 전체 시간 한도는 5초다.
+- 출처 하나가 실패하면 그 출처의 묶음을 모두 `null`로 두고 묶음 키를 `unavailable`에 넣는다. 설정이 비어 `null`인 묶음은 `unavailable`에 넣지 않는다.
+- 부른 출처가 모두 실패하면 응답을 만들지 않는다. 만료된 것이라도 그 범위의 캐시가 있으면 캐시로 응답하고 없으면 사용 불가다.
+
+<br>
+
+**2. CloudWatch**
+
 | 항목 | 규칙 |
 |---|---|
-| 대상 | 설정값의 ECS 클러스터와 서비스, ALB, RDS 인스턴스, Redis 노드, OpenSearch 도메인과 계정 ID ([6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿))<br>설정이 빈 리소스 묶음은 조회하지 않고 응답에서 `null`<br>모두 비면 호출 없이 사용 불가 |
-| 인증 | 서버 태스크 역할의 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
-| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>`TargetResponseTime`은 확장 통계 `p95`<br>ECS의 CPU와 메모리는 `Average`와 `Maximum` 두 통계를 따로 질의<br>운영 질의 수는 ECS 12, ALB 4, RDS 5, Redis 6, OpenSearch 2로 29개<br>응답에 `NextToken`이 있으면 이어 받음 |
-| 결과 확인 | 이어 받은 뒤 질의마다 `StatusCode`가 `Complete`이고 `Messages`에 오류가 없는지 확인<br>`Complete`가 아니거나(`PartialData`, `InternalError`, `Forbidden`) 오류가 있으면 그 질의가 속한 묶음의 조회 실패이며 0으로 채우지 않음<br>`GetMetricData` 한 번이 모든 묶음을 담으므로 응답 전체를 호출 실패와 같이 처리하고 캐시를 갱신하지 않음 |
-| 차원 | ECS는 `ClusterName`과 `ServiceName`<br>ALB는 `LoadBalancer`(ALB ARN 접미사)<br>RDS는 `DBInstanceIdentifier`<br>Redis는 `CacheClusterId`<br>OpenSearch는 `DomainName`과 `ClientId`(계정 ID) |
-| 태스크 수 | `DescribeServices` 한 번으로 설정한 서비스 전부의 `runningCount`, `desiredCount`, `pendingCount`<br>설정한 서비스가 응답의 `failures`에 있으면 실패로 봄 |
+| 인증 | 서버의 AWS 역할 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
+| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>앱 호스트의 CPU는 `Average`와 `Maximum` 두 통계를 따로 질의<br>운영 질의 수는 앱 호스트 4, RDS 5로 9개<br>응답에 `NextToken`이 있으면 이어 받음 |
+| 결과 확인 | 이어 받은 뒤 질의마다 `StatusCode`가 `Complete`이고 `Messages`에 오류가 없는지 확인<br>`Complete`가 아니거나(`PartialData`, `InternalError`, `Forbidden`) 오류가 있으면 CloudWatch 출처의 실패이며 0으로 채우지 않음 |
+| 차원 | 앱 호스트는 `AutoScalingGroupName`<br>인스턴스가 교체되어도 같은 계열로 이어짐<br>RDS는 `DBInstanceIdentifier` |
+| 변환 | 지연 시간은 초를 밀리초로 |
+| 빈 구간 | 받은 구간만 담고 채우지 않음 |
+| 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 9개라 캐시를 거치지 않은 요청 1,000번에 약 0.09달러 |
+
+<br>
+
+**3. 홈서버 Prometheus**
+
+| 항목 | 규칙 |
+|---|---|
+| 경로 | 조회 주소의 `/api/v1/query_range`와 `/api/v1/query`<br>Cloudflare Access 서비스 토큰 헤더와 Prometheus 읽기 계정의 기본 인증을 함께 보냄 |
+| 읽는 계열 | 홈서버의 기록 규칙이 만든 계열만 읽음<br>원 지표의 이름과 라벨이 바뀌면 기록 규칙에서 맞추고 서버 질의는 그대로 둠 |
+| 질의 범위 | 간격(`step`)은 `periodSeconds`<br>점 하나는 그 시각 직전 `periodSeconds` 동안의 값이라 점의 시각에서 `periodSeconds`를 빼 구간 시작으로 바꿈 |
+| 요청 수, 5xx 수 | 1분마다 기록된 초당 요청률을 구간 동안 더하고 60을 곱해 건수로 바꾼 뒤 정수로 반올림 |
+| 응답 시간 p95 | 버킷별 요청률 계열을 구간 동안 더한 뒤 95번째 백분위<br>구간에 요청이 없어 값이 `NaN`이면 그 점을 뺌 |
+| 메모리와 디스크 여유 | 구간 안 최솟값 |
+| JVM 메모리 압박 | 구간 안 최댓값 |
+| 전체 크기와 클러스터 상태 | 조회 시각의 마지막 값 |
+| 빈 구간 | 계열이 없는 구간은 점이 없으며 0으로 채우지 않음<br>계열이 아예 없으면 빈 점 목록이고 실패가 아님 |
+| 시간 한도 | 연결 1초, 질의 하나 3초<br>연결은 재사용 |
+| 실패 | 질의 하나라도 HTTP 오류, 응답의 `status`가 `success`가 아님, 시간 초과면 Prometheus 출처의 실패 |
+| 보관 | Prometheus가 90일 보관<br>기록 규칙은 만든 시각부터 쌓이므로 그 전 구간은 점이 없음 |
+
+기록 규칙 계열은 다음과 같다. 규칙 정의는 `manyak-terraform`의 `homeserver/observability/prometheus/rules/`에 둔다.
+
+| 계열 | 뜻 | 원천 |
+|---|---|---|
+| `manyak_server:http_requests:rate3m` | 운영 서버의 초당 요청률 | 서버가 보내는 HTTP 요청 지표<br>없는 경로로 온 요청 포함, `/actuator/**` 제외 |
+| `manyak_server:http_5xx:rate3m` | 운영 서버가 돌려준 5xx의 초당 요청률<br>5xx가 없으면 0 | 같음 |
+| `manyak_server:http_latency_bucket_nostream:rate3m` | 응답 시간 버킷(`le`)별 초당 요청률<br>경로가 `/stream`으로 끝나는 SSE 요청 제외 | 같음 |
+| `manyak_prod_host:memory_available_bytes` | 앱 호스트의 사용 가능 메모리 | 앱 호스트 로그 수집기의 호스트 지표 |
+| `manyak_prod_host:memory_total_bytes` | 앱 호스트의 전체 메모리 | 같음 |
+| `manyak_prod_host:disk_available_bytes` | 마운트 경로(`mountpoint`)별 디스크 여유<br>`/`와 `/data` | 같음 |
+| `manyak_prod_host:disk_total_bytes` | 마운트 경로별 디스크 크기 | 같음 |
+| `manyak_opensearch:disk_available_bytes` | 홈서버 OpenSearch 데이터 디스크의 여유 | 홈서버 수집기가 OpenSearch에서 읽은 노드 지표 |
+| `manyak_opensearch:disk_total_bytes` | 그 디스크의 크기 | 같음 |
+| `manyak_opensearch:jvm_memory_pressure_percent` | JVM old 영역 사용률(%) | 같음 |
+| `manyak_opensearch:cluster_status` | 클러스터 상태<br>0 green, 1 yellow, 2 red | 같음 |
+
+- SSE 채팅 스트림은 응답이 수십 초라 넣으면 p95가 가장 큰 버킷에 붙는다. 그래서 응답 시간에서만 뺀다.
+- 프록시가 서버 대신 돌려준 502와 504는 서버 지표에 없어 5xx 수에 들어가지 않는다.
+- OpenSearch 데이터 디스크는 홈서버의 다른 컨테이너와 같이 쓴다. 여유는 OpenSearch만의 몫이 아니다.
+
+<br>
+
+**4. Redis**
+
+| 항목 | 규칙 |
+|---|---|
+| 조회 | 서버가 쓰는 Redis 연결로 `INFO`와 `DBSIZE` |
+| 값 | 조회 시각의 현재 값이며 기간과 무관 |
+| 시간 한도 | 1초 |
+
+<br>
+
+**5. 공통**
+
+| 항목 | 규칙 |
+|---|---|
 | 집계 간격 | 기간 2일 이하 300초, 7일 이하 900초, 그보다 길면 3600초<br>조회 시작이 63일보다 오래되면 3600초<br>CloudWatch는 5분 단위 값을 63일, 1시간 단위 값을 455일 보관 |
 | 시각 | 조회 시작은 `from`의 KST 자정, 끝은 `to` 다음 날 KST 자정과 현재 시각 중 이른 쪽<br>점의 시각은 구간 시작 시각 |
-| 변환 | 지연 시간은 초를 밀리초로, OpenSearch 저장 공간은 MB를 바이트로 |
-| 빈 구간 | 건수 지표만 조회 범위의 모든 구간을 0으로 채움<br>`Complete`인 결과에만 적용<br>그 밖의 지표는 받은 구간만 |
-| 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>태스크마다 따로이고 키는 최근 100개 |
-| 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 두 호출을 합친 시간 한도 5초 초과는 그 키에 60초 쿨다운 |
-| 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 29개라 캐시를 거치지 않은 요청 1,000번에 약 0.29달러<br>Container Insights는 켜지 않음<br>`DescribeServices`는 무료 |
-| 집계와의 분리 | 다른 대시보드 응답과 별도 엔드포인트라 AWS 호출 장애가 DB 지표와 DB 테이블 크기에 영향을 주지 않음 |
+| 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>일부 묶음이 빈 응답도 보관하며 다음 갱신에서 실패한 출처를 다시 부름<br>프로세스마다 따로이고 키는 최근 100개 |
+| 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>부른 출처가 모두 실패하면 그 키에 60초 쿨다운 |
+| 집계와의 분리 | 다른 대시보드 응답과 별도 엔드포인트라 출처 장애가 DB 지표와 DB 테이블 크기에 영향을 주지 않음 |
 
 <br>
 
