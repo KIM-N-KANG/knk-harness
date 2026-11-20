@@ -21,12 +21,12 @@
 
 | 기능 | 현재 기준 |
 |---|---|
-| 계정, 동의, 게스트 데이터와 회원 이관 | [ACCOUNT](../domain/ACCOUNT/AGENTS.md) |
-| 탐색, 제작, 수정과 공개 | [STORY](../domain/STORY/AGENTS.md) |
-| 채팅, 선택지, 이미지, 공유와 피드백 | [CHAT](../domain/CHAT/AGENTS.md) |
-| 이프, 보상, 체험과 결제 | [PAYMENT](../domain/PAYMENT/AGENTS.md) |
-| 공지, 알림함, 수신 설정과 푸시 | [NOTIFICATION](../domain/NOTIFICATION/AGENTS.md) |
-| 검수, 입력 검사와 신고 | [MODERATION](../domain/MODERATION/AGENTS.md) |
+| 계정, 동의, 게스트 데이터와 회원 이관 | [ACCOUNT](../spec/ACCOUNT/AGENTS.md) |
+| 탐색, 제작, 수정과 공개 | [STORY](../spec/STORY/AGENTS.md) |
+| 채팅, 선택지, 이미지, 공유와 피드백 | [CHAT](../spec/CHAT/AGENTS.md) |
+| 이프, 보상, 체험과 결제 | [PAYMENT](../spec/PAYMENT/AGENTS.md) |
+| 공지, 알림함, 수신 설정과 푸시 | [NOTIFICATION](../spec/NOTIFICATION/AGENTS.md) |
+| 검수, 입력 검사와 신고 | [MODERATION](../spec/MODERATION/AGENTS.md) |
 | 공용 이동, 테마와 서비스 안내 | [공용 클라이언트](../ui/AGENTS.md) |
 
 기능별 입력, 비용, 권한과 보존 조건은 해당 도메인의 현재 문서에서 확인한다. 과거 개발 단계와 완료 표시는 현재 기능이나 배포 상태를 판단하는 근거로 사용하지 않는다. 일정과 우선순위 및 미결 사항은 Jira에서 관리한다.

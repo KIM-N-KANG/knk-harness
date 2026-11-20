@@ -37,11 +37,11 @@ graph LR
 
 | 특징 | 요지 | 기준 |
 | --- | --- | --- |
-| 게스트 허용과 선택적 인증 | 익명을 허용하는 경로는 토큰이 없거나 무효이면 익명으로 처리<br>유효한 앱 토큰이면 요청자를 회원으로 귀속<br>인증 수준은 경로마다 다르며 간편 제작, 채팅, 피드백은 익명 허용 | [ACCOUNT 4-2-1 공통 규칙과 헤더](../../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
-| 내부 PK와 공개 식별자 분리 | 순차 PK를 API에 노출하지 않고 외부에 노출하는 리소스는 `public_id` UUID를 사용<br>임시 리소스와 카탈로그의 예외는 도메인 스키마가 정함 | [STORY 3-2-1](../../domain/STORY/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙), [CHAT 3-2-1](../../domain/CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙) |
-| AI 서버 중계 | 스토리라인 생성과 컴파일, 검수, 대화 요약은 동기 REST로 호출<br>채팅 턴은 SSE로 받아 중계<br>결과를 검증한 뒤 저장 | [도메인 목록의 AI 계약](../../domain/AGENTS.md#1-도메인과-세트) |
+| 게스트 허용과 선택적 인증 | 익명을 허용하는 경로는 토큰이 없거나 무효이면 익명으로 처리<br>유효한 앱 토큰이면 요청자를 회원으로 귀속<br>인증 수준은 경로마다 다르며 간편 제작, 채팅, 피드백은 익명 허용 | [ACCOUNT 4-2-1 공통 규칙과 헤더](../../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더) |
+| 내부 PK와 공개 식별자 분리 | 순차 PK를 API에 노출하지 않고 외부에 노출하는 리소스는 `public_id` UUID를 사용<br>임시 리소스와 카탈로그의 예외는 도메인 스키마가 정함 | [STORY 3-2-1](../../spec/STORY/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙), [CHAT 3-2-1](../../spec/CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙) |
+| AI 서버 중계 | 스토리라인 생성과 컴파일, 검수, 대화 요약은 동기 REST로 호출<br>채팅 턴은 SSE로 받아 중계<br>결과를 검증한 뒤 저장 | [도메인 목록의 AI 계약](../../spec/AGENTS.md#1-도메인과-세트) |
 | 상관관계 관측 | 모든 요청에 `request_id`를 부여하고 `device_id_hash`로 익명 요청을 이어 로그, Sentry, `ai_call_logs`를 연결 | [분석 기준 6-3](../../reference/ANALYTICS.md#6-3-요청-식별자와-상관관계) |
-| 소프트 삭제 | 스토리와 채팅은 `deleted_at`을 기록하고 조회에서 제외 | [STORY 3-2-1](../../domain/STORY/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙), [CHAT 3-2-1](../../domain/CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙) |
+| 소프트 삭제 | 스토리와 채팅은 `deleted_at`을 기록하고 조회에서 제외 | [STORY 3-2-1](../../spec/STORY/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙), [CHAT 3-2-1](../../spec/CHAT/BACKEND/3-2-DB-SCHEMA.md#3-2-1-공통-규칙) |
 | 남용 방지 계층 | 게스트 허용으로 넓어진 악용 여지를 여러 장치로 줄임 | [1-5 남용 방지 설계](#1-5-남용-방지-설계) |
 
 <br>
@@ -70,10 +70,10 @@ graph LR
 
 | 계층 | 막는 것 | 장치 |
 | --- | --- | --- |
-| 진입 상한 | 가입 전 무제한 무료 사용 | 기기별 체험 한도 ([PAYMENT 4-1-4](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-4-체험-예약-복원-스냅샷)) |
-| 전환 차단 | 게스트 콘텐츠의 반복 이관 | 이관 계정당 1회 잠금과 시도 상한 ([ACCOUNT 4-1-10](../../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-10-게스트-이관))<br>게스트와 회원 사이의 교차 접근 차단 ([STORY 5-1-2](../../domain/STORY/BACKEND/5-1-SECURITY.md#5-1-2-소유권과-읽기-판정), [CHAT 5-1-2](../../domain/CHAT/BACKEND/5-1-SECURITY.md#5-1-2-소유권-판정)) |
-| 재가입 차단 | 탈퇴와 재가입 반복으로 계정 단위 1회성 혜택을 다시 받음 | 끊긴 소셜 연동 재사용, 보상 신원과 정지 상태 승계 ([ACCOUNT 4-1-6](../../domain/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-6-계정-생성과-재가입))<br>재가입 계정의 회원 체험은 소진 상태로 시작 ([PAYMENT 4-1-4](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-4-체험-예약-복원-스냅샷)) |
-| 회원 재화 보호 | 선차감 뒤 실패의 과금과 이중 환불 | 차감과 환불의 1회 처리, 선차감 대사, 보상 멱등 키 ([PAYMENT 5-1-6](../../domain/PAYMENT/BACKEND/5-1-SECURITY.md#5-1-6-재화-보호), [PAYMENT 4-1-15](../../domain/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-15-선차감-대사)) |
+| 진입 상한 | 가입 전 무제한 무료 사용 | 기기별 체험 한도 ([PAYMENT 4-1-4](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-4-체험-예약-복원-스냅샷)) |
+| 전환 차단 | 게스트 콘텐츠의 반복 이관 | 이관 계정당 1회 잠금과 시도 상한 ([ACCOUNT 4-1-10](../../spec/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-10-게스트-이관))<br>게스트와 회원 사이의 교차 접근 차단 ([STORY 5-1-2](../../spec/STORY/BACKEND/5-1-SECURITY.md#5-1-2-소유권과-읽기-판정), [CHAT 5-1-2](../../spec/CHAT/BACKEND/5-1-SECURITY.md#5-1-2-소유권-판정)) |
+| 재가입 차단 | 탈퇴와 재가입 반복으로 계정 단위 1회성 혜택을 다시 받음 | 끊긴 소셜 연동 재사용, 보상 신원과 정지 상태 승계 ([ACCOUNT 4-1-6](../../spec/ACCOUNT/BACKEND/4-1-PIPELINES.md#4-1-6-계정-생성과-재가입))<br>재가입 계정의 회원 체험은 소진 상태로 시작 ([PAYMENT 4-1-4](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-4-체험-예약-복원-스냅샷)) |
+| 회원 재화 보호 | 선차감 뒤 실패의 과금과 이중 환불 | 차감과 환불의 1회 처리, 선차감 대사, 보상 멱등 키 ([PAYMENT 5-1-6](../../spec/PAYMENT/BACKEND/5-1-SECURITY.md#5-1-6-재화-보호), [PAYMENT 4-1-15](../../spec/PAYMENT/BACKEND/4-1-PIPELINES.md#4-1-15-선차감-대사)) |
 | 관측 보완 | 우회 시도의 사후 탐지 | 상관관계 식별자, 호출량과 카운터 키 증가 추이 |
 
 디바이스 헤더 변조, 기기 교체, 게스트 간 리소스 접근과 무인증 쓰기 경로의 요청량 제한 부재는 막지 않고 수용한다. ([BE-045](../../reference/decisions/BACKEND.md#be-045))
@@ -84,19 +84,19 @@ graph LR
 
 | 항목 | 설정 |
 | --- | --- |
-| 필터 체인 | `/api/v1/admin/**`은 관리자 토큰 필터를 쓰는 별도 체인 ([ADMIN 5-1-1](../../domain/ADMIN/BACKEND/5-1-SECURITY.md#5-1-1-인증-수준과-토큰))<br>나머지 경로는 앱 토큰 체인<br>앱 체인도 `/api/v1/admin/**`를 모두 거부해 관리자 체인이 빠져도 관리자 경로가 열리지 않음 |
+| 필터 체인 | `/api/v1/admin/**`은 관리자 토큰 필터를 쓰는 별도 체인 ([ADMIN 5-1-1](../../spec/ADMIN/BACKEND/5-1-SECURITY.md#5-1-1-인증-수준과-토큰))<br>나머지 경로는 앱 토큰 체인<br>앱 체인도 `/api/v1/admin/**`를 모두 거부해 관리자 체인이 빠져도 관리자 경로가 열리지 않음 |
 | 세션 | 두 체인 모두 서버 세션을 만들지 않는 stateless 구성<br>인증은 요청마다 `Authorization` 헤더의 토큰으로 판정 |
 | CSRF | 두 체인 모두 비활성 |
 | CORS | 허용 origin은 `MANYAK_CORS_ALLOWED_ORIGINS`(콤마 구분)<br>메서드 `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, 요청 헤더 전체 허용<br>`X-Manyak-Request-Id`를 노출 헤더로 지정 |
 | Bearer 토큰 해석 생략 | 공개 인증 경로, 선택적 인증 경로, `/internal/**`, 공개 정적 자산은 리소스 서버가 토큰을 해석하지 않음<br>자동 첨부된 만료나 위조 토큰으로 401이 나지 않음<br>선택적 인증 경로의 회원 귀속은 별도 필터가 수행 |
-| 내부 경로 | `/internal/**`은 사용자 인증 대신 공유 시크릿으로 보호 ([NOTIFICATION 5-1-6](../../domain/NOTIFICATION/BACKEND/5-1-SECURITY.md#5-1-6-내부-경로-보호)) |
+| 내부 경로 | `/internal/**`은 사용자 인증 대신 공유 시크릿으로 보호 ([NOTIFICATION 5-1-6](../../spec/NOTIFICATION/BACKEND/5-1-SECURITY.md#5-1-6-내부-경로-보호)) |
 | 무인증 허용 | `/actuator/health`와 하위 경로, `/error`, `/profile-presets/**`, API 문서 경로<br>`/actuator/prometheus`는 local 프로파일에서만 |
 
 <br>
 
 ### 1-7 공통 오류 응답
 
-모든 오류 본문은 `ApiErrorResponse` 형식이다. 필드와 도메인별 앱 코드는 각 도메인 계약과 오류 처리에서 정한다. ([ACCOUNT 4-2-1 공통 규칙과 헤더](../../domain/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
+모든 오류 본문은 `ApiErrorResponse` 형식이다. 필드와 도메인별 앱 코드는 각 도메인 계약과 오류 처리에서 정한다. ([ACCOUNT 4-2-1 공통 규칙과 헤더](../../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더))
 
 아래는 컨트롤러 메서드에 도달하기 전에 프레임워크가 판정하는 요청 오류와 예상하지 못한 오류이며 전역 핸들러가 처리한다. 보안 필터가 인증을 요구하는 요청은 인증 판정이 먼저라 토큰이 없으면 아래 상태 대신 401로 끝난다.
 

@@ -20,14 +20,14 @@
 
 | 작업 대상 | 진입점과 범위 |
 |---|---|
-| 업무별 기능 | [도메인 목록](docs/domain/AGENTS.md). ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION, ADMIN, NOTICE의 요구사항, 설계, 계약과 검증 |
+| 업무별 기능 | [도메인 목록](docs/spec/AGENTS.md). ACCOUNT, PAYMENT, CHAT, STORY, MODERATION, NOTIFICATION, ADMIN, NOTICE의 요구사항, 설계, 계약과 검증 |
 | 여러 업무에 공통인 화면과 조작 | [공통 UI](docs/ui/AGENTS.md). 앱 셸, 내비게이션, 테마, 공통 화면 상태와 앱 진입 |
 | 여러 도메인에 공통인 기술 규칙 | [플랫폼 기반](docs/platform/AGENTS.md). 클라이언트 전송, 플랫폼별 구조와 상태 수명, 백엔드와 AI의 공통 구현 |
 | 환경, 인프라, 배포와 복구 | [운영](docs/operations/AGENTS.md). Terraform 선언, CI/CD, 설정 주입과 배포 검수 |
 | 공통 정의와 작성 기준 | [참조 자료](docs/reference/AGENTS.md). 용어, 서비스 배경, 공용 인터페이스, 분석과 작성 가이드 |
 
 - 도메인은 해당 폴더의 `AGENTS.md`에서 `BACKEND`, `AI`, `CLIENT` 중 관련 세트를 선택한다. 문서 역할과 코드 진입점은 세트의 `AGENTS.md`를 따른다.
-- 클라이언트 작업은 `docs/domain/<DOMAIN>/CLIENT/`의 공통 문서와 하위 `WEB/` 또는 `ANDROID/`를 함께 확인한다. 유저 스토리는 공통 세트에서 정의하고 플랫폼별 요구와 검증이 같은 ID를 참조한다.
+- 클라이언트 작업은 `docs/spec/<DOMAIN>/CLIENT/`의 공통 문서와 하위 `WEB/` 또는 `ANDROID/`를 함께 확인한다. 유저 스토리는 공통 세트에서 정의하고 플랫폼별 요구와 검증이 같은 ID를 참조한다.
 - 공통 UI는 `docs/ui/` 아래에 `WEB/`과 `ANDROID/`를 둔다. 공통 기술 기반은 [CLIENT](docs/platform/CLIENT/AGENTS.md) 아래에 [WEB](docs/platform/CLIENT/WEB/AGENTS.md)과 [ANDROID](docs/platform/CLIENT/ANDROID/AGENTS.md)를 둔다. 공통 화면과 기술 규칙을 업무별 세트에 복제하지 않는다.
 - API의 요청과 응답은 제공자 세트의 계약을 참조한다. 백엔드는 `BACKEND/4-2-CONTRACT.md`, AI는 `AI/5-CONTRACT.md`에서 정의하며 클라이언트의 연동 문서는 소비 조건과 플랫폼 처리를 설명한다.
 

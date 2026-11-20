@@ -15,4 +15,4 @@
 | 앱 소개 링크 | 웹 공유용 미리보기와 앱, 스토어 또는 웹으로 이어지는 화면 |
 | 오류 화면 | 실패 안내와 재시도. 없는 경로는 홈 이동 |
 
-마이의 계정과 초대는 [ACCOUNT 화면](../domain/ACCOUNT/CLIENT/3-1-INFORMATION-ARCHITECTURE.md), 이프는 [PAYMENT 화면](../domain/PAYMENT/CLIENT/3-1-INFORMATION-ARCHITECTURE.md), 공지와 알림 설정은 [NOTIFICATION 화면](../domain/NOTIFICATION/CLIENT/3-1-INFORMATION-ARCHITECTURE.md)을 따른다. 공용 셸은 각 기능의 접근 조건을 변경하지 않는다.
+마이의 계정과 초대는 [ACCOUNT 화면](../spec/ACCOUNT/CLIENT/3-1-INFORMATION-ARCHITECTURE.md), 이프는 [PAYMENT 화면](../spec/PAYMENT/CLIENT/3-1-INFORMATION-ARCHITECTURE.md), 공지와 알림 설정은 [NOTIFICATION 화면](../spec/NOTIFICATION/CLIENT/3-1-INFORMATION-ARCHITECTURE.md)을 따른다. 공용 셸은 각 기능의 접근 조건을 변경하지 않는다.
