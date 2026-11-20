@@ -388,23 +388,30 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 기본 | URL에 쿼리 없음, 오늘 2026-10-23 | 탭 막대에 서비스, AI 품질, AI 비용과 그 아래 하위 구분 막대에 서비스와 요청, 저장소, DB 테이블<br>서비스와 요청 하위 구분, 기간 오늘, 인프라 지표 요청이 `from=2026-10-23&to=2026-10-23` |
+| 기본 | URL에 쿼리 없음, 오늘 2026-11-20 | 탭 막대에 서비스, AI 품질, AI 비용과 그 아래 하위 구분 막대에 서비스와 요청, 저장소, DB 테이블<br>서비스와 요청 하위 구분, 기간 오늘, 인프라 지표 요청이 `from=2026-11-20&to=2026-11-20` |
 | 하위 구분 사이 응답 공유 | 서비스와 요청에서 저장소 하위 구분으로 | 요청을 다시 보내지 않음 |
 | 기간 상한 | 최근 90일로 서비스 탭 진입<br>기간 선택기 열기 | 기간 확인 필요 상자, 최근 31일로 맞추기, 요청 없음<br>최근 90일, 최근 6개월, 최근 1년 비활성 |
-| 태스크 카드 | `server`의 실행 1, 목표 2, 시작 중 1 | 큰 숫자 1개, 작은 줄 "목표 2개, 시작 중 1개" |
-| 서비스 이름 | `name`이 `server`, `ai`, `notification`, `worker` | 서버, AI, 알림, `worker` |
+| 메모리 카드 | `memoryAvailableBytes` 마지막 점 1,876,000,000, `memoryTotalBytes` 4,015,000,000 | 큰 숫자 1.9GB, 작은 줄 "전체 4.0GB" |
+| 상태 검사 카드 | `statusCheckFailed` 점이 모두 0<br>점 288개 중 2개가 1 | "정상"<br>"실패 2구간" |
 | 요청 합 | `requests` 점 3개 312, 0, 40 | 요청 수 카드 352회 |
-| 용량 | `rds.freeStorageBytes` 마지막 점 18,253,611,008 | RDS 여유 스토리지 18.3GB |
+| 5xx 합 | `server5xx` 점 3개 1, 0, 2 | 5xx 응답 카드 3회 |
 | 응답 시간 | `responseTimeP95Ms` 182 | 182.0ms |
-| 수집된 값 없음 | `opensearch.freeStorageBytes`가 빈 배열<br>`rds.connections` 점이 모두 0 | OpenSearch 여유 스토리지 카드 "수집된 값 없음"<br>연결 수 차트는 0을 그림 |
-| 받은 시각 | `asOf` `2026-10-23T01:12:40Z` | CloudWatch 출처 툴팁에 "2026-10-23 10:12 KST에 받은 값" |
+| 용량 | `rds.freeStorageBytes` 마지막 점 18,253,611,008 | RDS 여유 스토리지 18.3GB |
+| 디스크 계열 | `disks`가 `/`, `/data` | 계열 `/`, `/data`가 이 순서, 툴팁 "/data 9.9GB / 10.0GB" |
+| 메모리 축 | `memoryTotalBytes` 4,015,000,000<br>`memoryTotalBytes` `null` | 세로 축 0~4.0GB<br>축을 값에 맞춤 |
+| Redis 카드 | 사용 2,474,639, 한도 268,435,456<br>한도 0 | 2.4MB, 작은 줄 "한도 256.0MB, 0.9%"<br>작은 줄 "한도 없음" |
+| AOF 상태 | `aofLastWriteOk` `true`, `false`, `null` | "정상", "실패", "사용 안 함" |
+| Redis와 기간 | 기간을 최근 7일로 바꿈 | Redis 구역의 값은 새 응답의 현재 값이고 차트 없음 |
+| OpenSearch 상태 | `status` `yellow`<br>`status` `null` | 구역 제목 옆 `yellow`<br>"수집된 값 없음" |
+| 수집된 값 없음 | `opensearch.diskAvailableBytes`가 빈 배열<br>`rds.connections` 점이 모두 0 | OpenSearch 디스크 여유 카드 "수집된 값 없음"<br>연결 수 차트는 0을 그림 |
+| 받은 시각 | `asOf` `2026-11-20T01:12:40Z` | CloudWatch와 Prometheus 출처 툴팁에 "2026-11-20 10:12 KST에 받은 값" |
+| 출처 표시 | 서비스와 요청, 저장소 | 영역 제목 옆 "CloudWatch와 Prometheus", Redis 구역 제목 옆 "Redis" |
 | 가로 축 | `periodSeconds` 300, 기간 하루<br>기간 7일 | 축 눈금 `HH:mm`<br>`MM-DD HH:mm` |
-| 빈 구간 | `rds.cpu`가 12구간 중 10구간 | 비어 있는 두 구간에서 선이 끊김 |
+| 빈 구간 | `rds.cpu`가 12구간 중 10구간<br>`requests`가 12구간 중 10구간 | 비어 있는 두 구간에서 선이 끊김<br>요청 수도 0으로 그리지 않고 끊음 |
 | 사용률 축 | CPU 최댓값 8% | 세로 축 0~100% |
-| 평균과 최대 | `server`의 `cpu` 7.4, `cpuMax` 21.0 | 선은 7.4, 툴팁 "서버 7.4% / 21.0%", 수치 표에 평균과 최대 |
-| 서비스 색 | CPU 사용률 차트 | 서버 `#01A76B` 실선, AI `#3B6FD4` 긴 점선, 알림 `#E07A1F` 짧은 점선 |
-| Redis 계열 | 노드 `manyak-prod-redis-rg-001`, `-002` | 계열 "노드 001", "노드 002" |
-| 묶음 `null` | `redis`가 `null` | Redis 구역에 "이 환경에는 Redis 지표 설정이 없습니다.", RDS와 OpenSearch 구역 정상 |
+| 평균과 최대 | `cpu` 4.1, `cpuMax` 12.3 | 선은 4.1, 툴팁 "4.1% / 12.3%", 수치 표에 평균과 최대 |
+| 묶음 설정 없음 | `host`가 `null`, `unavailable` 빈 배열 | 앱 호스트 구역의 CPU 카드와 차트 자리에 "이 환경에는 앱 호스트 CPU 지표 설정이 없습니다.", 메모리와 디스크는 정상 |
+| 일시 조회 실패 | `unavailable`이 `hostSystem`, `requests`, `opensearch`이고 세 묶음 `null` | 요청 구역에 "지금 요청 지표를 가져올 수 없습니다. 잠시 후 다시 시도해 주세요.", 앱 호스트의 메모리와 디스크 자리와 OpenSearch 구역도 같은 형식<br>CPU, RDS, Redis는 정상 |
 | 사용 불가 | 인프라 지표 요청이 사용 불가 | 서비스와 요청 하위 구분과 저장소 하위 구분에 "인프라 지표를 불러올 수 없음", DB 테이블 하위 구분은 정상 |
 | DB 테이블 | URL에 `tab=tables&range=last7d` | 기간 선택기 비활성과 "현재", 요청은 `limit=20`만, 출처 표시 "서버 DB" |
 | 테이블 순서와 단위 | `tables` 3개, 첫 항목 `totalBytes` 402,653,184 | 순위 막대와 표가 응답 순서, 첫 항목 402.7MB |

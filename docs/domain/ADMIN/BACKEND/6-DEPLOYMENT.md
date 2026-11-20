@@ -20,7 +20,8 @@
 | Amplitude | Dashboard REST API | 분석 지표 |
 | Langfuse | Metrics API | AI 비용의 금액 |
 | Google Cloud Storage | Play Console 일괄 보고서 버킷 | 설치 지표 |
-| AWS CloudWatch, ECS | 서버 태스크 역할의 읽기 권한 | 인프라 지표 |
+| AWS CloudWatch | 서버의 AWS 역할의 읽기 권한 | 인프라 지표 |
+| 홈서버 Prometheus | Cloudflare 터널의 조회 주소, Access 서비스 토큰, 읽기 계정<br>홈서버의 기록 규칙과 수집기 | 인프라 지표 |
 | Redis | 다른 도메인과 같은 인스턴스 | Amplitude 배치의 5분 슬롯 선점 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
@@ -39,8 +40,9 @@
 | Langfuse | 연결할 수 없으면 AI 비용의 새 날짜만 받지 못함<br>저장 값이 있는 날짜는 그대로 응답<br>보관 기간(기본 30일)이 지난 날짜는 다시 받을 수 없어 배치가 매일 저장 |
 | Play 서비스 계정 키 | 비면 설치 지표만 사용 불가<br>기동은 정상<br>키는 첫 보고서 조회 때 해석하므로 base64나 서비스 계정 JSON이 아니어도 기동은 정상이고 설치 지표만 사용 불가<br>그때 로그 `reason`은 HTTP 상태 없는 `http_error` |
 | Google Cloud Storage | 연결할 수 없으면 설치 지표만 사용 불가<br>캐시가 있으면 캐시로 응답 |
-| CloudWatch, ECS | 권한이 없거나 연결할 수 없으면 인프라 지표만 사용 불가<br>기동은 정상<br>그 범위의 캐시가 있으면 캐시로 응답 |
-| 인프라 지표 설정 | 비어 있는 리소스 묶음은 응답에서 `null`<br>모두 비면 인프라 지표만 사용 불가<br>기동은 정상 |
+| CloudWatch | 권한이 없거나 연결할 수 없으면 `host`와 `rds` 묶음만 비움<br>기동은 정상 |
+| 홈서버 Prometheus | 홈서버나 터널이 내려가면 `requests`, `hostSystem`, `opensearch` 묶음만 비움<br>기동은 정상 |
+| 인프라 지표 설정 | 비어 있는 리소스 묶음은 응답에서 `null`<br>CloudWatch와 Prometheus 설정이 모두 비면 Redis 묶음만 응답<br>기동은 정상 |
 | Redis | 연결할 수 없으면 Amplitude 배치와 백필만 건너뜀<br>화면 요청은 그대로 값을 받음 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
@@ -71,7 +73,7 @@
 |---|---|---|---|
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | `1,2,3,4,5,10,11,206,207` | 주입 없음 | 콤마 구분 회원 내부 ID<br>대시보드 요약과 차트, DB 분석 지표 중 신규 가입자, 턴 도달률, 채팅 옵션 비중에서 제외하고 AI 비용에는 적용하지 않으며 기본값은 운영 Terraform `grafana/dashboards/service-stats.json`의 소비 활동 제외 목록과 같음<br>제작 세션 차트는 이 목록에서 `MANYAK_OFFICIAL_USER_PUBLIC_ID`의 회원을 뺀 나머지를 제외 |
 
-관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표와 DB 지표의 플랫폼 조회 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 분석 도구 갱신의 요청 대기 10초, 태스크당 비용 예산(최근 5분 500)과 그 가운데 배치와 백필 몫(300), 분석 값 배치의 실행 간격 5분과 새벽 배치 시작 시각 KST 03:00, 초기 백필 시작일 2026-07-01, 배치 켜기 여부(기본 켬, 테스트 프로파일은 끔), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), 실시간 이미지 장당 원가(초기 48원), Langfuse 비용의 원화 환율(초기 1,400원), Langfuse 추적 이름과 기능의 매핑 표, Langfuse 값의 오늘 유효 시간 10분과 어제 1시간, Langfuse 호출 시간 한도 10초, 호출 간격 1초, 한 응답의 최대 호출 6번, 호출 구간 기본 3일, 행 제한 1,000, 실패 쿨다운 60초, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`, 인프라 지표의 기간 상한 31일과 집계 간격 경계(2일, 7일, 63일), 캐시 60초, 호출 시간 한도 5초, 실패 쿨다운 60초, DB 테이블 크기의 캐시 5분과 개수 상한 100은 설정 파일의 고정값이다.
+관리자 토큰 수명과 대상 클레임 값, 분석 도구 지표의 오늘 값 유효 시간 10분과 확정일 기준(오늘에서 2일 이전), 분석 지표와 DB 지표의 플랫폼 조회 시간 한도 5초, 실패 쿨다운 60초, 캠페인 분석과 사용자, 전환, 기능 지표의 조회 시간 한도 10초와 갱신 시간 한도 60초, 분석 도구 갱신의 요청 대기 10초, 태스크당 비용 예산(최근 5분 500)과 그 가운데 배치와 백필 몫(300), 분석 값 배치의 실행 간격 5분과 새벽 배치 시작 시각 KST 03:00, 초기 백필 시작일 2026-07-01, 배치 켜기 여부(기본 켬, 테스트 프로파일은 끔), 유입 소스 목록(`ig`, `th`와 `threads`, `dc`), 캠페인 목록(차수, 캠페인 값, 시작일, 종료일, 대상 스토리), 실시간 이미지 장당 원가(초기 48원), Langfuse 비용의 원화 환율(초기 1,400원), Langfuse 추적 이름과 기능의 매핑 표, Langfuse 값의 오늘 유효 시간 10분과 어제 1시간, Langfuse 호출 시간 한도 10초, 호출 간격 1초, 한 응답의 최대 호출 6번, 호출 구간 기본 3일, 행 제한 1,000, 실패 쿨다운 60초, 설치 지표의 캐시 시간 1시간, 호출 시간 한도 10초, 실패 쿨다운 60초, 보고서 버킷 이름 `pubsite_prod_7346202752431827582`와 패키지 이름 `app.manyak`, 인프라 지표의 기간 상한 31일과 집계 간격 경계(2일, 7일, 63일), 캐시 60초, 전체 호출 시간 한도 5초, Prometheus 연결 1초와 질의 3초, Redis 1초, 실패 쿨다운 60초, DB 테이블 크기의 캐시 5분과 개수 상한 100은 설정 파일의 고정값이다.
 
 <br>
 
@@ -106,15 +108,13 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_ADMIN_INFRA_ECS_CLUSTER` | 빈 값 | 운영 태스크 정의에 Terraform이 기록 | ECS 클러스터 이름<br>운영 `manyak-prod` |
-| `MANYAK_ADMIN_INFRA_ECS_SERVICES` | 빈 값 | 같음 | 콤마 구분의 `표시 키=서비스 이름` 쌍이며 이 순서로 응답<br>운영 `server=manyak-prod,ai=manyak-prod-ai,notification=manyak-prod-notification` |
-| `MANYAK_ADMIN_INFRA_ALB` | 빈 값 | 같음 | ALB의 ARN 접미사 `app/manyak-prod-alb/{ID}`<br>Terraform의 `arn_suffix`를 그대로 씀 |
+| `MANYAK_ADMIN_INFRA_HOST_ASG` | 빈 값 | 운영 앱 호스트의 서버 설정에 Terraform이 기록 | 앱 호스트의 오토스케일링 그룹 이름<br>운영 `manyak-prod-host` |
 | `MANYAK_ADMIN_INFRA_RDS_INSTANCE` | 빈 값 | 같음 | RDS 인스턴스 식별자<br>운영 `manyak-prod-pg` |
-| `MANYAK_ADMIN_INFRA_REDIS_NODES` | 빈 값 | 같음 | 콤마 구분 캐시 클러스터 ID이며 이 순서로 응답<br>운영은 복제 그룹 `manyak-prod-redis-rg`의 구성원 `manyak-prod-redis-rg-001,manyak-prod-redis-rg-002` |
-| `MANYAK_ADMIN_INFRA_OPENSEARCH_DOMAIN` | 빈 값 | 같음 | 관리형 OpenSearch 도메인 이름<br>관리형 도메인을 쓰지 않으면 빈 값으로 두며 OpenSearch 묶음은 `null` |
-| `MANYAK_ADMIN_INFRA_AWS_ACCOUNT_ID` | 빈 값 | 같음 | OpenSearch 지표의 `ClientId` 차원<br>비면 OpenSearch 묶음만 `null` |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL` | 빈 값 | 같음 | 홈서버 Prometheus의 조회 주소<br>운영 `https://obs-metrics.manyak.app` |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_USERNAME`, `MANYAK_ADMIN_INFRA_PROMETHEUS_PASSWORD` | 빈 값 | 운영 앱 시크릿 | Prometheus 읽기 계정 |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_ACCESS_CLIENT_ID`, `MANYAK_ADMIN_INFRA_PROMETHEUS_ACCESS_CLIENT_SECRET` | 빈 값 | 같음 | 조회 주소의 Cloudflare Access 서비스 토큰 |
 
-- 개발 태스크 정의에는 주입하지 않는다. 개발 서버의 인프라 지표는 사용 불가다.
+- 개발 서버에는 주입하지 않는다. 개발 서버의 인프라 지표는 Redis 묶음만 응답한다.
 - 리전은 태스크의 AWS SDK 기본 리전(`ap-northeast-2`)을 쓴다.
 
 **5. 다른 도메인이 관리하는 값**
@@ -146,7 +146,7 @@
 | 관리자 역할 | 운영 DB에 관리자 역할 행이 있어야 첫 로그인이 가능 | 수동 확인<br>서버는 역할 행 유무를 검사하지 않음 |
 | Amplitude 시크릿 | 두 시크릿 JSON에 키 두 개가 있고 태스크 정의가 참조 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
 | Play 서비스 계정 키 | 운영 시크릿 JSON에 키가 있고 태스크 정의가 참조<br>서비스 계정에 보고서 버킷 읽기 권한 | 수동 검토<br>운영 Terraform apply가 서버 릴리스보다 먼저 |
-| 인프라 지표 권한과 설정 | 운영 서버 태스크 역할에 `cloudwatch:GetMetricData`와 세 서비스에 한정한 `ecs:DescribeServices`<br>운영 태스크 정의에 인프라 지표 환경 변수 | 수동 검토<br>`manyak-terraform`의 운영 apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 인프라 지표만 사용 불가 |
+| 인프라 지표 권한과 설정 | 운영 서버의 AWS 역할에 `cloudwatch:GetMetricData`<br>운영 앱 호스트의 서버 설정에 인프라 지표 환경 변수와 시크릿<br>홈서버에 조회 주소, 기록 규칙, OpenSearch와 앱 호스트 지표 수집 | 수동 검토<br>`manyak-terraform`의 운영 apply와 홈서버 반영이 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 해당 묶음만 빔 |
 | Langfuse 시크릿 | 운영 태스크 정의에 `manyak/prod/app`의 Langfuse 세 키 참조와 환경 이름 | 수동 검토<br>운영 Terraform apply가 필요하고 서버 릴리스와 순서가 바뀌어도 기동은 정상이며 AI 비용만 사용 불가 |
 | 팀 계정 코호트 | 분석 도구에 팀 계정 코호트가 있고 ID가 설정값과 같음 | 수동 확인 |
 | 와이어 계약 변경 | 관리자 API 응답이 바뀌면 관리자 페이지와 함께 배포<br>분석 도구 지표의 `pendingDates`와 늘어난 기간 상한은 관리자 페이지가 준비 중 표시와 재요청을 함께 배포<br>신규 가입자의 `signups.other` 제거는 관리자 페이지가 그 필드를 읽지 않고 새 플랫폼 필드를 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>기능 사용과 안정성의 `users.storyCompleteError` 제거도 관리자 페이지가 그 필드를 읽지 않고 `storyCompletion`을 없어도 되는 값으로 읽게 먼저 배포한 뒤 서버를 배포<br>AI 기능 `chat_compact`와 채팅 응답의 `summaryThroughTurn`은 서버를 먼저 배포하고 관리자 페이지 배포 전까지 `chat_compact`가 코드 이름 그대로 보임<br>플랫폼 묶음의 `unknown` 제거, 새 응답 필드, 새 엔드포인트, 새 전환 퍼널은 서버를 먼저 배포하고 관리자 페이지가 뒤에 배포<br>푸시 열람의 `pushOpens`는 웹과 앱의 합계로 바뀌어 관리자 페이지 배포 전까지 웹 기준 안내와 함께 합계가 보임<br>관리자 페이지는 `unknown`을 읽지 않아 순서가 바뀌어도 기존 화면은 깨지지 않고 새 영역만 사용 불가 | 수동 검토 |
@@ -243,7 +243,7 @@
 | 간편 제작 실패율 | 기본 범위의 기능 사용 응답과 운영 DB의 같은 날짜 `story_creation_requests` 집계 | 날짜마다 `requests`와 `failed`가 같음 |
 | 분석 값 배치 | 첫 배포 뒤 몇 시간의 `admin_analytics_backfill`<br>다음 날 KST 03:00 이후 로그 | `backfill`의 `remaining_days`가 줄다가 `done`<br>`nightly`가 그날 `done`<br>한 5분 슬롯에 실행 로그가 하나뿐<br>`backfill`이 `done`이 된 뒤 활동 탭과 유입 탭의 기본 범위 요청이 `admin_analytics_refreshed`에서 오늘 날짜만 받음 |
 | 설치 지표 | 설치 지표 응답 | 성공 응답과 `asOf`가 오늘에서 며칠 안<br>사용 불가면 `admin_play_stats_fetch_failed`의 `reason` |
-| 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 `ecs.services` 3개의 `runningTasks` 1 이상, 모든 묶음이 `null` 아님<br>사용 불가면 `admin_infra_metrics_fetch_failed`의 `reason` |
+| 인프라 지표 | 기본 범위의 인프라 지표와 DB 테이블 크기 응답 | 성공 응답과 빈 `unavailable`, 여섯 묶음이 모두 `null` 아님, `requests.requests`와 `hostSystem.memoryAvailableBytes`에 점이 있음<br>묶음이 비면 `admin_infra_metrics_fetch_failed`의 `reason`과 `service` |
 | AI 비용 | 기본 범위의 AI 비용 응답 | 성공 응답, `unmapped` 빈 배열, 비용이 있는 날짜의 `costKrw`가 `null`이 아님<br>사용 불가면 `admin_ai_cost_fetch_failed`의 `reason` |
 | AI 비용 백필 | 배포 뒤 첫 몇 실행의 Langfuse 호출과 저장 행 | 보관 시작일부터 KST 오늘 − 2일까지 모든 날짜에 `langfuse_ai_cost` 확정 행이 있음<br>`admin_ai_cost_fetch_failed`의 `status` 400이 없음 |
 | 감사 로그 | 운영 작업 1건 뒤 감사 로그 조회 | 해당 행이 보임 |
@@ -262,8 +262,9 @@
 | 백필이 끝나지 않음 | `admin_analytics_backfill`의 `result`, `reason` | `budget_share`만 반복되면 화면 요청이 시작한 갱신이 예산을 먼저 쓰는 중이라 대기<br>`claim_failed`면 Redis 연결<br>`no_credentials`면 Amplitude 시크릿 |
 | 분석 지표가 계속 사용 불가 | `admin_analytics_fetch_failed`의 `reason`과 `endpoint` | `no_credentials`면 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 인증 실패 상태면 키 값<br>`rate_limited`면 쿨다운 뒤 자동 재호출이므로 대기<br>`budget_exceeded`면 같은 5분에 갱신한 엔드포인트가 많은 것이므로 대기하고, 한 엔드포인트만 반복되면 그 엔드포인트의 조회 구성과 기간 상한 재검토 |
 | 설치 지표가 계속 사용 불가 | `admin_play_stats_fetch_failed`의 `reason`과 `status` | `no_credentials`면 운영 시크릿 JSON과 태스크 정의 참조<br>`http_error`에 권한 거부 상태면 서비스 계정의 버킷 읽기 권한<br>`http_error`에 상태가 없으면 키의 base64와 JSON 형식, 그다음 저장소 연결<br>`no_reports`면 Play Console의 보고서 생성 여부와 패키지 이름<br>`parse_error`면 보고서 형식 변경 |
-| 인프라 지표가 계속 사용 불가 | `admin_infra_metrics_fetch_failed`의 `reason`, `service`, `error_code` | `not_configured`면 운영 태스크 정의의 인프라 지표 환경 변수<br>`access_denied`면 서버 태스크 역할의 정책과 `service`의 권한<br>`throttled`면 60초 뒤 다시 시도<br>`incomplete`면 `error_code`를 보고 60초 뒤 다시 시도하며 `Forbidden`이면 태스크 역할 정책<br>`timeout`이나 `aws_error`면 NAT 경로와 AWS 상태 |
+| 인프라 지표의 묶음이 계속 비어 있음 | 응답의 `unavailable`, `admin_infra_metrics_fetch_failed`의 `reason`, `service`, `error_code` | `service`가 `cloudwatch`이고 `access_denied`면 서버 AWS 역할의 정책<br>`throttled`면 60초 뒤 다시 시도<br>`incomplete`면 `error_code`를 보고 60초 뒤 다시 시도하며 `Forbidden`이면 역할 정책<br>`timeout`이나 `aws_error`면 AWS 상태<br>`service`가 `prometheus`이고 `access_denied`면 Access 서비스 토큰과 읽기 계정 시크릿, `timeout`이나 `prometheus_error`면 홈서버와 터널 상태<br>`service`가 `redis`면 Redis 컨테이너 |
 | AI 비용이 계속 사용 불가 | `admin_ai_cost_fetch_failed`의 `reason`과 `status` | `not_configured`면 운영 태스크 정의의 Langfuse 시크릿 참조와 환경 이름<br>`http_error`에 401이면 키 값<br>`rate_limited`면 호출 제한이 풀린 뒤 다시 시도<br>`parse_error`면 Metrics API 응답 형식과 서버 구현 |
 | AI 비용 조회가 400 | `admin_ai_cost_fetch_failed`의 `status` 400과 요청 구간 | 보관 일수 설정이 실제 Langfuse 보관 기간보다 길면 보관 시작일이 너무 이름<br>`MANYAK_ADMIN_LANGFUSE_RETENTION_DAYS`를 줄임 |
 | AI 비용이 0이거나 `unmapped`만 있음 | 응답의 `unmapped`와 Langfuse 추적 이름 | 환경 이름 설정과 추적 이름 매핑 표 |
-| 인프라 지표의 한 묶음만 비어 있음 | 응답에서 `null`인 묶음 | 그 묶음의 환경 변수, OpenSearch는 계정 ID까지 |
+| 묶음이 `null`인데 `unavailable`에 없음 | 응답에서 `null`인 묶음 | 그 묶음의 환경 변수 |
+| Prometheus 묶음의 점 목록이 비어 있음 | 홈서버 Prometheus의 기록 규칙 계열 | 기록 규칙이 평가되는지, 수집기가 OpenSearch와 앱 호스트 지표를 보내는지 |

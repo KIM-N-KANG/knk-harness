@@ -10,7 +10,7 @@
 
 | 종류 | 확인 범위 | 외부 호출 | 실행 |
 |---|---|---|---|
-| 단위 | 관리자 토큰 발급과 검증, 표식 판정, KST 오늘 범위 계산, 페이지와 정렬 해석, 설치 보고서 CSV 해석과 합산, 인프라 지표의 집계 간격 판정과 단위 변환과 건수 0 채움 | 없음 | CI |
+| 단위 | 관리자 토큰 발급과 검증, 표식 판정, KST 오늘 범위 계산, 페이지와 정렬 해석, 설치 보고서 CSV 해석과 합산, 인프라 지표의 집계 간격 판정과 단위 변환, Prometheus 점의 시각 변환과 건수 반올림 | 없음 | CI |
 | 통합 | 로그인, 판정 필터, 감사 기록, 대시보드 요약과 차트, 스토리, 채팅, 회원, 결제 목록과 상세, 이프 내역, 감사 로그 조회, 분석 지표, 캠페인 분석, 사용자와 전환과 기능 지표, Amplitude 값 저장, 설치 지표, 인프라 지표, DB 테이블 크기 | 신원 검증기는 고정 신원을 돌려주는 구성으로 대체<br>분석 도구, 보고서 저장소, CloudWatch와 ECS는 고정 응답을 돌려주는 대역으로 대체<br>DB 테이블 크기의 카탈로그 조회는 대역으로 대체 | CI<br>H2, 스키마 자동 생성, 마이그레이션 비활성 |
 | 회귀 | 등록된 모든 관리자 경로의 인증과 권한 거절 | 없음 | CI |
 | 수동 | 엔드포인트 호출 | 실행 환경의 실제 의존성 | 서버 저장소의 HTTP 요청 파일 |
@@ -29,7 +29,9 @@
 | Amplitude | 사용자 수, 세분화, 퍼널, 리텐션, 세션 조회 요청을 받아 고정 JSON을 돌려주는 대역<br>요청 수, 순서, 쿼리를 기록 |
 | Redis | 배치 슬롯 선점을 성공, 이미 선점됨, 예외로 돌려주는 대역 |
 | Google Cloud Storage | 객체 목록과 내려받기를 고정 바이트로 돌려주는 대역<br>UTF-16LE로 인코딩한 뒤 gzip으로 압축한 월별 CSV 2개 이상 |
-| AWS CloudWatch, ECS | `GetMetricData`와 `DescribeServices` 요청을 받아 고정 응답이나 AWS 오류 코드를 돌려주는 대역<br>요청의 질의 목록, 통계, 차원, 시각, 간격을 기록 |
+| AWS CloudWatch | `GetMetricData` 요청을 받아 고정 응답이나 AWS 오류 코드를 돌려주는 대역<br>요청의 질의 목록, 통계, 차원, 시각, 간격을 기록 |
+| 홈서버 Prometheus | `query_range`와 `query` 요청을 받아 고정 JSON이나 HTTP 오류를 돌려주는 대역<br>요청의 질의, 시작과 끝, 간격, 인증 헤더 유무를 기록 |
+| Redis 현재 값 | `INFO`와 `DBSIZE` 결과를 고정 값이나 예외로 돌려주는 대역 |
 
 <br>
 
@@ -527,34 +529,44 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 구성 | 운영과 같은 설정(서비스 3개, Redis 노드 2개, 모든 리소스) | `GetMetricData` 질의 29개(ECS는 서비스마다 CPU와 메모리의 `Average`와 `Maximum`), 지표와 통계와 차원이 계약의 표와 같음<br>`TargetResponseTime`은 `p95`<br>`DescribeServices` 한 번에 서비스 3개 |
-| 기본 기간 | 쿼리 없음, 고정 시계 2026-10-23 09:00 KST | `from`과 `to`가 2026-10-23, 조회 시작 2026-10-23 00:00 KST, 끝 09:00 KST, `periodSeconds` 300 |
-| 지난 날짜 끝 | `from=2026-10-20&to=2026-10-21` | 조회 끝이 2026-10-22 00:00 KST |
+| 조회 구성 | 운영과 같은 설정(오토스케일링 그룹, RDS 인스턴스, Prometheus 조회 주소) | `GetMetricData` 질의 9개(앱 호스트 CPU는 `Average`와 `Maximum`), 지표와 통계와 차원이 계약의 표와 같음<br>Prometheus 질의가 기록 규칙 계열만 읽고 간격이 `periodSeconds`<br>Redis는 `INFO`와 `DBSIZE` |
+| 기본 기간 | 쿼리 없음, 고정 시계 2026-11-20 09:00 KST | `from`과 `to`가 2026-11-20, 조회 시작 2026-11-20 00:00 KST, 끝 09:00 KST, `periodSeconds` 300 |
+| 지난 날짜 끝 | `from=2026-11-17&to=2026-11-18` | 조회 끝이 2026-11-19 00:00 KST |
 | 집계 간격 | 기간 2일, 3일, 7일, 8일, 31일 | `periodSeconds` 300, 900, 900, 3600, 3600 |
 | 오래된 시작 | 오늘에서 64일 전부터 2일 | `periodSeconds` 3600 |
 | 기간 오류 | 32일, `to` 내일, `from`만, `from`이 `to`보다 뒤 | 전부 400, 대역 호출 없음 |
-| 단위 변환 | `TargetResponseTime` 0.123, `ReadLatency` 0.0008, OpenSearch `FreeStorageSpace` 1024 | `responseTimeP95Ms` 123, `readLatencyMs` 0.8, `freeStorageBytes` 1,073,741,824 |
-| 건수 0 채움 | 2시간 범위의 300초 간격에서 `RequestCount`가 24구간 중 3구간만 옴 | `requests` 점 24개, 나머지 21개는 0 |
-| 비건수 빈 구간 | `CPUUtilization`이 24구간 중 20구간만 옴 | `cpu` 점 20개, 채우지 않음 |
-| 태스크 수 | 대역이 `server` 실행 2, 목표 2, 시작 중 0 | `ecs.services[0]`의 `runningTasks` 2, `desiredTasks` 2, `pendingTasks` 0 |
-| 최댓값 통계 | `CPUUtilization`의 `Average` 7.4, `Maximum` 21.0 | `cpu` 7.4, `cpuMax` 21.0 |
-| 서비스 실패 항목 | `DescribeServices`의 `failures`에 `ai` | 503, `reason` `aws_error`, `service` `ecs` |
-| 묶음 설정 없음 | Redis 노드 설정만 빈 값 | `redis`가 `null`, Redis 질의 없음, 나머지 묶음 정상 |
-| 계정 ID 없음 | OpenSearch 도메인은 있고 계정 ID가 빈 값 | `opensearch`가 `null` |
-| 설정 전부 없음 | 모든 리소스 설정이 빈 값 | 대역 호출 없이 503, `reason` `not_configured` |
-| 권한 거부 | 대역이 `AccessDeniedException` | 503, `reason` `access_denied`, `error_code` 기록 |
-| 호출 제한 | 대역이 `ThrottlingException` | 503, `reason` `throttled` |
-| 시간 초과 | 대역이 5초 무응답 | 503, `reason` `timeout` |
+| 단위 변환 | `ReadLatency` 0.0008 | `readLatencyMs` 0.8 |
+| 빈 구간 | `CPUUtilization`이 24구간 중 20구간만 옴 | `cpu` 점 20개, 채우지 않음 |
+| 최댓값 통계 | `CPUUtilization`의 `Average` 4.1, `Maximum` 12.3 | `cpu` 4.1, `cpuMax` 12.3 |
+| 점의 시각 | 간격 300초에서 Prometheus 점의 시각이 00:05:00 | `at`이 00:00:00 |
+| 요청 수 반올림 | 구간의 초당 요청률 합에 60을 곱한 값이 3.8 | `requests`의 `value` 4 |
+| 요청 없는 구간의 p95 | p95 질의 결과의 한 점이 `NaN` | 그 점이 `responseTimeP95Ms`에 없음 |
+| 계열 없음 | OpenSearch 계열의 질의 결과가 빈 목록 | `opensearch`가 `null`이 아니고 `status`와 `diskTotalBytes`가 `null`, 점 목록이 빈 배열, `unavailable`에 없음 |
+| 디스크 순서 | 디스크 계열이 `/data`, `/` 순서로 옴 | `disks`가 `/`, `/data` 순서 |
+| 클러스터 상태 | 상태 계열의 마지막 값 0, 1, 2 | `status` `green`, `yellow`, `red` |
+| Redis 값 | 대역이 사용 메모리 2,474,639, 한도 268,435,456, 클라이언트 6, 키 7,450, AOF 쓰기 `ok` | `redis`의 다섯 값이 같고 `aofLastWriteOk` `true` |
+| AOF 꺼짐 | 대역의 `INFO`에 AOF가 꺼짐 | `aofLastWriteOk` `null` |
+| 묶음 설정 없음 | 오토스케일링 그룹 설정만 빈 값 | `host`가 `null`, 앱 호스트 질의 없음, `unavailable`에 없음, 나머지 묶음 정상 |
+| Prometheus 설정 없음 | 조회 주소가 빈 값 | `requests`, `hostSystem`, `opensearch`가 `null`, Prometheus 대역 호출 없음, `unavailable`에 없음 |
+| 설정 전부 없음 | CloudWatch와 Prometheus 설정이 빈 값 | 200, `redis`만 값이 있음 |
+| Prometheus 실패 | Prometheus 대역이 한 질의에 500 | 200, `unavailable`이 `hostSystem`, `requests`, `opensearch`, 세 묶음 `null`, 나머지 정상, `reason` `prometheus_error` |
+| Prometheus 인증 거부 | Prometheus 대역이 403 | 200, 세 묶음 `null`, `reason` `access_denied`, `service` `prometheus` |
+| Prometheus 시간 초과 | Prometheus 대역이 3초 넘게 무응답 | 200, 세 묶음 `null`, `reason` `timeout`, CloudWatch와 Redis 묶음은 정상 |
+| CloudWatch 권한 거부 | CloudWatch 대역이 `AccessDeniedException` | 200, `unavailable`이 `host`, `rds`, `reason` `access_denied`, `error_code` 기록 |
+| 호출 제한 | CloudWatch 대역이 `ThrottlingException` | 200, `host`와 `rds`가 `null`, `reason` `throttled` |
+| Redis 실패 | Redis 대역이 예외 | 200, `unavailable`이 `redis`, `reason` `redis_error` |
+| 모두 실패 | 세 대역이 모두 실패, 캐시 없음 | 503, 출처마다 실패 로그 한 줄 |
 | 이어 받기 | `GetMetricData`가 `NextToken`으로 두 번에 나눠 응답 | 두 응답의 점을 합친 하나의 응답 |
-| 불완전 결과 | 이어 받은 뒤에도 `RequestCount` 결과의 `StatusCode`가 `PartialData`<br>캐시 없음 | 503, `reason` `incomplete`, 0으로 채운 점을 만들지 않고 캐시 미갱신 |
-| 질의 오류 | 한 질의 결과의 `StatusCode`가 `Forbidden`이나 `InternalError`<br>같은 범위의 만료된 캐시 있음 | 200과 캐시 값, 캐시 미갱신, `reason` `incomplete` |
+| 불완전 결과 | 이어 받은 뒤에도 한 질의 결과의 `StatusCode`가 `PartialData` | `host`와 `rds`가 `null`, `reason` `incomplete`, 0으로 채운 점을 만들지 않음 |
 | 캐시 | 60초 안에 같은 범위 두 번 | 대역 호출은 처음 한 번 |
+| 일부 실패의 캐시 | Prometheus만 실패한 응답 뒤 60초 안에 같은 범위 | 대역 호출 없이 같은 응답<br>61초 뒤에는 세 출처를 다시 호출 |
 | 범위별 캐시 | 다른 `from`으로 요청 | 대역을 따로 호출 |
 | 캐시 만료 | 고정 시계를 61초 뒤로 옮긴 뒤 같은 범위 | 대역 재호출 |
-| 실패와 캐시 | 같은 범위의 만료된 캐시가 있고 대역 500 | 200과 캐시 값 |
-| 쿨다운 | 실패 뒤 30초 안에 같은 범위 재요청 | 대역 호출 없이 503 또는 캐시 |
-| 응답의 이름 | 정상 응답 | 계정 ID, ALB ARN 접미사, RDS 인스턴스 이름, OpenSearch 도메인 이름이 본문에 없음 |
-| 격리 | 대역 500 상태에서 요약, 차트, DB 테이블 크기 호출 | 모두 영향 없음 |
+| 실패와 캐시 | 같은 범위의 만료된 캐시가 있고 세 대역이 모두 실패 | 200과 캐시 값 |
+| 쿨다운 | 모두 실패한 뒤 30초 안에 같은 범위 재요청 | 대역 호출 없이 503 또는 캐시 |
+| 응답의 이름 | 정상 응답 | 계정 ID, 오토스케일링 그룹 이름, RDS 인스턴스 이름, 조회 주소가 본문에 없음 |
+| 인증 정보 | Prometheus 대역이 받은 요청 | Access 서비스 토큰 헤더와 기본 인증이 있음<br>실패 로그에 토큰과 비밀번호가 없음 |
+| 격리 | 세 대역이 모두 실패한 상태에서 요약, 차트, DB 테이블 크기 호출 | 모두 영향 없음 |
 | 테이블 정렬 | 카탈로그 대역이 전체 크기 300, 100, 200인 테이블 셋 | `tables`가 300, 200, 100 순서, `tableCount` 3 |
 | 테이블 개수 | `limit=2`<br>`limit=0`, `101`, `abc` | 2개, `tableCount`는 전체 수<br>전부 400 |
 | 테이블 캐시 | 5분 안에 같은 `limit` 두 번 | 카탈로그 조회는 처음 한 번 |

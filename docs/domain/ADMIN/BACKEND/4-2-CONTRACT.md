@@ -2618,7 +2618,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버가 태스크 역할로 CloudWatch와 ECS를 불러 운영 AWS 리소스의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
+서버가 CloudWatch, 홈서버 Prometheus, Redis를 불러 운영 앱 호스트와 저장소의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
 
 **1. 쿼리**
 
@@ -2635,39 +2635,43 @@ Authorization: Bearer {adminToken}
 
 | 필드명 | 타입 | 의미 |
 |---|---|---|
-| `asOf` | `string` | CloudWatch와 ECS에서 값을 받은 시각<br>캐시로 응답하면 그 캐시를 만든 시각 |
+| `asOf` | `string` | 세 출처에서 값을 받은 시각<br>캐시로 응답하면 그 캐시를 만든 시각 |
 | `from`, `to` | `string` | 적용한 KST 날짜 |
 | `periodSeconds` | `integer` | 점 하나의 집계 간격(초)<br>기간 2일 이하 `300`, 7일 이하 `900`, 그보다 길면 `3600`<br>조회 시작이 63일보다 오래되면 기간과 무관하게 `3600` |
-| `ecs` | `object / null` | ECS 서비스 지표<br>클러스터나 서비스 설정이 비어 있으면 `null` |
-| `ecs.services` | `object[]` | 설정한 서비스 순서 |
-| `ecs.services[].name` | `string` | 설정의 표시 키<br>운영은 `server`, `ai`, `notification` |
-| `ecs.services[].runningTasks` | `integer` | 조회 시각(`asOf`)에 실행 중인 태스크 수 |
-| `ecs.services[].desiredTasks` | `integer` | 조회 시각의 목표 태스크 수 |
-| `ecs.services[].pendingTasks` | `integer` | 조회 시각에 시작 중인 태스크 수 |
-| `ecs.services[].cpu` | 점 목록 | `AWS/ECS` `CPUUtilization` 평균(%) |
-| `ecs.services[].memory` | 점 목록 | `AWS/ECS` `MemoryUtilization` 평균(%) |
-| `ecs.services[].cpuMax` | 점 목록 | `CPUUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
-| `ecs.services[].memoryMax` | 점 목록 | `MemoryUtilization` 최댓값(%)<br>구간 안에서 서비스의 태스크 가운데 가장 높은 값 |
-| `alb` | `object / null` | ALB 지표<br>설정이 비어 있으면 `null` |
-| `alb.requests` | 점 목록 | `AWS/ApplicationELB` `RequestCount` 합(회) |
-| `alb.elb5xx` | 점 목록 | `HTTPCode_ELB_5XX_Count` 합(회)<br>ALB가 생성한 5xx이며 대상이 반환한 5xx는 제외 |
-| `alb.target5xx` | 점 목록 | `HTTPCode_Target_5XX_Count` 합(회)<br>서버가 돌려준 5xx |
-| `alb.responseTimeP95Ms` | 점 목록 | `TargetResponseTime`의 `p95`(밀리초) |
-| `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있으면 `null` |
+| `unavailable` | `string[]` | 이번에 값을 받지 못한 묶음의 키<br>`host`, `hostSystem`, `requests`, `rds`, `redis`, `opensearch` 가운데 해당하는 것<br>설정이 비어 `null`인 묶음은 넣지 않음 |
+| `host` | `object / null` | 앱 호스트의 CloudWatch 지표<br>오토스케일링 그룹 설정이 비어 있거나 CloudWatch 조회가 실패하면 `null` |
+| `host.cpu` | 점 목록 | `AWS/EC2` `CPUUtilization` 평균(%) |
+| `host.cpuMax` | 점 목록 | `CPUUtilization` 최댓값(%) |
+| `host.cpuCreditBalance` | 점 목록 | `CPUCreditBalance` 최솟값(크레딧) |
+| `host.statusCheckFailed` | 점 목록 | `StatusCheckFailed` 최댓값<br>검사가 실패한 구간은 `1`, 아니면 `0` |
+| `hostSystem` | `object / null` | 앱 호스트의 메모리와 디스크<br>Prometheus 조회 주소 설정이 비어 있거나 Prometheus 조회가 실패하면 `null` |
+| `hostSystem.memoryTotalBytes` | `integer / null` | 전체 메모리(바이트)<br>조회 시각의 마지막 값이며 계열이 없으면 `null` |
+| `hostSystem.memoryAvailableBytes` | 점 목록 | 사용 가능 메모리의 구간 안 최솟값(바이트) |
+| `hostSystem.disks` | `object[]` | 마운트 경로 오름차순<br>계열이 없으면 빈 배열 |
+| `hostSystem.disks[].mount` | `string` | 마운트 경로<br>운영은 `/`, `/data` |
+| `hostSystem.disks[].totalBytes` | `integer / null` | 디스크 크기(바이트)<br>조회 시각의 마지막 값 |
+| `hostSystem.disks[].availableBytes` | 점 목록 | 디스크 여유의 구간 안 최솟값(바이트) |
+| `requests` | `object / null` | 운영 서버의 요청 지표<br>`null` 조건은 `hostSystem`과 같음 |
+| `requests.requests` | 점 목록 | 서버가 받은 요청 수(회)<br>없는 경로로 온 요청 포함, `/actuator/**` 제외 |
+| `requests.server5xx` | 점 목록 | 서버가 돌려준 5xx 수(회)<br>프록시가 서버 대신 돌려준 502, 504는 제외 |
+| `requests.responseTimeP95Ms` | 점 목록 | 응답 시간의 95번째 백분위(밀리초)<br>SSE 스트림 요청 제외<br>요청이 없는 구간은 점이 없음 |
+| `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있거나 CloudWatch 조회가 실패하면 `null` |
 | `rds.cpu` | 점 목록 | `AWS/RDS` `CPUUtilization` 평균(%) |
 | `rds.freeStorageBytes` | 점 목록 | `FreeStorageSpace` 최솟값(바이트) |
 | `rds.connections` | 점 목록 | `DatabaseConnections` 최댓값(개) |
 | `rds.readLatencyMs` | 점 목록 | `ReadLatency` 평균(밀리초) |
 | `rds.writeLatencyMs` | 점 목록 | `WriteLatency` 평균(밀리초) |
-| `redis` | `object / null` | ElastiCache Redis 노드 지표<br>설정이 비어 있으면 `null` |
-| `redis.nodes` | `object[]` | 설정한 노드 순서 |
-| `redis.nodes[].id` | `string` | 캐시 클러스터 ID |
-| `redis.nodes[].cpu` | 점 목록 | `AWS/ElastiCache` `EngineCPUUtilization` 평균(%) |
-| `redis.nodes[].memory` | 점 목록 | `DatabaseMemoryUsagePercentage` 평균(%) |
-| `redis.nodes[].connections` | 점 목록 | `CurrConnections` 최댓값(개) |
-| `opensearch` | `object / null` | OpenSearch 도메인 지표<br>도메인이나 계정 ID 설정이 비어 있으면 `null` |
-| `opensearch.freeStorageBytes` | 점 목록 | `AWS/ES` `FreeStorageSpace` 최솟값(바이트)<br>CloudWatch 값이 MB라 1,048,576을 곱함 |
-| `opensearch.jvmMemoryPressure` | 점 목록 | `JVMMemoryPressure` 최댓값(%) |
+| `redis` | `object / null` | Redis의 현재 값<br>조회가 실패하면 `null` |
+| `redis.usedMemoryBytes` | `integer` | 사용 메모리(바이트) |
+| `redis.maxMemoryBytes` | `integer` | 메모리 한도(바이트)<br>한도가 없으면 `0` |
+| `redis.connectedClients` | `integer` | 연결된 클라이언트 수 |
+| `redis.keys` | `integer` | 키 수 |
+| `redis.aofLastWriteOk` | `boolean / null` | 마지막 AOF 쓰기가 성공했는지<br>AOF를 쓰지 않으면 `null` |
+| `opensearch` | `object / null` | 홈서버 OpenSearch 지표<br>`null` 조건은 `hostSystem`과 같음 |
+| `opensearch.status` | `string / null` | 클러스터 상태 `green`, `yellow`, `red`<br>조회 시각의 마지막 값이며 계열이 없으면 `null` |
+| `opensearch.diskTotalBytes` | `integer / null` | 데이터 디스크 크기(바이트)<br>조회 시각의 마지막 값 |
+| `opensearch.diskAvailableBytes` | 점 목록 | 데이터 디스크 여유의 구간 안 최솟값(바이트)<br>홈서버의 다른 컨테이너와 같이 쓰는 디스크 |
+| `opensearch.jvmMemoryPressure` | 점 목록 | JVM old 영역 사용률의 구간 안 최댓값(%) |
 
 점 목록은 다음 구조의 배열이다.
 
@@ -2677,9 +2681,9 @@ Authorization: Bearer {adminToken}
 | `[].value` | `number` | 그 구간의 값 |
 
 - 점은 시각 오름차순이다.
-- 건수 지표(`alb.requests`, `alb.elb5xx`, `alb.target5xx`)는 CloudWatch가 값이 없는 구간을 빼고 주므로 서버가 조회 범위의 모든 구간을 0으로 채운다. 나머지 지표는 CloudWatch가 값을 준 구간만 담고 빈 구간을 채우지 않는다.
-- 태스크 수는 조회 시각(`asOf`) 기준 값이라 기간과 무관하다.
-- 리소스 이름과 계정 ID는 응답에 넣지 않는다. Redis 노드만 노드를 구분하려고 캐시 클러스터 ID를 넣는다.
+- 값이 없는 구간은 점이 없다. 서버는 빈 구간을 0으로 채우지 않는다.
+- `redis`의 값과 `memoryTotalBytes`, `totalBytes`, `diskTotalBytes`, `status`는 조회 시각(`asOf`) 기준이라 기간과 무관하다.
+- 리소스 이름, 계정 ID, 조회 주소는 응답에 넣지 않는다. 디스크만 구분하려고 마운트 경로를 넣는다.
 
 <br>
 
@@ -2688,7 +2692,9 @@ Authorization: Bearer {adminToken}
 | 상태 | `code` | 조건 |
 |---|---|---|
 | 400 | `BAD_REQUEST` | 한쪽만 있는 `from` 또는 `to`, 날짜 형식 오류, `from`이 `to`보다 뒤, `to`가 오늘 이후, 31일 초과 |
-| 503 | `SERVICE_UNAVAILABLE` | 리소스 설정이 모두 비어 있음<br>CloudWatch나 ECS 호출 실패, 권한 거부, 호출 제한, 불완전하거나 오류인 질의 결과, 시간 초과, 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
+| 503 | `SERVICE_UNAVAILABLE` | 부른 출처가 모두 실패했거나 실패 뒤 쿨다운 중이거나 다른 요청이 갱신 중인데 캐시도 없음 |
+
+출처 하나만 실패하면 200이고 그 출처의 묶음이 `null`이며 `unavailable`에 키가 들어간다.
 
 <details>
 <summary><b>요청과 응답 예시</b></summary>
@@ -2698,69 +2704,88 @@ Authorization: Bearer {adminToken}
 **1) Request**
 
 ```http
-GET /api/v1/admin/infra/metrics?from=2026-10-23&to=2026-10-23
+GET /api/v1/admin/infra/metrics?from=2026-11-20&to=2026-11-20
 Authorization: Bearer {adminToken}
 ```
 
 **2) 200 Response body**
 
-예시에는 점 목록마다 점 1~2개만 표시하고 `ai`와 `notification` 서비스, 두 번째 Redis 노드를 줄였다.
+예시에는 점 목록마다 점 1~2개만 표시했다.
 
 ```json
 {
-  "asOf": "2026-10-23T01:12:40Z",
-  "from": "2026-10-23",
-  "to": "2026-10-23",
+  "asOf": "2026-11-20T03:12:40Z",
+  "from": "2026-11-20",
+  "to": "2026-11-20",
   "periodSeconds": 300,
-  "ecs": {
-    "services": [
-      {
-        "name": "server",
-        "runningTasks": 2,
-        "desiredTasks": 2,
-        "pendingTasks": 0,
-        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 7.4 }, { "at": "2026-10-22T15:05:00Z", "value": 8.1 }],
-        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 41.2 }, { "at": "2026-10-22T15:05:00Z", "value": 41.5 }],
-        "cpuMax": [{ "at": "2026-10-22T15:00:00Z", "value": 21.0 }, { "at": "2026-10-22T15:05:00Z", "value": 12.3 }],
-        "memoryMax": [{ "at": "2026-10-22T15:00:00Z", "value": 44.0 }, { "at": "2026-10-22T15:05:00Z", "value": 44.1 }]
-      }
+  "unavailable": [],
+  "host": {
+    "cpu": [{ "at": "2026-11-19T15:00:00Z", "value": 4.1 }, { "at": "2026-11-19T15:05:00Z", "value": 4.3 }],
+    "cpuMax": [{ "at": "2026-11-19T15:00:00Z", "value": 12.3 }, { "at": "2026-11-19T15:05:00Z", "value": 6.0 }],
+    "cpuCreditBalance": [{ "at": "2026-11-19T15:00:00Z", "value": 331.4 }],
+    "statusCheckFailed": [{ "at": "2026-11-19T15:00:00Z", "value": 0 }]
+  },
+  "hostSystem": {
+    "memoryTotalBytes": 4015000000,
+    "memoryAvailableBytes": [{ "at": "2026-11-19T15:00:00Z", "value": 1876000000 }],
+    "disks": [
+      { "mount": "/", "totalBytes": 21462000000, "availableBytes": [{ "at": "2026-11-19T15:00:00Z", "value": 15400000000 }] },
+      { "mount": "/data", "totalBytes": 10726000000, "availableBytes": [{ "at": "2026-11-19T15:00:00Z", "value": 10610000000 }] }
     ]
   },
-  "alb": {
-    "requests": [{ "at": "2026-10-22T15:00:00Z", "value": 312 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
-    "elb5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 0 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
-    "target5xx": [{ "at": "2026-10-22T15:00:00Z", "value": 1 }, { "at": "2026-10-22T15:05:00Z", "value": 0 }],
-    "responseTimeP95Ms": [{ "at": "2026-10-22T15:00:00Z", "value": 182.0 }]
+  "requests": {
+    "requests": [{ "at": "2026-11-19T15:00:00Z", "value": 312 }, { "at": "2026-11-19T15:05:00Z", "value": 4 }],
+    "server5xx": [{ "at": "2026-11-19T15:00:00Z", "value": 1 }, { "at": "2026-11-19T15:05:00Z", "value": 0 }],
+    "responseTimeP95Ms": [{ "at": "2026-11-19T15:00:00Z", "value": 182.0 }]
   },
   "rds": {
-    "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 4.9 }],
-    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 18253611008 }],
-    "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 21 }],
-    "readLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 0.8 }],
-    "writeLatencyMs": [{ "at": "2026-10-22T15:00:00Z", "value": 1.6 }]
+    "cpu": [{ "at": "2026-11-19T15:00:00Z", "value": 3.9 }],
+    "freeStorageBytes": [{ "at": "2026-11-19T15:00:00Z", "value": 18253611008 }],
+    "connections": [{ "at": "2026-11-19T15:00:00Z", "value": 5 }],
+    "readLatencyMs": [{ "at": "2026-11-19T15:00:00Z", "value": 0.8 }],
+    "writeLatencyMs": [{ "at": "2026-11-19T15:00:00Z", "value": 1.6 }]
   },
   "redis": {
-    "nodes": [
-      {
-        "id": "manyak-prod-redis-rg-001",
-        "cpu": [{ "at": "2026-10-22T15:00:00Z", "value": 1.2 }],
-        "memory": [{ "at": "2026-10-22T15:00:00Z", "value": 3.4 }],
-        "connections": [{ "at": "2026-10-22T15:00:00Z", "value": 18 }]
-      }
-    ]
+    "usedMemoryBytes": 2474639,
+    "maxMemoryBytes": 268435456,
+    "connectedClients": 6,
+    "keys": 7450,
+    "aofLastWriteOk": true
   },
   "opensearch": {
-    "freeStorageBytes": [{ "at": "2026-10-22T15:00:00Z", "value": 6442450944 }],
-    "jvmMemoryPressure": [{ "at": "2026-10-22T15:00:00Z", "value": 58.0 }]
+    "status": "green",
+    "diskTotalBytes": 137170518016,
+    "diskAvailableBytes": [{ "at": "2026-11-19T15:00:00Z", "value": 114949550080 }],
+    "jvmMemoryPressure": [{ "at": "2026-11-19T15:00:00Z", "value": 9.0 }]
   }
 }
 ```
 
-**3) 503 Response body**
+**3) 200 Response body, Prometheus 조회 실패**
 
 ```json
 {
-  "timestamp": "2026-10-23T01:12:40.000Z",
+  "asOf": "2026-11-20T03:12:40Z",
+  "from": "2026-11-20",
+  "to": "2026-11-20",
+  "periodSeconds": 300,
+  "unavailable": ["hostSystem", "requests", "opensearch"],
+  "host": { "cpu": [], "cpuMax": [], "cpuCreditBalance": [], "statusCheckFailed": [] },
+  "hostSystem": null,
+  "requests": null,
+  "rds": { "cpu": [], "freeStorageBytes": [], "connections": [], "readLatencyMs": [], "writeLatencyMs": [] },
+  "redis": { "usedMemoryBytes": 2474639, "maxMemoryBytes": 268435456, "connectedClients": 6, "keys": 7450, "aofLastWriteOk": true },
+  "opensearch": null
+}
+```
+
+점 목록은 줄여 빈 배열로 적었다.
+
+**4) 503 Response body**
+
+```json
+{
+  "timestamp": "2026-11-20T03:12:40.000Z",
   "status": 503,
   "code": "SERVICE_UNAVAILABLE",
   "message": "인프라 지표를 가져올 수 없습니다.",
@@ -4098,7 +4123,8 @@ Authorization: Bearer {adminToken}
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
-| AWS CloudWatch, ECS | 없음 | CloudWatch `GetMetricData` 지표 조회, ECS `DescribeServices` 태스크 수 조회 |
+| AWS CloudWatch | 없음 | `GetMetricData` 지표 조회 |
+| 홈서버 Prometheus | 없음 | 기록 규칙 계열의 `query_range`와 `query` 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

@@ -83,8 +83,9 @@
 | 스토리 응답 | 목록과 상세는 제목, 소개, 장르, 태그만<br>설정 본문과 시작 설정 본문 없음<br>스토리 설정 응답만 제작 입력 원문과 이미지 전부를 싣고 `submission`과 `objectKey`는 없음 |
 | 감사 로그 | 대상은 외부 식별자<br>순차 PK는 처리자 FK 컬럼에만 있고 응답에 노출하지 않음 |
 | 사유 | 관리자가 적는 자유 문장이라 회원 개인정보를 적지 않도록 관리자 페이지가 안내<br>서버는 길이만 검증 |
-| AWS 권한 | 서버 태스크 역할에 `cloudwatch:GetMetricData`와 세 ECS 서비스 ARN에 한정한 `ecs:DescribeServices`만 더함<br>`GetMetricData`는 리소스를 지정할 수 없어 `*`<br>쓰기와 설정 변경 권한 없음 |
-| 인프라 응답 | 계정 ID와 ALB, RDS, OpenSearch 도메인 이름은 응답에 넣지 않음<br>Redis 노드는 구분을 위해 캐시 클러스터 ID만 넣음<br>테이블 이름과 크기는 관리자에게만 보임 |
+| AWS 권한 | 서버의 AWS 역할에 `cloudwatch:GetMetricData`만 더함<br>`GetMetricData`는 리소스를 지정할 수 없어 `*`<br>쓰기와 설정 변경 권한 없음 |
+| 홈서버 Prometheus 접근 | 조회 주소는 Cloudflare Access 서비스 토큰과 Prometheus 읽기 계정을 둘 다 요구<br>터널은 `/api/v1/query`와 `/api/v1/query_range`만 Prometheus로 보냄<br>토큰과 계정은 시크릿으로 주입하고 로그와 응답에 넣지 않음<br>서버가 보내는 질의는 고정이고 요청 값은 기간과 간격만 들어감 |
+| 인프라 응답 | 계정 ID, 오토스케일링 그룹과 RDS 인스턴스 이름, 조회 주소, Prometheus의 `job`과 `instance` 값은 응답에 넣지 않음<br>디스크는 구분을 위해 마운트 경로만 넣음<br>테이블 이름과 크기는 관리자에게만 보임 |
 
 <br>
 
