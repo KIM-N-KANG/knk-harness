@@ -849,7 +849,7 @@ CloudWatch, Prometheus, Redis
 | `manyak_server:http_requests:rate3m` | 운영 서버의 초당 요청률 | 서버가 보내는 HTTP 요청 지표<br>없는 경로로 온 요청 포함, `/actuator/**` 제외 |
 | `manyak_server:http_5xx:rate3m` | 운영 서버가 돌려준 5xx의 초당 요청률<br>5xx가 없으면 0 | 같음 |
 | `manyak_server:http_latency_bucket_nostream:rate3m` | 응답 시간 버킷(`le`)별 초당 요청률<br>경로가 `/stream`으로 끝나는 SSE 요청 제외 | 같음 |
-| `manyak_prod_host:memory_available_bytes` | 앱 호스트의 사용 가능 메모리 | 앱 호스트 로그 수집기의 호스트 지표 |
+| `manyak_prod_host:memory_available_bytes` | 앱 호스트의 사용 가능 메모리 | 앱 호스트의 지표 수집 컨테이너가 보내는 호스트 지표 |
 | `manyak_prod_host:memory_total_bytes` | 앱 호스트의 전체 메모리 | 같음 |
 | `manyak_prod_host:disk_available_bytes` | 마운트 경로(`mountpoint`)별 디스크 여유<br>`/`와 `/data` | 같음 |
 | `manyak_prod_host:disk_total_bytes` | 마운트 경로별 디스크 크기 | 같음 |
