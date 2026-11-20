@@ -13,6 +13,7 @@ import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "create_branch.py"
 BRANCH = "docs/KNK-999-branch-test"
+HOTFIX_BRANCH = "hotfix/KNK-999-branch-test"
 
 
 class CreateBranchTests(unittest.TestCase):
@@ -49,9 +50,11 @@ class CreateBranchTests(unittest.TestCase):
             "-m", message,
         )
 
-    def run_script(self, *options: str, success: bool = True) -> subprocess.CompletedProcess[str]:
+    def run_script(
+        self, *options: str, success: bool = True, tag: str = "docs",
+    ) -> subprocess.CompletedProcess[str]:
         result = subprocess.run(
-            [sys.executable, str(SCRIPT), "--ticket", "KNK-999", "--tag", "docs",
+            [sys.executable, str(SCRIPT), "--ticket", "KNK-999", "--tag", tag,
              "--title", "Branch Test", "--json", *options],
             cwd=self.repo, env=self.env, text=True, capture_output=True,
         )
@@ -60,6 +63,21 @@ class CreateBranchTests(unittest.TestCase):
         else:
             self.assertNotEqual(result.returncode, 0, result.stdout)
         return result
+
+    def diverge_remote_main_and_dev(self) -> tuple[str, str]:
+        """원격에 main을 만들고 main과 dev에 서로 다른 커밋을 쌓는다. (main, dev) 끝 커밋을 돌려준다."""
+        self.git(self.remote, "branch", "main")
+        self.commit(self.remote, "dev only change")
+        self.git(self.remote, "checkout", "--quiet", "main")
+        self.commit(self.remote, "production state")
+        self.git(self.remote, "checkout", "--quiet", "dev")
+        main = self.git(self.remote, "rev-parse", "main")
+        dev = self.git(self.remote, "rev-parse", "dev")
+        self.assertNotEqual(main, dev)
+        return main, dev
+
+    def remote_refs(self) -> str:
+        return self.git(self.repo, "for-each-ref", "--format=%(refname)", "refs/remotes/origin")
 
     def assert_dirty_rejected(self) -> None:
         status = self.git(self.repo, "status", "--porcelain")
@@ -94,6 +112,39 @@ class CreateBranchTests(unittest.TestCase):
             self.git(self.repo, "for-each-ref", f"refs/heads/{BRANCH}", "--format=%(upstream)"),
             "",
         )
+
+    def test_hotfix_default_fetches_remote_main(self) -> None:
+        main, _ = self.diverge_remote_main_and_dev()
+        result = json.loads(self.run_script("--create", tag="hotfix").stdout)
+        self.assertTrue(result["created"])
+        self.assertEqual(result["branch"], HOTFIX_BRANCH)
+        self.assertEqual(result["base_ref"], "refs/remotes/origin/main")
+        self.assertEqual(self.git(self.repo, "branch", "--show-current"), HOTFIX_BRANCH)
+        self.assertEqual(self.git(self.repo, "rev-parse", "HEAD"), main)
+        # main만 받고 origin/dev는 그대로 둔다.
+        self.assertEqual(self.git(self.repo, "rev-parse", "origin/dev"), self.initial)
+        self.assertEqual(
+            self.git(self.repo, "for-each-ref", f"refs/heads/{HOTFIX_BRANCH}", "--format=%(upstream)"),
+            "",
+        )
+
+    def test_other_tags_still_default_to_remote_dev(self) -> None:
+        _, dev = self.diverge_remote_main_and_dev()
+        for tag in ("feat", "fix", "docs", "chore"):
+            with self.subTest(tag=tag):
+                self.git(self.repo, "checkout", "--quiet", "dev")
+                result = json.loads(self.run_script("--create", tag=tag).stdout)
+                self.assertEqual(result["branch"], f"{tag}/KNK-999-branch-test")
+                self.assertEqual(result["base_ref"], "refs/remotes/origin/dev")
+                self.assertEqual(self.git(self.repo, "rev-parse", "HEAD"), dev)
+        self.assertNotIn("refs/remotes/origin/main", self.remote_refs())
+
+    def test_hotfix_explicit_base_is_used_as_is(self) -> None:
+        self.diverge_remote_main_and_dev()
+        result = json.loads(self.run_script("--create", "--base", "dev", tag="hotfix").stdout)
+        self.assertEqual(result["base_ref"], "dev")
+        self.assertEqual(self.git(self.repo, "rev-parse", "HEAD"), self.initial)
+        self.assertNotIn("refs/remotes/origin/main", self.remote_refs())
 
     def test_untracked_file_blocks_creation(self) -> None:
         (self.repo / "untracked.txt").write_text("preserve me\n")
