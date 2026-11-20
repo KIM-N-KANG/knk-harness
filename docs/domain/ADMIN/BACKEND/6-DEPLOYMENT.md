@@ -22,7 +22,7 @@
 | Google Cloud Storage | Play Console 일괄 보고서 버킷 | 설치 지표 |
 | AWS CloudWatch | 서버의 AWS 역할의 읽기 권한 | 인프라 지표 |
 | 홈서버 Prometheus | Cloudflare 터널의 조회 주소, Access 서비스 토큰, 읽기 계정<br>홈서버의 기록 규칙과 수집기 | 인프라 지표 |
-| Redis | 다른 도메인과 같은 인스턴스 | Amplitude 배치의 5분 슬롯 선점 |
+| Redis | 다른 도메인과 같은 인스턴스 | Amplitude 배치의 5분 슬롯 선점, 인프라 지표의 Redis 현재 값 |
 | Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
 
 <br>
@@ -43,7 +43,7 @@
 | CloudWatch | 권한이 없거나 연결할 수 없으면 `host`와 `rds` 묶음만 비움<br>기동은 정상 |
 | 홈서버 Prometheus | 홈서버나 터널이 내려가면 `requests`, `hostSystem`, `opensearch` 묶음만 비움<br>기동은 정상 |
 | 인프라 지표 설정 | 비어 있는 리소스 묶음은 응답에서 `null`<br>CloudWatch와 Prometheus 설정이 모두 비면 Redis 묶음만 응답<br>기동은 정상 |
-| Redis | 연결할 수 없으면 Amplitude 배치와 백필만 건너뜀<br>화면 요청은 그대로 값을 받음 |
+| Redis | 연결할 수 없으면 Amplitude 배치와 백필을 건너뛰고 인프라 지표의 `redis` 묶음만 비움<br>그 밖의 화면 요청은 그대로 값을 받음 |
 | Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
