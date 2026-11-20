@@ -277,6 +277,32 @@ flowchart TD
 
 <br>
 
+### 7-3 운영 긴급 수정
+
+운영 장애나 보안 문제를 바로 고쳐야 하는데 `dev`에 다음 운영 릴리스에 넣을 수 없는 변경이 있을 때만 이 경로를 쓴다. `dev`에 내보내면 안 되는 변경이 없으면 일반 릴리스 경로로 patch 릴리스를 낸다. ([DPL-D08](DECISIONS.md#dpl-d08))
+
+```mermaid
+flowchart LR
+    A["origin/main에서<br>hotfix 브랜치 생성"] --> B["수정과 테스트"]
+    B --> C["main으로 PR<br>Merge Commit"]
+    C --> D["patch 태그와<br>운영 배포"]
+    D --> E["같은 브랜치를<br>dev에 반영"]
+```
+
+| 항목 | 규칙 |
+|---|---|
+| 분기 | 최신 `origin/main`에서 `hotfix/{JIRA_KEY}-{slug}` |
+| 범위 | 장애를 고치는 최소 변경만<br>다른 기능과 정리 작업을 섞지 않음 |
+| PR 제목 | `[KNK-xxx] Hotfix: vX.Y.Z 배포` |
+| main 병합 | 릴리스와 같은 Merge Commit<br>병합 뒤 patch 버전 태그 |
+| 검증 | 일반 릴리스와 같은 CI, 배포 확인, 코드 외 할 일 칸 |
+| dev 반영 | 같은 브랜치를 `dev`로 PR해 그 저장소의 릴리스 역반영 방식으로 병합<br>main 병합 직후에 하고, 충돌은 `dev`의 변경을 살려 해결 |
+| 기록 | 릴리스와 같은 티켓과 태그 규칙 |
+
+Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode`를 올린다([7-2](#7-2-android-앱-릴리스)).
+
+<br>
+
 ### 8 로컬, 통합 실행
 
 `manyak-infra`의 Compose가 로컬 실행 기준이다. 서버, AI, 웹, PostgreSQL, Redis와 Prometheus 설정을 함께 확인한다. 서비스명 DNS는 Compose 네트워크 안에서 사용한다. AI stub과 실제 AI 호출 여부는 명시적인 실행 설정으로 확인한다.
