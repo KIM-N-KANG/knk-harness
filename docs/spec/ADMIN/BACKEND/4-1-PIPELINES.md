@@ -801,7 +801,7 @@ CloudWatch, Prometheus, Redis
 | 출처 | 묶음 | 설정이 비면 |
 |---|---|---|
 | CloudWatch | `host`(앱 호스트), `rds` | 오토스케일링 그룹이 비면 `host`만, RDS 인스턴스가 비면 `rds`만 `null`<br>둘 다 비면 CloudWatch를 부르지 않음 |
-| 홈서버 Prometheus | `requests`, `hostSystem`, `opensearch` | 조회 주소가 비면 세 묶음 모두 `null`이고 부르지 않음 |
+| 관측 서버 Prometheus | `requests`, `hostSystem`, `opensearch` | 조회 주소가 비면 세 묶음 모두 `null`이고 부르지 않음 |
 | Redis | `redis` | 설정 없음<br>서버가 쓰는 Redis에 항상 물음 |
 
 - 설정값은 [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿)이 정한다.
@@ -825,12 +825,12 @@ CloudWatch, Prometheus, Redis
 
 <br>
 
-**3. 홈서버 Prometheus**
+**3. 관측 서버 Prometheus**
 
 | 항목 | 규칙 |
 |---|---|
 | 경로 | 조회 주소의 `/api/v1/query_range`와 `/api/v1/query`<br>Cloudflare Access 서비스 토큰 헤더와 Prometheus 읽기 계정의 기본 인증을 함께 보냄 |
-| 읽는 계열 | 홈서버의 기록 규칙이 만든 계열만 읽음<br>원 지표의 이름과 라벨이 바뀌면 기록 규칙에서 맞추고 서버 질의는 그대로 둠 |
+| 읽는 계열 | 관측 서버의 기록 규칙이 만든 계열만 읽음<br>원 지표의 이름과 라벨이 바뀌면 기록 규칙에서 맞추고 서버 질의는 그대로 둠 |
 | 질의 범위 | 간격(`step`)은 `periodSeconds`<br>점 하나는 그 시각 직전 `periodSeconds` 동안의 값이라 점의 시각에서 `periodSeconds`를 빼 구간 시작으로 바꿈 |
 | 요청 수, 5xx 수 | 1분마다 기록된 초당 요청률을 구간 동안 더하고 60을 곱해 건수로 바꾼 뒤 정수로 반올림 |
 | 응답 시간 p95 | 버킷별 요청률 계열을 구간 동안 더한 뒤 95번째 백분위<br>구간에 요청이 없어 값이 `NaN`이면 그 점을 뺌 |
@@ -842,7 +842,7 @@ CloudWatch, Prometheus, Redis
 | 실패 | 질의 하나라도 HTTP 오류, 응답의 `status`가 `success`가 아님, 시간 초과면 Prometheus 출처의 실패 |
 | 보관 | Prometheus가 90일 보관<br>기록 규칙은 만든 시각부터 쌓이므로 그 전 구간은 점이 없음 |
 
-기록 규칙 계열은 다음과 같다. 규칙 정의는 `manyak-terraform`의 `homeserver/observability/prometheus/rules/`에 둔다.
+기록 규칙 계열은 다음과 같다. 규칙 정의는 `manyak-terraform`의 관측 서버 Prometheus 규칙 디렉터리에 둔다.
 
 | 계열 | 뜻 | 원천 |
 |---|---|---|
@@ -853,14 +853,14 @@ CloudWatch, Prometheus, Redis
 | `manyak_prod_host:memory_total_bytes` | 앱 호스트의 전체 메모리 | 같음 |
 | `manyak_prod_host:disk_available_bytes` | 마운트 경로(`mountpoint`)별 디스크 여유<br>`/`와 `/data` | 같음 |
 | `manyak_prod_host:disk_total_bytes` | 마운트 경로별 디스크 크기 | 같음 |
-| `manyak_opensearch:disk_available_bytes` | 홈서버 OpenSearch 데이터 디스크의 여유 | 홈서버 수집기가 OpenSearch에서 읽은 노드 지표 |
+| `manyak_opensearch:disk_available_bytes` | 관측 서버 OpenSearch 데이터 디스크의 여유 | 관측 서버 수집기가 OpenSearch에서 읽은 노드 지표 |
 | `manyak_opensearch:disk_total_bytes` | 그 디스크의 크기 | 같음 |
 | `manyak_opensearch:jvm_memory_pressure_percent` | JVM old 영역 사용률(%) | 같음 |
 | `manyak_opensearch:cluster_status` | 클러스터 상태<br>0 green, 1 yellow, 2 red | 같음 |
 
 - SSE 채팅 스트림은 응답이 수십 초라 넣으면 p95가 가장 큰 버킷에 붙는다. 그래서 응답 시간에서만 뺀다.
 - 프록시가 서버 대신 돌려준 502와 504는 서버 지표에 없어 5xx 수에 들어가지 않는다.
-- OpenSearch 데이터 디스크는 홈서버의 다른 컨테이너와 같이 쓴다. 여유는 OpenSearch만의 몫이 아니다.
+- OpenSearch 데이터 디스크는 같은 서버의 다른 컨테이너와 같이 쓴다. 여유는 OpenSearch만의 몫이 아니다.
 
 <br>
 

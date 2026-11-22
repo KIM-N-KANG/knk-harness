@@ -4,24 +4,23 @@
 
 ### 2-1 메트릭과 운영 연동
 
-구조화 로그, Sentry, `ai_call_logs`는 개별 사건을 기록하고, 메트릭은 RED(Rate, Error, Duration)와 AI 호출 지연을 시계열로 집계한다. 운영 선언은 Micrometer의 OTLP 메트릭을 OpenTelemetry Collector로 보내고 Amazon Managed Service for Prometheus(AMP)에 저장한다. Grafana Cloud 직접 전송은 이전 구성이다.
+구조화 로그, Sentry, `ai_call_logs`는 개별 사건을 기록하고, 메트릭은 RED(Rate, Error, Duration)와 AI 호출 지연을 시계열로 집계한다. 운영 선언은 Micrometer의 OTLP 메트릭을 관측 서버의 OpenTelemetry Collector로 보내고 Prometheus에 저장한다. Grafana Cloud 직접 전송은 이전 구성이다.
 
-**수집 경로**: `OtlpMeterRegistry`가 step 주기마다 내부 Collector의 `/v1/metrics`로 전송한다. Collector가 IAM과 SigV4 인증으로 AMP에 Prometheus remote write를 수행한다. 트레이스는 Collector에서 Data Prepper로 전달한 뒤 OpenSearch에 저장한다. 앱의 `/actuator/prometheus`를 운영 외부에 노출하지 않으며 actuator는 `health,info`만 공개한다. 로컬은 `prometheus`를 추가해 수신 형식 확인과 Compose의 Prometheus 수집에 사용한다. ([배포 구성](../../operations/DEPLOYMENT.md#4-5-관측-수집-경로))
+**수집 경로**: `OtlpMeterRegistry`가 step 주기마다 관측 서버 Collector의 `/v1/metrics`로 인증 헤더와 함께 전송하고, Collector가 Prometheus에 넘긴다. 트레이스는 Collector에서 Data Prepper로 전달한 뒤 OpenSearch에 저장한다. 앱의 `/actuator/prometheus`를 운영 외부에 노출하지 않으며 actuator는 `health,info`만 공개한다. 로컬은 `prometheus`를 추가해 수신 형식 확인과 Compose의 Prometheus 수집에 사용한다. ([배포 구성](../../operations/DEPLOYMENT.md#4-5-관측-수집-경로))
 
 ```mermaid
 flowchart LR
-    S["서버와 AI 및 알림"] -->|OTLP 메트릭과 트레이스| C["OpenTelemetry Collector"]
-    C -->|메트릭: SigV4 remote write| M["AMP"]
+    S["서버와 AI 및 알림"] -->|OTLP 메트릭과 트레이스| C["관측 서버 Collector"]
+    C -->|메트릭| M["Prometheus"]
     C -->|트레이스| D["Data Prepper"]
     D --> O["OpenSearch"]
-    S -->|표준 출력| F["FireLens"]
-    F -->|기존 로그 경로| O
+    S -->|표준 출력| F["앱 호스트 로그 라우터"]
     F --> W["CloudWatch"]
-    F -->|OTLP 로그: 추가 경로| C
+    F -->|OTLP 로그| C
     C -->|로그| D
 ```
 
-위 그림은 prod의 활성 토글 선언 기준이다. 각 앱의 실제 계측 항목은 해당 명세를 따른다. FireLens의 기존 로그와 OTLP 로그를 합쳐 요청 수를 중복 집계하지 않는다.
+위 그림은 prod의 활성 토글 선언 기준이다. 각 앱의 실제 계측 항목은 해당 명세를 따른다. CloudWatch 사본과 관측 서버의 로그를 합쳐 요청 수를 중복 집계하지 않는다.
 
 **지표 카탈로그**
 
@@ -57,19 +56,19 @@ DB 커넥션 풀은 **둘 중 하나만 고른다.** `hikaricp.*`(Hikari 자체 
 | `manyak.ai.call.duration` | 100ms\~240s | 54 | AI 타임아웃 최대 180초(compile)보다 **위**여야 타임아웃 직전 분포가 보인다 |
 | `manyak.story.creation.duration` | 100ms\~240s | 54 | 위와 같음(스토리 완성 = compile 호출 포함) |
 
-버킷 수는 **scrape 프레임 기준**이다: `registry.scrape`가 실제로 뱉는 `_bucket` 라인 수(min/max clamp 경계와 `+Inf` 포함)이다. AMP에 최종 적재된 시계열 수와 요금은 별도 확인한다. `PercentileHistogramBuckets.buckets`의 순수 버킷 집합을 직접 세면 프레임 차이로 일관되게 3 적게 나온다(66, 44, 51). 100ms\~240s의 54는 100ms\~120s(49)에 상한 확대분 +5를 더한 값이고, 증가분 +5는 두 프레임에서 동일하다.
+버킷 수는 **scrape 프레임 기준**이다: `registry.scrape`가 실제로 뱉는 `_bucket` 라인 수(min/max clamp 경계와 `+Inf` 포함)이다. Prometheus에 최종 적재된 시계열 수는 별도 확인한다. `PercentileHistogramBuckets.buckets`의 순수 버킷 집합을 직접 세면 프레임 차이로 일관되게 3 적게 나온다(66, 44, 51). 100ms\~240s의 54는 100ms\~120s(49)에 상한 확대분 +5를 더한 값이고, 증가분 +5는 두 프레임에서 동일하다.
 
 상한은 **타임아웃보다 높게** 둔다. 같거나 낮으면 느린 정상 호출이 `+Inf` 구간에 합쳐져 타임아웃 직전의 p95, p99를 구분할 수 없다.
 
 `http.server.requests`의 10초 상한은 **의도적으로 AI 대기 엔드포인트를 덮지 않는다.** 그 경로의 지연은 전용 `manyak.*` 타이머가 담당하고, HTTP 히스토그램 상한을 올리면 버킷이 엔드포인트 수만큼 곱해져 비용이 크다. 대신 AI 엔드포인트의 HTTP p95는 10초에서 상한값으로 집계된다는 점을 알고 받아들인다.
 
-**환경 구분**: `service.name`과 환경별 수집 경로로 구분한다. 서버 기본 서비스명은 `manyak-server`, 로컬 예시는 `OTEL_SERVICE_NAME=manyak-server-local`이다. 현재 Collector는 `service.name`을 `job`, `service.instance.id`를 `instance`로 변환하는 exporter 기본 동작을 사용하며 모든 리소스 속성을 라벨로 승격하지 않는다. 이전 Grafana Cloud의 `service_name` 필터를 AMP 쿼리에 그대로 복사하지 않는다. 실제 수신 라벨과 데이터 소스를 확인해 조회한다.
+**환경 구분**: `service.name`과 환경별 수집 경로로 구분한다. 서버 기본 서비스명은 `manyak-server`, 로컬 예시는 `OTEL_SERVICE_NAME=manyak-server-local`이다. 현재 Collector는 `service.name`을 `job`, `service.instance.id`를 `instance`로 변환하는 exporter 기본 동작을 사용하며 모든 리소스 속성을 라벨로 승격하지 않는다. 이전 Grafana Cloud의 `service_name` 필터를 Prometheus 쿼리에 그대로 복사하지 않는다. 실제 수신 라벨과 데이터 소스를 확인해 조회한다.
 
-**조회 시 이름과 단위**: 같은 Timer도 전송 경로에 따라 이름과 단위가 달라질 수 있다. 기존 실측에서는 로컬 Prometheus에 `manyak_story_creation_duration_seconds_*`, Grafana Cloud에는 `manyak_story_creation_duration_milliseconds_*`로 나타났다. 이 결과를 현재 AMP 수신 형식으로 간주하지 않는다. 대시보드와 알림 쿼리는 실제 AMP에 수신된 이름과 단위를 확인한 뒤 작성한다.
+**조회 시 이름과 단위**: 같은 Timer도 전송 경로에 따라 이름과 단위가 달라질 수 있다. 기존 실측에서는 로컬 Prometheus에 `manyak_story_creation_duration_seconds_*`, Grafana Cloud에는 `manyak_story_creation_duration_milliseconds_*`로 나타났다. 이 결과를 현재 Prometheus 수신 형식으로 간주하지 않는다. 대시보드와 알림 쿼리는 실제 Prometheus에 수신된 이름과 단위를 확인한 뒤 작성한다.
 
 **전송 주기**: 서버 기본값은 60초, 로컬 프로파일은 10초다. 주기가 짧을수록 데이터 포인트 수와 수집 비용이 늘어나므로 필요한 관측 해상도와 함께 판단한다.
 
-**OTLP는 기본으로 끈다.** `MANYAK_OTLP_METRICS_ENABLED`의 앱 기본값은 `false`다. 운영 Terraform은 Collector endpoint와 `cumulative` 집계 방식, 활성 토글을 함께 주입한다. 앱에 Grafana Cloud 인증 헤더를 주입하는 이전 구성은 현재 prod 선언에서 제거됐다. 메트릭 전송 실패는 사용자 요청과 분리한다. ([6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현))
+**OTLP는 기본으로 끈다.** `MANYAK_OTLP_METRICS_ENABLED`의 앱 기본값은 `false`다. 운영 Terraform은 관측 서버 Collector endpoint와 `cumulative` 집계 방식, 활성 토글, 인증 헤더 참조를 함께 주입한다. 앱에 Grafana Cloud 인증 헤더를 주입하는 이전 구성은 현재 prod 선언에서 제거됐다. 메트릭 전송 실패는 사용자 요청과 분리한다. ([6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현))
 
 **미주입과 빈 값은 다르다.** Spring Boot 4.0.6의 `PropertiesConfigAdapter.obtain`은 null만 검사한다. URL이 빈 문자열이면 기본값을 찾지 않고 빈 값 그대로 micrometer에 전달한다.
 
@@ -96,7 +95,7 @@ URL 설정을 빈 문자열로 두면 이 경로를 타므로 endpoint는 유효
 
 4xx를 `failure`에서 떼는 이유는 두 갈래를 한 히스토그램에 섞으면 **거부 비중에 따라 실패 p95가 요동치기** 때문이다. 거부가 늘수록 밀리초 표본이 늘어 p95가 오히려 **낮아지므로**, AI가 실제로 느려지는데 지표는 개선된 것처럼 보이는 역전이 생긴다. 실패 건수 알림도 404 급증만으로 오발화한다. **알림과 p95는 `outcome="failure"`만 봐야 한다.** 태그 값이 2에서 3으로 늘어도 유한 enum이라 카디널리티는 안전하다(위 카디널리티 규칙).
 
-**알림**: [CHAT 알림](../../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙은 2026-10-24부터 일시 정지 상태이고 Grafana는 쓰지 않는다. AMP 규칙과 Slack 전달은 KNK-1931에서 옮기며 적용 뒤 발화를 확인한다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
+**알림**: [CHAT 알림](../../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙은 2026-10-24부터 일시 정지 상태이고 Grafana는 쓰지 않는다. Prometheus 규칙과 Slack 전달은 KNK-1931에서 옮기며 적용 뒤 발화를 확인한다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
 
 **현재 구현하지 않은 범위.** AI는 전달받은 식별자를 Langfuse 관측에 연결한다. 선택지 상호작용 API의 저장은 구현돼 있지만, 사용자 반응을 생성 버전에 연결해 score로 발행하는 전체 경로(outbox와 score 전송 포함)는 구현되지 않았다. 계약은 [6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현)에 있다.
 

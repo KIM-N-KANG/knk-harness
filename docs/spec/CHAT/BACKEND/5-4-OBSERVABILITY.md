@@ -13,17 +13,17 @@ AI 서버로 보내는 헤더 목록은 처리 흐름의 공통 처리에, 개�
 flowchart LR
     S["`**서버**
 CHAT 도메인`"]
-    S -->|표준 출력 JSON| F["`**FireLens**
+    S -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
-    F -->|로그 인덱스| OS["`**OpenSearch**`"]
+    F -->|OTLP 로그| C["OpenTelemetry Collector"]
     F --> CW["`**CloudWatch**
 안전망`"]
     S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
     C --> DP["`**Data Prepper**`"]
-    DP -->|트레이스 인덱스| OS
+    DP -->|로그와 트레이스 인덱스| OS["`**OpenSearch**`"]
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| C
-    C -->|SigV4 remote write| G["`**AMP**`"]
+    C -->|지표| G["`**Prometheus**`"]
     S -->|AI 호출 기록| PG["`**PostgreSQL**
 ai_call_logs`"]
     S -->|5xx, 스트림 실패| SE["`**Sentry**`"]

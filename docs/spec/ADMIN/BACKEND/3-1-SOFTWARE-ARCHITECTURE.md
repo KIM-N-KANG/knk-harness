@@ -19,7 +19,7 @@ ADMIN 도메인은 서버 애플리케이션의 내부 패키지다. 별도 프�
 | Langfuse | AI 호출의 모델별 비용 | Metrics API HTTPS 호출, 공개 키와 비밀 키 |
 | Google Cloud Storage | Play Console 일괄 보고서 보관 | 서비스 계정으로 객체 목록과 내려받기 HTTPS 호출 |
 | AWS CloudWatch | 앱 호스트와 RDS 지표 | 서버의 AWS 역할로 AWS SDK 호출 |
-| 홈서버 Prometheus | 서버 요청 지표, 앱 호스트 메모리·디스크, 홈서버 OpenSearch 지표 | Cloudflare 터널의 조회 주소로 HTTP 호출<br>Access 서비스 토큰과 Prometheus 계정 |
+| 관측 서버 Prometheus | 서버 요청 지표, 앱 호스트 메모리·디스크, 관측 서버 OpenSearch 지표 | 조회 주소로 HTTP 호출<br>Access 서비스 토큰과 Prometheus 계정 |
 | Redis | 분석 값 배치의 5분 슬롯 선점, 인프라 지표의 Redis 현재 값 | 다른 도메인과 같은 Redis에 `SET NX`와 `INFO` |
 
 ```mermaid
@@ -41,7 +41,7 @@ ACCOUNT, MODERATION, STORY**
     S -->|보고서 내려받기, 1시간 캐시| GCS["`**Google Cloud Storage**
 Play 일괄 보고서`"]
     S -->|지표 조회, 60초 캐시| CW["`**CloudWatch**`"]
-    S -->|지표 조회, 60초 캐시| PM["`**홈서버 Prometheus**`"]
+    S -->|지표 조회, 60초 캐시| PM["`**관측 서버 Prometheus**`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     class A,DB,AM,GCS,CW,PM ext
@@ -130,7 +130,7 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | ADMIN → Amplitude | 분석 지표 조회만<br>이벤트 발행은 공통 분석 발행기가 함<br>호출 전에 값 저장소를 먼저 읽어 비어 있거나 만료된 날짜만 조회 |
 | ADMIN → Google Cloud Storage | 설치 보고서 읽기만<br>쓰기 없음 |
 | ADMIN → Langfuse | AI 비용 조회만<br>호출 전에 값 저장소를 먼저 읽어 비어 있거나 만료된 날짜만 조회<br>보관 기간 밖 날짜는 조회하지 않음 |
-| ADMIN → CloudWatch, 홈서버 Prometheus | 지표 읽기만<br>쓰기 없음 |
+| ADMIN → CloudWatch, 관측 서버 Prometheus | 지표 읽기만<br>쓰기 없음 |
 | Amplitude 배치 스케줄러 → Redis | 5분 슬롯 키 선점만<br>값은 Redis에 두지 않음 |
 | Amplitude 배치 스케줄러 → 값 저장소와 Amplitude 호출 | 화면 요청과 같은 구성 요소를 거침<br>배치 예산 몫이 따로이고 백그라운드 갱신을 띄우지 않고 그 실행 안에서 갱신 |
 

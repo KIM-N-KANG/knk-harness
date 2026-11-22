@@ -17,16 +17,16 @@ flowchart LR
 NOTIFICATION 패키지`"]
         N["`**알림 서비스**`"]
     end
-    U -->|표준 출력 JSON| F["`**FireLens**
+    U -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
-    F -->|로그 인덱스| OS["`**OpenSearch**`"]
+    F -->|OTLP 로그| C["OpenTelemetry Collector"]
     F --> CW["`**CloudWatch**
 안전망`"]
     U -->|OTLP 트레이스, 지표| C["OpenTelemetry Collector"]
     C --> DP["`**Data Prepper**`"]
-    DP -->|트레이스 인덱스| OS
+    DP -->|로그와 트레이스 인덱스| OS["`**OpenSearch**`"]
     OS --> OD["`**OpenSearch Dashboards**`"]
-    C -->|SigV4 remote write| G["`**AMP**`"]
+    C -->|지표| G["`**Prometheus**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
