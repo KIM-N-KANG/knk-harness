@@ -46,9 +46,9 @@
 | `MANYAK_CHAT_COMPACT_ENABLED`, `MANYAK_CHAT_COMPACT_INTERVAL_TURNS`, `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | `false`, `10`, `300` | 대화 요약 켜기, 요약 주기(턴), AI 요약 대기 한도 ([CHAT 4-1](../../spec/CHAT/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_CHAT_SSE_CONCURRENCY`, `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | `64`, `100` | 채팅 SSE 작업 동시 실행 수와 대기열 크기 |
 | `MANYAK_AI_MODERATION_TIMEOUT`, `..._POOL_SIZE`, `..._RETRY_DELAYS`, `..._REQUEST_BUDGET_BYTES`, `..._RECLAIM_AFTER`, `..._POLL_INTERVAL`, `..._POLL_ENABLED` | `180s`, `4`, `1m,5m`, `41943040`, `300s`, `1000`, `true` | 스토리 검수 요청과 재시도, 회수 주기 ([MODERATION 4-1](../../spec/MODERATION/BACKEND/4-1-PIPELINES.md)) |
-| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 홈서버 OpenSearch의 터널 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 검색 서버 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
 | `MANYAK_OPENSEARCH_USERNAME`, `MANYAK_OPENSEARCH_PASSWORD` | 없음 | 환경별 검색 전용 계정. 한쪽만 있으면 기동 실패. 둘 다 비면 인증 없이 연결한다(로컬과 테스트) |
-| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | 터널 주소의 Cloudflare Access 서비스 토큰. 한쪽만 있으면 기동 실패. 둘 다 비면 헤더 없이 연결한다 |
+| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | 검색 서버 주소의 Cloudflare Access 서비스 토큰. 한쪽만 있으면 기동 실패. 둘 다 비면 헤더 없이 연결한다 |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 검색 인덱스 이름. 운영은 `stories-prod` |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | `true`면 기동 시 전체 재색인 1회. 복구용이며 끝나면 되돌린다 |
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 이미지 CDN base URL. `imageKey`로 서빙 URL을 만든다 ([CHAT 4-1-13](../../spec/CHAT/BACKEND/4-1-PIPELINES.md#4-1-13-실시간-이미지)) |
@@ -63,7 +63,7 @@
 | --- | --- | --- |
 | `MANYAK_PUSH_MODE` | `local` | 발송 요청 전달 방식. `local`은 서버 안에서 처리, `remote`는 아웃박스를 거쳐 큐로 보내 manyak-notification이 소비 ([NOTIFICATION 3-1](../../spec/NOTIFICATION/BACKEND/3-1-SOFTWARE-ARCHITECTURE.md)) |
 | `MANYAK_PUSH_QUEUE_URL` | 없음 | 원격 모드의 SQS 큐 URL. local 프로파일의 원격 모드는 Kafka(`SPRING_KAFKA_BOOTSTRAP_SERVERS`, 기본 `localhost:9092`) |
-| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 없음 | Firebase 서비스 계정 JSON 원문. 비어 있으면 FCM 빈을 만들지 않고 발송하지 않는다. Secrets Manager에 키를 넣고 태스크 정의에 노출하는 terraform apply가 함께 필요 |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 없음 | Firebase 서비스 계정 JSON 원문. 비어 있으면 FCM 빈을 만들지 않고 발송하지 않는다. Secrets Manager에 키를 넣고 앱 호스트 설정에 노출하는 terraform apply와 재배포가 함께 필요 |
 | `MANYAK_PUSH_WEB_BASE_URL`, `MANYAK_PUSH_WEB_ICON_URL` | `https://manyak.app`, `https://manyak.app/icons/icon-192.png` | 딥링크 base URL과 웹 푸시 아이콘 |
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_ENABLED`, `..._CRON`, `..._TITLE`, `..._BODY` | `true`, `0 0 9 * * *`, yml 문구 | 출석 리마인드 배치와 기본 문구 |
 | `MANYAK_PUSH_CREDIT_EXPIRY_REMINDER_ENABLED`, `..._CRON`, `..._TITLE`, `..._BODY` | `true`, `0 0 10 * * *`, yml 문구 | 이프 만료 예정 알림 배치와 기본 문구 |
@@ -79,7 +79,7 @@
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
 | `MANYAK_OTLP_METRICS_ENABLED` | `false` | 메트릭 OTLP 전송 토글. 켠 채 URL을 주지 않으면 `localhost:4318`로 보낸다 ([2-1](2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)) |
-| `MANAGEMENT_OTLP_METRICS_EXPORT_URL`, `MANAGEMENT_OTLP_METRICS_EXPORT_AGGREGATIONTEMPORALITY` | 없음 | 메트릭 사용 시 필수. 운영은 내부 OTel Collector의 `/v1/metrics`와 `cumulative`. AMP 인증은 Collector의 IAM과 SigV4가 맡는다 |
+| `MANAGEMENT_OTLP_METRICS_EXPORT_URL`, `MANAGEMENT_OTLP_METRICS_EXPORT_AGGREGATIONTEMPORALITY` | 없음 | 메트릭 사용 시 필수. 운영은 관측 서버 Collector의 `/v1/metrics`와 `cumulative`. 인증 헤더는 시크릿 참조로 주입 |
 | `MANYAK_TRACING_ENABLED`, `MANYAK_TRACING_SAMPLING`, `MANYAK_OTLP_TRACES_ENDPOINT` | `false`, `1.0`, 없음 | 트레이스 전송. endpoint는 전체 URL(예 `http://collector:4318/v1/traces`). 표준 `OTEL_EXPORTER_OTLP_ENDPOINT`는 메트릭 설정이 가로채므로 쓰지 않는다 |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE` | 없음, `local`(dev는 `dev`), `0.0` | Sentry. DSN이 없으면 비활성 |
 | `MANYAK_ANALYTICS_DEVICE_ID_PEPPER` | 없음 | `device_id` 해시 pepper. 없으면 옛 이름 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER`, 둘 다 없으면 무염 해시 |
@@ -98,7 +98,7 @@
 | `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 없음 | 푸시 열람 측정 시작일(KST `YYYY-MM-DD`) |
 | `MANYAK_ADMIN_LANGFUSE_HOST`, `..._PUBLIC_KEY`, `..._SECRET_KEY`, `..._ENVIRONMENT`, `..._RETENTION_DAYS` | 없음, `30`일 | AI 비용 지표의 Langfuse 조회 |
 | `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 ([ADMIN 6](../../spec/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
-| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 홈서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 관측 서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
 | `MANYAK_PLAY_STATS_BUCKET`, `MANYAK_PLAY_STATS_PACKAGE_NAME`, `MANYAK_PLAY_STATS_SA_KEY_BASE64` | yml 버킷, `app.manyak`, 없음 | Google Play 설치 보고서(GCS) 조회. 키가 없으면 앱 설치 지표가 비어 있다 |
 
 <br>

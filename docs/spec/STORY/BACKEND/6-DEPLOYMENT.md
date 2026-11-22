@@ -15,11 +15,11 @@
 | 의존 대상 | 내용 | STORY 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 스토리, 제작 진행, 생성 요청, 초안, 카탈로그 테이블 |
-| AI 서버 | 운영은 독립 ECS 서비스, 개발은 같은 태스크의 컨테이너 | 스토리라인, 컴파일<br>스텁이면 불필요 |
+| AI 서버 | 운영 앱 호스트의 별도 컨테이너 | 스토리라인, 컴파일<br>스텁이면 불필요 |
 | S3 assets 버킷과 CloudFront | Terraform 관리 | 생성 및 업로드 이미지 경로의 쓰기와 HEAD<br>버킷 CORS(PUT, HEAD) |
-| OpenSearch | 홈서버의 OpenSearch(관측 데이터와 같은 클러스터)<br>Cloudflare 터널 주소로 연결, 인덱스 `stories-{env}` | 검색과 색인 |
+| OpenSearch | 관측 서버의 OpenSearch(관측 데이터와 같은 클러스터)<br>공개 주소로 연결, 인덱스 `stories-{env}` | 검색과 색인 |
 | Redis | 게스트 체험 카운터 | PAYMENT 도메인의 서비스로 접근 |
-| Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
+| 관측 서버 | 트레이스 수신 | 트레이스 전송 |
 
 <br>
 
@@ -30,7 +30,7 @@
 | S3 assets 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 생성 이미지 업로드 생략<br>인물 이미지와 표지 URL은 `null`로 저장<br>업로드 presign은 사용 불가로 응답<br>업로드 경로의 IAM 권한이나 CORS 설정이 없으면 저장소가 업로드를 거부 |
 | OpenSearch | 엔드포인트가 비면 검색은 사용 불가로 응답하고 색인과 정기 재색인은 생략<br>엔드포인트에 스킴이나 경로가 있으면 기동 실패<br>계정 쌍이나 접근 토큰 쌍의 한쪽 값만 있으면 기동 실패<br>질의 실패, 응답 한도 초과, 인덱스 없음은 WARN을 남기고 DB 대체 검색으로 응답, 커서가 있는 요청은 사용 불가로 응답<br>색인 실패는 WARN만 남기고 스토리 저장은 진행 |
 | Redis | 지연 연결이라 기동은 진행<br>회원 체험 카운터 장애는 예약 실패로 보고 크레딧 경로로 폴백, WARN<br>운영 health는 Redis를 분리 |
-| Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
+| 관측 서버 | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 | Slack 웹훅 | 미설정이면 신고 알림 생략 |
 | 공식 계정 설정 | 비어 있으면 오리지널 필터 결과가 빈 값<br>UUID 형식이 아니면 기동 실패 |
 | 프리셋 CDN 주소 | 비어 있으면 프리셋 키가 남은 스토리의 표지가 `null` |
@@ -45,14 +45,14 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포 시 `latest` 승격<br>실패하면 이전 digest로 복원 |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포가 성공한 뒤 `latest` 승격 |
 | 상태 검사 | 배포 완료, 서버와 AI 컨테이너 정상, health `UP` | 동일 |
 
 <br>
 
 ### 6-3 환경 변수와 시크릿
 
-환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 새 태스크를 시작해야 적용된다. 값은 Terraform이 태스크 정의에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 태스크 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
+환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 값은 Terraform이 앱 호스트 설정(`app_host_defs`)에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 앱 호스트의 인스턴스 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
 
 <br>
 
@@ -60,7 +60,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_AI_BASE_URL` | 없음 | 운영 태스크 환경 변수, Cloud Map 내부 주소<br>개발 태스크 환경 변수 `http://localhost:8000` | |
+| `MANYAK_AI_BASE_URL` | 없음 | 운영 앱 호스트 설정 `http://ai.internal`(내부 프록시) | |
 | `MANYAK_AI_STORY_STUB` | `false` | 주입 없음 | |
 
 <br>
@@ -70,9 +70,9 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 주입 없음 | 프리셋 이미지 키를 URL로 조합할 때만 사용 |
-| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 개발과 운영 태스크 환경 변수, assets 버킷과 CDN 주소 | 버킷과 base URL이 둘 다 있어야 활성화<br>이름은 인물 이미지용이지만 표지와 업로드도 같이 사용 |
+| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 운영 앱 호스트 설정, dev 환경 설정, assets 버킷과 CDN 주소 | 버킷과 base URL이 둘 다 있어야 활성화<br>이름은 인물 이미지용이지만 표지와 업로드도 같이 사용 |
 | `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 주입 없음 | 비어 있으면 AWS 기본 S3 주소 |
-| `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
+| `AWS_REGION` | `ap-northeast-2` | 컨테이너 실행 환경 | |
 
 <br>
 
@@ -80,9 +80,9 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OPENSEARCH_ENDPOINT` | 빈 값 | 개발과 운영 태스크 환경 변수, 홈서버 OpenSearch의 터널 주소 | 스킴과 경로 없는 호스트 |
+| `MANYAK_OPENSEARCH_ENDPOINT` | 빈 값 | 운영 앱 호스트 설정, dev 환경 설정. 검색 서버 주소 | 스킴과 경로 없는 호스트 |
 | `MANYAK_OPENSEARCH_USERNAME`<br>`MANYAK_OPENSEARCH_PASSWORD` | 빈 값 | 시크릿 | 환경별 검색 전용 계정<br>권한은 그 환경의 인덱스 `stories-{env}*`로 제한<br>둘 다 비면 인증 없이 연결(로컬과 테스트) |
-| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`<br>`MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 빈 값 | 시크릿 | 터널 주소를 지키는 Cloudflare Access 서비스 토큰<br>요청 헤더 `CF-Access-Client-Id`, `CF-Access-Client-Secret`으로 전송<br>둘 다 비면 헤더 없이 연결 |
+| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`<br>`MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 빈 값 | 시크릿 | 검색 서버 주소를 지키는 Cloudflare Access 서비스 토큰<br>요청 헤더 `CF-Access-Client-Id`, `CF-Access-Client-Secret`으로 전송<br>둘 다 비면 헤더 없이 연결 |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 개발 `stories-dev`, 운영 `stories-prod` | |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | 개발과 운영 Terraform 변수 | |
 
@@ -92,7 +92,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 빈 값 | 개발과 운영 태스크 정의에 환경별 값을 직접 기록 | 오리지널 필터와 관리자 오리지널 API의 공식 계정<br>비어 있으면 관리자 오리지널 등록이 사용 불가 |
+| `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 빈 값 | 개발과 운영 앱 호스트 설정에 환경별 값을 직접 기록 | 오리지널 필터와 관리자 오리지널 API의 공식 계정<br>비어 있으면 관리자 오리지널 등록이 사용 불가 |
 | `MANYAK_CREDIT_STORY_CREATION_COST` | 250 | 주입 없음 | 런타임 값은 PAYMENT 정책이 우선 |
 | `MANYAK_GUEST_TRIAL_STORYLINE_LIMIT` | 5 | 주입 없음 | |
 | `MANYAK_GUEST_TRIAL_STORY_CREATION_LIMIT` | 1 | 주입 없음 | |
@@ -104,11 +104,11 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 관측 서버의 `/v1/traces` 주소 주입 | 추적을 켜면 필수 |
 | `MANYAK_TRACING_SAMPLING` | `1.0` | 주입 없음 | |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 태스크 정의의 일반 환경 변수(내부 OTel Collector `/v1/metrics`), 인증 헤더 없음 | 내부 OTel Collector를 거쳐 AMP로 전송 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 앱 호스트 설정의 일반 환경 변수(관측 서버 `/v1/metrics`), 인증 헤더는 시크릿 참조 | 관측 서버의 Prometheus로 전송 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
-| `SENTRY_ENVIRONMENT` | `local` | 개발과 운영 태스크 환경 변수 | |
+| `SENTRY_ENVIRONMENT` | `local` | 운영 앱 호스트 설정, dev 환경 설정 | |
 | `MANYAK_SLACK_REPORT_WEBHOOK_URL` | 빈 값 | 운영 Secrets Manager | |
 
 <br>
@@ -117,9 +117,9 @@
 
 | 확인 항목 | 기준 | 자동 여부와 한계 |
 |---|---|---|
-| 와이어 계약 변경 | 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>개발은 같은 태스크를 두 레포가 갱신하므로 순서를 워크플로가 보장하지 않음<br>운영은 서버와 AI가 별도 서비스라 순서를 수동으로 맞춤|
+| 와이어 계약 변경 | 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>서버와 AI는 레포마다 따로 배포되므로 순서를 수동으로 맞춤|
 | S3 경로 권한과 CORS | Terraform apply가 서버 배포보다 먼저<br>늦으면 저장소가 업로드를 거부하고 새 스토리의 표지는 `null` | 수동 적용<br>서버 배포 워크플로는 Terraform 상태를 검사하지 않음 |
-| 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행<br>롤링 중 구버전 SELECT 실패 방지 | 수동 검토 |
+| 컬럼 제거 | 그 컬럼을 읽는 구버전 컨테이너가 사라진 다음 릴리스에서 수행<br>롤링 중 구버전 SELECT 실패 방지 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교가 CI 자동 |
 | 코드 테스트 | 전체 테스트 통과 | CI 자동 |
 | 컨테이너 기동 | 컨테이너 헬스체크와 `/actuator/health` `UP` | CI 자동<br>AI 서버 실제 호출과 검색, 업로드 동작은 검사하지 않음 |
@@ -130,12 +130,12 @@
 
 | 변경 대상 | 변경 위치와 적용 | 확인 조건 |
 |---|---|---|
-| 공식 계정 | 환경별 태스크 정의 값 변경 후 Terraform apply | 해당 환경 DB에 그 public_id의 사용자 존재<br>오리지널 필터 응답 |
-| PENDING 회수 기준 | 설정 속성 변경 후 새 태스크 | 컴파일 읽기 제한 시간보다 길게 유지 |
+| 공식 계정 | 환경별 앱 호스트 설정 값 변경 후 Terraform apply | 해당 환경 DB에 그 public_id의 사용자 존재<br>오리지널 필터 응답 |
+| PENDING 회수 기준 | 설정 속성 변경 후 새 컨테이너 | 컴파일 읽기 제한 시간보다 길게 유지 |
 | 완성 소모 이프 | 운영 중 조정은 `credit_policies`의 `story_creation_cost` 오버라이드, 스냅샷 갱신 주기 60초<br>기본값 변경은 코드 수정 후 재빌드 | 최소값 1 이상<br>정책 반영 뒤 완성 요청의 차감량 |
 | 검색 재색인 | 해당 환경의 Terraform 변수 `search_reindex_on_startup=true`로 apply 후 `false`로 되돌림 | 기동 로그에 재색인 실패 WARN 없음<br>검색 결과에 기존 스토리 포함 |
 | 화풍 카탈로그 | `art_styles` 행을 SQL로 추가하거나 비활성화<br>이름, 설명, 순서 변경<br>신규 화풍은 AI가 지원을 배포한 뒤 활성화 | 화풍 목록 응답<br>`ANIME`은 기본값이라 비활성화하지 않음 |
-| 이미지 저장소 | assets 모듈 출력이 태스크 정의로 전달되므로 버킷과 CDN 변경 후 Terraform apply | presign 201, 업로드 PUT 200, 새 스토리의 표지 URL |
+| 이미지 저장소 | assets 모듈 출력이 앱 호스트 설정로 전달되므로 버킷과 CDN 변경 후 Terraform apply | presign 201, 업로드 PUT 200, 새 스토리의 표지 URL |
 | 추적과 지표 전송 | 운영 Terraform 변수 `tracing_enabled`, `enable_otlp_metrics` 변경 후 apply | 지표는 시크릿의 전송 URL과 인증 헤더가 먼저 채워져야 함<br>추적은 수집기 FGAC 권한이 먼저 |
 
 <br>
@@ -159,9 +159,8 @@
 
 | 상황 | 처리와 한계 |
 |---|---|
-| 운영 롤링 교체 중 진행 중인 컴파일 | ALB 타깃 해제 대기 240초가 컴파일과 이미지 단계의 제한 시간 합보다 길므로 기존 태스크에서 완료<br>새 태스크로 이전하지 않음 |
-| 태스크 강제 종료 중 진행 중인 컴파일 | 생성 요청 행이 `PENDING`으로 남고 클라이언트는 응답을 받지 못함<br>같은 요청 ID 재요청은 회수 기준 시간 동안 진행 중으로 거절<br>그 뒤 회수해 재실행<br>이미 저장된 간편 제작 결과는 요청 회수 시 응답 재구성 |
-| 개발 stop-then-start | 교체 중 모든 요청 실패<br>데이터 컨테이너 재시작 |
+| 운영 롤링 교체 중 진행 중인 컴파일 | 프록시 드레인 240초가 컴파일과 이미지 단계의 제한 시간 합보다 길므로 기존 컨테이너에서 완료<br>새 컨테이너로 이전하지 않음 |
+| 컨테이너 강제 종료 중 진행 중인 컴파일 | 생성 요청 행이 `PENDING`으로 남고 클라이언트는 응답을 받지 못함<br>같은 요청 ID 재요청은 회수 기준 시간 동안 진행 중으로 거절<br>그 뒤 회수해 재실행<br>이미 저장된 간편 제작 결과는 요청 회수 시 응답 재구성 |
 | AI 호출 중 AI 서버 교체 | 호출이 끊기면 AI 실패로 응답, 요청 행 `FAILED`<br>같은 요청 ID 재요청으로 재실행 |
 
 <br>
@@ -172,8 +171,8 @@
 
 | 상황 | 복구 방식 | 한계와 확인 사항 |
 |---|---|---|
-| 새 태스크 헬스체크 실패 | 직전 배포로 자동 복귀 | 환경 태그가 실패한 이미지를 가리킬 수 있으므로 다음 재배포 전에 태그 확인 |
-| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 이전 이미지를 환경 태그로 다시 태깅한 뒤 새 배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
+| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원은 필요 없음 |
+| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 SSM 문서 `image=rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
 | 마이그레이션 적용 후 되돌리기 | 적용된 마이그레이션은 되돌리지 않음 | 새 컬럼은 구버전 코드와 호환하게 추가 |
 | 설정 오류 | 잘못된 Terraform 값이나 시크릿을 이전 호환 값으로 복구 후 apply | 이미지 태그 복원만으로 설정은 복원되지 않음 |
 
@@ -183,7 +182,7 @@
 
 | 확인 항목 | 자료 | 기준 |
 |---|---|---|
-| 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
+| 기동 | 배포 출력의 이미지와 컨테이너 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
 | 완성 실패 | `manyak.story.creation.duration`의 `failure` 비율 | 배포 전과 같은 수준 |
 | AI 호출 | `ai_call_logs`의 `STARTED` 잔존 | 호출 중 중단 없음 |
 | 검색 | 색인 실패와 질의 실패 WARN, 검색 응답 | WARN 없음, 검색 성공 |
@@ -199,6 +198,6 @@
 | 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, OpenSearch 엔드포인트 형식, 공식 계정 UUID, 추적 주소 누락 중 해당 값 수정 후 apply |
 | health 정상, 생성이 AI 실패로 응답 | 요청 ID의 `ai_call_logs`, AI 서버 로그, AI 주소 | AI 서비스 상태와 내부 주소 확인<br>제한 시간 초과와 AI 오류 응답 구분 |
 | 검색이 사용 불가로 응답 | OpenSearch 엔드포인트, 요청의 `cursor` 유무 | 엔드포인트 미주입과 저장소 장애 중 커서 요청을 구분 |
-| 검색 결과가 관련도 순이 아니거나 `manyak.story.search.fallback`이 증가 | 질의 실패 WARN, 시작 로그의 인덱스 초기화 WARN, 홈서버 OpenSearch와 터널 상태, 검색 계정과 접근 토큰 | 저장소와 터널 복구, 계정 권한과 토큰 확인<br>장애 중 빠진 문서는 정기 재색인이나 재색인 설정으로 채움 |
-| 이미지 업로드 실패 | 이미지 저장소 환경 변수 3종, 버킷 CORS, 태스크 역할의 업로드 경로 권한 | 미설정은 presign이 사용 불가로 응답<br>권한과 CORS 문제는 저장소가 업로드 거부<br>Terraform apply 순서 확인 |
+| 검색 결과가 관련도 순이 아니거나 `manyak.story.search.fallback`이 증가 | 질의 실패 WARN, 시작 로그의 인덱스 초기화 WARN, 검색 서버와 그 연결 상태, 검색 계정과 접근 토큰 | 저장소와 연결 복구, 계정 권한과 토큰 확인<br>장애 중 빠진 문서는 정기 재색인이나 재색인 설정으로 채움 |
+| 이미지 업로드 실패 | 이미지 저장소 환경 변수 3종, 버킷 CORS, 인스턴스 역할의 업로드 경로 권한 | 미설정은 presign이 사용 불가로 응답<br>권한과 CORS 문제는 저장소가 업로드 거부<br>Terraform apply 순서 확인 |
 | 새 스토리의 표지가 `null` | 이미지 저장소 환경 변수, S3 업로드 경로 권한 | 업로드 생략 조건과 권한 문제를 구분 |

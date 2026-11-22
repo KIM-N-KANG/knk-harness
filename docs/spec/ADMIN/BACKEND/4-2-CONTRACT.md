@@ -2618,7 +2618,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버가 CloudWatch, 홈서버 Prometheus, Redis를 불러 운영 앱 호스트와 저장소의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
+서버가 CloudWatch, 관측 서버 Prometheus, Redis를 불러 운영 앱 호스트와 저장소의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
 
 **1. 쿼리**
 
@@ -2667,10 +2667,10 @@ Authorization: Bearer {adminToken}
 | `redis.connectedClients` | `integer` | 연결된 클라이언트 수 |
 | `redis.keys` | `integer` | 키 수 |
 | `redis.aofLastWriteOk` | `boolean / null` | 마지막 AOF 쓰기가 성공했는지<br>AOF를 쓰지 않으면 `null` |
-| `opensearch` | `object / null` | 홈서버 OpenSearch 지표<br>`null` 조건은 `hostSystem`과 같음 |
+| `opensearch` | `object / null` | 관측 서버 OpenSearch 지표<br>`null` 조건은 `hostSystem`과 같음 |
 | `opensearch.status` | `string / null` | 클러스터 상태 `green`, `yellow`, `red`<br>조회 시각의 마지막 값이며 계열이 없으면 `null` |
 | `opensearch.diskTotalBytes` | `integer / null` | 데이터 디스크 크기(바이트)<br>조회 시각의 마지막 값 |
-| `opensearch.diskAvailableBytes` | 점 목록 | 데이터 디스크 여유의 구간 안 최솟값(바이트)<br>홈서버의 다른 컨테이너와 같이 쓰는 디스크 |
+| `opensearch.diskAvailableBytes` | 점 목록 | 데이터 디스크 여유의 구간 안 최솟값(바이트)<br>같은 서버의 다른 컨테이너와 같이 쓰는 디스크 |
 | `opensearch.jvmMemoryPressure` | 점 목록 | JVM old 영역 사용률의 구간 안 최댓값(%) |
 
 점 목록은 다음 구조의 배열이다.
@@ -4124,7 +4124,7 @@ Authorization: Bearer {adminToken}
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
 | AWS CloudWatch | 없음 | `GetMetricData` 지표 조회 |
-| 홈서버 Prometheus | 없음 | 기록 규칙 계열의 `query_range`와 `query` 조회 |
+| 관측 서버 Prometheus | 없음 | 기록 규칙 계열의 `query_range`와 `query` 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 
 다른 도메인이 호출하는 연산의 입력과 결과는 다음과 같다.

@@ -12,7 +12,7 @@ AI 서버로 보내는 헤더 목록은 처리 흐름의 공통 처리에, 개�
 %%{init: {"flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 24, "rankSpacing": 40}}}%%
 flowchart LR
     S["<b>서버</b><br/>STORY 도메인"]
-    S -->|표준 출력 JSON| F["<b>FireLens</b><br/>Fluent Bit"]
+    S -->|표준 출력 JSON| F["<b>로그 라우터</b><br/>Fluent Bit"]
     F -->|로그 인덱스| OS["<b>OpenSearch</b>"]
     F --> CW["<b>CloudWatch</b><br/>안전망"]
     S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
@@ -20,7 +20,7 @@ flowchart LR
     DP -->|트레이스 인덱스| OS
     OS --> OD["<b>OpenSearch Dashboards</b>"]
     S -->|OTLP 지표| C
-    C -->|SigV4 remote write| G["<b>AMP</b>"]
+    C -->|지표| G["<b>Prometheus</b>"]
     S -->|AI 호출 기록| PG["<b>PostgreSQL</b><br/>ai_call_logs"]
     S -->|5xx| SE["<b>Sentry</b>"]
     SE --> SL["<b>Slack</b><br/>일일 요약"]

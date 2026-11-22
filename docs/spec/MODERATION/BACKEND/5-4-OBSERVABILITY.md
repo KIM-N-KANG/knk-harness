@@ -13,7 +13,7 @@
 flowchart LR
     S["`**서버**
 MODERATION 도메인`"]
-    S -->|표준 출력 JSON| F["`**FireLens**
+    S -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
     F -->|로그 인덱스| OS["`**OpenSearch**`"]
     F --> CW["`**CloudWatch**
@@ -23,7 +23,7 @@ Fluent Bit`"]
     DP -->|트레이스 인덱스| OS
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| C
-    C -->|SigV4 remote write| G["`**AMP**`"]
+    C -->|지표| G["`**Prometheus**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
     S -->|보류 알림| SL

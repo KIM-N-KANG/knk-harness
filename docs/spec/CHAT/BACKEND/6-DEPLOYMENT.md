@@ -15,11 +15,11 @@
 | 의존 대상 | 내용 | CHAT 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 채팅, 메시지, 선택지, 버전 이력, 거쳐온 사건, 공유, 모델, 피드백 테이블 |
-| AI 서버 | 운영은 독립 ECS 서비스, 개발은 같은 태스크의 컨테이너 | 턴 스트림, 선택지, 대화 요약<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
+| AI 서버 | 운영 앱 호스트의 별도 컨테이너 | 턴 스트림, 선택지, 대화 요약<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
 | S3 assets 버킷과 CloudFront | Terraform 관리 | 실시간 이미지 경로 `chat-images/*`의 presigned PUT과 HEAD<br>AI 서버의 업로드 허용 호스트에 버킷 주소 등록 |
 | Redis | 생성 중 키와 생성별 이벤트 스트림<br>체험 카운터 | 생성 상태와 Redis Streams는 CHAT이 직접 접근<br>체험은 PAYMENT 도메인의 서비스로 접근 |
 | Slack 웹훅, Google Form | 피드백 전달 | 커밋 후 비동기 발송 |
-| Data Prepper | 트레이스를 받아 OpenSearch에 적재 | 트레이스 전송 |
+| 관측 서버 | 트레이스 수신 | 트레이스 전송 |
 
 <br>
 
@@ -30,7 +30,7 @@
 | S3 assets 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 실시간 이미지 업로드 위치를 발급하지 않고 턴은 진행<br>업로드 경로의 IAM 권한이 없으면 AI의 업로드가 실패해 인물 기본 이미지로 대체<br>AI 허용 호스트에 없으면 AI가 생성을 생략 |
 | Redis | 필요한 시점에 연결하므로 기동은 진행<br>회원 체험 카운터 장애는 예약 실패로 보고 이프 소모로 전환<br>턴 체험 복원 실패는 환불 실패 지표로 기록되고 이미지 체험 복원 실패는 WARN만<br>생성 중 키 획득 오류는 과금 전에 일시 장애로 거절<br>생성 도중 이벤트 기록 실패는 생성과 저장을 계속하고 상세 재조회로 복구<br>재연결의 스트림 존재 확인과 생성 중 키 확인 오류는 사용 불가로 응답<br>수신 중 읽기 오류는 종료 이벤트 없이 연결 종료 |
 | Slack 웹훅, Google Form | 미설정이면 해당 전달 생략<br>실패는 접수 결과에 영향 없음 |
-| Data Prepper | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
+| 관측 서버 | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
 
 <br>
 
@@ -42,14 +42,14 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포 시 `latest` 승격<br>실패하면 이전 digest로 복원 |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포가 성공한 뒤 `latest` 승격 |
 | 상태 검사 | 배포 완료, 서버와 AI 컨테이너 정상, health `UP` | 동일 |
 
 <br>
 
 ### 6-3 환경 변수와 시크릿
 
-환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 새 태스크를 시작해야 적용된다. 값은 Terraform이 태스크 정의에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 태스크 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
+환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 값은 Terraform이 앱 호스트 설정(`app_host_defs`)에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 앱 호스트의 인스턴스 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
 
 <br>
 
@@ -57,11 +57,11 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_AI_BASE_URL` | 없음 | 운영 태스크 환경 변수, Cloud Map 내부 주소<br>개발 태스크 환경 변수 `http://localhost:8000` | |
+| `MANYAK_AI_BASE_URL` | 없음 | 운영 앱 호스트 설정 `http://ai.internal`(내부 프록시) | |
 | `MANYAK_AI_CHAT_STUB` | `false` | 주입 없음 | |
 | `MANYAK_CHAT_SSE_CONCURRENCY` | 64 | 주입 없음 | 턴을 처리하는 백그라운드 작업 스레드 수 |
 | `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | 100 | 주입 없음 | 대기 큐 크기<br>초과하면 거부 |
-| `MANYAK_CHAT_COMPACT_ENABLED` | `false` | 켤 환경의 태스크 환경 변수 | 끄면 요약을 요청하지 않고 저장된 요약도 AI 요청에 싣지 않음<br>재생성의 요약 무효화는 설정과 무관하게 수행 |
+| `MANYAK_CHAT_COMPACT_ENABLED` | `false` | 켤 환경의 앱 호스트 설정 | 끄면 요약을 요청하지 않고 저장된 요약도 AI 요청에 싣지 않음<br>재생성의 요약 무효화는 설정과 무관하게 수행 |
 | `MANYAK_CHAT_COMPACT_INTERVAL_TURNS` | 10 | 주입 없음 | 완료 턴 수가 이 값의 배수일 때 요약 요청 |
 | `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | 300 | 주입 없음 | 요약 호출의 응답 대기 |
 
@@ -72,9 +72,9 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 주입 없음 | 프리셋 표지 키를 URL로 조합할 때만 사용 |
-| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 개발과 운영 태스크 환경 변수, assets 버킷과 CDN 주소 | 버킷과 이미지 제공 기본 URL이 둘 다 있어야 실시간 이미지 활성화 |
+| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 운영 앱 호스트 설정, dev 환경 설정, assets 버킷과 CDN 주소 | 버킷과 이미지 제공 기본 URL이 둘 다 있어야 실시간 이미지 활성화 |
 | `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 주입 없음 | 비어 있으면 AWS 기본 S3 주소 |
-| `AWS_REGION` | `ap-northeast-2` | 태스크 실행 환경 | |
+| `AWS_REGION` | `ap-northeast-2` | 컨테이너 실행 환경 | |
 
 <br>
 
@@ -105,8 +105,8 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 Data Prepper 내부 주소 주입 | 추적을 켜면 필수 |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 태스크 정의의 일반 환경 변수(내부 OTel Collector `/v1/metrics`), 인증 헤더 없음 | 내부 OTel Collector를 거쳐 AMP로 전송 |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 관측 서버의 `/v1/traces` 주소 주입 | 추적을 켜면 필수 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 앱 호스트 설정의 일반 환경 변수(관측 서버 `/v1/metrics`), 인증 헤더는 시크릿 참조 | 관측 서버의 Prometheus로 전송 |
 | `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
 
 <br>
@@ -129,18 +129,18 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 확인 항목 | 기준 | 자동 여부와 한계 |
 |---|---|---|
-| 와이어 계약 변경 | SSE 이벤트나 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>개발은 같은 태스크를 두 레포가 갱신하므로 순서를 워크플로가 보장하지 않음<br>운영은 서버와 AI가 별도 서비스라 순서를 수동으로 맞춤|
+| 와이어 계약 변경 | SSE 이벤트나 응답 형식이 바뀌면 서버와 클라이언트를 함께 배포<br>AI 계약이 바뀌면 서버와 AI 서버를 함께 배포 | 수동 검토<br>서버와 AI는 레포마다 따로 배포되므로 순서를 수동으로 맞춤|
 | 모델 선택 도입 | AI 서버의 모델 라우팅(`user_id`, `model_tier` 수신)이 먼저 운영에 있어야 하고 `model_tier` 허용값이 `LITE`, `AURORA`인 버전이어야 함<br>AI가 `BASIC`, `ADVANCED`만 받는 버전이면 모든 턴 요청이 422로 거절됨<br>AI 컨테이너에 `GEMINI_API_KEY`가 주입돼 기동 검사를 통과해야 오로라 모델 턴이 성공<br>웹의 모델 선택 UI와 모델 목록 조회를 같은 릴리스에서 배포<br>운영 `credit_policies`에 `chat_turn_cost` 행이 있으면 배포 전 삭제 | 수동 검토<br>AI가 먼저 배포돼도 `model_tier`가 없는 구버전 서버 요청은 AI 기본값으로 처리되므로 AI 선행이 안전 |
-| 출력 분량 도입 | 구버전 AI는 요청의 모르는 필드를 무시하므로 서버와 AI 서버의 배포 순서는 무관<br>AI 서버가 `long_response`를 아는 버전으로 배포되기 전에는 모든 턴이 짧은 응답으로 생성됨<br>구버전 서버는 설정 변경에서 `model`을 필수로 받아 `longResponse`만 보낸 요청을 400으로 거절하고, AI 요청에 `long_response`를 싣지 않아 저장된 `true`를 전달하지 못함<br>토글이 없으면 사용자가 출력 분량을 켤 수 없으므로 웹과 앱의 출력 분량 토글을 같은 릴리스에 포함하고, 서버의 모든 태스크 교체가 끝난 뒤 공개 | 수동 검토<br>서버를 이전 이미지로 되돌리면 토글 저장이 400으로 실패하고 저장된 `true`가 AI 요청에 반영되지 않음 |
+| 출력 분량 도입 | 구버전 AI는 요청의 모르는 필드를 무시하므로 서버와 AI 서버의 배포 순서는 무관<br>AI 서버가 `long_response`를 아는 버전으로 배포되기 전에는 모든 턴이 짧은 응답으로 생성됨<br>구버전 서버는 설정 변경에서 `model`을 필수로 받아 `longResponse`만 보낸 요청을 400으로 거절하고, AI 요청에 `long_response`를 싣지 않아 저장된 `true`를 전달하지 못함<br>토글이 없으면 사용자가 출력 분량을 켤 수 없으므로 웹과 앱의 출력 분량 토글을 같은 릴리스에 포함하고, 서버의 모든 컨테이너 교체가 끝난 뒤 공개 | 수동 검토<br>서버를 이전 이미지로 되돌리면 토글 저장이 400으로 실패하고 저장된 `true`가 AI 요청에 반영되지 않음 |
 | 새 모델 코드 추가 | AI 라우팅이 그 코드를 아는 버전이 운영에 배포된 뒤 모델 표에 행 추가<br>가격, 이름, 순서, 노출 변경은 행 수정만으로 적용 | 수동 검토<br>AI가 모르는 코드는 턴 요청을 거절해 턴이 실패 |
 | 정책값 응답의 `chatTurnCost` 제거 | 웹이 모델 목록의 가격으로 옮긴 뒤 다음 릴리스에서 필드 제거 | 수동 검토 |
 | 차감 행 연결 컬럼 | 메시지와 버전 이력의 `credit_transaction_id` 마이그레이션은 행 단위 선차감 대사 코드와 같은 릴리스에 포함<br>새 코드의 턴 차감은 참조 종류 `CHAT_TURN`으로 기록하고 행 단위 대사는 이 참조 종류만 다루므로 혼재 배포 중 구버전이 만든 `CHAT` 차감은 그룹 규칙으로 처리됨 | 수동 검토<br>참조 종류 규칙은 PAYMENT 세트의 대사 규칙 |
 | 채팅 설정 컬럼의 DB 기본값 | `story_chats.model_code`는 `NOT NULL DEFAULT 'LITE'`, `story_chats.long_response`는 `NOT NULL DEFAULT false`로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>전체 행 UPDATE 없음 | 수동 검토<br>롤링 교체 중과 이전 이미지 복구 시 구버전 채팅 생성이 실패하지 않음 |
 | 부분 유니크 인덱스 생성 | `story_messages`, `story_message_versions`의 행 수를 확인하고 마이그레이션 트랜잭션 안의 일반 `CREATE INDEX`로 적용<br>현재 운영 규모에서는 잠금 시간이 짧음 | 수동 검토<br>행 수가 수백만을 넘으면 `lock_timeout`을 두고 배포 시간대 조정 |
-| 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음<br>요약을 켠 뒤 이전 이미지로 되돌렸다가 다시 배포하면 설정을 끈 채 배포<br>구버전 태스크가 모두 내려간 뒤 설정을 켜기 전에 `UPDATE story_chats SET summary = NULL, summary_through_turn = 0 WHERE summary_through_turn > 0` 실행<br>최초 도입은 저장된 요약이 없어 일괄 비우기 해당 없음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>구버전은 재생성 때 요약을 비우지 않아 되돌린 기간의 재생성이 이전 응답을 담은 요약을 남길 수 있음<br>일괄 비우기 뒤 모든 채팅은 다음 요약 경계까지 원문으로 진행 |
-| 요약 이력과 숨긴 턴 도입 | `story_chat_summaries` 추가와 기존 `summary`, `summary_through_turn` 값을 이력 행으로 옮기는 마이그레이션, `story_messages.hidden_at`과 부분 유일 인덱스로의 교체, `story_chats`의 `hidden_turn_count`, `revision`, `forked_from_chat_id`, `forked_from_turn` 추가를 그 값을 읽는 코드와 같은 릴리스에 포함<br>새 컬럼은 `NOT NULL DEFAULT 0`으로 추가해 구버전의 컬럼 생략 삽입을 받음<br>`summary`와 `summary_through_turn` 컬럼 제거는 구버전 태스크가 사라진 다음 릴리스<br>입력 수정과 포크는 클라이언트 변경이 함께 필요하고 서버만 먼저 배포해도 기존 동작은 바뀌지 않음 | 수동 검토<br>이전 이미지로 되돌리면 이력에만 저장된 요약을 읽지 못해 원문 전체로 요청하고 되돌린 기간의 요약은 옛 컬럼에 저장됨<br>다시 배포할 때 옛 컬럼의 요약이 이력보다 새로우면 이력 행으로 옮기는 마이그레이션을 한 번 더 둠 |
+| 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음<br>요약을 켠 뒤 이전 이미지로 되돌렸다가 다시 배포하면 설정을 끈 채 배포<br>구버전 컨테이너가 모두 내려간 뒤 설정을 켜기 전에 `UPDATE story_chats SET summary = NULL, summary_through_turn = 0 WHERE summary_through_turn > 0` 실행<br>최초 도입은 저장된 요약이 없어 일괄 비우기 해당 없음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>구버전은 재생성 때 요약을 비우지 않아 되돌린 기간의 재생성이 이전 응답을 담은 요약을 남길 수 있음<br>일괄 비우기 뒤 모든 채팅은 다음 요약 경계까지 원문으로 진행 |
+| 요약 이력과 숨긴 턴 도입 | `story_chat_summaries` 추가와 기존 `summary`, `summary_through_turn` 값을 이력 행으로 옮기는 마이그레이션, `story_messages.hidden_at`과 부분 유일 인덱스로의 교체, `story_chats`의 `hidden_turn_count`, `revision`, `forked_from_chat_id`, `forked_from_turn` 추가를 그 값을 읽는 코드와 같은 릴리스에 포함<br>새 컬럼은 `NOT NULL DEFAULT 0`으로 추가해 구버전의 컬럼 생략 삽입을 받음<br>`summary`와 `summary_through_turn` 컬럼 제거는 구버전 컨테이너가 사라진 다음 릴리스<br>입력 수정과 포크는 클라이언트 변경이 함께 필요하고 서버만 먼저 배포해도 기존 동작은 바뀌지 않음 | 수동 검토<br>이전 이미지로 되돌리면 이력에만 저장된 요약을 읽지 못해 원문 전체로 요청하고 되돌린 기간의 요약은 옛 컬럼에 저장됨<br>다시 배포할 때 옛 컬럼의 요약이 이력보다 새로우면 이력 행으로 옮기는 마이그레이션을 한 번 더 둠 |
 | S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
-| 컬럼 제거 | 그 컬럼을 읽는 구버전 태스크가 사라진 다음 릴리스에서 수행 | 수동 검토 |
+| 컬럼 제거 | 그 컬럼을 읽는 구버전 컨테이너가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
 | AI 호출 기록의 기능 값 | `ck_ai_call_logs_feature`에 `chat_image`를 더하는 마이그레이션이 `chat_image` 행을 쓰는 코드와 같은 릴리스에 있어야 함<br>제약은 DROP 뒤 ADD로 다시 만들고 기존 네 값을 유지 | 기동 시 자동 적용<br>체크 제약은 테스트 프로파일에서 검증되지 않아 DB 문서 생성 스크립트로 확인 |
 | 응답 모델 컬럼 | `story_messages.model_code`(NULL 허용, `chat_models.code` FK)를 추가하는 마이그레이션이 그 값을 쓰는 코드와 같은 릴리스에 있어야 함<br>기존 행은 채우지 않고 `NULL`로 둠 | 기동 시 자동 적용<br>DB 문서 생성 스크립트로 FK와 `dbdoc/` 확인 |
@@ -159,13 +159,13 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 모델 프로모션 가격과 기간 | 관리자 API 또는 관리자 화면으로 설정과 해제<br>시작과 종료 시각에 다음 요청부터 자동 적용 | 프로모션 가격은 0 이상 10,000 이하<br>회원 모델 목록의 `promotion`, 라이트 0원이면 회원 체험 사용량의 `limit` `null`<br>다음 회원 턴의 원장 행 유무와 차감량<br>감사 로그의 변경 전후 값 |
 | 새 모델 코드 | AI 라우팅 배포 뒤 행 추가 | AI 호출이 거절되지 않고 `ai_call_logs.model`이 의도한 모델 |
 | 이미지 소모 이프 | 운영 중 조정은 `credit_policies`의 `chat_image_cost` 오버라이드, 스냅샷 갱신 주기 60초<br>기본값 변경은 코드 수정 후 재빌드 | 이미지 비용은 0 이상<br>정책 반영 뒤 턴 요청의 차감량 |
-| 체험 한도 | 환경 변수 변경 후 새 태스크 시작 | 카운터는 초기화하지 않으므로 축소 시 이미 새 한도 이상 쓴 기기는 즉시 소진 상태 |
+| 체험 한도 | 환경 변수 변경 후 서비스 재배포 | 카운터는 초기화하지 않으므로 축소 시 이미 새 한도 이상 쓴 기기는 즉시 소진 상태 |
 | AI 시간 한도 | 코드 기본값 변경 후 이미지 재빌드 | 생성 마감을 이벤트 간격 한도보다 길게 유지 |
-| 대화 요약 켜기, 요약 간격, 요약 응답 대기 | 환경 변수 변경 후 새 태스크 시작 | 켜기 전에 AI 서버의 요약 API 배포<br>응답 대기는 AI 서버 내부 호출의 최악 시간 240초보다 길게 유지<br>켠 뒤 `ai_call_logs` `chat_compact`의 실패 비율 |
+| 대화 요약 켜기, 요약 간격, 요약 응답 대기 | 환경 변수 변경 후 서비스 재배포 | 켜기 전에 AI 서버의 요약 API 배포<br>응답 대기는 AI 서버 내부 호출의 최악 시간 240초보다 길게 유지<br>켠 뒤 `ai_call_logs` `chat_compact`의 실패 비율 |
 | 생성 중 상태와 이벤트 보관 기간 | 코드 상수 변경 후 이미지 재빌드 | 생성 중 키의 TTL, 스트림 신규 생성 기한, 스트림 생성 시 TTL, 종료 후 스트림 보관 기간, 전용 읽기 연결의 명령 타임아웃 |
-| 백그라운드 작업 스레드 수와 큐 | 환경 변수 변경 후 새 태스크 시작 | `chat.turn.queue` 대기 시간과 거부 로그<br>수신 연결 상한도 함께 바뀜 |
-| 이미지 저장소 | assets 모듈 출력이 태스크 정의로 전달되므로 버킷과 CDN 변경 후 Terraform apply<br>AI 허용 호스트 갱신 | 턴 요청의 업로드 위치 발급, AI 업로드 성공, 본문의 실시간 마커 |
-| 피드백 전달 | 웹훅 시크릿과 폼 ID 변경 후 새 태스크 시작 | 피드백 등록 뒤 채널 수신 |
+| 백그라운드 작업 스레드 수와 큐 | 환경 변수 변경 후 서비스 재배포 | `chat.turn.queue` 대기 시간과 거부 로그<br>수신 연결 상한도 함께 바뀜 |
+| 이미지 저장소 | assets 모듈 출력이 앱 호스트 설정로 전달되므로 버킷과 CDN 변경 후 Terraform apply<br>AI 허용 호스트 갱신 | 턴 요청의 업로드 위치 발급, AI 업로드 성공, 본문의 실시간 마커 |
+| 피드백 전달 | 웹훅 시크릿과 폼 ID 변경 후 서비스 재배포 | 피드백 등록 뒤 채널 수신 |
 | 추적과 지표 전송 | 운영 Terraform 변수 `tracing_enabled`, `enable_otlp_metrics` 변경 후 apply | 지표는 시크릿의 전송 URL과 인증 헤더가 먼저 채워져야 함 |
 
 <br>
@@ -189,10 +189,9 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 상황 | 처리와 한계 |
 |---|---|
-| 운영 롤링 교체 중 진행 중인 턴 | ALB 타깃 해제 대기 240초 안에 기존 태스크의 생성 작업을 마감까지 유지<br>연결 해제만으로 작업을 취소하지 않음<br>생성 작업은 새 태스크로 이전하지 않음<br>2단계의 재연결은 공유 Redis 스트림을 통해 새 태스크에서도 수신 가능 |
-| 구버전과 새 버전 태스크 혼재 | 배포 중 몇 분 동안 생성 선점 보장이 일부 빠지는 일회성 한계 수용<br>구버전은 생성 중 키와 연결 독립 실행을 보장하지 않음<br>별도 배포 전환 장치는 두지 않음<br>모든 태스크 교체와 기존 생성 종료 후 새 동시성 보장 검증 |
-| 태스크 강제 종료 중 진행 중인 턴 | 저장 전이면 환불 코드가 실행되지 못할 수 있음<br>PAYMENT의 선차감 대사 배치가 턴 차감을 보정하고 이미지 차감은 보정하지 않음<br>생성 중 키는 TTL로 해제되지만 작업은 Redis에서 재실행되지 않음 |
-| 개발 stop-then-start | 교체 중 모든 요청 실패<br>데이터 컨테이너 재시작 |
+| 운영 롤링 교체 중 진행 중인 턴 | 프록시 드레인 240초 안에 기존 컨테이너의 생성 작업을 마감까지 유지<br>연결 해제만으로 작업을 취소하지 않음<br>생성 작업은 새 컨테이너로 이전하지 않음<br>2단계의 재연결은 같은 Redis 스트림을 통해 새 컨테이너에서도 수신 가능 |
+| 구버전과 새 버전 컨테이너 혼재 | 배포 중 몇 분 동안 생성 선점 보장이 일부 빠지는 일회성 한계 수용<br>구버전은 생성 중 키와 연결 독립 실행을 보장하지 않음<br>별도 배포 전환 장치는 두지 않음<br>모든 컨테이너 교체와 기존 생성 종료 후 새 동시성 보장 검증 |
+| 컨테이너 강제 종료 중 진행 중인 턴 | 저장 전이면 환불 코드가 실행되지 못할 수 있음<br>PAYMENT의 선차감 대사 배치가 턴 차감을 보정하고 이미지 차감은 보정하지 않음<br>생성 중 키는 TTL로 해제되지만 작업은 Redis에서 재실행되지 않음 |
 | AI 호출 중 AI 서버 교체 | 스트림이 끊기면 스트림 실패로 응답하고 환불<br>클라이언트가 같은 입력을 다시 보냄 |
 
 <br>
@@ -203,8 +202,8 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 상황 | 복구 방식 | 한계와 확인 사항 |
 |---|---|---|
-| 새 태스크 헬스체크 실패 | 직전 배포로 자동 복귀 | 환경 태그가 실패한 이미지를 가리킬 수 있으므로 다음 재배포 전에 태그 확인 |
-| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 이전 이미지를 환경 태그로 다시 태깅한 뒤 새 배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
+| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원은 필요 없음 |
+| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 SSM 문서 `image=rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
 | 마이그레이션 적용 후 되돌리기 | 적용된 마이그레이션은 되돌리지 않음 | 새 컬럼은 구버전 코드와 호환되도록 추가 |
 | 설정 오류 | 잘못된 Terraform 값이나 시크릿을 이전 호환 값으로 복구 후 apply | 이미지 태그 복원만으로 설정은 복원되지 않음 |
 
@@ -214,7 +213,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 확인 항목 | 자료 | 기준 |
 |---|---|---|
-| 기동 | 해당 배포 ID의 태스크 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
+| 기동 | 배포 출력의 이미지와 컨테이너 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
 | 턴 실패 | `manyak.chat.turn.result`의 `failure` 비율 | 배포 전과 같은 수준 |
 | 환불 | `manyak.chat.turn.refund`의 `failure` | 0 |
 | AI 호출 | `ai_call_logs`의 `STARTED` 잔존과 `turn_number IS NULL`인 `SUCCEEDED` | `STARTED` 장기 잔존 없음<br>`turn_number`가 없는 `SUCCEEDED`는 생성 마감 초과, 시작 상태 불일치, 저장 실패, 저장 후 관측 실패 중 어느 경로인지 확인 |
@@ -237,6 +236,6 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 오로라 모델 턴만 실패 | `ai_call_logs`의 `model`, AI 서버 로그의 공급자 응답 | AI 컨테이너의 `GEMINI_API_KEY` 주입과 공급자 인증 확인 |
 | 차감액이 기대와 다름 | 원장 `CHAT_TURN` 행의 `amount`, 턴 저장 로그의 `model_code`와 `turn_cost`, `chat_models` | 체험 턴은 0, 청구 모델의 행 가격과 비교<br>모델 변경 전에 시작한 턴은 이전 모델 가격 |
 | 턴이 큐에서 밀리거나 거부됨 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`, 스팬 `chat.turn.queue` | 백그라운드 작업 스레드 수와 큐 크기 조정, AI 지연 확인 |
-| 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 태스크 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
+| 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 인스턴스 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
 | 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>지표 `manyak.chat.compact.result`의 `disabled`가 늘고 있으면 설정이 꺼진 상태<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
 | 환불 실패 알림 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`, Redis와 DB 상태 | 회원 차감은 원장에서 사후 환불<br>체험 복원 실패는 카운터 수동 보정 |
