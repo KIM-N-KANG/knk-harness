@@ -4,7 +4,7 @@
 
 ### 1 목적과 범위
 
-AWS 구성은 manyak-terraform의 운영 선언(`terraform/envs/prod`, `terraform/modules/app-host`)을, 서비스 배포는 각 서비스 레포의 `.github/workflows/docker-image.yml`을 기준으로 한다. 이 문서의 선언값은 AWS 리소스 실측값이나 배포 완료 증거가 아니다. 실제 실행 이미지는 배포 기록과 호스트의 배포 기록으로 확인한다.
+AWS 구성은 2026-11-22에 확인한 [Terraform 선언](https://github.com/KIM-N-KANG/manyak-terraform/tree/50c066c8d9c77230f07640c68eb139992d80437a/terraform)(`envs/prod`, `modules/app-host`)을 기준으로 한다. 서비스 배포는 같은 날 확인한 [server](https://github.com/KIM-N-KANG/manyak-server/blob/4898a651c80076748828f3c5ed40c85de4c7bd57/.github/workflows/docker-image.yml), [ai](https://github.com/KIM-N-KANG/manyak-ai/blob/df2fd64906cea9b13a5d173547fed1212c27e9cb/.github/workflows/docker-image.yml), [notification](https://github.com/KIM-N-KANG/manyak-notification/blob/5ae93a17e2a82ab1be26f7d5f21c0195d5e0f110/.github/workflows/docker-image.yml) 워크플로를 기준으로 한다. 이 문서의 선언값은 AWS 리소스 실측값이나 배포 완료 증거가 아니다. 실제 실행 이미지는 배포 기록과 호스트의 배포 기록으로 확인한다.
 
 <br>
 

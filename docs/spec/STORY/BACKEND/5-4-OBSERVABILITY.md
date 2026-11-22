@@ -13,11 +13,11 @@ AI 서버로 보내는 헤더 목록은 처리 흐름의 공통 처리에, 개�
 flowchart LR
     S["<b>서버</b><br/>STORY 도메인"]
     S -->|표준 출력 JSON| F["<b>로그 라우터</b><br/>Fluent Bit"]
-    F -->|로그 인덱스| OS["<b>OpenSearch</b>"]
+    F -->|OTLP 로그| C["OpenTelemetry Collector"]
     F --> CW["<b>CloudWatch</b><br/>안전망"]
     S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
     C --> DP["<b>Data Prepper</b>"]
-    DP -->|트레이스 인덱스| OS
+    DP -->|로그와 트레이스 인덱스| OS["<b>OpenSearch</b>"]
     OS --> OD["<b>OpenSearch Dashboards</b>"]
     S -->|OTLP 지표| C
     C -->|지표| G["<b>Prometheus</b>"]

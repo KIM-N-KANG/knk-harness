@@ -15,12 +15,12 @@ flowchart LR
 CHAT 도메인`"]
     S -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
-    F -->|로그 인덱스| OS["`**OpenSearch**`"]
+    F -->|OTLP 로그| C["OpenTelemetry Collector"]
     F --> CW["`**CloudWatch**
 안전망`"]
     S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
     C --> DP["`**Data Prepper**`"]
-    DP -->|트레이스 인덱스| OS
+    DP -->|로그와 트레이스 인덱스| OS["`**OpenSearch**`"]
     OS --> OD["`**OpenSearch Dashboards**`"]
     S -->|OTLP 지표| C
     C -->|지표| G["`**Prometheus**`"]
