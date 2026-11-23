@@ -178,3 +178,21 @@
 | 영향 | 디스패처를 쓰는 테스트는 `@get:Rule val mainDispatcherRule = MainDispatcherRule()`을 쓰고, 같은 디스패처로 `runTest`를 돌릴 때는 `MainDispatcherRule(dispatcher)`로 넘긴다. testing은 런타임 모듈 수에 포함하지 않는다. |
 | 대체 관계 | 없음. 한 모듈 안에서 여러 테스트가 쓰는 Fake를 그 모듈의 `src/test` 공유 패키지에 두고 기능 간 테스트 의존을 두지 않는 [모듈 재구성 계획](../../../../../manyak-android/docs/plans/module-reorganization.md#21-화면과-테스트)의 규칙은 유지한다. |
 | 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../manyak-android/docs/plans/core-testing-module.md), [Android 공식 모듈화 패턴의 테스트 모듈](https://developer.android.com/topic/modularization/patterns#test-modules) |
+
+<br>
+
+<a id="a-097"></a>
+<a id="a-097-pr-전-코드-리뷰와-에뮬레이터-화면-검사를-둠"></a>
+
+**A-097. PR 전 코드 리뷰와 에뮬레이터 화면 검사를 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-23 |
+| 상태 | Accepted |
+| 배경 | 앱에는 스크린샷 테스트 도구가 없고, 화면 확인 규칙은 `installDebug` 뒤 `adb exec-out screencap`으로 전후를 비교한다는 한 줄뿐이라 대상 화면과 점검 항목, 기기 설정 복구가 작업마다 달랐다. PR 전 diff 리뷰 절차도 없어 정적 검사가 잡지 못하는 규칙(디자인 토큰, 문구 위치, `reduce` 순수성, 라우트 식별자, 구성 변경)은 작성자가 직접 기억해야 했다. 웹은 같은 날 [W-046](../WEB/DECISIONS.md#w-046)으로 PR 전 UI 검사와 코드 리뷰를 도입했다. |
+| 채택 | 모든 새 PR 전에 저장소의 pr-review 스킬로 diff를 리뷰하고, UI를 바꾼 PR은 ui-review 스킬로 debug 빌드를 에뮬레이터에 설치해 `android` CLI의 캡처와 레이아웃 트리로 [4-3](4-VERIFICATION.md#4-3-pr-전-리뷰와-화면-검사)의 항목을 확인한다. 결과는 PR 본문에 남기고 머지 조건은 CI의 `check`와 `assembleDebug`로 유지한다. 리뷰에 쓰는 공식 Android 스킬(`android/skills`)은 skills CLI로 받아 커밋과 해시를 `skills-lock.json`에 고정한다. |
+| 대안 | 스크린샷 테스트 도구(Roborazzi 등) 도입: 웹이 W-046에서 걷어낸 기준 이미지 갱신 비용이 같은 형태로 생긴다.<br>기존 screencap 전후 비교만 유지: 점검 항목과 기기 설정 복구가 작업마다 계속 달라진다. |
+| 이유 | 웹과 같은 PR 전 절차로 맞추고, 화면을 실행해 보는 검사와 diff를 읽는 리뷰를 나눠 서로 독립적으로 돌린다. `android` CLI는 셸 명령이라 Claude Code와 Codex에서 같은 스킬로 쓸 수 있다. |
+| 영향 | 화면 표현은 머지 조건에 들어가지 않는다. 회원 화면은 로그인된 에뮬레이터 상태에 기대므로 로그아웃 상태면 확인하지 못한 범위로 남는다. 검사는 앱 데이터를 지우는 명령과 소셜 로그인을 쓰지 않는다. 변경 전 비교는 요청한 경우에만 별도 worktree의 기준 빌드로 한다. |
+| 근거 | [KNK-2132](https://kimandkang.atlassian.net/browse/KNK-2132), [W-046](../WEB/DECISIONS.md#w-046) |
