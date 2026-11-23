@@ -16,7 +16,8 @@
 | 다크 모드 | 채팅방, 목록, 상세와 회원 마이는 화면 캡처로 UI 검사. 나머지 화면 수동 |
 | 인앱 | 카카오톡, Instagram, Threads와 iOS 및 Android 실기기의 로그인 및 게스트 진입. 내린 목록을 위로 올릴 때 호스트 닫기와 위치 튐 없음 |
 | 인증 팝업 | COOP 검증은 Chromium 범위, Mobile Safari와 동일하게 간주하지 않음 |
-| UI 검사 | UI를 바꾼 PR 전에 수행. E2E fixture로 고정한 모바일 화면 캡처(`pnpm ui:capture`), agent-browser로 개발 서버 직접 확인, 레이아웃과 React 코드 점검<br>결과는 PR 화면 절에 기록. CI 판정과 머지 조건에 포함되지 않음 |
+| UI 검사 | UI를 바꾼 PR 전에 수행. E2E fixture로 고정한 모바일 화면 캡처(`pnpm ui:capture`), agent-browser로 개발 서버 직접 확인<br>결과는 PR 화면 절에 기록. CI 판정과 머지 조건에 포함되지 않음 |
+| 코드 리뷰 | 모든 PR 전에 수행. diff로 정확성, 보안과 개인정보, 프로젝트 규칙, React와 웹 플랫폼 패턴, 테스트와 명세 동기화 점검<br>남은 문제는 PR 리뷰 참고에 기록. CI 판정과 머지 조건에 포함되지 않음 |
 | SSR | E2E_SEO=1의 별도 모의 서버로 첫 HTML 검증. 기본 API_BASE_URL 빈 값에서 SSR 검증은 생략됨 |
 
 API fixture의 정책값을 기대값으로 사용하고 홈 SSR과 브라우저 mock이 섞이지 않도록 API_BASE_URL 및 서버 재사용을 확인한다. 실제 환경에서는 서버 응답과 화면을 비교한다. Safari 뒤로가기는 URL과 목적지 DOM을 함께 확인한다.
