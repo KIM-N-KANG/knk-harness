@@ -178,7 +178,7 @@
 | 이유 | 필수 동의와 같은 자리에서 한 번에 받으면 첫 진입의 시트가 한 장 줄고, 선택 항목이 필수 완료 조건에 섞이지 않는다. 기능 모듈끼리 직접 의존하지 않는 규칙을 지키려 저장은 알림 기능에 남기고 루트가 답만 전달한다. 재진입 단위 재질문은 서버 필드 없이 반복 노출을 끊는다. 전문을 창으로 여는 것은 모달 시트가 백스택의 문서를 덮기 때문이다. |
 | 영향 | 기존 회원도 다음 진입에 한 번 시트를 본다. 재로그인은 여전히 거절 기록을 지우므로 같은 기기의 재로그인 회원은 다시 첫 질문을 받는다(선택 항목). 로그인 화면의 간주 동의 문구는 문서 링크만 남긴다. `ManyakCheckbox`를 designsystem으로 올리고 `ManyakBottomSheet`에 뒤로가기 잠금을 추가했으며, 법적 문서 화면에 제목, 뒤로가기 앱바를 넣어 백스택 진입과 창 진입의 표현을 통일했다. |
 | 대체 관계 | [A-040](../../../NOTIFICATION/CLIENT/ANDROID/DECISIONS.md#a-040)의 첫 질문 자리(별도 시트)와 "물었음" 단일 플래그를 대체한다. 통지, 야간, 고지 정본 결정은 유지한다. 공통 [동의 모델](../3-2-INTERACTION-FLOWS.md#3-2-1-로그인과-필수-동의)의 "Android는 별도 시트" 문구를 같은 날 정정했다. |
-| 근거 | [KNK-1347](https://kimandkang.atlassian.net/browse/KNK-1347), [Android 계획](../../../../../../manyak-android/docs/plans/legal-consent.md) |
+| 근거 | [KNK-1347](https://kimandkang.atlassian.net/browse/KNK-1347), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/legal-consent.md) |
 
 <br>
 
@@ -197,7 +197,7 @@
 | 이유 | 서버 정본, 세션 종료 장벽, 모듈 의존 규칙을 유지하면서 화면 재생성이나 늦은 응답이 이전 계정의 완료 상태를 복구하지 않게 한다. 403은 동의 시트에 안내와 로그아웃을 남겨 재시도 루프를 피한다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | [A-044](#a-044)의 동의 UI 소유권과 광고 동의 처리 순서는 유지하고, 동의 판정 결과의 공유와 종료 정리를 보완한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/consent-session-legal-webview.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/consent-session-legal-webview.md). |
 
 <br>
 
@@ -216,7 +216,7 @@
 | 이유 | 홈을 먼저 만들지 않아 화면별 조회와 외부 진입이 동의 관문을 우회하지 못한다. 동의 상태를 루트에 두어 화면 재생성 및 로그인 화면에서 회원 화면으로의 전환에도 체크와 선택 동의 결과가 유지된다. 기존 인증 API와 토큰 저장 의미는 바꾸지 않으므로 서버 계정 생성 지연은 별도 서버 계약 변경이 필요하다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | A-044의 회원 화면 위 동의 및 알림 권한 선행 순서를 대체한다. A-051의 서버 판정 공유와 종료 정리는 유지하고 회원 자동 조회에도 적용한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/consent-session-legal-webview.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/consent-session-legal-webview.md). |
 
 <br>
 
@@ -235,7 +235,7 @@
 | 이유 | 로그인 버튼을 보여 줄 필요가 없는 복원 경로를 구분하면서 필수 동의의 서버 판정과 외부 진입 대기 조건을 그대로 보존한다. 경로 구분은 루트 ViewModel 수명이며 영속 완료 플래그나 인증 저장 스키마를 추가하지 않는다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | A-052에서 저장 세션 복원도 로그인 화면에서 대기시키던 표시 범위만 대체한다. 필수 동의 완료 전 회원 그래프와 자동 조회를 차단하는 결정은 유지한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1519-detail-alignment.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1519-detail-alignment.md). |
 
 <br>
 
@@ -254,7 +254,7 @@
 | 영향 | 가입 완료 성공은 기존 로그인과 같은 인증 작업 안에서 토큰 저장과 회원 공개를 마친 뒤 대기를 비운다. 회원이 된 뒤에는 기존처럼 `GET /users/me/consents`로 한 번 더 확인한다. 요청이 하나 늘지만 정지 회원은 가입 완료까지 성공하므로 이 확인이 있어야 이용 제한 상태로 간다. |
 | 범위 | Android 소셜 로그인의 필수 동의 대기, 가입 완료, 가입 취소와 재로그인 안내 |
 | 대체 관계 | A-052의 "인증된 회원도 서버 필수 동의 확인 전에는 로그인 화면에 남기고 뒤로가기는 기존 로그아웃으로 연결" 중 새 소셜 로그인 부분을 대체한다. 새 로그인은 동의 전에 세션이 없고 시트의 뒤로가기는 가입 취소이다. A-044의 "뒤로가기만 로그아웃"은 저장 세션과 가입 완료 뒤 회원 동의 조회에만 남는다. 서버 계정 생성 지연은 A-052가 남긴 별도 서버 계약 변경으로 해결됐다. |
-| 근거 | 검증 근거는 [동의 후 가입 완료 계획](../../../../../../manyak-android/docs/plans/consent-before-signup.md)을 참조한다. |
+| 근거 | 검증 근거는 [동의 후 가입 완료 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/consent-before-signup.md)을 참조한다. |
 
 <br>
 

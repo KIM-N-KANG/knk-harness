@@ -326,7 +326,7 @@
 | 이유 | 표현을 하나로 두어 같은 항목이 자리마다 다르게 읽히지 않고, 시트는 항목이 늘어도 폭, 위치 제약이 없다. 축소판은 머리글 두 줄로 대체되어 카드마다 미리보기 변형을 유지할 비용이 사라진다. 교체 이동은 삭제와 같은 이유로 지운 것과 다름없는 이전 방으로 되돌아가지 않게 한다. |
 | 영향 | `ManyakOptionsDialog`, `ManyakOptionsMenu`, 카드 축소판, `thumbnail-small` 토큰을 제거한다. 채팅방 ViewModel이 프로필 저장소를 읽어 메뉴의 잔액을 갱신한다. 공유하기 항목은 [A-043](../../../CHAT/CLIENT/ANDROID/DECISIONS.md#a-043)이 정한다. |
 | 대체 관계 | [A-029](DECISIONS.md#a-029)의 다이얼로그 표현과 카드 축소판을 대체한다. 더보기, 길게 누르기 진입과 삭제 확인 절차는 유지한다. [A-030](DECISIONS.md#a-030)의 삭제 항목 조건은 유지한다. |
-| 근거 | [KNK-1320](https://kimandkang.atlassian.net/browse/KNK-1320), [Android 계획](../../../../../../manyak-android/docs/plans/chat-room.md) |
+| 근거 | [KNK-1320](https://kimandkang.atlassian.net/browse/KNK-1320), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/chat-room.md) |
 
 <br>
 
@@ -345,7 +345,7 @@
 | 이유 | 키워드 초안에는 `requestId`가 없고 재생성마다 `requestId`가 바뀌어, 라우트에 실은 키가 프로세스 재시작 뒤 이미 지운 행을 가리킬 수 있다. 세션 ID를 키로 두면 단계 전환이 같은 행을 덮어 웹의 소유 레코드 이관이 필요 없고, 완성 제출도 그 ID로 정확히 한 초안만 내린다. |
 | 영향 | v3→v4 마이그레이션이 편집 테이블을 다시 만들어 남은 초안을 `legacy-0`으로 옮기고 날짜 없이 맨 뒤에 둔다. 새로 만들기 확인 다이얼로그와 `client_storyCreate_resumeDialog_*` 이벤트를 제거한다. 퍼널 라우트에 필드가 늘어 이전 형식으로 저장된 백스택은 해석하지 못하는데, 앱 업데이트는 액티비티를 새로 시작하므로 영향이 없다고 판단했다. |
 | 대체 관계 | [C-004](../DECISIONS.md#c-004)의 "편집 초안 한 개"와 [A-035](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-035)의 "편집 슬롯은 기기당 한 행"을 대체한다. 계정별 보존은 유지한다. |
-| 근거 | [KNK-1395](https://kimandkang.atlassian.net/browse/KNK-1395), [Android 계획](../../../../../../manyak-android/docs/plans/multiple-story-drafts.md) |
+| 근거 | [KNK-1395](https://kimandkang.atlassian.net/browse/KNK-1395), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/multiple-story-drafts.md) |
 
 <br>
 
@@ -364,7 +364,7 @@
 | 이유 | 기능 모듈끼리 참조하지 않고 기존 앱 조립 및 공유 계약의 소유권을 유지한다. 목록 전체를 새로 읽으면 스크롤과 정렬 위치가 바뀌므로 카드 수만 갱신한다. 변경 스트림은 replay나 영속 저장을 하지 않아 다음 세션에 이전 값을 전달하지 않는다. 진행 중 조회와 겹치는 변경만 응답에 합치고 이후 조회는 서버 값을 사용한다. |
 | 영향 | 상세 조회가 좋아요 요청 중 낙관적 값이나 복원 값을 덮지 않도록 진행 중 조회를 취소하고 요청 중 화면 복귀 조회를 생략한다. 헤더와 기본 심벌은 공통 계약을 그대로 적용하며 별도 그라데이션 예외를 두지 않는다. |
 | 후속 관계 | [A-030](DECISIONS.md#a-030)의 소유자 상세 삭제에 성공 후 제작 탭 복귀를 명시한다. 일반 뒤로가기와 채팅 복귀는 유지한다. |
-| 근거 | [KNK-1516](https://kimandkang.atlassian.net/browse/KNK-1516), [Android 작업 기록](../../../../../../manyak-android/docs/plans/story-detail-alignment.md) |
+| 근거 | [KNK-1516](https://kimandkang.atlassian.net/browse/KNK-1516), [Android 작업 기록](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/story-detail-alignment.md) |
 
 <br>
 
@@ -383,7 +383,7 @@
 | 이유 | 로컬 작업의 접근성을 서버 조회 실패에 묶지 않고 기존 제작 카드 설계를 유지한다. 화면 표현만 바꿔 임시 저장 경고가 생기지 않게 하며, 같은 문구만을 이유로 기능 문자열의 공용 소유권을 새로 만들지 않는다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | 기존 결정은 유지하며 A-046의 다중 초안 화면 표현과 A-023의 구성 변경 대응을 보완한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1519-detail-alignment.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1519-detail-alignment.md). |
 
 <br>
 
@@ -402,7 +402,7 @@
 | 이유 | 세 단계가 공유하는 버튼 한 곳에서 웹과 같은 안내를 맞추고, 연타로 같은 내용을 거듭 저장하지 않게 한다. 구성 변경으로 대기 표시를 잃으면 그 저장의 토스트만 생략되며 저장 결과에는 영향이 없다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | 임시 저장 성공을 버튼의 체크와 '임시 저장됨'으로 표시하고 다시 편집하면 표시를 거두던 범위만 대체한다. 버튼 저장과 백그라운드 전환 저장의 저장 경로는 유지한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1519-detail-alignment.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1519-detail-alignment.md). |
 
 <br>
 
@@ -421,7 +421,7 @@
 | 이유 | 저장 스키마와 일반 제작 폼을 추가하지 않고 다른 클라이언트에서 시작한 등록의 결과를 보여 준다. 화면 수명이 반복 요청을 중단하고, 기존 탭 선택은 중복 루트 목적지 없이 목록의 상태와 스크롤을 유지한다. |
 | 영향 | 원문에 별도 항목으로 구분하지 않음 |
 | 대체 관계 | A-037의 화면 노출 중 조회 원칙을 검수 제출본에도 적용한다. A-045의 허용 경로에 `/studio`를 추가하며 A-034의 수신자 재검증을 유지한다. |
-| 검증 근거 | [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1520-studio-submissions.md). |
+| 검증 근거 | [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1520-studio-submissions.md). |
 
 <br>
 
@@ -457,7 +457,7 @@
 | 영향 | 추가 ID 목록은 유효한 비대표 장르로 정규화한다. 이전 초안에 대표 장르가 추가 ID로 저장되어 있어도 선택 상태는 보존하고 원래 대표 위치로 복원한다. 이 규칙으로 같은 장르가 선택 경로에 따라 다른 위치나 동작을 갖지 않게 한다. |
 | 범위 | Android 간편 제작의 장르 선택과 칩 순서 |
 | 대체 관계 | A-057의 검색 선택 처리와 칩 배치 결정을 대체한다. 서버 검색, 추가 칩 저장 방식과 이전 직접 입력의 호환 결정은 유지한다. |
-| 근거 | 검증 근거는 [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1543-provided-genre-search.md)을 참조한다. |
+| 근거 | 검증 근거는 [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1543-provided-genre-search.md)을 참조한다. |
 
 <br>
 
@@ -476,7 +476,7 @@
 | 영향 | 캐시에 없는 검색은 기존 결과를 유지하며 실제 요청이 300ms에 도달할 때만 로딩 문구를 표시한다. 250ms 입력 대기는 포함하지 않는다. PC 네트워크에서 측정한 dev 응답보다 여유 있는 값으로 정했으며 모바일 환경의 실측값으로 간주하지 않는다. 타이머를 요청의 자식 작업으로 두어 빠른 응답이나 취소 뒤 로딩 문구가 뒤늦게 나타나지 않게 한다. |
 | 범위 | Android 간편 제작의 장르 조회와 로딩 표시 |
 | 대체 관계 | A-057의 서버 검색 원칙을 유지하면서 이미 받은 결과의 재사용과 로딩 표시 기준을 추가한다. A-058의 선택 토글과 칩 순서는 유지한다. |
-| 근거 | 측정값과 회귀 검증 근거는 [Android 기능 계획](../../../../../../manyak-android/docs/plans/knk-1543-provided-genre-search.md)을 참조한다. |
+| 근거 | 측정값과 회귀 검증 근거는 [Android 기능 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1543-provided-genre-search.md)을 참조한다. |
 
 <br>
 
@@ -512,7 +512,7 @@
 | 영향 | 202 응답을 받으면 폼 JSON을 제거하고 제출 ID만 원자적으로 남긴다. 이 연결 행은 카드에 표시하지 않으며 늦은 저장을 거절하고 복원된 라우트를 서버 제출본으로 연결한다. 초안 ID는 재사용하지 않으며 연결 행은 앱 데이터 삭제까지 보관한다. 입력의 이중 정본이나 백그라운드 재전송 큐는 만들지 않는다. 응답 유실까지 정확히 한 번 접수하려면 서버 멱등 계약이 필요하므로 현재 API에서는 신규 POST를 자동 재전송하지 않는다.<br><br>이미지의 objectKey와 앱 전용 파일 참조를 폼과 함께 보관한다. Photo Picker의 임시 접근 권한이나 cache 경로만으로 저장본을 복원하지 않는다. 파일 이름은 고유하게 만들어 저장하지 않은 이미지 교체가 이전 저장본의 파일을 덮어쓰지 않게 한다. |
 | 범위 | Android 일반 제작 초안과 로컬 이미지 |
 | 대체 관계 | A-046의 간편 제작 저장은 유지하고 일반 제작에 별도 저장 경계를 추가한다. A-055의 저장 안내와 버튼 잠금을 일반 제작에도 적용한다. |
-| 근거 | 검증 근거는 [일반 제작 구현 계획](../../../../../../manyak-android/docs/plans/knk-1521-general-story-create-edit.md)을 참조한다. |
+| 근거 | 검증 근거는 [일반 제작 구현 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1521-general-story-create-edit.md)을 참조한다. |
 
 <br>
 
@@ -530,7 +530,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 영향 | 수정 요청은 폼을 처음 읽었을 때의 변환 결과와 비교하여 기본값이나 파서 표현 차이만으로 원문을 덮어쓰지 않는다. 서버 인물 ID와 폼에 없는 인물 및 대표 이미지 외의 이미지는 보존한다. 표지 DELETE 성공 뒤 PATCH가 실패해도 삭제된 표지의 기준값을 갱신하여 다시 삭제 전 상태로 간주하지 않는다.<br><br>검수 조회는 STARTED 수명에 두고 쓰기와 접수 기록은 ActivityRetained 작업 수명에서 끝낸다. 구성 변경은 쓰기를 다시 시작하지 않으며 세션 세대가 달라진 결과는 반영하지 않는다. 검수 대기 상한은 단조 시계로 계산한다. |
 | 범위 | Android 일반 제작과 기존 스토리 수정 |
-| 근거 | 검증 근거는 [일반 제작 구현 계획](../../../../../../manyak-android/docs/plans/knk-1521-general-story-create-edit.md)을 참조한다. |
+| 근거 | 검증 근거는 [일반 제작 구현 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1521-general-story-create-edit.md)을 참조한다. |
 
 <br>
 
@@ -639,7 +639,7 @@
 | 영향 | 새로 시작한 화면은 라우트에 `resume`이 없어 상세 404를 안내 없이 빈 폼으로 연다. 프로세스 복원을 위해 새 화면도 상세를 조회하므로, 오프라인에서는 일반 제작 화면이 불러오기 실패와 재시도로 열린다. 임시 저장도 오프라인에서는 실패한다. 옮긴 초안의 처음 저장 시각은 옮긴 시각으로 바뀐다. |
 | 범위 | Android 회원 일반 제작의 임시 저장, 이어서 만들기, 제작 탭 초안 카드, 등록과 재제출의 `draftId` |
 | 대체 관계 | [A-061](DECISIONS.md#a-061)에서 `general_story_draft`를 일반 제작 입력의 저장 정본으로 쓰던 범위를 대체한다. 같은 기록의 접수 연결 행, 늦은 저장 거절, 신규 POST를 자동 재전송하지 않는 결정은 유지한다. |
-| 근거 | 검증 근거는 [KNK-1668 구현 계획](../../../../../../manyak-android/docs/plans/knk-1668-general-draft-server.md)을 참조한다. |
+| 근거 | 검증 근거는 [KNK-1668 구현 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1668-general-draft-server.md)을 참조한다. |
 
 <br>
 
@@ -658,7 +658,7 @@
 | 이유 | 세션 ID가 이미 계약이 요구하는 고정 ID라, 웹처럼 단계마다 바뀌는 소유 기록을 서버 초안에 다시 잇는 장치가 필요 없다. 연결 정보를 기존 JSON 열(생성 명령이나 진행)에 끼우면 마이그레이션은 없지만 명령과 진행의 의미가 섞여, 보존 마이그레이션 한 단계로 열을 더하는 쪽을 택했다. 0은 웹의 숨김 비교 `version <= (draftVersion ?? 0)`과 같은 결과를 열 하나로 낸다. 기존 행을 옮기지 않는 이유는 [W-037](../WEB/DECISIONS.md#w-037)과 같아, 한꺼번에 옮기면 회원당 5개 상한이 차고 서버 연동 전 생성 요청을 서버 초안에 연결할 근거가 없다. 일반 제작은 [A-074](DECISIONS.md#a-074)로 옮기지만 간편 제작은 진행 기록이 기기 안 복구에 묶여 같은 이관이 맞지 않다. |
 | 영향 | 새 간편 제작도 진입 때 서버 상세를 한 번 조회하므로 오프라인에서는 키워드 단계가 불러오기 실패와 다시 시도로 열린다. 판정 대기는 채팅방 진입과 같은 늦게 뜨는 스피너로 보인다. 기존 기기 안 간편 제작 초안은 다른 기기에서 이어서 만들 수 없다. 서버 스토리라인 초안 카드는 목록에 단계가 없어 스토리라인 라우트로 열고 복원 뒤 추가 정보 라우트를 쌓는다. 기기 안 기록이 서버 초안 ID를 행 키로 쓰므로, 기록 뒤에 다른 곳에서 저장해 따로 보이는 서버 카드를 열면 이 기기의 기록을 새 ID의 기기 안 초안으로 떼어 낸 뒤 연다. 웹은 기록을 생성 요청 ID로 따로 두어 두 갈래가 서버 초안 연결을 유지하지만, Android의 떼어 낸 갈래는 기기 안에만 저장된다. 완성 실패로 되돌아온 초안은 [A-077](DECISIONS.md#a-077)을 따른다. |
 | 대체 관계 | [A-046](DECISIONS.md#a-046)에서 Room 행을 간편 제작 편집 초안의 저장 정본으로 쓰던 범위 중, 회원 서버 세션의 키워드 초안과 스토리라인 초안 저장을 대체한다. 퍼널 세션 ID를 행 키로 쓰는 구조, 생성 중과 생성 결과 행, 완성 요청 분리는 유지한다. |
-| 근거 | [간편 제작 임시 저장](../4-1-CONTRACT.md#4-1-4-공통-초안-봉투와-버전), [스토리 제작 임시 저장](../../BACKEND/4-2-CONTRACT.md#4-2-23-초안-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](../../../../../../manyak-android/docs/plans/knk-1668-simple-draft-server.md) |
+| 근거 | [간편 제작 임시 저장](../4-1-CONTRACT.md#4-1-4-공통-초안-봉투와-버전), [스토리 제작 임시 저장](../../BACKEND/4-2-CONTRACT.md#4-2-23-초안-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1668-simple-draft-server.md) |
 
 <br>
 
@@ -676,7 +676,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 서버 초안 하나는 카드 많아야 한 장이라 보이는 초안 카드가 5장 미만이면 새 제작의 첫 저장에 서버 자리가 있다. 진입 경로가 FAB 하나라 FAB에서 이미 그린 목록으로 판정하면 퍼널 진입에 목록 조회를 더하지 않아도 된다. 스켈레톤은 카드가 따로 끼어들어 목록이 밀리는 것을 막고 웹과 같은 첫 화면을 보인다. |
 | 영향 | 새 제작 진입 경로가 늘면 그 경로에도 같은 판정을 더해야 한다. 서버 목록을 받기 전이나 받지 못했을 때는 기기 안 카드와 마지막으로 받은 서버 목록만 센다. 첫 조회 동안에는 기기 안 초안 카드도 스켈레톤 뒤에 있다가 함께 보이며, 첫 조회 뒤로는 서버 목록 조회가 실패해도 기기 안 카드를 유지한다. |
-| 근거 | [제작 카드와 다중 완성 진행](../2-2-REQUIREMENTS.md#2-2-2-탐색과-제작-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](../../../../../../manyak-android/docs/plans/knk-1668-simple-draft-server.md) |
+| 근거 | [제작 카드와 다중 완성 진행](../2-2-REQUIREMENTS.md#2-2-2-탐색과-제작-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1668-simple-draft-server.md) |
 
 <br>
 
@@ -694,7 +694,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 실패한 입력을 이어서 만들기로 고쳐 다시 완성할 수 있고, 제출한 명령을 초안에 남겨 같은 입력이면 같은 requestId를 써 중복 생성과 중복 과금이 없다. 되돌린 초안은 서버 초안 연결과 처음 저장 시각을 지켜 카드 순서가 바뀌지 않고, 공통 계약의 상한 계산과도 맞다. 요청 삭제와 초안 쓰기를 한 트랜잭션으로 묶어 입력을 잃거나 카드가 겹치지 않게 한다. |
 | 영향 | 실패 사유(이프 부족 등)를 따로 안내하지 않고 한 문구로 알린다. 복구 조회는 사유를 돌려주지 않아 웹의 사유별 안내와 다르다. 실패가 제작 탭을 보지 않는 동안 정해지면 토스트 없이 초안 카드만 보인다. 서버가 완성 요청을 기록하며 지운 초안은 되돌린 초안을 다시 저장할 때 같은 ID로 새로 만들어져 처음 저장 시각이 저장한 시각으로 바뀐다. |
-| 근거 | [임시 저장](../4-1-CONTRACT.md#4-1-4-공통-초안-봉투와-버전), [제작 카드와 다중 완성 진행](../2-2-REQUIREMENTS.md#2-2-2-탐색과-제작-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](../../../../../../manyak-android/docs/plans/knk-1668-simple-draft-server.md) |
+| 근거 | [임시 저장](../4-1-CONTRACT.md#4-1-4-공통-초안-봉투와-버전), [제작 카드와 다중 완성 진행](../2-2-REQUIREMENTS.md#2-2-2-탐색과-제작-목록), [KNK-1668](https://kimandkang.atlassian.net/browse/KNK-1668), [KNK-1668 간편 제작 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1668-simple-draft-server.md) |
 
 <br>
 
@@ -712,7 +712,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 키워드 화면이 생성을 기다리게 바꾸면 스토리라인 단계가 그리는 로딩과 복구 흐름을 다시 짜야 해, 이미 있는 "이어 갈 스토리라인이 없으면 키워드 라우트로 바꾸기" 경로를 쓴다. 요청 명령에 키워드가 모두 있어 프로세스 복원 경로와 같은 재료로 채울 수 있다. 거절된 키워드를 자동 저장하면 사용자가 누르지 않은 서버 저장이 생기고, 직전 스토리라인을 지우면 다시 얻기 비싼 결과를 잃는다. 422는 서버가 요청을 실패로 기록하고 환불까지 마친 확정 응답이라 조회를 거칠 이유가 없고, 조회를 거치면 사유를 잃는다. |
 | 영향 | 스토리라인 단계 뒤에는 키워드 단계로 돌아가지 않는다는 규칙에 거절만 예외가 생긴다. 고르지 않은 직접 입력 태그는 요청에 없어 돌아오지 않는다. 거절된 키워드는 프로세스 종료에서 복원하지 않는다. 다시 만들기가 거절된 초안은 키워드 단계에서 저장하지 않고 떠나면 직전 스토리라인 카드로 남고, 키워드를 저장하면 그 키워드 초안이 된다. 응답을 받지 못해 복구 조회로 확정한 완성 실패는 [A-077](DECISIONS.md#a-077)대로 한 문구이다. `CreationProgressAccess.completionFailures`가 사유를 싣도록 바뀌었다. |
-| 근거 | [Android 간편 제작 흐름과 보존](AGENTS.md), [스토리 생성 퍼널](../2-2-REQUIREMENTS.md#2-2-4-간편-제작-입력), [KNK-1870](https://kimandkang.atlassian.net/browse/KNK-1870), [KNK-1870 계획](../../../../../../manyak-android/docs/plans/knk-1870-content-rejection.md) |
+| 근거 | [Android 간편 제작 흐름과 보존](AGENTS.md), [스토리 생성 퍼널](../2-2-REQUIREMENTS.md#2-2-4-간편-제작-입력), [KNK-1870](https://kimandkang.atlassian.net/browse/KNK-1870), [KNK-1870 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1870-content-rejection.md) |
 
 <br>
 
@@ -730,7 +730,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 온보딩을 셸 위에 쌓으면 시스템 뒤로가기와 예측형 뒤로가기가 홈을 드러내 우회가 된다. 루트에 두면 뒤로가기는 앱을 떠나고 다시 열면 같은 화면이며, 뒤로가기를 가로채는 별도 처리가 필요 없다. 루트 키만 바꾸면 상세에서 시작한 채팅의 "상세로, 그다음 탭으로" 규칙이 그대로 이어진다. 완료를 서버에 두면 새 API 계약이 필요하고, 기기 안 표시는 앱을 지우거나 다른 기기에서 로그인했을 때 온보딩을 건너뛰는 정도의 손실만 있다. 기록기를 묶음으로 바꾸면 `auth`가 가입 뒤 안내의 종류를 알 필요가 없다. 메모리 완료 표시는 저장 실패 뒤 화면 재생성이 채팅방에 있던 사용자를 온보딩으로 되돌리지 않게 한다. |
 | 영향 | 신규 가입 회원의 첫 회원 화면은 홈이 아니라 온보딩이고, 알림 권한과 초대 코드 안내, 알림이나 웹 링크로 연 화면은 온보딩 위에 뜬다. 완료 저장이 실패하면 다음 실행에서 온보딩이 다시 열린다. 다른 기기나 재설치 뒤의 로그인은 `isNewUser`가 거짓이라 온보딩이 열리지 않는다. 오리지널은 첫 페이지(20편)만 읽는다. |
-| 근거 | [Android 신규 가입 온보딩](2-2-REQUIREMENTS.md), [Android 내비게이션과 화면](../../../../ui/ANDROID/3-2-INTERACTION-FLOWS.md#3-2-1-탭과-화면-복귀), [분석 Spec](../../../../reference/ANALYTICS.md#4-2-20-신규-가입-온보딩-구현knk-1892), [KNK-1892](https://kimandkang.atlassian.net/browse/KNK-1892), [KNK-1892 계획](../../../../../../manyak-android/docs/plans/knk-1892-signup-story-onboarding.md) |
+| 근거 | [Android 신규 가입 온보딩](2-2-REQUIREMENTS.md), [Android 내비게이션과 화면](../../../../ui/ANDROID/3-2-INTERACTION-FLOWS.md#3-2-1-탭과-화면-복귀), [분석 Spec](../../../../reference/ANALYTICS.md#4-2-20-신규-가입-온보딩-구현knk-1892), [KNK-1892](https://kimandkang.atlassian.net/browse/KNK-1892), [KNK-1892 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1892-signup-story-onboarding.md) |
 
 <br>
 
@@ -879,4 +879,4 @@
 | 이유 | 기능 간 직접 의존 없이 목록 조회는 home 한 곳에 남는다. 포트는 조회 조건을 숨기고 온보딩이 실제로 쓰는 결과만 공개해 ChatStarter와 같은 공용 포트 규칙을 따른다. |
 | 영향 | DataStore 파일 이름 `story-onboarding`과 키, 라우트 `StoryOnboardingRoute`, 분석 이벤트는 그대로라 저장된 온보딩 표시와 백스택 복원이 이어진다. 로딩 문구는 다른 기능처럼 onboarding이 자기 문구(`story_onboarding_loading`)로 가진다. |
 | 대체 관계 | [A-083](#a-083)의 "`home`의 `StoryOnboardingStore`" 중 소유 모듈만 onboarding으로 바꾼다. 루트 교체, 완료 판정, 회원 귀속 정리 결정은 유지한다. |
-| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../../manyak-android/docs/plans/story-onboarding-module.md) |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/story-onboarding-module.md) |
