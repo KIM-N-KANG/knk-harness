@@ -161,11 +161,11 @@ Terraform PR 검증과 drift 검사는 자격증명과 권한을 분리한다. �
 | 트리거 | 동작 |
 | --- | --- |
 | PR → `dev` | pnpm install, lint, typecheck, Docker build 검증 |
-| PR, push → `dev`, `main` | Playwright(4 워커 병렬): Pixel 5 전체 E2E, 비주얼 회귀, iPhone 13 스모크. CI가 Chromium, WebKit을 설치하고 Linux 기준 이미지와 비교 |
+| PR, push → `dev`, `main` | Playwright(4 워커 병렬): Pixel 5 전체 E2E, iPhone 13 스모크. 브라우저가 포함된 Playwright 컨테이너에서 실행 |
 | push → `dev` | GHCR `dev`, `<short-sha>` push |
 | push tag `v*` | GHCR release 이미지 push. build arg는 `NEXT_PUBLIC_AMPLITUDE_API_KEY`, `NEXT_PUBLIC_META_PIXEL_ID` |
 
-비주얼 기준 이미지는 Linux에서 렌더링한 결과만 사용한다. UI를 의도적으로 바꾸면 `manyak-web`에서 `pnpm test:e2e:visual:update`로 Playwright Docker 이미지 기준을 갱신하고 diff를 검토한다. macOS 로컬 실행은 폰트, 안티앨리어싱 차이 때문에 스냅샷 비교를 건너뛴다.
+화면 표현은 CI에서 비교하지 않는다. UI를 바꾼 PR은 만들기 전에 UI 검사를 하고 결과를 PR에 남긴다. ([5-1 검증 수단](../platform/CLIENT/WEB/5-VERIFICATION.md#5-1-검증-수단))
 
 운영 Terraform에는 `manyak-web` 컨테이너를 호스팅에 배포하는 리소스가 없다. 웹은 Vercel에서 서빙하며 release PR은 GHCR release 이미지 발행과 외부 호스팅 반영을 전제로 한다. Vercel 프로젝트 `manyak`의 Function Region은 백엔드와 같은 서울 `icn1`이다(프로젝트 설정 Settings → Functions, 레포에는 설정이 없음). 브라우저의 모든 API 호출이 거치는 BFF 프록시(`/api/[...path]`)와 서버 렌더가 이 리전의 함수에서 백엔드를 부르므로, 기본값 `iad1`(미국 동부)이면 호출마다 왕복 약 700ms가 더 들었다(2026-10-19 전환, 프록시 호출 800ms → 100ms대). 리전 설정은 이후 배포부터 적용되므로 바꾸면 운영과 `dev` 브랜치 도메인(`dev.manyak.app`) 배포를 다시 만들어야 한다.
 
@@ -345,7 +345,7 @@ flowchart TD
 다음 조건을 모두 만족하면 배포가 완료된다.
 
 - 변경 대상 저장소의 필수 테스트와 Docker build 검증이 통과한다.
-- 웹은 Pixel 5 전체 E2E, 비주얼 회귀와 iPhone 13 스모크가 통과한다. UI 변경이면 Linux 기준 이미지 diff를 함께 검토한다.
+- 웹은 Pixel 5 전체 E2E와 iPhone 13 스모크가 통과한다. UI 변경이면 PR에 남긴 UI 검사 결과를 함께 검토한다.
 - server, ai, notification 배포는 ECR에 `<short-sha>` 태그가 있고, 배포 출력의 `deployed <image>`가 그 이미지이며, 배포 뒤 `:latest`가 같은 SHA로 옮겨졌다.
 - server는 외부 `https://api.manyak.app/actuator/health`가 200과 `status=UP`을 반환한다.
 - 기능 설정을 켜거나 끄는 배포는 실행 중인 컨테이너의 해당 환경 변수가 의도한 값이다. 헬스 성공만으로 판정하지 않는다.
