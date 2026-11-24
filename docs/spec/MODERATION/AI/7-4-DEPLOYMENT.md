@@ -12,7 +12,7 @@
 | 포함 | `src/`, `prompt/`, 운영 의존성 |
 | 제외 | 테스트, 개발 의존성, `.env` |
 | 개발 배포 | `dev` push → GHCR `dev` → dev 환경 자동 교체 |
-| 운영 배포 | `main` push → ECR → 운영 앱 호스트의 ai 컨테이너(SSM 문서 `manyak-prod-host-deploy-ai`)<br>배포 시점의 `main` HEAD 이미지 사용 |
+| 운영 배포 | `main` push → GHCR → 배포 작업이 `:prod` 승격 → 운영 호스트 updater가 ai 컨테이너 교체<br>배포 시점의 `main` HEAD 이미지 사용 |
 | 자동 검사 | 전체 테스트와 커버리지 90% 이상<br>컨테이너 health와 Langfuse 초기화 검사 |
 
 <br>
@@ -59,7 +59,7 @@
 
 | 상황 | 처리 |
 |---|---|
-| 운영 배포나 health 실패 | 새 컨테이너만 지워지고 이전 컨테이너가 계속 서비스<br>되돌리기는 SSM 문서 `image=rollback`, 완료와 health는 별도 확인 |
+| 운영 배포나 health 실패 | 새 컨테이너만 지워지고 이전 컨테이너가 계속 서비스<br>되돌리기는 `Prod Rollback (GHCR :prod)` 워크플로나 호스트 `deploy.sh ai rollback`, 완료와 health는 별도 확인 |
 | 코드나 프롬프트 문제 | 이전 정상 이미지와 호환 설정으로 복원 |
 | 모델, 키 또는 허용 호스트 문제 | 해당 설정 복원 후 재배포<br>이미지 복원만으로 외부 설정은 복원되지 않음 |
 | 컨테이너 교체 중 요청 종료 | 새 컨테이너로 진행 중 검수를 이전하거나 이어받지 않음 |

@@ -38,11 +38,10 @@
 | 단계 | 개발 | 운영 |
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
-| 이미지 게시 | GHCR `manyak-ai`, 커밋 SHA 앞 7자리 태그 | ECR `manyak-ai`, 커밋 SHA 앞 7자리 태그 |
+| 이미지 게시 | GHCR `manyak-ai`, 커밋 SHA 앞 7자리 태그 | GHCR `manyak-ai`, 커밋 SHA 앞 7자리 태그 |
 | 배포 대상 선택 | 실행 커밋이 최신 `dev`가 아니면 배포 생략 | 배포 작업 시점의 `main` HEAD 선택<br>그 이미지가 아직 없으면 배포 생략 |
-| 환경 태그 | 배포 작업에서 `dev` 갱신 | 배포가 성공한 뒤 `latest` 갱신 |
-| AWS 인증과 리전 | 해당 없음 | GitHub OIDC, `ap-northeast-2` |
-| 적용 | dev 환경이 `dev` 이미지를 자동으로 받아 교체 | SSM 문서 `manyak-prod-host-deploy-ai`로 앱 호스트의 ai 컨테이너 교체 |
+| 환경 태그 | 배포 작업에서 `dev` 갱신 | 배포 작업이 main HEAD 이미지로 `:prod` 갱신 |
+| 적용 | dev 환경이 `dev` 이미지를 자동으로 받아 교체 | 운영 호스트 updater가 1분 안에 `:prod`를 받아 ai 컨테이너 교체 |
 | 상태 검사 | `dev-api.manyak.app` 헬스 | 새 컨테이너 헬스 통과 뒤 내부 프록시 전환<br>배포 출력의 `ai: deployed <image>` 확인 |
 
 <br>
@@ -51,9 +50,9 @@
 
 | 구성 | 배포 영향 |
 |---|---|
-| 앱 호스트의 ai 컨테이너. 백엔드는 내부 프록시 주소 `http://ai.internal`로 호출 | ai 컨테이너만 교체, 백엔드 재시작 없음<br>프록시 전환 뒤 옛 컨테이너의 진행 중 요청을 240초 드레인 |
+| 운영 호스트의 ai 컨테이너. 백엔드는 내부 프록시 주소 `http://ai.internal`로 호출 | ai 컨테이너만 교체, 백엔드 재시작 없음<br>프록시 전환 뒤 옛 컨테이너의 진행 중 요청을 240초 드레인 |
 
-앱 호스트 배포 방식과 되돌리기는 [배포 5-1](../../../operations/DEPLOYMENT.md#5-1-server-ai-notification-이미지)을 따른다.
+운영 배포 방식과 되돌리기는 [배포 5-1](../../../operations/DEPLOYMENT.md#5-1-server-ai-notification-이미지)을 따른다.
 
 <br>
 
@@ -64,8 +63,8 @@
 | 이미지 구성 | [Dockerfile](../../../../../manyak-ai/Dockerfile), [.dockerignore](../../../../../manyak-ai/.dockerignore) |
 | 빌드, 게시, 배포, 자동 복구 | [docker-image.yml](../../../../../manyak-ai/.github/workflows/docker-image.yml) |
 | 설정 기본값 | [config.py](../../../../../manyak-ai/src/core/config.py) |
-| 운영 모델 Parameter 선언 | [ai-model-config.tf](../../../../../manyak-terraform/terraform/envs/prod/ai-model-config.tf) |
-| 운영 ai 컨테이너 설정과 백엔드 연결 | [app-host.tf](../../../../../manyak-terraform/terraform/envs/prod/app-host.tf) |
+| 운영 모델 설정 | [ai.env](../../../../../manyak-terraform/oci/prod/services/ai.env) |
+| 운영 ai 컨테이너 설정과 백엔드 연결 | [ai.conf](../../../../../manyak-terraform/oci/prod/services/ai.conf), [server.env](../../../../../manyak-terraform/oci/prod/services/server.env) |
 | 로컬 통합 실행 | [docker-compose.yml](../../../../../manyak-infra/docker-compose.yml)<br>`STORYLINES_MODEL`의 기본값 `deepseek-v4-flash`를 현재 등록된 모델명으로 변경 |
 
 <br>
@@ -98,9 +97,9 @@
 
 | 이름 | 의미, 타입 | 필수 조건과 코드 기본값 | 로컬 인프라의 주입 |
 |---|---|---|---|
-| `DEEPSEEK_API_KEY` | 키, 문자열 | 설정 필드에 기본값 없음<br>DeepSeek 선택 시 유효한 키 필요 | 운영 Secrets Manager 참조 |
-| `OPENAI_API_KEY` | 텍스트, 이미지 공용 키, 문자열 | 기본 빈 값<br>Luna, Sol 본문 호출과 이미지 생성에 필수 | 운영 Secrets Manager 참조 |
-| `GEMINI_API_KEY` | Gemini 공급자 키, 문자열 | 기본 빈 값<br>`AURORA` 본문 라우팅에 필수 | Secrets Manager 참조 있음 |
+| `DEEPSEEK_API_KEY` | 키, 문자열 | 설정 필드에 기본값 없음<br>DeepSeek 선택 시 유효한 키 필요 | 운영 호스트 `secrets/ai.env` |
+| `OPENAI_API_KEY` | 텍스트, 이미지 공용 키, 문자열 | 기본 빈 값<br>Luna, Sol 본문 호출과 이미지 생성에 필수 | 운영 호스트 `secrets/ai.env` |
+| `GEMINI_API_KEY` | Gemini 공급자 키, 문자열 | 기본 빈 값<br>`AURORA` 본문 라우팅에 필수 | 운영 호스트 `secrets/ai.env` |
 | `ANTHROPIC_API_KEY` | 다른 태스크, 모델의 공급자 키, 문자열 | 기본 빈 값, 선택 모델에 따라 필요 | 참조 없음 |
 | `DEEPSEEK_API_URL` | 문자열 | 기본 `https://api.deepseek.com` | ai 컨테이너에 별도 주입 없음 |
 | `OPENAI_API_URL`, `ANTHROPIC_API_URL`, `GEMINI_API_URL` | 선택 문자열 | 기본 `None`, SDK 기본 주소 사용 | ai 컨테이너에 별도 주입 없음 |
@@ -111,13 +110,13 @@
 
 | 이름 | 의미, 타입 | 코드 기본값 | 로컬 인프라의 출처, 조건 |
 |---|---|---|---|
-| `CHAT_CHOICE_MODEL` | 선택지 모델, 문자열 | `deepseek-flash` | 운영 Terraform에 별도 주입 없음 |
+| `CHAT_CHOICE_MODEL` | 선택지 모델, 문자열 | `deepseek-flash` | 운영 `services/ai.env`에 없음 |
 | `IMAGE_MODEL` | 공통 이미지 모델, 문자열 | `gpt-image-2.5-flare` | 별도 주입 없음, 이미지 등록부에 있어야 함 |
 | `IMAGE_QUALITY` | 문자열 열거값 | `low` | `low`, `medium`, `high` |
 | `IMAGE_SIZE` | 크기 문자열 | `1024x768` | 양의 정수 `가로x세로` 형식 |
 | `IMAGE_TIMEOUT` | 이미지 호출 제한 시간, 초, 실수 | `60.0` | 0보다 큰 유한값<br>전체 이미지 작업은 최대 30초 |
 | `IMAGE_PARENT_ALLOWED_HOSTS` | 호스트 목록, JSON 배열 | `cdn.manyak.app`, `dev-cdn.manyak.app` | 별도 주입 없음<br>기본 이미지 다운로드 대상 |
-| `IMAGE_UPLOAD_ALLOWED_HOSTS` | 호스트 목록, JSON 배열 | `[]` | 운영 Terraform에서 이미지 버킷의 리전별 S3 호스트로 주입<br>비어 있으면 업로드 거부 |
+| `IMAGE_UPLOAD_ALLOWED_HOSTS` | 호스트 목록, JSON 배열 | `[]` | 운영 호스트 `secrets/ai.env`의 R2 계정 주소<br>비어 있으면 업로드 거부 |
 
 <br>
 
@@ -133,19 +132,19 @@
 
 **3. 관측 설정**
 
-운영 추적 환경 변수는 앱 호스트의 ai 설정에서 구성한다. ([app-host.tf](../../../../../manyak-terraform/terraform/envs/prod/app-host.tf))
+운영 추적 환경 변수는 운영 `services/ai.env`에서 구성한다. ([ai.env](../../../../../manyak-terraform/oci/prod/services/ai.env))
 
 | 이름 | 타입, 코드 기본값 | 인프라의 출처와 조건 |
 |---|---|---|
 | `APP_VERSION` | 문자열, `0.4.4` | 별도 주입 없음<br>커밋 SHA 자동 주입 아님 |
-| `SENTRY_DSN` | 문자열, 빈 값 | 운영 Secrets Manager의 AI DSN 참조 |
-| `SENTRY_ENVIRONMENT` | 문자열, `local` | 운영 앱 호스트 설정과 dev 환경의 환경명 |
+| `SENTRY_DSN` | 문자열, 빈 값 | 운영 호스트 `secrets/ai.env`의 AI DSN |
+| `SENTRY_ENVIRONMENT` | 문자열, `local` | 운영 `services/ai.env`와 dev 환경의 환경명 |
 | `SENTRY_TRACES_SAMPLE_RATE` | 실수, `0.0` | 별도 주입 없음 |
-| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | 문자열, 빈 값 | 운영 Secrets Manager 참조 |
-| `LANGFUSE_HOST` | 문자열, `https://cloud.langfuse.com` | 운영 Secrets Manager 참조<br>활성화에는 JP 주소 필요 |
+| `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` | 문자열, 빈 값 | 운영 호스트 `secrets/ai.env` |
+| `LANGFUSE_HOST` | 문자열, `https://cloud.langfuse.com` | 운영 호스트 `secrets/ai.env`<br>활성화에는 JP 주소 필요 |
 | `LANGFUSE_SAMPLE_RATE` | 문자열, `1.0` | 별도 주입 없음<br>초기화 시 0~1 수치로 검사 |
-| `MANYAK_TRACING_ENABLED` | 불리언, `false` | 운영 Terraform의 `tracing_enabled=true`일 때 ai 컨테이너에 `true` 주입<br>비활성 시 주입 없음 |
-| `MANYAK_OTLP_TRACES_ENDPOINT` | 문자열, 빈 값 | 같은 조건에서 관측 서버의 `/v1/traces` 주소 주입<br>인증 헤더는 `OTEL_EXPORTER_OTLP_HEADERS` 시크릿 참조<br>비활성 시 주입 없음 |
+| `MANYAK_TRACING_ENABLED` | 불리언, `false` | 운영 `services/ai.env`에 `true` |
+| `MANYAK_OTLP_TRACES_ENDPOINT` | 문자열, 빈 값 | 운영 `services/ai.env`에 같은 호스트의 otel-agent `http://otel-agent:4318/v1/traces`<br>관측 서버 인증은 otel-agent가 붙임 |
 
 <br>
 
@@ -172,10 +171,10 @@ API 변경 시 기존 백엔드와의 호환성을 확인하고 배포 순서를
 
 | 순서 | 작업 | 확인 항목 |
 |---|---|---|
-| 1 | 배포 대상 확인 | 환경, 대상 커밋, 이미지, 앱 호스트의 ai 컨테이너 설정 |
+| 1 | 배포 대상 확인 | 환경, 대상 커밋, 이미지, 운영 호스트의 ai 컨테이너 설정 |
 | 2 | 설정, 호환성 확인 | OpenAI, Gemini 키의 주입 참조, 라우팅 대상 모델 등록, 이미지 허용 호스트<br>백엔드의 회원 UUID와 현재 등급 전달, 응답 소비 방식 확인 |
 | 3 | 테스트와 이미지 검사 | CI 결과, 변경 경로의 통합 검증과 미실행 범위 |
-| 4 | 배포 실행 | 해당 환경 워크플로와 SSM 명령 확인<br>운영은 실행 커밋과 실제 선택된 main HEAD를 구분 |
+| 4 | 배포 실행 | 해당 환경 워크플로의 `:prod` 승격과 updater 교체 확인<br>운영은 실행 커밋과 실제 선택된 main HEAD를 구분 |
 | 5 | 적용 결과 확인 | 배포 출력의 이미지, AI health와 생성 결과 |
 | 6 | 기록 | 배포 시각, 대상 SHA, 이미지, 설정 변경 범위, 검수, 복구 결과<br>비밀값 제외 |
 
@@ -194,13 +193,13 @@ API 변경 시 기존 백엔드와의 호환성을 확인하고 배포 순서를
 
 **3. 복구**
 
-새 컨테이너가 헬스를 통과하지 못하면 배포가 실패하고 옛 ai가 계속 서비스한다. `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원 단계는 없다.
+새 컨테이너가 헬스를 통과하지 못하면 배포가 실패하고 옛 ai가 계속 서비스한다. 그 다이제스트는 호스트가 실패로 기록해 다시 시도하지 않고, 배포 잡의 스모크가 실패하면 `:prod`를 직전 다이제스트로 되돌린다.
 
 | 상황 | 복구 방식 | 한계, 확인 사항 |
 |---|---|---|
-| 운영 배포 실패 | 새 컨테이너만 지워지고 옛 컨테이너 유지 | 배포 출력과 앱 호스트 로그로 원인 확인 |
-| 배포는 정상이나 품질 악화 | SSM 문서 `image=rollback` 또는 검증한 이전 이미지(`image=<ECR 이미지>:<sha7>`)와 설정 조합으로 복원 후 재검수 | health 기반 판정은 품질 악화를 탐지하지 않음 |
-| 모델, 키, 허용 호스트 설정 오류 | 잘못된 주입값을 이전 호환 설정으로 복구하고 `image=current`로 다시 배포 | 이미지 되돌리기만으로 Parameter Store, Secrets Manager 값이 복원되지 않음 |
+| 운영 배포 실패 | 새 컨테이너만 지워지고 옛 컨테이너 유지 | updater 기록(`journalctl -u manyak-updater`)과 관측 서버 로그로 원인 확인 |
+| 배포는 정상이나 품질 악화 | `Prod Rollback (GHCR :prod)` 워크플로나 호스트 `deploy.sh ai rollback`(직전 이미지)과 설정 조합으로 복원 후 재검수 | health 기반 판정은 품질 악화를 탐지하지 않음 |
+| 모델, 키, 허용 호스트 설정 오류 | 잘못된 주입값을 이전 호환 설정으로 복구하고 `deploy.sh ai current`로 다시 배포 | 이미지 되돌리기만으로 `ai.env`와 비밀값 파일이 복원되지 않음 |
 
 <br>
 
@@ -221,15 +220,15 @@ API 변경 시 기존 백엔드와의 호환성을 확인하고 배포 순서를
 
 ### 7-4-8 배포 실패 진단
 
-워크플로 실행 ID, 실제 배포 대상 SHA, SSM 명령 결과와 배포 출력의 이미지로 실패 대상을 좁힌다. 운영에서는 오래된 실행이 최신 main HEAD를 배포할 수 있으므로 실행 화면의 커밋만으로 이미지를 판단하지 않는다.
+워크플로 실행 ID, 실제 배포 대상 SHA, updater 기록과 호스트의 `/data/state/ai.image`, `ai.failed`로 실패 대상을 좁힌다. 운영에서는 오래된 실행이 최신 main HEAD를 배포할 수 있으므로 실행 화면의 커밋만으로 이미지를 판단하지 않는다.
 
 | 실패 상황 | 확인할 자료와 위치 | 원인별 조치 |
 |---|---|---|
 | 테스트, 빌드, 게시 실패 | GitHub Actions의 실패 단계<br>Dockerfile, 의존성 선언과 레지스트리 인증 | 코드, 빌드, 인증 문제를 구분하고 해당 원본 수정 |
 | 배포가 생략됨 | 최신 SHA 게이트와 main HEAD 이미지 조회 결과 | 의도된 생략인지, 이미지 게시가 아직 끝나지 않았는지 구분<br>미게시와 조회 인증, 네트워크 실패를 혼동하지 않음 |
-| 운영 배포 명령 실패 | SSM 명령 상태와 출력, 워크플로 IAM 권한 | 문서 이름, 대상 태그와 배포 권한 대조<br>대상이나 권한 오류 수정 후 재배포 |
-| 컨테이너 시작 실패 | 배포 출력, CloudWatch `/manyak/prod/app-host`의 ai 시작 로그 | 이미지 pull, 키, Parameter 주입 권한, 모델 설정과 템플릿 로드 실패 구분 |
-| health 실패 | 해당 배포의 `ai` 상태와 시작 로그 | 백엔드 health만으로 AI 정상 판단 안 함<br>운영 로그는 CloudWatch `/manyak/prod/app-host` |
+| 운영 배포 실패 | 워크플로의 `:prod` 승격 단계, updater 기록, `/data/state/ai.failed` | GHCR 패키지 권한과 다이제스트 대조<br>원인 수정 후 새 이미지로 재배포(실패 기록된 다이제스트는 다시 시도하지 않음) |
+| 컨테이너 시작 실패 | updater 기록, 관측 서버 로그(`logs.manyak.app`)와 호스트 `docker logs`의 ai 시작 로그 | 이미지 pull, 키, 모델 설정과 템플릿 로드 실패 구분 |
+| health 실패 | 해당 배포의 `ai` 상태와 시작 로그 | 백엔드 health만으로 AI 정상 판단 안 함<br>운영 로그는 관측 서버 OpenSearch |
 | health 정상, 본문 생성 실패 | `request_id`의 Sentry, Langfuse, 해당 요청의 라우팅 결과와 공급자 응답 | 실패한 모델의 추론 강도와 공급자 키 주입 확인<br>키의 형식 검사 통과와 공급자 인증 성공 구분 |
 | 이미지만 기본 이미지로 유지 | `child_image`, 다운로드, 업로드 기록 | 슬롯, 기본 이미지 대상, 허용 호스트, 업로드 주소와 마감 확인 |
 | 관측 기록 없음 | 관측 환경값, 키 주입 참조, 초기화 로그, 표본 비율 | 생성 실패와 관측 비활성, 전송 실패 구분 |
