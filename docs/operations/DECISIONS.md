@@ -43,6 +43,8 @@ flowchart LR
     end
 ```
 
+2026-11-21 운영 컴퓨트를 ECS에서 EC2 앱 호스트 한 대로 옮겼고(DPL-D09), 2026-11-24 OCI 오사카 VM 한 대로 다시 옮기며 AWS 자원을 모두 지웠다(DPL-D10). 위 그림과 DPL-D01 ~ D06, DEP 기록의 AWS 구성은 모두 당시 기록이며 현재 운영 절차가 아니다.
+
 <a id="전환-단계-기록"></a>
 
 **전환 단계 기록**
@@ -173,6 +175,7 @@ DPL 기록은 DEP 결정을 전환 단계별로 묶은 당시 구현 방법이�
 | 영향 | 설정 켜기와 Terraform 적용이 릴리스 기록에 남는다. 요약이 꺼진 상태는 CHAT 지표와 알림으로도 감지한다. |
 | 근거 | [KNK-1955](https://kimandkang.atlassian.net/browse/KNK-1955), [KNK-1958](https://kimandkang.atlassian.net/browse/KNK-1958), [KNK-1961](https://kimandkang.atlassian.net/browse/KNK-1961), [Terraform PR #119](https://github.com/KIM-N-KANG/manyak-terraform/pull/119). |
 | 연결 결정 | CHAT 결정 26. |
+| 보완 | 2026-11-24부터 설정 대조는 실행 중 컨테이너의 환경(`docker inspect`)과 호스트 `services/<서비스>.env`로 한다(DPL-D10). |
 
 
 <br>
@@ -191,6 +194,37 @@ DPL 기록은 DEP 결정을 전환 단계별로 묶은 당시 구현 방법이�
 | 대안 | 긴급 수정도 늘 `dev`를 거치게 하면 대기 중인 미완성 변경이 함께 운영에 나간다. `dev`에서 해당 변경만 되돌려 릴리스하는 방법은 되돌림과 재적용 커밋이 늘고 실수 여지가 크다. v0.5.3처럼 `dev`에 먼저 넣고 `main` 기준 릴리스 브랜치로 cherry-pick하는 방법은 수정이 `dev`의 다른 변경에 기대면 옮길 때 충돌하고, 브랜치 이름만으로 일반 릴리스와 구분되지 않는다. |
 | 영향 | 브랜치 생성 스킬에 `hotfix` 종류와 `main` 기준 분기를 둔다. `dev` 반영을 빠뜨리면 다음 릴리스에서 수정이 사라지므로 `main` 병합 직후 `dev` PR을 만든다. |
 | 근거 | 2026-11-21 작업 대화의 긴급 수정 규칙 요청. ([KNK-2122](https://kimandkang.atlassian.net/browse/KNK-2122)) |
+<br>
+
+<a id="dpl-d09"></a>
+<a id="dpl-d09-ec2-앱-호스트"></a>
+
+**DPL-D09. EC2 앱 호스트**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-21 |
+| 상태 | 대체됨(DPL-D10) |
+| 배경 | 운영 ECS(서비스별 Fargate 태스크, ALB)가 사용량에 비해 비쌌다. |
+| 채택 | ECS를 EC2 앱 호스트 한 대(t4g.medium)로 바꿨다. server, ai, notification 컨테이너를 kamal-proxy 뒤에서 서비스마다 따로 무중단 배포하고, 배포는 SSM 문서와 호스트 `deploy.sh`, 설정은 `app_host_defs`가 정본이었다. DB는 RDS, 큐는 SQS 그대로였다. |
+| 영향 | 서비스별 배포, 내부 프록시(`ai.internal`, `server.internal`), 공개 `/internal` 차단, 240초 드레인은 DPL-D10에도 그대로 이어졌다. |
+| 근거 | [KNK-2106](https://kimandkang.atlassian.net/browse/KNK-2106) |
+<br>
+
+<a id="dpl-d10"></a>
+<a id="dpl-d10-oci-오사카-단일-vm-이전"></a>
+
+**DPL-D10. OCI 오사카 단일 VM 이전**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-24 |
+| 상태 | 채택 |
+| 배경 | AWS 계정(소마 리스)이 12월 초 회수된다. 유지가 목표라 월 비용을 무료 한도 안으로 줄여야 했다. OCI 무료 홈 리전 목록에 서울이 없어 오사카로 정했다(한국에서 TCP 왕복 약 35ms 증가). |
+| 채택 | OCI 오사카 VM 한 대(Arm 2 OCPU, 12 GB, 무료 한도)에 server, ai, notification과 PostgreSQL, Redis, Kafka 컨테이너를 모두 둔다. 이미지는 GHCR, CI는 `:prod` 태그만 옮기고 호스트 updater가 1분마다 따라가 교체한다(CI는 호스트에 들어가지 않음). 비밀 아닌 설정은 manyak-terraform `oci/prod/services/*.env`, 비밀값은 호스트 파일. 큐는 SQS 대신 Kafka, 이미지 저장은 S3와 CloudFront 대신 Cloudflare R2와 `cdn.manyak.app`, DB 백업은 매일 `pg_dump`를 R2로(7일)와 OCI 볼륨 백업. 관측과 검색은 마냑 tailnet으로 홈서버 관측 서버에 보낸다. Terraform state는 R2, OCI 자원도 terraform `envs/prod`로 관리한다. 전환은 05:02 ~ 05:09 KST(쓰기 정지 약 7분)였고 같은 날 AWS 자원을 모두 지웠다. |
+| 대안 | 다른 클라우드의 유료 VM은 월 수만 원이 들어 목표와 맞지 않았다. OCI 관리형 PostgreSQL은 유료라 컨테이너로 두었다. OCI 도쿄는 무료 자원이 홈 리전에만 있어 쓰지 않았다. `api.manyak.app`을 Cloudflare 프록시 뒤에 두는 안은 KT 사용자 지연이 오히려 늘어 채택하지 않았다(2026-11-24 실측). |
+| 영향 | 호스트 한 대에 DB까지 있어 호스트 장애가 곧 서비스 장애이고 DB 복구는 덤프와 볼륨 백업에 기댄다. 한국에서 요청당 지연이 늘었고 SK브로드밴드 회선은 오사카 경로가 해외로 돌아 더 크다. DLQ 경보와 R2 접두어별 권한은 없다. |
+| 근거 | [KNK-2126](https://kimandkang.atlassian.net/browse/KNK-2126), [KNK-2135](https://kimandkang.atlassian.net/browse/KNK-2135), [KNK-2139](https://kimandkang.atlassian.net/browse/KNK-2139) |
 <br>
 
 <a id="dep-001"></a>
