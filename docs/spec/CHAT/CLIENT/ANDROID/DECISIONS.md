@@ -86,7 +86,7 @@
 | 이유 | 링크를 받는 쪽은 앱이 아니라 웹이라 앱은 전달만 맡으면 되고, 시스템 공유 시트가 클립보드보다 한 번의 탭으로 목적지까지 닿는다. 공유 SDK 를 싣지 않는 초대의 결정과 같은 이유이다. |
 | 영향 | 열람 화면은 여전히 웹 소유이다. 디버그 빌드는 API 가 dev 이고 웹 origin 기본값이 운영이라 발급 링크를 운영 웹이 찾지 못하며, dev 웹은 SSO 뒤라 공개 origin 이 없어 수용한다. |
 | 대체 관계 | 2026-08-29의 "채팅 공유 앱 비적용"(Android 계획 문서 결정, ADR 미기재)을 대체한다. [A-026](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-026)의 공유 시트 사용을 채팅 공유로 확장한다. |
-| 근거 | [KNK-1320](https://kimandkang.atlassian.net/browse/KNK-1320), [Android 계획](../../../../../../manyak-android/docs/plans/chat-room.md) |
+| 근거 | [KNK-1320](https://kimandkang.atlassian.net/browse/KNK-1320), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/chat-room.md) |
 
 <br>
 
@@ -104,7 +104,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 별도 창은 좌표계가 달라 창 위치를 다시 맞춰야 하고, 같은 컴포지션이면 측정한 좌표를 그대로 쓴다. 뒤 화면 조작은 `pointerInput`, 보조기술은 `clearAndSetSemantics`로 창과 같은 모달성을 얻는다. 투어가 뜬 채 뒤로가기로 방을 나가면 이미 열람 기록이 남아 다시 볼 수 없으므로, 앱 모달의 관례대로 투어만 닫는다. 이탈 지점을 보는 지표라 건너뛰기로 센다. 스텝을 ViewModel에 두는 것은 회전 뒤 첫 스텝으로 되돌아가거나 도달 이벤트가 중복되지 않게 하려는 것이다. |
 | 영향 | 건너뛰기 이벤트에 버튼 클릭과 뒤로가기가 섞인다. 프로세스가 재생성되면 투어 상태가 사라지지만 열람 기록이 이미 남아 다시 열리지 않는다(웹 새로고침과 같음). |
-| 근거 | [KNK-1431](https://kimandkang.atlassian.net/browse/KNK-1431), [Android 계획](../../../../../../manyak-android/docs/plans/chat-tour.md) |
+| 근거 | [KNK-1431](https://kimandkang.atlassian.net/browse/KNK-1431), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/chat-tour.md) |
 
 <br>
 
@@ -123,7 +123,7 @@
 | 이유 | 계정에 속하지 않는 안내를 로그아웃으로 반복시키지 않으며 별도 저장소나 마이그레이션 없이 기존 기기 설정 소유권을 따른다. DataStore의 원자적 저장 결과가 있어야 판정하므로 저장 실패를 성공으로 취급하지 않는다. 뒤로가기로 방이나 시트까지 닫으면 사용자가 안내받은 스위치를 찾기 위해 시트를 다시 열어야 한다. 공통 투어 딤 그리기는 재사용하되 서로 다른 창의 좌표와 포커스 처리는 분리한다. |
 | 영향 | 예약 중 다음 전송이 시작되면 응답 종료 뒤 다시 기다린다. 회전 뒤 좌표와 장식 애니메이션은 새로 구성한다. 기기 기록은 남아 프로세스 종료 뒤 같은 안내가 되살아나지 않는다. |
 | 후속 관계 | [A-048](DECISIONS.md#a-048)의 첫 진입 투어 결정은 유지한다. 설정 시트 위의 실시간 이미지 안내에만 별도 Popup을 적용한다. |
-| 근거 | [KNK-1517](https://kimandkang.atlassian.net/browse/KNK-1517), [Android 작업 기록](../../../../../../manyak-android/docs/plans/realtime-image-nudge.md) |
+| 근거 | [KNK-1517](https://kimandkang.atlassian.net/browse/KNK-1517), [Android 작업 기록](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/realtime-image-nudge.md) |
 
 <br>
 
@@ -177,7 +177,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 결과마다 확정 목록, 전송 잠금, 입력 되돌리기, 선택지 생성이 함께 바뀌어 화면 상태를 가진 ViewModel 밖으로 빼면 같은 정본을 여러 곳이 고친다. 409의 두 코드는 어느 쪽이든 입력을 되돌리고 상세를 다시 읽으며, 생성 중이면 상세에 그 생성이 있으므로 코드를 읽지 않아도 같은 결과가 나온다. 웹도 같은 판정을 쓴다. 스트리밍 응답 본문을 읽지 않는 기존 원칙도 지킨다. 읽던 연결의 실패를 네트워크 실패로 올리면 서버가 계속하는 생성을 실패로 안내하게 된다. 백그라운드에서는 기기가 프로세스를 얼리거나 연결을 끊어 재연결 시도가 헛돌고, 그 실패 안내가 돌아온 화면에 뜨며 저장된 턴은 방을 다시 열어야 보였다. 포그라운드 서비스로 연결을 붙잡는 것은 응답 하나에 알림을 띄워야 해 과하다. |
 | 영향 | 409에 새 코드가 생겨도 상세로 판단하므로 따로 다루려면 그때 본문을 읽어야 한다. 스트림을 열기 전의 네트워크 실패도 상세에 생성 중인 턴이 있으면 이어받는데, 그 생성이 방금 보낸 요청이면 되돌린 입력이 생성 중인 입력과 함께 보인다. 잠깐 다른 앱을 다녀와도 받던 응답을 처음부터 다시 받는다. `ChatRoomViewModel`이 detekt `LargeClass` 기준을 넘어 억제한다. |
-| 근거 | [생성 이어받기](../2-2-REQUIREMENTS.md#2-2-3-생성-실패와-복구), [채팅 재연결 계약](../../BACKEND/4-2-CONTRACT.md#4-2-13-생성-스트림-재연결), [KNK-1692](https://kimandkang.atlassian.net/browse/KNK-1692), [KNK-1692 계획](../../../../../../manyak-android/docs/plans/knk-1692-resume-chat-generation.md) |
+| 근거 | [생성 이어받기](../2-2-REQUIREMENTS.md#2-2-3-생성-실패와-복구), [채팅 재연결 계약](../../BACKEND/4-2-CONTRACT.md#4-2-13-생성-스트림-재연결), [KNK-1692](https://kimandkang.atlassian.net/browse/KNK-1692), [KNK-1692 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1692-resume-chat-generation.md) |
 
 <br>
 

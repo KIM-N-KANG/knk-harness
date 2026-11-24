@@ -32,7 +32,7 @@
 | 이유 | Android 이프 충전의 탭은 무료 충전과 내역 둘이라 Boolean 하나로 충분하고, 라우트가 `my`의 탭 열거형을 참조하지 않아 기능 모듈 직접 참조 금지 규칙을 지킨다. 탭은 여전히 목적지가 아니라 화면 상태라 처음 탭만 라우트로 받고 이후 선택은 구성 변경에서만 유지한다. 모르는 값을 무료 탭으로 여는 것은 웹 전용 구매 탭 링크나 나중에 생길 값이 오류 없이 기본 화면에 도착하게 하기 위해서이다. |
 | 영향 | `MyCreditChargeRoute`가 `data object`에서 기본값 있는 `data class`로 바뀌어 앱 안의 진입은 `MyCreditChargeRoute()`로 무료 충전 탭을 연다. Android에 구매 탭이 생기면 Boolean을 탭 값으로 바꿔야 한다. `deepLink`가 없는 출석 리마인드의 `type` 매핑은 무료 충전 탭 그대로이다. 웹 앱 열기 링크([A-071](../../../../ui/ANDROID/DECISIONS.md#a-071))는 경로만 https로 옮기고 쿼리를 버리므로 그 경로로는 항상 무료 충전 탭이 열린다. |
 | 대체 관계 | [A-045](../../../NOTIFICATION/CLIENT/ANDROID/DECISIONS.md#a-045)의 "이프 충전의 `tab` 쿼리는 읽지 않습니다"와 "탭 파라미터는 두 번째 사용처가 생기기 전에는 라우트에 싣지 않습니다"를 대체한다. `deepLink` 정본 해석, 허용 호스트와 경로, 해석 실패 시 홈, `type` 하위 호환 매핑은 유지한다. |
-| 근거 | [KNK-1843](https://kimandkang.atlassian.net/browse/KNK-1843), [KNK-1840](https://kimandkang.atlassian.net/browse/KNK-1840), [KNK-1843 계획](../../../../../../manyak-android/docs/plans/knk-1843-credit-charge-tab-query.md) |
+| 근거 | [KNK-1843](https://kimandkang.atlassian.net/browse/KNK-1843), [KNK-1840](https://kimandkang.atlassian.net/browse/KNK-1840), [KNK-1843 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1843-credit-charge-tab-query.md) |
 
 <br>
 
@@ -50,7 +50,7 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | 화면 기능끼리 직접 참조하지 않는 규칙을 지키면서 출석 구현을 한 곳에 둔다. 절차를 두 ViewModel에 되풀이하면 겹친 요청 거르기와 닫기 잠금이 갈라질 수 있고, 별도 Gradle 모듈은 클래스 하나에 과하다. `common`은 `analytics`에 의존하지 않아 분석은 ViewModel에 남긴다. 저장 경로를 버튼 저장과 같게 두면 서버 초안과 기기 안 초안, 충돌과 실패 안내를 새로 만들지 않는다. 퍼널을 백스택에 남기면 돌아와 같은 퍼널을 다시 여는 동작이 생기는데, 웹과 같이 이어서 만들기는 제작 탭 카드로만 한다. |
 | 영향 | 이프 충전 화면의 출석과 시트의 출석이 같은 구현을 쓴다. 출석 결과 문구는 `my`와 `designsystem`에 같은 값으로 두 벌 있다. 간편 제작에서 충전으로 떠나면 퍼널의 편집 상태는 사라지고 저장한 초안만 남는다. 제작 탭으로 떠난 뒤 확정된 완성 실패는 [A-077](../../../STORY/CLIENT/ANDROID/DECISIONS.md#a-077)대로 한 문구로 알린다. |
-| 근거 | [공통 이프 부족 처리](../2-2-REQUIREMENTS.md#2-2-5-이프-부족과-입력-보존), [KNK-1845](https://kimandkang.atlassian.net/browse/KNK-1845), [KNK-1844](https://kimandkang.atlassian.net/browse/KNK-1844), [KNK-1845 계획](../../../../../../manyak-android/docs/plans/knk-1845-credit-shortage-sheet.md) |
+| 근거 | [공통 이프 부족 처리](../2-2-REQUIREMENTS.md#2-2-5-이프-부족과-입력-보존), [KNK-1845](https://kimandkang.atlassian.net/browse/KNK-1845), [KNK-1844](https://kimandkang.atlassian.net/browse/KNK-1844), [KNK-1845 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1845-credit-shortage-sheet.md) |
 
 <br>
 
@@ -87,4 +87,4 @@
 | 이유 | 결제 도메인 코드가 한 모듈에 모여 마이 변경과 독립적으로 빌드되고 검사된다. 공용 포트는 이미 common에 있어 소비자 코드는 바뀌지 않는다. |
 | 영향 | 라우트 `MyCreditChargeRoute`와 딥링크 `/my/credits`, 분석 이벤트는 이름까지 그대로라 백스택 복원과 알림 진입이 이어진다. 충전 화면 문구는 `credit_` 접두어로 credit이 소유한다. 마이의 프로필, 초대, 페르소나와 `profile` DataStore는 마이에 남는다. |
 | 대체 관계 | 없음. [A-081](#a-081), [A-092](#a-092)의 common과 designsystem 배치는 유지하고, 구현 소유 모듈만 my에서 credit으로 바뀐다. |
-| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](../../../../../../manyak-android/docs/plans/credit-module.md) |
+| 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/credit-module.md) |

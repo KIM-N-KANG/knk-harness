@@ -104,7 +104,7 @@
 | 이유 | 시트는 알림의 가치를 이해한 뒤 묻는 자리이고, 즉시 통지는 별도 발송 경로 없이 14일 기한을 충족한다. 서버에 "물었음"을 두지 않은 것은 API 계약을 늘리지 않기 위해서이며, 대신 재로그인 시 거절자에게 한 번 더 묻는 한계를 받아들였다. |
 | 영향 | 2년 재확인 발송과 광고 페이로드의 전송자 연락처, 수신 거부 문구는 서버 과제로 남는다. 반복 노출이 문제되면 서버 필드로 올리는 후속 결정으로 대체할 수 있으며 이 기록은 보존한다. |
 | 대체 관계 | 첫 질문 자리와 "물었음" 단일 플래그는 [A-044](../../../ACCOUNT/CLIENT/ANDROID/DECISIONS.md#a-044)가 대체한다. 즉시 통지, 야간 분리, 고지 정본 결정은 유지한다. |
-| 근거 | [KNK-1254](https://kimandkang.atlassian.net/browse/KNK-1254), [Android 계획](../../../../../../manyak-android/docs/plans/marketing-consent.md) |
+| 근거 | [KNK-1254](https://kimandkang.atlassian.net/browse/KNK-1254), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/marketing-consent.md) |
 
 <br>
 
@@ -123,7 +123,7 @@
 | 이유 | URL을 정본으로 두면 서버가 목적지를 옮겨도 허용 목록 안에서는 앱 업데이트 없이 따라간다. 실패 시 `type`으로 되돌리면 서버가 목적지를 바꾼 뒤에도 구 매핑으로 가 서버 의도와 어긋나므로 홈으로 떨어뜨린다. `type` 매핑을 남기는 것은 업데이트 전에 만든 PendingIntent와 `deepLink`가 없는 프로모션 때문이다. 파서를 `java.net.URI`로 두는 것은 `android.net.Uri`가 JVM 유닛 테스트에서 빈 스텁이라서이고, 같은 파서를 뒤의 공유 URL App Links(KNK-927, 928)가 재사용한다. 탭 파라미터는 무료 탭이 기본이라 두 번째 사용처가 생기기 전에는 라우트에 싣지 않는다. |
 | 영향 | 사용자에게 보이는 동작은 바뀌지 않는다. App Links(HTTPS intent-filter, `assetlinks.json`)는 이 결정에 포함하지 않는다. 웹 이프 충전 화면은 `?tab=` 쿼리를 아직 읽지 않는다(웹 몫). |
 | 대체 관계 | [A-034](DECISIONS.md#a-034)의 수신자 재검증은 유지하고, 그 뒤의 목적지 결정만 `type` 매핑에서 URL 해석으로 바꾼다. `type` 매핑은 `deepLink`가 없는 payload의 하위 호환으로 남는다. |
-| 근거 | [KNK-1348](https://kimandkang.atlassian.net/browse/KNK-1348), [Android 계획](../../../../../../manyak-android/docs/plans/push-deeplink.md) |
+| 근거 | [KNK-1348](https://kimandkang.atlassian.net/browse/KNK-1348), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/push-deeplink.md) |
 
 <br>
 
@@ -141,4 +141,4 @@
 | 대안 | 원문에 별도 항목으로 구분하지 않음 |
 | 이유 | Preferences의 문자열 집합은 순서가 없어 "최근 100개"를 지킬 수 없고, Room 테이블은 ID 목록 하나에 과하다. 웹과 같은 기기 단위라 로그아웃에 지우면 같은 기기의 다음 사용자에게 읽은 공지가 다시 새 공지로 보여 계약과 어긋난다. 판정을 `common` 계약으로 올려 `my`가 직접 관찰하게 하면 두 번째 소비처 전에 공유 계약이 생기고, 셸이 이미 마이에 콜백 여럿을 내리는 자리라 값 하나를 더 내리는 것이 가장 짧다. 공지 조회에 인증 클라이언트를 쓰면 만료 토큰 재발급이 공지 요청에 엮인다. |
 | 영향 | 안 읽음 판정은 첫 페이지 20건 안에서만 본다. 그 뒤 공지는 대개 30일을 넘겼고, 넘기지 않았어도 점이 꺼질 뿐 목록에는 그대로 있다. 읽음 저장 실패는 조용히 무시해 다음에 점이 한 번 더 보인다. 회원별 알림함이 생기면 헤더 버튼의 목적지만 바꾸면 된다. |
-| 근거 | [2-2-2 공지사항](../2-2-REQUIREMENTS.md#2-2-2-공지사항), [Android 공지사항](3-3-LAYOUT.md#3-3-1-목록과-설정), [KNK-1819](https://kimandkang.atlassian.net/browse/KNK-1819), [KNK-1819 계획](../../../../../../manyak-android/docs/plans/knk-1819-notices.md) |
+| 근거 | [2-2-2 공지사항](../2-2-REQUIREMENTS.md#2-2-2-공지사항), [Android 공지사항](3-3-LAYOUT.md#3-3-1-목록과-설정), [KNK-1819](https://kimandkang.atlassian.net/browse/KNK-1819), [KNK-1819 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/knk-1819-notices.md) |
