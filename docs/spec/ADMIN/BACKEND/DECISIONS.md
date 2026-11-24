@@ -896,3 +896,18 @@ ADMIN 도메인 백엔드의 중요한 결정을 날짜, 상태, 배경, 채택,
 | 채택 | 앱 호스트의 CPU 사용률과 CPU 크레딧 잔액과 상태 검사, RDS 지표는 CloudWatch에서 읽는다. 앱 호스트 차원은 인스턴스 교체에도 이어지도록 오토스케일링 그룹으로 둔다. 요청 수와 5xx 수와 응답 시간 p95, 앱 호스트 메모리와 디스크, 관측 서버 OpenSearch의 디스크 여유와 JVM 메모리 압박과 클러스터 상태는 관측 서버 Prometheus의 기록 규칙 계열에서 읽는다. Redis는 서버가 `INFO`와 `DBSIZE`로 현재 값만 읽는다. 세 출처를 나란히 부르고 실패한 출처의 묶음만 `null`로 두며 묶음 키를 `unavailable`에 넣는다. 부른 출처가 모두 실패할 때만 캐시 또는 503이다. 18번의 2026-10-23 보완(응답 전체를 실패로 처리)은 출처 안에서만 유지한다. |
 | 대안 | 요청 지표를 빼는 안은 화면에서 가장 자주 보는 값이 없어진다. 프록시 로그에 CloudWatch 지표 필터를 거는 안은 사용자 지정 지표 요금(월 약 0.9달러)과 로그 형식 변경이 든다. 서버가 원 지표를 직접 질의하는 안은 31일 범위의 p95가 약 6초로 시간 한도를 넘고, 지표 이름이나 라벨이 바뀔 때마다 서버를 다시 배포해야 한다. OpenSearch와 Redis를 CloudWatch 에이전트로 올리는 안은 에이전트 메모리와 사용자 지정 지표 요금이 든다. Redis 추이를 Prometheus로 모으는 안은 수집기를 하나 더 두어야 해 현재 값으로 시작한다. 한 출처의 실패를 응답 전체의 503으로 두는 안은 관측 서버가 내려가면 AWS 지표까지 볼 수 없다. |
 | 영향 | 계약의 `ecs`, `alb` 묶음과 `redis.nodes`, `opensearch.freeStorageBytes`가 없어지고 `host`, `hostSystem`, `requests`, `unavailable`이 생겨 관리자 웹과 함께 배포해야 한다. 관측 서버에 Prometheus 조회 주소(경로 제한, Access 서비스 토큰, 읽기 계정), 기록 규칙, OpenSearch 지표 수집이 필요하고 앱 호스트 로그 수집기가 호스트 지표를 보내야 한다. `manyak-terraform`이 운영 서버 설정에 환경 변수 3개와 시크릿 4개를 넣고 ECS용 환경 변수와 `ecs:DescribeServices` 권한을 뺀다. 기록 규칙은 만든 시각부터 쌓여 그 전 구간은 점이 없다. 요청 수는 초당 요청률에서 되돌린 값이라 요청이 몇 건뿐인 구간은 실제와 1~2건 다를 수 있다. `GetMetricData` 질의는 9개, 캐시를 거치지 않은 요청 1,000번에 약 0.09달러다. |
+
+<br>
+
+**64. 인프라 지표의 운영 호스트와 DB 묶음을 관측 서버 Prometheus 기록 규칙에서 읽는다**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-24 |
+| 상태 | 채택. 63번의 "앱 호스트와 RDS는 CloudWatch"를 운영에서 대체 |
+| 배경 | 운영을 OCI 오사카 VM 한 대로 옮기고 AWS 자원을 모두 지웠다(KNK-2126). CloudWatch와 RDS가 없어졌고 DB는 운영 호스트의 PostgreSQL 컨테이너가 됐다. 관측 서버 Prometheus는 마냑 tailnet으로 닿는다. |
+| 채택 | 설정 `MANYAK_ADMIN_INFRA_HOST_SOURCE`로 `host`, `rds` 묶음의 출처를 고른다. 운영은 `prometheus`이고 기록 규칙 `manyak_prod_host:*`, `manyak_prod_db:*`가 CloudWatch 지표와 같은 뜻의 값을 만든다. 응답 필드 이름(`host`, `rds`, `cpuCreditBalance`)은 그대로 두어 관리자 웹과 동반 배포 없이 바꿨다. `cpuCreditBalance`는 OCI에 개념이 없어 빈 목록이다. Prometheus 조회는 tailnet 출구(`http://obs-home`)와 읽기 계정으로 하고 Access 서비스 토큰은 쓰지 않는다. CloudWatch 경로는 코드 기본값으로 남았다. |
+| 대안 | 필드 이름을 `db` 등으로 바꾸는 안은 관리자 웹과 동반 배포가 필요해 이번에는 두지 않았다. CloudWatch 경로를 지우는 안은 코드 정리로 따로 한다. |
+| 영향 | 4-1-21 출처 표와 기록 규칙 표, 4-2-34 필드 설명, 6-3 설정 표, 5-1 접근 경계, 5-5 Prometheus 출처 시나리오가 바뀐다. 관측 서버에 새 기록 규칙 일곱 개가 생겼다. |
+| 근거 | [KNK-2126](https://kimandkang.atlassian.net/browse/KNK-2126), [KNK-2140](https://kimandkang.atlassian.net/browse/KNK-2140) |
+
