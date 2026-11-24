@@ -214,3 +214,57 @@
 | 이유 | 웹과 같이 계획 기록을 PR 한 곳으로 모으고, 저장소가 소유하는 값은 매 세션 읽히는 `AGENTS.md` 한 곳에 둔다. |
 | 영향 | 앱 `AGENTS.md`가 몇 줄 길어진다. 과거 계획은 git 이력과 고정 링크로만 볼 수 있다. 기존 결정의 내용과 ID는 바꾸지 않고 근거 링크의 주소만 바꿨다. |
 | 근거 | [KNK-2132](https://kimandkang.atlassian.net/browse/KNK-2132) |
+
+<br>
+
+<a id="a-099"></a>
+<a id="a-099-버튼의-주-색은-브랜드-원색으로-둠"></a>
+
+**A-099. 버튼의 주 색은 브랜드 원색으로 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-08-24 |
+| 상태 | Accepted (DESIGN.md 기록에서 옮김) |
+| 배경 | 주 버튼 배경 후보는 로고와 같은 브랜드 원색 `brand`(#05A66B)와 한 단계 어두운 `backgroundBrandBold`(#00804B)였다. 원색 위 흰 글자의 대비는 3.15로 AA 기준에 못 미친다. |
+| 채택 | 주 버튼과 FAB의 배경은 `brand`로 두고 `backgroundBrandBold`는 눌림 상태에만 쓴다. M3 슬롯 파생(primary = `backgroundBrandBold`)은 안전망이라 버튼 색을 명시한다. |
+| 대안 | 원문에 별도 항목으로 구분하지 않음 |
+| 이유 | 웹 primary와 같은 값으로 맞추는 것을 흰 글자 대비 3.15보다 우선했다. |
+| 영향 | 주 버튼 글자 대비가 AA에 못 미친다. 같은 문제가 있는 조합은 DESIGN.md의 쓰면 안 되는 조합과 함께 관리한다. |
+| 근거 | [DESIGN.md 브랜드](../../../../../manyak-android/DESIGN.md#브랜드), [이동 전 기록](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/DESIGN.md) |
+
+<br>
+
+<a id="a-100"></a>
+<a id="a-100-눌림-피드백을-테마의-리플-하나로-둠"></a>
+
+**A-100. 눌림 피드백을 테마의 리플 하나로 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-09-03 |
+| 상태 | Accepted (DESIGN.md 기록에서 옮김) |
+| 배경 | 2026-08-24에는 리플을 앱 전체에서 껐다(별도 결정 ID 없음). 배경색이 없는 카드와 행은 눌림을 알릴 수단이 없었다. |
+| 채택 | `ManyakTheme`이 `LocalRippleConfiguration`으로 `overlayPressed` 색과 농도를 내리고 호버, 포커스, 드래그 농도는 0으로 둔다. 선택 표시가 피드백을 맡는 자리(하단 탭, 밑줄 탭, 선택 컨트롤이 있는 행, 이미지 뷰어 닫기 영역)만 리플을 끈다. 축소 같은 다른 눌림 애니메이션은 더하지 않는다. |
+| 대안 | 원문에 별도 항목으로 구분하지 않음 |
+| 이유 | 채움이 없는 요소에도 같은 규칙으로 눌림을 말하려면 반투명 리플 하나가 필요했다. |
+| 영향 | 2026-08-24의 리플 전역 끄기를 대체한다. 길게 누르기는 열릴 때 `LongPress` 햅틱을 한 번 울린다. |
+| 근거 | [DESIGN.md 모션](../../../../../manyak-android/DESIGN.md#모션), [이동 전 기록](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/DESIGN.md) |
+
+<br>
+
+<a id="a-101"></a>
+<a id="a-101-디자인-토큰-사본을-두지-않고-kotlin-파일을-기준으로-둠"></a>
+
+**A-101. 디자인 토큰 사본을 두지 않고 Kotlin 파일을 기준으로 둠**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-08-29, 2026-11-24 |
+| 상태 | Accepted |
+| 배경 | 토큰 값은 웹과 공유하는 디자인 토큰에서 왔지만 생성기가 앱 저장소 밖에 있다. 앱 저장소의 `design/design-tokens.json` 사본은 아무도 읽지 않고 손으로만 맞추다 어긋났다. DESIGN.md의 YAML front matter와 산문 표도 같은 값을 다시 적어 2026-11에는 다크 `backgroundNeutral`처럼 코드와 다른 값이 남았다. |
+| 채택 | 2026-08-29에 토큰 JSON 사본을 지웠고 Style Dictionary 같은 생성기를 두지 않는다. 2026-11-24에 DESIGN.md의 front matter를 지우고 `core/designsystem`의 Kotlin 토큰 파일을 값의 기준으로 둔다. DESIGN.md는 토큰의 용도, 금지 조합과 공용 컴포넌트 규칙을 적는다. 2026-08-29에 다크 `textSubtlest`와 `textDisabled`를 한 단계 밝게 올린 값은 유지한다. |
+| 대안 | 생성기를 앱 빌드에 연결: 토큰 변경 빈도에 비해 Android 빌드에 Node 의존을 얹는 비용이 크다. |
+| 이유 | 사람이 옮겨 적는 값은 한 곳만 두어야 어긋남을 줄일 수 있다. |
+| 영향 | 값을 바꾸면 Kotlin 토큰 파일과 DESIGN.md 표를 같은 커밋에서 고친다. 웹과 공유하는 값이면 PR에 웹 변경 필요를 적는다. 두 클라이언트의 값이 같은지는 자동으로 확인하지 못한다. |
+| 근거 | [KNK-2132](https://kimandkang.atlassian.net/browse/KNK-2132), [이동 전 DESIGN.md](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/DESIGN.md) |
