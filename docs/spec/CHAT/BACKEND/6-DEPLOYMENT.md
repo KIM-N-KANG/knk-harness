@@ -15,8 +15,8 @@
 | 의존 대상 | 내용 | CHAT 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 채팅, 메시지, 선택지, 버전 이력, 거쳐온 사건, 공유, 모델, 피드백 테이블 |
-| AI 서버 | 운영 앱 호스트의 별도 컨테이너 | 턴 스트림, 선택지, 대화 요약<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
-| S3 assets 버킷과 CloudFront | Terraform 관리 | 실시간 이미지 경로 `chat-images/*`의 presigned PUT과 HEAD<br>AI 서버의 업로드 허용 호스트에 버킷 주소 등록 |
+| AI 서버 | 운영 호스트의 별도 컨테이너 | 턴 스트림, 선택지, 대화 요약<br>모델 라우팅은 AI 컨테이너의 OpenAI와 Gemini 키가 필요<br>스텁이면 불필요 |
+| 이미지 저장소(Cloudflare R2 `manyak-prod-assets`, `cdn.manyak.app`) | Cloudflare에서 관리(terraform 밖) | 실시간 이미지 경로 `chat-images/*`의 presigned PUT과 HEAD<br>AI 서버의 업로드 허용 호스트에 R2 계정 주소 등록 |
 | Redis | 생성 중 키와 생성별 이벤트 스트림<br>체험 카운터 | 생성 상태와 Redis Streams는 CHAT이 직접 접근<br>체험은 PAYMENT 도메인의 서비스로 접근 |
 | Slack 웹훅, Google Form | 피드백 전달 | 커밋 후 비동기 발송 |
 | 관측 서버 | 트레이스 수신 | 트레이스 전송 |
@@ -27,7 +27,7 @@
 |---|---|
 | AI 서버 | 주소에 `http` 또는 `https` 스킴이나 호스트가 없으면 기동 실패<br>연결 실패와 이벤트 간 시간 초과는 스트림 실패로 응답하고 환불<br>AI가 모르는 모델 코드를 거절하면 스트림 실패로 응답하고 환불<br>선택지 호출 실패는 AI 실패로 응답<br>대화 요약 호출 실패는 기존 요약을 유지하고 다음 요약 경계에서 다시 요청<br>요약 간격이 1 미만이거나 요약 응답 대기가 0 이하이면 기동 실패 |
 | PostgreSQL | 연결할 수 없으면 기동 실패<br>모델 표에 노출 중인 기본 모델이 없으면 채팅 생성과 턴 요청이 서버 오류 |
-| S3 assets 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 실시간 이미지 업로드 위치를 발급하지 않고 턴은 진행<br>업로드 경로의 IAM 권한이 없으면 AI의 업로드가 실패해 인물 기본 이미지로 대체<br>AI 허용 호스트에 없으면 AI가 생성을 생략 |
+| 이미지 저장소 버킷 | 버킷과 이미지 제공 기본 URL 중 하나라도 비면 실시간 이미지 업로드 위치를 발급하지 않고 턴은 진행<br>R2 접근 키 권한이 없으면 AI의 업로드가 실패해 인물 기본 이미지로 대체<br>AI 허용 호스트에 없으면 AI가 생성을 생략 |
 | Redis | 필요한 시점에 연결하므로 기동은 진행<br>회원 체험 카운터 장애는 예약 실패로 보고 이프 소모로 전환<br>턴 체험 복원 실패는 환불 실패 지표로 기록되고 이미지 체험 복원 실패는 WARN만<br>생성 중 키 획득 오류는 과금 전에 일시 장애로 거절<br>생성 도중 이벤트 기록 실패는 생성과 저장을 계속하고 상세 재조회로 복구<br>재연결의 스트림 존재 확인과 생성 중 키 확인 오류는 사용 불가로 응답<br>수신 중 읽기 오류는 종료 이벤트 없이 연결 종료 |
 | Slack 웹훅, Google Form | 미설정이면 해당 전달 생략<br>실패는 접수 결과에 영향 없음 |
 | 관측 서버 | 추적을 켜고 주소가 비면 기동 실패<br>추적이 꺼지면 스팬을 만들되 전송하지 않음 |
@@ -42,14 +42,14 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포가 성공한 뒤 `latest` 승격 |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | GHCR 커밋 SHA 앞 7자리. 배포 잡이 `:prod`로 옮기면 운영 호스트가 1분 안에 받아 교체 |
 | 상태 검사 | 배포 완료, 서버와 AI 컨테이너 정상, health `UP` | 동일 |
 
 <br>
 
 ### 6-3 환경 변수와 시크릿
 
-환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 값은 Terraform이 앱 호스트 설정(`app_host_defs`)에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 앱 호스트의 인스턴스 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
+환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 운영의 비밀 아닌 값은 manyak-terraform `oci/prod/services/<서비스>.env`, 비밀값은 운영 호스트 `/opt/manyak/secrets/<서비스>.env`에서 주입한다. 레포 값을 바꾸면 호스트에서 `deploy.sh sync` 뒤 그 서비스를 다시 배포한다. 이미지 저장소(R2)에는 그 버킷만 쓰는 접근 키를 비밀값으로 넣는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
 
 <br>
 
@@ -57,11 +57,11 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_AI_BASE_URL` | 없음 | 운영 앱 호스트 설정 `http://ai.internal`(내부 프록시) | |
+| `MANYAK_AI_BASE_URL` | 없음 | 운영 `services/server.env` `http://ai.internal`(내부 프록시) | |
 | `MANYAK_AI_CHAT_STUB` | `false` | 주입 없음 | |
 | `MANYAK_CHAT_SSE_CONCURRENCY` | 64 | 주입 없음 | 턴을 처리하는 백그라운드 작업 스레드 수 |
 | `MANYAK_CHAT_SSE_QUEUE_CAPACITY` | 100 | 주입 없음 | 대기 큐 크기<br>초과하면 거부 |
-| `MANYAK_CHAT_COMPACT_ENABLED` | `false` | 켤 환경의 앱 호스트 설정 | 끄면 요약을 요청하지 않고 저장된 요약도 AI 요청에 싣지 않음<br>재생성의 요약 무효화는 설정과 무관하게 수행 |
+| `MANYAK_CHAT_COMPACT_ENABLED` | `false` | 켤 환경의 `services/server.env` | 끄면 요약을 요청하지 않고 저장된 요약도 AI 요청에 싣지 않음<br>재생성의 요약 무효화는 설정과 무관하게 수행 |
 | `MANYAK_CHAT_COMPACT_INTERVAL_TURNS` | 10 | 주입 없음 | 완료 턴 수가 이 값의 배수일 때 요약 요청 |
 | `MANYAK_CHAT_COMPACT_TIMEOUT_SECONDS` | 300 | 주입 없음 | 요약 호출의 응답 대기 |
 
@@ -72,9 +72,9 @@
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 주입 없음 | 프리셋 표지 키를 URL로 조합할 때만 사용 |
-| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 운영 앱 호스트 설정, dev 환경 설정, assets 버킷과 CDN 주소 | 버킷과 이미지 제공 기본 URL이 둘 다 있어야 실시간 이미지 활성화 |
-| `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 주입 없음 | 비어 있으면 AWS 기본 S3 주소 |
-| `AWS_REGION` | `ap-northeast-2` | 컨테이너 실행 환경 | |
+| `MANYAK_CHARACTER_IMAGE_BUCKET`, `MANYAK_CHARACTER_IMAGE_REGION`, `MANYAK_CHARACTER_IMAGE_BASE_URL` | 빈 값 | 운영 `services/server.env`, dev 환경 설정, R2 버킷과 CDN 주소 | 버킷과 이미지 제공 기본 URL이 둘 다 있어야 실시간 이미지 활성화 |
+| `MANYAK_CHARACTER_IMAGE_ENDPOINT` | 빈 값 | 운영 호스트 비밀값(R2 계정 엔드포인트), dev 공개 `dev-s3` 주소 | 비어 있으면 AWS 기본 S3 주소<br>운영 리전은 `auto` |
+| `AWS_REGION` | `ap-northeast-2` | 주입 없음 | 옛 AWS 경로 전용. 운영과 dev는 쓰지 않음 |
 
 <br>
 
@@ -94,7 +94,7 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL` | 빈 값 | 운영 Secrets Manager | |
+| `MANYAK_SLACK_FEEDBACK_WEBHOOK_URL` | 빈 값 | 운영 호스트 비밀값 파일 | |
 | `MANYAK_GOOGLE_FORM_FEEDBACK_ID` | 빈 값, 운영 설정 파일은 실제 폼 ID | 주입 없음 | 비어 있으면 폼 전달 생략 |
 | `MANYAK_GOOGLE_FORM_FEEDBACK_BODY_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_EMAIL_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_PLATFORM_ENTRY`, `MANYAK_GOOGLE_FORM_FEEDBACK_APP_VERSION_ENTRY` | 설정 파일의 폼 항목 ID | 주입 없음 | 폼을 바꾸면 함께 갱신 |
 
@@ -104,10 +104,10 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
+| `MANYAK_TRACING_ENABLED` | `false` | 운영 `services/server.env` | |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 관측 서버의 `/v1/traces` 주소 주입 | 추적을 켜면 필수 |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 앱 호스트 설정의 일반 환경 변수(관측 서버 `/v1/metrics`), 인증 헤더는 시크릿 참조 | 관측 서버의 Prometheus로 전송 |
-| `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 `services/server.env`<br>전송 URL은 같은 호스트의 otel-agent(`http://otel-agent:4318/v1/metrics`), 관측 서버 인증은 otel-agent가 붙임 | 관측 서버의 Prometheus로 전송 |
+| `SENTRY_DSN` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | |
 
 <br>
 
@@ -139,7 +139,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 부분 유니크 인덱스 생성 | `story_messages`, `story_message_versions`의 행 수를 확인하고 마이그레이션 트랜잭션 안의 일반 `CREATE INDEX`로 적용<br>현재 운영 규모에서는 잠금 시간이 짧음 | 수동 검토<br>행 수가 수백만을 넘으면 `lock_timeout`을 두고 배포 시간대 조정 |
 | 대화 요약 도입 | 서버는 대화 요약을 끈 채 AI 서버보다 먼저 배포 가능<br>AI 서버의 요약 API가 운영에 배포된 뒤 `MANYAK_CHAT_COMPACT_ENABLED`를 켬<br>턴 요청의 `summary`는 현재 AI 계약에 있어 턴 쪽 AI 변경은 없음<br>`story_chats.summary_through_turn` 추가와 `ai_call_logs` feature 제약의 `chat_compact` 추가를 같은 릴리스의 마이그레이션에 포함<br>컬럼은 `NOT NULL DEFAULT 0`으로 추가해 기존 행 백필과 구버전 코드의 컬럼 생략 삽입을 함께 처리<br>클라이언트 계약은 바뀌지 않음<br>요약을 켠 뒤 이전 이미지로 되돌렸다가 다시 배포하면 설정을 끈 채 배포<br>구버전 컨테이너가 모두 내려간 뒤 설정을 켜기 전에 `UPDATE story_chats SET summary = NULL, summary_through_turn = 0 WHERE summary_through_turn > 0` 실행<br>최초 도입은 저장된 요약이 없어 일괄 비우기 해당 없음 | 수동 검토<br>이전 이미지로 되돌리면 저장된 요약을 쓰지 않고 원문 전체로 요청<br>구버전은 재생성 때 요약을 비우지 않아 되돌린 기간의 재생성이 이전 응답을 담은 요약을 남길 수 있음<br>일괄 비우기 뒤 모든 채팅은 다음 요약 경계까지 원문으로 진행 |
 | 요약 이력과 숨긴 턴 도입 | `story_chat_summaries` 추가와 기존 `summary`, `summary_through_turn` 값을 이력 행으로 옮기는 마이그레이션, `story_messages.hidden_at`과 부분 유일 인덱스로의 교체, `story_chats`의 `hidden_turn_count`, `revision`, `forked_from_chat_id`, `forked_from_turn` 추가를 그 값을 읽는 코드와 같은 릴리스에 포함<br>새 컬럼은 `NOT NULL DEFAULT 0`으로 추가해 구버전의 컬럼 생략 삽입을 받음<br>`summary`와 `summary_through_turn` 컬럼 제거는 구버전 컨테이너가 사라진 다음 릴리스<br>입력 수정과 포크는 클라이언트 변경이 함께 필요하고 서버만 먼저 배포해도 기존 동작은 바뀌지 않음 | 수동 검토<br>이전 이미지로 되돌리면 이력에만 저장된 요약을 읽지 못해 원문 전체로 요청하고 되돌린 기간의 요약은 옛 컬럼에 저장됨<br>다시 배포할 때 옛 컬럼의 요약이 이력보다 새로우면 이력 행으로 옮기는 마이그레이션을 한 번 더 둠 |
-| S3 경로 권한과 AI 허용 호스트 | Terraform apply와 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
+| R2 접근 키와 AI 허용 호스트 | 비밀값과 AI 설정이 서버 배포보다 먼저<br>늦으면 실시간 이미지가 기본 이미지로 대체 | 수동 적용 |
 | 컬럼 제거 | 그 컬럼을 읽는 구버전 컨테이너가 사라진 다음 릴리스에서 수행 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>마이그레이션은 재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
 | AI 호출 기록의 기능 값 | `ck_ai_call_logs_feature`에 `chat_image`를 더하는 마이그레이션이 `chat_image` 행을 쓰는 코드와 같은 릴리스에 있어야 함<br>제약은 DROP 뒤 ADD로 다시 만들고 기존 네 값을 유지 | 기동 시 자동 적용<br>체크 제약은 테스트 프로파일에서 검증되지 않아 DB 문서 생성 스크립트로 확인 |
@@ -164,9 +164,9 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 | 대화 요약 켜기, 요약 간격, 요약 응답 대기 | 환경 변수 변경 후 서비스 재배포 | 켜기 전에 AI 서버의 요약 API 배포<br>응답 대기는 AI 서버 내부 호출의 최악 시간 240초보다 길게 유지<br>켠 뒤 `ai_call_logs` `chat_compact`의 실패 비율 |
 | 생성 중 상태와 이벤트 보관 기간 | 코드 상수 변경 후 이미지 재빌드 | 생성 중 키의 TTL, 스트림 신규 생성 기한, 스트림 생성 시 TTL, 종료 후 스트림 보관 기간, 전용 읽기 연결의 명령 타임아웃 |
 | 백그라운드 작업 스레드 수와 큐 | 환경 변수 변경 후 서비스 재배포 | `chat.turn.queue` 대기 시간과 거부 로그<br>수신 연결 상한도 함께 바뀜 |
-| 이미지 저장소 | assets 모듈 출력이 앱 호스트 설정로 전달되므로 버킷과 CDN 변경 후 Terraform apply<br>AI 허용 호스트 갱신 | 턴 요청의 업로드 위치 발급, AI 업로드 성공, 본문의 실시간 마커 |
+| 이미지 저장소 | 버킷과 CDN을 바꾸면 `services/server.env`와 호스트 비밀값을 고친 뒤 sync와 재배포<br>AI 허용 호스트 갱신 | 턴 요청의 업로드 위치 발급, AI 업로드 성공, 본문의 실시간 마커 |
 | 피드백 전달 | 웹훅 시크릿과 폼 ID 변경 후 서비스 재배포 | 피드백 등록 뒤 채널 수신 |
-| 추적과 지표 전송 | 운영 Terraform 변수 `tracing_enabled`, `enable_otlp_metrics` 변경 후 apply | 지표는 시크릿의 전송 URL과 인증 헤더가 먼저 채워져야 함 |
+| 추적과 지표 전송 | `services/<서비스>.env`의 `MANYAK_TRACING_ENABLED`, `MANYAK_OTLP_METRICS_ENABLED` 변경 후 sync와 재배포 | 관측 서버 인증은 호스트 otel-agent가 붙임 |
 
 <br>
 
@@ -178,7 +178,7 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 순서 | 작업 | 확인 항목 |
 |---|---|---|
-| 1 | 설정과 인프라 확인 | 새 시크릿 키의 주입 참조, S3 경로 권한, AI 허용 호스트, 마이그레이션 순서<br>Terraform 변경은 서버 배포보다 먼저 apply |
+| 1 | 설정과 인프라 확인 | 새 비밀값 키, R2 접근 키, AI 허용 호스트, 마이그레이션 순서<br>설정 변경은 서버 배포보다 먼저 sync |
 | 2 | 동반 배포 확인 | AI 서버, 클라이언트와 함께 배포해야 하는 변경인지와 그 순서 |
 | 3 | 배포 실행 | 운영은 AI 레포의 배포와 겹치지 않는지 확인 |
 | 4 | 적용 결과 확인 | 배포 후 확인 항목 |
@@ -202,10 +202,10 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 상황 | 복구 방식 | 한계와 확인 사항 |
 |---|---|---|
-| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원은 필요 없음 |
-| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 SSM 문서 `image=rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
+| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | 실패한 다이제스트는 호스트가 기록해 다시 시도하지 않고, 배포 잡의 스모크가 실패하면 `:prod`를 직전 다이제스트로 되돌림 |
+| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 `Prod Rollback (GHCR :prod)` 워크플로나 호스트 `deploy.sh <서비스> rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 동작 오류를 탐지하지 않음 |
 | 마이그레이션 적용 후 되돌리기 | 적용된 마이그레이션은 되돌리지 않음 | 새 컬럼은 구버전 코드와 호환되도록 추가 |
-| 설정 오류 | 잘못된 Terraform 값이나 시크릿을 이전 호환 값으로 복구 후 apply | 이미지 태그 복원만으로 설정은 복원되지 않음 |
+| 설정 오류 | 잘못된 `services/*.env` 값이나 비밀값을 이전 호환 값으로 복구 후 sync와 재배포 | 이미지 태그 복원만으로 설정은 복원되지 않음 |
 
 <br>
 
@@ -231,11 +231,11 @@ TTL 150초, 스트림 보관 5분, 읽기 대기 확인 주기 5초, 전용 읽�
 
 | 실패 상황 | 확인할 자료와 위치 | 원인별 조치 |
 |---|---|---|
-| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, 백그라운드 작업 스레드 수 1 미만, 요약 간격 1 미만, 요약 응답 대기 0 이하, 추적 주소 누락 중 해당 값 수정 후 apply |
+| 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | AI 주소 스킴과 호스트, 백그라운드 작업 스레드 수 1 미만, 요약 간격 1 미만, 요약 응답 대기 0 이하, 추적 주소 누락 중 해당 값 수정 후 재배포 |
 | health 정상, 턴이 스트림 실패로 끝남 | 요청 ID의 `ai_call_logs`, 로그 `ai_stream_failed`, AI 서버 로그 | AI 서비스 상태와 내부 주소 확인<br>이벤트 간 시간 초과와 AI 오류 응답 구분<br>AI가 422로 거절하면 모델 표의 코드와 AI 라우팅의 허용값, 회원 공개 식별자 형식 대조 |
 | 오로라 모델 턴만 실패 | `ai_call_logs`의 `model`, AI 서버 로그의 공급자 응답 | AI 컨테이너의 `GEMINI_API_KEY` 주입과 공급자 인증 확인 |
 | 차감액이 기대와 다름 | 원장 `CHAT_TURN` 행의 `amount`, 턴 저장 로그의 `model_code`와 `turn_cost`, `chat_models` | 체험 턴은 0, 청구 모델의 행 가격과 비교<br>모델 변경 전에 시작한 턴은 이전 모델 가격 |
 | 턴이 큐에서 밀리거나 거부됨 | 로그 `chat_turn_schedule_rejected`, `chat_turn_timeout`, 스팬 `chat.turn.queue` | 백그라운드 작업 스레드 수와 큐 크기 조정, AI 지연 확인 |
-| 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, 인스턴스 역할의 `chat-images/*` 권한, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>Terraform과 AI 설정 순서 확인 |
+| 실시간 이미지가 기본 이미지로만 나옴 | 이미지 저장소 환경 변수 3종, R2 접근 키, AI 허용 호스트 | 설정이 없으면 업로드 위치 미발급<br>권한과 호스트 문제는 AI 업로드 실패<br>비밀값과 AI 설정 순서 확인 |
 | 대화 요약이 저장되지 않음 | `MANYAK_CHAT_COMPACT_ENABLED`, `ai_call_logs` `chat_compact` 행의 상태와 `error_code`, 로그 `chat_compact_failed`, `chat_compact_discarded`, AI 서버 로그 | 행이 없으면 설정 확인<br>지표 `manyak.chat.compact.result`의 `disabled`가 늘고 있으면 설정이 꺼진 상태<br>`chat_compact_failed`의 `reason`으로 AI 호출 실패와 서버 쪽 실패 구분<br>`AI_COMPACT_FAILED`가 이어지면 AI 요약 API 배포와 응답 시간 확인<br>폐기만 반복되면 `reason`별로 재생성 빈도와 요약 지연 확인 |
 | 환불 실패 알림 | 로그 `chat_turn_refund_failed`, `chat_image_refund_failed`, Redis와 DB 상태 | 회원 차감은 원장에서 사후 환불<br>체험 복원 실패는 카운터 수동 보정 |

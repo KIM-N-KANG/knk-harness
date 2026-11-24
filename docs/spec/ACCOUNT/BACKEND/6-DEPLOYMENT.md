@@ -15,10 +15,10 @@
 | 의존 대상 | 내용 | ACCOUNT 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 회원, 소셜 연동, 동의, 페르소나 테이블 |
-| Redis | 앱 호스트의 Redis 컨테이너 | 세션, 동의 대기 코드, 링크 코드<br>체험 카운터는 PAYMENT 경유 |
+| Redis | 운영 호스트의 Redis 컨테이너 | 세션, 동의 대기 코드, 링크 코드<br>체험 카운터는 PAYMENT 경유 |
 | Google, Kakao | 공개 키 집합 | 신원 증명 서명 검증 |
 | 프로필 프리셋 자산 | 서버 이미지에 포함된 정적 파일 | 가입 배정, 프리셋 목록, 무인증 제공 |
-| Secrets Manager | Terraform이 앱 호스트 설정에 참조 주입 | 대칭키, 제공자 client ID, 디바이스 pepper |
+| 호스트 비밀값 파일 | 운영 `/opt/manyak/secrets/server.env`, dev 홈서버 비밀값 파일 | 대칭키, 제공자 client ID, 디바이스 pepper |
 | 관측 서버 | 트레이스 수신 | 트레이스 전송 |
 
 <br>
@@ -44,14 +44,14 @@
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
 | 머지 규칙 | 기능 브랜치에서 `dev`로 squash | `release/vX.Y.Z`에서 `main`으로 merge commit |
-| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | 커밋 SHA 앞 7자리, 배포가 성공한 뒤 `latest` 승격 |
+| 이미지 태그 | 커밋 SHA 앞 7자리, 환경 태그 `dev` | GHCR 커밋 SHA 앞 7자리. 배포 잡이 `:prod`로 옮기면 운영 호스트가 1분 안에 받아 교체 |
 | 상태 검사 | 배포 완료, 서버 컨테이너 정상, health `UP` | 동일 |
 
 <br>
 
 ### 6-3 환경 변수와 시크릿
 
-환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 값은 Terraform이 앱 호스트 설정(`app_host_defs`)에 주입하고 시크릿은 Secrets Manager에서 주입한다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
+환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 운영의 비밀 아닌 값은 manyak-terraform `oci/prod/services/<서비스>.env`, 비밀값은 운영 호스트 `/opt/manyak/secrets/<서비스>.env`에서 주입한다. 레포 값을 바꾸면 호스트에서 `deploy.sh sync` 뒤 그 서비스를 다시 배포한다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
 
 <br>
 
@@ -59,9 +59,9 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_AUTH_JWT_SECRET` | 없음 | 개발과 운영 Secrets Manager | 32바이트 이상 |
-| `MANYAK_GOOGLE_CLIENT_IDS` | 빈 값 | 개발과 운영 Secrets Manager | 콤마 구분<br>클라이언트가 서버 client ID를 `aud`로 지정한 ID 토큰에 `azp`가 실리면 그 값도 목록에 포함 |
-| `MANYAK_KAKAO_CLIENT_IDS` | 빈 값 | 개발과 운영 Secrets Manager | 단일 카카오 앱의 REST API 키와 네이티브 앱 키만 |
+| `MANYAK_AUTH_JWT_SECRET` | 없음 | dev 비밀값과 운영 호스트 비밀값 파일 | 32바이트 이상 |
+| `MANYAK_GOOGLE_CLIENT_IDS` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 콤마 구분<br>클라이언트가 서버 client ID를 `aud`로 지정한 ID 토큰에 `azp`가 실리면 그 값도 목록에 포함 |
+| `MANYAK_KAKAO_CLIENT_IDS` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 단일 카카오 앱의 REST API 키와 네이티브 앱 키만 |
 | `MANYAK_AUTH_CONSENT_TOKEN_TTL` | `PT10M` | 주입 없음 | |
 | `MANYAK_AUTH_CONSENT_GATE_ENABLED` | `false` | 주입 없음 | 미동의 회원 서버 게이트 |
 
@@ -85,7 +85,7 @@
 |---|---|---|---|
 | `MANYAK_ASSET_BASE_URL` | `https://api.manyak.app` | 주입 없음 | 프리셋 이미지 URL의 앞부분<br>저장된 URL은 전체 값이므로 변경해도 기존 회원의 값은 유지 |
 | `MANYAK_ANALYTICS_DEVICE_ID_PEPPER` | 빈 값 | 주입 없음 | 디바이스 해시 pepper<br>없으면 `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` 값을 씀<br>바꾸면 게스트 동의와 체험 카운터의 키가 달라짐 |
-| `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 빈 값 | 운영 Secrets Manager | 위 변수가 없을 때의 pepper |
+| `MANYAK_ANALYTICS_ANONYMOUS_ID_PEPPER` | 빈 값 | 운영 호스트 비밀값 파일 | 위 변수가 없을 때의 pepper |
 
 <br>
 
@@ -93,12 +93,12 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` | `false` | 운영 Terraform 변수 | |
-| `MANYAK_AMPLITUDE_API_KEY` | 빈 값 | 운영 Secrets Manager | 비어 있으면 발행 생략 |
-| `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | |
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수<br>전송 URL은 앱 호스트 설정의 일반 환경 변수(관측 서버 `/v1/metrics`), 인증 헤더는 시크릿 참조 | 관측 서버의 Prometheus로 전송 |
+| `MANYAK_ANALYTICS_AMPLITUDE_ENABLED` | `false` | 운영 `services/server.env` | |
+| `MANYAK_AMPLITUDE_API_KEY` | 빈 값 | 운영 호스트 비밀값 파일 | 비어 있으면 발행 생략 |
+| `MANYAK_TRACING_ENABLED` | `false` | 운영 `services/server.env` | |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 `services/server.env`<br>전송 URL은 같은 호스트의 otel-agent(`http://otel-agent:4318/v1/metrics`), 관측 서버 인증은 otel-agent가 붙임 | 관측 서버의 Prometheus로 전송 |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 관측 서버의 `/v1/traces` 주소 주입 | 추적을 켜면 필수 |
-| `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | |
+| `SENTRY_DSN` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | |
 
 <br>
 
@@ -121,15 +121,15 @@
 
 | 변경 대상 | 변경 위치와 적용 | 확인 조건 |
 |---|---|---|
-| 대칭키 | Secrets Manager 값 변경 후 서비스 재배포 | 기존 접근 토큰이 전부 무효가 되며 회전으로 복구<br>롤링 교체 중 구버전과 신버전이 서로의 토큰을 거부 |
-| 제공자 client ID | Secrets Manager 값 변경 후 서비스 재배포 | 각 플랫폼의 로그인 성공 |
+| 대칭키 | 호스트 비밀값 파일 변경 후 서비스 재배포 | 기존 접근 토큰이 전부 무효가 되며 회전으로 복구<br>롤링 교체 중 구버전과 신버전이 서로의 토큰을 거부 |
+| 제공자 client ID | 호스트 비밀값 파일 변경 후 서비스 재배포 | 각 플랫폼의 로그인 성공 |
 | 동의 게이트 | 환경 변수 추가 후 서비스 재배포 | 미동의 회원의 허용 목록 밖 요청 거절 |
 | 법적 문서 버전 | 환경 변수 또는 설정 파일 변경 후 서비스 재배포 | 회원 동의 조회의 `requiredVersion`, 재동의 유도 |
 | 토큰과 코드 수명 | 설정 파일 또는 코드 기본값 변경 후 재빌드 | 회전 유예를 0으로 두면 동시 회전이 재사용 탐지로 바뀜 |
 | 프리셋 이미지 | 정적 자산과 명사 풀을 함께 변경 후 재빌드 | 기동 로그의 적재 수가 명사 수와 같음 |
 | 가입과 초대 보상액, 월 상한 | PAYMENT 정책값 | 세션 조회와 초대 조회의 응답 값 |
 | 계정 정지와 해제 | 관리자 API<br>재배포 없음 | 회원 상세의 상태<br>감사 로그 |
-| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | |
+| 추적과 지표 전송 | `services/<서비스>.env` 변경 후 `deploy.sh sync`와 재배포 | |
 
 <br>
 
@@ -139,7 +139,7 @@
 
 | 순서 | 작업 | 확인 항목 |
 |---|---|---|
-| 1 | 설정과 시크릿 확인 | 새 시크릿 키의 주입 참조, 법적 문서 버전, 마이그레이션 순서 |
+| 1 | 설정과 시크릿 확인 | 새 비밀값 키, 법적 문서 버전, 마이그레이션 순서 |
 | 2 | 동반 배포 확인 | 클라이언트와 함께 배포해야 하는 변경인지와 순서<br>동의 게이트는 클라이언트 전환 뒤 |
 | 3 | 배포 실행 | |
 | 4 | 적용 결과 확인 | 배포 후 확인 항목 |
@@ -162,8 +162,8 @@
 
 | 상황 | 복구 방식 | 한계와 확인 사항 |
 |---|---|---|
-| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원은 필요 없음 |
-| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 SSM 문서 `image=rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 로그인 실패를 탐지하지 않음 |
+| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | 실패한 다이제스트는 호스트가 기록해 다시 시도하지 않고, 배포 잡의 스모크가 실패하면 `:prod`를 직전 다이제스트로 되돌림 |
+| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 `Prod Rollback (GHCR :prod)` 워크플로나 호스트 `deploy.sh <서비스> rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 로그인 실패를 탐지하지 않음 |
 | 마이그레이션 적용 후 되돌리기 | 적용된 마이그레이션은 되돌리지 않음 | 새 컬럼은 구버전 코드와 호환되도록 추가 |
 | 설정 오류 | 잘못된 시크릿을 이전 값으로 복구 후 서비스 재배포 | 이미지 태그 복원만으로 설정은 복원되지 않음 |
 

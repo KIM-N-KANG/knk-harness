@@ -10,16 +10,16 @@
 
 ### 6-1 배포 단위와 의존성
 
-배포 단위는 서버 컨테이너와 알림 서비스 컨테이너다. 운영에서는 두 컨테이너가 같은 앱 호스트에서 따로 배포된다. 이 도메인이 기동과 요청 처리에 쓰는 의존 대상은 다음과 같다.
+배포 단위는 서버 컨테이너와 알림 서비스 컨테이너다. 운영에서는 두 컨테이너가 같은 운영 호스트에서 따로 배포된다. 이 도메인이 기동과 요청 처리에 쓰는 의존 대상은 다음과 같다.
 
 | 의존 대상 | 내용 | NOTIFICATION 도메인이 쓰는 것 |
 |---|---|---|
 | PostgreSQL | 기동 시 마이그레이션 적용 | 토큰, 동의 컬럼, 템플릿, 캠페인, 아웃박스, 알림 내역, 발송 결과 |
 | Redis | 서버와 알림 서비스가 같은 인스턴스 | 회차 선점, 쿨다운, 멱등 기록 |
-| 메시지 큐 | 운영은 SQS 표준 큐와 실패 메시지 큐 | 발송 요청 전달 |
+| 메시지 브로커 | 운영과 dev는 Kafka 토픽 `push.requested`, 재시도 토픽, DLQ 토픽(같은 호스트의 Kafka) | 발송 요청 전달 |
 | FCM | 서비스 계정 인증 | 발송 |
 | 서버 내부 API | 운영은 내부 프록시 주소 `http://server.internal` | 자격 조회, 무효 토큰 삭제, 결과 보고 |
-| Secrets Manager | Terraform이 앱 호스트 설정에 참조 주입 | 공유 시크릿, FCM 자격 증명 |
+| 호스트 비밀값 파일 | 운영 `/opt/manyak/secrets/`, dev 홈서버 비밀값 파일 | 공유 시크릿, FCM 자격 증명 |
 | 공개 프록시 | 운영 | 내부 경로 차단 |
 | 관측 서버 | 트레이스 수신 | 두 단위의 트레이스 전송 |
 
@@ -28,7 +28,7 @@
 | 의존 대상 | 연결과 설정 실패 시 동작 |
 |---|---|
 | FCM 자격 증명 | 비어 있으면 기동은 정상이고 발송만 비활성<br>비어 있지 않은데 해석할 수 없으면 기동 실패 |
-| 큐 주소 | 개발과 운영 프로파일의 원격 모드 서버와 알림 서비스에서 비어 있으면 기동 실패 |
+| 큐 주소 | 브로커가 `sqs`일 때 원격 모드 서버와 알림 서비스에서 비어 있으면 기동 실패<br>운영과 dev는 `kafka`라 Kafka 부트스트랩 주소를 쓴다 |
 | 공유 시크릿 | 비어 있으면 내부 API가 없는 경로로 응답<br>알림 서비스의 자격 조회가 전부 실패 |
 | 서버 내부 주소 | 비어 있으면 알림 서비스는 기동하되 자격 조회 실패로 발송 없음 |
 | 아웃박스 설정 | 임대가 전송 제한과 같거나 짧거나, 시간 값이 0 이하이거나, 백오프 상한이 초기값보다 작으면 기동 실패 |
@@ -49,15 +49,15 @@
 | 단계 | 개발 | 운영 |
 |---|---|---|
 | 자동 시작 | `dev` push | `main` push |
-| 이미지 태그 | 커밋 SHA, 환경 태그 `dev` | 커밋 SHA<br>배포가 성공한 뒤 `latest` 승격 |
-| 배포 | 서버: 서버 배포 절차<br>알림 서비스: 최신 `dev` SHA 확인 뒤 `:dev` 승격, dev 환경이 자동 교체 | 서버: 서버 배포 절차<br>알림 서비스: 앱 호스트에 별도 배포 |
+| 이미지 태그 | 커밋 SHA, 환경 태그 `dev` | 커밋 SHA<br>배포 잡이 `:prod`로 옮기면 운영 호스트가 1분 안에 받아 교체 |
+| 배포 | 서버: 서버 배포 절차<br>알림 서비스: 최신 `dev` SHA 확인 뒤 `:dev` 승격, dev 환경이 자동 교체 | 서버: 서버 배포 절차<br>알림 서비스: 운영 호스트에 별도 배포 |
 | 상태 검사 | 서버, AI, 알림 컨테이너 모두 정상, health `UP` | 배포 완료와 health `UP` |
 
 <br>
 
 ### 6-3 환경 변수와 시크릿
 
-환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 값은 Terraform이 앱 호스트 설정(`app_host_defs`)에 주입하고 시크릿은 Secrets Manager에서 주입한다. AWS 자원에는 앱 호스트의 인스턴스 역할로 접근하므로 별도 접근 키를 주입하지 않는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
+환경 변수가 설정 파일의 값보다 우선한다. 설정은 기동 시 읽으므로 변경 뒤 서비스를 다시 배포해야 적용된다. 운영의 비밀 아닌 값은 manyak-terraform `oci/prod/services/<서비스>.env`, 비밀값은 운영 호스트 `/opt/manyak/secrets/<서비스>.env`에서 주입한다. 레포 값을 바꾸면 호스트에서 `deploy.sh sync` 뒤 그 서비스를 다시 배포한다. 이미지 저장소(R2)에는 그 버킷만 쓰는 접근 키를 비밀값으로 넣는다. 이 도메인이 읽는 설정만 적는다. 기본값이 "빈 값"이면 변수가 없어도 빈 문자열로 기동한다. "없음"이면 변수가 없을 때 기동에 실패한다.
 
 <br>
 
@@ -65,11 +65,13 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_PUSH_MODE` | `local` | 운영 Terraform 변수, 개발은 Terraform 고정값<br>둘 다 `remote` | `local`은 서버가 직접 발송<br>`remote`는 메시지 큐로 알림 서비스에 넘김 |
-| `MANYAK_PUSH_QUEUE_URL` | 빈 값 | 개발과 운영 Terraform | 원격 모드 필수 |
-| `AWS_REGION` | `ap-northeast-2` | 컨테이너 실행 환경 | |
-| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | 개발과 운영 Secrets Manager | 로컬 모드 롤백에만 필요 |
-| `MANYAK_INTERNAL_SHARED_SECRET` | 빈 값 | 개발과 운영 Secrets Manager | 알림 서비스와 같은 값 |
+| `MANYAK_PUSH_MODE` | `local` | 운영 `services/server.env`, dev compose<br>둘 다 `remote` | `local`은 서버가 직접 발송<br>`remote`는 브로커로 알림 서비스에 넘김 |
+| `MANYAK_PUSH_BROKER` | `sqs` | 운영 `services/server.env`, dev compose<br>둘 다 `kafka` | 원격 모드의 발행 브로커 |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | 운영 `kafka:9092` | |
+| `MANYAK_PUSH_QUEUE_URL` | 빈 값 | 주입 없음 | 브로커가 `sqs`일 때만 필수 |
+| `AWS_REGION` | `ap-northeast-2` | 주입 없음 | 옛 AWS 경로 전용. 운영과 dev는 쓰지 않음 |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 로컬 모드 롤백에만 필요 |
+| `MANYAK_INTERNAL_SHARED_SECRET` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 알림 서비스와 같은 값 |
 | `MANYAK_PUSH_WEB_BASE_URL` | `https://manyak.app` | 주입 없음 | 딥링크 앞부분 |
 | `MANYAK_PUSH_WEB_ICON_URL` | `https://manyak.app/icons/icon-192.png` | 주입 없음 | |
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_ENABLED` | `true` | 주입 없음 | |
@@ -94,18 +96,21 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `SPRING_PROFILES_ACTIVE` | 기본 프로필 | Terraform | `dev`, `prod`에서만 SQS 소비 |
-| `SERVER_PORT` | `8080` | 개발 Terraform은 `8081` | |
-| `MANYAK_INTERNAL_SHARED_SECRET` | 빈 값 | 개발과 운영 Secrets Manager | 서버와 같은 값 |
-| `MANYAK_SERVER_INTERNAL_BASE_URL` | 빈 값 | 운영 Terraform, 내부 프록시 주소 `http://server.internal` | |
-| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | 개발과 운영 Secrets Manager | 서버와 같은 Firebase 프로젝트 |
-| `MANYAK_PUSH_QUEUE_URL` | 빈 값 | Terraform | `dev`, `prod` 프로필에서 필수 |
-| `MANYAK_PUSH_CONSUMER_RETRY_DELAY_MS` | `60000` | Terraform, 메시지 큐 가시성과 같은 값 | |
-| `MANYAK_PUSH_CONSUMER_RETRY_ATTEMPTS` | `5` | Terraform, 큐 수신 상한과 같은 값 | |
+| `SPRING_PROFILES_ACTIVE` | 기본 프로필 | 운영 `services/notification.env` | |
+| `MANYAK_PUSH_BROKER` | `sqs` | 운영 `services/notification.env`, dev compose<br>둘 다 `kafka` | 소비 브로커 |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | 운영 `kafka:9092` | |
+| `SPRING_CLOUD_AWS_SQS_ENABLED` | `true` | 운영 `false` | Kafka 소비일 때 SQS 자동 구성을 끔 |
+| `SERVER_PORT` | `8080` | 주입 없음 | |
+| `MANYAK_INTERNAL_SHARED_SECRET` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 서버와 같은 값 |
+| `MANYAK_SERVER_INTERNAL_BASE_URL` | 빈 값 | 운영 `services/notification.env`, 내부 프록시 주소 `http://server.internal` | |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 서버와 같은 Firebase 프로젝트 |
+| `MANYAK_PUSH_QUEUE_URL` | 빈 값 | 주입 없음 | 브로커가 `sqs`일 때만 필수 |
+| `MANYAK_PUSH_CONSUMER_RETRY_DELAY_MS` | `60000` | 운영 `services/notification.env` | Kafka 재시도 토픽의 재처리 간격 |
+| `MANYAK_PUSH_CONSUMER_RETRY_ATTEMPTS` | `5` | 운영 `services/notification.env` | 넘으면 DLQ 토픽으로 |
 | `MANYAK_PUSH_CONSUMER_PROCESSING_TTL_MS` | `120000` | 주입 없음 | 재전달 가능 시간보다 짧아야 함 |
 | `MANYAK_PUSH_CONSUMER_PROCESSING_BUDGET_MS` | `10000` | 주입 없음 | 선점 수명보다 짧아야 함 |
-| `SPRING_DATA_REDIS_HOST` | `localhost` | 운영 Terraform, 서버와 같은 Redis | |
-| `SPRING_DATA_REDIS_PORT` | `6379` | 운영 Terraform<br>개발 Terraform | |
+| `SPRING_DATA_REDIS_HOST` | `localhost` | 운영 `services/notification.env`, 서버와 같은 Redis | |
+| `SPRING_DATA_REDIS_PORT` | `6379` | 운영 `services/notification.env` | |
 | `MANYAK_PUSH_WEB_BASE_URL` | 서버와 같음 | 주입 없음 | |
 | `MANYAK_PUSH_WEB_ICON_URL` | 서버와 같음 | 주입 없음 | |
 
@@ -115,11 +120,11 @@
 
 | 이름 | 기본값 | 주입 출처 | 비고 |
 |---|---|---|---|
-| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 Terraform 변수, 전송 URL은 내부 OpenTelemetry Collector 주소 | 운영은 두 단위 모두 주입<br>집계는 `cumulative` |
-| `MANYAK_TRACING_ENABLED` | `false` | 운영 Terraform 변수 | 두 단위 모두 |
+| `MANYAK_OTLP_METRICS_ENABLED` | `false` | 운영 `services/notification.env`, 전송 URL은 같은 호스트의 otel-agent | 운영은 두 단위 모두 주입<br>집계는 `cumulative` |
+| `MANYAK_TRACING_ENABLED` | `false` | 운영 `services/server.env` | 두 단위 모두 |
 | `MANYAK_TRACING_SAMPLING` | `1.0` | 주입 없음 | |
 | `MANYAK_OTLP_TRACES_ENDPOINT` | 빈 값 | 추적을 켠 운영 환경에 내부 OpenTelemetry Collector 주소 주입 | 추적을 켜면 필수<br>두 단위 모두 |
-| `SENTRY_DSN` | 빈 값 | 개발과 운영 Secrets Manager | 서버만 |
+| `SENTRY_DSN` | 빈 값 | dev 비밀값과 운영 호스트 비밀값 파일 | 서버만 |
 
 <br>
 
@@ -127,11 +132,11 @@
 
 | 확인 항목 | 기준 | 자동 여부와 한계 |
 |---|---|---|
-| 메시지 큐와 소비자 설정 | 메시지 큐의 가시성과 수신 상한을 소비자 재전달 설정에 그대로 주입 | Terraform이 같은 지역 변수로 주입 |
+| 브로커와 소비자 설정 | 재시도 간격과 횟수를 알림 서비스 설정으로 주입(60초, 5회) | `services/notification.env` 수동 검토 |
 | 공유 시크릿 | 서버와 알림 서비스에 같은 값<br>빈 값 거부 | 수동 검토<br>길이만 검사하고 값은 기록하지 않음 |
 | Firebase 프로젝트 | 서버와 알림 서비스의 자격 증명이 앱과 같은 프로젝트 | 수동 검토 |
-| 발송 모드 전환 | 알림 서비스가 메시지 큐를 소비하는 것을 확인한 뒤 서버를 원격 모드로 전환 | 수동 결정 |
-| 시나리오 추가 | 큐 메시지 검증의 허용 시나리오를 알림 서비스에 먼저 배포<br>공지 시나리오 `NOTICE`와 공개 중단 시나리오 `STORY_TAKEN_DOWN`도 같은 순서<br>서버는 발송 결과 보고의 `type`, 알림 내역의 `type` CHECK 마이그레이션, 템플릿 키를 같은 릴리스에 포함 | 수동 검토<br>순서가 바뀌면 원격 모드의 그 시나리오 메시지가 실패 메시지 큐로 가고 알림 내역은 정상 |
+| 발송 모드 전환 | 알림 서비스가 브로커를 소비하는 것을 확인한 뒤 서버를 원격 모드로 전환 | 수동 결정 |
+| 시나리오 추가 | 브로커 메시지 검증의 허용 시나리오를 알림 서비스에 먼저 배포<br>공지 시나리오 `NOTICE`와 공개 중단 시나리오 `STORY_TAKEN_DOWN`도 같은 순서<br>서버는 발송 결과 보고의 `type`, 알림 내역의 `type` CHECK 마이그레이션, 템플릿 키를 같은 릴리스에 포함 | 수동 검토<br>순서가 바뀌면 원격 모드의 그 시나리오 메시지가 DLQ 토픽로 가고 알림 내역은 정상 |
 | 내부 API 추가 | 결과 보고 API는 서버를 먼저 배포한 뒤 알림 서비스가 보고를 시작<br>순서가 바뀌면 서버 배포 전까지 보고가 경로 없음 응답으로 실패해 경고만 남고 통계는 비어 있으며 발송에는 영향 없음 | 수동 검토 |
 | 와이어 계약 변경 | 푸시 데이터가 바뀌면 앱과 웹의 처리를 함께 배포<br>새 시나리오는 웹과 앱의 알림함 라벨을 함께 배포하고 늦어지면 구버전은 라벨 없이 제목, 본문, 딥링크 이동으로 보임 | 수동 검토 |
 | 회원 API 추가 | 알림 내역 API는 서버를 먼저 배포한 뒤 웹과 앱이 알림함을 붙임<br>배포 전의 알림은 내역이 없음 | 수동 검토 |
@@ -139,7 +144,7 @@
 | 캠페인 공지 연결 | 캠페인 공지 참조의 유니크 제거, 실패 사유 컬럼 추가와 `noticeId`를 받는 서버를 먼저 배포한 뒤 관리자 웹이 공지 연결과 실패 사유 표시를 더함<br>관리자 웹이 먼저면 이전 서버가 `noticeId`를 무시해 공지 없는 광고 캠페인을 만듦<br>푸시 데이터와 알림 내역은 바뀌지 않아 웹과 앱은 함께 배포하지 않음 | 수동 검토 |
 | 마이그레이션 | 기동 시 실행하므로 새 마이그레이션은 해당 코드보다 먼저 적용<br>재실행해도 같은 결과 | 기동 시 자동 적용<br>마이그레이션 경로 변경 PR은 `tbls lint`와 `dbdoc/` 비교를 CI에서 자동 실행 |
 | 코드 테스트 | 두 저장소의 전체 테스트 통과 | CI 자동 |
-| 컨테이너 기동 | 컨테이너 헬스체크와 `/actuator/health` `UP` | CI 자동<br>FCM과 메시지 큐 연결은 검사하지 않음 |
+| 컨테이너 기동 | 컨테이너 헬스체크와 `/actuator/health` `UP` | CI 자동<br>FCM과 브로커 연결은 검사하지 않음 |
 
 <br>
 
@@ -149,13 +154,13 @@
 |---|---|---|
 | 출석 리마인드와 이프 만료 예정 알림 문구 | 관리자 API로 템플릿 행 추가 또는 기본 문구 복귀<br>갱신 주기 안에 반영<br>재배포 없음 | 문구 템플릿 조회의 `effective`<br>다음 회차의 발송 문구 |
 | 캠페인 예약, 취소, 재실행 | 관리자 API<br>재배포 없음 | 캠페인 목록의 상태와 결과 필드 |
-| 발송 모드 | Terraform 변수 변경 후 서비스 재배포 | 원격이면 아웃박스 행과 메시지 큐의 가시 메시지 수, 로컬이면 서버 발송 지표 |
-| 공유 시크릿 | Secrets Manager 값 변경 후 서버와 알림 서비스 모두 서비스 재배포 | 교체 중에는 자격 조회가 실패해 재전달됨 |
-| FCM 자격 증명 | Secrets Manager 값 변경 후 서비스 재배포 | 발송 지표의 `failure`가 늘지 않음 |
+| 발송 모드 | `services/server.env` 변경 후 sync와 서비스 재배포 | 원격이면 아웃박스 행과 Kafka 소비자 그룹 지연, 로컬이면 서버 발송 지표 |
+| 공유 시크릿 | 호스트 비밀값 파일 변경 후 서버와 알림 서비스 모두 서비스 재배포 | 교체 중에는 자격 조회가 실패해 재전달됨 |
+| FCM 자격 증명 | 호스트 비밀값 파일 변경 후 서비스 재배포 | 발송 지표의 `failure`가 늘지 않음 |
 | 출석 발송 시각 | 환경 변수 변경 후 서비스 재배포 | 야간 구간으로 옮기면 야간 동의자에게만 발송 |
 | 이프 만료 예정 발송 시각 | 환경 변수 변경 후 서비스 재배포 | 옮긴 시간만큼 만료 창이 겹치거나 비어 그 구간의 로트가 두 번 들거나 빠짐<br>겹침의 중복은 쿨다운이 막음 |
-| 소비자 시간 설정 | Terraform 변경 후 apply | 메시지 큐 설정과 함께 바꿈 |
-| 추적과 지표 전송 | 운영 Terraform 변수 변경 후 apply | 두 단위 모두 해당 |
+| 소비자 시간 설정 | `services/notification.env` 변경 후 sync와 재배포 | |
+| 추적과 지표 전송 | `services/<서비스>.env` 변경 후 `deploy.sh sync`와 재배포 | 두 단위 모두 해당 |
 
 <br>
 
@@ -178,8 +183,8 @@
 |---|---|
 | 롤링 교체 중 아웃박스 | 임대가 끝나면 새 컨테이너의 릴레이가 이어받음 |
 | 롤링 교체 중 큐 소비 | 처리 중 메시지는 가시성 시간이 지나면 재전달<br>선점 수명이 지나면 새 소비자가 처리 |
-| 알림 서비스 중단 | 메시지 큐에 적체되고 서버는 영향 없음<br>재기동 뒤 소비 |
-| 서버 중단 | 알림 서비스의 자격 조회가 실패해 재전달<br>상한을 넘기면 실패 메시지 큐 |
+| 알림 서비스 중단 | Kafka 토픽에 쌓이고 서버는 영향 없음<br>재기동 뒤 소비 |
+| 서버 중단 | 알림 서비스의 자격 조회가 실패해 재전달<br>상한을 넘기면 DLQ 토픽 |
 | 출석과 이프 만료 예정 회차 중 교체 | 두 컨테이너가 동시에 실행돼도 선점 키로 한 번만 실행<br>커밋 전에 종료되면 그날 요청이 남지 않음 |
 | 캠페인 회차 중 교체 | 전송 중 상태로 남음<br>시간 한도 뒤 스케줄러가 실패로 전환하고 관리자가 재실행<br>원격 모드는 이미 기록된 회원이 다시 받지 않고 로컬 모드는 중복 가능 |
 
@@ -191,10 +196,10 @@
 
 | 상황 | 복구 방식 | 한계와 확인 사항 |
 |---|---|---|
-| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | `latest`는 배포가 성공한 뒤에만 옮기므로 태그 복원은 필요 없음 |
-| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 SSM 문서 `image=rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 발송 실패를 탐지하지 않음 |
+| 새 컨테이너 헬스체크 실패 | 새 컨테이너만 지우고 기존 컨테이너가 계속 서비스 | 실패한 다이제스트는 호스트가 기록해 다시 시도하지 않고, 배포 잡의 스모크가 실패하면 `:prod`를 직전 다이제스트로 되돌림 |
+| 배포는 정상이나 동작 오류 | revert 커밋 릴리스 또는 `Prod Rollback (GHCR :prod)` 워크플로나 호스트 `deploy.sh <서비스> rollback`으로 직전 이미지 재배포 | health 기반 자동 복구는 발송 실패를 탐지하지 않음 |
 | 마이그레이션 적용 후 되돌리기 | 적용된 마이그레이션은 되돌리지 않음 | 새 컬럼은 구버전 코드와 호환되도록 추가 |
-| 실패 메시지 큐 적체 | 원인 해결 뒤 본 큐로 되돌림 | 되돌린 메시지는 멱등 기록이 남아 있으면 발송 없이 확인 |
+| DLQ 토픽 적체 | 원인 해결 뒤 DLQ 토픽의 메시지를 `push.requested`로 다시 발행 | 되돌린 메시지는 멱등 기록이 남아 있으면 발송 없이 확인 |
 | 원격 모드 장애 | 서버를 로컬 모드로 되돌림 | 서버에 FCM 자격 증명이 있어야 함<br>릴레이가 멈춰 아웃박스의 미발행 행은 그대로 남음<br>원격으로 다시 전환하면 포기 시각이 지난 행은 발행 없이 포기로 기록되고 나머지만 발행됨 |
 | 잘못 보낸 광고 | 회수 불가 | 캠페인 취소는 선점 전에만 유효<br>확정 전에 대상 수 미리보기로 확인 |
 | 설정 오류 | 잘못된 값을 이전 값으로 복구 후 서비스 재배포 | 이미지 복원만으로 설정은 복원되지 않음 |
@@ -206,12 +211,12 @@
 | 확인 항목 | 자료 | 기준 |
 |---|---|---|
 | 기동 | 두 단위의 배포 출력 이미지와 컨테이너 상태, 헬스체크 `/actuator/health`, 스모크 테스트 | 의도한 이미지로 기동, `UP` |
-| 메시지 큐 소비 | 메시지 큐의 가시 메시지 수, 실패 메시지 큐 경보 | 적체가 늘지 않고 경보 없음 |
+| 브로커 소비 | Kafka 소비자 그룹 지연, DLQ 토픽 메시지 수, 소비 지표의 `dlq` | 지연과 DLQ가 늘지 않음(DLQ 경보 규칙은 아직 없음) |
 | 발송 | 발송 지표의 `failure` | 배포 전과 같은 수준 |
 | 아웃박스 | 아웃박스 지표의 `retry`와 `abandoned` | 늘지 않음 |
 | 내부 API | 요청 로그의 내부 경로 상태 | 경로 없음 응답과 인증 실패 응답이 없음 |
 | 결과 보고 | 보고 실패 WARN과 발송 결과 행 | WARN이 없고 소비가 성공할 때마다 행 증가 |
-| 실패 메시지 큐 | 경보 | 발생 없음 |
+| DLQ 토픽 | 소비 지표의 `dlq` | 증가 없음 |
 
 <br>
 
@@ -221,11 +226,11 @@
 |---|---|---|
 | 기동 중 설정 검증 실패 | 시작 로그의 예외 메시지 | 서버: 원격 모드의 큐 주소, 아웃박스 설정, 문구 기본값, FCM 자격 증명 해석, 추적 주소 누락 중 해당 값 수정 후 서비스 재배포<br>알림 서비스: 큐 주소, 소비자 시간 설정, FCM 자격 증명 해석 중 해당 값 수정 후 서비스 재배포 |
 | 자격 조회가 전부 실패 | 알림 서비스의 조회 실패 WARN, 서버 내부 경로 요청 로그 | 없는 경로 응답이면 시크릿 미설정<br>인증 실패 응답이면 시크릿 불일치<br>연결 실패면 내부 프록시의 `server.internal` 라우트 확인 |
-| 메시지 큐가 적체되고 소비가 없음 | 알림 서비스 컨테이너 상태, 큐 주소 | 컨테이너 실행 여부와 주소 확인 |
+| 소비자 그룹 지연이 늘고 소비가 없음 | 알림 서비스 컨테이너 상태, Kafka 부트스트랩 주소 | 컨테이너 실행 여부와 주소 확인 |
 | 발송이 전부 실패 | 발송 지표, 발송 실패 WARN의 오류 코드 | 인증 오류면 자격 증명과 Firebase 프로젝트 확인 |
-| 아웃박스가 발행되지 않음 | 아웃박스 지표의 `retry`, 릴레이 로그 | 메시지 큐 권한과 주소 확인 |
+| 아웃박스가 발행되지 않음 | 아웃박스 지표의 `retry`, 릴레이 로그 | Kafka 브로커 상태와 부트스트랩 주소 확인 |
 | 출석 리마인드가 나가지 않음 | 회차 로그, 선점 실패 로그, 아웃박스 지표 | 회차 로그가 없으면 Redis 연결과 스케줄러 활성화 확인<br>요청은 기록됐는데 발송이 없으면 아웃박스 발행과 큐 소비 확인 |
 | 이프 만료 예정 알림이 나가지 않음 | 회차 로그, 선점 실패 로그, 아웃박스 지표, 알림 내역 행 | `targets`가 0이면 창 안 로트 보유 회원이 없고 `targets`와 `cooldown`이 같으면 전부 쿨다운<br>내역은 있는데 푸시가 없으면 발송 결과의 `reason` 확인<br>회차 로그가 없으면 Redis 연결과 스케줄러 활성화 확인 |
 | 발송 결과가 기록되지 않음 | 알림 서비스의 `push_delivery_report_failed` WARN | 요청 거절 응답이면 서버의 `type` 목록 미확장 |
-| 실패 메시지 큐 경보 | 실패 메시지 큐의 메시지 본문 | 검증 실패면 메시지 형식 확인<br>재전달 초과면 자격 조회나 FCM 장애 확인 |
+| DLQ 토픽 증가 | DLQ 토픽의 메시지 본문 | 검증 실패면 메시지 형식 확인<br>재전달 초과면 자격 조회나 FCM 장애 확인 |
 | 알림 통계가 비어 있음 | 보고 실패 WARN과 서버 내부 경로 요청 로그 | 경로 없음 응답이면 서버가 먼저 배포되지 않음<br>WARN도 없으면 알림 서비스가 구버전 |
