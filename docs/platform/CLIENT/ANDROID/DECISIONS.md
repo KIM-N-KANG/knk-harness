@@ -265,6 +265,6 @@
 | 배경 | 토큰 값은 웹과 공유하는 디자인 토큰에서 왔지만 생성기가 앱 저장소 밖에 있다. 앱 저장소의 `design/design-tokens.json` 사본은 아무도 읽지 않고 손으로만 맞추다 어긋났다. DESIGN.md의 YAML front matter와 산문 표도 같은 값을 다시 적어 2026-11에는 다크 `backgroundNeutral`처럼 코드와 다른 값이 남았다. |
 | 채택 | 2026-08-29에 토큰 JSON 사본을 지웠고 Style Dictionary 같은 생성기를 두지 않는다. 2026-11-24에 DESIGN.md의 front matter를 지우고 `core/designsystem`의 Kotlin 토큰 파일을 값의 기준으로 둔다. DESIGN.md는 토큰의 용도, 금지 조합과 공용 컴포넌트 규칙을 적는다. 2026-08-29에 다크 `textSubtlest`와 `textDisabled`를 한 단계 밝게 올린 값은 유지한다. |
 | 대안 | 생성기를 앱 빌드에 연결: 토큰 변경 빈도에 비해 Android 빌드에 Node 의존을 얹는 비용이 크다. |
-| 이유 | 사람이 옮겨 적는 값은 한 곳만 두어야 어긋남을 줄일 수 있다. |
+| 이유 | 사람이 옮겨 적는 값은 기준을 한 곳에 정해야 어긋났을 때 어느 쪽이 맞는지 판단할 수 있다. DESIGN.md의 여백, 크기, 모양, 모션, 타이포 표는 화면을 만들 때 바로 보는 참고로 남기고, 값이 다르면 Kotlin이 기준이다. 어긋남이 실제로 생긴 색은 산문에서 값을 빼고 용도만 적는다. |
 | 영향 | 값을 바꾸면 Kotlin 토큰 파일과 DESIGN.md 표를 같은 커밋에서 고친다. 웹과 공유하는 값이면 PR에 웹 변경 필요를 적는다. 두 클라이언트의 값이 같은지는 자동으로 확인하지 못한다. |
 | 근거 | [KNK-2132](https://kimandkang.atlassian.net/browse/KNK-2132), [이동 전 DESIGN.md](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/DESIGN.md) |
