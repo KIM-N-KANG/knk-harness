@@ -20,8 +20,6 @@ NOTIFICATION 패키지`"]
     U -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
     F -->|OTLP 로그| C["OpenTelemetry Collector"]
-    F --> CW["`**CloudWatch**
-안전망`"]
     U -->|OTLP 트레이스, 지표| C["OpenTelemetry Collector"]
     C --> DP["`**Data Prepper**`"]
     DP -->|로그와 트레이스 인덱스| OS["`**OpenSearch**`"]
@@ -29,15 +27,14 @@ Fluent Bit`"]
     C -->|지표| G["`**Prometheus**`"]
     S -->|5xx| SE["`**Sentry**`"]
     SE -->|일일 요약| SL["`**Slack**`"]
-    Q["`**실패 메시지 큐**`"] -->|가시 메시지 경보| SNS["`**SNS 이메일**`"]
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     class S,N comp
-    class F,OS,CW,DP,OD,G,SE,SL,Q,SNS ext
+    class F,OS,DP,OD,G,SE,SL ext
     style U fill:#FAFAFA,stroke:#AAAAAA
 ```
 
-운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
+운영에서는 로그 라우터와 서버가 같은 호스트의 otel-agent로 보내고, otel-agent가 마냑 tailnet으로 관측 서버의 Collector에 넘긴다. 운영 전송 경로는 manyak-terraform `oci/prod`(otel-agent, fluent-bit) 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -116,13 +113,13 @@ Fluent Bit`"]
 |---|---|
 | 토큰과 동의 | 요청 로그의 `/api/v1/users/me/push-tokens`, `/api/v1/users/me/push-settings` 상태 분포 |
 | 완성, 검수, 공개 중단 알림 | 원격 모드는 지표 `manyak.push.outbox.result`와 `manyak.push.consume.result`<br>로컬 모드는 발송 실패 WARN |
-| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, 실패 메시지 큐 경보<br>알림 서비스는 지표를 전송하지 않음 |
+| 출석 리마인드 | 로그 `attendance_reminder_sent`의 `targets`와 `sent`, 선점 실패 로그<br>발송 결과는 알림 서비스의 소비 결과 로그와 발송 실패 WARN, DLQ 수신 WARN<br>알림 서비스는 지표를 전송하지 않음 |
 | 이프 만료 예정 알림 | 로그 `credit_expiry_reminder_sent`의 `targets`, `cooldown`, `sent`, 선점 실패 로그<br>회원별 최종 결과는 `push_delivery_results`의 `type`이 `CREDIT_EXPIRY_REMINDER`인 행<br>발송 결과는 출석 리마인드와 같음 |
 | 캠페인 | 캠페인 목록 API의 결과 필드<br>회차 로그<br>발송 결과는 출석 리마인드와 같음 |
 | 관리자 API | 요청 로그의 `/api/v1/admin/push/` 접두 경로 상태 분포<br>변경 이력은 관리자 도메인의 감사 로그 |
 | 알림 통계 | 알림 통계 API와 캠페인 상세<br>보고 실패 WARN<br>요청 로그의 `/internal/push-deliveries` 상태 분포<br>누락 규모는 지표 `manyak.push.send.result`의 `success`와 결과 행의 도달 기기 수 합을 비교 |
 | 큐 중계 | 지표 `manyak.push.outbox.result`의 `retry`와 `abandoned`, 포기 WARN |
-| 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`와 `discard`, 실패 메시지 큐 경보 |
+| 큐 소비 | 지표 `manyak.push.consume.result`의 `retry`, `discard`, `dlq`와 DLQ 수신 WARN `알림 DLQ 수신` |
 | FCM | 지표 `manyak.push.send.result`의 `failure`와 `unregistered`, 발송 실패 WARN |
 | 자격 조회 | 알림 서비스의 자격 조회 실패 WARN, 요청 로그의 내부 경로 상태 |
 
@@ -140,7 +137,7 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 내부 OTel Collector를 거쳐 AMP로 전송<br>알림 서비스는 운영만 켬 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 호스트 otel-agent를 거쳐 관측 서버 Prometheus로 전송<br>알림 서비스는 운영만 켬 |
 | 전송 주기 | 60초 간격 |
 | 사전 등록 | 발송, 아웃박스, 소비 결과 카운터는 기동 시 0으로 등록해 첫 실패부터 집계 |
 
@@ -163,7 +160,7 @@ Fluent Bit`"]
 
 | 항목 | 기준 |
 |---|---|
-| 실패 메시지 큐 | 가시 메시지가 1건이라도 있으면 SNS 이메일<br>개발과 운영 모두 |
+| DLQ 토픽 | 경보 규칙은 아직 없음<br>소비 지표의 `dlq`와 DLQ 수신 WARN으로 확인 |
 | 본 큐 적체 | 경보 없음 |
 | 정기 보고 | 매일 오전 10시(KST), 지난 24시간 동안 발생한 운영 Sentry 오류 요약 |
 | NOTIFICATION에서 수집하는 오류 | 서버의 예상하지 못한 예외로 인한 500<br>4xx 거절, 발송 실패, 회차 실패, 소비 재전달, 알림 서비스의 오류는 Sentry에 없어 보고에 포함되지 않음 |
@@ -181,7 +178,7 @@ Fluent Bit`"]
 |---|---|
 | 푸시 토큰 | 지표와 트레이스에 없음 |
 | 동의 시각 | 지표에 기록하지 않음 |
-| 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 메시지 큐에는 본문으로 보존 |
+| 푸시 데이터 | 로그에 기록하지 않음<br>아웃박스와 Kafka 토픽에는 본문으로 보존 |
 | 회원 식별자 | 서버 로그는 내부 ID, 알림 서비스 로그는 공개 식별자 |
 | Sentry 요청 필드 | 기본 수집 |
 | Sentry 이벤트 | 서버의 5xx만 캡처<br>기본 개인정보 수집 비활성화 |
@@ -195,5 +192,5 @@ Fluent Bit`"]
 | 지표 전송 실패 | SDK로 배치 전송<br>실패분은 유실 |
 | Sentry 캡처 실패 | SDK 내부에서 처리<br>DSN 없는 환경은 no-op |
 | 회차 로그 | 회차가 예외로 끝나면 결과 대신 실패 이벤트<br>결과와 실패, 선점 실패 로그가 모두 없으면 실행되지 않았거나 로그가 유실된 것 |
-| 소비 지표의 `dlq` | SQS 환경에서는 증가하지 않음<br>실패 메시지 큐 도착은 메시지 큐 경보로 확인 |
+| 소비 지표의 `dlq` | DLQ 토픽에 메시지가 도착할 때마다 증가 |
 | 미수집과 누락 | 수집 비활성화, 기록 실패, 전송 유실을 구분<br>기록이 없다는 이유만으로 발송이 없었다고 판단하지 않음 |
