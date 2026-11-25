@@ -880,3 +880,22 @@
 | 영향 | DataStore 파일 이름 `story-onboarding`과 키, 라우트 `StoryOnboardingRoute`, 분석 이벤트는 그대로라 저장된 온보딩 표시와 백스택 복원이 이어진다. 로딩 문구는 다른 기능처럼 onboarding이 자기 문구(`story_onboarding_loading`)로 가진다. |
 | 대체 관계 | [A-083](#a-083)의 "`home`의 `StoryOnboardingStore`" 중 소유 모듈만 onboarding으로 바꾼다. 루트 교체, 완료 판정, 회원 귀속 정리 결정은 유지한다. |
 | 근거 | [KNK-2049](https://kimandkang.atlassian.net/browse/KNK-2049), [Android 계획](https://github.com/KIM-N-KANG/manyak-android/blob/27b9c46bb5b7dcad1b9bb9a50f7ec18c3d1c8f31/docs/plans/story-onboarding-module.md) |
+
+<br>
+
+<a id="a-102"></a>
+<a id="a-102-홈-카드-줄의-이름-줄-화살표를-없애고-양옆-카드를-8dp씩-보인다"></a>
+
+**A-102. 홈 카드 줄의 이름 줄 화살표를 없애고 양옆 카드를 8dp씩 보인다**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-25 |
+| 상태 | Accepted |
+| 관계 | 웹 [W-049](../WEB/DECISIONS.md#w-049)의 홈 카드 줄을 Android에 적용한다. KNK-2032에서 웹 KNK-2030을 따라 넣은 이름 줄의 이전, 다음 화살표를 대체한다. |
+| 배경 | 웹 KNK-2137이 이름 줄 화살표를 없애고 카드 사이를 8px로 고르게 둔 채 셋째 카드의 앞 8px을 보이도록 바꿨고, 터치 기기에는 넘김 버튼을 두지 않는다. Android는 셋째 카드가 16dp 보여 카드 시작점에 맞춰 넘긴 자리에서 양옆에 보이는 폭이 달랐다. 사용자가 Android도 웹과 같게 맞추기로 했다. |
+| 채택 | 이름 줄의 화살표와 카드 한 장씩 넘기는 처리를 없애고 손으로만 끌어 넘긴다. 카드 사이 8dp는 그대로 두고 카드 폭을 (줄 폭 − 40dp) ÷ 2로 잡아 처음 화면에 두 장과 셋째 카드의 앞 8dp를 보인다. 카드 시작점을 왼쪽 여백 16dp에 맞춘 자리에서는 앞 카드가 여백에서 간격을 뺀 8dp만 남아 양옆이 같다. 골격은 같은 줄 배치를 써서 함께 바뀐다. |
+| 대안 | 화살표를 남기고 폭만 맞추는 안. 웹 터치 화면과 표현이 달라지고, 줄이 넘길 카드가 있음을 이미 셋째 카드로 알려 채택하지 않았다. 웹처럼 마우스를 올린 쪽에만 넘김 버튼을 띄우는 안. Android 지원 기기는 터치가 기본이라 두지 않았다. |
+| 이유 | 웹과 같은 홈 카드 줄을 주고, 넘김 수단을 손으로 끄는 동작 하나로 줄인다. |
+| 영향 | 화살표 검증 STORY-ANDROID-21(홈)을 폐기하고 줄 배치 검증 STORY-ANDROID-27을 더했다. 화살표 문구 `home_section_previous`, `home_section_next`를 지웠다. 스냅이 없어 끌어 넘긴 자리에서는 양옆 폭이 같지 않을 수 있다. 화면 낭독기 사용자는 카드 사이를 옮겨 다니면 줄이 따라 넘어간다. |
+| 근거 | [Android 화면 배치](3-3-LAYOUT.md#3-3-1-목록과-제작), [KNK-2142](https://kimandkang.atlassian.net/browse/KNK-2142) |
