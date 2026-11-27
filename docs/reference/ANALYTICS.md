@@ -79,7 +79,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 - 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지한다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않는다. Android와 iOS Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않는다.
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급한다.
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않는다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리한다([4-4-3 중앙 로그아웃과 복구](../spec/ACCOUNT/CLIENT/ANDROID/4-4-EXECUTION.md#4-4-3-중앙-로그아웃과-복구)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않는다.
-- **iOS 로그아웃**도 Amplitude를 식별자 기준으로 쓰지 않는다. 새 이벤트 발행을 막은 상태에서 Amplitude 사용자 ID 해제 → 앱 UUID 교체, 영속화 → 새 UUID를 Amplitude 기기 ID로 주입 → Crashlytics 사용자 ID 해제 순서로 분리하며 SDK 초기화가 만든 값에 의존하지 않는다. 세션 종료 절차 안의 위치는 ACCOUNT가 정한다([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측)).
+- **iOS 로그아웃**도 Amplitude를 식별자 기준으로 쓰지 않는다. 새 이벤트 발행을 막은 상태에서 Amplitude와 Crashlytics 사용자 ID 해제 → 앱 UUID 교체, 영속화 → 새 UUID를 Amplitude 기기 ID로 주입 순서로 분리하며 SDK 초기화가 만든 값에 의존하지 않는다. 순서와 세션 종료 절차 안의 위치는 ACCOUNT iOS가 정한다([4-4-3 중앙 로그아웃과 복구](../spec/ACCOUNT/CLIENT/IOS/4-4-EXECUTION.md#4-4-3-중앙-로그아웃과-복구)).
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊는다(ACCOUNT-US-012 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선한다.
 - 공통 프로퍼티에 `is_logged_in`(boolean), `user_id`(public_id 문자열)를 로그인 시점부터 추가한다(§3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용한다. 서버 구조화 로그의 `user_id` 필드 추가는 [채팅 관측](../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md)이 소유한다.
 

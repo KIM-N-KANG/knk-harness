@@ -31,7 +31,7 @@
 | `X-Manyak-App-Version` | 미정(서버 선행 변경 필요). 현재 서버는 이 헤더가 있으면 분석 `platform`을 `Android`로 기록하므로 싣지 않음 ([I-019](DECISIONS.md#i-019)) |
 | `X-Manyak-Request-Id` | 생성하지 않음. 응답 값을 오류의 `requestId`로 보관 |
 
-기기 ID의 생성, 교체와 분석 SDK 주입 순서는 ACCOUNT가 정한다. 인증 클라이언트는 `ManyakAuth`가 구현한 토큰 포트로 access 토큰을 붙인다. 만료 전 선제 재발급, 401 뒤 재발급 한 번과 원 요청 재전송 한 번, 앱 전체에서 재발급을 하나만 실행하는 직렬화는 이 경계에서만 처리하며 재발급 결과별 세션 처리와 시간 기준은 ACCOUNT를 따른다. ([ACCOUNT CLIENT](../../../spec/ACCOUNT/CLIENT/AGENTS.md))
+기기 ID의 생성, 교체와 분석 SDK 주입 순서는 ACCOUNT가 정한다. 인증 클라이언트는 `ManyakAuth`가 구현한 토큰 포트로 access 토큰을 붙인다. 만료 전 선제 재발급, 401 뒤 재발급 한 번과 원 요청 재전송 한 번, 앱 전체에서 재발급을 하나만 실행하는 직렬화는 이 경계에서만 처리하며 재발급 결과별 세션 처리와 시간 기준은 ACCOUNT를 따른다. ([ACCOUNT iOS 재발급](../../../spec/ACCOUNT/CLIENT/IOS/4-4-EXECUTION.md#4-4-2-재발급))
 
 | `DomainError` | 의미 |
 |---|---|
@@ -57,7 +57,7 @@
 
 요청마다 다른 해석이 필요하면 그 요청이 기본 변환을 바꾼다. 예를 들어 수정 요청의 403은 권한 없음으로 처리한다. `Unauthorized`와 `AccountSuspended` 결과만으로 세션을 끝내지 않으며 세션 종료는 ACCOUNT의 재발급 결과가 정한다. 오류 원인 메시지에는 URL과 헤더가 섞일 수 있으므로 사용자 문구, 분석 값과 로그에 넣지 않는다.
 
-SSE는 `URLSession.bytes`로 받고 같은 공통 헤더와 인증 경계를 쓴다. 이벤트 해석, 시간 제한과 실패 변환은 [CHAT](../../../spec/CHAT/CLIENT/AGENTS.md)이 정한다.
+SSE는 `URLSession.bytes`로 받고 같은 공통 헤더와 인증 경계를 쓴다. 이벤트 해석, 시간 제한과 실패 변환은 [CHAT iOS](../../../spec/CHAT/CLIENT/IOS/4-4-EXECUTION.md#4-4-1-요청과-sse-해석)가 정한다.
 
 <br>
 

@@ -68,7 +68,7 @@
 | 정리 중 | 공개 상태 `Pending`, 장벽 닫힘. 이전 계정 결과 반영 금지 |
 | 정리 실패 | 필수 단계마다 3회 시도(200ms, 400ms 간격) 후 `CleanupFailed`, 저널 유지, 새 로그인 차단 |
 | 재기동 | 같은 기기 ID 후보로 성공 단계 다음부터 멱등 재개. 재개한 정리는 종료 안내 없이 `Guest` 공개 |
-| 제작 데이터 | 제작 데이터베이스 행은 삭제하지 않고 소유 회원 ID로 격리 ([STORY 적용 범위](../../../STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) |
+| 제작 데이터 | 제작 데이터베이스 행은 삭제하지 않고 소유 회원 ID로 격리 ([STORY iOS 제작 데이터베이스](../../../STORY/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-2-제작-데이터베이스)) |
 
 <br>
 
@@ -82,10 +82,10 @@
 | 프로필 캐시 | `ManyakMy` | 메모리 값 해제 |
 | 초대 안내 대기 | `ManyakMy` | 메모리 값 해제 |
 | 페르소나 목록과 생성 항목 | `ManyakMy` | 메모리 값 해제 |
-| 스토리 온보딩 표시 | `ManyakOnboarding` | 메모리 값 해제 ([STORY 적용 범위](../../../STORY/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) |
-| 광고 동의 질문 기록 | `ManyakNotification` | 메모리 값 해제 ([NOTIFICATION 수신 동의](../../../NOTIFICATION/CLIENT/2-2-REQUIREMENTS.md#2-2-5-수신-동의와-설정)) |
-| 표시된 알림 | `ManyakNotification` | 범위는 NOTIFICATION ([푸시와 계정 격리](../../../NOTIFICATION/CLIENT/2-2-REQUIREMENTS.md#2-2-4-푸시와-계정-격리)) |
-| 체험 잔여 | `ManyakCredit` | 메모리 값 해제 ([PAYMENT 체험](../../../PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-3-체험)) |
+| 스토리 온보딩 표시 | `ManyakOnboarding` | 메모리 값 해제 ([STORY iOS 가입 안내](../../../STORY/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-4-장르-기기-기록과-가입-안내)) |
+| 광고 동의 질문 기록 | `ManyakNotification` | 메모리 값 해제 ([NOTIFICATION iOS 저장 위치](../../../NOTIFICATION/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명)) |
+| 알림 정리 | `ManyakNotification` | 기기 FCM 토큰 삭제, 알림 센터의 이 앱 알림 제거와 배지 0. 범위는 NOTIFICATION ([NOTIFICATION iOS 저장 위치](../../../NOTIFICATION/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명)) |
+| 체험 잔여 | `ManyakCredit` | 메모리 값 해제 ([PAYMENT iOS 값과 수명](../../../PAYMENT/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-값과-수명)) |
 | 회원 suite | `ManyakCommon` | suite 전체 삭제. 삭제 결과를 돌려주지 않으므로 남은 키가 없는지 다시 읽어 판정 |
 | 이미지 캐시 | `ManyakDesignSystem`. 앱 타깃이 감싸 등록 | Nuke 설정이 쓰는 메모리와 디스크 캐시 전체 ([I-062](DECISIONS.md#i-062)) |
 | HTTP 응답 캐시 | `ManyakNetwork` | 요청 계층이 응답 캐시를 쓰면 전체 삭제 |
@@ -95,10 +95,10 @@
 | 기기 귀속 값 | 소유 타깃 | 처리 |
 |---|---|---|
 | 테마 선택 | `ManyakCommon` | 유지 |
-| 채팅 기기 설정 | `ManyakChat` | 유지 |
+| 채팅 기기 설정과 안내 기록 | `ManyakChat` | 유지 |
 | 최근 검색 | `ManyakHome` | 유지 |
 | 공지 읽음 | `ManyakNotice` | 유지 |
-| 알림 권한 질문 여부 | `ManyakNotification` | 유지 |
+| 기기 토큰 삭제 미완료 표시 | `ManyakNotification` | 유지. 기기 토큰 삭제나 다음 등록이 성공하면 지움 |
 | 제작 안내 단계 | `ManyakCreate` | 유지 |
 | 제작 데이터베이스 | `ManyakCreate` | 유지하고 소유 회원 ID로 격리 |
 | 기기 ID | `ManyakCommon` | 로그아웃 정리에서 새 값으로 교체 |

@@ -78,7 +78,7 @@ flowchart TD
 | 기능 데이터베이스 | GRDB(SQLite). 소유 기능 타깃 하나만 엶 | 회원 귀속 행은 회원 ID로 격리. 테이블과 정리 범위는 소유 도메인 |
 | 기기 귀속 키와 값 | UserDefaults 기기 suite | 로그아웃에도 유지 |
 | 회원 귀속 키와 값 | UserDefaults 회원 suite | 로그아웃 정리에서 suite 전체 삭제 |
-| 토큰 | Keychain | 접근 정책과 재설치 처리는 [ACCOUNT](../../../spec/ACCOUNT/CLIENT/AGENTS.md) |
+| 토큰 | Keychain | 접근 정책과 재설치 처리는 [ACCOUNT iOS](../../../spec/ACCOUNT/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-세션과-토큰) |
 | 이미지 캐시 | Nuke 메모리와 디스크 캐시 | 로그아웃 정리에서 삭제 |
 | 기기 백업 | Keychain 토큰은 기기 전용이라 다른 기기로 복원되지 않음 | 그 밖의 저장소의 백업 포함 여부는 미정 |
 

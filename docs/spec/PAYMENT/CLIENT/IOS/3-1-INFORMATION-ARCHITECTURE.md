@@ -15,4 +15,4 @@
 | 무료 충전의 친구 초대 | 같은 탭 스택의 친구 초대 | ACCOUNT의 초대 화면 |
 | 회원 채팅 메뉴 이프 카드의 내역 | 같은 시트의 이프 내역 | 첫 페이지. 배치와 흐름은 CHAT |
 
-이프 충전은 진입한 탭의 스택에 쌓이고 탭 바를 숨긴다. 구매 탭, 상품 목록, 결제 확인과 웹 충전 화면으로 가는 진입은 두지 않는다. 처음 탭의 조건은 iOS 요구사항, 탭 바와 푸시 목적지의 탭은 공통 UI, 알림함 카드의 이동은 NOTIFICATION이 정한다. ([2-2-1](2-2-REQUIREMENTS.md#2-2-1-충전-화면), [루트와 셸](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸), [진입 목적지](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-2-진입-목적지), [회원 알림함](../../../NOTIFICATION/CLIENT/2-2-REQUIREMENTS.md#2-2-3-회원-알림함))
+이프 충전은 진입한 탭의 스택에 쌓이고 탭 바를 숨긴다. 구매 탭, 상품 목록, 결제 확인과 웹 충전 화면으로 가는 진입은 두지 않는다. 처음 탭의 조건은 iOS 요구사항, 탭 바와 푸시 목적지의 탭은 공통 UI, 알림함 카드의 이동은 NOTIFICATION이 정한다. ([2-2-1](2-2-REQUIREMENTS.md#2-2-1-충전-화면), [루트와 셸](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸), [진입 목적지](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-2-진입-목적지), [NOTIFICATION iOS 목적지](../../../NOTIFICATION/CLIENT/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-목적지))
