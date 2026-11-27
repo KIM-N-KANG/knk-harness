@@ -80,6 +80,6 @@ flowchart TD
 4. App Store Connect에 올리고 같은 빌드의 dSYM이 Crashlytics에 올라갔는지 확인한다.
 5. TestFlight 내부 테스터로 실기기에서 로그인과 핵심 흐름을 완주한다.
 6. 통과하면 같은 빌드를 외부 테스터에 배포하고 같은 빌드로 App Store 심사에 제출한다. 단계마다 다시 빌드하지 않는다.
-7. 승인 뒤 App Store Connect의 단계적 출시로 시작하고 [중단 기준](../../../operations/DEPLOYMENT.md#9-3-android-단계적-출시와-중단-기준)을 iOS 앱 버전별로 관찰한다. 기준을 충족하면 단계적 출시를 멈추고 수정판을 준비한다.
+7. 승인 뒤 App Store Connect의 단계적 출시로 시작하고 [중단 기준](../../../operations/DEPLOYMENT.md#9-4-ios-단계적-출시와-중단-기준)을 iOS 앱 버전별로 관찰한다. 기준을 충족하면 단계적 출시를 멈추고 수정판을 준비한다.
 
 외부 테스터 배포와 App Store 제출은 Apple 심사를 거친다. 단계적 출시의 단계별 비율과 기간은 App Store Connect가 정하며 이번 작성에서 다시 확인하지 않았다. 앱은 로그인이 필수이므로 심사용 계정의 준비 방식은 미정이다. 외부 로그인의 앱 전환, 앱 열기 링크와 푸시는 실기기와 설치 빌드를 명시해 검증한다. ([I-014](DECISIONS.md#i-014), [I-015](DECISIONS.md#i-015), [I-023](DECISIONS.md#i-023))

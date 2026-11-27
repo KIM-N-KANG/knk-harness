@@ -29,7 +29,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | 사용자 행동 이벤트    | 화면 진입, CTA 클릭, 선택, 제출, 완료           | `4. 이벤트 카탈로그` |
 | 서버 처리 결과 이벤트 | 스토리 생성, AI 응답, 피드백 제출의 성공과 실패 | `4. 이벤트 카탈로그` |
 | 핵심 퍼널과 지표      | 제작 퍼널, 채팅 활성화 퍼널, 전체 활성화 퍼널   | `5. 퍼널과 지표`     |
-| 운영 관측             | 웹, 서버, AI Sentry, Android Crashlytics, CloudWatch, `ai_call_logs`, 실패 코드 | `6. 관측 구현` |
+| 운영 관측             | 웹, 서버, AI Sentry, Android와 iOS Crashlytics, CloudWatch, `ai_call_logs`, 실패 코드 | `6. 관측 구현` |
 | 릴리스 검수           | P0 이벤트, 식별자, 원문 미수집, 로그 연결 확인  | `8. 검수 체크리스트` |
 
 | 제외 범위              | 처리 기준                                                                                                                                           |
@@ -43,15 +43,15 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 ### 2 식별자 정책
 
-웹은 동의한 게스트의 체험과 회원 이용을 지원하고 Android는 로그인 후 이용한다. 익명 기기 단위는 `device_id`, 로그인한 회원은 `user_id`로 구분한다. 로그인과 로그아웃 때의 식별자 연결은 아래 플랫폼별 규칙을 따른다.
+웹은 동의한 게스트의 체험과 회원 이용을 지원하고 Android와 iOS는 로그인 후 이용한다. 익명 기기 단위는 `device_id`, 로그인한 회원은 `user_id`로 구분한다. 로그인과 로그아웃 때의 식별자 연결은 아래 플랫폼별 규칙을 따른다.
 
-**식별자의 논리적 의미, 타입, 금지 데이터, 서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성, 보관, 복원하는지는 플랫폼 매핑이다. 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유한다**(로그아웃 시 재발급, [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string), `session_id`(방문 흐름, number), `user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-2)을 충족해야 한다.** 게스트 체험 한도, 자동 이관은 앱에 게스트가 없어 비적용이다([2-2-1 진입과 동의](../spec/ACCOUNT/CLIENT/ANDROID/2-2-REQUIREMENTS.md#2-2-1-진입과-동의)).
+**식별자의 논리적 의미, 타입, 금지 데이터, 서버 상관관계는 플랫폼 공통 계약**이고, 그 값을 어떤 SDK로 생성, 보관, 복원하는지는 플랫폼 매핑이다. 웹은 Amplitude Browser SDK가 채우는 값에 매핑하고, **Android는 앱이 첫 실행 시 생성한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유한다**(로그아웃 시 재발급, [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)). Android도 **동일한 논리적 `device_id`(익명 사용자 단위, string), `session_id`(방문 흐름, number), `user_id`(로그인 사용자, string) 의미와 API 헤더 계약(§6-2)을 충족해야 한다.** 게스트 체험 한도, 자동 이관은 앱에 게스트가 없어 비적용이다([2-2-1 진입과 동의](../spec/ACCOUNT/CLIENT/ANDROID/2-2-REQUIREMENTS.md#2-2-1-진입과-동의)). **iOS도 앱이 생성하고 영속화한 UUID를 `device_id`로 쓰며 API 헤더와 분석 SDK가 같은 값을 공유하고 로그아웃 때 교체한다.** 같은 논리적 식별자 의미와 API 헤더 계약을 충족하며 게스트 체험 한도와 자동 이관은 비적용이다([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측)).
 
 | 식별자           | 분석 이벤트 타입 | 생성, 관리                                      | 사용처                            |
 | ---------------- | ---------------- | ---------------------------------------------- | --------------------------------- |
-| `device_id`      | string           | 논리 식별자, 웹: Amplitude Browser SDK 자동 수집 / Android: 앱이 생성한 UUID | 익명 사용자 단위 분석             |
-| `session_id`     | number           | 논리 식별자, 웹, Android 모두 Amplitude SDK 자동 수집 | 한 번의 방문 흐름                 |
-| `request_id`     | string           | **백엔드 생성**(수신 헤더가 없으면 생성, 응답 헤더로 항상 echo, 클라이언트 앱은 생성, 주입하지 않음, §6-2) | 서버 로그, Sentry, AI 호출, Android API non-fatal 연결 |
+| `device_id`      | string           | 논리 식별자, 웹: Amplitude Browser SDK 자동 수집 / Android: 앱이 생성한 UUID / iOS: 앱이 생성한 UUID | 익명 사용자 단위 분석             |
+| `session_id`     | number           | 논리 식별자, 웹, Android, iOS 모두 Amplitude SDK 자동 수집 | 한 번의 방문 흐름                 |
+| `request_id`     | string           | **백엔드 생성**(수신 헤더가 없으면 생성, 응답 헤더로 항상 echo, 클라이언트 앱은 생성, 주입하지 않음, §6-2) | 서버 로그, Sentry, AI 호출, Android와 iOS API non-fatal 연결 |
 | `device_id_hash` | string           | 백엔드가 `device_id`를 해시                    | 서버 로그, Sentry, `ai_call_logs` |
 | `creation_id`(= `analytics_creation_id`) | string | 간편 제작 진행(세션) 식별자 `simpleCreationId`(원본 `story_creation_sessions.id`, Long)를 문자열로 변환 | 스토리 제작 시도 연결. **AI 트레이스의 `trace_creation_id`와 다른 값**(아래 주의) |
 | `story_id`       | string           | 스토리 완성 후 서버 발급                       | 스토리 관련 이벤트                |
@@ -66,33 +66,35 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | `session_id`  | 방문 세션        | 같은 방문 안의 순차 행동            |
 | `creation_id`(= `analytics_creation_id`) | 스토리 생성 시도 | 제작 퍼널의 생성 성공 이후 구간(잔여 간극은 §8-7 A1~A3) |
 | `chat_id`     | 채팅 세션        | 채팅 활성화와 대화 깊이             |
-| `request_id`  | API 요청         | 서버 로그, Sentry, AI 호출과 Android API non-fatal 상관관계 |
+| `request_id`  | API 요청         | 서버 로그, Sentry, AI 호출과 Android와 iOS API non-fatal 상관관계 |
 
-`request_id`는 제품 분석 프로퍼티가 아니라 요청 진단 상관 키이다. 서버 로그, Sentry, AI 호출을 잇고, Android는 응답 헤더 값을 예상하지 못한 API non-fatal의 event-local Crashlytics key로만 사용할 수 있다. 프론트엔드 `client_*`와 백엔드 `server_*` 이벤트를 분석에서 직접 연결하는 용도로는 아직 쓰지 않으며, 현재 제품 퍼널 연결은 `analytics_creation_id`와 `chat_id`를 사용한다(`analytics_creation_id` 경로의 잔여 간극은 §8-7 A1~A3).
+`request_id`는 제품 분석 프로퍼티가 아니라 요청 진단 상관 키이다. 서버 로그, Sentry, AI 호출을 잇고, Android와 iOS는 응답 헤더 값을 예상하지 못한 API non-fatal의 event-local Crashlytics key로만 사용할 수 있다. 프론트엔드 `client_*`와 백엔드 `server_*` 이벤트를 분석에서 직접 연결하는 용도로는 아직 쓰지 않으며, 현재 제품 퍼널 연결은 `analytics_creation_id`와 `chat_id`를 사용한다(`analytics_creation_id` 경로의 잔여 간극은 §8-7 A1~A3).
 
-> **두 종류의 `creation_id`를 구분한다.** 제품 분석 이벤트의 `creation_id`는 **`analytics_creation_id`**(진행 세션 식별자 `simpleCreationId`의 문자열 표기)이고, AI 트레이스, `ai_call_logs`, `X-Manyak-Creation-Id`의 `creation_id`는 **`trace_creation_id`**(스토리라인 생성 요청의 클라이언트 생성 UUID `story_creation_requests.request_id`)이다. 값도 타입도 다르며(정의: [`0-glossary.md §0-3-2`](GLOSSARY.md)) **두 값을 직접 조인하면 안 된다.** 제품 퍼널, 지표는 `analytics_creation_id`만, AI 호출, Langfuse 트레이스 연결은 `trace_creation_id`만 쓴다. **Android도 같은 규칙을 따른다.** `client_*`, `server_*` 분석 이벤트에는 `analytics_creation_id`를, AI 호출 상관 헤더에는 `trace_creation_id`를 싣는다(§6-3, §6-8).
+> **두 종류의 `creation_id`를 구분한다.** 제품 분석 이벤트의 `creation_id`는 **`analytics_creation_id`**(진행 세션 식별자 `simpleCreationId`의 문자열 표기)이고, AI 트레이스, `ai_call_logs`, `X-Manyak-Creation-Id`의 `creation_id`는 **`trace_creation_id`**(스토리라인 생성 요청의 클라이언트 생성 UUID `story_creation_requests.request_id`)이다. 값도 타입도 다르며(정의: [`0-glossary.md §0-3-2`](GLOSSARY.md)) **두 값을 직접 조인하면 안 된다.** 제품 퍼널, 지표는 `analytics_creation_id`만, AI 호출, Langfuse 트레이스 연결은 `trace_creation_id`만 쓴다. **Android와 iOS도 같은 규칙을 따른다.** `client_*`, `server_*` 분석 이벤트에는 `analytics_creation_id`를, AI 호출 상관 헤더에는 `trace_creation_id`를 싣는다(§6-3, §6-8).
 
 스토리 생성 요청은 `analytics_creation_id`가 발급되기 전에도 발생할 수 있다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계한다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `analytics_creation_id`를 발급한다. 이후 `server_*` 이벤트의 `analytics_creation_id` 적재는 **목표 계약과 현재 구현이 다르다.** 목표 계약은 성공, 실패 모두 `string` 필수이지만, **현재 구현은 성공 이벤트만 값을 싣고(타입은 `string`이 아닌 `simpleCreationId` Long) 실패 이벤트는 AI 호출 실패, 세션 저장 실패처럼 발급 전 단계에서 끝나면 값 없이 발행될 수 있다**(§8-7 A1, A3). `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 CloudWatch 운영 로그로만 추적한다.
 
 `구현`, 로그인 도입에 따른 식별자 정책은 다음과 같다.
 
-- 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지한다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않는다. Android Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않는다.
+- 로그인 성공 시 Amplitude `setUserId`에 사용자 `public_id`를 설정하고 `device_id`는 유지한다. 같은 기기의 과거 익명 행동은 `device_id`로 연결되므로 별도 `alias`는 사용하지 않는다. Android와 iOS Crashlytics에도 `public_id`를 user ID로 설정하되 `device_id`는 넣지 않는다.
 - **웹 로그아웃**은 `setUserId(null)` 뒤 Amplitude `reset()`으로 SDK가 `device_id`를 새로 발급한다.
 - **Android 로그아웃**은 Amplitude를 식별자 정본으로 쓰지 않는다. 새 이벤트 발행을 막은 상태에서 `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId(새 UUID)` → Crashlytics `setUserId("")` 순서로 분리한다([4-4-3 중앙 로그아웃과 복구](../spec/ACCOUNT/CLIENT/ANDROID/4-4-EXECUTION.md#4-4-3-중앙-로그아웃과-복구)). SDK `reset()`이 어떤 값을 만들었는지에 의존하지 않는다.
+- **iOS 로그아웃**도 Amplitude를 식별자 기준으로 쓰지 않는다. 새 이벤트 발행을 막은 상태에서 Amplitude 사용자 ID 해제 → 앱 UUID 교체, 영속화 → 새 UUID를 Amplitude 기기 ID로 주입 → Crashlytics 사용자 ID 해제 순서로 분리하며 SDK 초기화가 만든 값에 의존하지 않는다. 세션 종료 절차 안의 위치는 ACCOUNT가 정한다([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측)).
 - Amplitude는 한 번 연결된 `user_id`↔`device_id`를 이후 익명 이벤트까지 병합할 수 있으므로, 공용 기기에서 다음 사용자의 행동이 이전 회원에게 귀속되지 않게 로그아웃 때 둘을 함께 끊는다(ACCOUNT-US-012 계정 보호). 개인 기기의 과거 익명 연속성보다 계정 보호를 우선한다.
 - 공통 프로퍼티에 `is_logged_in`(boolean), `user_id`(public_id 문자열)를 로그인 시점부터 추가한다(§3-2). 서버 분석 이벤트의 사용자 식별도 `user_id`를 사용한다. 서버 구조화 로그의 `user_id` 필드 추가는 [채팅 관측](../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md)이 소유한다.
 
 **유입 귀속 사용자 속성.** 웹과 Android는 첫 유입 경로를 같은 Amplitude 사용자 속성 이름으로 남겨 웹 가입과 앱 가입을 같은 기준으로 비교한다. 값은 처음 한 번만 쓰고(`setOnce`) 이후 유입으로 덮어쓰지 않는다.
 
-| 속성 | 웹 | Android |
-| --- | --- | --- |
-| `initial_utm_source`<br>`initial_utm_medium`<br>`initial_utm_campaign`<br>`initial_utm_content` | 첫 방문 URL의 UTM<br>Amplitude Browser SDK가 자동 수집 | Play Install Referrer의 같은 이름 UTM<br>앱이 설치당 한 번 보냄 |
+| 속성 | 웹 | Android | iOS |
+| --- | --- | --- | --- |
+| `initial_utm_source`<br>`initial_utm_medium`<br>`initial_utm_campaign`<br>`initial_utm_content` | 첫 방문 URL의 UTM<br>Amplitude Browser SDK가 자동 수집 | Play Install Referrer의 같은 이름 UTM<br>앱이 설치당 한 번 보냄 | 보내지 않음. 설치 귀속 없음 |
 
 - Android는 값이 있는 키만 보낸다. Play 밖에서 설치해 referrer를 조회할 수 없으면 보내지 않는다.
 - 자연 설치는 `utm_source=google-play`, `utm_medium=organic`이다. 웹 배너를 거친 설치는 `utm_source=manyak_web`이며 `utm_medium`으로 배너(`app_banner`)와 공유 링크(`share_link`)를 나눈다(§4-2-18).
 - Meta 앱 광고 설치는 `utm_source`(`apps.facebook.com`, `apps.instagram.com`)로 구분한다. `utm_content`는 Meta가 암호화한 광고 정보라 복호화 없이는 광고 단위로 나누지 않는다.
 - Play는 광고를 누르고 설치한 경우에만 광고 경로를 넘긴다. 광고를 보기만 하고 나중에 설치하면 자연 설치로 남는다.
 - referrer는 설치 후 90일 동안 조회된다. 이 기능 이전 버전으로 설치한 사용자도 그 안에 업데이트하고 실행하면 속성이 붙지만, 그 전에 기록된 이벤트에는 붙지 않으므로 사용자 단위로 집계한다.
+- iOS 가입은 이 속성이 없어 웹, Android 가입과 같은 기준으로 유입 경로를 비교하지 않는다. ([I-010](../platform/CLIENT/IOS/DECISIONS.md#i-010))
 
 <br>
 
@@ -148,7 +150,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | `story_id`    | string | story 관련 이벤트 | 스토리 식별자이다.                                                           |
 | `chat_id`     | string | chat 관련 이벤트  | 채팅 식별자이다.                                                             |
 
-다음 값은 Amplitude SDK가 자동으로 채우므로 커스텀 프로퍼티로 다시 만들지 않는다(웹은 Browser SDK 기준으로 검증됨, Android도 SDK 자동 수집 항목을 검수하되 앱 소유 `device_id`와 혼동하지 않는다).
+다음 값은 Amplitude SDK가 자동으로 채우므로 커스텀 프로퍼티로 다시 만들지 않는다(웹은 Browser SDK 기준으로 검증됨, Android와 iOS도 SDK 자동 수집 항목을 검수하되 앱 소유 `device_id`와 혼동하지 않는다).
 
 ```text
 session_id
@@ -158,9 +160,9 @@ country, region, city, language
 event_time, event_id
 ```
 
-`device_id`도 커스텀 이벤트 프로퍼티로 보내지 않지만 생성 주체는 플랫폼별로 다르다. 웹은 Browser SDK 자동 값을 사용하고, Android는 앱 소유 UUID를 SDK `setDeviceId`로 **첫 이벤트 전에 주입**한다. 따라서 Android 검수에서 “SDK 자동 생성”을 요구하면 안 된다.
+`device_id`도 커스텀 이벤트 프로퍼티로 보내지 않지만 생성 주체는 플랫폼별로 다르다. 웹은 Browser SDK 자동 값을 사용하고, Android는 앱 소유 UUID를 SDK `setDeviceId`로 **첫 이벤트 전에 주입**한다. iOS도 앱 소유 UUID를 첫 이벤트와 `setOnce` 사용자 속성 전에 SDK에 주입한다. 따라서 Android와 iOS 검수에서 “SDK 자동 생성”을 요구하면 안 된다.
 
-웹, Android 이벤트는 **SDK 자동 수집 값으로 구분한다.** `platform`, `os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`, Android SDK 1.30은 `platform: Android`로 각각 운영 프로젝트 적재를 확인, 2026-09-04, KNK-1178), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 한다. 이벤트 이름, 커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§4)를 재사용한다.
+웹, Android 이벤트는 **SDK 자동 수집 값으로 구분한다.** `platform`, `os_name`이 플랫폼 구분 축이고(웹 Browser SDK는 `platform: Web`, Android SDK 1.30은 `platform: Android`로 각각 운영 프로젝트 적재를 확인, 2026-09-04, KNK-1178), `app_version`은 웹에서는 웹 앱 버전, Android에서는 앱 패키지 버전을 담는 것을 원칙으로 한다. iOS 이벤트도 SDK 자동 수집 값으로 구분하지만 Amplitude Swift SDK가 싣는 `platform`, `os_name`, `app_version` 값은 미확인이다([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측)). 이벤트 이름, 커스텀 프로퍼티는 플랫폼별로 새로 만들지 않고 공통 카탈로그(§4)를 재사용한다.
 
 다음 프로퍼티는 관련 기능 도입 시점에 추가한다.
 
@@ -337,7 +339,7 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 
 ### 4-2-1 간편 제작 첫 진입 안내
 
-간편 제작과 제작 탭에서 단계마다 여는 대화창이다. 웹과 Android가 같은 이름과 프로퍼티로 보낸다. ([간편 제작 첫 진입 안내](../spec/STORY/CLIENT/3-2-INTERACTION-FLOWS.md#3-2-6-제작-안내)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 센다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있다.
+간편 제작과 제작 탭에서 단계마다 여는 대화창이다. 웹, Android와 iOS가 같은 이름과 프로퍼티로 보낸다. ([간편 제작 첫 진입 안내](../spec/STORY/CLIENT/3-2-INTERACTION-FLOWS.md#3-2-6-제작-안내)) 안내를 연 사람 수는 `stage=intro`인 단계 노출로 센다. 기기마다 한 번만 끝까지 진행하므로 단계 노출은 사용자당 단계별로 사실상 1회이고, 로컬 저장소가 막힌 환경에서는 반복될 수 있다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -544,7 +546,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 - `is_new_user`는 find-or-create에서 신규 생성이면 `true`이다.
 - 마이그레이션 카운트는 스토리+채팅 합산이 제출 총수와 일치해야 한다(정합 검증용). 제출 배열이 스토리, 채팅 모두 비면 이벤트를 발행하지 않는다(0건 노이즈 방지).
-- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않는다. 프론트엔드는 이 이벤트를 옛 식별자로 enqueue한 뒤 식별자를 분리한다, 웹은 `setUserId(null)` → `reset()`, Android는 이벤트 발행 차단 → `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId(새 UUID)`이다(§2). 순서가 바뀌면 로그아웃 행동이 다음 익명 사용자에게 귀속되거나 새 기기가 이전 사용자와 연결될 수 있다.
+- 로그아웃은 서버가 refresh를 폐기하지만 분석은 `client_account_logoutButton_clicked` 하나로 충분해 별도 `server_*`를 두지 않는다. 프론트엔드는 이 이벤트를 옛 식별자로 enqueue한 뒤 식별자를 분리한다, 웹은 `setUserId(null)` → `reset()`, Android는 이벤트 발행 차단 → `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId(새 UUID)`이고 iOS도 같은 순서이다(§2). 순서가 바뀌면 로그아웃 행동이 다음 익명 사용자에게 귀속되거나 새 기기가 이전 사용자와 연결될 수 있다.
 - `client_account_loginButton_clicked`는 게스트가 마이 페이지에서 로그인 화면으로 이동한 유입을 구분한다. 로그인 화면 진입 자체는 `client_login_viewed`로 측정한다.
 - 계정 연동(KNK-740)의 클라이언트 이벤트는 시도 시점(`client_account_linkAccountButton_clicked`) 하나뿐이다. 성공, 실패는 서버가 `server_link_socialLink_processed_*`로 이미 잡고 있어 중복이며, 클라이언트에서 결과를 다시 보내면 재인증, 연동 2단계를 한 시도로 세기 어려워진다. 이 이벤트는 인앱 브라우저 차단으로 플로우가 시작되지 않은 경우에도 발화해 차단 빈도를 함께 측정한다. 링크 코드는 비밀값이라 어떤 이벤트에도 싣지 않는다(§6 관측 금지 규칙).
 
@@ -664,7 +666,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 ### 4-2-15 안드로이드 앱 보강 이벤트, `구현`(KNK-1178)
 
-앱은 공통 카탈로그를 그대로 재사용한다(§3-3-6 원칙). 아래는 **앱에만 있는 화면, 동작**이라 카탈로그에 없던 이벤트이고, 이름, 프로퍼티 규칙은 §3-1을 따른다. 웹에 같은 화면이 생기면 같은 이름을 쓴다.
+앱은 공통 카탈로그를 그대로 재사용한다(§3-3-6 원칙). 아래는 **앱에만 있는 화면, 동작**이라 카탈로그에 없던 이벤트이고, 이름, 프로퍼티 규칙은 §3-1을 따른다. 웹에 같은 화면이 생기면 같은 이름을 쓴다. iOS 앱도 이 절의 이벤트를 같은 이름과 프로퍼티로 보내는 것을 원칙으로 하며 비적용 범위는 §4-2-16을 따른다.
 
 **기존 화면 보강**, 목록 카드 옵션, 삭제, 조회 실패는 앱이 먼저 계측한 동작이다(웹은 KNK-1186으로 카드 옵션 다이얼로그가 생겼지만 옵션, 삭제 이벤트는 아직 후속, §4-2-16). 시작 설정 선택은 앱 스토리 상세에만 있는 UX이다.
 
@@ -724,6 +726,8 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 | 로그인 유도 (2)     | `client_storyList_loginButton_clicked`, `client_account_loginButton_clicked`                                                                                       | 비로그인 상태 없음            |
 | 공유 열람 (2) | `client_chatShare_*` 2개 | 공유 링크 열람은 웹 화면에서 수행 |
 
+웹 전용 5개는 iOS 앱에도 비적용이다. iOS에만 비적용인 것은 이벤트가 아니라 Android 전용 수단에 묶인 유입 귀속 사용자 속성(§2)과 Meta SDK 자동 이벤트(§6-1)이다.
+
 Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카드 옵션의 공유 링크 발급 시점에 기록한다. 일반 입력의 "상황 추가"는 `client_chat_situationInsertButton_clicked`와 `chat_id`를 기록하고, 블럭 모드의 추가는 `client_chat_addBlockButton_clicked`를 사용한다. 두 동작은 별개이며 입력 원문을 보내지 않는다.
 
 **웹 후속 작업**, 앱 보강 이벤트(§4-2-15) 중 웹에 같은 화면, 동작이 있는데 계측이 빠진 항목이다. 웹이 같은 이름으로 따라와야 플랫폼 비교가 된다.
@@ -775,6 +779,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 - `escapeGuide_shown`을 `variant = ios_inapp`인 `actionButton_clicked`로 나누면 외부 브라우저 전환 실패율의 대리 지표이다.
 - Android에서 앱이 열렸는지 플레이스토어로 갔는지는 웹에서 구분할 수 없다. 배너를 거친 설치는 앱이 플레이스토어 referrer(`utm_source=manyak_web`, `utm_medium=app_banner`)를 `initial_utm_*` 사용자 속성으로 남겨 구분한다(§2).
+- iOS 앱은 설치 귀속을 보내지 않으므로 `ios_inapp`, `ios_browser` 배너를 거친 iOS 설치는 앱 쪽 속성으로 구분하지 않는다(§2).
 
 <br>
 
@@ -794,7 +799,7 @@ Android도 `client_chat_shareButton_clicked`를 채팅방 메뉴와 목록 카�
 
 ### 4-2-20 신규 가입 온보딩, `구현`(KNK-1892)
 
-Android [신규 가입 온보딩](../spec/STORY/CLIENT/ANDROID/2-2-REQUIREMENTS.md) 화면의 이벤트이다. `screen_name`은 `storyOnboarding`이다. 웹에 같은 화면이 생기면 같은 이름을 쓴다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수이다.
+Android [신규 가입 온보딩](../spec/STORY/CLIENT/ANDROID/2-2-REQUIREMENTS.md) 화면의 이벤트이다. `screen_name`은 `storyOnboarding`이다. iOS 앱도 같은 이름과 프로퍼티로 보낸다. 웹에 같은 화면이 생기면 같은 이름을 쓴다. `position`은 오리지널 목록 안에서 0부터 센 순번(홈 카드와 같음)이고, `browsed_count`는 이번 진입에서 1초 이상 가운데 둔 서로 다른 스토리 수이다.
 
 | 이벤트 | 우선순위 | 발생 시점 | 고유 프로퍼티 |
 | --- | --- | --- | --- |
@@ -823,6 +828,7 @@ Android 앱이 푸시나 알림함의 알림을 눌렀을 때 보내는 이벤�
 
 - UTM 네 값은 `deepLink` 쿼리의 값을 디코딩해 그대로 보낸다. 값 규칙은 [NOTIFICATION 4-2-10 푸시 데이터](../spec/NOTIFICATION/BACKEND/4-2-CONTRACT.md#4-2-10-푸시-데이터)의 딥링크 UTM 쿼리이다.
 - `notification_type`은 서버가 보낸 `type` 원문(대문자)이며 `utm_content`와 같은 정보이다.
+- iOS 앱도 같은 이름과 프로퍼티로 보낸다. 푸시 탭에서 `deepLink`와 `type`을 읽는 iOS 페이로드 형식은 미정(서버 선행 변경 필요)이다.
 - 관리자 푸시 열람과 알림함 열람은 웹은 `[Amplitude] Page Viewed`, 앱은 `client_notification_opened`로 센다. v1.7.7보다 낮은 버전의 앱은 이 이벤트를 보내지 않으므로 앱 열람은 v1.7.7의 Play 배포일을 앱 측정 시작일로 두고 그날부터 센다([ADMIN 2-4 제품 제약](../spec/ADMIN/BACKEND/2-REQUIREMENTS.md#2-4-제품-제약)).
 
 <br>
@@ -979,7 +985,7 @@ flowchart TD
     C -->|직접 만들기| H["온보딩 완료: create"]
 ```
 
-신규 가입 회원이 온보딩에서 실제 대화까지 가는지 측정한다(Android).
+신규 가입 회원이 온보딩에서 실제 대화까지 가는지 측정한다(Android, iOS).
 
 | 순서 | 단계 | 이벤트 | 고정값 |
 | ---- | ---- | ---- | ---- |
@@ -1074,6 +1080,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6. 관측 구현`을 �
 | Android Meta SDK | 앱 설치 광고 전환 신호 | 자동 로깅되는 앱 설치와 앱 실행(`fb_mobile_activate_app`) 이벤트와 광고 식별자(AAID), 앱 설치 캠페인 성과 측정(KNK-1718). 앱이 직접 정의한 이벤트는 보내지 않음 |
 | 브라우저 Sentry  | 웹 프론트엔드 오류 분석 | 렌더링 오류, 라우트 오류, API 실패, 사용자 행동 breadcrumb |
 | Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal, non-fatal, API 30+ ANR, 수동 화면, P0 행동 로그. API 24~29 ANR, NDK는 초기 범위 밖([3-3 관측](../platform/CLIENT/ANDROID/3-EXECUTION.md#3-3-관측)) |
+| iOS Crashlytics | iOS 앱 오류 분석 | 처리되지 않은 크래시, 예상하지 못한 네트워크, 파싱, 5xx non-fatal, 수동 화면, P0 행동 로그. 앱 멈춤(hang)의 수집 범위는 미확인([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공, 실패, AI 응답 성공, 실패, 피드백 제출 성공, 실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
 | CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
@@ -1087,11 +1094,13 @@ Meta 픽셀도 제품 지표 계산에 사용하지 않는다, Meta 광고 최�
 
 Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산에 사용하지 않는다. 자동 이벤트 로깅과 광고 식별자 수집만 켜고, 앱 코드에서 이벤트나 프로퍼티를 추가로 보내지 않으므로 원문 수집 원칙(§7)에 저촉되지 않는다. SDK가 광고 식별자, 기기와 OS 정보, IP를 Meta로 직접 전송하므로 이 경로는 개인정보 처리방침 v1.8의 행태정보 절에 고지하고, 이벤트를 추가하거나 수집 항목을 바꾸면 처리방침과 Play Console 데이터 보안 양식을 함께 갱신한다.
 
+iOS 앱은 Meta SDK, 광고 식별자와 App Tracking Transparency(앱 추적 허용 요청) 창을 쓰지 않는다. iOS의 앱 설치 광고 전환 신호는 없다. ([I-010](../platform/CLIENT/IOS/DECISIONS.md#i-010))
+
 <br>
 
 ### 6-2 프론트엔드 API 헤더
 
-모든 클라이언트(웹, Android)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송한다(플랫폼 공통 계약, 현재 웹에서 검증됨, Android 배선은 [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)에서 확정). 필수 여부의 정본은 백엔드 수용 계약([공통 요청 헤더](../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더), [이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md))이다.
+모든 클라이언트(웹, Android, iOS)는 백엔드 API를 호출할 때 익명 사용자와 세션 식별자를 HTTP 헤더로 **best-effort** 전송한다(플랫폼 공통 계약, 현재 웹에서 검증됨, Android 배선은 [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)에서 확정, iOS 배선은 [3-2 네트워크 요청](../platform/CLIENT/IOS/3-EXECUTION.md#3-2-네트워크-요청)). 필수 여부의 정본은 백엔드 수용 계약([공통 요청 헤더](../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더), [이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md))이다.
 
 | 헤더                  | 전송 계약 | 값           | 설명                                                                                     |
 | --------------------- | --------- | ------------ | ----------------------------------------------------------------------------------------- |
@@ -1099,7 +1108,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않는다. 백엔드가 `unknown`으로 채운다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성, 주입하지 않는다. 백엔드가 생성해 응답 헤더로 echo한다(§6-3). |
 
-**`X-Manyak-Device-Id`가 정책상 필수인 경로**, ① 게스트 체험 한도 대상 요청(스토리라인 생성, 스토리 완성, 채팅 턴의 게스트 호출): 누락 시 400([이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정된다([소셜 인증 계약](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-2-소셜-인증)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청한다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막는다**([연동 계약](../platform/CLIENT/CONTRACT.md), [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)).
+**`X-Manyak-Device-Id`가 정책상 필수인 경로**, ① 게스트 체험 한도 대상 요청(스토리라인 생성, 스토리 완성, 채팅 턴의 게스트 호출): 누락 시 400([이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정된다([소셜 인증 계약](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-2-소셜-인증)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android와 iOS는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청한다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막는다**([연동 계약](../platform/CLIENT/CONTRACT.md), [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)).
 
 프론트엔드는 `device_id` 원본 값을 헤더에 싣는다. 백엔드는 저장 전 `device_id_hash`로 변환한다. 프론트엔드는 별도 해시를 만들지 않는다.
 
@@ -1109,7 +1118,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 **관측 계층마다 싣는 상관 키가 다르다.** 아래 공통 상관 필드는 요청 단위로 어디서나 이어지지만, `creation_id`는 계층마다 **서로 다른 값**이므로 하나의 전역 필드 표로 묶지 않는다(§2 두 개념 구분).
 
-**공통 상관 필드**, 백엔드가 서버 분석 이벤트, CloudWatch 로그, Sentry scope, AI 호출 요청에 가능한 범위에서 함께 싣는다. `request_id`는 응답 헤더로도 돌려주며 Android는 실패한 그 요청의 Crashlytics non-fatal에만 복사할 수 있다.
+**공통 상관 필드**, 백엔드가 서버 분석 이벤트, CloudWatch 로그, Sentry scope, AI 호출 요청에 가능한 범위에서 함께 싣는다. `request_id`는 응답 헤더로도 돌려주며 Android와 iOS는 실패한 그 요청의 Crashlytics non-fatal에만 복사할 수 있다.
 
 | 필드             | 설명                                                   |
 | ---------------- | ------------------------------------------------------ |
@@ -1131,7 +1140,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | 서버 Sentry scope                                  | 없음 | 없음 | **현재 `creation_id`를 부착하지 않는다**(MDC 전역 키만 tag, context로 올림, §6-6)                      |
 | `ai_call_logs`                                     | `trace_creation_id`     | 위 AI 호출 상관값                                            | **목표 계약**, 현재 테이블에 `creation_id` 컬럼이 없다(§6-9)                                        |
 
-`request_id`는 서버 로그, Sentry, `ai_call_logs`와 Android API non-fatal을 잇는 진단 상관 키이다. 프론트엔드 `client_*` 이벤트와 백엔드 `server_*` 이벤트를 제품 분석에서 연결할 때는 현재 `analytics_creation_id`와 `chat_id`를 사용한다(`analytics_creation_id` 경로의 잔여 간극은 §8-7 A1~A3).
+`request_id`는 서버 로그, Sentry, `ai_call_logs`와 Android, iOS API non-fatal을 잇는 진단 상관 키이다. 프론트엔드 `client_*` 이벤트와 백엔드 `server_*` 이벤트를 제품 분석에서 연결할 때는 현재 `analytics_creation_id`와 `chat_id`를 사용한다(`analytics_creation_id` 경로의 잔여 간극은 §8-7 A1~A3).
 
 <br>
 
@@ -1168,6 +1177,19 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 - `CancellationException`, 사용자가 복구할 수 있는 4xx, 제공자 로그인 취소는 기록하지 않는다. 카탈로그에 정의된 제품 행동, 처리 결과 이벤트는 그대로 Amplitude에 보내되, Crashlytics에 남겼다는 이유만으로 같은 오류의 새 `client_*` 분석 이벤트를 추가하지 않는다.
 - 표준 Crashlytics Android SDK의 ANR 범위는 API 30+이다([Firebase 공식 FAQ](https://firebase.google.com/docs/crashlytics/troubleshooting)). API 24~29는 스토어의 Android vitals를 별도 신호로 확인하지만 완전한 대체로 보지 않는다.
 - 앱 소유 native 코드가 없으므로 Crashlytics NDK SDK, native symbol 업로드는 쓰지 않고 R8/ProGuard mapping만 릴리스마다 업로드한다. 앱이 C/C++ 산출물을 소유하게 되면 NDK 관측을 별도 결정한다.
+
+#### iOS, Firebase Crashlytics
+
+| 구분 | 수집 내용 |
+| --- | --- |
+| Custom keys | 지속 key는 `screen_name`, `feature`, 필요할 때 공개 `story_id`, `chat_id`만 사용한다. `request_id`는 실패한 그 요청의 non-fatal에만 추가한다 |
+| User | 로그인 뒤 `public_id`, 로그아웃 뒤 해제. `device_id`는 설정하지 않는다 |
+| Logs | 화면 이름과 P0 행동 **이벤트 이름**만 기록한다. 프로퍼티 값, 사용자 입력, URL 원문은 넣지 않는다 |
+| Exceptions | 처리되지 않은 크래시, 예상하지 못한 네트워크, 파싱, 5xx non-fatal. 앱 멈춤(hang)의 수집 범위는 미확인 |
+
+- Firebase Analytics를 설치하지 않으므로 자동 breadcrumb는 없고 위 수동 Logs가 기준이다.
+- 취소(`CancellationError`와 `URLSession` 취소), 예상한 4xx, 제공자 로그인 취소는 기록하지 않는다.
+- Release만 수집하고 Debug는 끈다. 난독화가 없으므로 매핑 파일 대신 Archive마다 dSYM을 올린다. ([3-5 관측](../platform/CLIENT/IOS/3-EXECUTION.md#3-5-관측), [5-1 빌드와 환경](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-1-빌드와-환경))
 
 <br>
 
@@ -1531,7 +1553,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 
 - 새 이벤트를 추가하면 `4. 이벤트 카탈로그`에 이벤트명, 발생 시점, 고유 프로퍼티, 우선순위를 추가한다.
 - 새 이벤트가 지표에 쓰이면 `5. 퍼널과 지표`에 계산식과 집계 단위를 추가한다.
-- 새 이벤트가 웹 Sentry breadcrumb, Android Crashlytics 수동 log 또는 CloudWatch 로그와 연결되면 `6. 관측 구현`에 연결 기준을 추가한다.
+- 새 이벤트가 웹 Sentry breadcrumb, Android와 iOS Crashlytics 수동 log 또는 CloudWatch 로그와 연결되면 `6. 관측 구현`에 연결 기준을 추가한다.
 - P0 이벤트가 바뀌면 이 문서의 출시 전 P0 체크리스트를 업데이트한다.
 - 원문 수집 가능성이 있는 프로퍼티를 추가하면 `7. 개인정보와 원문 수집 원칙`과 `8-5. 개인정보 검수 기준`을 함께 확인한다.
 - 같은 표를 여러 섹션에 복사하지 않고 원본 섹션을 참조한다.
@@ -1550,17 +1572,18 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 | 이벤트 수집           | `client_chat_viewed`, `client_chat_messageInput_submitted`가 수집된다.                                                                                                           |
 | 이벤트 수집           | `server_chat_aiMessage_processed_succeeded`, `server_chat_aiMessage_processed_failed`가 수집된다.                                                                                |
 | 이벤트 수집           | `client_feedback_viewed`, `client_feedback_form_submitted`가 수집된다.                                                                                                           |
-| 식별자                | 웹은 `device_id`, `session_id`를 SDK가 생성하고, Android는 앱 UUID를 첫 이벤트 전에 `setDeviceId`로 주입하며 `session_id`만 SDK가 관리한다. 어느 플랫폼도 둘을 커스텀 이벤트 프로퍼티로 중복 전송하지 않는다. |
+| 식별자                | 웹은 `device_id`, `session_id`를 SDK가 생성하고, Android는 앱 UUID를 첫 이벤트 전에 `setDeviceId`로 주입하며 `session_id`만 SDK가 관리한다. iOS도 앱 UUID를 첫 이벤트 전에 주입하고 `session_id`만 SDK가 관리한다. 어느 플랫폼도 둘을 커스텀 이벤트 프로퍼티로 중복 전송하지 않는다. |
 | 식별자                | 스토리 제작 퍼널 1~2단계(제작 진입 → 생성 요청)를 `device_id`, `session_id` 순차 기준으로 계산할 수 있다.                                                                       |
 | 식별자 `계획`         | **실패 조인**, `server_*` 실패 이벤트를 `analytics_creation_id`로 개별 시도에 연결한다. **§8-7 A1, A3 해소 전까지 통과 항목으로 요구하지 않는다**(발급 전 실패는 값 없음, 타입 불일치). |
 | 식별자 `계획`         | **생성 성공 → 스토리라인 선택**, `analytics_creation_id`로 조인한다. **A3 해소 전까지 통과 항목으로 요구하지 않는다**(서버 Long ↔ 클라이언트 문자열).                        |
 | 식별자 `계획`         | **생성 성공 → 제작 완료**, `analytics_creation_id`로 조인한다. **A2, A3 해소 전까지 통과 항목으로 요구하지 않는다**(완료 이벤트에 값 없음, 타입 불일치).                       |
 | 식별자                | 채팅 첫 메시지와 AI 응답을 `chat_id`, `turn_number`로 연결할 수 있다.                                                                                                          |
-| 로그 연결             | 서버 로그, 서버, AI Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있고, Android의 예상하지 못한 API non-fatal도 응답의 같은 값을 event-local Crashlytics key로 가진다. |
+| 로그 연결             | 서버 로그, 서버, AI Sentry, `ai_call_logs`를 `request_id`로 연결할 수 있고, Android와 iOS의 예상하지 못한 API non-fatal도 응답의 같은 값을 event-local Crashlytics key로 가진다. |
 | 개인정보              | 채팅 메시지, 피드백 본문, 이메일, 키워드 원문, 프롬프트 전문이 payload에 없다.                                                                                                 |
 | 이벤트 수집 `Phase 1` | `server_login_googleLogin_processed_succeeded`, `_failed`, `server_login_kakaoLogin_processed_succeeded`, `_failed`, `server_login_migration_processed_succeeded`, `_failed`가 수집되고, `client_login_oauthError_shown`이 `error_code`와 함께 수집된다(§4-2-8, 콜백 단계 실패는 서버 이벤트가 못 잡음). |
-| 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정된다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리한다. |
+| 식별자 `Phase 1`      | 로그인 시 `setUserId`로 `user_id`가 설정된다. 웹 로그아웃은 `setUserId(null)` → `reset()`, Android 로그아웃은 이벤트 차단 → Amplitude `setUserId(null)` → 앱 UUID 재발급, 영속화 → `setDeviceId` → Crashlytics user ID 빈 문자열 순서로 다음 사용자를 분리한다. iOS 로그아웃은 §2의 iOS 순서로 분리한다. |
 | Android 안정성        | 내부 release의 test crash, non-fatal이 Crashlytics에 앱 버전, 빌드, 수동 화면 로그와 함께 보이고, debug 빌드는 수집하지 않는다. API 30+ ANR을 확인하며 API 24~29, NDK 공백은 §6-4 범위대로 처리한다. |
+| iOS 안정성            | TestFlight 빌드의 test crash, non-fatal이 Crashlytics에 앱 버전, 빌드 번호, 수동 화면 로그, 기호화된 스택과 함께 보이고, Debug 빌드는 수집하지 않는다. |
 | 이벤트 수집 `Phase 1` | `client_creditShortageDialog_shown`이 `trigger`와 함께 수집된다(`client_guestLimitDialog_*`는 2026-09-19 폐기).                                                                 |
 | 이벤트 수집 `Phase 1` | `client_storyCreate_methodOption_selected`, `client_generalCreate_viewed`, `client_generalCreate_completed`, `client_generalCreate_registerError_shown`, `client_generalCreate_reviewResult_shown`, `client_storyList_submissionCard_clicked`, `client_storyEdit_viewed`, `client_storyEdit_completed`가 수집된다. |
 | 이벤트 수집 `Phase 1` | `client_chat_regenerateButton_clicked`, `client_chat_chatImage_impressed`가 수집되고, `server_chat_aiMessage_processed_*`에 `is_regenerated`가 실린다.                           |
@@ -1576,10 +1599,10 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 - Amplitude 디버그 모드에서 P0 `client_*` 이벤트가 한 번씩 발생한다.
 - 이벤트명이 `{platform}_{screenName}(_{objectName})?_{actionType}(_{eventType})?` 형식을 따른다.
 - 프로퍼티는 `snake_case`로 전송한다.
-- 같은 사용자 행동에서 Amplitude event와 플랫폼 오류 도구의 안전한 breadcrumb(웹 Sentry / Android Crashlytics 수동 log), 상관 키(`chat_id`)가 연결된다. Android는 Firebase Analytics 자동 breadcrumb를 요구하지 않는다. **`analytics_creation_id` 경로는 §8-7 A1~A3 해소 전까지 통과 항목이 아니다**(§8-3 구간별 기준과 동일).
+- 같은 사용자 행동에서 Amplitude event와 플랫폼 오류 도구의 안전한 breadcrumb(웹 Sentry / Android와 iOS Crashlytics 수동 log), 상관 키(`chat_id`)가 연결된다. Android와 iOS는 Firebase Analytics 자동 breadcrumb를 요구하지 않는다. **`analytics_creation_id` 경로는 §8-7 A1~A3 해소 전까지 통과 항목이 아니다**(§8-3 구간별 기준과 동일).
 - API 요청 헤더에 `X-Manyak-Device-Id`, `X-Manyak-Session-Id`가 포함된다.
 - `X-Manyak-Request-Id`가 없을 때 백엔드가 `request_id`를 생성한다.
-- Android의 예상하지 못한 API non-fatal에는 응답 `request_id`가 event-local key로 있고, 전역 key와 사용자 입력, 토큰, `device_id`는 없어야 한다.
+- Android와 iOS의 예상하지 못한 API non-fatal에는 응답 `request_id`가 event-local key로 있고, 전역 key와 사용자 입력, 토큰, `device_id`는 없어야 한다.
 
 <br>
 
@@ -1671,7 +1694,7 @@ group by feature;
 
 ### 8-7 `creation_id` 계약과 현재 구현의 간극, `확인 필요`
 
-Android도 같은 이벤트 카탈로그를 구현해야 하므로(§2), 아래 간극을 먼저 정리해야 웹, Android가 같은 계약을 구현할 수 있다. **현재 구현과 목표 계약이 다른 구간이며, 팀 결정 전까지 어느 쪽도 정본으로 확정하지 않는다.** 인접 서비스 레포의 코드는 이 문서에서 바꾸지 않는다.
+Android와 iOS도 같은 이벤트 카탈로그를 구현해야 하므로(§2), 아래 간극을 먼저 정리해야 웹, Android, iOS가 같은 계약을 구현할 수 있다. **현재 구현과 목표 계약이 다른 구간이며, 팀 결정 전까지 어느 쪽도 정본으로 확정하지 않는다.** 인접 서비스 레포의 코드는 이 문서에서 바꾸지 않는다.
 
 | #   | 항목                                                          | 목표 계약(이 문서)                                                            | 현재 구현                                                                                                        | 영향                                                                                                                     | 처리 방향                                                                                                     |
 | --- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -1680,4 +1703,4 @@ Android도 같은 이벤트 카탈로그를 구현해야 하므로(§2), 아래 
 | A3  | `creation_id` 타입                                            | `string`(§2, 분석 이벤트는 문자열)                                          | 웹 클라이언트 이벤트는 문자열로 변환해 보내고, 서버 성공 이벤트(`..._succeeded`)는 `Long` 값을 그대로 전달한다 | 같은 프로퍼티가 이벤트 출처에 따라 문자열, 숫자로 섞여 조인, 필터가 어긋날 수 있다                                      | 서버 전송 시 문자열 변환과 계약 변경 중 하나로 정렬 **결정 필요**. 임의 변경 금지                              |
 | A4  | `creation_id` 이름의 의미 충돌                                | 개념 이름을 분리해 `analytics_creation_id`(분석)와 `trace_creation_id`(AI 트레이스)로 구분(§2, [`0-glossary.md`](GLOSSARY.md)) | **와이어 키는 양쪽 다 `creation_id`이다**, 분석 이벤트는 진행 세션 ID(`simpleCreationId`, Long 원본), AI 트레이스, `ai_call_logs`, `X-Manyak-Creation-Id`는 스토리라인 요청 UUID | 두 값을 같은 연결 키로 오인하면 조인 결과가 전부 비거나 잘못 붙는다. Android가 어느 값을 실을지 혼동할 위험도 같다 | 문서 개념 분리는 전파 완료(용어집 §0-3-2, §2, §6-3 계층별 표, `3-1-client-spec.md`, `4-backend-server-spec.md §4-3·§4-7`, `5-ai-server-spec.md §5-6`). **와이어 키, 헤더, DB 컬럼 이름 변경은 배포된 계약이라 팀 결정 필요**(임의 개명 금지), 이름이 같은 한 오인 위험은 남으므로 항목을 닫지 않는다 |
 
-Android 구현 시에도 이 간극이 해소되기 전까지는 `creation_id` 관련 프로퍼티를 임의로 추가하지 않고 웹과 동일한 현재 계약을 따른다(이벤트 이름, 기존 프로퍼티 재사용 원칙은 §3-2). **Android가 실을 값은 문맥으로 갈린다**, `client_*`, `server_*` 분석 이벤트의 `creation_id`에는 `analytics_creation_id`를, AI 호출 상관 헤더(`X-Manyak-Creation-Id`)에는 `trace_creation_id`를 싣는다(A4).
+Android와 iOS 구현 시에도 이 간극이 해소되기 전까지는 `creation_id` 관련 프로퍼티를 임의로 추가하지 않고 웹과 동일한 현재 계약을 따른다(이벤트 이름, 기존 프로퍼티 재사용 원칙은 §3-2). **Android와 iOS가 실을 값은 문맥으로 갈린다**, `client_*`, `server_*` 분석 이벤트의 `creation_id`에는 `analytics_creation_id`를, AI 호출 상관 헤더(`X-Manyak-Creation-Id`)에는 `trace_creation_id`를 싣는다(A4).
