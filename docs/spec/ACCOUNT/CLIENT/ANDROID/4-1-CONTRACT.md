@@ -10,7 +10,7 @@
 | 소셜 로그인 | `/auth/social/{provider}`, `/auth/social/complete`. 구버전 `/auth/login/{provider}` 미사용 |
 | 가입 완료 | `X-Manyak-Consent-Token`으로 대기 코드 전달. 광고 동의 답은 본문에 포함하지 않음 |
 | 계정 연동 | 재인증 enum은 대문자, 공급자 경로는 소문자 |
-| 법적 문서 | 설정된 웹 호스트의 HTTPS `/terms`, `/privacy`, `/about` |
+| 법적 문서 | 설정된 웹 호스트의 HTTPS `/terms`, `/privacy` |
 | 외부 HTTP(S) | `ACTION_VIEW`, 브라우저 없으면 실패 토스트 |
 | 차단 | 다른 스킴과 같은 호스트의 문서 외 페이지. 웹의 클라이언트 라우팅 링크 제거도 필요하며 WebView 검사로 대체하지 않음 |
 

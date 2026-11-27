@@ -35,7 +35,7 @@ flowchart LR
 | `docs/spec/<DOMAIN>/CLIENT/` | 공통 배경, 유저 스토리, 요구사항, 화면 계약과 공용 데이터 형식 |
 | `CLIENT/WEB/` | 웹의 적용 범위, URL, 브라우저 동작, 저장과 구현 |
 | `CLIENT/ANDROID/` | Android의 적용 범위, 화면 이동, 기기 수명, 저장과 구현 |
-| `docs/ui/`, `docs/ui/WEB/`, `docs/ui/ANDROID/` | 공통 UI의 배경부터 검증까지, 앱 셸, 탐색, 테마, 서비스 안내와 앱 진입 |
+| `docs/ui/`, `docs/ui/WEB/`, `docs/ui/ANDROID/` | 공통 UI의 배경부터 검증까지, 앱 셸, 탐색, 테마와 앱 진입 |
 | `docs/platform/CLIENT/`와 하위 `WEB/`, `ANDROID/` | 여러 도메인의 전송, 컴포넌트, 상태 수명, 관측, 검증과 빌드 규칙 |
 | `docs/operations/` | 공용 인프라, 배포와 복구 |
 | `docs/reference/` | 작성 기준, 용어, 분석과 결정 원문 |
