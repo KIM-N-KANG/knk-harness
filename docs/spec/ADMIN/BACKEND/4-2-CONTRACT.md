@@ -2618,7 +2618,7 @@ Authorization: Bearer {adminToken}
 | 인증 | 관리자 |
 | 성공 | 200 |
 
-서버가 CloudWatch, 관측 서버 Prometheus, Redis를 불러 운영 앱 호스트와 저장소의 핵심 지표를 응답한다. 앱 지표와 로그와 트레이스는 OpenSearch UI가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
+서버가 관측 서버 Prometheus와 Redis를 불러 운영 호스트와 저장소의 핵심 지표를 응답한다(`host`, `rds`는 설정 `host-source`에 따라 CloudWatch도 가능하나 운영은 Prometheus). 앱 지표와 로그와 트레이스는 OpenSearch Dashboards(`logs.manyak.app`)가 맡고 이 응답에 넣지 않는다. ([4-1-21 인프라 지표](4-1-PIPELINES.md#4-1-21-인프라-지표))
 
 **1. 쿼리**
 
@@ -2639,12 +2639,12 @@ Authorization: Bearer {adminToken}
 | `from`, `to` | `string` | 적용한 KST 날짜 |
 | `periodSeconds` | `integer` | 점 하나의 집계 간격(초)<br>기간 2일 이하 `300`, 7일 이하 `900`, 그보다 길면 `3600`<br>조회 시작이 63일보다 오래되면 기간과 무관하게 `3600` |
 | `unavailable` | `string[]` | 이번에 값을 받지 못한 묶음의 키<br>`host`, `hostSystem`, `requests`, `rds`, `redis`, `opensearch` 가운데 해당하는 것<br>설정이 비어 `null`인 묶음은 넣지 않음 |
-| `host` | `object / null` | 앱 호스트의 CloudWatch 지표<br>오토스케일링 그룹 설정이 비어 있거나 CloudWatch 조회가 실패하면 `null` |
-| `host.cpu` | 점 목록 | `AWS/EC2` `CPUUtilization` 평균(%) |
-| `host.cpuMax` | 점 목록 | `CPUUtilization` 최댓값(%) |
-| `host.cpuCreditBalance` | 점 목록 | `CPUCreditBalance` 최솟값(크레딧) |
-| `host.statusCheckFailed` | 점 목록 | `StatusCheckFailed` 최댓값<br>검사가 실패한 구간은 `1`, 아니면 `0` |
-| `hostSystem` | `object / null` | 앱 호스트의 메모리와 디스크<br>Prometheus 조회 주소 설정이 비어 있거나 Prometheus 조회가 실패하면 `null` |
+| `host` | `object / null` | 운영 호스트 지표<br>운영은 Prometheus 기록 규칙 `manyak_prod_host:*`에서 채움<br>출처 설정이 비어 있거나 그 출처 조회가 실패하면 `null` |
+| `host.cpu` | 점 목록 | CPU 사용률 평균(%)<br>운영 `manyak_prod_host:cpu_usage_percent`, CloudWatch 출처면 `AWS/EC2` `CPUUtilization` |
+| `host.cpuMax` | 점 목록 | CPU 사용률 최댓값(%) |
+| `host.cpuCreditBalance` | 점 목록 | `CPUCreditBalance` 최솟값(크레딧)<br>CloudWatch 출처에서만 채움. 운영(OCI)에는 크레딧 개념이 없어 늘 빈 목록 |
+| `host.statusCheckFailed` | 점 목록 | 상태 확인 실패의 최댓값<br>실패한 구간은 `1`, 아니면 `0`<br>운영은 호스트 지표가 5분 넘게 없으면 실패 |
+| `hostSystem` | `object / null` | 운영 호스트의 메모리와 디스크<br>Prometheus 조회 주소 설정이 비어 있거나 Prometheus 조회가 실패하면 `null` |
 | `hostSystem.memoryTotalBytes` | `integer / null` | 전체 메모리(바이트)<br>조회 시각의 마지막 값이며 계열이 없으면 `null` |
 | `hostSystem.memoryAvailableBytes` | 점 목록 | 사용 가능 메모리의 구간 안 최솟값(바이트) |
 | `hostSystem.disks` | `object[]` | 마운트 경로 오름차순<br>계열이 없으면 빈 배열 |
@@ -2655,12 +2655,12 @@ Authorization: Bearer {adminToken}
 | `requests.requests` | 점 목록 | 서버가 받은 요청 수(회)<br>없는 경로로 온 요청 포함, `/actuator/**` 제외 |
 | `requests.server5xx` | 점 목록 | 서버가 돌려준 5xx 수(회)<br>프록시가 서버 대신 돌려준 502, 504는 제외 |
 | `requests.responseTimeP95Ms` | 점 목록 | 응답 시간의 95번째 백분위(밀리초)<br>SSE 스트림 요청 제외<br>요청이 없는 구간은 점이 없음 |
-| `rds` | `object / null` | RDS 인스턴스 지표<br>설정이 비어 있거나 CloudWatch 조회가 실패하면 `null` |
-| `rds.cpu` | 점 목록 | `AWS/RDS` `CPUUtilization` 평균(%) |
-| `rds.freeStorageBytes` | 점 목록 | `FreeStorageSpace` 최솟값(바이트) |
-| `rds.connections` | 점 목록 | `DatabaseConnections` 최댓값(개) |
-| `rds.readLatencyMs` | 점 목록 | `ReadLatency` 평균(밀리초) |
-| `rds.writeLatencyMs` | 점 목록 | `WriteLatency` 평균(밀리초) |
+| `rds` | `object / null` | 운영 DB 지표. 이름은 RDS 시절 그대로이며 운영 DB는 운영 호스트의 PostgreSQL 컨테이너<br>운영은 Prometheus 기록 규칙 `manyak_prod_db:*`에서 채움<br>출처 설정이 비어 있거나 그 출처 조회가 실패하면 `null` |
+| `rds.cpu` | 점 목록 | DB CPU 평균(%)<br>운영 `manyak_prod_db:cpu_percent`, CloudWatch 출처면 `AWS/RDS` `CPUUtilization` |
+| `rds.freeStorageBytes` | 점 목록 | 저장 공간 여유의 최솟값(바이트)<br>운영은 데이터 볼륨 여유 |
+| `rds.connections` | 점 목록 | DB 연결 수의 최댓값(개) |
+| `rds.readLatencyMs` | 점 목록 | 읽기 지연 평균(밀리초)<br>운영은 데이터 볼륨의 읽기 I/O 한 번 평균 시간 |
+| `rds.writeLatencyMs` | 점 목록 | 쓰기 지연 평균(밀리초)<br>운영은 데이터 볼륨의 쓰기 I/O 한 번 평균 시간 |
 | `redis` | `object / null` | Redis의 현재 값<br>조회가 실패하면 `null` |
 | `redis.usedMemoryBytes` | `integer` | 사용 메모리(바이트) |
 | `redis.maxMemoryBytes` | `integer` | 메모리 한도(바이트)<br>한도가 없으면 `0` |
@@ -4123,7 +4123,7 @@ Authorization: Bearer {adminToken}
 | Amplitude | 없음 | Dashboard REST API의 이벤트 세분화 조회, 퍼널 조회, 리텐션 조회, 세션 조회 |
 | Langfuse | 없음 | Metrics API의 관측 비용 합 |
 | Google Cloud Storage | 없음 | Play Console 일괄 보고서 객체 목록과 내려받기 |
-| AWS CloudWatch | 없음 | `GetMetricData` 지표 조회 |
+| AWS CloudWatch | 없음 | `host-source=cloudwatch`일 때만 `GetMetricData` 지표 조회. 운영 미사용 |
 | 관측 서버 Prometheus | 없음 | 기록 규칙 계열의 `query_range`와 `query` 조회 |
 | 모든 도메인 | 관리자 판정 필터와 앱 토큰 검증 보강 | 인증 필터와 상관관계 필터 |
 

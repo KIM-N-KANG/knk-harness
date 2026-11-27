@@ -16,8 +16,6 @@ MODERATION 도메인`"]
     S -->|표준 출력 JSON| F["`**로그 라우터**
 Fluent Bit`"]
     F -->|OTLP 로그| C["OpenTelemetry Collector"]
-    F --> CW["`**CloudWatch**
-안전망`"]
     S -->|OTLP 트레이스| C["OpenTelemetry Collector"]
     C --> DP["`**Data Prepper**`"]
     DP -->|로그와 트레이스 인덱스| OS["`**OpenSearch**`"]
@@ -35,7 +33,7 @@ Fluent Bit`"]
     class F,OS,CW,DP,OD,G,SE,SL,AI,LF ext
 ```
 
-운영 전송 경로는 Terraform 선언 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
+운영에서는 로그 라우터와 서버가 같은 호스트의 otel-agent로 보내고, otel-agent가 마냑 tailnet으로 관측 서버의 Collector에 넘긴다. 운영 전송 경로는 manyak-terraform `oci/prod`(otel-agent, fluent-bit) 기준이다. 공통 로그의 추가 OTLP 경로와 수신 확인 기준은 [백엔드 운영 관측](../../../platform/BACKEND/2-OBSERVABILITY.md#2-1-메트릭과-운영-연동)을 따른다. 위 그림은 도메인별 신호를 중심으로 표시한다.
 
 <br>
 
@@ -103,7 +101,7 @@ Fluent Bit`"]
 
 | 항목 | 기준과 제한 |
 |---|---|
-| 전송 여부 | 지표 전송을 켠 환경에서만 AMP로 전송 |
+| 전송 여부 | 지표 전송을 켠 환경에서만 관측 서버 Prometheus로 전송 |
 | 전송 주기 | 60초 간격 |
 | 인스턴스 | 리소스 속성 `service.instance.id`가 기동마다 바뀜<br>여러 태스크의 누적 건수는 인스턴스별로 합산 |
 | 결과 분포 | 승인, 반려, 실패의 건수 지표는 없음<br>제출본 테이블의 상태로 집계 |

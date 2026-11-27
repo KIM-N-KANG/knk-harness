@@ -1,26 +1,26 @@
 # 2 백엔드 운영 관측
 
-메트릭 측정값은 기존 문서의 Spring Boot 4.0.6과 Micrometer 1.16.5 실측 기록을 보존한다. 운영 전송 경로는 [배포 문서의 Terraform 기준](../../operations/DEPLOYMENT.md#1-목적과-범위)을 따른다. 선언 검토와 실제 수신 검증은 구분한다.
+메트릭 측정값은 기존 문서의 Spring Boot 4.0.6과 Micrometer 1.16.5 실측 기록을 보존한다. 운영 전송 경로는 [배포 문서](../../operations/DEPLOYMENT.md#4-5-관측-수집-경로)의 manyak-terraform `oci/prod`(otel-agent, fluent-bit) 기준을 따른다. 선언 검토와 실제 수신 검증은 구분한다.
 
 ### 2-1 메트릭과 운영 연동
 
 구조화 로그, Sentry, `ai_call_logs`는 개별 사건을 기록하고, 메트릭은 RED(Rate, Error, Duration)와 AI 호출 지연을 시계열로 집계한다. 운영 선언은 Micrometer의 OTLP 메트릭을 관측 서버의 OpenTelemetry Collector로 보내고 Prometheus에 저장한다. Grafana Cloud 직접 전송은 이전 구성이다.
 
-**수집 경로**: `OtlpMeterRegistry`가 step 주기마다 관측 서버 Collector의 `/v1/metrics`로 인증 헤더와 함께 전송하고, Collector가 Prometheus에 넘긴다. 트레이스는 Collector에서 Data Prepper로 전달한 뒤 OpenSearch에 저장한다. 앱의 `/actuator/prometheus`를 운영 외부에 노출하지 않으며 actuator는 `health,info`만 공개한다. 로컬은 `prometheus`를 추가해 수신 형식 확인과 Compose의 Prometheus 수집에 사용한다. ([배포 구성](../../operations/DEPLOYMENT.md#4-5-관측-수집-경로))
+**수집 경로**: `OtlpMeterRegistry`가 step 주기마다 같은 호스트의 otel-agent `/v1/metrics`로 보내고, otel-agent가 인증을 붙여 마냑 tailnet으로 관측 서버 Collector에 넘기며, Collector가 Prometheus에 넘긴다. 트레이스는 Collector에서 Data Prepper로 전달한 뒤 OpenSearch에 저장한다. 앱의 `/actuator/prometheus`를 운영 외부에 노출하지 않으며 actuator는 `health,info`만 공개한다. 로컬은 `prometheus`를 추가해 수신 형식 확인과 Compose의 Prometheus 수집에 사용한다. ([배포 구성](../../operations/DEPLOYMENT.md#4-5-관측-수집-경로))
 
 ```mermaid
 flowchart LR
-    S["서버와 AI 및 알림"] -->|OTLP 메트릭과 트레이스| C["관측 서버 Collector"]
+    S["서버와 AI 및 알림"] -->|OTLP 메트릭과 트레이스| A["호스트 수집기 otel-agent"]
+    A -->|마냑 tailnet| C["관측 서버 Collector"]
     C -->|메트릭| M["Prometheus"]
     C -->|트레이스| D["Data Prepper"]
     D --> O["OpenSearch"]
-    S -->|표준 출력| F["앱 호스트 로그 라우터"]
-    F --> W["CloudWatch"]
-    F -->|OTLP 로그| C
+    S -->|표준 출력| F["호스트 로그 라우터"]
+    F -->|OTLP 로그| A
     C -->|로그| D
 ```
 
-위 그림은 prod의 활성 토글 선언 기준이다. 각 앱의 실제 계측 항목은 해당 명세를 따른다. CloudWatch 사본과 관측 서버의 로그를 합쳐 요청 수를 중복 집계하지 않는다.
+위 그림은 prod의 활성 토글 선언 기준이다. 각 앱의 실제 계측 항목은 해당 명세를 따른다.
 
 **지표 카탈로그**
 
@@ -47,7 +47,7 @@ DB 커넥션 풀은 **둘 중 하나만 고른다.** `hikaricp.*`(Hikari 자체 
 
 **카디널리티 규칙**: 메트릭 태그에는 **고유값을 넣지 않는다**. `user_id`, `story_id`, `chat_id`, `request_id`, `device_id_hash`는 금지이며, 개별 추적은 구조화 로그와 `ai_call_logs`의 몫이다. 태그는 유한 enum으로만 둔다(`feature` 6종 × `outcome` 2종 = 최대 12개 태그 조합, 실제 기록하는 조합만 생성). `uri`는 Spring이 경로 변수를 템플릿(`/api/v1/stories/{storyId}`)으로 치환해 적재하므로 안전하다.
 
-**히스토그램 비용**: 서버 측에서 p95를 계산하려면 percentile histogram이 필요하며, 태그 조합마다 `le` 버킷 수만큼 시계열이 늘어난다. Micrometer 1.16.5의 기본 1ms~30s 구간에서 69개 버킷을 측정했다. 아래 구간은 당시 엔드포인트 39개와 상태 코드 3~5종으로 약 8천~1만 3천 시계열을 예상해 범위를 줄인 기록이다. 당시 Grafana Cloud 무료 티어의 1만 active series를 비용 기준으로 삼았으며, 이 값은 현재 AMP의 한도나 요금 기준이 아니다.
+**히스토그램 비용**: 서버 측에서 p95를 계산하려면 percentile histogram이 필요하며, 태그 조합마다 `le` 버킷 수만큼 시계열이 늘어난다. Micrometer 1.16.5의 기본 1ms~30s 구간에서 69개 버킷을 측정했다. 아래 구간은 당시 엔드포인트 39개와 상태 코드 3~5종으로 약 8천~1만 3천 시계열을 예상해 범위를 줄인 기록이다. 당시 Grafana Cloud 무료 티어의 1만 active series를 비용 기준으로 삼았으며, 이 값은 현재 관측 서버 Prometheus의 한도 기준이 아니다.
 
 | 메트릭 | 구간 | 버킷 수(실측) | 근거 |
 | --- | --- | ---: | --- |
@@ -68,7 +68,7 @@ DB 커넥션 풀은 **둘 중 하나만 고른다.** `hikaricp.*`(Hikari 자체 
 
 **전송 주기**: 서버 기본값은 60초, 로컬 프로파일은 10초다. 주기가 짧을수록 데이터 포인트 수와 수집 비용이 늘어나므로 필요한 관측 해상도와 함께 판단한다.
 
-**OTLP는 기본으로 끈다.** `MANYAK_OTLP_METRICS_ENABLED`의 앱 기본값은 `false`다. 운영 Terraform은 관측 서버 Collector endpoint와 `cumulative` 집계 방식, 활성 토글, 인증 헤더 참조를 함께 주입한다. 앱에 Grafana Cloud 인증 헤더를 주입하는 이전 구성은 현재 prod 선언에서 제거됐다. 메트릭 전송 실패는 사용자 요청과 분리한다. ([6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현))
+**OTLP는 기본으로 끈다.** `MANYAK_OTLP_METRICS_ENABLED`의 앱 기본값은 `false`다. 운영 `oci/prod/services/<서비스>.env`가 `http://otel-agent:4318/v1/metrics`와 `cumulative` 집계 방식, 활성 토글을 주입하고, 관측 서버 인증은 otel-agent가 붙인다. 앱은 인증 헤더를 갖지 않는다. 메트릭 전송 실패는 사용자 요청과 분리한다. ([6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현))
 
 **미주입과 빈 값은 다르다.** Spring Boot 4.0.6의 `PropertiesConfigAdapter.obtain`은 null만 검사한다. URL이 빈 문자열이면 기본값을 찾지 않고 빈 값 그대로 micrometer에 전달한다.
 
@@ -95,7 +95,7 @@ URL 설정을 빈 문자열로 두면 이 경로를 타므로 endpoint는 유효
 
 4xx를 `failure`에서 떼는 이유는 두 갈래를 한 히스토그램에 섞으면 **거부 비중에 따라 실패 p95가 요동치기** 때문이다. 거부가 늘수록 밀리초 표본이 늘어 p95가 오히려 **낮아지므로**, AI가 실제로 느려지는데 지표는 개선된 것처럼 보이는 역전이 생긴다. 실패 건수 알림도 404 급증만으로 오발화한다. **알림과 p95는 `outcome="failure"`만 봐야 한다.** 태그 값이 2에서 3으로 늘어도 유한 enum이라 카디널리티는 안전하다(위 카디널리티 규칙).
 
-**알림**: [CHAT 알림](../../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙은 2026-10-24부터 일시 정지 상태이고 Grafana는 쓰지 않는다. Prometheus 규칙과 Slack 전달은 KNK-1931에서 옮기며 적용 뒤 발화를 확인한다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
+**알림**: [CHAT 알림](../../spec/CHAT/BACKEND/5-4-OBSERVABILITY.md#5-4-9-알림)의 환불 실패와 AI 실패 급증 임계값을 보존한다. 이전 Grafana 규칙은 2026-10-24부터 일시 정지 상태이고 Grafana는 쓰지 않는다. 관측 서버 Prometheus 규칙(AI 실패 급증, 턴 환불 실패, 서버 지표 누락, 대화 요약 꺼짐)이 Alertmanager를 거쳐 Slack으로 알린다. 새 지연과 실패율 임계값은 운영 기준선으로 정하고, 서버 중단 시 No Data 처리도 함께 정의한다.
 
 **현재 구현하지 않은 범위.** AI는 전달받은 식별자를 Langfuse 관측에 연결한다. 선택지 상호작용 API의 저장은 구현돼 있지만, 사용자 반응을 생성 버전에 연결해 score로 발행하는 전체 경로(outbox와 score 전송 포함)는 구현되지 않았다. 계약은 [6 관측 구현](../../reference/ANALYTICS.md#6-관측-구현)에 있다.
 

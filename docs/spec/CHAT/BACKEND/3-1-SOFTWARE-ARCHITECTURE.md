@@ -15,8 +15,8 @@ CHAT 도메인은 서버 애플리케이션 내부 패키지로 구성된다. �
 | 클라이언트 | 입력 전송과 스트림 표시 | REST, SSE |
 | AI 서버 | 턴 본문, 판정, 이미지, 선택지, 대화 요약 생성 | SSE 수신, 동기 HTTP |
 | PostgreSQL | 채팅, 메시지, 선택지, 이력, 공유, 피드백 저장 | JDBC |
-| S3 | 실시간 이미지 저장 | AWS SDK, presigned URL |
-| CloudFront | 이미지 제공 | 응답의 CDN URL |
+| 객체 저장소 | 실시간 이미지 저장 | S3 호환 API(AWS SDK), presigned URL<br>운영 Cloudflare R2, dev MinIO |
+| CDN | 이미지 제공 | 응답의 CDN URL(`cdn.manyak.app`, R2 사용자 도메인) |
 | Redis | 생성 중 상태와 생성 이벤트 보관<br>체험 카운터 | 생성 중 키와 Redis Streams는 CHAT이 직접 접근<br>체험 카운터는 PAYMENT 도메인 경유 |
 | Amplitude | 서버 분석 이벤트 | HTTP API |
 | Slack, Google Form | 피드백 전달 | 웹훅, 폼 응답 |
@@ -31,8 +31,8 @@ flowchart LR
     subgraph ST["저장"]
         direction TB
         DB["`**PostgreSQL**`"]
-        S3["`**S3**
-CloudFront로 제공`"]
+        S3["`**객체 저장소**
+R2, CDN으로 제공`"]
         R["`**Redis**
 생성 중 상태와 이벤트
 체험은 PAYMENT 경유`"]
@@ -119,7 +119,7 @@ CHAT은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함된
 | CHAT → STORY | 스토리 읽기 판정, 공개본 데이터, 시작 설정, 엔딩, 주요 사건, 인물 이미지, 표지 URL, 토큰 치환을 사용<br>도달 집계 행을 STORY 테이블에 기록 |
 | ACCOUNT → CHAT | 게스트 이관이 채팅의 후보 조회와 클레임 명령을 호출<br>내 채팅 목록은 chat 패키지의 컨트롤러가 채팅 서비스를 호출하고 ACCOUNT 코드를 거치지 않음 |
 | 서비스 → 피드백 전달 | 이벤트로만 연결<br>커밋 후 리스너가 비동기 발송 |
-| 외부 시스템 | AI 서버와 S3는 인터페이스로 분리<br>스텁과 미구성 저장소로 대체 가능 |
+| 외부 시스템 | AI 서버와 객체 저장소는 인터페이스로 분리<br>스텁과 미구성 저장소로 대체 가능 |
 
 <br>
 

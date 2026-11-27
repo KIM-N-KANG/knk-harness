@@ -15,9 +15,9 @@ STORY 도메인은 서버 애플리케이션 내부 패키지로 구성된다. �
 | 클라이언트 | 요청 전송과 결과 표시 | REST |
 | AI 서버 | 스토리라인, 컴파일, 이미지 생성 | 동기 HTTP |
 | PostgreSQL | 원본 저장 | JDBC |
-| S3 | 이미지 저장 | AWS SDK, presigned URL |
-| CloudFront | 이미지 제공 | 응답의 CDN URL |
-| OpenSearch | 검색 색인 | OpenSearch 클라이언트, 검색 전용 계정과 Cloudflare Access 서비스 토큰 |
+| 객체 저장소 | 이미지 저장 | S3 호환 API(AWS SDK), presigned URL<br>운영 Cloudflare R2, dev MinIO |
+| CDN | 이미지 제공 | 응답의 CDN URL(`cdn.manyak.app`, R2 사용자 도메인) |
+| OpenSearch | 검색 색인 | OpenSearch 클라이언트, 검색 전용 계정<br>운영과 dev는 마냑 tailnet으로 관측 서버에 연결 |
 | Redis | 게스트 체험 카운터 | PAYMENT 도메인 경유 |
 | Amplitude | 서버 분석 이벤트 | HTTP API |
 | Slack | 신고 알림 | 웹훅 |
@@ -31,7 +31,7 @@ flowchart LR
     subgraph ST["저장"]
         direction TB
         DB["<b>PostgreSQL</b>"]
-        S3["<b>S3</b><br/>CloudFront로 제공"]
+        S3["<b>객체 저장소</b><br/>R2, CDN으로 제공"]
         OS["<b>OpenSearch</b>"]
         R["<b>Redis</b><br/>PAYMENT 경유"]
     end
@@ -97,7 +97,7 @@ STORY는 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | 이름 토큰 치환 | 저장 원문, 이름 | 치환된 글 | 조사 선택, 토큰 단위 절단 |
 | AI 호출 | 조립된 요청, 트레이스 헤더 | 파싱된 응답 | 대기 시간, 직렬화, 호출 기록 |
 | 검색 색인 | 색인 요청 이벤트, 묶음 색인 요청 이벤트 | 검색 문서 | 커밋 후 문서 생성과 색인, 묶음 색인, 재색인 |
-| 이미지 저장소 | 객체 키와 바이트 | 이미지 제공 URL | S3 업로드, 서명, 존재 확인 |
+| 이미지 저장소 | 객체 키와 바이트 | 이미지 제공 URL | 객체 저장소 업로드, 서명, 존재 확인 |
 | 초안 서비스 | 초안 저장 요청, 초안 ID | 초안 목록과 상세, 저장 결과 | 회원 단위 직렬화, 내용 비교와 버전 판정, 상한 검사, 이미지 키 검증, 접수 시 삭제 |
 | 공통 | 모든 요청 | 요청자 식별자, 상관관계 식별자, 오류 응답 본문, 로그와 분석 이벤트 | 오류 응답, 인증, 상관관계 식별자, 구조화 로그, 분석 이벤트 |
 
@@ -116,7 +116,7 @@ STORY는 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | CHAT ↔ STORY | CHAT은 읽기 판정, 공개본, 기본 주인공 이름, 토큰 치환을 사용<br>STORY는 채팅의 누적 턴 수와 존재 여부만 읽음 |
 | MODERATION ↔ STORY | 검수 실행기가 승인 시 등록 저장과 수정 적용을 호출<br>STORY에서 MODERATION으로는 검수 접수만 요청 |
 | ADMIN ↔ STORY | 관리자 오리지널과 홈 섹션은 ADMIN의 요청자 판정과 감사 기록 연산을 사용<br>ADMIN은 스토리와 제작 세션을 읽기만 함 |
-| 외부 시스템 | AI 서버, S3, OpenSearch는 인터페이스로 분리<br>스텁과 미구성 저장소로 대체 가능 |
+| 외부 시스템 | AI 서버, 객체 저장소, OpenSearch는 인터페이스로 분리<br>스텁과 미구성 저장소로 대체 가능 |
 
 <br>
 

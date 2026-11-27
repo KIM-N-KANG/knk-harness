@@ -782,7 +782,8 @@ flowchart LR
     G -->|예| E
     G -->|아니오| X["`**사용 불가로 응답**`"]
     F -->|아니오| C["`**세 출처를 나란히 호출**
-CloudWatch, Prometheus, Redis
+Prometheus, Redis
+설정에 따라 CloudWatch
 합쳐 5초`"]
     C -->|하나 이상 성공| D["`**변환과 조립**
 실패한 출처의 묶음은 비움
@@ -800,25 +801,25 @@ CloudWatch, Prometheus, Redis
 
 | 출처 | 묶음 | 설정이 비면 |
 |---|---|---|
-| CloudWatch | `host`(앱 호스트), `rds` | 오토스케일링 그룹이 비면 `host`만, RDS 인스턴스가 비면 `rds`만 `null`<br>둘 다 비면 CloudWatch를 부르지 않음 |
-| 관측 서버 Prometheus | `requests`, `hostSystem`, `opensearch` | 조회 주소가 비면 세 묶음 모두 `null`이고 부르지 않음 |
+| 관측 서버 Prometheus | `requests`, `hostSystem`, `opensearch`<br>`host-source=prometheus`(운영)이면 `host`(운영 호스트), `rds`(운영 DB)도 | 조회 주소가 비면 이 출처의 묶음 모두 `null`이고 부르지 않음 |
+| CloudWatch | `host-source=cloudwatch`(코드 기본값)일 때 `host`, `rds` | 오토스케일링 그룹이 비면 `host`만, RDS 인스턴스가 비면 `rds`만 `null`<br>둘 다 비면 CloudWatch를 부르지 않음<br>운영은 AWS를 지워 쓰지 않음 |
 | Redis | `redis` | 설정 없음<br>서버가 쓰는 Redis에 항상 물음 |
 
-- 설정값은 [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿)이 정한다.
-- 세 출처를 나란히 부르고 전체 시간 한도는 5초다.
+- 설정값은 [6-3 환경 변수와 시크릿](6-DEPLOYMENT.md#6-3-환경-변수와-시크릿)이 정한다. `host`, `rds`의 출처는 `MANYAK_ADMIN_INFRA_HOST_SOURCE`가 고른다. 응답 필드 이름(`host`, `rds`)은 출처와 관계없이 같다.
+- 출처를 나란히 부르고 전체 시간 한도는 5초다.
 - 출처 하나가 실패하면 그 출처의 묶음을 모두 `null`로 두고 묶음 키를 `unavailable`에 넣는다. 설정이 비어 `null`인 묶음은 `unavailable`에 넣지 않는다.
 - 부른 출처가 모두 실패하면 응답을 만들지 않는다. 만료된 것이라도 그 범위의 캐시가 있으면 캐시로 응답하고 없으면 사용 불가다.
 
 <br>
 
-**2. CloudWatch**
+**2. CloudWatch(`host-source=cloudwatch`일 때만, 운영 미사용)**
 
 | 항목 | 규칙 |
 |---|---|
 | 인증 | 서버의 AWS 역할 자격 증명을 AWS SDK 기본 자격 증명 체인으로 씀<br>액세스 키를 설정값으로 두지 않음 |
-| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>앱 호스트의 CPU는 `Average`와 `Maximum` 두 통계를 따로 질의<br>운영 질의 수는 앱 호스트 4, RDS 5로 9개<br>응답에 `NextToken`이 있으면 이어 받음 |
+| 지표 조회 | `GetMetricData` 한 번에 지표마다 `MetricStat` 질의 하나<br>지표, 통계, 단위는 계약의 표<br>운영 호스트의 CPU는 `Average`와 `Maximum` 두 통계를 따로 질의<br>운영 질의 수는 운영 호스트 4, RDS 5로 9개<br>응답에 `NextToken`이 있으면 이어 받음 |
 | 결과 확인 | 이어 받은 뒤 질의마다 `StatusCode`가 `Complete`이고 `Messages`에 오류가 없는지 확인<br>`Complete`가 아니거나(`PartialData`, `InternalError`, `Forbidden`) 오류가 있으면 CloudWatch 출처의 실패이며 0으로 채우지 않음 |
-| 차원 | 앱 호스트는 `AutoScalingGroupName`<br>인스턴스가 교체되어도 같은 계열로 이어짐<br>RDS는 `DBInstanceIdentifier` |
+| 차원 | 운영 호스트는 `AutoScalingGroupName`<br>인스턴스가 교체되어도 같은 계열로 이어짐<br>RDS는 `DBInstanceIdentifier` |
 | 변환 | 지연 시간은 초를 밀리초로 |
 | 빈 구간 | 받은 구간만 담고 채우지 않음 |
 | 비용 | `GetMetricData`는 요청한 지표 1,000개당 0.01달러<br>응답 하나가 9개라 캐시를 거치지 않은 요청 1,000번에 약 0.09달러 |
@@ -829,7 +830,7 @@ CloudWatch, Prometheus, Redis
 
 | 항목 | 규칙 |
 |---|---|
-| 경로 | 조회 주소의 `/api/v1/query_range`와 `/api/v1/query`<br>Cloudflare Access 서비스 토큰 헤더와 Prometheus 읽기 계정의 기본 인증을 함께 보냄 |
+| 경로 | 조회 주소의 `/api/v1/query_range`와 `/api/v1/query`<br>Prometheus 읽기 계정의 기본 인증을 보냄<br>운영 조회 주소는 운영 호스트의 tailnet 출구 `http://obs-home`이며 관측 서버 입구가 이 두 경로만 Prometheus로 넘김<br>Access 서비스 토큰 설정이 있으면 헤더로도 보내지만 운영은 비움 |
 | 읽는 계열 | 관측 서버의 기록 규칙이 만든 계열만 읽음<br>원 지표의 이름과 라벨이 바뀌면 기록 규칙에서 맞추고 서버 질의는 그대로 둠 |
 | 질의 범위 | 간격(`step`)은 `periodSeconds`<br>점 하나는 그 시각 직전 `periodSeconds` 동안의 값이라 점의 시각에서 `periodSeconds`를 빼 구간 시작으로 바꿈 |
 | 요청 수, 5xx 수 | 1분마다 기록된 초당 요청률을 구간 동안 더하고 60을 곱해 건수로 바꾼 뒤 정수로 반올림 |
@@ -849,8 +850,14 @@ CloudWatch, Prometheus, Redis
 | `manyak_server:http_requests:rate3m` | 운영 서버의 초당 요청률 | 서버가 보내는 HTTP 요청 지표<br>없는 경로로 온 요청 포함, `/actuator/**` 제외 |
 | `manyak_server:http_5xx:rate3m` | 운영 서버가 돌려준 5xx의 초당 요청률<br>5xx가 없으면 0 | 같음 |
 | `manyak_server:http_latency_bucket_nostream:rate3m` | 응답 시간 버킷(`le`)별 초당 요청률<br>경로가 `/stream`으로 끝나는 SSE 요청 제외 | 같음 |
-| `manyak_prod_host:memory_available_bytes` | 앱 호스트의 사용 가능 메모리 | 앱 호스트의 지표 수집 컨테이너가 보내는 호스트 지표 |
-| `manyak_prod_host:memory_total_bytes` | 앱 호스트의 전체 메모리 | 같음 |
+| `manyak_prod_host:cpu_usage_percent` | 운영 호스트 CPU 사용률(%)<br>`host.cpu`는 구간 평균, `host.cpuMax`는 구간 최댓값 | 운영 호스트의 노드 지표 |
+| `manyak_prod_host:status_check_failed` | 0 정상, 1 실패. 호스트 지표가 5분 넘게 없으면 1<br>`host.statusCheckFailed`는 구간 최댓값 | 같음 |
+| `manyak_prod_db:cpu_percent` | 운영 DB(postgres 컨테이너) CPU(%), 호스트 전체 코어 대비<br>`rds.cpu`는 구간 평균 | 운영 호스트의 컨테이너 지표 |
+| `manyak_prod_db:free_storage_bytes` | 데이터 볼륨 여유<br>`rds.freeStorageBytes`는 구간 최솟값 | 운영 호스트의 노드 지표 |
+| `manyak_prod_db:connections` | DB 연결 수(모든 데이터베이스 합)<br>`rds.connections`는 구간 최댓값 | 운영 호스트의 Postgres 지표 |
+| `manyak_prod_db:read_latency_seconds`, `manyak_prod_db:write_latency_seconds` | 데이터 볼륨의 읽기, 쓰기 I/O 한 번 평균 시간(초)<br>서버가 밀리초로 바꾸고 `NaN` 점은 뺌 | 운영 호스트의 노드 지표 |
+| `manyak_prod_host:memory_available_bytes` | 운영 호스트의 사용 가능 메모리 | 운영 호스트의 지표 수집 컨테이너가 보내는 호스트 지표 |
+| `manyak_prod_host:memory_total_bytes` | 운영 호스트의 전체 메모리 | 같음 |
 | `manyak_prod_host:disk_available_bytes` | 마운트 경로(`mountpoint`)별 디스크 여유<br>`/`와 `/data` | 같음 |
 | `manyak_prod_host:disk_total_bytes` | 마운트 경로별 디스크 크기 | 같음 |
 | `manyak_opensearch:disk_available_bytes` | 관측 서버 OpenSearch 데이터 디스크의 여유 | 관측 서버 수집기가 OpenSearch에서 읽은 노드 지표 |
@@ -878,7 +885,7 @@ CloudWatch, Prometheus, Redis
 
 | 항목 | 규칙 |
 |---|---|
-| 집계 간격 | 기간 2일 이하 300초, 7일 이하 900초, 그보다 길면 3600초<br>조회 시작이 63일보다 오래되면 3600초<br>CloudWatch는 5분 단위 값을 63일, 1시간 단위 값을 455일 보관 |
+| 집계 간격 | 기간 2일 이하 300초, 7일 이하 900초, 그보다 길면 3600초<br>조회 시작이 63일보다 오래되면 3600초<br>63일 규칙은 CloudWatch 보관 기준(5분 단위 63일)에서 왔고 Prometheus는 90일 보관 |
 | 시각 | 조회 시작은 `from`의 KST 자정, 끝은 `to` 다음 날 KST 자정과 현재 시각 중 이른 쪽<br>점의 시각은 구간 시작 시각 |
 | 캐시 | `from`과 `to`를 키로 응답 전체를 60초 프로세스 메모리에 보관<br>일부 묶음이 빈 응답도 보관하며 다음 갱신에서 실패한 출처를 다시 부름<br>프로세스마다 따로이고 키는 최근 100개 |
 | 갱신과 실패 | 같은 키의 만료 뒤 첫 요청 하나만 호출, 나머지는 만료된 캐시 또는 사용 불가<br>부른 출처가 모두 실패하면 그 키에 60초 쿨다운 |

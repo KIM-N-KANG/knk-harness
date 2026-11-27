@@ -18,8 +18,8 @@ ADMIN 도메인은 서버 애플리케이션의 내부 패키지다. 별도 프�
 | Amplitude | 활성과 신규 사용자 수, 세분화, 퍼널, 리텐션, 세션 제공 | Dashboard REST API HTTPS 호출 |
 | Langfuse | AI 호출의 모델별 비용 | Metrics API HTTPS 호출, 공개 키와 비밀 키 |
 | Google Cloud Storage | Play Console 일괄 보고서 보관 | 서비스 계정으로 객체 목록과 내려받기 HTTPS 호출 |
-| AWS CloudWatch | 앱 호스트와 RDS 지표 | 서버의 AWS 역할로 AWS SDK 호출 |
-| 관측 서버 Prometheus | 서버 요청 지표, 앱 호스트 메모리·디스크, 관측 서버 OpenSearch 지표 | 조회 주소로 HTTP 호출<br>Access 서비스 토큰과 Prometheus 계정 |
+| AWS CloudWatch | `host-source=cloudwatch`일 때의 호스트와 DB 지표 | AWS SDK 호출<br>운영은 쓰지 않음 |
+| 관측 서버 Prometheus | 운영 호스트와 DB 지표, 서버 요청 지표, 운영 호스트 메모리·디스크, 관측 서버 OpenSearch 지표 | 마냑 tailnet 출구(`http://obs-home`)로 HTTP 호출<br>Prometheus 읽기 계정 |
 | Redis | 분석 값 배치의 5분 슬롯 선점, 인프라 지표의 Redis 현재 값 | 다른 도메인과 같은 Redis에 `SET NX`와 `INFO` |
 
 ```mermaid
@@ -40,7 +40,6 @@ ACCOUNT, MODERATION, STORY**
     S -->|비어 있는 날짜만 조회, 비용 예산| AM["`**Amplitude**`"]
     S -->|보고서 내려받기, 1시간 캐시| GCS["`**Google Cloud Storage**
 Play 일괄 보고서`"]
-    S -->|지표 조회, 60초 캐시| CW["`**CloudWatch**`"]
     S -->|지표 조회, 60초 캐시| PM["`**관측 서버 Prometheus**`"]
     classDef ext fill:#F4F6F4,stroke:#9BA99E,color:#253C2C
     classDef comp fill:#E8F2E8,stroke:#527A59,color:#182D1D
@@ -112,7 +111,7 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | DB 분석 지표 | 기간 | 신규 가입자, 턴 도달률, 채팅 옵션 비중, AI 비용의 호출 수와 토큰 | 날짜별 집계, 팀 계정 제외, 실시간 이미지 장당 원가 적용 |
 | AI 비용 조회 | 기간 | 날짜별 기능과 모델의 비용 | 보관 기간 판정, Langfuse 호출, 추적 이름 매핑, 원화 변환, 값 저장, 배치의 확정 값 저장, 호출 제한 처리, 실패 시 저장 값이나 사용 불가 |
 | 설치 지표 | 없음 | Android 누적 기기 설치 수, 활성 기기 수, 일별 기기 설치 수와 앱 삭제 수 | 보고서 내려받기, CSV 해석과 합산, 1시간 캐시, 실패 시 사용 불가 |
-| 인프라 지표 | 기간 | 앱 호스트, 요청, RDS, Redis, OpenSearch 지표 | CloudWatch와 Prometheus와 Redis를 나란히 호출, 단위 변환, 빈 구간 처리, 60초 캐시, 실패한 출처의 묶음만 비움 |
+| 인프라 지표 | 기간 | 운영 호스트, 요청, DB(`rds`), Redis, OpenSearch 지표 | Prometheus와 Redis(설정에 따라 CloudWatch)를 나란히 호출, 단위 변환, 빈 구간 처리, 60초 캐시, 실패한 출처의 묶음만 비움 |
 | DB 테이블 크기 | 개수 | 데이터베이스 크기와 테이블별 크기와 추정 행 수 | 카탈로그 조회, 5분 캐시 |
 | 회원 조회 | 검색어 또는 공개 식별자 | 회원 요약과 상세, 이프 내역과 출석 페이지 | 검색, 잔액과 콘텐츠 수 조회, 접속 기록 |
 
@@ -130,7 +129,7 @@ ADMIN은 다른 도메인의 백엔드와 하나의 서버 이미지에 포함�
 | ADMIN → Amplitude | 분석 지표 조회만<br>이벤트 발행은 공통 분석 발행기가 함<br>호출 전에 값 저장소를 먼저 읽어 비어 있거나 만료된 날짜만 조회 |
 | ADMIN → Google Cloud Storage | 설치 보고서 읽기만<br>쓰기 없음 |
 | ADMIN → Langfuse | AI 비용 조회만<br>호출 전에 값 저장소를 먼저 읽어 비어 있거나 만료된 날짜만 조회<br>보관 기간 밖 날짜는 조회하지 않음 |
-| ADMIN → CloudWatch, 관측 서버 Prometheus | 지표 읽기만<br>쓰기 없음 |
+| ADMIN → 관측 서버 Prometheus(설정에 따라 CloudWatch) | 지표 읽기만<br>쓰기 없음 |
 | Amplitude 배치 스케줄러 → Redis | 5분 슬롯 키 선점만<br>값은 Redis에 두지 않음 |
 | Amplitude 배치 스케줄러 → 값 저장소와 Amplitude 호출 | 화면 요청과 같은 구성 요소를 거침<br>배치 예산 몫이 따로이고 백그라운드 갱신을 띄우지 않고 그 실행 안에서 갱신 |
 

@@ -1,6 +1,6 @@
 # 3 백엔드 런타임 설정
 
-설정 이름과 기본값은 서버 dev `32ae380`의 `application.yml`과 프로파일 yml(`application-{local,dev,prod}.yml`)을 기준으로 한다. 실제 적용값은 배포 기록으로 확인하며 도메인별 설정이 바뀌면 해당 세트의 배포 계약을 우선한다. 설정 코드가 있다는 사실은 외부 결제, 푸시, 관측이 켜져 있다는 증거가 아니다.
+설정 이름과 기본값은 서버 dev `ec1e3e4b`의 `application.yml`과 프로파일 yml(`application-{local,dev,prod}.yml`)을 기준으로 한다. 실제 적용값은 배포 기록으로 확인하며 도메인별 설정이 바뀌면 해당 세트의 배포 계약을 우선한다. 설정 코드가 있다는 사실은 외부 결제, 푸시, 관측이 켜져 있다는 증거가 아니다.
 
 값은 배포 파이프라인이 주입하며 문서와 레포에 싣지 않는다. 표의 기본값은 yml에 적힌 값이고 빈 값은 "없음"으로 적는다. `MANAGEMENT_*`, `SPRING_*`처럼 yml에 자리 표시가 없는 이름은 Spring 환경 변수 바인딩으로 프로퍼티에 들어간다.
 
@@ -22,7 +22,7 @@
 | `MANYAK_KAKAO_CLIENT_IDS` | 없음(local은 더미) | 카카오 로그인 사용 시 예 | 같은 카카오 앱의 REST API 키(웹 `aud`)와 네이티브 앱 키(Android `aud`) 목록. 플랫폼 키가 빠지면 그 플랫폼 로그인만 401 |
 | `MANYAK_LEGAL_TERMS_VERSION`, `MANYAK_LEGAL_PRIVACY_VERSION`, `MANYAK_LEGAL_GUEST_PRIVACY_VERSION` | `v1.4`, `v1.8`, `v1.0` | 아니오 | 현행 약관과 처리방침 버전. 동의 확인 기준 |
 | `MANYAK_OFFICIAL_USER_PUBLIC_ID` | 없음 | 아니오 | 오리지널 스토리를 소유한 공식 계정 공개 ID. 비어 있으면 오리지널 필터가 빈 결과 |
-| `AWS_REGION` | `ap-northeast-2` | 아니오 | SQS, 관리자 인프라 조회의 리전 |
+| `AWS_REGION` | `ap-northeast-2` | 아니오 | SQS 발행기, CloudWatch 인프라 조회, 검색 SigV4 같은 옛 AWS 경로 전용. 운영과 dev는 쓰지 않는다 |
 
 <br>
 
@@ -48,11 +48,12 @@
 | `MANYAK_AI_MODERATION_TIMEOUT`, `..._POOL_SIZE`, `..._RETRY_DELAYS`, `..._REQUEST_BUDGET_BYTES`, `..._RECLAIM_AFTER`, `..._POLL_INTERVAL`, `..._POLL_ENABLED` | `180s`, `4`, `1m,5m`, `41943040`, `300s`, `1000`, `true` | 스토리 검수 요청과 재시도, 회수 주기 ([MODERATION 4-1](../../spec/MODERATION/BACKEND/4-1-PIPELINES.md)) |
 | `MANYAK_OPENSEARCH_ENDPOINT` | 없음 | 스토리 검색 OpenSearch 호스트(`https://` 없이). 검색 서버 주소다. 비어 있으면 검색 503이고 색인을 건너뛴다. DB 대체 검색은 주소가 설정된 저장소의 질의 실패에만 적용한다 ([STORY 4-2-3](../../spec/STORY/BACKEND/4-2-CONTRACT.md#4-2-3-검색)) |
 | `MANYAK_OPENSEARCH_USERNAME`, `MANYAK_OPENSEARCH_PASSWORD` | 없음 | 환경별 검색 전용 계정. 한쪽만 있으면 기동 실패. 둘 다 비면 인증 없이 연결한다(로컬과 테스트) |
-| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | 검색 서버 주소의 Cloudflare Access 서비스 토큰. 한쪽만 있으면 기동 실패. 둘 다 비면 헤더 없이 연결한다 |
+| `MANYAK_OPENSEARCH_ACCESS_CLIENT_ID`, `MANYAK_OPENSEARCH_ACCESS_CLIENT_SECRET` | 없음 | Cloudflare Access 서비스 토큰 헤더. 한쪽만 있으면 기동 실패, 둘 다 비면 헤더 없이 연결한다. 운영과 dev는 마냑 tailnet으로 연결해 쓰지 않는다(KNK-2139) |
 | `MANYAK_OPENSEARCH_STORY_INDEX` | `stories-dev` | 검색 인덱스 이름. 운영은 `stories-prod` |
 | `MANYAK_OPENSEARCH_REINDEX_ON_STARTUP` | `false` | `true`면 기동 시 전체 재색인 1회. 복구용이며 끝나면 되돌린다 |
 | `MANYAK_IMAGE_BASE_URL` | `https://cdn.manyak.app` | 이미지 CDN base URL. `imageKey`로 서빙 URL을 만든다 ([CHAT 4-1-13](../../spec/CHAT/BACKEND/4-1-PIPELINES.md#4-1-13-실시간-이미지)) |
-| `MANYAK_CHARACTER_IMAGE_BUCKET`, `..._REGION`, `..._BASE_URL`, `..._ENDPOINT` | 없음 | 생성 이미지 S3 업로드와 URL. `ENDPOINT`는 로컬 MinIO 같은 S3 호환 저장소용 |
+| `MANYAK_CHARACTER_IMAGE_BUCKET`, `..._REGION`, `..._BASE_URL`, `..._ENDPOINT` | 없음 | 생성 이미지 저장(S3 호환 API)과 URL. 운영은 R2 계정 엔드포인트와 리전 `auto`, dev와 로컬은 MinIO |
+| `MANYAK_CHARACTER_IMAGE_INTERNAL_ENDPOINT` | 없음 | 서버 자신의 저장, 복사, HEAD 호출에만 쓰는 내부 주소(dev의 `http://minio:9000`). presigned URL은 `ENDPOINT`로 만든다 |
 | `MANYAK_ASSET_BASE_URL` | `https://api.manyak.app`(dev는 `https://dev-api.manyak.app`) | 프로필 프리셋 이미지 base URL |
 
 <br>
@@ -62,8 +63,10 @@
 | 환경 변수 | 기본값 | 용도 |
 | --- | --- | --- |
 | `MANYAK_PUSH_MODE` | `local` | 발송 요청 전달 방식. `local`은 서버 안에서 처리, `remote`는 아웃박스를 거쳐 큐로 보내 manyak-notification이 소비 ([NOTIFICATION 3-1](../../spec/NOTIFICATION/BACKEND/3-1-SOFTWARE-ARCHITECTURE.md)) |
-| `MANYAK_PUSH_QUEUE_URL` | 없음 | 원격 모드의 SQS 큐 URL. local 프로파일의 원격 모드는 Kafka(`SPRING_KAFKA_BOOTSTRAP_SERVERS`, 기본 `localhost:9092`) |
-| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 없음 | Firebase 서비스 계정 JSON 원문. 비어 있으면 FCM 빈을 만들지 않고 발송하지 않는다. Secrets Manager에 키를 넣고 앱 호스트 설정에 노출하는 terraform apply와 재배포가 함께 필요 |
+| `MANYAK_PUSH_BROKER` | `sqs` | 원격 모드의 발행 브로커. 운영, dev, local은 `kafka` |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka 주소. 운영 호스트는 `kafka:9092` |
+| `MANYAK_PUSH_QUEUE_URL` | 없음 | `broker=sqs`일 때만 쓰는 SQS 큐 URL |
+| `MANYAK_FCM_SERVICE_ACCOUNT_JSON` | 없음 | Firebase 서비스 계정 JSON 원문. 비어 있으면 FCM 빈을 만들지 않고 발송하지 않는다. 운영은 호스트 비밀값 파일에 넣고 재배포한다 |
 | `MANYAK_PUSH_WEB_BASE_URL`, `MANYAK_PUSH_WEB_ICON_URL` | `https://manyak.app`, `https://manyak.app/icons/icon-192.png` | 딥링크 base URL과 웹 푸시 아이콘 |
 | `MANYAK_PUSH_ATTENDANCE_REMINDER_ENABLED`, `..._CRON`, `..._TITLE`, `..._BODY` | `true`, `0 0 9 * * *`, yml 문구 | 출석 리마인드 배치와 기본 문구 |
 | `MANYAK_PUSH_CREDIT_EXPIRY_REMINDER_ENABLED`, `..._CRON`, `..._TITLE`, `..._BODY` | `true`, `0 0 10 * * *`, yml 문구 | 이프 만료 예정 알림 배치와 기본 문구 |
@@ -97,10 +100,11 @@
 | `MANYAK_ADMIN_DASHBOARD_EXCLUDED_USER_IDS` | yml 목록 | DB 지표에서 뺄 팀 계정 내부 ID |
 | `MANYAK_ADMIN_PUSH_OPENS_MEASURED_FROM` | 없음 | 푸시 열람 측정 시작일(KST `YYYY-MM-DD`) |
 | `MANYAK_ADMIN_LANGFUSE_HOST`, `..._PUBLIC_KEY`, `..._SECRET_KEY`, `..._ENVIRONMENT`, `..._RETENTION_DAYS` | 없음, `30`일 | AI 비용 지표의 Langfuse 조회 |
-| `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | 운영 인프라 지표의 CloudWatch 조회 대상 ([ADMIN 6](../../spec/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
-| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 관측 서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
+| `MANYAK_ADMIN_INFRA_HOST_SOURCE` | `cloudwatch` | 운영 인프라 지표 host, rds 묶음의 출처. 운영은 `prometheus`(관측 서버 기록 규칙) ([ADMIN 6](../../spec/ADMIN/BACKEND/6-DEPLOYMENT.md)) |
+| `MANYAK_ADMIN_INFRA_HOST_ASG`, `..._RDS_INSTANCE` | 없음 | `host-source=cloudwatch`일 때의 CloudWatch 조회 대상. 운영은 쓰지 않는다 |
+| `MANYAK_ADMIN_INFRA_PROMETHEUS_URL`, `..._USERNAME`, `..._PASSWORD`, `..._ACCESS_CLIENT_ID`, `..._ACCESS_CLIENT_SECRET` | 없음 | 운영 인프라 지표의 관측 서버 Prometheus 조회 주소, 읽기 계정, Cloudflare Access 서비스 토큰. 운영 주소는 `http://obs-home`(tailnet 출구)이고 Access 토큰은 쓰지 않는다. 주소가 비면 Prometheus 묶음을 응답하지 않는다 |
 | `MANYAK_PLAY_STATS_BUCKET`, `MANYAK_PLAY_STATS_PACKAGE_NAME`, `MANYAK_PLAY_STATS_SA_KEY_BASE64` | yml 버킷, `app.manyak`, 없음 | Google Play 설치 보고서(GCS) 조회. 키가 없으면 앱 설치 지표가 비어 있다 |
 
 <br>
 
-환경별 태스크 참조, IAM, 재배포는 [배포 설계](../../operations/DEPLOYMENT.md#6-런타임-설정과-시크릿)를 따른다.
+환경별 비밀값 위치와 재배포는 [배포 설계](../../operations/DEPLOYMENT.md#6-런타임-설정과-시크릿)를 따른다.

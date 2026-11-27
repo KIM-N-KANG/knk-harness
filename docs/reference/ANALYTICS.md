@@ -29,13 +29,13 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 | 사용자 행동 이벤트    | 화면 진입, CTA 클릭, 선택, 제출, 완료           | `4. 이벤트 카탈로그` |
 | 서버 처리 결과 이벤트 | 스토리 생성, AI 응답, 피드백 제출의 성공과 실패 | `4. 이벤트 카탈로그` |
 | 핵심 퍼널과 지표      | 제작 퍼널, 채팅 활성화 퍼널, 전체 활성화 퍼널   | `5. 퍼널과 지표`     |
-| 운영 관측             | 웹, 서버, AI Sentry, Android Crashlytics, CloudWatch, `ai_call_logs`, 실패 코드 | `6. 관측 구현` |
+| 운영 관측             | 웹, 서버, AI Sentry, Android Crashlytics, 관측 서버 로그와 지표, `ai_call_logs`, 실패 코드 | `6. 관측 구현` |
 | 릴리스 검수           | P0 이벤트, 식별자, 원문 미수집, 로그 연결 확인  | `8. 검수 체크리스트` |
 
 | 제외 범위              | 처리 기준                                                                                                                                           |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 사용자 입력 원문 분석  | MVP 분석 이벤트와 로그에 원문을 넣지 않는다.                                                                                                      |
-| 대시보드 화면 요구사항 | 실제 Amplitude 또는 CloudWatch 대시보드가 정해질 때 별도 문서로 추가한다.                                                                         |
+| 대시보드 화면 요구사항 | 실제 Amplitude 또는 관측 서버 대시보드가 정해질 때 별도 문서로 추가한다.                                                                         |
 | 미구현 계측 | 인증 기능의 구현 여부와 분석 이벤트의 구현 여부를 구분한다. 로그인 처리와 이관 서버 이벤트 중 계획 항목은 이벤트 카탈로그에서 따로 표시한다. |
 | 실험 분석              | A/B 테스트 도입 후 `experiment_key`, `variant`를 추가한다.                                                                                        |
 
@@ -72,7 +72,7 @@ MVP 분석은 스토리 제작과 채팅 활성화에 필요한 최소 신호를
 
 > **두 종류의 `creation_id`를 구분한다.** 제품 분석 이벤트의 `creation_id`는 **`analytics_creation_id`**(진행 세션 식별자 `simpleCreationId`의 문자열 표기)이고, AI 트레이스, `ai_call_logs`, `X-Manyak-Creation-Id`의 `creation_id`는 **`trace_creation_id`**(스토리라인 생성 요청의 클라이언트 생성 UUID `story_creation_requests.request_id`)이다. 값도 타입도 다르며(정의: [`0-glossary.md §0-3-2`](GLOSSARY.md)) **두 값을 직접 조인하면 안 된다.** 제품 퍼널, 지표는 `analytics_creation_id`만, AI 호출, Langfuse 트레이스 연결은 `trace_creation_id`만 쓴다. **Android도 같은 규칙을 따른다.** `client_*`, `server_*` 분석 이벤트에는 `analytics_creation_id`를, AI 호출 상관 헤더에는 `trace_creation_id`를 싣는다(§6-3, §6-8).
 
-스토리 생성 요청은 `analytics_creation_id`가 발급되기 전에도 발생할 수 있다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계한다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `analytics_creation_id`를 발급한다. 이후 `server_*` 이벤트의 `analytics_creation_id` 적재는 **목표 계약과 현재 구현이 다르다.** 목표 계약은 성공, 실패 모두 `string` 필수이지만, **현재 구현은 성공 이벤트만 값을 싣고(타입은 `string`이 아닌 `simpleCreationId` Long) 실패 이벤트는 AI 호출 실패, 세션 저장 실패처럼 발급 전 단계에서 끝나면 값 없이 발행될 수 있다**(§8-7 A1, A3). `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 CloudWatch 운영 로그로만 추적한다.
+스토리 생성 요청은 `analytics_creation_id`가 발급되기 전에도 발생할 수 있다. `client_storyCreate_storyGeneration_requested`는 `device_id`와 `session_id` 순차 기준으로 집계한다. 백엔드는 스토리라인 생성 처리를 시작할 때 가능한 한 먼저 `analytics_creation_id`를 발급한다. 이후 `server_*` 이벤트의 `analytics_creation_id` 적재는 **목표 계약과 현재 구현이 다르다.** 목표 계약은 성공, 실패 모두 `string` 필수이지만, **현재 구현은 성공 이벤트만 값을 싣고(타입은 `string`이 아닌 `simpleCreationId` Long) 실패 이벤트는 AI 호출 실패, 세션 저장 실패처럼 발급 전 단계에서 끝나면 값 없이 발행될 수 있다**(§8-7 A1, A3). `creation_id` 발급 전의 malformed request는 분석 이벤트가 아니라 운영 로그로만 추적한다.
 
 `구현`, 로그인 도입에 따른 식별자 정책은 다음과 같다.
 
@@ -577,7 +577,7 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 - 초대 이벤트는 원래 마이 페이지 복사 버튼 기준으로 `client_account_inviteLinkButton_clicked` 하나였으나, 친구 초대가 전용 페이지(`/my/invite`)로 분리되며 화면 관례에 맞춰 `client_invite_*` 3개로 대체했다. 초대 방식 개편(KNK-567, 링크 어트리뷰션 → 코드 입력, [이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md) 결정 기록)으로 코드 입력 3종(`codeInput_*`)과 온보딩 2종(`inviteOnboarding_*`)을 추가하고, 복사 버튼의 복사 대상을 링크에서 코드로 재정의했다.
 - `client_invite_codeInput_failed`의 `error_type`은 redeem 오류 계약의 사유(404 `not_found`, 409 `INVITE_SELF_CODE` → `self_code`, 409 `INVITE_ALREADY_REDEEMED` → `already_redeemed`)와 네트워크 실패를 구분한다, 링크 방식과 달리 코드 입력은 타이핑 실패가 전환 손실의 주 요인이라 실패 사유 분포가 개편 효과 판정의 핵심 지표이다.
 - 적립 이벤트는 계정 화면이 아니라 서버 기능 도메인 기준이라 `server_credit_earn_*`으로 두고(가입은 로그인, 출석은 마이 페이지, 초대는 코드 입력(redeem)에서 발생, KNK-567 전에는 로그인에서 발생) 사유를 `reason`으로 구분한다.
-- 적립 실패는 별도 이벤트 없이 서버 오류 관측(CloudWatch, Sentry)으로 추적한다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
+- 적립 실패는 별도 이벤트 없이 서버 오류 관측(운영 로그, Sentry)으로 추적한다(멱등 재요청은 실패가 아니라 `rewarded: false` 성공).
 
 <br>
 
@@ -868,7 +868,7 @@ track("client_storyCreate_storylineOption_selected", {
 
 ### 5-1 지표 원칙
 
-MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확인하는 데 집중한다. 지표 계산의 기준 데이터는 Amplitude 이벤트이다. 장애 원인, latency, token count, AI 실패 코드는 CloudWatch와 `ai_call_logs`로 보조 분석한다.
+MVP 지표는 사용자가 스토리를 만들고 채팅을 이어가는지 확인하는 데 집중한다. 지표 계산의 기준 데이터는 Amplitude 이벤트이다. 장애 원인, latency, token count, AI 실패 코드는 운영 로그와 `ai_call_logs`로 보조 분석한다.
 
 같은 지표를 여러 방식으로 계산하지 않는다. 지표 이름, 계산식, 집계 단위, 제외 조건은 이 문서를 원본으로 삼는다.
 
@@ -1047,13 +1047,13 @@ flowchart TD
 | 채팅        | 채팅 응답 저장 성공률   | `ai_response_saved` 수 / `user_message_saved` 수               |
 | 피드백      | 피드백 제출 성공률      | `feedback_delivery_completed` 수 / 피드백 제출 API 요청 수     |
 
-CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6. 관측 구현`을 따른다.
+운영 로그 이벤트와 `ai_call_logs` 기록 기준은 `6. 관측 구현`을 따른다.
 
 <br>
 
 ### 5-6 계산 주의사항
 
-`server_storyCreate_storyGeneration_processed_failed`는 `analytics_creation_id`가 발급된 스토리 생성 처리 실패만 포함하는 것이 **목표 계약**이다, **현재 구현은 AI 호출, 세션 저장 실패 등 발급 전 실패도 값 없이 발행할 수 있어, `analytics_creation_id` 기준 집계는 그만큼 누락된다**(§8-7 A1). 요청 형식 자체가 깨져 `creation_id`를 만들 수 없는 malformed request는 CloudWatch의 `api_request_failed`로만 추적한다.
+`server_storyCreate_storyGeneration_processed_failed`는 `analytics_creation_id`가 발급된 스토리 생성 처리 실패만 포함하는 것이 **목표 계약**이다, **현재 구현은 AI 호출, 세션 저장 실패 등 발급 전 실패도 값 없이 발행할 수 있어, `analytics_creation_id` 기준 집계는 그만큼 누락된다**(§8-7 A1). 요청 형식 자체가 깨져 `creation_id`를 만들 수 없는 malformed request는 운영 로그의 `api_request_failed`로만 추적한다.
 
 `client_chat_messageInput_submitted`는 사용자 메시지 전송 시점이다. AI 응답 성공 여부는 `server_chat_aiMessage_processed_succeeded`로 판단한다. 사용자가 메시지를 보냈지만 AI 응답이 실패한 경우 말 거는 비율에는 포함되고 AI 응답 성공률에는 포함되지 않는다.
 
@@ -1076,7 +1076,7 @@ CloudWatch 이벤트와 `ai_call_logs` 기록 기준은 `6. 관측 구현`을 �
 | Android Crashlytics | Android 앱 오류 분석 | Kotlin/JVM fatal, non-fatal, API 30+ ANR, 수동 화면, P0 행동 로그. API 24~29 ANR, NDK는 초기 범위 밖([3-3 관측](../platform/CLIENT/ANDROID/3-EXECUTION.md#3-3-관측)) |
 | 서버 분석 이벤트 | 퍼널 결과 계측       | 생성 성공, 실패, AI 응답 성공, 실패, 피드백 제출 성공, 실패   |
 | 서버 Sentry      | 백엔드 예외 분석     | API 예외, AI 호출 실패, DB 오류, 외부 연동 실패            |
-| CloudWatch       | 운영 로그와 지표     | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
+| 관측 서버(OpenSearch, Prometheus) | 운영 로그와 지표 | API 요청 로그, 주요 비즈니스 이벤트, latency, status       |
 | AI Sentry        | AI 서비스 오류 분석  | provider 오류, timeout, 파싱 실패, schema 검증 실패        |
 | `ai_call_logs`   | AI 호출 이력         | 스토리라인 생성, 스토리 생성, 채팅 응답, 선택지 생성       |
 | Langfuse         | AI LLM 트레이싱      | 정상, 실패 LLM 호출의 프롬프트, 응답 원문, 토큰, 지연, AI 프로덕션 활성. 선호 신호 결합은 `계획` |
@@ -1109,7 +1109,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 **관측 계층마다 싣는 상관 키가 다르다.** 아래 공통 상관 필드는 요청 단위로 어디서나 이어지지만, `creation_id`는 계층마다 **서로 다른 값**이므로 하나의 전역 필드 표로 묶지 않는다(§2 두 개념 구분).
 
-**공통 상관 필드**, 백엔드가 서버 분석 이벤트, CloudWatch 로그, Sentry scope, AI 호출 요청에 가능한 범위에서 함께 싣는다. `request_id`는 응답 헤더로도 돌려주며 Android는 실패한 그 요청의 Crashlytics non-fatal에만 복사할 수 있다.
+**공통 상관 필드**, 백엔드가 서버 분석 이벤트, 운영 로그, Sentry scope, AI 호출 요청에 가능한 범위에서 함께 싣는다. `request_id`는 응답 헤더로도 돌려주며 Android는 실패한 그 요청의 Crashlytics non-fatal에만 복사할 수 있다.
 
 | 필드             | 설명                                                   |
 | ---------------- | ------------------------------------------------------ |
@@ -1127,7 +1127,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | --------------------------------------------------- | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | 제품 분석 이벤트(`client_*`, `server_*`)            | `analytics_creation_id` | `simpleCreationId`(원본 `story_creation_sessions.id`)        | 구현. 단 타입, 누락 간극이 있다(§8-7 A1~A3)                                                           |
 | AI 호출 요청 헤더(`X-Manyak-Creation-Id`), Langfuse | `trace_creation_id`     | 스토리라인 단계 `story_creation_requests.request_id`(UUID)   | 구현([제작 추적 헤더](../spec/STORY/BACKEND/5-4-OBSERVABILITY.md#5-4-3-ai-서버로-전달하는-헤더))                                                                |
-| CloudWatch 구조화 로그                             | `analytics_creation_id` | 제작 로그 이벤트(`story_create_requested` 등)의 `creation_id` 필드에 `simpleCreationId`를 싣는다 | 구현. 요청 전역 MDC 필드가 아니라 **해당 로그 이벤트의 개별 필드**이다(MDC 전역 키는 위 공통 상관 필드 중 `request_id`, `session_id`, `device_id_hash` 3종) |
+| 구조화 로그(관측 서버 OpenSearch)                  | `analytics_creation_id` | 제작 로그 이벤트(`story_create_requested` 등)의 `creation_id` 필드에 `simpleCreationId`를 싣는다 | 구현. 요청 전역 MDC 필드가 아니라 **해당 로그 이벤트의 개별 필드**이다(MDC 전역 키는 위 공통 상관 필드 중 `request_id`, `session_id`, `device_id_hash` 3종) |
 | 서버 Sentry scope                                  | 없음 | 없음 | **현재 `creation_id`를 부착하지 않는다**(MDC 전역 키만 tag, context로 올림, §6-6)                      |
 | `ai_call_logs`                                     | `trace_creation_id`     | 위 AI 호출 상관값                                            | **목표 계약**, 현재 테이블에 `creation_id` 컬럼이 없다(§6-9)                                        |
 
@@ -1171,9 +1171,9 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 
 <br>
 
-### 6-5 백엔드 CloudWatch 로그
+### 6-5 백엔드 구조화 로그
 
-모든 백엔드 로그는 JSON 형태로 남긴다. CloudWatch `event_name`은 운영 로그 이름이며, `4. 이벤트 카탈로그`의 분석 이벤트 네이밍 컨벤션을 강제하지 않는다.
+모든 백엔드 로그는 JSON 형태로 남긴다. 구조화 로그의 `event_name`은 운영 로그 이름이며, `4. 이벤트 카탈로그`의 분석 이벤트 네이밍 컨벤션을 강제하지 않는다.
 
 ```json
 {
@@ -1219,7 +1219,7 @@ Android 앱의 Meta SDK(facebook-core)도 같은 이유로 제품 지표 계산�
 | Breadcrumb | API 요청 시작, DB 저장 완료, AI 호출 시작과 종료                                                           |
 | Exceptions | 5xx 예외, DB 예외, AI 호출 timeout, AI 응답 검증 실패, Slack 피드백 webhook 실패                           |
 
-사용자 입력 검증 실패처럼 예상 가능한 4xx 오류는 기본적으로 Sentry exception으로 보내지 않는다. 같은 4xx 오류가 짧은 시간에 반복되어 운영 문제가 의심될 때만 warning 수준의 CloudWatch 로그로 확인한다.
+사용자 입력 검증 실패처럼 예상 가능한 4xx 오류는 기본적으로 Sentry exception으로 보내지 않는다. 같은 4xx 오류가 짧은 시간에 반복되어 운영 문제가 의심될 때만 warning 수준의 운영 로그로 확인한다.
 
 <br>
 
@@ -1318,7 +1318,7 @@ AI feature는 프론트엔드 이벤트명에 넣지 않는다. 상세 원인은
 
 <br>
 
-### 6-10 AI CloudWatch와 Sentry 기준
+### 6-10 AI 로그와 Sentry 기준
 
 AI의 현재 로그와 Sentry 기록은 [CHAT 관측](../spec/CHAT/AI/7-3-OBSERVABILITY.md)과 [STORY 관측](../spec/STORY/AI/7-3-OBSERVABILITY.md)을 따른다. 아래 JSON과 이벤트 표는 초기 통합 관측안으로 보존하며 현재 구현 형식이 아니다. 특히 `ai_call_log_id`와 DB 기록은 백엔드 책임이므로 AI가 이 필드를 발급하거나 `ai_call_logs`에 직접 쓰는 것으로 해석하지 않는다.
 
@@ -1365,7 +1365,7 @@ AI의 현재 로그와 Sentry 기록은 [CHAT 관측](../spec/CHAT/AI/7-3-OBSERV
 
 평가 대상, 연구 시스템은 [6-4 AI 평가 방법](../spec/CHAT/AI/6-4-AI-EVALUATION-METHOD.md)이 설명하며, 실행, 채택 규칙은 연결된 연구 레포 문서가 소유한다. 이 절은 평가 결과의 로깅 계약과, 자가개선 루프가 사용할 수 있는 데이터의 수집 기준을 고정한다.
 
-**평가 로그 이벤트**, 평가 에이전트가 벤치 실행 결과를 JSON 로그로 남긴다. Amplitude 이벤트가 아니다(사용자 행동이 아니라 내부 품질 실측이므로 CloudWatch 로그 축).
+**평가 로그 이벤트**, 평가 에이전트가 벤치 실행 결과를 JSON 로그로 남긴다. Amplitude 이벤트가 아니다(사용자 행동이 아니라 내부 품질 실측이므로 운영 로그 축).
 
 | 이벤트                         | 발생 시점                 | 핵심 필드                                                                                                                                          |
 | ------------------------------ | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1481,7 +1481,7 @@ flowchart LR
 
 ### 7 개인정보와 원문 수집 원칙
 
-MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_call_logs`에는 사용자가 입력한 원문을 직접 넣지 않는다.
+MVP 분석 이벤트, 운영 로그, Sentry, Crashlytics context/log, `ai_call_logs`에는 사용자가 입력한 원문을 직접 넣지 않는다.
 
 | 데이터                | 분석 이벤트   | 운영 로그, Sentry, Crashlytics | 대체 값                             |
 | --------------------- | ------------- | --------------------------- | ----------------------------------- |
@@ -1520,7 +1520,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 | P0 이벤트 우선   | 출시 전에는 `4-1. MVP 우선순위`의 P0 이벤트를 모두 확인한다.                                                     |
 | 원본 섹션 기준   | 이벤트는 `4. 이벤트 카탈로그`, 지표는 `5. 퍼널과 지표`, 관측 구현은 `6. 관측 구현`을 기준으로 확인한다.      |
 | 식별자 연결 확인 | `device_id`, `session_id`, `chat_id`, `request_id`, `ai_call_log_id`가 각 계층에서 이어지는지 본다. `analytics_creation_id`(분석 이벤트의 `creation_id`) 경로는 §8-7 A1~A3 해소 전까지 구간별로만 확인한다(§8-3). `trace_creation_id`(AI 트레이스, 헤더의 `creation_id`)는 다른 값이므로 두 값을 직접 조인하지 않는다(§2, §6-3). |
-| 원문 수집 금지   | 채팅, 피드백, 이메일, 키워드, 프롬프트, AI 생성 결과 원문이 **Amplitude, CloudWatch, Sentry, Crashlytics, `ai_call_logs`** payload에 없는지 확인한다(Langfuse는 §7 예외, 아래 별도 항목).                             |
+| 원문 수집 금지   | 채팅, 피드백, 이메일, 키워드, 프롬프트, AI 생성 결과 원문이 **Amplitude, 운영 로그, Sentry, Crashlytics, `ai_call_logs`** payload에 없는지 확인한다(Langfuse는 §7 예외, 아래 별도 항목).                             |
 | Langfuse 원문 예외 | Langfuse가 §7 확정 조건(JP 리전, AI 담당자 한정 접근, prod 전용)대로 동작하는지 확인한다. 제공 장르 외의 사용자 자유입력을 tags, metadata에 색인하지 않는지 확인한다. |
 
 <br>
@@ -1531,7 +1531,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 
 - 새 이벤트를 추가하면 `4. 이벤트 카탈로그`에 이벤트명, 발생 시점, 고유 프로퍼티, 우선순위를 추가한다.
 - 새 이벤트가 지표에 쓰이면 `5. 퍼널과 지표`에 계산식과 집계 단위를 추가한다.
-- 새 이벤트가 웹 Sentry breadcrumb, Android Crashlytics 수동 log 또는 CloudWatch 로그와 연결되면 `6. 관측 구현`에 연결 기준을 추가한다.
+- 새 이벤트가 웹 Sentry breadcrumb, Android Crashlytics 수동 log 또는 운영 로그와 연결되면 `6. 관측 구현`에 연결 기준을 추가한다.
 - P0 이벤트가 바뀌면 이 문서의 출시 전 P0 체크리스트를 업데이트한다.
 - 원문 수집 가능성이 있는 프로퍼티를 추가하면 `7. 개인정보와 원문 수집 원칙`과 `8-5. 개인정보 검수 기준`을 함께 확인한다.
 - 같은 표를 여러 섹션에 복사하지 않고 원본 섹션을 참조한다.
@@ -1588,7 +1588,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 - 모든 API 로그에 `request_id`, `session_id`, `device_id_hash`가 있다.
 - 생성, AI 응답, 피드백 결과가 `server_*` 분석 이벤트로 발행된다.
 - `server_*` 이벤트가 `chat_id`로 client 이벤트와 연결된다. **`analytics_creation_id` 경로는 §8-7 A1~A3 해소 전까지 통과 항목으로 요구하지 않는다**(실패 이벤트 누락 가능, 완료 이벤트에 값 없음, 타입 불일치, §8-3 구간별 기준과 동일).
-- 5xx 오류가 Sentry에 생성되고 CloudWatch 로그의 `request_id`로 연결된다.
+- 5xx 오류가 Sentry에 생성되고 운영 로그의 `request_id`로 연결된다.
 - 서버 분석 이벤트의 `error_type`이 `6-7. 서버 분석 이벤트와 실패 타입` 기준을 따른다.
 - 스토리 생성 실패율, API 실패율, 피드백 제출 성공률을 계산할 수 있다.
 
@@ -1597,7 +1597,7 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 ### 8-4-3 AI 서비스
 
 - 성공 호출과 실패 호출이 모두 `ai_call_logs`에 기록된다.
-- CloudWatch 로그에서 `request_id`로 백엔드 로그와 AI 로그를 연결할 수 있다.
+- 운영 로그에서 `request_id`로 백엔드 로그와 AI 로그를 연결할 수 있다.
 - AI 호출 결과가 `server_storyCreate_storyGeneration_processed_*` 또는 `server_chat_aiMessage_processed_*` 이벤트로 연결된다.
 - `error_code`가 `6-9. ai_call_logs 기록 기준` 기준으로 `error_type`에 매핑된다.
 - Sentry 이벤트에 `feature`, `model`, `prompt_template_version`, `error_code`가 있다.
@@ -1609,36 +1609,38 @@ MVP 분석 이벤트, CloudWatch 로그, Sentry, Crashlytics context/log, `ai_ca
 
 | 데이터                | 확인 기준                                                          |
 | --------------------- | ------------------------------------------------------------------ |
-| 채팅 메시지 원문      | Amplitude, CloudWatch, Sentry, `ai_call_logs` payload에 없다.  |
+| 채팅 메시지 원문      | Amplitude, 운영 로그, Sentry, `ai_call_logs` payload에 없다.  |
 | 피드백 본문           | 분석 이벤트와 로그 payload에 없다.                             |
 | 이메일                | 분석 이벤트와 로그 payload에 없다. `has_email`만 허용한다.   |
 | 키워드, 추가 정보 원문 | 관리되는 ID 또는 선택값만 허용한다.                              |
-| 프롬프트 전문         | CloudWatch, Sentry, `ai_call_logs`에 없다.                     |
-| AI 생성 결과 원문     | CloudWatch, Sentry, `ai_call_logs`에 없다.                     |
+| 프롬프트 전문         | 운영 로그, Sentry, `ai_call_logs`에 없다.                      |
+| AI 생성 결과 원문     | 운영 로그, Sentry, `ai_call_logs`에 없다.                      |
 | 익명 ID               | 서버 계층에는 원본 `device_id`가 없고 `device_id_hash`만 있다. |
 
 <br>
 
 ### 8-6 검증 쿼리 예시
 
-아래 쿼리는 운영 검수용 예시이다. 실제 로그 그룹, 테이블명, 시간 범위는 배포 환경에 맞춘다.
+아래 쿼리는 운영 검수용 예시이다. 실제 인덱스, 테이블명, 시간 범위는 배포 환경에 맞춘다. 운영 로그는 관측 서버 OpenSearch의 `logs-otel-v1-*` 인덱스에 있고 앱 필드는 `log.attributes.*` 아래, 시각은 `time`이다. OpenSearch Dashboards(`logs.manyak.app`)의 Query Workbench에서 PPL로 조회한다.
 
-CloudWatch에서 최근 API 실패를 확인한다.
+최근 API 실패를 확인한다.
 
 ```text
-fields @timestamp, event_name, request_id, endpoint, status_code, error_code, duration_ms
-| filter event_name = "api_request_failed"
-| sort @timestamp desc
-| limit 50
+source = logs-otel-v1-*
+| where `log.attributes.event_name` = 'api_request_failed'
+| sort - time
+| fields time, `log.attributes.request_id`, `log.attributes.endpoint`, `log.attributes.status_code`, `log.attributes.error_code`, `log.attributes.duration_ms`
+| head 50
 ```
 
-CloudWatch에서 한 요청의 백엔드 흐름을 확인한다.
+한 요청의 백엔드 흐름을 확인한다.
 
 ```text
-fields @timestamp, event_name, request_id, creation_id, story_id, chat_id, duration_ms
-| filter request_id = "req_..."
-| sort @timestamp asc
-| limit 100
+source = logs-otel-v1-*
+| where `log.attributes.request_id` = 'req_...'
+| sort time
+| fields time, `log.attributes.event_name`, `log.attributes.creation_id`, `log.attributes.story_id`, `log.attributes.chat_id`, `log.attributes.duration_ms`
+| head 100
 ```
 
 AI 호출 실패 분포를 확인한다.

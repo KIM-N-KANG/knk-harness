@@ -529,7 +529,8 @@
 
 | 확인 항목 | 입력과 상황 | 기대 결과 |
 |---|---|---|
-| 조회 구성 | 운영과 같은 설정(오토스케일링 그룹, RDS 인스턴스, Prometheus 조회 주소) | `GetMetricData` 질의 9개(앱 호스트 CPU는 `Average`와 `Maximum`), 지표와 통계와 차원이 계약의 표와 같음<br>Prometheus 질의가 기록 규칙 계열만 읽고 간격이 `periodSeconds`<br>Redis는 `INFO`와 `DBSIZE` |
+| 조회 구성 | CloudWatch 출처 설정(오토스케일링 그룹, RDS 인스턴스, Prometheus 조회 주소) | `GetMetricData` 질의 9개(운영 호스트 CPU는 `Average`와 `Maximum`), 지표와 통계와 차원이 계약의 표와 같음<br>Prometheus 질의가 기록 규칙 계열만 읽고 간격이 `periodSeconds`<br>Redis는 `INFO`와 `DBSIZE` |
+| Prometheus 출처 | `host-source=prometheus`(운영과 같은 설정)와 Prometheus 조회 주소 | CloudWatch를 부르지 않음<br>`host`, `rds`가 기록 규칙 `manyak_prod_host:*`, `manyak_prod_db:*` 질의로 채워지고 `host.cpuCreditBalance`는 빈 목록<br>Prometheus가 실패하면 `host`, `rds`도 `unavailable`에 들어감 |
 | 기본 기간 | 쿼리 없음, 고정 시계 2026-11-20 09:00 KST | `from`과 `to`가 2026-11-20, 조회 시작 2026-11-20 00:00 KST, 끝 09:00 KST, `periodSeconds` 300 |
 | 지난 날짜 끝 | `from=2026-11-17&to=2026-11-18` | 조회 끝이 2026-11-19 00:00 KST |
 | 집계 간격 | 기간 2일, 3일, 7일, 8일, 31일 | `periodSeconds` 300, 900, 900, 3600, 3600 |
@@ -546,7 +547,7 @@
 | 클러스터 상태 | 상태 계열의 마지막 값 0, 1, 2 | `status` `green`, `yellow`, `red` |
 | Redis 값 | 대역이 사용 메모리 2,474,639, 한도 268,435,456, 클라이언트 6, 키 7,450, AOF 쓰기 `ok` | `redis`의 다섯 값이 같고 `aofLastWriteOk` `true` |
 | AOF 꺼짐 | 대역의 `INFO`에 AOF가 꺼짐 | `aofLastWriteOk` `null` |
-| 묶음 설정 없음 | 오토스케일링 그룹 설정만 빈 값 | `host`가 `null`, 앱 호스트 질의 없음, `unavailable`에 없음, 나머지 묶음 정상 |
+| 묶음 설정 없음 | 오토스케일링 그룹 설정만 빈 값 | `host`가 `null`, 운영 호스트 질의 없음, `unavailable`에 없음, 나머지 묶음 정상 |
 | Prometheus 설정 없음 | 조회 주소가 빈 값 | `requests`, `hostSystem`, `opensearch`가 `null`, Prometheus 대역 호출 없음, `unavailable`에 없음 |
 | 설정 전부 없음 | CloudWatch와 Prometheus 설정이 빈 값 | 200, `redis`만 값이 있음 |
 | Prometheus 실패 | Prometheus 대역이 한 질의에 500 | 200, `unavailable`이 `hostSystem`, `requests`, `opensearch`, 세 묶음 `null`, 나머지 정상, `reason` `prometheus_error` |
@@ -565,7 +566,7 @@
 | 실패와 캐시 | 같은 범위의 만료된 캐시가 있고 세 대역이 모두 실패 | 200과 캐시 값 |
 | 쿨다운 | 모두 실패한 뒤 30초 안에 같은 범위 재요청 | 대역 호출 없이 503 또는 캐시 |
 | 응답의 이름 | 정상 응답 | 계정 ID, 오토스케일링 그룹 이름, RDS 인스턴스 이름, 조회 주소가 본문에 없음 |
-| 인증 정보 | Prometheus 대역이 받은 요청 | Access 서비스 토큰 헤더와 기본 인증이 있음<br>실패 로그에 토큰과 비밀번호가 없음 |
+| 인증 정보 | Prometheus 대역이 받은 요청 | 기본 인증이 있음. Access 토큰 설정이 있으면 그 헤더도 있음<br>실패 로그에 토큰과 비밀번호가 없음 |
 | 격리 | 세 대역이 모두 실패한 상태에서 요약, 차트, DB 테이블 크기 호출 | 모두 영향 없음 |
 | 테이블 정렬 | 카탈로그 대역이 전체 크기 300, 100, 200인 테이블 셋 | `tables`가 300, 200, 100 순서, `tableCount` 3 |
 | 테이블 개수 | `limit=2`<br>`limit=0`, `101`, `abc` | 2개, `tableCount`는 전체 수<br>전부 400 |

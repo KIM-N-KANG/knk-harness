@@ -12,8 +12,8 @@
 | 프레임워크 | Spring Boot 4.0.6, Spring MVC + `SseEmitter`(SSE), WebClient(AI 스트림 수신) |
 | 영속성 | Spring Data JPA, PostgreSQL(운영), H2(테스트), Flyway 마이그레이션 |
 | Redis | refresh 토큰, 동의 대기 코드와 연동 코드, 체험 카운터, 채팅 생성 중 상태와 이벤트 보관, 배치 회차 선점 |
-| 메시지 발행 | 알림 아웃박스의 원격 모드에서 dev와 prod는 SQS, local은 Kafka |
-| 검색, 객체 저장 | OpenSearch(스토리 검색), S3(이미지) |
+| 메시지 발행 | 알림 아웃박스의 원격 모드. dev, prod, local 모두 Kafka(`MANYAK_PUSH_BROKER=kafka`). SQS 발행기는 코드 기본값으로만 남음 |
+| 검색, 객체 저장 | OpenSearch(스토리 검색), S3 호환 객체 저장소(이미지, 운영 Cloudflare R2, dev MinIO) |
 | 인증 | Spring Security, OAuth2 Resource Server(JWT), 소셜 OIDC ID 토큰 검증(Nimbus: Google, Kakao 공용) |
 | 관측 | Logstash Logback Encoder(JSON 구조화 로그), Sentry, Spring Actuator, Micrometer OTLP 메트릭, OpenTelemetry 트레이스 |
 | API 문서 | SpringDoc OpenAPI (Swagger UI) |

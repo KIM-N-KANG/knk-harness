@@ -255,6 +255,7 @@
 | 별도 자산 레포 + jsDelivr 등 GitHub CDN | 인프라 작업 0으로 가장 가볍지만, 무료 제3자 서비스 의존(SLA 없음)이고 사용자 업로드로 확장할 수 없어 결국 S3로 이중 전환하게 됩니다 |
 
 - **영향.** `manyak-terraform`에 버킷·CloudFront 구성 1회 작업이 필요합니다(경로·배포 상세는 [`4-deployment.md §4-4`](../../operations/DEPLOYMENT.md#4-인프라-아키텍처) 소유: 운영 시드 전용·presigned 없음으로 정리 완료). 현 규모에선 비용이 사실상 0(CloudFront 무료 구간)이며, **자산 파일**은 업로드만으로 서빙 가능해 배포와 분리됩니다(카탈로그 등재는 Flyway 시드로 서버 릴리스에 동반: 위 시드 실행 경로). 2026-07-10 합의에서 프리셋 풀 전환 후에도 이 결정(S3)을 재확인했습니다: 노출 빈도가 높고 자산이 계속 늘어 배포 분리 이점이 유지됩니다.
+- 이후 변경: 2026-11-24 저장소를 Cloudflare R2(S3 호환 API), 서빙을 `cdn.manyak.app`(R2 사용자 도메인)으로 옮겼다. 키와 URL, 객체를 지우지 않는 규칙은 그대로다([DPL-D10](../../operations/DECISIONS.md#dpl-d10)).
 
 <a id="be-019"></a>
 
@@ -570,6 +571,7 @@
 - 근거: 2026-09-18 김태완 멘토링에서 학습 범위를 알림만으로 제한하고 운영 SQS, 로컬 Kafka, 동기 경로 선행과 기존 코드 보존을 정했다. 코드 조사에서는 `push`가 시나리오 데이터와 회원 자격 조회를 경계로 발송 책임을 떼기 가장 고립된 후보였다. 현행 `StoryCompletionPushListener`와 `FcmPushSender`는 커밋 뒤 실패를 로그로 남기고 앱 수준 재시도를 하지 않는다. 검색도 `StorySearchIndexListener`의 색인 실패를 삼키지만 PostgreSQL 정본에서 재색인할 수 있다. 반면 알림 발송 요청은 별도 기록이 없어 실패 후 재개할 근거가 없으므로 아웃박스와 멱등 소비를 학습할 대상으로 삼는다. 색인 실패와 복구 사례가 보여 준 커밋 이후 외부 전달의 공백을 다루되 검색 분리로 범위를 넓히지 않는다.
 - 관계: [BE-035](#be-035)의 토큰 소유권과 동의 계약, 발송 직전 재확인은 유지한다. 실행 주체와 큐 재전달만 이 결정으로 확장하며 메시지에 동의나 토큰 스냅샷을 싣지 않는다. [BE-036](#be-036)의 검색 파생 사본과 재색인 구조는 유지하고 검색은 분리하지 않는다. 출석 리마인드와 프로모션 스케줄러 이전은 큐 전환 결과를 보고 판단한다.
 - 출처: [KNK-1361](https://kimandkang.atlassian.net/browse/KNK-1361), [KNK-1368](https://kimandkang.atlassian.net/browse/KNK-1368), [KNK-1370](https://kimandkang.atlassian.net/browse/KNK-1370), 노션 멘토링 정리(2026-09-18 김태완, 티켓에 정리된 결정), 2026-09-19 코드 조사. 코드 근거는 `manyak-server`의 `push/event/StoryCompletionPushListener.kt`, `push/service/FcmPushSender.kt`, `search/event/StorySearchIndexListener.kt`다.
+- 이후 변경: 브로커를 dev는 KNK-2125(2026-11-22), 운영은 KNK-2126(2026-11-24)에서 SQS 대신 Kafka로 바꿨다(`MANYAK_PUSH_BROKER=kafka`, 토픽 `push.requested`와 재시도, DLQ). SQS 어댑터는 코드에만 남아 있다.
 
 <a id="be-048"></a>
 
@@ -651,6 +653,7 @@
 
 - 관계: BE-047의 분리와 큐 도입을 prod 운영 배치로 구체화한다. BE-047의 책임 경계, 모드별 배타 실행, 아웃박스와 소비자 멱등 계약은 유지하며 과거 기록을 대체하거나 수정하지 않는다. 트레이싱은 이 결정의 범위 밖이며 KNK-1464의 OpenSearch Trace Analytics에서 다룬다. ([BE-047](#be-047), [알림 서비스 계약](../../spec/NOTIFICATION/BACKEND/4-2-CONTRACT.md))
 - 출처: [KNK-1440](https://kimandkang.atlassian.net/browse/KNK-1440)의 운영 구성 결정, [KNK-1381](https://kimandkang.atlassian.net/browse/KNK-1381), [KNK-1367](https://kimandkang.atlassian.net/browse/KNK-1367), [KNK-1464](https://kimandkang.atlassian.net/browse/KNK-1464). 현재 구현은 서버 `a0a89ca`의 `push/outbox/`, 알림 `ac51603`의 `push/consumer/`, Terraform `ae315c3`의 `envs/dev/sqs.tf`, `envs/dev/alarms.tf`, `modules/compute-ecs/main.tf`로 대조했다. prod 실서비스 상태는 별도로 조회하지 않았다.
+- 이후 변경: 운영 배치는 2026-11-21 EC2 앱 호스트(KNK-2106, 내부 kamal-proxy `server.internal`), 2026-11-24 OCI 운영 호스트(KNK-2126, Kafka)로 대체됐다. ECS 서비스, Cloud Map, ALB, ElastiCache, FireLens, ECR, SNS 경보는 없다([DPL-D10](../../operations/DECISIONS.md#dpl-d10)).
 
 <a id="be-052"></a>
 
@@ -751,6 +754,7 @@
 - 대안과 기각 이유: 운영 직접 부하는 CPU 크레딧 소진과 실사용자 영향 때문에 기각한다. dev를 운영처럼 개조하는 안은 팀 공용 환경을 바꾸고 영구 비용을 늘리므로 기각한다. 운영 OpenSearch 공유는 운영 검색에 영향을 주고 고정된 트레이스 서비스 이름 때문에 운영과 테스트 데이터가 섞이므로 기각한다. 서버 채팅 스텁은 AI 호출 구간을 건너뛰어 그 구간을 포함한 지연을 측정할 수 없으므로 기각한다. 공용 모듈 복사는 2,500줄 이상을 중복 관리해야 하므로 기각하며 기존 모듈 재사용과 loadtest 전용 수동 정리 절차를 선택한다.
 - 경계: internal HTTP ALB를 사용해 Cloudflare와 TLS 구간이 없고 실제 LLM 대신 mock을 쓰며 FCM 발송은 꺼진다. 복원 직후의 캐시와 t3 CPU 크레딧 상태가 측정에 영향을 주고 실사용자 트래픽도 없다. 임시 OpenSearch는 운영과 로그 부하가 다르다. 따라서 이 환경에서는 서버 쪽 지연과 처리 한계, 개선 전후 차이를 재고 사용자 체감 전체 시간은 운영 트레이스로 확인한다. 임시 환경도 t3 사양의 한계를 없애는 것은 아니므로 캐시와 크레딧 상태를 함께 해석한다. 정리 SQL은 발송과 대기 작업의 부작용을 막기 위한 것이며 복원 데이터 전체의 개인정보 비식별화를 뜻하지 않는다. 결정 당시 비용 추정은 시간당 약 0.5달러에 OpenSearch 하루 약 2달러를 더한 수준이며 측정 후 삭제하는 임시 운영을 전제로 한다.
 - 출처: 사용자 승인 결정과 멘토 조언을 정리한 [KNK-1498](https://kimandkang.atlassian.net/browse/KNK-1498), [KNK-1594](https://kimandkang.atlassian.net/browse/KNK-1594), [KNK-1595](https://kimandkang.atlassian.net/browse/KNK-1595), [KNK-1596](https://kimandkang.atlassian.net/browse/KNK-1596). 구현 근거는 [manyak-terraform #92](https://github.com/KIM-N-KANG/manyak-terraform/pull/92), [manyak-server #315](https://github.com/KIM-N-KANG/manyak-server/pull/315), [manyak-server #316](https://github.com/KIM-N-KANG/manyak-server/pull/316)이다.
+- 이후 변경: 2026-11-24 AWS 자원을 모두 지워 이 환경은 더 만들 수 없다.
 
 <a id="be-059"></a>
 
