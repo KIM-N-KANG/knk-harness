@@ -60,7 +60,7 @@
 | ONBD-BANNER-09 | P1 | iPhone Safari 26 이상, 첫 접속 | 추가하기, 기기 뒤로가기 | 스크린샷 4장 안내 시트가 열리고 뒤로가기로 닫히며 화면은 그대로 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-10 | P1 | iOS, 안내대로 홈 화면에 추가 | 홈 화면 아이콘으로 실행 | 배너가 보이지 않음 | 수동 | 같음 |
 | ONBD-BANNER-11 | P1 | Android Chrome, 첫 접속 | 닫기, 같은 탭 새로고침, 새 탭으로 2, 3번째 접속 | 닫은 탭에서는 다시 보이지 않고 3번째 접속에 다시 표시 | ✅ e2e `smoke/app-banner` | 같음 |
-| ONBD-BANNER-12 | P1 | Android Chrome, 데스크톱 | 이용약관, 개인정보 처리방침, 데스크톱 홈 진입 | 배너 미노출. 문서 화면만 본 접속은 세지 않음 | ✅ e2e `smoke/app-banner` | 같음 |
+| ONBD-BANNER-12 | P1 | Android Chrome, 데스크톱 | 이용약관, 개인정보 처리방침, 레거시 `/about`, 데스크톱 홈 진입 | 배너 미노출. 문서 화면만 본 접속은 세지 않음 | ✅ e2e `smoke/app-banner` | 같음 |
 | ONBD-BANNER-13 | P2 | 기기 동작 줄이기 설정 | 배너 표시와 닫기 | 높이 애니메이션 없이 표시되고 사라짐 | 수동 | 같음 |
 | ONBD-BANNER-14 | P2 | Android Chrome, 홈 목록 스크롤 | 배너 닫기 후 탭 전환 왕복 | 탭별 스크롤 위치 복원이 어긋나지 않음 | 수동 | 같음 |
 | ONBD-BANNER-15 | P2 | Android, 앱 미설치 | 앱 열기로 설치 | Play Console 설치 귀속에 `utm_source=manyak_web`, `utm_medium=app_banner`가 남음 | 수동 | 같음 |
