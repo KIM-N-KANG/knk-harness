@@ -4,7 +4,7 @@
 
 작성 규칙은 클라이언트 가이드를 적용한다. ([작성 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md))
 
-플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
+플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md), [IOS](IOS/AGENTS.md).
 
 <br>
 
