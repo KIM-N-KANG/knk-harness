@@ -322,7 +322,6 @@ P0 이벤트는 출시 전에 반드시 수집한다. P1 이벤트는 P0가 안�
 | P2                  | client | `client_chatShare_characterImage_clicked`                |
 | P2                  | client | `client_terms_viewed`                                    |
 | P2                  | client | `client_privacy_viewed`                                  |
-| P2 `계획`           | client | `client_serviceInfo_viewed`                              |
 | P2 `구현` | client | `client_appBanner_closeButton_clicked`                   |
 | P2 `구현` | client | `client_appBanner_escapeGuide_shown`                     |
 
@@ -636,9 +635,9 @@ server 이벤트의 `error_type`은 `network`, `validation`, `server` 중 하나
 
 <br>
 
-### 4-2-13 서비스 안내, `구현`
+### 4-2-13 서비스 안내, `폐기`
 
-서비스 안내 화면([공통 UI](../ui/AGENTS.md))의 진입 이벤트이다. 법적 고지(§4-2-11)와 같은 유입 경로 분석용 저우선 계측이다.
+서비스 안내 화면의 진입 이벤트였다. 서비스 안내를 없애며 두 플랫폼 모두 보내지 않는다([C-024](../spec/ACCOUNT/CLIENT/DECISIONS.md#c-024)). 과거 데이터 해석을 위해 정의를 남긴다.
 
 | 이벤트                      | 우선순위 | 발생 시점             | 고유 프로퍼티 |
 | --------------------------- | -------- | --------------------- | ------------- |

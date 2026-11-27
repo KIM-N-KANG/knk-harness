@@ -34,6 +34,6 @@
 | NOTIFICATION-ANDROID-05 | NOTIFICATION-US-003 | 허용 및 금지 링크, deepLink 없는 이전 payload, 로그인 중 프로세스 종료 | 목적지 규칙, 수신자 재확인, 목적지 복원, 중복 상세 없음 | 링크 테스트와 기기 |
 | NOTIFICATION-ANDROID-06 | NOTIFICATION-US-003 | 같은 제출본 검수 결과 대기, 표시 후 2분, 다른 제출본 | 관찰 중 중복만 억제, 서로 다른 알림 유지, 잠금 화면 제목만 | 표시 테스트와 기기 |
 | NOTIFICATION-ANDROID-07 | NOTIFICATION-US-004 | 선택 동의, 첫 거절 후 재진입 1~3회, 두 번째 거절과 재로그인 | 필수 동의 독립, 세 번째 재질문, 종료 기록과 회원 격리 | 동의 테스트와 기기 |
-| NOTIFICATION-ANDROID-08 | NOTIFICATION-US-004 | 광고와 야간 변경, 서비스 변경, 저장 실패, 기기 알림 차단 | 전체 저장과 야간 동시 해제, 성공 광고 변경만 통지, 실패 복원 | 설정 테스트와 기기 |
+| NOTIFICATION-ANDROID-08 | NOTIFICATION-US-004 | 광고와 야간 변경, 서비스 변경, 저장 실패, 기기 알림 차단 | 전체 저장과 야간 동시 해제, 성공 광고 변경만 통지, 실패 복원. 통지 전송자는 "마냑 운영자 나그네랩"으로 처리방침 13항 전송자와 같음 | 설정 테스트와 기기 |
 
 공지 원문 사례는 NOTIFICATION-US-001에 대응한다. 신규 시나리오는 실행 완료 표시가 아니다.

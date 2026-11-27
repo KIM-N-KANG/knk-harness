@@ -241,7 +241,6 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 | LEGAL-ENTRY-04 | P1  | 게스트(비로그인)                           | `/terms`, `/privacy` URL 직접 진입                             | 라우트 가드 없이 두 페이지 모두 열람 가능                                                                                     | ◐ e2e `legal/legal`(`/terms`만) | [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입) 검수 기준              |
 | LEGAL-ENTRY-05 | P1  | 회원 로그인 상태                           | `/terms`, `/privacy` 진입                                      | 게스트와 동일하게 열람 가능(회원/게스트 무관)                                                                                 | 수동                            | [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입)                        |
 | LEGAL-ENTRY-06 | P1 | `/terms`, `/privacy` 표시됨 | 헤더 마냑 로고 탭 | 로고는 링크가 아니라 이동하지 않음. 헤더에 링크 없음 | ✅ e2e `legal/legal` | [웹 문서 열람](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
-| LEGAL-ENTRY-08 | P1 | 서비스 안내(`/about`) 표시됨 | "약관 및 정책"의 "서비스 이용약관", "개인정보 처리방침" 링크 각각 탭 | 각 링크 뒤에 새 창 아이콘이 보이고, 새 브라우저 탭에서 `/terms`, `/privacy`를 각각 열며 원래 `/about` 탭 유지: 로그인 후에도 접근 가능한 상시 진입점 | ✅ e2e `my/service-info` | [3-3-2 서비스 안내](../../../../ui/3-3-LAYOUT.md#3-3-2-서비스-안내) |
 
 <br>
 
@@ -429,7 +428,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 
 `ONBD-INVITE-06`은 게스트 온보딩 페이지 제거로 폐기됐다. 간편 제작 첫 진입 안내와의 겹침은 `STORY-TUTORIAL-08`에서 검증한다. ([STORY QA](../../../STORY/CLIENT/WEB/5-1-VERIFICATION.md#5-1-8-story-tutorial))
 
-`MY-MENU-15`는 `AUTH-LOGOUT-01`로, `MY-INFO-04`는 `LEGAL-ENTRY-08`로 통합했다.
+`MY-MENU-15`는 `AUTH-LOGOUT-01`로, `MY-INFO-04`는 `LEGAL-ENTRY-08`로 통합했다. `LEGAL-ENTRY-08`은 서비스 안내를 없애며 폐기했고 상시 진입점은 `MY-MENU-23`의 마이 하단 링크가 맡는다([C-024](../DECISIONS.md#c-024)).
 
 `AUTH-HANDOFF-02`부터 `12`, `14`부터 `18`은 로그인 핸드오프 제거로 폐기됐다. `AUTH-HANDOFF-01`, `13`은 인앱 게스트 이용 검증으로 유지한다.
 
