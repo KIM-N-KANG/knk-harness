@@ -6,7 +6,7 @@
 
 ### 2-2-1 신고 조건과 결과
 
-MODERATION-US-001은 웹과 Android에 적용한다.
+MODERATION-US-001은 웹, Android와 iOS에 적용한다.
 
 | 조건 | 요구사항 |
 |---|---|

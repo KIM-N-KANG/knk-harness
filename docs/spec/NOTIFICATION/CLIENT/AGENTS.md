@@ -1,6 +1,6 @@
 # NOTIFICATION 공통 클라이언트
 
-플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md).
+플랫폼: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md), [IOS](IOS/AGENTS.md).
 
 ### 1 문서 역할
 

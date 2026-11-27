@@ -12,7 +12,7 @@
 |---|---|
 | [`AI/`](AI/AGENTS.md) | 검수 판정, 재시도와 보류, 15세 모드 프롬프트 |
 | [`BACKEND/`](BACKEND/AGENTS.md) | 검수 요청과 상태, 제출본 회차, 결과 반영과 노출 제한, 재시도와 보류, 용량 예산 |
-| [`CLIENT/`](CLIENT/AGENTS.md) | 회원 신고와 결과 안내, WEB과 ANDROID의 신고 시트 구현 및 검증 |
+| [`CLIENT/`](CLIENT/AGENTS.md) | 회원 신고와 결과 안내, WEB, ANDROID와 IOS의 신고 시트 구현 및 검증 |
 
 - 세트마다 `DECISIONS.md`를 두고 이 도메인 결정의 이력을 기록한다.
 - 세트 사이에 같은 사실을 두 번 정하지 않는다. 계약은 정하는 쪽(BACKEND의 계약 문서)이 기준이고 다른 세트는 참조한다.
