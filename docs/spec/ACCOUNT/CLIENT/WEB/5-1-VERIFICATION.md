@@ -241,6 +241,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 | LEGAL-ENTRY-04 | P1  | 게스트(비로그인)                           | `/terms`, `/privacy` URL 직접 진입                             | 라우트 가드 없이 두 페이지 모두 열람 가능                                                                                     | ◐ e2e `legal/legal`(`/terms`만) | [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입) 검수 기준              |
 | LEGAL-ENTRY-05 | P1  | 회원 로그인 상태                           | `/terms`, `/privacy` 진입                                      | 게스트와 동일하게 열람 가능(회원/게스트 무관)                                                                                 | 수동                            | [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입)                        |
 | LEGAL-ENTRY-06 | P1 | `/terms`, `/privacy` 표시됨 | 헤더 마냑 로고 탭 | 로고는 링크가 아니라 이동하지 않음. 헤더에 링크 없음 | ✅ e2e `legal/legal` | [웹 문서 열람](../../../../ui/WEB/2-2-REQUIREMENTS.md#2-2-2-문서와-검색) |
+| LEGAL-ENTRY-09 | P1 | 게스트와 회원 각각 | 홈(`/`) 맨 아래 확인, "사업자 정보" 버튼 탭 | 처음에는 "사업자 정보" 버튼과 문서 링크 세 개만 보임. 버튼을 누르면 [3-3-7 홈과 마이 하단 사업자 정보](../3-3-LAYOUT.md#3-3-7-홈과-마이-하단-사업자-정보)의 사업자 정보 여덟 쌍이 펼쳐지고 다시 누르면 접힘. 링크 동작은 MY-MENU-23과 같음 | UI 검사(화면 표현) | [2-2-7 사업자 정보와 문서 링크](../2-2-REQUIREMENTS.md#2-2-7-사업자-정보와-문서-링크), KNK-2148 |
 
 <br>
 
@@ -398,7 +399,7 @@ WebKit 테스트 환경에서는 목 응답의 COOP 헤더만으로 창 참조 �
 | MY-MENU-19 | P2 | 회원, base64 썸네일 없음, 세션 이미지가 환경별 프로필 프리셋 URL | 프로필 이미지 확인 | 운영 `api.manyak.app`과 개발 `dev-api.manyak.app`의 `/profile-presets/**` 이미지가 원형으로 렌더링 | 수동 | [웹 이미지 검증](../../../../platform/CLIENT/WEB/4-EXECUTION.md#4-1-이미지), KNK-832 |
 | MY-MENU-20   | P0  | 회원                                              | 회원 탈퇴 메뉴 탭      | `/my/account-deletion`으로 이동. 사용자 제거 아이콘(`UserRemove02Icon`)과 위험색 문구 표시                               | ✅ e2e `my/account-deletion`                  | ACCOUNT-US-013, [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입) 회원 탈퇴            |
 | MY-MENU-22 | P2 | 회원 | 친구 초대 메뉴 확인 | "친구 초대" 라벨 아래에 작은 강조색 보조 문구 "하고 N 이프 받기" 표시(N은 `GET /credits/policies`의 `inviteReward`). 라벨과 이어 한 문장으로 읽힘 | 수동(UI 검사) | [3-1-1 화면과 진입](../3-1-INFORMATION-ARCHITECTURE.md#3-1-1-화면과-진입) 마이 페이지 회원 상태 구성, [4-1 연동 계약](../4-1-CONTRACT.md) 이프 정책 수치 표시, KNK-1092, 1095 |
-| MY-MENU-23 | P1 | 게스트와 회원 각각 | `/my` 맨 아래 확인, 문서 링크 탭 | [3-3-7 마이 하단 사업자 정보](../3-3-LAYOUT.md#3-3-7-마이-하단-사업자-정보)의 사업자 정보 일곱 쌍과 그 아래 문서 링크를 표시하고 값이 사이트 상수와 같음. 각 링크는 새 탭에서 `/terms`, `/privacy`를 엶 | ◐ unit `tests/constants/site.test.ts`(항목과 이메일), UI 검사(화면 표현) | [2-2-7 사업자 정보와 문서 링크](../2-2-REQUIREMENTS.md#2-2-7-사업자-정보와-문서-링크), KNK-2146 |
+| MY-MENU-23 | P1 | 게스트와 회원 각각 | `/my` 맨 아래 확인, 문서 링크 탭 | [3-3-7 홈과 마이 하단 사업자 정보](../3-3-LAYOUT.md#3-3-7-홈과-마이-하단-사업자-정보)의 사업자 정보 여덟 쌍(호스팅서비스 제공자 포함)을 펼친 채로, 그 아래 문서 링크 세 개를 표시하고 값이 사이트 상수와 같음. 서비스 이용약관, 개인정보 처리방침은 새 탭에서 `/terms`, `/privacy`를, 사업자정보 확인은 새 탭에서 공정거래위원회 사업자정보 공개 페이지를 엶 | ◐ unit `tests/constants/site.test.ts`(항목, 이메일, 공정위 주소), UI 검사(화면 표현) | [2-2-7 사업자 정보와 문서 링크](../2-2-REQUIREMENTS.md#2-2-7-사업자-정보와-문서-링크), KNK-2146, KNK-2148 |
 
 <br>
 
