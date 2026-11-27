@@ -19,7 +19,7 @@
 | 이어받기 | [4-2-13](../BACKEND/4-2-CONTRACT.md#4-2-13-생성-스트림-재연결) | `generationId`의 이벤트를 처음부터 재수신. 생성과 과금 재시작 없음 |
 | 모델과 설정 | [목록](../BACKEND/4-2-CONTRACT.md#4-2-14-모델-목록), [변경](../BACKEND/4-2-CONTRACT.md#4-2-15-채팅-설정-변경) | `model` 또는 `longResponse` 중 바꾼 필드만 PATCH. 이어쓰기, 재생성과 입력 수정 본문에 모델을 추가하지 않음 |
 
-`realtimeImage`는 기기 설정을 항상 명시한다. 서버 기본값 true에 의존하지 않는다. 피드백 `platform`은 웹 `WEB`, Android `ANDROID`이며 사용자에게 선택받지 않는다. 피드백 서버 상한 2000자는 UI의 500자 상한과 다르다.
+`realtimeImage`는 기기 설정을 항상 명시한다. 서버 기본값 true에 의존하지 않는다. 피드백 `platform`은 웹 `WEB`, Android `ANDROID`, iOS `IOS`이며 사용자에게 선택받지 않는다. 피드백 서버 상한 2000자는 UI의 500자 상한과 다르다.
 
 <br>
 
