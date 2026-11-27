@@ -41,7 +41,7 @@
 | 인증 팝업 | [start-popup-login](../../../../../../manyak-web/src/features/auth/_shared/utils/start-popup-login.ts), [start-social-login](../../../../../../manyak-web/src/features/auth/_shared/utils/start-social-login.ts) |
 | 재발급 | [session-refresh-gate](../../../../../../manyak-web/src/lib/auth/session-refresh-gate.ts), [refresh-dedup](../../../../../../manyak-web/src/lib/auth/refresh-dedup.ts) |
 | 이관과 정리 | [use-auto-migration](../../../../../../manyak-web/src/features/auth/_shared/hooks/use-auto-migration.ts), [clear-local-member-state](../../../../../../manyak-web/src/features/auth/_shared/utils/clear-local-member-state.ts) |
-| 사업자 정보 | [사이트 상수](../../../../../../manyak-web/src/constants/site.ts), [마이 하단 푸터](../../../../../../manyak-web/src/features/my/menu/components/business-info-footer.tsx) |
+| 사업자 정보 | [사이트 상수](../../../../../../manyak-web/src/constants/site.ts), [홈과 마이 하단 푸터](../../../../../../manyak-web/src/components/layout/business-info-footer.tsx) |
 | 문구와 법적 본문 | [프로필](../../../../../../manyak-web/src/features/my/profile/constants.ts), [페르소나](../../../../../../manyak-web/src/features/my/personas/constants.ts), [이용약관](../../../../../../manyak-web/src/features/legal/content/terms-content.ts), [처리방침](../../../../../../manyak-web/src/features/legal/content/privacy-content.ts) |
 
 <br>
