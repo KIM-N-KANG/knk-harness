@@ -2,7 +2,7 @@
 
 상위 계약은 하위 구현이나 검증 결과에 맞춰 변경하지 않는다.
 
-플랫폼 이동: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md). 작성 규칙은 [클라이언트 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md), 과거 결정은 [DECISIONS](DECISIONS.md)에서 확인한다.
+플랫폼 이동: [WEB](WEB/AGENTS.md), [ANDROID](ANDROID/AGENTS.md), [IOS](IOS/AGENTS.md). 작성 규칙은 [클라이언트 가이드](../../../reference/CLIENT-SPEC-WRITING-GUIDE.md), 과거 결정은 [DECISIONS](DECISIONS.md)에서 확인한다.
 
 <br>
 
