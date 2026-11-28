@@ -47,6 +47,7 @@ Fluent Bit`"]
 | `request_id` | `req_` + UUID | 요청 헤더 값을 쓰고 없으면 생성<br>응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
+| `platform`, `app_version` | 요청 플랫폼과 앱 버전 | ACCOUNT와 같음 ([ACCOUNT 5-4-2 상관관계 식별자](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자)) |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`<br>`spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 

@@ -50,6 +50,7 @@ Fluent Bit`"]
 | `request_id` | 요청 헤더 값<br>없으면 `req_` + UUID | 생성한 값은 응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 서버에서 계산<br>알림 서비스는 내부 API 헤더로만 전달 |
+| `platform`, `app_version` | 요청 플랫폼과 앱 버전 | ACCOUNT와 같음 ([ACCOUNT 5-4-2 상관관계 식별자](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자))<br>서버에서만 기록하고 알림 서비스에는 전달하지 않음 |
 | `sentry_event_id` | Sentry 이벤트 ID | 서버의 5xx만 |
 | `traceId`와 `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성 |
 

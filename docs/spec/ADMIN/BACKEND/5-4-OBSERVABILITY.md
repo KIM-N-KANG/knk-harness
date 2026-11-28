@@ -50,6 +50,7 @@ Fluent Bit`"]
 |---|---|---|
 | `request_id` | `req_` + UUID | 요청 헤더 값이 1~64자이고 영문, 숫자, 하이픈, 밑줄만이면 그대로 쓰고 없거나 조건에 어긋나면 새로 생성<br>응답 헤더로 반환하고 감사 로그에 같은 값을 저장 |
 | `session_id` | `X-Manyak-Session-Id` | 관리자 페이지는 보내지 않아 `unknown` |
+| `platform`, `app_version` | 요청 플랫폼과 앱 버전 | ACCOUNT와 같음 ([ACCOUNT 5-4-2 상관관계 식별자](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자))<br>관리자 페이지는 보내지 않아 `unknown` |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`<br>`spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 
