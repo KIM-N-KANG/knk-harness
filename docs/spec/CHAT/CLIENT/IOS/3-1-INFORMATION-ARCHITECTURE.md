@@ -20,4 +20,4 @@
 | 공유 전달 | iOS 시스템 공유 시트. 수신자는 웹 공유본 열람 |
 | 피드백 | 마이 탭 스택의 라우트. 탭 바 숨김 |
 
-하단 탭 표시 분류와 전체 화면 덮개의 범위는 공통 UI IOS를 따른다. 공통 정보 순서와 로그인 범위를 적용한다. ([공통 UI IOS 3-1-1](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸), [공통 3-1](../3-1-INFORMATION-ARCHITECTURE.md), [2-2](2-2-REQUIREMENTS.md))
+하단 탭 표시 규칙과 전체 화면 덮개의 범위는 공통 UI IOS를 따른다. 공통 정보 순서와 로그인 범위를 적용한다. ([공통 UI IOS 3-1-1](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸), [공통 3-1](../3-1-INFORMATION-ARCHITECTURE.md), [2-2](2-2-REQUIREMENTS.md))

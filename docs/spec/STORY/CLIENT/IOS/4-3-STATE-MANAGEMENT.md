@@ -35,9 +35,13 @@ Store와 화면 상태는 프로세스 종료 뒤 복원하지 않는다. 저장
 
 | 열 | 형식과 의미 |
 |---|---|
+| `draftId` | 필수 TEXT. 편집 행에서는 제작 세션 하나의 초안 ID. 새 제작을 시작할 때 만든 UUID이며 단계가 바뀌어도 같은 행을 덮어씀. `general_story_draft`에서는 접수된 일반 제작 초안의 ID |
+| `requestId` | 필수 TEXT. 완성 요청 하나의 ID. `completionCommand`의 requestId와 같은 값이며 결과 반영, 재전송과 삭제의 단위 |
 | `ownerId` | 필수 TEXT. 소유 회원 ID. 빈 값으로 쓰지 않음 |
 | `stage` | 필수 TEXT. `KEYWORD_DRAFT`(기기 세션의 키워드 입력), `STORYLINE_GENERATION`(생성 중), `STORY_DRAFT`(생성 결과와 추가 정보) |
 | `status` | 필수 TEXT. `PENDING` 또는 `COMPLETED` |
+| `storyId` | 선택 TEXT. `COMPLETED`로 바꿀 때 완성된 스토리의 ID를 씀. `COMPLETED`인데 값이 없으면 `PENDING`으로 읽음 |
+| `storyTitle` | 선택 TEXT. `COMPLETED`로 바꿀 때 완성된 스토리의 제목을 씀. 없으면 빈 제목으로 읽음 |
 | `generationCommand` | 선택 JSON. [스토리라인 생성 요청](../4-1-CONTRACT.md#4-1-2-간편-제작-요청) 전체와 requestId, parentCreationId. `STORY_DRAFT`에서는 재시도용 마지막 요청 |
 | `completionCommand` | JSON. 완성 요청 전체와 requestId. 요청 행은 필수, 편집 행은 확정 실패에서 되돌린 원 명령일 때만 |
 | `generation` | JSON. 생성 결과의 simpleCreationId, 스토리라인 세 개와 추천 정보. 요청 행은 필수 |

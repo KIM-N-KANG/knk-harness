@@ -6,7 +6,7 @@
 
 ### 3-1-1 목적지
 
-화면은 진입한 탭의 NavigationStack에 쌓고 탭 바 표시는 [공통 UI iOS 분류](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸)를 따른다. 외부 진입의 탭과 스택은 [진입 목적지](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-2-진입-목적지)가 정한다.
+화면은 진입한 탭의 NavigationStack에 쌓고 탭 바 표시는 [공통 UI iOS 규칙](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-1-루트와-셸)를 따른다. 외부 진입의 탭과 스택은 [진입 목적지](../../../../ui/IOS/3-1-INFORMATION-ARCHITECTURE.md#3-1-2-진입-목적지)가 정한다.
 
 | 목적지 | 위치와 구조 |
 |---|---|
