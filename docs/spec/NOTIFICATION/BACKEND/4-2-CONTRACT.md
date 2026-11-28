@@ -124,7 +124,7 @@
 | 필드명 | 타입 | 필수 | 의미와 기본값 |
 |---|---|---|---|
 | `token` | `string` | 필수 | FCM 등록 토큰, 1~512자 |
-| `platform` | `string` | 필수 | `ANDROID`, `WEB` |
+| `platform` | `string` | 필수 | `ANDROID`, `WEB`, `IOS` |
 
 - 같은 토큰을 다시 보내면 갱신한다. 토큰이 바뀌면 새 값으로 다시 등록한다. 다른 회원이 등록한 토큰을 보내면 소유자가 요청자로 바뀐다.
 
@@ -369,7 +369,7 @@ Content-Type: application/json
 | `reason` | `string` | `OK`, `USER_NOT_FOUND`, `NOT_ACTIVE`, `SERVICE_PUSH_DISABLED`, `MARKETING_NOT_AGREED`, `NO_TOKENS` |
 | `tokens` | `object[]` | 허용일 때만, 최근 갱신 순 최대 10개<br>거절이면 빈 배열 |
 | `tokens[].token` | `string` | FCM 등록 토큰 |
-| `tokens[].platform` | `string` | `ANDROID`, `WEB` |
+| `tokens[].platform` | `string` | `ANDROID`, `WEB`, `IOS` |
 
 | `reason` | 의미 |
 |---|---|
@@ -748,6 +748,7 @@ Content-Type: application/json
 |---|---|
 | Android | 데이터만<br>서비스 알림은 높은 우선순위, 광고 알림은 보통<br>유효 기한이 있는 시나리오는 유효 기한까지의 TTL |
 | 웹 | 데이터와 함께 제목, 본문, 아이콘, 클릭 링크의 알림 구성<br>스토리 완성은 제목 `스토리가 완성됐어요`, 본문은 스토리 제목<br>그 외는 데이터의 `title`과 `body`<br>클릭 링크는 `deepLink`, 없으면 운영 웹 주소 |
+| iOS | 데이터와 함께 제목, 본문, 소리의 알림 구성<br>제목과 본문은 웹과 같은 규칙<br>소리는 시스템 기본 소리<br>서비스 알림은 즉시 전달(`apns-priority` 10), 광고 알림은 절전을 고려한 전달(`apns-priority` 5)이며 광고 알림은 늦게 표시되거나 묶여 표시될 수 있음<br>유효 기한이 있는 시나리오는 유효 기한을 만료 시각(`apns-expiration`, UTC epoch 초)으로 지정하고 발송 시각에서 4주를 넘으면 4주 뒤로 제한<br>만료 시각을 넘긴 뒤의 전달 여부는 APNs가 정함<br>`STORY_MODERATION_COMPLETED`는 교체 키(`apns-collapse-id`) `story-moderation:{submissionId}`를 붙여 같은 제출본의 앞 알림을 교체하고 다른 시나리오는 교체 키 없음<br>배지 숫자, 무음 푸시와 백그라운드 실행 요청, 표시 직전 내용 변경 요청, 중요도 상향은 넣지 않음 |
 
 <details>
 <summary><b>푸시 데이터 예시</b></summary>

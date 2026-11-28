@@ -23,7 +23,7 @@ NOTIFICATION 도메인은 서버 애플리케이션의 내부 패키지와 별�
 %%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 20, "rankSpacing": 60}}}%%
 flowchart LR
     C["`**클라이언트**
-웹 BFF, Android`"] -->|REST| S["`**서버**
+웹 BFF, Android, iOS`"] -->|REST| S["`**서버**
 NOTIFICATION 패키지`"]
     AP["`**관리자 페이지**
 서버 측 처리기`"] -->|REST, 관리자 토큰| S

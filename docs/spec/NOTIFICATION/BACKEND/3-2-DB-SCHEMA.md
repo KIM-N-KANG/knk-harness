@@ -82,7 +82,7 @@ erDiagram
 | `id` | bigint | PK | |
 | `user_id` | bigint | NOT NULL, FK `users.id` CASCADE | 소유 회원<br>같은 기기에서 계정이 바뀌면 소유 회원 변경 |
 | `token` | varchar(512) | NOT NULL, UNIQUE | FCM 등록 토큰 |
-| `platform` | varchar(16) | NOT NULL, CHECK `ANDROID` `WEB` | |
+| `platform` | varchar(16) | NOT NULL, CHECK `ANDROID` `WEB` `IOS` | |
 | `updated_at` | timestamptz | NOT NULL, 기본 `now()` | 마지막 등록 시각<br>값이 같아도 재등록마다 갱신 |
 
 | 인덱스 | 컬럼 |
