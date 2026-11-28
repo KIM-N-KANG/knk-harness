@@ -10,7 +10,7 @@
 |---|---|
 | 중복 요청 | 작업 종류마다 `Task` 핸들을 들고 실행 중이면 새 요청을 무시(single-flight) |
 | 새로고침 | 이전 작업을 취소하고 새로 시작. 취소된 작업의 늦은 결과는 Event로 보내지 않음 |
-| 화면 이탈 | 화면이 계층에서 빠지면 Store가 가진 작업을 모두 취소 |
+| 화면 이탈 | 화면이 계층에서 빠지면 Store가 보관한 작업 핸들을 모두 직접 취소. 작업이 Store를 강하게 잡아 해제를 막지 않게 함 |
 | 취소 | `CancellationError`와 `URLSession`의 취소 오류는 실패로 바꾸지 않음. 오류 표시, 보고와 분석 이벤트 없음 |
 | 재시도 | 한 계층에서만 담당. 소셜 로그인과 계정 연동은 자동 반복하지 않음 |
 | 무거운 작업 | 데이터베이스 접근, 큰 응답 디코딩과 이미지 처리는 메인 액터 밖에서 실행 |
@@ -105,7 +105,7 @@ Amplitude와 Firebase Crashlytics만 사용한다. Firebase Analytics, Meta SDK,
 | 사용자 | 로그인은 공개 사용자 ID를 Amplitude와 Crashlytics에 연결. 로그아웃은 세션 정리 순서에 맞춰 사용자 해제와 기기 ID 교체 |
 | 이벤트 | [분석 기준](../../../reference/ANALYTICS.md)의 앱 이벤트 이름과 프로퍼티를 그대로 사용. 플랫폼 구분은 SDK 자동 수집 값이며 iOS SDK가 싣는 `platform` 값은 확인하지 않음 |
 | 발화 위치 | Store와 관측 어댑터. reducer와 `body`에서 관측 호출 금지. 화면 노출 이벤트는 화면 표시 한 번에 한 번 |
-| `error_type` 값 | `DomainError` 종류를 고정 문자열 `Network`, `Serialization`, `Server`, `Unauthorized`, `AccountSuspended`, `ProviderCancelled`, `ProviderFailed`, `ProviderNotConfigured`, `Unknown`으로 보냄. Swift case 이름이나 타입 설명을 그대로 쓰지 않음 |
+| `error_type` 값 | 분석 기준이 `DomainError` 종류로 정한 이벤트에 한해 고정 문자열 `Network`, `Serialization`, `Server`, `Unauthorized`, `AccountSuspended`, `ProviderCancelled`, `ProviderFailed`, `ProviderNotConfigured`, `Unknown`으로 보냄. Swift case 이름이나 타입 설명을 그대로 쓰지 않음. 이벤트가 따로 값을 정했으면 분석 기준의 값을 씀 |
 | Crashlytics 키 | 지속 키는 `screen_name`, `feature`, 필요할 때 공개 `story_id`, `chat_id`. `request_id`는 실패한 그 요청의 non-fatal에만 |
 | 행동 기록 | 화면 이름과 P0 행동 이벤트 이름만 Crashlytics 로그로 남김. Amplitude 어댑터에서 한 번 연결 |
 | 보고 대상 | 처리되지 않은 크래시, 예상하지 못한 네트워크, 파싱과 5xx non-fatal |

@@ -1,4 +1,4 @@
-# CHAT IOS 클라이언트
+# CHAT iOS 클라이언트
 
 작성 규칙: [클라이언트 가이드](../../../../reference/CLIENT-SPEC-WRITING-GUIDE.md).
 

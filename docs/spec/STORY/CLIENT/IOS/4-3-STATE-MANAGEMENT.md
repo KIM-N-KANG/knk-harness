@@ -11,7 +11,7 @@ Store와 화면 상태는 프로세스 종료 뒤 복원하지 않는다. 저장
 | 상태 | 기준 |
 |---|---|
 | 홈 | Store의 섹션 목록. 섹션마다 가로 줄의 스크롤 위치는 화면 상태 |
-| 탐색 | Store가 마지막으로 새로 섞은 순서와 커서를 메모리에 둔다. 앱 타깃이 다른 탭에서 탐색 탭을 고른 진입마다 진입 번호를 올리며 탐색 스택이 루트일 때만 새로 섞는다. 그리드 스크롤은 진입 번호별 화면 상태라 새 순서는 맨 위, 상세 복귀는 같은 위치 |
+| 탐색 | Store가 마지막으로 새로 섞은 순서와 커서를 메모리에 둔다. 앱 타깃은 다른 탭에서 탐색 탭을 고른 진입 가운데 탐색 스택이 루트인 진입에서만 진입 번호를 올리고 새로 섞는다. 상세를 쌓은 채 들어오면 번호와 순서를 바꾸지 않는다. 그리드 스크롤은 진입 번호별 화면 상태라 새 순서는 맨 위, 상세 복귀는 같은 위치 |
 | 스토리 검색 | 입력 글자는 화면 상태, 제출한 검색어, 결과와 커서는 Store 메모리. 새 검색어마다 결과 번호를 올려 새 결과는 맨 위부터, 상세 복귀는 같은 위치 |
 | 상세 | 선택, 채팅 생성, 좋아요, 채팅 시작 시트 열림과 펼친 행은 Store. 시트에서 페르소나 생성으로 떠난 표시는 Store 메모리에 두고 다음 화면 표시 때 한 번 소비한다. 이미지 뷰어 URL은 Store이며 저장소와 라우트에 넣지 않음 |
 | 제작 옵션 | Store의 대상 카드. 조회로 대상이 없어지거나 상태가 바뀌면 갱신 |
@@ -29,8 +29,8 @@ Store와 화면 상태는 프로세스 종료 뒤 복원하지 않는다. 저장
 
 | 테이블과 키 | 열 |
 |---|---|
-| `pending_story_creation`<br>기본 키 `draftId` | `draftId`, `ownerId`, `stage`, `generationCommand`, `completionCommand`, `generation`, `progress`, `keywordSnapshot`, `createdAt`, `serverDraftVersion` |
-| `story_completion_request`<br>기본 키 `requestId` | `requestId`, `ownerId`, `completionCommand`, `generationCommand`, `generation`, `progress`, `submittedAt`, `status`, `storyId`, `storyTitle`, `createdAt`, `serverDraftVersion` |
+| `pending_story_creation`(편집 행)<br>기본 키 `draftId` | `draftId`, `ownerId`, `stage`, `generationCommand`, `completionCommand`, `generation`, `progress`, `keywordSnapshot`, `createdAt`, `serverDraftVersion` |
+| `story_completion_request`(요청 행)<br>기본 키 `requestId` | `requestId`, `ownerId`, `completionCommand`, `generationCommand`, `generation`, `progress`, `submittedAt`, `status`, `storyId`, `storyTitle`, `createdAt`, `serverDraftVersion` |
 | `general_story_draft`<br>기본 키 `ownerId`, `draftId` | `ownerId`, `draftId`, `acceptedSubmissionId` |
 
 | 열 | 형식과 의미 |
@@ -74,11 +74,11 @@ JSON 열은 읽을 때 모르는 키를 무시하고 없는 키는 기본값으�
 
 | UserDefaults 키 | suite와 값 |
 |---|---|
-| `recent_story_searches` | 기기 suite. 앞뒤 공백을 뺀 검색어의 최신순 문자열 배열, 최대 10개. 같은 문자열은 맨 앞으로 옮긴다. 읽거나 쓰지 못하면 남기지 않고 빈 목록으로 본다 |
+| `recent_story_searches` | 기기 suite. 앞뒤 공백을 뺀 검색어의 최신순 문자열 배열, 최대 10개. 같은 문자열은 맨 앞으로 옮긴다. 값이 없거나 문자열 배열로 해석되지 않으면 빈 목록으로 본다 |
 | `create_tutorial_stage` | 기기 suite. 마지막으로 마친 단계 `intro`, `keyword`, `storyline`, `additional-info`, `completing` 또는 전체 완료 `done` |
 | `story_onboarding_pending` | 회원 suite. 신규 가입이면 true, 완료하면 지움. 없으면 온보딩 없음 |
 
-가입 온보딩 저장소는 `UserScopedStore`로 등록해 로그아웃 정리에서 표시와 같은 실행의 메모리 완료를 함께 지운다. 회원 루트는 표시를 읽기 전에 메인 셸을 그리지 않고 읽기 실패는 온보딩 없음으로 처리한다. 완료는 메모리 완료를 먼저 남긴 뒤 표시를 지워 저장 실패가 같은 실행에서 온보딩을 다시 열지 않게 한다. 저장 실패 뒤 다음 실행에서는 온보딩이 다시 열린다.
+가입 온보딩 저장소는 `UserScopedStore`로 등록해 로그아웃 정리에서 같은 실행의 메모리 완료를 지우며 디스크의 표시는 회원 suite 정리가 지운다. 회원 루트는 표시를 읽기 전에 메인 셸을 그리지 않고 표시가 없으면 온보딩 없음으로 처리한다. 완료는 메모리 완료를 먼저 남긴 뒤 표시를 지워 같은 실행에서 온보딩이 다시 열리지 않게 한다. UserDefaults는 쓰기 결과를 돌려주지 않으므로 실패 분기를 두지 않으며, 지운 값이 디스크에 반영되기 전에 프로세스가 끝나면 다음 실행에서 온보딩이 다시 열린다.
 
 <br>
 
@@ -87,6 +87,6 @@ JSON 열은 읽을 때 모르는 키를 무시하고 없는 키는 기본값으�
 | 상태 | 기준 |
 |---|---|
 | 진행 기록 | 기기 suite의 `create_tutorial_stage`. `UserScopedStore`에 참여하지 않음 |
-| 다음 단계 | 절차가 처음 한 번 읽고 마칠 때마다 메모리에서 바로 바꾼다. 기록이 없거나 읽지 못하면 인사, 알 수 없는 값이면 없음 |
+| 다음 단계 | 절차가 처음 한 번 읽고 마칠 때마다 메모리에서 바로 바꾼다. 기록이 없으면 인사, 알 수 없는 값이면 없음 |
 | 열린 단계 | 화면 Store가 가진 절차의 상태. 테마와 글자 크기 변경, 백그라운드 복귀에 유지하고 프로세스 종료에는 남기지 않는다 |
-| 기록 쓰기 | 버튼과 VoiceOver 닫기 동작으로 닫을 때만 쓴다. 닫자마자 화면을 떠나도 쓰기를 취소하지 않고 실패는 다음 진입에 같은 단계를 다시 여는 것으로 끝낸다 |
+| 기록 쓰기 | 버튼과 VoiceOver 닫기 동작으로 닫을 때만 쓴다. 닫자마자 화면을 떠나도 쓰기를 취소하지 않는다. 쓴 값이 디스크에 반영되기 전에 프로세스가 끝나면 다음 진입에 같은 단계를 다시 연다 |

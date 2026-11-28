@@ -829,7 +829,7 @@ Android 앱이 푸시나 알림함의 알림을 눌렀을 때 보내는 이벤�
 - UTM 네 값은 `deepLink` 쿼리의 값을 디코딩해 그대로 보낸다. 값 규칙은 [NOTIFICATION 4-2-10 푸시 데이터](../spec/NOTIFICATION/BACKEND/4-2-CONTRACT.md#4-2-10-푸시-데이터)의 딥링크 UTM 쿼리이다.
 - `notification_type`은 서버가 보낸 `type` 원문(대문자)이며 `utm_content`와 같은 정보이다.
 - iOS 앱도 같은 이름과 프로퍼티로 보낸다. 푸시 탭에서 `deepLink`와 `type`을 읽는 iOS 페이로드 형식은 미정(서버 선행 변경 필요)이다.
-- 관리자 푸시 열람과 알림함 열람은 웹은 `[Amplitude] Page Viewed`, 앱은 `client_notification_opened`로 센다. v1.7.7보다 낮은 버전의 앱은 이 이벤트를 보내지 않으므로 앱 열람은 v1.7.7의 Play 배포일을 앱 측정 시작일로 두고 그날부터 센다([ADMIN 2-4 제품 제약](../spec/ADMIN/BACKEND/2-REQUIREMENTS.md#2-4-제품-제약)).
+- 관리자 푸시 열람과 알림함 열람은 웹은 `[Amplitude] Page Viewed`, 앱은 `client_notification_opened`로 센다. v1.7.7보다 낮은 버전의 Android 앱은 이 이벤트를 보내지 않으므로 Android 앱 열람은 v1.7.7의 Play 배포일을 측정 시작일로 두고 그날부터 센다. iOS 앱은 버전 체계가 Android와 별개이고 첫 버전부터 이 이벤트를 보내므로 첫 출시일부터 센다([ADMIN 2-4 제품 제약](../spec/ADMIN/BACKEND/2-REQUIREMENTS.md#2-4-제품-제약)).
 
 <br>
 

@@ -319,7 +319,7 @@ flowchart LR
 | dev 반영 | 같은 브랜치를 `dev`로 PR해 그 저장소의 릴리스 역반영 방식으로 병합<br>main 병합 직후에 하고, 충돌은 `dev`의 변경을 살려 해결 |
 | 기록 | 릴리스와 같은 티켓과 태그 규칙 |
 
-Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode`를 올린다([7-2](#7-2-android-앱-릴리스)). iOS도 hotfix를 `main` 병합 커밋에서만 Archive하고 빌드 번호를 올린다([7-4](#7-4-ios-앱-릴리스)).
+Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode`를 올린다([7-2](#7-2-android-앱-릴리스)). iOS도 hotfix를 `main` 병합 커밋에서만 Archive하고 마케팅 버전의 patch와 빌드 번호를 올린다([7-4](#7-4-ios-앱-릴리스)).
 
 <br>
 
@@ -335,7 +335,7 @@ iOS 저장소 `manyak-ios`는 생성 전이다. 브랜치 생성부터 App Store
 | 심사 | 외부 테스터 배포와 App Store 제출은 Apple 심사를 거침. 반려되면 수정 후 새 빌드 번호로 다시 검증 |
 | 빌드 번호 | `CFBundleVersion`. 업로드할 때마다 1 증가, 재사용 금지. 심사 반려 뒤 같은 내용을 다시 올릴 때도 올림 |
 | 마케팅 버전 | `CFBundleShortVersionString`. 1.0.0부터 시작하고 Android 버전과 별개. 버그 수정은 patch, 기능 추가는 minor |
-| 출시 | App Store Connect의 단계적 출시로 시작하고 [9-4](#9-4-ios-단계적-출시와-중단-기준)의 기준을 관찰 |
+| 출시 | 첫 버전은 전체 출시. 두 번째 버전부터 제출 전에 단계적 출시를 선택하고 [9-4](#9-4-ios-단계적-출시와-중단-기준)의 기준을 관찰 |
 
 로그인이 필수인 앱이므로 심사 전용 Google 계정의 자격 증명을 App Store Connect의 심사 정보에만 적는다. ([I-026](../platform/CLIENT/IOS/DECISIONS.md#i-026))
 
@@ -411,6 +411,6 @@ flowchart TD
 
 ### 9-4 iOS 단계적 출시와 중단 기준
 
-App Store 출시는 App Store Connect의 단계적 출시로 시작한다. 단계별 비율과 기간은 App Store Connect가 정하며 이번 작성에서 확인하지 않았다. 중단 기준은 [9-3](#9-3-android-단계적-출시와-중단-기준)의 표와 같고 iOS 앱 버전별로 비교한다. 기준 중 하나라도 충족하면 단계적 출시를 멈추고 수정판을 준비한다. ([I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015))
+단계적 출시는 버전 업데이트에만 쓸 수 있어 첫 버전 1.0.0은 전체 출시하고 두 번째 버전부터 단계적 출시로 시작한다. 자동 업데이트 대상에게 7일 동안 1%에서 100%까지 정해진 비율로 나가며 합계 30일까지 멈출 수 있다. 첫 버전은 비교할 직전 버전이 없어 아래 기준 대신 같은 지표를 출시 뒤 관찰한다. ([I-029](../platform/CLIENT/IOS/DECISIONS.md#i-029)) 중단 기준은 [9-3](#9-3-android-단계적-출시와-중단-기준)의 표와 같고 iOS 앱 버전별로 비교한다. 기준 중 하나라도 충족하면 단계적 출시를 멈추고 수정판을 준비한다. ([I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015))
 
 iOS도 Crashlytics, Amplitude의 버전별 비교 대시보드가 첫 App Store 출시 전에 있어야 기준이 성립한다. Amplitude에서 iOS 앱 버전을 담는 값은 미확인이다. ([3-2 공통 프로퍼티](../reference/ANALYTICS.md#3-2-공통-프로퍼티))

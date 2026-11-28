@@ -30,7 +30,7 @@
 | 관계 | Android [A-002](../ANDROID/DECISIONS.md#a-002)의 로그인 필수 모델을 iOS에도 적용 |
 | 승인 근거 | KNK-2154 작업 대화에서 사용자가 확정했다 |
 | 배경 | 서버 소셜 인증의 제공자는 `google`, `kakao`뿐이다(dev OpenAPI 2026-11-26 조회, 재인증 요청 스키마에만 `APPLE`, `NAVER` 값이 보임). App Store 심사 지침 4.8은 서드파티 소셜 로그인으로 주 계정을 만드는 앱에 동등한 로그인 서비스를 요구하고 Sign in with Apple이 이를 충족한다는 자료가 있다(2026-11-26 웹 확인). 지침 원문과 예외 조항은 확인하지 않았다. |
-| 채택 | iOS 로그인 제공자는 Google과 Kakao만 둔다. Sign in with Apple은 넣지 않고 심사 지침 4.8 반려 위험을 감수한다. 반려되면 그때 추가하며 서버 `auth/social/{provider}`에 `apple`을 추가하는 것이 선행 조건이다. |
+| 채택 | iOS 로그인 제공자는 Google과 Kakao만 둔다. Sign in with Apple은 넣지 않고 심사 지침 4.8 반려 위험을 감수한다. 반려되면 그때 추가하며 서버 `/auth/social/{provider}`에 `apple`을 추가하는 것이 선행 조건이다. |
 | 대안 | 첫 출시에 Sign in with Apple 포함(서버 로그인 제공자 계약과 계정 연동 계약을 먼저 넓혀야 함) |
 | 이유 | 원문에 별도 항목으로 구분하지 않음 |
 | 영향 | 반려되면 서버 계약 변경, iOS 제공자 추가와 재심사가 출시 일정에 더해진다. `DomainError`의 제공자 관련 오류와 연동 칩의 대상은 Google과 Kakao다. 지침 원문은 제출 전에 다시 확인해야 위험의 크기를 판단할 수 있다. |

@@ -14,7 +14,7 @@
 | 진행 중 숨김 | Store의 대신하는 턴 ID와 입력 수정 여부. 확정, 실패와 정리에서 해제 |
 | 포크 요청 | Store 잠금. 원래 방이 스택에 남으므로 성공 뒤 이동 Effect를 보낸 뒤 해제 |
 | 삭제 요청 | Store 잠금. 처리 중 방 전체 조작 차단. 성공은 이동 Effect, 실패는 잠금 해제와 토스트 |
-| 모델 시트와 헤더 숨김 | 화면 상태. 같은 방에서 유지 |
+| 채팅 응답 시트와 헤더 숨김 | 화면 상태. 같은 방에서 유지 |
 | 메뉴의 이프 내역 | 채팅방 Store. 메뉴 화면이면 없음. 돌아가기와 시트 닫기에서 비움 |
 | 뷰어 URL | 채팅방 Store. 라우트와 저장 상태에 넣지 않음. 상세에서 이미지가 사라지면 닫기 |
 | 이미지, 추천과 입력 모드 | UserDefaults 기기 suite의 `chat_realtime_image_enabled`(기본 false), `chat_choices_enabled`(기본 true), `chat_input_mode`(기본 블럭). `UserScopedStore` 비참여 |

@@ -13,4 +13,4 @@
 | 앱 타깃 `Manyak` | 시작 때 정책 조회, 회원 체험 조회, 공용 값 전달과 충전 목적지 조립. 무료 충전 탭의 친구 초대 줄은 `ManyakMy`의 줄을 넘김. 체험 저장소를 정리 등록 배열에 등록 |
 | `ManyakNavigation` | 처음 내역 탭을 열지 나타내는 라우트 값과 푸시 경로의 `tab` 해석 |
 
-충전 화면과 부족 시트는 같은 출석 구현을, 충전 내역 탭과 채팅 메뉴는 같은 내역 구현을 쓴다. `ManyakChat`과 `ManyakCreate`는 `ManyakCredit`와 `ManyakMy`를 참조하지 않는다. 공용 절차는 상태 변경을 호출 Store에 전달하고 별도 Store를 만들지 않는다. 어느 타깃도 StoreKit을 링크하지 않고 상품 목록과 웹 충전 주문 API를 부르지 않는다. ([공통 4-1](../4-1-CONTRACT.md), [IOS 기반 1-2](../../../../platform/CLIENT/IOS/1-COMPONENT-ARCHITECTURE.md#1-2-모듈과-허용-의존))
+충전 화면과 부족 시트는 같은 출석 구현을, 충전 내역 탭과 채팅 메뉴는 같은 내역 구현을 쓴다. `ManyakChat`과 `ManyakCreate`는 `ManyakCredit`과 `ManyakMy`를 참조하지 않는다. 공용 절차는 상태 변경을 호출 Store에 전달하고 별도 Store를 만들지 않는다. 어느 타깃도 StoreKit을 링크하지 않고 상품 목록과 웹 충전 주문 API를 부르지 않는다. ([공통 4-1](../4-1-CONTRACT.md), [IOS 기반 1-2](../../../../platform/CLIENT/IOS/1-COMPONENT-ARCHITECTURE.md#1-2-모듈과-허용-의존))
