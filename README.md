@@ -11,7 +11,7 @@ knk-workspace/
 ├── knk-harness/
 ├── manyak-web/
 ├── manyak-android/
-├── manyak-ios/          # 저장소 생성 전
+├── manyak-ios/
 ├── manyak-server/
 ├── manyak-ai/
 ├── manyak-notification/
@@ -22,7 +22,7 @@ knk-workspace/
 - `knk-harness/`: 공통 LLM 작업 규칙과 팀 운영 지침을 담는 저장소입니다.
 - `manyak-web/`: 마냑 웹 프론트엔드 저장소입니다.
 - `manyak-android/`: 마냑 안드로이드 앱 저장소입니다.
-- `manyak-ios/`: 마냑 iOS 앱 저장소입니다. 아직 생성 전이므로 클론하지 않습니다.
+- `manyak-ios/`: 마냑 iOS 앱 저장소입니다.
 - `manyak-server/`: 마냑 백엔드 서버 저장소입니다.
 - `manyak-ai/`: 마냑 AI 서버 저장소입니다.
 - `manyak-notification/`: 마냑 알림 서비스 저장소입니다.
@@ -68,7 +68,7 @@ git clone <manyak-infra-repository-url>
 | --- | --- |
 | 웹 프론트엔드 | `../manyak-web` |
 | 안드로이드 앱 | `../manyak-android` |
-| iOS 앱 | `../manyak-ios`(저장소 생성 전) |
+| iOS 앱 | `../manyak-ios` |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 운영 Terraform | `../manyak-terraform` |

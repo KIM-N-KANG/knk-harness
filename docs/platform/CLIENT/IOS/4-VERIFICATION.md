@@ -54,7 +54,7 @@ HTTP는 `URLProtocol` 대역으로 공통 헤더, 상태별 기본 변환, `URLE
 | 저장 위치 | 원본은 `.agents/skills/`, `.claude/skills/`에는 같은 이름의 심볼릭 링크. 서브에이전트 정의는 코드 리뷰와 화면 검사 두 개 |
 | 하네스 공통 연결 | `create-branch`, `create-commit`, `create-pr`. iOS 저장소의 커밋 형식, 필수 검사 명령과 PR 전 리뷰만 더함 |
 | 저장소 절차 | `merge-pr`, `pr-review`, `ui-review`. `ui-review`는 시뮬레이터 도구 기준으로 다시 작성 |
-| 플랫폼 지식 | `feature-planning`, `release-ops`, `session-data-cleanup`은 iOS 도구에 맞춰 고쳐 씀. `compose-development`는 SwiftUI판으로, `room-migration`은 GRDB 마이그레이션 스킬로 새로 작성. `configuration-changes`는 비적용 |
+| 플랫폼 지식 | `release-ops`, `session-data-cleanup`은 iOS 도구에 맞춰 고쳐 씀. `compose-development`는 SwiftUI판으로, `room-migration`은 GRDB 마이그레이션 스킬로 새로 작성. `configuration-changes`는 비적용. `feature-planning`은 두지 않음 |
 | Xcode 제공 스킬 | 저장소에 커밋하지 않고 개인 환경에만 둠. 설치한 Xcode에서 `xcrun agent skills export`로 내보내며 Xcode 버전마다 목록이 바뀜 |
 
 저장소 스킬은 개인 환경의 Xcode 제공 스킬이 없어도 끝까지 실행되게 작성한다. `ui-review`의 설치, 실행과 캡처는 `xcrun simctl`로 하고 Xcode 제공 스킬은 있으면 레이아웃과 접근성 계층 확인에 보조로 쓴다. ([I-016](DECISIONS.md#i-016))

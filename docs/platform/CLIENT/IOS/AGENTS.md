@@ -21,14 +21,14 @@
 
 ### 2 코드 위치
 
-iOS 저장소 `manyak-ios`는 생성 전이다. 아래는 계획 위치이며 현재 존재하는 파일이 아니다.
+iOS 저장소 `manyak-ios`에는 프로젝트 뼈대와 빈 타깃 선언만 있다. 아래 위치의 구현 파일은 각 타깃을 구현할 때 생긴다.
 
-| 대상 | 계획 위치 | Android 대응 |
+| 대상 | 위치 | Android 대응 |
 |---|---|---|
-| 앱 타깃 `Manyak` | Xcode 프로젝트의 앱 타깃 | `app` |
+| 앱 타깃 `Manyak` | `App/Manyak.xcodeproj`의 앱 타깃. 소스는 `App/Manyak` | `app` |
 | 기반 타깃 `ManyakCommon`, `ManyakDesignSystem`, `ManyakNavigation`, `ManyakAnalytics`, `ManyakNetwork`, `ManyakAuth`, `ManyakReport`, `ManyakTesting` | 로컬 패키지 `Package.swift`의 타깃. 소스는 `Core/<타깃>` | `core/<모듈>` |
 | 기능 타깃 `ManyakHome`, `ManyakChat`, `ManyakCredit`, `ManyakStudio`, `ManyakStory`, `ManyakLogin`, `ManyakLegal`, `ManyakMy`, `ManyakCreate`, `ManyakNotification`, `ManyakNotice`, `ManyakOnboarding` | 같은 패키지의 타깃. 소스는 `Feature/<타깃>` | `feature/<모듈>` |
-| 단위 테스트 | 타깃마다 `<타깃>Tests` | `src/test` |
+| 단위 테스트 | 타깃마다 `<타깃>Tests`. 소스는 `Tests/<타깃>Tests` | `src/test` |
 | UI 테스트 | 앱 타깃의 XCUITest 타깃 | `src/androidTest` |
 | 빌드 설정 | 공용 xcconfig, 커밋하지 않는 비밀값 xcconfig와 예시 파일 | `app/build.gradle.kts`, `local.properties.example` |
 | Firebase 설정 | `GoogleService-Info.plist` | `google-services.json` |

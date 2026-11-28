@@ -34,13 +34,13 @@
 | 항목 | 내용 |
 |---|---|
 | 실행 계기 | `dev`, `main` 대상 PR과 push |
-| 러너 | GitHub Actions macOS 러너. Xcode 27 이상 선택 |
+| 러너 | GitHub Actions macOS 러너의 `xcode-27` 이미지. 설치된 Xcode 27 가운데 가장 높은 버전 선택 |
 | 단계 | swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트, 시뮬레이터용 Debug 빌드 |
 | 판정 | 한 단계라도 실패하면 실패 |
 | 제외 | XCUITest, Release Archive, 서명과 업로드 |
 | 비밀값 | 두지 않음. 비밀값 xcconfig 없이 빌드 |
 
-러너 이미지의 Xcode 27 제공 여부는 확인하지 않았다(2026-11-26 기준). ([I-013](DECISIONS.md#i-013))
+Xcode 27은 `macos-latest` 이미지에 없고 `xcode-27` 라벨의 러너 이미지에 있어 그 라벨을 쓴다(2026-11-28 확인). ([I-013](DECISIONS.md#i-013))
 
 <br>
 

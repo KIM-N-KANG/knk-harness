@@ -16,7 +16,7 @@ AWS 구성은 2026-11-22에 확인한 [Terraform 선언](https://github.com/KIM-
 | manyak-server, manyak-ai, manyak-notification | 이미지 빌드, 태그 승격, 앱 호스트 배포, 서비스 검수 | 각 `.github/workflows/docker-image.yml` |
 | manyak-infra | 로컬 통합 Docker Compose | `docker-compose.yml` |
 | manyak-web, manyak-android | 플랫폼별 빌드, 배포 | 각 플랫폼 레포 및 [웹 배포](../platform/CLIENT/WEB/6-DEPLOYMENT.md), [Android 배포](../platform/CLIENT/ANDROID/5-DEPLOYMENT.md) |
-| manyak-ios(저장소 생성 전) | iOS 빌드, 배포 | [iOS 배포](../platform/CLIENT/IOS/5-DEPLOYMENT.md) |
+| manyak-ios | iOS 빌드, 배포 | [iOS 배포](../platform/CLIENT/IOS/5-DEPLOYMENT.md) |
 | knk-harness | 현재 구조, 결정 이력 | 이 문서와 배포 결정 기록 |
 
 Terraform에서 관리하지 않는 웹 호스팅 설정, Play 배포 트랙이나 App Store Connect 배포를 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../spec/AGENTS.md#1-도메인과-세트))
@@ -192,7 +192,7 @@ release 번들(AAB)은 CI가 만들지 않는다. 릴리스 담당자가 로컬�
 
 ### 5-4 manyak-ios CI
 
-저장소 생성 전이며 아래는 계획 구성이다. 컨테이너 이미지가 없는 앱 저장소이다. GitHub Actions macOS 러너의 iOS 워크플로가 `dev`, `main` 대상 PR과 push에서 swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트와 시뮬레이터용 Debug 빌드를 실행하고 한 단계라도 실패하면 실패한다. XCUITest는 CI에서 돌리지 않는다. 러너 이미지의 Xcode 27 제공 여부는 확인하지 않았다(2026-11-26 기준). ([I-013](../platform/CLIENT/IOS/DECISIONS.md#i-013))
+컨테이너 이미지가 없는 앱 저장소이다. GitHub Actions macOS 러너의 iOS 워크플로가 `dev`, `main` 대상 PR과 push에서 swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트와 시뮬레이터용 Debug 빌드를 실행하고 한 단계라도 실패하면 실패한다. XCUITest는 CI에서 돌리지 않는다. Xcode 27은 `macos-latest` 이미지에 없고 `xcode-27` 라벨의 러너 이미지에 있어 그 라벨을 쓴다(2026-11-28 확인). ([I-013](../platform/CLIENT/IOS/DECISIONS.md#i-013))
 
 Release Archive는 CI가 만들지 않는다. 릴리스 담당자가 `main` 병합 커밋에서 Xcode로 Archive하고 App Store Connect에 직접 올린다.
 
@@ -325,7 +325,7 @@ Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode
 
 ### 7-4 iOS 앱 릴리스
 
-iOS 저장소 `manyak-ios`는 생성 전이다. 브랜치 생성부터 App Store 출시까지의 순서와 단계별 확인은 [5-4 출시](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-4-출시)에 있고 운영 규칙은 아래와 같다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014), [I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015), [I-023](../platform/CLIENT/IOS/DECISIONS.md#i-023))
+브랜치 생성부터 App Store 출시까지의 순서와 단계별 확인은 [5-4 출시](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-4-출시)에 있고 운영 규칙은 아래와 같다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014), [I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015), [I-023](../platform/CLIENT/IOS/DECISIONS.md#i-023))
 
 | 항목 | 규칙 |
 |---|---|
