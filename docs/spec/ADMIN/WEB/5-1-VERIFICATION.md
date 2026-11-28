@@ -78,6 +78,7 @@
 | 같은 이름의 메뉴 | `/analytics/chats`<br>`/chats` | 대시보드 구역의 채팅만 활성<br>관리 구역의 채팅만 활성 |
 | 개요 활성 | `/dashboard/analytics` | `/analytics/chats?tab=engagement`로 바뀌고 채팅만 활성, 개요는 비활성 |
 | 워드마크 | 사이드바 | 접근성 이름 "마냑 관리자" |
+| 메뉴 서랍 | 너비 390px에서 메뉴 버튼을 누름<br>서랍의 메뉴를 누름<br>Esc, 배경, 메뉴 버튼<br>서랍을 연 채 뒤로 가기<br>서랍을 연 채 너비를 1440px로 넓혔다가 390px로 줄임<br>너비 1440px | 서랍이 열리고 본문 스크롤이 잠김<br>그 화면으로 이동하고 서랍이 닫힘<br>서랍이 닫힘<br>서랍이 닫히고 스크롤 잠금이 풀림<br>서랍이 닫힌 채로 있음<br>상단 바 없이 왼쪽 사이드바와 본문 |
 | 외부 도구 | 사이드바의 외부 도구 열기 | Amplitude, OpenSearch 로그, Sentry, Langfuse, Google Play Console, 그로블 순서<br>Google Play Console은 `https://play.google.com/console/developers/7346202752431827582/app-list`를 새 탭에서 엶 |
 | 요약 카드 | 요약, 차트, 분석 지표, 설치 지표 응답 | 카드 8개가 오늘 활성 사용자, 가입자, 앱 설치(Android), 결제 금액 (환불 포함), 스토리 생성, 채팅 시작, 턴, AI 비용 순서<br>서버 DB 카드 5개는 기간 합계 큰 숫자, 증감, 오늘과 누적 줄<br>이프 적립, 이프 소모, 결제 건수 카드와 Amplitude 사용자 지표 구역, 설치 차트 없음 |
 | 카드 격자 | 너비 1280px<br>너비 1024px | 4열 2행, 윗줄은 오늘 활성 사용자, 가입자, 앱 설치, 결제 금액<br>2열 4행 |
