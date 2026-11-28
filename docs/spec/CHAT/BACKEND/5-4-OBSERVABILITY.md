@@ -50,6 +50,7 @@ ai_call_logs`"]
 | `request_id` | `req_` + UUID | 요청 헤더 값을 쓰고 없으면 생성<br>응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
+| `platform`, `app_version` | 요청 플랫폼과 앱 버전 | ACCOUNT와 같음 ([ACCOUNT 5-4-2 상관관계 식별자](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자)) |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송이 비활성화되어도 생성해 로그에 포함 |
 
@@ -237,7 +238,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 실시간 이미지 | URL과 바이너리를 로그에 싣지 않음 |
 | 공유 토큰 | 분석 이벤트에 싣지 않음<br>요청 로그의 `endpoint`와 Sentry의 경로에는 열람 요청 경로가 그대로 남음 |
 | 피드백 본문, 이메일 | 로그에 싣지 않음<br>Slack과 Google Form에는 본문과 메타 전달 |
-| Sentry 이벤트 | 5xx와 스트림 실패를 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| Sentry 이벤트 | 5xx와 스트림 실패를 캡처<br>기본 개인정보 수집 끔<br>`request_id`, `platform`, `app_version`은 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 | JDBC 스팬 | placeholder SQL만 수집<br>바인딩 값 제외 |
 
 <br>

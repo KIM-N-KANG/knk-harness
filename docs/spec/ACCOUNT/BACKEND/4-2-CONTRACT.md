@@ -41,7 +41,8 @@
 | `X-Manyak-Request-Id` | 문자열 | 로그 연결<br>없으면 서버가 생성하고 응답 헤더로 항상 반환 | 선택 |
 | `X-Manyak-Session-Id` | 문자열 | 클라이언트 분석 세션 식별 | 선택 |
 | `X-Manyak-Device-Id` | 문자열 | 회원 체험 스냅샷의 기기 사용량 조회, 게스트 동의의 기기 식별<br>게스트 스토리 이관의 기기 증명<br>서버 분석 이벤트의 `device_id` | 게스트 동의는 필수<br>이관은 게스트 때와 같은 값을 보내야 스토리를 이관할 수 있음 |
-| `X-Manyak-App-Version` | 문자열 | Android 앱이 모든 요청에 싣는 앱 버전<br>서버 분석 이벤트의 `platform`과 `app_version`([5-4-9 분석 이벤트](5-4-OBSERVABILITY.md#5-4-9-분석-이벤트)) | 선택 |
+| `X-Manyak-Platform` | `ios`, `android`, `web` | 요청을 보낸 클라이언트의 플랫폼<br>다른 값은 헤더가 없는 것으로 처리하고 요청을 거절하지 않음<br>로그와 Sentry의 `platform`([5-4-2 상관관계 식별자](5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자)), 서버 분석 이벤트의 `platform`([5-4-9 분석 이벤트](5-4-OBSERVABILITY.md#5-4-9-분석-이벤트)) | 선택 |
+| `X-Manyak-App-Version` | 문자열 | 앱이 모든 요청에 싣는 앱 버전<br>`X-Manyak-Platform` 없이 이 헤더만 있으면 Android 요청으로 판정<br>로그, Sentry와 서버 분석 이벤트의 `app_version` | 선택 |
 | `X-Manyak-Consent-Token` | 문자열 | 동의 완료 전용 대기 코드 | 동의 완료는 필수 |
 | `X-Manyak-Link-Code` | 문자열 | 계정 연동 | 연동은 필수 |
 

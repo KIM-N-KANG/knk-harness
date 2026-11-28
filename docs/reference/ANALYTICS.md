@@ -1107,6 +1107,8 @@ iOS 앱은 Meta SDK, 광고 식별자와 App Tracking Transparency(앱 추적 �
 | `X-Manyak-Device-Id`  | best-effort(일부 경로 필수) | 논리 `device_id`  | 일반 요청은 누락해도 거부되지 않고 백엔드가 `unknown`으로 채운다. 아래 필수 경로 참조. |
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않는다. 백엔드가 `unknown`으로 채운다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성, 주입하지 않는다. 백엔드가 생성해 응답 헤더로 echo한다(§6-3). |
+| `X-Manyak-Platform` | best-effort | `ios`, `android`, `web` | 누락해도 요청이 거부되지 않는다. 백엔드가 서버 분석 이벤트의 `platform`, 로그와 Sentry에 쓴다. 이 헤더 없이 `X-Manyak-App-Version`만 있으면 Android로 판정한다([요청 헤더](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)). |
+| `X-Manyak-App-Version` | best-effort | 앱 버전 | Android와 iOS 앱이 싣고 웹은 싣지 않는다. 누락해도 요청이 거부되지 않는다. 백엔드가 서버 분석 이벤트의 `app_version`, 로그와 Sentry에 쓴다. |
 
 **`X-Manyak-Device-Id`가 정책상 필수인 경로**, ① 게스트 체험 한도 대상 요청(스토리라인 생성, 스토리 완성, 채팅 턴의 게스트 호출): 누락 시 400([이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정된다([소셜 인증 계약](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-2-소셜-인증)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android와 iOS는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청한다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막는다**([연동 계약](../platform/CLIENT/CONTRACT.md), [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)).
 
@@ -1136,7 +1138,7 @@ iOS 앱은 Meta SDK, 광고 식별자와 App Tracking Transparency(앱 추적 �
 | --------------------------------------------------- | ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | 제품 분석 이벤트(`client_*`, `server_*`)            | `analytics_creation_id` | `simpleCreationId`(원본 `story_creation_sessions.id`)        | 구현. 단 타입, 누락 간극이 있다(§8-7 A1~A3)                                                           |
 | AI 호출 요청 헤더(`X-Manyak-Creation-Id`), Langfuse | `trace_creation_id`     | 스토리라인 단계 `story_creation_requests.request_id`(UUID)   | 구현([제작 추적 헤더](../spec/STORY/BACKEND/5-4-OBSERVABILITY.md#5-4-3-ai-서버로-전달하는-헤더))                                                                |
-| CloudWatch 구조화 로그                             | `analytics_creation_id` | 제작 로그 이벤트(`story_create_requested` 등)의 `creation_id` 필드에 `simpleCreationId`를 싣는다 | 구현. 요청 전역 MDC 필드가 아니라 **해당 로그 이벤트의 개별 필드**이다(MDC 전역 키는 위 공통 상관 필드 중 `request_id`, `session_id`, `device_id_hash` 3종) |
+| CloudWatch 구조화 로그                             | `analytics_creation_id` | 제작 로그 이벤트(`story_create_requested` 등)의 `creation_id` 필드에 `simpleCreationId`를 싣는다 | 구현. 요청 전역 MDC 필드가 아니라 **해당 로그 이벤트의 개별 필드**이다(MDC 전역 키는 위 공통 상관 필드 중 `request_id`, `session_id`, `device_id_hash` 3종과 요청 플랫폼의 `platform`, `app_version`) |
 | 서버 Sentry scope                                  | 없음 | 없음 | **현재 `creation_id`를 부착하지 않는다**(MDC 전역 키만 tag, context로 올림, §6-6)                      |
 | `ai_call_logs`                                     | `trace_creation_id`     | 위 AI 호출 상관값                                            | **목표 계약**, 현재 테이블에 `creation_id` 컬럼이 없다(§6-9)                                        |
 
@@ -1236,7 +1238,7 @@ iOS 앱은 Meta SDK, 광고 식별자와 App Tracking Transparency(앱 추적 �
 
 | 구분       | 수집 내용                                                                                                  |
 | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| Tags       | `endpoint`, `http_method`, `status_code`, `error_code`, `story_id`, `chat_id`, `request_id`. `creation_id`는 **목표 계약**, 현재 서버 Sentry는 MDC 전역 키(`request_id`, `session_id`, `device_id_hash`)만 올리고 `creation_id`를 부착하지 않는다(§6-3). 도입 시 어느 개념(`analytics_creation_id` / `trace_creation_id`)을 올릴지 함께 결정한다 |
+| Tags       | `endpoint`, `http_method`, `status_code`, `error_code`, `story_id`, `chat_id`, `request_id`, `platform`, `app_version`. `creation_id`는 **목표 계약**, 현재 서버 Sentry는 MDC 전역 키(`request_id`, `session_id`, `device_id_hash`, `platform`, `app_version`)만 올리고 `creation_id`를 부착하지 않는다(§6-3). 도입 시 어느 개념(`analytics_creation_id` / `trace_creation_id`)을 올릴지 함께 결정한다 |
 | Context    | `session_id`, `device_id_hash`, `feature`, `duration_ms`, `ai_call_log_id`                                 |
 | Breadcrumb | API 요청 시작, DB 저장 완료, AI 호출 시작과 종료                                                           |
 | Exceptions | 5xx 예외, DB 예외, AI 호출 timeout, AI 응답 검증 실패, Slack 피드백 webhook 실패                           |

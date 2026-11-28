@@ -46,6 +46,8 @@ Fluent Bit`"]
 | `request_id` | `req_` + UUID | 요청 헤더 값이 1~64자이고 영문, 숫자, 하이픈, 밑줄만이면 그대로 쓰고 없거나 조건에 어긋나면 새로 생성<br>응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
+| `platform` | `ios`, `android`, `web` | `X-Manyak-Platform`이 세 값 중 하나면 그 값<br>아니고 `X-Manyak-App-Version`이 있으면 `android`<br>둘 다 아니면 `unknown` |
+| `app_version` | `X-Manyak-App-Version` | 1~50자가 아니거나 없으면 `unknown` |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 
@@ -149,7 +151,7 @@ ACCOUNT 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 H
 | 닉네임, 페르소나 본문 | 로그에 기록하지 않음 |
 | 요청 경로 | 요청 로그 `endpoint`와 Sentry breadcrumb에 기록<br>경로에 비밀값 없음 |
 | Sentry 요청 필드 | 소셜 인증, 동의 완료, 호환 로그인, 토큰 회전, 로그아웃, 연동 재인증과 연동 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |
-| Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`, `platform`, `app_version`은 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 
 <br>
 
@@ -194,7 +196,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `device_id_hash` | 이벤트 프로퍼티는 디바이스 해시<br>헤더가 없으면 생략 |
 | `session_id` | 정수 문자열일 때만 포함 |
 | `request_id`, `is_logged_in` | 요청 문맥 |
-| `platform` | 요청에 `X-Manyak-App-Version` 헤더가 있으면 `Android`<br>헤더가 없으면 생략 |
+| `platform` | 상관관계 식별자의 `platform`이 `ios`면 `iOS`, `android`면 `Android`, `web`이면 `Web`<br>`unknown`이면 생략 |
 | `app_version` | `X-Manyak-App-Version` 헤더 값<br>1~50자가 아니거나 헤더가 없으면 생략 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>검증 실패는 `validation`, 공개 키 조회와 연결 실패는 `network`, 검증 통과 뒤 저장 실패는 `server` |
@@ -205,7 +207,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `reason` | 초대 코드 제출 거절 사유<br>`invalid_format`, `not_found`, `self_code`, `already_redeemed`, `inviter_withdrawn`, `inviter_unavailable`, `inviter_newer` |
 
 - `device_id` 원본은 클라이언트가 같은 Amplitude 프로젝트에 직접 보내는 기기 식별자와 같은 값이다. 서버 이벤트는 이 값으로 클라이언트 이벤트와 같은 기기 프로필에 병합된다. 분석 이벤트 경로에서는 원본을 요청 처리 중 Amplitude 발송까지만 전달하고 저장하지 않는다. 동의 대기의 원문 보관은 보존 요구사항의 기존 규칙을 따른다([2-5 데이터 보존](2-REQUIREMENTS.md#2-5-데이터-보존)). 알림 서비스가 호출하는 내부 API에는 원본 헤더가 없어 헤더 없음 규칙을 따른다.
-- `platform`과 `app_version`은 이벤트 프로퍼티가 아니라 Amplitude 이벤트의 기기 필드다. 앱 SDK가 이벤트를 늦게 올려도 앱 요청의 서버 이벤트가 Android로 잡힌다. 웹은 헤더를 보내지 않아 생략하고 Amplitude가 그 사용자에게 아는 플랫폼을 따른다. 이 규칙은 CHAT, STORY, PAYMENT의 서버 이벤트에도 같다.
+- `platform`과 `app_version`은 이벤트 프로퍼티가 아니라 Amplitude 이벤트의 기기 필드다. 클라이언트 SDK가 이벤트를 늦게 올려도 서버 이벤트가 요청의 플랫폼으로 잡힌다. 플랫폼을 판정하지 못한 요청은 생략하고 Amplitude가 그 사용자에게 아는 플랫폼을 따른다. 알림 서비스가 호출하는 내부 API가 여기에 든다. 이 규칙은 CHAT, STORY, PAYMENT의 서버 이벤트에도 같다.
 - 로그인 성공 이벤트는 소셜 인증 완료, 동의 완료, 호환 로그인에서 요청당 1회다. 동의 대기 단계에서는 발행하지 않는다.
 - 실패 이벤트는 서비스 판정 단계에 도달한 요청만 집계한다. 요청 형식 검증과 인증 단계에서 거절된 요청은 집계하지 않는다.
 - 이관 카운트의 합은 제출 총수와 같다. 제출 배열이 둘 다 비면 발행하지 않는다.

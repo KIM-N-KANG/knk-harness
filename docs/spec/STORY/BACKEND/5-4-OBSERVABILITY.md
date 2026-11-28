@@ -46,6 +46,7 @@ flowchart LR
 | `request_id` | `req_` + UUID | 요청 헤더 값을 쓰고 없으면 생성<br>응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
+| `platform`, `app_version` | 요청 플랫폼과 앱 버전 | ACCOUNT와 같음 ([ACCOUNT 5-4-2 상관관계 식별자](../../ACCOUNT/BACKEND/5-4-OBSERVABILITY.md#5-4-2-상관관계-식별자)) |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만<br>같은 요청의 `api_request_failed` 로그에 실림 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송이 비활성화되어도 생성해 로그에 포함 |
 
@@ -204,7 +205,7 @@ AI 호출 1회마다 1행을 남긴다. 호출 전 `STARTED`로 적재하고 종
 | 사용자 입력 원문, 프롬프트, AI 응답 본문 | 로그, Sentry, `ai_call_logs`에 싣지 않음<br>원문은 AI 서버의 Langfuse에서 관리 |
 | 생성 이미지 | base64와 URL을 로그에 싣지 않음<br>객체 키는 S3 보상 삭제에만 사용 |
 | 검색어 | 로그와 Sentry에 구조화 필드로 싣지 않음 |
-| Sentry 이벤트 | 5xx를 캡처. 검색 저장소 장애 중 커서 요청의 503은 제외<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| Sentry 이벤트 | 5xx를 캡처. 검색 저장소 장애 중 커서 요청의 503은 제외<br>기본 개인정보 수집 끔<br>`request_id`, `platform`, `app_version`은 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 | JDBC 스팬 | placeholder SQL만 수집<br>바인딩 값 제외 |
 | 로그 `message` | 예외 메시지와 스택트레이스는 그대로 기록 |
 
