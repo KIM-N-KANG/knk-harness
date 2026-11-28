@@ -331,7 +331,7 @@ iOS 저장소 `manyak-ios`는 생성 전이다. 브랜치 생성부터 App Store
 |---|---|
 | 릴리스 브랜치 | `origin/dev`에서 `release/v{버전}`. 공용 xcconfig의 마케팅 버전과 빌드 번호만 커밋<br>같은 브랜치로 `main` 릴리스 PR과 `dev` 버전 동기화 PR |
 | 출시 빌드 | `main` 병합 커밋에서만 Release Archive. Archive 뒤 App Store Connect 업로드와 같은 빌드의 dSYM 업로드 확인 |
-| 승격 | TestFlight 내부 테스터 실기기 검수, 외부 테스터, App Store 심사 순으로 같은 빌드. 단계마다 다시 빌드하지 않음 |
+| 승격 | TestFlight 내부 테스터 실기기 검수를 통과한 같은 빌드를 외부 테스터에 배포하면서 App Store 심사에 제출. 관문은 내부 테스터 검수뿐. 단계마다 다시 빌드하지 않음 |
 | 심사 | 외부 테스터 배포와 App Store 제출은 Apple 심사를 거침. 반려되면 수정 후 새 빌드 번호로 다시 검증 |
 | 빌드 번호 | `CFBundleVersion`. 업로드할 때마다 1 증가, 재사용 금지. 심사 반려 뒤 같은 내용을 다시 올릴 때도 올림 |
 | 마케팅 버전 | `CFBundleShortVersionString`. 1.0.0부터 시작하고 Android 버전과 별개. 버그 수정은 patch, 기능 추가는 minor |

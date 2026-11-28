@@ -45,13 +45,16 @@ flowchart TD
     A["Effect 발생"] --> B{"수집 중인 스트림"}
     B -->|있음| C["수집 스트림에 넣기"]
     C --> D{"넣은 결과"}
-    D -->|대기열에 들어감| E["화면이 처리"]
+    D -->|대기열에 들어감| E{"화면이 꺼내기 전에 수집 취소"}
+    E -->|아니오| H["화면이 처리"]
+    E -->|예| I["보관 대기열 앞에 되돌림"]
+    I --> G
     D -->|스트림 종료| F["보관 대기열 끝에 추가"]
     B -->|없음| F
     F --> G["다음 수집 시작 때 순서대로 전달하고 비움"]
 ```
 
-화면은 Effect를 `.task` 하나에서만 수집한다. 같은 Store를 두 화면이 동시에 수집하지 않는다.
+수집 스트림에 넣은 것은 전달 완료가 아니다. 화면이 꺼내기 전에 수집이 취소되면 스트림에 남은 Effect를 순서를 지켜 보관 대기열 앞에 되돌리고 다음 수집에서 전달한다. 화면이 이미 꺼낸 Effect는 다시 전달하지 않는다. 화면은 Effect를 `.task` 하나에서만 수집한다. 같은 Store를 두 화면이 동시에 수집하지 않는다.
 
 <br>
 
@@ -80,7 +83,8 @@ flowchart TD
 | 회원 귀속 키와 값 | UserDefaults 회원 suite | 로그아웃 정리에서 suite 전체 삭제 |
 | 토큰 | Keychain | 접근 정책과 재설치 처리는 [ACCOUNT iOS](../../../spec/ACCOUNT/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-세션과-토큰) |
 | 이미지 캐시 | Nuke 메모리와 디스크 캐시 | 로그아웃 정리에서 삭제 |
-| 기기 백업 | 기능 데이터베이스 파일은 백업에서 제외. UserDefaults 두 suite는 포함. Keychain 토큰은 기기 전용이라 다른 기기로 복원되지 않음 | 복원한 기기는 토큰이 없어 Guest로 시작하고 그 시작에서 복원된 회원 suite를 지움 ([I-024](DECISIONS.md#i-024)) |
+| 기기 ID | Application Support의 백업 제외 파일 | 로그아웃 정리에서 새 값으로 교체. UserDefaults에 두지 않음 ([ACCOUNT iOS](../../../spec/ACCOUNT/CLIENT/IOS/4-4-EXECUTION.md#4-4-4-시작과-재설치-판정)) |
+| 기기 백업 | 기능 데이터베이스 파일, 기기 ID 파일과 종료 저널 파일은 백업에서 제외. UserDefaults 두 suite는 포함. Keychain 토큰은 기기 전용이라 다른 기기로 복원되지 않음 | 복원한 기기는 토큰과 기기 ID가 없어 새 기기 ID를 만들고 Guest로 시작하며 그 시작에서 복원된 회원 suite를 지움 ([I-024](DECISIONS.md#i-024)) |
 
 회원 데이터를 쓰는 저장소는 `UserScopedStore`를 따르고 앱 타깃의 등록 배열에 등록한다. 로그아웃 정리가 끝날 때까지 필요한 값(세션 종료 저널 등)은 회원 suite에 두지 않는다. 로그아웃 뒤 늦게 도착한 응답이 지운 데이터를 되살리지 않도록 회원 데이터 쓰기는 `SessionGate`의 세대 확인을 거친다. 토큰과 동의 대기 코드 같은 비밀값은 UserDefaults와 데이터베이스에 두지 않는다. ([I-008](DECISIONS.md#i-008))
 
