@@ -10,8 +10,8 @@
 | PAYMENT-US-002 | [2-2-4](2-2-REQUIREMENTS.md#2-2-4-보상과-내역) | 운영 정책값, KST 하루 한 번 출석, 중복 성공과 실패 구분 |
 | PAYMENT-US-003 | [2-2-2](2-2-REQUIREMENTS.md#2-2-2-잔액과-비용), [2-2-3](2-2-REQUIREMENTS.md#2-2-3-체험) | 정가와 적용가, 미확인 자리표시, 모델별 가격과 체험 분리 |
 | PAYMENT-US-004 | [2-2-5](2-2-REQUIREMENTS.md#2-2-5-이프-부족과-입력-보존) | 아는 값만 선검사, 출석과 충전 중 잠금, 입력 보관과 저장 실패, 플랫폼별 제출 후 안내 |
-| PAYMENT-US-005 | [2-2-3](2-2-REQUIREMENTS.md#2-2-3-체험) | 웹 게스트 소진, 무료 진입, 로그인 후 계정 잔여. Android 비적용 |
+| PAYMENT-US-005 | [2-2-3](2-2-REQUIREMENTS.md#2-2-3-체험) | 웹 게스트 소진, 무료 진입, 로그인 후 계정 잔여. Android와 iOS 비적용 |
 | PAYMENT-US-006 | [2-2-4](2-2-REQUIREMENTS.md#2-2-4-보상과-내역) | 불투명 커서, 부분 오류, KST 날짜, 알 수 없는 사유 |
-| PAYMENT-US-007 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위) | 웹 전용 결제. Android에 구매 탭과 Play 구매 흐름 없음 |
+| PAYMENT-US-007 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위) | 웹 전용 결제. Android에 구매 탭과 Play 구매 흐름 없음. iOS에 구매 화면, StoreKit 결제와 웹 구매 안내 없음 |
 
 검증 절차와 자동화 연결은 실행 결과가 아니다. 실제 통과와 환경, 한계는 PR과 CI에 기록한다.

@@ -16,9 +16,10 @@ AWS 구성은 2026-11-22에 확인한 [Terraform 선언](https://github.com/KIM-
 | manyak-server, manyak-ai, manyak-notification | 이미지 빌드, 태그 승격, 앱 호스트 배포, 서비스 검수 | 각 `.github/workflows/docker-image.yml` |
 | manyak-infra | 로컬 통합 Docker Compose | `docker-compose.yml` |
 | manyak-web, manyak-android | 플랫폼별 빌드, 배포 | 각 플랫폼 레포 및 [웹 배포](../platform/CLIENT/WEB/6-DEPLOYMENT.md), [Android 배포](../platform/CLIENT/ANDROID/5-DEPLOYMENT.md) |
+| manyak-ios(저장소 생성 전) | iOS 빌드, 배포 | [iOS 배포](../platform/CLIENT/IOS/5-DEPLOYMENT.md) |
 | knk-harness | 현재 구조, 결정 이력 | 이 문서와 배포 결정 기록 |
 
-Terraform에서 관리하지 않는 웹 호스팅 설정이나 Play 배포 트랙을 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../spec/AGENTS.md#1-도메인과-세트))
+Terraform에서 관리하지 않는 웹 호스팅 설정, Play 배포 트랙이나 App Store Connect 배포를 AWS 코드에서 추정하지 않는다. 애플리케이션 도메인 계약은 도메인별 백엔드와 AI 명세에서 정한다. ([도메인 목록](../spec/AGENTS.md#1-도메인과-세트))
 
 <br>
 
@@ -189,6 +190,19 @@ release 번들(AAB)은 CI가 만들지 않는다. 릴리스 담당자가 로컬�
 
 <br>
 
+### 5-4 manyak-ios CI
+
+저장소 생성 전이며 아래는 계획 구성이다. 컨테이너 이미지가 없는 앱 저장소이다. GitHub Actions macOS 러너의 iOS 워크플로가 `dev`, `main` 대상 PR과 push에서 swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트와 시뮬레이터용 Debug 빌드를 실행하고 한 단계라도 실패하면 실패한다. XCUITest는 CI에서 돌리지 않는다. 러너 이미지의 Xcode 27 제공 여부는 확인하지 않았다(2026-11-26 기준). ([I-013](../platform/CLIENT/IOS/DECISIONS.md#i-013))
+
+Release Archive는 CI가 만들지 않는다. 릴리스 담당자가 `main` 병합 커밋에서 Xcode로 Archive하고 App Store Connect에 직접 올린다.
+
+- **CI에 서명 자산을 두지 않는다.** 배포 인증서, 프로비저닝 프로파일과 App Store Connect 키는 릴리스 담당자의 Mac에만 둔다. 서명은 Xcode 자동 서명을 쓰고 인증서와 프로파일을 따로 보관하지 않으며 담당자의 Mac을 쓸 수 없으면 다른 Mac에서 다시 발급한다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014), [I-025](../platform/CLIENT/IOS/DECISIONS.md#i-025))
+- **Release 주입값**은 커밋하지 않는 비밀값 xcconfig에서 읽는다(Google iOS 클라이언트 ID, 서버 클라이언트 ID, Kakao 네이티브 앱 키, Amplitude 키). 저장소에는 예시 파일만 둔다. 비어 있어도 빌드는 성공하고 해당 기능만 실행 시 실패하므로 Archive 전에 Release 값 네 개를 확인한다. 운영 서버 주소 `https://api.manyak.app/api/v1/`은 Release 구성에 고정한다. 키 값과 실제 경로는 문서에도 저장소에도 적지 않는다. ([5-1 빌드와 환경](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-1-빌드와-환경))
+- **`GoogleService-Info.plist`는 저장소에 커밋한다.** CI는 비밀값 없이 PR마다 Debug 빌드를 만든다. 서버 FCM, Android와 같은 Firebase 프로젝트에 iOS 앱을 추가하며 환경별로 나누지 않는다. Debug는 Crashlytics 수집을 끈다. APNs 인증 키는 Firebase 콘솔에만 등록하고 저장소와 문서에 두지 않는다. ([I-021](../platform/CLIENT/IOS/DECISIONS.md#i-021))
+- 난독화는 적용하지 않는다. Archive마다 dSYM을 Crashlytics에 올린다.
+
+<br>
+
 ### 6 런타임 설정과 시크릿
 
 Terraform은 Secrets Manager 리소스와 컨테이너의 시크릿 참조(`envs/prod/app-host.tf`의 `app_host_defs`)를 관리한다. 실제 앱 시크릿 값은 Terraform state에 저장하지 않는다. `ignore_changes`만으로 secret_version refresh를 차단할 수 없으므로 해당 리소스를 다시 도입하지 않는다. 호스트 `deploy.sh`는 배포할 때마다 S3의 호스트 설정을 받고 시크릿을 새로 읽어 컨테이너 환경으로 넘긴다. 시크릿 값 등록, 참조 선언과 apply, 서비스 재배포(SSM 문서 `image=current`)의 세 단계가 모두 있어야 실행 중 컨테이너에 반영된다.
@@ -305,7 +319,25 @@ flowchart LR
 | dev 반영 | 같은 브랜치를 `dev`로 PR해 그 저장소의 릴리스 역반영 방식으로 병합<br>main 병합 직후에 하고, 충돌은 `dev`의 변경을 살려 해결 |
 | 기록 | 릴리스와 같은 티켓과 태그 규칙 |
 
-Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode`를 올린다([7-2](#7-2-android-앱-릴리스)).
+Android는 hotfix도 `main` 병합 커밋에서만 AAB를 만들고 `versionCode`를 올린다([7-2](#7-2-android-앱-릴리스)). iOS도 hotfix를 `main` 병합 커밋에서만 Archive하고 마케팅 버전의 patch와 빌드 번호를 올린다([7-4](#7-4-ios-앱-릴리스)).
+
+<br>
+
+### 7-4 iOS 앱 릴리스
+
+iOS 저장소 `manyak-ios`는 생성 전이다. 브랜치 생성부터 App Store 출시까지의 순서와 단계별 확인은 [5-4 출시](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-4-출시)에 있고 운영 규칙은 아래와 같다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014), [I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015), [I-023](../platform/CLIENT/IOS/DECISIONS.md#i-023))
+
+| 항목 | 규칙 |
+|---|---|
+| 릴리스 브랜치 | `origin/dev`에서 `release/v{버전}`. 공용 xcconfig의 마케팅 버전과 빌드 번호만 커밋<br>같은 브랜치로 `main` 릴리스 PR과 `dev` 버전 동기화 PR |
+| 출시 빌드 | `main` 병합 커밋에서만 Release Archive. Archive 뒤 App Store Connect 업로드와 같은 빌드의 dSYM 업로드 확인 |
+| 승격 | TestFlight 내부 테스터 실기기 검수를 통과한 같은 빌드를 외부 테스터에 배포하면서 App Store 심사에 제출. 관문은 내부 테스터 검수뿐. 단계마다 다시 빌드하지 않음 |
+| 심사 | 외부 테스터 배포와 App Store 제출은 Apple 심사를 거침. 반려되면 수정 후 새 빌드 번호로 다시 검증 |
+| 빌드 번호 | `CFBundleVersion`. 업로드할 때마다 1 증가, 재사용 금지. 심사 반려 뒤 같은 내용을 다시 올릴 때도 올림 |
+| 마케팅 버전 | `CFBundleShortVersionString`. 1.0.0부터 시작하고 Android 버전과 별개. 버그 수정은 patch, 기능 추가는 minor |
+| 출시 | 첫 버전은 전체 출시. 두 번째 버전부터 제출 전에 단계적 출시를 선택하고 [9-4](#9-4-ios-단계적-출시와-중단-기준)의 기준을 관찰 |
+
+로그인이 필수인 앱이므로 심사 전용 Google 계정의 자격 증명을 App Store Connect의 심사 정보에만 적는다. ([I-026](../platform/CLIENT/IOS/DECISIONS.md#i-026))
 
 <br>
 
@@ -356,6 +388,7 @@ flowchart TD
 - 시크릿 변경은 값을 소비하는 서비스의 재배포까지 끝나야 반영으로 본다.
 - 웹 release는 GHCR release 이미지 태그가 발행된다. 호스팅 반영은 Vercel 쪽 별도 절차로 확인한다.
 - Android 릴리스는 `main` 커밋에서 만든 AAB가 내부 테스트 실기기 스모크를 통과하고 승격한 트랙에 같은 번들이 올라간다. 프로덕션은 단계적 출시를 시작한 시점이 아니라 100% 도달과 중단 기준 미발동을 확인해야 완료된다.
+- iOS 릴리스는 `main` 커밋에서 Archive한 빌드가 TestFlight 내부 테스터 실기기 스모크를 통과하고 외부 테스터와 App Store에 같은 빌드가 올라간다. App Store 출시는 단계적 출시를 시작한 시점이 아니라 전체 출시 도달과 중단 기준 미발동을 확인해야 완료된다.
 - 롤백 기준 이미지 태그 또는 DB 복구 계획을 배포 전에 확인한다. Flyway 마이그레이션은 전진 전용으로 취급한다.
 
 <br>
@@ -373,3 +406,11 @@ flowchart TD
 | Amplitude 로그인 성공률, 스토리 생성 완주율 | 직전 버전 대비 하락이 관찰될 때 |
 
 세 기준은 모두 앱 버전별로 비교한다. Crashlytics, Amplitude의 버전별 비교 대시보드는 아직 없으며 첫 프로덕션 출시 전에 만들어야 기준이 성립한다.
+
+<br>
+
+### 9-4 iOS 단계적 출시와 중단 기준
+
+단계적 출시는 버전 업데이트에만 쓸 수 있어 첫 버전 1.0.0은 전체 출시하고 두 번째 버전부터 단계적 출시로 시작한다. 자동 업데이트 대상에게 7일 동안 1%에서 100%까지 정해진 비율로 나가며 합계 30일까지 멈출 수 있다. 첫 버전은 비교할 직전 버전이 없어 아래 기준 대신 같은 지표를 출시 뒤 관찰한다. ([I-029](../platform/CLIENT/IOS/DECISIONS.md#i-029)) 중단 기준은 [9-3](#9-3-android-단계적-출시와-중단-기준)의 표와 같고 iOS 앱 버전별로 비교한다. 기준 중 하나라도 충족하면 단계적 출시를 멈추고 수정판을 준비한다. ([I-015](../platform/CLIENT/IOS/DECISIONS.md#i-015))
+
+iOS도 Crashlytics, Amplitude의 버전별 비교 대시보드가 첫 App Store 출시 전에 있어야 기준이 성립한다. Amplitude에서 iOS 앱 버전을 담는 값은 미확인이다. ([3-2 공통 프로퍼티](../reference/ANALYTICS.md#3-2-공통-프로퍼티))

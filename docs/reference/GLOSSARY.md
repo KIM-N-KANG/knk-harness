@@ -129,9 +129,9 @@
 
 | 공식 용어 | 영문 식별자 | 정의 | 지양 표기 |
 | --- | --- | --- | --- |
-| 게스트 | guest | 로그인 없이 서비스를 쓰는 사용자. 웹은 공개 콘텐츠 열람과 이용 동의 후 체험을 제공한다. Android는 로그인 후 사용한다. ([웹 게스트 요구사항](../spec/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원)) | "비로그인 사용자"는 설명문에서 허용 |
+| 게스트 | guest | 로그인 없이 서비스를 쓰는 사용자. 웹은 공개 콘텐츠 열람과 이용 동의 후 체험을 제공한다. Android와 iOS는 로그인 후 사용한다. ([웹 게스트 요구사항](../spec/ACCOUNT/CLIENT/WEB/2-2-REQUIREMENTS.md#2-2-1-게스트와-회원)) | "비로그인 사용자"는 설명문에서 허용 |
 | 익명 사용자 | anonymous user | 분석에서 로그인 계정과 연결되지 않은 사용자 단위. `device_id`로 식별하며 제품의 이용 권한은 플랫폼별 게스트 계약을 따른다 | 없음 |
-| 디바이스 ID | `device_id` / `device_id_hash` | 기기 또는 브라우저 단위 식별자. 웹은 Amplitude Browser SDK 값, Android는 앱이 생성하고 영속화한 UUID를 SDK에 주입한다. API 헤더와 SDK가 같은 값을 사용하고 서버 저장에는 해시를 사용한다. ([식별자 정책](ANALYTICS.md#2-식별자-정책)) | `anonymous_id`(레거시, V17에서 정리 완료) |
+| 디바이스 ID | `device_id` / `device_id_hash` | 기기 또는 브라우저 단위 식별자. 웹은 Amplitude Browser SDK 값, Android와 iOS는 앱이 생성하고 영속화한 UUID를 SDK에 주입하며 로그아웃 때 새 값으로 바꾼다. API 헤더와 SDK가 같은 값을 사용하고 서버 저장에는 해시를 사용한다. ([식별자 정책](ANALYTICS.md#2-식별자-정책)) | `anonymous_id`(레거시, V17에서 정리 완료) |
 | 세션 | `session_id` | **분석 세션 전용 예약어**(Amplitude). 한 번의 방문 단위 | 채팅, 간편 제작 진행 단위를 "세션"으로 부르는 것(§5) |
 | 요청 ID | `request_id` | API 요청 1건의 상관 ID(`req_` + UUID). 헤더 `X-Manyak-Request-Id` | 없음 |
 | 사용자 | `user` | 로그인한 사용자 계정. 외부 식별자는 UUID `public_id` | 없음 |
@@ -156,7 +156,7 @@
 | 적립 | earn / `reason` 적립 계열: `SIGNUP_REWARD`, `INVITE_REWARD`, `ATTENDANCE_REWARD`, `PURCHASE` | 보상 또는 구매로 이프가 늘어나는 것. 보상액, 초대자 월 한도와 상품 총량은 서버 정책과 상품 응답을 사용한다. 고정 수치를 용어집에 중복 정의하지 않는다. ([정책값](../spec/PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-3-정책값-조회), [상품 목록](../spec/PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-2-상품-목록-조회)) | "충전"(Phase 3 유료 결제 `PURCHASE` 전용) |
 | 소모 | spend / `reason` 소모 계열: `STORY_CREATION`, `CHAT_TURN` | 기능 사용으로 이프가 줄어드는 것. 간편 제작 완성, 채팅 턴과 응답 재생성의 적용 비용은 서버 정책, 선택 모델과 체험 상태로 결정한다. 스토리라인 생성과 재생성은 무료다. 요청 전에 소모하는 방식은 선차감이라고 부른다. ([잔액과 비용](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-2-잔액과-비용)) | "차감" 단독 표기(회수, 정산과 혼동, "선차감"은 예외), "사용" 단독 표기 |
 | 환불 | refund / `REFUND` | 선차감 후 AI 실패 시 자동으로 이프를 되돌리는 것 | "취소" |
-| 구매 | `PURCHASE` | 웹 결제창으로 상품을 구매해 이프를 적립하는 것. Android에는 구매 탭과 인앱 결제가 없다. 구매 로트와 만료 규칙은 PAYMENT 계약을 따른다. ([유료 구매 범위](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) | 보상과 혼용 금지 |
+| 구매 | `PURCHASE` | 웹 결제창으로 상품을 구매해 이프를 적립하는 것. Android에는 구매 탭과 인앱 결제가 없다. iOS에는 구매 탭, 인앱 결제와 웹 구매 안내가 모두 없다. 구매 로트와 만료 규칙은 PAYMENT 계약을 따른다. ([유료 구매 범위](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) | 보상과 혼용 금지 |
 | 보상 이프 | 없음(이용약관 용어) | 이용약관에서 운영자가 무상으로 부여한 이프. 가입, 출석, 초대 보상과 사용 취소로 반환된 이프(`REFUND`)를 포함하며 부여일로부터 30일 뒤 만료된다. ([법적 콘텐츠](../spec/ACCOUNT/CLIENT/WEB/4-1-CONTRACT.md#4-1-2-법적-콘텐츠)) | 없음 |
 | 유상 이프 | 없음(이용약관 용어) | 이용약관에서 회원이 대금을 지급하고 구매한 이프. 원장의 `PURCHASE` 적립분이며 보너스를 포함한 구매분 하나로 다룬다 | 없음 |
 | 결제 환불 | 없음 | 청약철회나 결제 오류로 그로블 결제를 취소하고 대금을 돌려주는 것. 서버는 통지를 받아 회수(`PURCHASE_REVERSAL`)한다. 이용약관과 사용자 화면은 "환불"로 쓰고, AI 실패에 따른 `REFUND`는 이용약관에서 "사용 취소에 따른 반환"으로 쓴다 | 명세에서 `REFUND`와 같은 뜻으로 쓰는 것 |
@@ -164,7 +164,7 @@
 | 회수 | `PURCHASE_REVERSAL` | 결제 환불에 따라 구매 로트 잔여를 줄이는 음수 원장 사유. AI 실패에 따른 재적립인 `REFUND`와 구분한다. 잔액과 이용내역 분류는 PAYMENT 계약을 따른다. ([그로블 웹훅](../spec/PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-10-그로블-웹훅-수신)) | AI 실패 후 재적립인 `REFUND`와 혼용 금지 |
 | 출석체크 | attendance | KST 자정 기준 하루 1회 접속 보상을 받는 행위 | "데일리 체크인" |
 | 초대 코드 | invite code, `invite_code` | 다른 회원의 초대 관계와 보상을 등록하는 코드. 등록 자격은 ACCOUNT, 보상액과 초대자 월 상한은 PAYMENT에서 정의한다. ([계정 요구사항](../spec/ACCOUNT/CLIENT/2-2-REQUIREMENTS.md#2-2-4-연동과-초대), [보상과 내역](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-4-보상과-내역)) | "초대 링크"(링크 어트리뷰션 방식은 KNK-567로 폐기), "추천인 코드" |
-| 체험 한도 | trial limit | 이프 없이 사용할 수 있는 기능별 사용량 상한. 웹 게스트 체험과 회원의 적용 비용 표시를 구분하며 실제 한도와 사용량은 서버 응답을 따른다. Android에는 게스트 체험이 없다. ([체험 사용량](../spec/PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-4-체험-사용량-조회), [플랫폼 범위](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) | "무료 이프"(게스트는 이프가 없음) |
+| 체험 한도 | trial limit | 이프 없이 사용할 수 있는 기능별 사용량 상한. 웹 게스트 체험과 회원의 적용 비용 표시를 구분하며 실제 한도와 사용량은 서버 응답을 따른다. Android와 iOS에는 게스트 체험이 없다. ([체험 사용량](../spec/PAYMENT/BACKEND/4-2-CONTRACT.md#4-2-4-체험-사용량-조회), [플랫폼 범위](../spec/PAYMENT/CLIENT/2-2-REQUIREMENTS.md#2-2-1-적용-범위)) | "무료 이프"(게스트는 이프가 없음) |
 
 <br>
 

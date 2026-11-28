@@ -27,8 +27,8 @@
 | 공통 정의와 작성 기준 | [참조 자료](docs/reference/AGENTS.md). 용어, 서비스 배경, 공용 인터페이스, 분석과 작성 가이드 |
 
 - 도메인은 해당 폴더의 `AGENTS.md`에서 `BACKEND`, `AI`, `CLIENT` 중 관련 세트를 선택한다. 문서 역할과 코드 진입점은 세트의 `AGENTS.md`를 따른다.
-- 클라이언트 작업은 `docs/spec/<DOMAIN>/CLIENT/`의 공통 문서와 하위 `WEB/` 또는 `ANDROID/`를 함께 확인한다. 유저 스토리는 공통 세트에서 정의하고 플랫폼별 요구와 검증이 같은 ID를 참조한다.
-- 공통 UI는 `docs/ui/` 아래에 `WEB/`과 `ANDROID/`를 둔다. 공통 기술 기반은 [CLIENT](docs/platform/CLIENT/AGENTS.md) 아래에 [WEB](docs/platform/CLIENT/WEB/AGENTS.md)과 [ANDROID](docs/platform/CLIENT/ANDROID/AGENTS.md)를 둔다. 공통 화면과 기술 규칙을 업무별 세트에 복제하지 않는다.
+- 클라이언트 작업은 `docs/spec/<DOMAIN>/CLIENT/`의 공통 문서와 하위 `WEB/`, `ANDROID/` 또는 `IOS/`를 함께 확인한다. 유저 스토리는 공통 세트에서 정의하고 플랫폼별 요구와 검증이 같은 ID를 참조한다.
+- 공통 UI는 `docs/ui/` 아래에 `WEB/`, `ANDROID/`와 `IOS/`를 둔다. 공통 기술 기반은 [CLIENT](docs/platform/CLIENT/AGENTS.md) 아래에 [WEB](docs/platform/CLIENT/WEB/AGENTS.md), [ANDROID](docs/platform/CLIENT/ANDROID/AGENTS.md)와 [IOS](docs/platform/CLIENT/IOS/AGENTS.md)를 둔다. 공통 화면과 기술 규칙을 업무별 세트에 복제하지 않는다.
 - API의 요청과 응답은 제공자 세트의 계약을 참조한다. 백엔드는 `BACKEND/4-2-CONTRACT.md`, AI는 `AI/5-CONTRACT.md`에서 정의하며 클라이언트의 연동 문서는 소비 조건과 플랫폼 처리를 설명한다.
 
 <br>
@@ -41,6 +41,7 @@
 |---|---|
 | 웹 프론트엔드 | `../manyak-web` |
 | Android 앱 | `../manyak-android` |
+| iOS 앱 | `../manyak-ios`(저장소 생성 전) |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 알림 서비스 | `../manyak-notification` |
@@ -59,7 +60,7 @@
 
 - 요구사항, 화면과 구현 설계, 계약, 검증은 각 세트의 역할별 문서에 기록한다. 변경한 단계와 영향을 받는 이후 문서를 갱신하며 구현이나 검증 결과를 이유로 상위 요구를 바꾸지 않는다.
 - 도메인과 UI 세트는 단계 번호를 유지한다. 플랫폼 기반의 여러 본문은 폴더별로 1부터 번호를 붙인다. `AGENTS.md`와 `DECISIONS.md`를 제외한 본문이 하나인 폴더는 파일 접두사를 생략한다. 참조 자료와 템플릿은 기존 이름을 유지한다.
-- 첫 제목은 공통 문서에서 `# 1 배경`, `# 2-1 유저 스토리`처럼 역할을 쓰고 플랫폼 문서에서 `# 2-2 요구사항: 웹`, `# 2-2 요구사항: 안드로이드`처럼 구분한다. 도메인명과 CLIENT를 반복하지 않는다.
+- 첫 제목은 공통 문서에서 `# 1 배경`, `# 2-1 유저 스토리`처럼 역할을 쓰고 플랫폼 문서에서 `# 2-2 요구사항: 웹`, `# 2-2 요구사항: 안드로이드`, `# 2-2 요구사항: iOS`처럼 구분한다. 도메인명과 CLIENT를 반복하지 않는다.
 - 명세 본문에 문서 정보, 읽는 순서나 목차 블록을 두지 않는다. 조건과 결과는 표로, 분기와 상태 전이를 포함하는 흐름은 Mermaid로 표현한다. 문서 역할과 코드 위치는 간결한 `AGENTS.md`에서 안내한다.
 - 현재 결정과 후속 결정은 해당 세트의 `DECISIONS.md`에 기록한다. 결정 하나를 상태, 배경, 채택, 대안과 영향의 표로 정리하고 날짜와 근거가 있으면 보존한다. 없는 대안이나 상태를 추측해서 채우지 않는다.
 - 확정된 결정의 ID, 당시 사실과 판단 근거는 보존한다. 결정이 바뀌면 새 기록에 대체하는 ID와 적용 범위를 명시한다. [기존 결정 원문](docs/reference/decisions/AGENTS.md)의 과거 구현 상태를 현재 상태로 고쳐 쓰지 않는다. 문서 배치 결정은 [DOCUMENTATION.md](docs/reference/decisions/DOCUMENTATION.md)에 둔다.

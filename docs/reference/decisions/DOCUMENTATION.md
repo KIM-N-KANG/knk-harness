@@ -160,3 +160,20 @@
 | 채택 | 도메인 명세의 위치를 `docs/spec/<DOMAIN>/`으로 한다. 폴더 밖에서 들어오는 링크와 안내 문서, 작성 가이드의 경로를 함께 바꾼다. |
 | 영향 | 기존 결정 본문에 적힌 `docs/domain` 서술은 당시 기록으로 보존하고 링크 대상만 새 경로로 바꾼다. 고정 커밋 주소로 남긴 옛 `docs/spec` 링크는 옛 통합 명세를 가리키므로 그대로 둔다. 이 경로를 참조하는 서비스 저장소의 링크도 함께 바꾼다. |
 | 근거 | 2026-11-21 작업 대화의 폴더 이름 정리 요청. ([KNK-2120](https://kimandkang.atlassian.net/browse/KNK-2120)) |
+
+<br>
+
+<a id="c-026"></a>
+
+**C-026. IOS 세트를 ANDROID와 같은 자리에 배치**
+
+| 항목 | 내용 |
+|---|---|
+| 날짜 | 2026-11-28 |
+| 상태 | Accepted |
+| 관계 | C-011의 재검토 조건인 새 클라이언트 플랫폼 추가에 따른 결정이다. C-011, C-014, C-015, C-016의 배치와 번호 규칙은 유지하고 플랫폼 폴더에 IOS를 더한다. |
+| 승인 근거 | KNK-2154 작업 대화에서 사용자가 확정했다. |
+| 배경 | iOS 앱 개발에 착수하려면 `CLIENT/WEB`과 `CLIENT/ANDROID`만 있는 문서 구조에 iOS 세트를 어떤 구조로 둘지 정해야 했다. |
+| 채택 | `docs/platform/CLIENT/IOS/`, `docs/ui/IOS/`, `docs/spec/<DOMAIN>/CLIENT/IOS/`에 ANDROID와 같은 파일 번호와 이름으로 둔다. 플랫폼 문서의 첫 제목은 `# 2-2 요구사항: iOS`처럼 끝에 구분한다.<br>iOS 결정 ID는 접두사 `I-`를 쓰고 세트마다 번호 구간을 나눠 충돌을 막는다. 구간은 platform I-001~I-029, ui I-030~I-059, ACCOUNT I-060~I-079, PAYMENT I-080~I-089, CHAT I-090~I-109, STORY I-110~I-139, NOTIFICATION I-140~I-159, MODERATION I-160~I-169이다. |
+| 영향 | 진입 문서, 작성 가이드, 용어집, 분석 기준과 운영 문서에 iOS 적용 범위를 더한다. iOS 저장소 `manyak-ios`는 생성 전이므로 IOS 세트의 코드 위치는 계획 모듈로만 적고 파일 링크를 두지 않는다. |
+| 근거 | [KNK-2154](https://kimandkang.atlassian.net/browse/KNK-2154) |

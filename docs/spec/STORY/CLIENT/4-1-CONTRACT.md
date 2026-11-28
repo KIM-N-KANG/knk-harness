@@ -127,7 +127,7 @@ API 경로는 `/api/v1` 기준이다. 인증, 응답 전체 필드와 서버 제
 | genres | 선택 순서 selected, 이름을 보관하는 customTags, 대표 밖 칩 순서 addedTagIds |
 | description와 visibility | 주요 내용 문자열과 PUBLIC 또는 PRIVATE |
 
-selected는 tag의 숫자 ID 또는 custom의 ID를 구분하고 customTags는 ID와 이름을 보관한다. Android가 이름으로 저장한 값과 웹이 제공 ID로 저장한 값을 모두 읽는다. 제공 ID를 이름으로 변환하는 데 필요한 카탈로그를 받지 못하면 이름을 잃은 채 다시 저장하지 않는다.
+selected는 tag의 숫자 ID 또는 custom의 ID를 구분하고 customTags는 ID와 이름을 보관한다. Android와 iOS가 이름으로 저장한 값과 웹이 제공 ID로 저장한 값을 모두 읽는다. 제공 ID를 이름으로 변환하는 데 필요한 카탈로그를 받지 못하면 이름을 잃은 채 다시 저장하지 않는다.
 
 최상위 필드의 타입이 다르거나 필드가 없으면 새 폼 기본값을 채운다. 항목 안의 빠진 필드도 기본값을 사용한다. 이전 초안에 없는 인물 소개는 빈 문자열로 읽는다.
 

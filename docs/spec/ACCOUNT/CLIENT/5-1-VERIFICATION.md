@@ -8,8 +8,8 @@
 |---|---|---|
 | ACCOUNT-US-001 | [2-2-2](2-2-REQUIREMENTS.md#2-2-2-로그인과-동의) | Google과 Kakao 로그인, 실패와 취소 후 재시도 |
 | ACCOUNT-US-002 | [2-2-2](2-2-REQUIREMENTS.md#2-2-2-로그인과-동의), [2-2-6](2-2-REQUIREMENTS.md#2-2-6-실패와-복구-결과) | 로그인 전 전문 열람, 본문 동일성, 표시 버전과 요구 버전 구분. 가입 동의 전 계정 생성과 회원 부수 효과 차단, 취소와 만료 |
-| ACCOUNT-US-003 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위), [2-2-5](2-2-REQUIREMENTS.md#2-2-5-종료와-데이터-보호) | 웹 게스트의 회원 이관과 제작 복구 데이터 유지. Android 비적용 |
-| ACCOUNT-US-004 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위) | 웹의 공개 열람과 동의 후 게스트 체험. Android 로그인 전 이용 범위 구분 |
+| ACCOUNT-US-003 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위), [2-2-5](2-2-REQUIREMENTS.md#2-2-5-종료와-데이터-보호) | 웹 게스트의 회원 이관과 제작 복구 데이터 유지. Android와 iOS 비적용 |
+| ACCOUNT-US-004 | [2-2-1](2-2-REQUIREMENTS.md#2-2-1-적용-범위) | 웹의 공개 열람과 동의 후 게스트 체험. Android와 iOS 로그인 전 이용 범위 구분 |
 | ACCOUNT-US-005 | [2-2-3](2-2-REQUIREMENTS.md#2-2-3-프로필과-페르소나) | 재로그인과 기기 변경 뒤 같은 계정의 서재 유지 |
 | ACCOUNT-US-006 | [2-2-3](2-2-REQUIREMENTS.md#2-2-3-프로필과-페르소나) | 가입 시 닉네임과 프리셋 이미지 자동 부여 |
 | ACCOUNT-US-007 | [2-2-3](2-2-REQUIREMENTS.md#2-2-3-프로필과-페르소나), [2-2-6](2-2-REQUIREMENTS.md#2-2-6-실패와-복구-결과) | 변경 필드 저장, 오류 시 입력 보존과 작성자 갱신 |
