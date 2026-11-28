@@ -107,7 +107,7 @@ backgroundBrandBold는 눌림에만 쓰고 성공 상태에 새 초록을 만들
 | 큰 글자 | 고정 높이 대신 최소 높이. 가로 배치가 넘치면 줄을 바꾸거나 세로로 쌓음 |
 | 숫자 | 고정폭 숫자는 도메인이 정한 자리(이프 잔액과 내역 금액 등)에만 |
 
-아이콘은 원본 SVG를 Asset Catalog(앱에 묶는 리소스 목록)에 템플릿 렌더링(쓰는 쪽 색으로 칠하는 방식)으로 둔다. 크기는 iconTiny 12pt, iconSmall 16pt, icon 20pt, 탭 바 tabIcon 24pt이며 하단 탭은 filled와 outline 쌍을 둔다. SF Symbols(Apple의 시스템 아이콘 모음)는 시스템 뒤로 버튼처럼 시스템 UI 안에서만 쓴다. 이프 마크는 이미지로 두고 옆 글자 크기에 맞춰 함께 커진다. 원본 SVG 출처가 확인되지 않은 아이콘의 확보 방법은 미정이다. ([I-038](DECISIONS.md#i-038))
+아이콘은 원본 SVG를 Asset Catalog(앱에 묶는 리소스 목록)에 템플릿 렌더링(쓰는 쪽 색으로 칠하는 방식)으로 둔다. 크기는 iconTiny 12pt, iconSmall 16pt, icon 20pt, 탭 바 tabIcon 24pt이며 하단 탭은 filled와 outline 쌍을 둔다. SF Symbols(Apple의 시스템 아이콘 모음)는 시스템 뒤로 버튼처럼 시스템 UI 안에서만 쓴다. 이프 마크는 이미지로 두고 옆 글자 크기에 맞춰 함께 커진다. 원본 SVG 출처가 확인되지 않은 아이콘은 Android 앱의 벡터 리소스를 SVG로 변환해 쓰고 변환 결과를 Android 화면과 눈으로 대조한다. ([I-038](DECISIONS.md#i-038), [I-054](DECISIONS.md#i-054))
 
 <br>
 

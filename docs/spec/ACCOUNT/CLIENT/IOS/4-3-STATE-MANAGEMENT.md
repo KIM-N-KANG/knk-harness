@@ -84,7 +84,7 @@
 | 페르소나 목록과 생성 항목 | `ManyakMy` | 메모리 값 해제 |
 | 스토리 온보딩 표시 | `ManyakOnboarding` | 메모리 값 해제 ([STORY iOS 가입 안내](../../../STORY/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-4-장르-기기-기록과-가입-안내)) |
 | 광고 동의 질문 기록 | `ManyakNotification` | 메모리 값 해제 ([NOTIFICATION iOS 저장 위치](../../../NOTIFICATION/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명)) |
-| 알림 정리 | `ManyakNotification` | 기기 FCM 토큰 삭제, 알림 센터의 이 앱 알림 제거와 배지 0. 범위는 NOTIFICATION ([NOTIFICATION iOS 저장 위치](../../../NOTIFICATION/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명)) |
+| 알림 정리 | `ManyakNotification` | 기기 FCM 토큰 삭제, 알림 센터의 이 앱 알림 제거. 범위는 NOTIFICATION ([NOTIFICATION iOS 저장 위치](../../../NOTIFICATION/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-저장-위치와-수명)) |
 | 체험 잔여 | `ManyakCredit` | 메모리 값 해제 ([PAYMENT iOS 값과 수명](../../../PAYMENT/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-값과-수명)) |
 | 회원 suite | `ManyakCommon` | suite 전체 삭제. 삭제 결과를 돌려주지 않으므로 남은 키가 없는지 다시 읽어 판정 |
 | 이미지 캐시 | `ManyakDesignSystem`. 앱 타깃이 감싸 등록 | Nuke 설정이 쓰는 메모리와 디스크 캐시 전체 ([I-062](DECISIONS.md#i-062)) |

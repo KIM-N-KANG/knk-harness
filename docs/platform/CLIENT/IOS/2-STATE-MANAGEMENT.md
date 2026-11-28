@@ -80,7 +80,7 @@ flowchart TD
 | 회원 귀속 키와 값 | UserDefaults 회원 suite | 로그아웃 정리에서 suite 전체 삭제 |
 | 토큰 | Keychain | 접근 정책과 재설치 처리는 [ACCOUNT iOS](../../../spec/ACCOUNT/CLIENT/IOS/4-3-STATE-MANAGEMENT.md#4-3-1-세션과-토큰) |
 | 이미지 캐시 | Nuke 메모리와 디스크 캐시 | 로그아웃 정리에서 삭제 |
-| 기기 백업 | Keychain 토큰은 기기 전용이라 다른 기기로 복원되지 않음 | 그 밖의 저장소의 백업 포함 여부는 미정 |
+| 기기 백업 | 기능 데이터베이스 파일은 백업에서 제외. UserDefaults 두 suite는 포함. Keychain 토큰은 기기 전용이라 다른 기기로 복원되지 않음 | 복원한 기기는 토큰이 없어 Guest로 시작하고 그 시작에서 복원된 회원 suite를 지움 ([I-024](DECISIONS.md#i-024)) |
 
 회원 데이터를 쓰는 저장소는 `UserScopedStore`를 따르고 앱 타깃의 등록 배열에 등록한다. 로그아웃 정리가 끝날 때까지 필요한 값(세션 종료 저널 등)은 회원 suite에 두지 않는다. 로그아웃 뒤 늦게 도착한 응답이 지운 데이터를 되살리지 않도록 회원 데이터 쓰기는 `SessionGate`의 세대 확인을 거친다. 토큰과 동의 대기 코드 같은 비밀값은 UserDefaults와 데이터베이스에 두지 않는다. ([I-008](DECISIONS.md#i-008))
 

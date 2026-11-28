@@ -22,7 +22,7 @@
 |---|---|
 | 로그인 서비스 | Sign in with Apple 없이 제출. App Store 심사 지침 4.8 반려 위험을 감수하고 반려되면 서버 `auth/social/{provider}`의 `apple` 추가를 먼저 진행한 뒤 새 결정으로 추가 ([I-060](DECISIONS.md#i-060)) |
 | 계정 삭제 | 앱 안 회원 탈퇴 화면이 계정 삭제를 제공. 심사 지침의 계정 삭제 조항 원문은 확인하지 않음 |
-| 심사 계정 | 로그인 필수라 심사용 계정이 필요하며 준비 방식은 미정 ([IOS 출시](../../../../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-4-출시)) |
+| 심사 계정 | 로그인 필수라 심사 전용 Google 계정을 제공. 자격 증명은 App Store Connect의 심사 정보에만 기록 ([IOS 출시](../../../../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-4-출시)) |
 | 저장 식별자 | Keychain 항목 식별자, 설치 표시 키와 저널 파일 이름은 출시 뒤 바꾸지 않음. 설치 표시 키를 바꾸면 모든 기존 설치가 재설치로 판정되어 로그아웃됨 |
 
 공용 빌드, 서명과 출시 절차는 IOS 기반을 따른다. ([IOS 배포](../../../../platform/CLIENT/IOS/5-DEPLOYMENT.md))

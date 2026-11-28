@@ -196,7 +196,7 @@ release 번들(AAB)은 CI가 만들지 않는다. 릴리스 담당자가 로컬�
 
 Release Archive는 CI가 만들지 않는다. 릴리스 담당자가 `main` 병합 커밋에서 Xcode로 Archive하고 App Store Connect에 직접 올린다.
 
-- **CI에 서명 자산을 두지 않는다.** 배포 인증서, 프로비저닝 프로파일과 App Store Connect 키는 릴리스 담당자의 Mac에만 둔다. Xcode 자동 서명 사용 여부와 인증서 보관, 복구 방식은 미정이다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014))
+- **CI에 서명 자산을 두지 않는다.** 배포 인증서, 프로비저닝 프로파일과 App Store Connect 키는 릴리스 담당자의 Mac에만 둔다. 서명은 Xcode 자동 서명을 쓰고 인증서와 프로파일을 따로 보관하지 않으며 담당자의 Mac을 쓸 수 없으면 다른 Mac에서 다시 발급한다. ([I-014](../platform/CLIENT/IOS/DECISIONS.md#i-014), [I-025](../platform/CLIENT/IOS/DECISIONS.md#i-025))
 - **Release 주입값**은 커밋하지 않는 비밀값 xcconfig에서 읽는다(Google iOS 클라이언트 ID, 서버 클라이언트 ID, Kakao 네이티브 앱 키, Amplitude 키). 저장소에는 예시 파일만 둔다. 비어 있어도 빌드는 성공하고 해당 기능만 실행 시 실패하므로 Archive 전에 Release 값 네 개를 확인한다. 운영 서버 주소 `https://api.manyak.app/api/v1/`은 Release 구성에 고정한다. 키 값과 실제 경로는 문서에도 저장소에도 적지 않는다. ([5-1 빌드와 환경](../platform/CLIENT/IOS/5-DEPLOYMENT.md#5-1-빌드와-환경))
 - **`GoogleService-Info.plist`는 저장소에 커밋한다.** CI는 비밀값 없이 PR마다 Debug 빌드를 만든다. 서버 FCM, Android와 같은 Firebase 프로젝트에 iOS 앱을 추가하며 환경별로 나누지 않는다. Debug는 Crashlytics 수집을 끈다. APNs 인증 키는 Firebase 콘솔에만 등록하고 저장소와 문서에 두지 않는다. ([I-021](../platform/CLIENT/IOS/DECISIONS.md#i-021))
 - 난독화는 적용하지 않는다. Archive마다 dSYM을 Crashlytics에 올린다.
@@ -337,7 +337,7 @@ iOS 저장소 `manyak-ios`는 생성 전이다. 브랜치 생성부터 App Store
 | 마케팅 버전 | `CFBundleShortVersionString`. 1.0.0부터 시작하고 Android 버전과 별개. 버그 수정은 patch, 기능 추가는 minor |
 | 출시 | App Store Connect의 단계적 출시로 시작하고 [9-4](#9-4-ios-단계적-출시와-중단-기준)의 기준을 관찰 |
 
-로그인이 필수인 앱이므로 심사용 계정의 준비 방식은 미정이다.
+로그인이 필수인 앱이므로 심사 전용 Google 계정의 자격 증명을 App Store Connect의 심사 정보에만 적는다. ([I-026](../platform/CLIENT/IOS/DECISIONS.md#i-026))
 
 <br>
 

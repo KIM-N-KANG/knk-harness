@@ -25,7 +25,7 @@
 | Firebase 설정 | `GoogleService-Info.plist`를 커밋. 환경 구분 없는 Firebase 프로젝트 하나 ([I-021](DECISIONS.md#i-021)) |
 | APNs 인증 키 | Firebase 콘솔에 등록. 저장소와 문서에 두지 않음 |
 
-키 값과 실제 경로는 문서와 저장소에 적지 않는다. 오픈소스 고지 목록의 생성 방식은 미정이며 대상은 Swift Package Manager 의존성과 번들 글꼴 두 종의 OFL이다. 앱 개인정보 라벨과 개인정보 매니페스트(`PrivacyInfo.xcprivacy`)의 내용은 미정이며 대상은 Amplitude와 Crashlytics가 보내는 데이터, UserDefaults처럼 사용 이유 신고가 필요한 API다.
+키 값과 실제 경로는 문서와 저장소에 적지 않는다. 오픈소스 고지 목록은 빌드 단계에서 Swift Package Manager 의존성의 라이선스를 모아 만들고 번들 글꼴 두 종의 OFL은 저장소에 둔 원문을 더한다. 생성 도구는 구현에서 고른다. ([I-027](DECISIONS.md#i-027)) 앱 개인정보 라벨과 개인정보 매니페스트(`PrivacyInfo.xcprivacy`)는 첫 제출 전에 작성하는 점검 항목이며 내용을 이 문서에 미리 적지 않는다. 대상은 Amplitude와 Crashlytics가 보내는 데이터, UserDefaults처럼 사용 이유 신고가 필요한 API이고 연결한 SDK 버전의 공식 문서를 기준으로 쓴 뒤 개인정보 처리방침과 대조한다. ([I-028](DECISIONS.md#i-028))
 
 <br>
 
@@ -52,7 +52,7 @@
 | 빌드 번호 | `CFBundleVersion`. App Store Connect에 올릴 때마다 1 증가, 재사용 금지. 심사 반려 뒤 같은 내용을 다시 올릴 때도 올림 |
 | 정의 위치 | 두 값 모두 공용 xcconfig 한 곳 |
 | 서명 | 릴리스 담당자의 Mac에서 수동. CI에 인증서, 프로비저닝 프로파일과 App Store Connect 키를 두지 않음 |
-| 서명 방식 | 미정(Xcode 자동 서명 사용 여부, 인증서 보관과 복구) |
+| 서명 방식 | Xcode 자동 서명. 인증서와 프로비저닝 프로파일은 Xcode가 만들고 갱신하며 따로 보관하지 않음. 담당자의 Mac을 쓸 수 없으면 Apple Developer 계정으로 다른 Mac에서 다시 발급 ([I-025](DECISIONS.md#i-025)) |
 
 <br>
 
@@ -82,4 +82,4 @@ flowchart TD
 6. 통과하면 같은 빌드를 외부 테스터에 배포하고 같은 빌드로 App Store 심사에 제출한다. 단계마다 다시 빌드하지 않는다.
 7. 승인 뒤 App Store Connect의 단계적 출시로 시작하고 [중단 기준](../../../operations/DEPLOYMENT.md#9-4-ios-단계적-출시와-중단-기준)을 iOS 앱 버전별로 관찰한다. 기준을 충족하면 단계적 출시를 멈추고 수정판을 준비한다.
 
-외부 테스터 배포와 App Store 제출은 Apple 심사를 거친다. 단계적 출시의 단계별 비율과 기간은 App Store Connect가 정하며 이번 작성에서 다시 확인하지 않았다. 앱은 로그인이 필수이므로 심사용 계정의 준비 방식은 미정이다. 외부 로그인의 앱 전환, 앱 열기 링크와 푸시는 실기기와 설치 빌드를 명시해 검증한다. ([I-014](DECISIONS.md#i-014), [I-015](DECISIONS.md#i-015), [I-023](DECISIONS.md#i-023))
+외부 테스터 배포와 App Store 제출은 Apple 심사를 거친다. 단계적 출시의 단계별 비율과 기간은 App Store Connect가 정하며 이번 작성에서 다시 확인하지 않았다. 앱은 로그인이 필수이므로 심사 전용 Google 계정을 만들어 운영 환경에서 가입과 로그인을 확인한 뒤 자격 증명을 App Store Connect의 심사 정보에만 적는다. 자격 증명은 문서와 저장소에 두지 않는다. ([I-026](DECISIONS.md#i-026)) 외부 로그인의 앱 전환, 앱 열기 링크와 푸시는 실기기와 설치 빌드를 명시해 검증한다. ([I-014](DECISIONS.md#i-014), [I-015](DECISIONS.md#i-015), [I-023](DECISIONS.md#i-023))
