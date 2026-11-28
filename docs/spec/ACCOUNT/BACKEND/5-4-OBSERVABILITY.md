@@ -46,6 +46,8 @@ Fluent Bit`"]
 | `request_id` | `req_` + UUID | 요청 헤더 값이 1~64자이고 영문, 숫자, 하이픈, 밑줄만이면 그대로 쓰고 없거나 조건에 어긋나면 새로 생성<br>응답 헤더로 반환 |
 | `session_id` | `X-Manyak-Session-Id` | 없으면 `unknown` |
 | `device_id_hash` | `device_hash_` + SHA-256(pepper + 원본) 앞 16자 | 원본은 저장하지 않음 |
+| `platform` | `ios`, `android`, `web` | `X-Manyak-Platform`이 세 값 중 하나면 그 값<br>아니고 `X-Manyak-App-Version`이 있으면 `android`<br>둘 다 아니면 `unknown` |
+| `app_version` | `X-Manyak-App-Version` | 1~50자가 아니거나 없으면 `unknown` |
 | `sentry_event_id` | Sentry 이벤트 ID | 5xx를 Sentry로 보낸 요청만 |
 | `traceId`, `spanId` | 현재 스팬 | 트레이스 전송을 비활성화해도 생성해 로그에 포함 |
 
@@ -149,7 +151,7 @@ ACCOUNT 전용 지표는 없다. 요청률, 오류율, 응답 시간은 공통 H
 | 닉네임, 페르소나 본문 | 로그에 기록하지 않음 |
 | 요청 경로 | 요청 로그 `endpoint`와 Sentry breadcrumb에 기록<br>경로에 비밀값 없음 |
 | Sentry 요청 필드 | 소셜 인증, 동의 완료, 호환 로그인, 토큰 회전, 로그아웃, 연동 재인증과 연동 경로의 본문, 헤더, 쿠키, 쿼리 제거<br>그 외 경로는 기본 수집 |
-| Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`는 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
+| Sentry 이벤트 | 5xx만 캡처<br>기본 개인정보 수집 끔<br>`request_id`, `platform`, `app_version`은 태그, `session_id`와 `device_id_hash`는 `identity` 컨텍스트, `unknown`은 제외 |
 
 <br>
 
@@ -194,7 +196,7 @@ Amplitude HTTP API로 비동기 발행한다. 분석 전송을 켜고 API 키가
 | `device_id_hash` | 이벤트 프로퍼티는 디바이스 해시<br>헤더가 없으면 생략 |
 | `session_id` | 정수 문자열일 때만 포함 |
 | `request_id`, `is_logged_in` | 요청 문맥 |
-| `platform` | 요청에 `X-Manyak-App-Version` 헤더가 있으면 `Android`<br>헤더가 없으면 생략 |
+| `platform` | 상관관계 식별자의 `platform`이 `ios`면 `iOS`, `android`면 `Android`, `web`이면 `Web`<br>`unknown`이면 생략 |
 | `app_version` | `X-Manyak-App-Version` 헤더 값<br>1~50자가 아니거나 헤더가 없으면 생략 |
 | `insert_id` | `{request_id}:{eventType}`<br>재시도 중복 제거 |
 | `error_type` | `network`, `validation`, `server`<br>검증 실패는 `validation`, 공개 키 조회와 연결 실패는 `network`, 검증 통과 뒤 저장 실패는 `server` |

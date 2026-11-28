@@ -1107,6 +1107,7 @@ iOS 앱은 Meta SDK, 광고 식별자와 App Tracking Transparency(앱 추적 �
 | `X-Manyak-Device-Id`  | best-effort(일부 경로 필수) | 논리 `device_id`  | 일반 요청은 누락해도 거부되지 않고 백엔드가 `unknown`으로 채운다. 아래 필수 경로 참조. |
 | `X-Manyak-Session-Id` | best-effort | 논리 `session_id` | 누락해도 요청이 거부되지 않는다. 백엔드가 `unknown`으로 채운다.                      |
 | `X-Manyak-Request-Id` | 클라이언트 미생성 | `request_id` | 클라이언트 앱은 생성, 주입하지 않는다. 백엔드가 생성해 응답 헤더로 echo한다(§6-3). |
+| `X-Manyak-Platform` | best-effort | `ios`, `android`, `web` | 누락해도 요청이 거부되지 않는다. 백엔드가 서버 분석 이벤트의 `platform`, 로그와 Sentry에 쓴다. 이 헤더 없이 `X-Manyak-App-Version`만 있으면 Android로 판정한다([요청 헤더](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-1-공통-규칙과-헤더)). |
 
 **`X-Manyak-Device-Id`가 정책상 필수인 경로**, ① 게스트 체험 한도 대상 요청(스토리라인 생성, 스토리 완성, 채팅 턴의 게스트 호출): 누락 시 400([이프 처리 흐름](../spec/PAYMENT/BACKEND/4-1-PIPELINES.md)). ② 첫 로그인: 회원 체험 시드가 이 헤더를 사용하며 누락 시 소진 시드가 1회성으로 확정된다([소셜 인증 계약](../spec/ACCOUNT/BACKEND/4-2-CONTRACT.md#4-2-2-소셜-인증)). 웹은 SDK가 남긴 쿠키 폴백을 사용하고, Android와 iOS는 앱 UUID가 없으면 먼저 생성해 영속화한 뒤 요청한다. **필수 경로에서는 값이 없다고 생략하지 않고 요청 자체를 막는다**([연동 계약](../platform/CLIENT/CONTRACT.md), [4-1-2 식별 정보](../spec/ACCOUNT/CLIENT/ANDROID/4-1-CONTRACT.md#4-1-2-식별-정보)).
 

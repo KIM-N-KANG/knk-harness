@@ -153,7 +153,9 @@
 | 내 콘텐츠 목록 | 소유 스토리 3개, 삭제 1개, `limit` 0, 101, 문자열 | 2개를 생성 시각이 최신인 순으로 반환, 1개, 100개 상한, 400 |
 | 요청 ID 헤더 | 64자, 65자, 공백 포함 | 그대로 반환, 서버 생성 ID 반환, 서버 생성 ID 반환 |
 | 게스트 이벤트 기기 식별자 | 게스트 로그인 실패 요청에 `X-Manyak-Device-Id` 있음, 없음 | `device_id`는 헤더 원본, `unknown`<br>두 경우 모두 로그 MDC와 Sentry `identity`는 해시, 이벤트 프로퍼티 `device_id_hash`는 해시 또는 생략, 원본은 `device_id` 외에 없음 |
-| 앱 요청 플랫폼 | 로그인 성공 요청에 `X-Manyak-App-Version: 1.4.0`<br>헤더 없음<br>51자 값 | Amplitude 이벤트의 `platform` `Android`, `app_version` `1.4.0`<br>`platform`과 `app_version` 생략<br>`platform` `Android`, `app_version` 생략 |
+| 요청 플랫폼 | 로그인 성공 요청에 `X-Manyak-Platform: ios`와 `X-Manyak-App-Version: 1.0.0`<br>`X-Manyak-Platform: web`만<br>`X-Manyak-App-Version: 1.4.0`만<br>`X-Manyak-Platform: desktop`만<br>두 헤더 없음<br>`X-Manyak-Platform: android`와 51자 앱 버전 | Amplitude 이벤트의 `platform` `iOS`, `app_version` `1.0.0`<br>`platform` `Web`, `app_version` 생략<br>`platform` `Android`, `app_version` `1.4.0`<br>`platform`과 `app_version` 생략<br>`platform`과 `app_version` 생략<br>`platform` `Android`, `app_version` 생략 |
+| 요청 플랫폼 로그 | 위 여섯 요청 | 로그 MDC의 `platform`은 순서대로 `ios`, `web`, `android`, `unknown`, `unknown`, `android`<br>`app_version`은 `1.0.0`, `unknown`, `1.4.0`, `unknown`, `unknown`, `unknown` |
+| 요청 플랫폼 Sentry 태그 | `X-Manyak-Platform: ios`와 `X-Manyak-App-Version: 1.0.0`인 요청의 500<br>두 헤더가 없는 요청의 500 | 태그 `platform` `ios`와 `app_version` `1.0.0`<br>두 태그 없음 |
 | 회원 이벤트 기기 식별자 | 회원 로그인 성공 요청에 `X-Manyak-Device-Id` 있음, 없음 | `device_id`는 헤더 원본이고 `device_id_hash`는 해시, 둘 다 생략<br>두 경우 모두 `user_id`는 공개 식별자, 로그 MDC와 Sentry `identity`는 해시 |
 
 <br>
