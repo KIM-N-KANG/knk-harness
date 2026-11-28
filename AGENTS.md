@@ -41,7 +41,7 @@
 |---|---|
 | 웹 프론트엔드 | `../manyak-web` |
 | Android 앱 | `../manyak-android` |
-| iOS 앱 | `../manyak-ios`(저장소 생성 전) |
+| iOS 앱 | `../manyak-ios` |
 | 백엔드 서버 | `../manyak-server` |
 | AI 서버 | `../manyak-ai` |
 | 알림 서비스 | `../manyak-notification` |
