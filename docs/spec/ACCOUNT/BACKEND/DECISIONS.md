@@ -281,7 +281,7 @@ ACCOUNT 도메인 백엔드의 중요한 결정을 날짜, 상태, 배경, 채�
 | 배경 | iOS 앱을 개발하기 시작했다. 결정 20은 `X-Manyak-App-Version` 헤더가 있으면 Android로 판정해서 iOS 앱이 같은 헤더를 실으면 Android로 잡힌다. 그래서 iOS 앱 명세는 이 헤더를 싣지 않기로 했고 iOS 요청은 플랫폼과 앱 버전이 모두 빠진다. 로그와 Sentry에는 플랫폼이 없어 오류가 어느 클라이언트에서 났는지 요청만 보고 알 수 없다. |
 | 채택 | 클라이언트가 `X-Manyak-Platform`에 `ios`, `android`, `web` 중 하나를 싣는다. 서버는 이 값으로 요청 플랫폼을 판정하고, 이 헤더가 없거나 다른 값인데 `X-Manyak-App-Version`이 있으면 `android`로 판정한다. 판정한 값을 서버 분석 이벤트의 `platform`에 `iOS`, `Android`, `Web`으로 싣고 로그 MDC와 Sentry 태그에 `platform`과 `app_version`을 더한다. 결정 20의 판정 규칙을 대체하며 서버 이벤트에 `platform`과 `app_version`을 싣는다는 결정은 유지한다. |
 | 대안 | `X-Manyak-App-Version`의 값에 플랫폼을 붙이는 안은 이미 배포된 Android 앱이 버전만 보내서 값 형식으로 구분할 수 없다. iOS 전용 헤더만 더하는 안은 Android와 웹의 판정이 헤더가 없다는 사실에 계속 기대어, 헤더 없는 내부 호출과 구분되지 않는다. `User-Agent`로 추정하는 안은 결정 20에서 기각한 이유가 그대로다. |
-| 영향 | 헤더를 보내지 않는 배포된 Android 앱은 앱 버전 헤더로 계속 Android로 잡힌다. 웹이 `web`을 보내기 시작하면 웹 요청의 서버 이벤트가 Amplitude의 병합 대신 서버가 실은 `Web`으로 잡혀 ADMIN 지표의 플랫폼 없음이 준다. Amplitude Swift SDK가 싣는 `platform` 값은 미확인이라 iOS 앱의 첫 dev 이벤트에서 서버 값 `iOS`와 같은지 대조한다. iOS, Android, 웹 클라이언트 명세의 공통 헤더 계약에 이 헤더를 더한다. 헤더 값은 저장하지 않는다. |
+| 영향 | 헤더를 보내지 않는 배포된 Android 앱은 앱 버전 헤더로 계속 Android로 잡힌다. 웹이 `web`을 보내기 시작하면 웹 요청의 서버 이벤트가 Amplitude의 병합 대신 서버가 실은 `Web`으로 잡혀 ADMIN 지표의 플랫폼 없음이 준다. Amplitude Swift SDK가 싣는 `platform` 값은 미확인이라 iOS 앱의 첫 dev 이벤트에서 서버 값 `iOS`와 같은지 대조한다. iOS, Android, 웹 클라이언트 명세의 공통 헤더 계약에 이 헤더를 더하며 클라이언트가 헤더를 싣기 전까지 iOS와 웹 요청은 지금처럼 플랫폼 없음으로 남는다. 헤더 값은 로그, Sentry와 분석 이벤트에만 싣고 DB에 저장하지 않는다. |
 
 <br>
 
