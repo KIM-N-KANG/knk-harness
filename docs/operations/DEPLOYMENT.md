@@ -192,7 +192,7 @@ release 번들(AAB)은 CI가 만들지 않는다. 릴리스 담당자가 로컬�
 
 ### 5-4 manyak-ios CI
 
-컨테이너 이미지가 없는 앱 저장소이다. GitHub Actions macOS 러너의 iOS 워크플로가 `dev`, `main` 대상 PR과 push에서 swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트와 시뮬레이터용 Debug 빌드를 실행하고 한 단계라도 실패하면 실패한다. XCUITest는 CI에서 돌리지 않는다. 러너 이미지의 Xcode 27 제공 여부는 확인하지 않았다(2026-11-26 기준). ([I-013](../platform/CLIENT/IOS/DECISIONS.md#i-013))
+컨테이너 이미지가 없는 앱 저장소이다. GitHub Actions macOS 러너의 iOS 워크플로가 `dev`, `main` 대상 PR과 push에서 swift-format 검사, SwiftLint, iOS 시뮬레이터 단위 테스트와 시뮬레이터용 Debug 빌드를 실행하고 한 단계라도 실패하면 실패한다. XCUITest는 CI에서 돌리지 않는다. Xcode 27은 `macos-latest` 이미지에 없고 `xcode-27` 라벨의 러너 이미지에 있어 그 라벨을 쓴다(2026-11-28 확인). ([I-013](../platform/CLIENT/IOS/DECISIONS.md#i-013))
 
 Release Archive는 CI가 만들지 않는다. 릴리스 담당자가 `main` 병합 커밋에서 Xcode로 Archive하고 App Store Connect에 직접 올린다.
 
