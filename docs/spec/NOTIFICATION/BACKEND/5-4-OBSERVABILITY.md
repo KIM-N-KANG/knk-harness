@@ -135,7 +135,7 @@ Fluent Bit`"]
 | `manyak.push.send.result` | Counter<br>`outcome` = `success`, `unregistered`, `failure` | FCM 발송 결과<br>서버와 알림 서비스가 각자 기록 |
 | `manyak.push.outbox.result` | Counter<br>`outcome` = `published`, `retry`, `abandoned` | 릴레이 발행 결과 |
 | `manyak.push.consume.result` | Counter<br>`outcome` = `success`, `retry`, `discard`, `dlq` | 큐 소비 결과 |
-| `fcm.send` | 관측 스팬<br>`platform` = `android`, `web`<br>`outcome` = `success`, `unregistered`, `failure` | 알림 서비스의 FCM 호출 스팬과 소요 시간 |
+| `fcm.send` | 관측 스팬<br>`platform` = `android`, `web`, `ios`<br>`outcome` = `success`, `unregistered`, `failure` | 알림 서비스의 FCM 호출 스팬과 소요 시간 |
 | `http.server.requests` | Timer<br>`uri`, `method`, `status`, `outcome` | 회원 API와 내부 API의 요청률과 오류율 |
 
 | 항목 | 기준과 제한 |
